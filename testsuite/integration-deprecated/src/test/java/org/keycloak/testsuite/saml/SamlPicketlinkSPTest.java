@@ -48,6 +48,7 @@ import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.PageUtils;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -482,7 +483,7 @@ public class SamlPicketlinkSPTest {
     public void testPostBadClientSignature() {
         driver.navigate().to("http://localhost:8081/bad-client-sales-post-sig/");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
-        Assert.assertEquals(driver.getTitle(), "We're sorry...");
+        Assert.assertEquals(PageUtils.getPageTitle(driver), "We're sorry...");
 
     }
 

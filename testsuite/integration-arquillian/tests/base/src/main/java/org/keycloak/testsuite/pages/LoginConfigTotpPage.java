@@ -49,7 +49,7 @@ public class LoginConfigTotpPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Mobile Authenticator Setup");
+        return PageUtils.getPageTitle(driver).equals("Mobile Authenticator Setup");
     }
 
     public void open() {

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.junit.Assert;
+import org.keycloak.testsuite.PageUtils;
 import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebDriver;
 

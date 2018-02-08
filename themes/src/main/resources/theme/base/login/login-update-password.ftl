@@ -1,8 +1,6 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
-    <#if section = "title">
-        ${msg("updatePasswordTitle")}
-    <#elseif section = "header">
+    <#if section = "header">
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
@@ -34,7 +32,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
                 </div>
             </div>
         </form>

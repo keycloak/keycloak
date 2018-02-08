@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,7 +44,7 @@ public class LoginConfigTotpPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Mobile Authenticator Setup");
+        return PageUtils.getPageTitle(driver).equals("Mobile Authenticator Setup");
     }
 
     public void open() {

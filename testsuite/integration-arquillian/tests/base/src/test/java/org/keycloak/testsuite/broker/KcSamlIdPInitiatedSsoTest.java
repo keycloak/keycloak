@@ -14,6 +14,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.IOUtil;
 
@@ -102,7 +103,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     public void testProviderIdpInitiatedLogin() throws Exception {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
 
-        waitForPage("log in to");
+        waitForPage("log in to", true);
 
         Assert.assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
@@ -110,7 +111,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         log.debug("Logging in");
         accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
 
-        waitForPage("update account information");
+        waitForPage("update account information", false);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
         Assert.assertThat("We must be on consumer realm right now",
@@ -144,10 +145,10 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         return getAuthRoot() + "/auth/realms/" + realmName + "/broker/saml-leaf/endpoint";
     }
 
-    private void waitForPage(final String title) {
+    private void waitForPage(final String title, final boolean htmlTitle) {
         WebDriverWait wait = new WebDriverWait(driver, 5);
 
-        ExpectedCondition<Boolean> condition = (WebDriver input) -> input.getTitle().toLowerCase().contains(title);
+        ExpectedCondition<Boolean> condition = (WebDriver input) -> htmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
 
         wait.until(condition);
     }

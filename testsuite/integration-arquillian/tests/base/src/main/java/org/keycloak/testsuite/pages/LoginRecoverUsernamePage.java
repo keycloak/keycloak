@@ -40,7 +40,7 @@ public class LoginRecoverUsernamePage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Forgot Your Username?");
+        return PageUtils.getPageTitle(driver).equals("Forgot Your Username?");
     }
 
     public void open() {

@@ -48,6 +48,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.PageUtils;
 import org.keycloak.testsuite.adapter.servlet.SamlSPFacade;
 import org.keycloak.testsuite.pages.InputPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -582,7 +583,7 @@ public class SamlAdapterTestStrategy extends ExternalResource {
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-client-sales-post-sig/");
         System.out.println(driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
-        assertEquals(driver.getTitle(), "We're sorry...");
+        assertEquals(PageUtils.getPageTitle(driver), "We're sorry...");
 
     }
     public static interface CheckAuthError {
