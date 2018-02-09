@@ -255,7 +255,7 @@ curl -X POST \
     -d "client_secret=geheim" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "subject_token=...." \
-    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token"
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token"
     -d "requested_issuer=google" \
     http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
 ----
