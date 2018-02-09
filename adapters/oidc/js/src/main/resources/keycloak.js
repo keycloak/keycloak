@@ -971,7 +971,7 @@
             loginIframe.iframe = iframe;
 
             iframe.onload = function() {
-                var authUrl = kc.authorize();
+                var authUrl = kc.endpoints.authorize();
                 if (authUrl.charAt(0) === '/') {
                     loginIframe.iframeOrigin = getOrigin();
                 } else {
@@ -982,7 +982,7 @@
                 setTimeout(check, loginIframe.interval * 1000);
             }
 
-            var src = kc.checkSessionIframe();
+            var src = kc.endpoints.checkSessionIframe();
             iframe.setAttribute('src', src );
             iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
