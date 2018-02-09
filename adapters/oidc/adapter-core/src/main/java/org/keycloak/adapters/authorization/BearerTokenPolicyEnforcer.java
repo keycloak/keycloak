@@ -50,10 +50,10 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         HttpFacade.Response response = facade.getResponse();
         AuthzClient authzClient = getAuthzClient();
         String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient);
-        String clientId = authzClient.getConfiguration().getResource();
-        String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/authorize";
+        String realm = authzClient.getConfiguration().getRealm();
+        String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString();
         response.setStatus(401);
-        StringBuilder wwwAuthenticate = new StringBuilder("UMA realm=\"").append(clientId).append("\"").append(",as_uri=\"").append(authorizationServerUri).append("\"");
+        StringBuilder wwwAuthenticate = new StringBuilder("UMA realm=\"").append(realm).append("\"").append(",as_uri=\"").append(authorizationServerUri).append("\"");
 
         if (ticket != null) {
             wwwAuthenticate.append(",ticket=\"").append(ticket).append("\"");

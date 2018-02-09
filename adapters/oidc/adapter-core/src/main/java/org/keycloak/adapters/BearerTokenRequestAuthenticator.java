@@ -174,6 +174,10 @@ public class BearerTokenRequestAuthenticator {
 
             @Override
             public boolean challenge(HttpFacade facade) {
+                if (deployment.getPolicyEnforcer() != null) {
+                    deployment.getPolicyEnforcer().enforce(OIDCHttpFacade.class.cast(facade));
+                    return true;
+                }
                 OIDCAuthenticationError error = new OIDCAuthenticationError(reason, description);
                 facade.getRequest().setError(error);
                 facade.getResponse().addHeader("WWW-Authenticate", challenge);

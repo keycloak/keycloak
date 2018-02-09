@@ -64,54 +64,58 @@ public abstract class AbstractPolicyEnforcer {
             return createEmptyAuthorizationContext(true);
         }
 
+        Request request = httpFacade.getRequest();
+        String path = getPath(request);
+        PathConfig pathConfig = this.pathMatcher.matches(path, this.paths);
         KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
 
-        if (securityContext != null) {
-            AccessToken accessToken = securityContext.getToken();
+        if (securityContext == null) {
+            if (pathConfig != null) {
+                challenge(pathConfig, getRequiredScopes(pathConfig, request), httpFacade);
+            }
+            return createEmptyAuthorizationContext(false);
+        }
 
-            if (accessToken != null) {
-                Request request = httpFacade.getRequest();
-                String path = getPath(request);
-                PathConfig pathConfig = this.pathMatcher.matches(path, this.paths);
+        AccessToken accessToken = securityContext.getToken();
 
-                LOGGER.debugf("Checking permissions for path [%s] with config [%s].", request.getURI(), pathConfig);
+        if (accessToken != null) {
+            LOGGER.debugf("Checking permissions for path [%s] with config [%s].", request.getURI(), pathConfig);
 
-                if (pathConfig == null) {
-                    if (EnforcementMode.PERMISSIVE.equals(enforcementMode)) {
-                        return createAuthorizationContext(accessToken, null);
-                    }
-
-                    LOGGER.debugf("Could not find a configuration for path [%s]", path);
-
-                    if (isDefaultAccessDeniedUri(request, enforcerConfig)) {
-                        return createAuthorizationContext(accessToken, null);
-                    }
-
-                    handleAccessDenied(httpFacade);
-
-                    return createEmptyAuthorizationContext(false);
+            if (pathConfig == null) {
+                if (EnforcementMode.PERMISSIVE.equals(enforcementMode)) {
+                    return createAuthorizationContext(accessToken, null);
                 }
 
-                if (EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
-                    return createEmptyAuthorizationContext(true);
+                LOGGER.debugf("Could not find a configuration for path [%s]", path);
+
+                if (isDefaultAccessDeniedUri(request, enforcerConfig)) {
+                    return createAuthorizationContext(accessToken, null);
                 }
 
-                MethodConfig methodConfig = getRequiredScopes(pathConfig, request);
+                handleAccessDenied(httpFacade);
 
-                if (isAuthorized(pathConfig, methodConfig, accessToken, httpFacade)) {
-                    try {
-                        return createAuthorizationContext(accessToken, pathConfig);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Error processing path [" + pathConfig.getPath() + "].", e);
-                    }
+                return createEmptyAuthorizationContext(false);
+            }
+
+            if (EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                return createEmptyAuthorizationContext(true);
+            }
+
+            MethodConfig methodConfig = getRequiredScopes(pathConfig, request);
+
+            if (isAuthorized(pathConfig, methodConfig, accessToken, httpFacade)) {
+                try {
+                    return createAuthorizationContext(accessToken, pathConfig);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error processing path [" + pathConfig.getPath() + "].", e);
                 }
+            }
 
-                LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
+            LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
 
-                if (!challenge(pathConfig, methodConfig, httpFacade)) {
-                    LOGGER.debugf("Challenge not sent, sending default forbidden response. Path [%s]", pathConfig);
-                    handleAccessDenied(httpFacade);
-                }
+            if (!challenge(pathConfig, methodConfig, httpFacade)) {
+                LOGGER.debugf("Challenge not sent, sending default forbidden response. Path [%s]", pathConfig);
+                handleAccessDenied(httpFacade);
             }
         }
 

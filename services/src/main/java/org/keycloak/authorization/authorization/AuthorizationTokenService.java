@@ -155,7 +155,7 @@ public class AuthorizationTokenService {
             ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
             AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(identity, permissions, targetClient), request.getRpt() != null);
 
-            return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+            return Cors.add(httpRequest, Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
                     .allowedOrigins(getKeycloakSession().getContext().getUri(), targetClient)
                     .allowedMethods(HttpMethod.POST)
                     .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
