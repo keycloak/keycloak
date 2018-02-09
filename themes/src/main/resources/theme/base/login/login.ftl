@@ -13,9 +13,9 @@
                     <label for="username" class="${properties.kcSrOnlyClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
 
                     <#if usernameEditDisabled??>
-                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="Username" type="text" disabled />
+                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" disabled />
                     <#else>
-                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="Username" type="text" autofocus autocomplete="off" />
+                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" autofocus autocomplete="off" />
                     </#if>
                 </div>
 
