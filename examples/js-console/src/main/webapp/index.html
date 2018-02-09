@@ -25,9 +25,11 @@
     <button onclick="keycloak.login()">Login</button>
     <button onclick="keycloak.logout()">Logout</button>
     <button onclick="keycloak.register()">Register</button>
+    <button onclick="keycloak.accountManagement()">Account</button>
     <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
     <button onclick="loadProfile()">Get Profile</button>
+    <button onclick="updateProfile()">Update profile</button>
     <button onclick="loadUserInfo()">Get User Info</button>
     <button onclick="output(keycloak.tokenParsed)">Show Token</button>
     <button onclick="output(keycloak.refreshTokenParsed)">Show Refresh Token</button>
@@ -37,6 +39,8 @@
     <button onclick="output(keycloak.createLoginUrl())">Show Login URL</button>
     <button onclick="output(keycloak.createLogoutUrl())">Show Logout URL</button>
     <button onclick="output(keycloak.createRegisterUrl())">Show Register URL</button>
+    <button onclick="output(keycloak.createAccountUrl())">Show Account URL</button>
+
 </div>
 
 <h2>Result</h2>
@@ -53,6 +57,27 @@
         }).error(function() {
             output('Failed to load profile');
         });
+    }
+
+    function updateProfile() {
+        var url = keycloak.createAccountUrl().split('?')[0];
+        var req = new XMLHttpRequest();
+        req.open('POST', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.setRequestHeader('Authorization', 'bearer ' + keycloak.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    output('Success');
+                } else {
+                    output('Failed');
+                }
+            }
+        }
+
+        req.send('{"email":"myemail@foo.bar","firstName":"test","lastName":"bar"}');
     }
 
     function loadUserInfo() {
