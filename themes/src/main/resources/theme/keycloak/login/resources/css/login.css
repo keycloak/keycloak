@@ -185,7 +185,7 @@ ol#kc-totp-settings li:first-of-type {
 #kc-oauth ul li {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 12px;
-    padding: 10px 30px;
+    padding: 10px 0;
 }
 
 #kc-oauth ul li:first-of-type {
@@ -346,17 +346,20 @@ a.zocial  {
     }
 }
 
+.card-pf form.form-actions .btn {
+    float: right;
+    margin-left: 10px;
+}
+
+#kc-form-buttons {
+  margin-top: 40px;
+}
 
 .login-pf-page .login-pf-brand {
   margin-top: 20px;
   max-width: 360px;
   width: 40%;
 }
-/* .login-pf-page .card-pf {
-  padding: 10px 20px 30px 20px;
-  margin-bottom: 0;
-} */
-
 
 .card-pf {
   background: #fff;
@@ -413,4 +416,8 @@ a.zocial  {
 .login-pf-page.login-pf-page-accounts {
   margin-left: auto;
   margin-right: auto;
+}
+
+.login-pf-page .btn-primary {
+    margin-top: 0;
 }
