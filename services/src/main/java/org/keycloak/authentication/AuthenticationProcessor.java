@@ -60,6 +60,7 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
@@ -487,32 +488,72 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            return LoginActionsService.loginActionsBaseUrl(getUriInfo())
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            }
+            return uriBuilder
                     .build(getRealm().getName());
         }
 
         @Override
         public URI getActionTokenUrl(String tokenString) {
-            return LoginActionsService.actionTokenProcessor(getUriInfo())
+            UriBuilder uriBuilder = LoginActionsService.actionTokenProcessor(getUriInfo())
                     .queryParam(Constants.KEY, tokenString)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            }
+            return uriBuilder
+                    .build(getRealm().getName());
+        }
+
+        @Override
+        public URI getActionUrl(String code, boolean authSessionIdParam) {
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                    .path(AuthenticationProcessor.this.flowPath)
+                    .queryParam(LoginActionsService.SESSION_CODE, code)
+                    .queryParam(Constants.EXECUTION, getExecution().getId())
+                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+            if (authSessionIdParam) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            }
+            return uriBuilder
                     .build(getRealm().getName());
         }
 
         @Override
         public URI getRefreshExecutionUrl() {
-            return LoginActionsService.loginActionsBaseUrl(getUriInfo())
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            }
+            return uriBuilder
+                    .build(getRealm().getName());
+        }
+
+        @Override
+        public URI getRefreshUrl(boolean authSessionIdParam) {
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                    .path(AuthenticationProcessor.this.flowPath)
+                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+            if (authSessionIdParam) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            }
+            return uriBuilder
                     .build(getRealm().getName());
         }
 

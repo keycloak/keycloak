@@ -17,6 +17,8 @@
 
 package org.keycloak.adapters.installed;
 
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -31,6 +33,11 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +46,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -47,6 +55,8 @@ import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -76,6 +86,9 @@ public class KeycloakInstalled {
     private Locale locale;
     private HttpResponseWriter loginResponseWriter;
     private HttpResponseWriter logoutResponseWriter;
+    Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
+    Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
+    Pattern codePattern = Pattern.compile("code=([^&]+)");
 
 
 
@@ -289,6 +302,86 @@ public class KeycloakInstalled {
         status = Status.LOGGED_MANUAL;
     }
 
+    public boolean loginCommandLine() throws IOException, ServerRequest.HttpFailure, VerificationException {
+        String redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+
+        return loginCommandLine(redirectUri);
+    }
+
+
+
+    /**
+     * Proprietary WWW-Authentication challenge protocol.
+     * WWW-Authentication: X-Text-Form-Challenge callback="{url}" param="{param-name}" label="{param-display-label}"
+     *
+     * @param redirectUri
+     * @return
+     * @throws IOException
+     * @throws ServerRequest.HttpFailure
+     * @throws VerificationException
+     */
+    public boolean loginCommandLine(String redirectUri) throws IOException, ServerRequest.HttpFailure, VerificationException {
+        String authUrl = deployment.getAuthUrl().clone()
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+                .build().toString();
+        ResteasyClient client = new ResteasyClientBuilder().disableTrustManager().build();
+        try {
+            Response response = client.target(authUrl).request().get();
+            if (response.getStatus() != 401) {
+                return false;
+            }
+            while (true) {
+                String authenticationHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                if (authenticationHeader == null) {
+                    return false;
+                }
+                if (!authenticationHeader.contains("X-Text-Form-Challenge")) {
+                    return false;
+                }
+                if (response.getMediaType() != null) {
+                    String splash = response.readEntity(String.class);
+                    System.console().writer().println(splash);
+                }
+                Matcher m = callbackPattern.matcher(authenticationHeader);
+                if (!m.find()) return false;
+                String callback = m.group(1);
+                //System.err.println("callback: " + callback);
+                m = paramPattern.matcher(authenticationHeader);
+                Form form = new Form();
+                while (m.find()) {
+                    String param = m.group(1);
+                    String label = m.group(2);
+                    String mask = m.group(3).trim();
+                    boolean maskInput = mask.equals("true");
+                    String value = null;
+                    if (maskInput) {
+                        char[] txt = System.console().readPassword(label);
+                        value = new String(txt);
+                    } else {
+                        value = System.console().readLine(label);
+                    }
+                    form.param(param, value);
+                }
+                response = client.target(callback).request().post(Entity.form(form));
+                if (response.getStatus() == 401) continue;
+                if (response.getStatus() != 302) return false;
+                String location = response.getLocation().toString();
+                m = codePattern.matcher(location);
+                if (!m.find()) return false;
+                String code = m.group(1);
+                processCode(code, redirectUri);
+                return true;
+            }
+        } finally {
+            client.close();
+
+        }
+    }
+
+
     public String getTokenString() throws VerificationException, IOException, ServerRequest.HttpFailure {
         return tokenString;
     }
@@ -372,6 +465,86 @@ public class KeycloakInstalled {
         while (reader.read(cb) != -1) {
             char c = cb[0];
             if ((c == ' ') || (c == '\n') || (c == '\r')) {
+                break;
+            } else {
+                sb.append(c);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static class MaskingThread extends Thread {
+        private volatile boolean stop;
+        private char echochar = '*';
+
+        public MaskingThread() {
+        }
+
+        /**
+         * Begin masking until asked to stop.
+         */
+        public void run() {
+
+            int priority = Thread.currentThread().getPriority();
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+
+            try {
+                stop = true;
+                while(stop) {
+                    System.out.print("\010" + echochar);
+                    try {
+                        // attempt masking at this rate
+                        Thread.currentThread().sleep(1);
+                    }catch (InterruptedException iex) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            } finally { // restore the original priority
+                Thread.currentThread().setPriority(priority);
+            }
+        }
+
+        /**
+         * Instruct the thread to stop masking.
+         */
+        public void stopMasking() {
+            this.stop = false;
+        }
+    }
+
+    public static String readMasked(Reader reader) {
+        MaskingThread et = new MaskingThread();
+        Thread mask = new Thread(et);
+        mask.start();
+
+        BufferedReader in = new BufferedReader(reader);
+        String password = "";
+
+        try {
+            password = in.readLine();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        // stop masking
+        et.stopMasking();
+        // return the password entered by the user
+        return password;
+    }
+
+    private String readLine(Reader reader, boolean mask) throws IOException {
+        if (mask) {
+            System.out.print(" ");
+            return readMasked(reader);
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        char cb[] = new char[1];
+        while (reader.read(cb) != -1) {
+            char c = cb[0];
+            if ((c == '\n') || (c == '\r')) {
                 break;
             } else {
                 sb.append(c);
