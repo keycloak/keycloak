@@ -1,4 +1,4 @@
-FROM mariadb:10.3
+FROM mariadb:10.3.3
 
 ARG MAX_CONNECTIONS=100
 
