@@ -327,7 +327,7 @@ public class LoginActionsService {
                                          @QueryParam(Constants.TAB_ID) String tabId,
                                          @QueryParam(Constants.KEY) String key) {
         if (key != null) {
-            return handleActionToken(key, execution, clientId, tabId);
+            return handleActionToken(authSessionId, key, execution, clientId, tabId);
         }
 
         event.event(EventType.RESET_PASSWORD);
@@ -422,14 +422,15 @@ public class LoginActionsService {
      */
     @Path("action-token")
     @GET
-    public Response executeActionToken(@QueryParam("key") String key,
+    public Response executeActionToken(@QueryParam(AUTH_SESSION_ID) String authSessionId,
+                                       @QueryParam("key") String key,
                                        @QueryParam("execution") String execution,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
-        return handleActionToken(key, execution, clientId, tabId);
+        return handleActionToken(authSessionId, key, execution, clientId, tabId);
     }
 
-    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId) {
+    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String authSessionId, String tokenString, String execution, String clientId, String tabId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -443,9 +444,11 @@ public class LoginActionsService {
         if (clientId != null) {
             client = realm.getClientByClientId(clientId);
         }
+        AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
         if (client != null) {
             session.getContext().setClient(client);
-            authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
+            authSessionId = authSessionId == null ? authenticationSessionManager.getAuthSessionCookieDecoded(realm) : authSessionId;
+            authSession = authenticationSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         }
 
         event.event(EventType.EXECUTE_ACTION_TOKEN);
@@ -528,7 +531,7 @@ public class LoginActionsService {
               ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
                 // There exists an authentication session but no auth session ID was received in the action token
                 logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
-                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
+                authenticationSessionManager.removeAuthenticationSession(realm, authSession, false);
 
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
