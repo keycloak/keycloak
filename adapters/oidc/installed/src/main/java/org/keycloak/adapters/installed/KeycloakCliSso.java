@@ -53,9 +53,13 @@ public class KeycloakCliSso {
             login();
         } else if (args[0].equalsIgnoreCase("login-manual")) {
             loginManual();
-        } else if (args[0].equalsIgnoreCase("login-cli")) {
+        }
+        /*
+        else if (args[0].equalsIgnoreCase("login-cli")) {
             loginCli();
-        } else if (args[0].equalsIgnoreCase("token")) {
+        }
+        */
+        else if (args[0].equalsIgnoreCase("token")) {
             token();
         } else if (args[0].equalsIgnoreCase("logout")) {
             logout();

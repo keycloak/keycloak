@@ -311,7 +311,7 @@ public class KeycloakInstalled {
 
 
     /**
-     * Proprietary WWW-Authentication challenge protocol.
+     * Experimental proprietary WWW-Authentication challenge protocol.
      * WWW-Authentication: X-Text-Form-Challenge callback="{url}" param="{param-name}" label="{param-display-label}"
      *
      * @param redirectUri
