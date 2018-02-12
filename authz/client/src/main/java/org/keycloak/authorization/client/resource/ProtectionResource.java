@@ -68,7 +68,7 @@ public class ProtectionResource {
      * @return the {@link TokenIntrospectionResponse}
      */
     public TokenIntrospectionResponse introspectRequestingPartyToken(String rpt) {
-        return this.http.<TokenIntrospectionResponse>post("/protocol/openid-connect/token/introspect")
+        return this.http.<TokenIntrospectionResponse>post(serverConfiguration.getTokenIntrospectionEndpoint())
                 .authentication()
                     .client()
                 .form()

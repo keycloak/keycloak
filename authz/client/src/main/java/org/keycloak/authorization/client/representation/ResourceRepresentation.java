@@ -41,6 +41,8 @@ public class ResourceRepresentation {
     private String displayName;
     private String uri;
     private String type;
+
+    @JsonProperty("resource_scopes")
     private Set<ScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")

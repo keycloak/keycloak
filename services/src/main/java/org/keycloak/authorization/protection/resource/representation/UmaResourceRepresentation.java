@@ -41,6 +41,7 @@ public class UmaResourceRepresentation {
     private String type;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("resource_scopes")
     private Set<UmaScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")

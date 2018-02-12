@@ -18,7 +18,6 @@
 package org.keycloak.authz.helloworld;
 
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
@@ -57,7 +56,6 @@ public class AuthorizationClientExample {
         for (Permission granted : requestingPartyToken.getPermissions()) {
             System.out.println(granted);
         }
-
     }
 
     private static void createResource() {
@@ -80,7 +78,7 @@ public class AuthorizationClientExample {
         }
 
         // create the resource on the server
-        RegistrationResponse response = resourceClient.create(newResource);
+        ResourceRepresentation response = resourceClient.create(newResource);
         String resourceId = response.getId();
 
         // query the resource using its newly generated id
@@ -121,17 +119,11 @@ public class AuthorizationClientExample {
         // create a new instance based on the configuration define at keycloak-authz.json
         AuthzClient authzClient = AuthzClient.create();
 
-        // obtain an Entitlement API Token in order to get access to the Entitlement API.
-        // this token is just an access token issued to a client on behalf of an user
-        // with a scope = kc_entitlement
-        String eat = getEntitlementAPIToken(authzClient);
-
         // create an authorization request
         AuthorizationRequest request = new AuthorizationRequest();
 
+        // add permissions to the request based on the resources and scopes you want to check access
         request.addPermission("Default Resource");
-
-        authzClient.protection().resource().findByName("New Resource");
 
         // send the entitlement request to the server in order to
         // obtain an RPT with permissions for a single resource
@@ -158,16 +150,5 @@ public class AuthorizationClientExample {
         System.out.println("You got a RPT: " + rpt);
 
         // now you can use the RPT to access protected resources on the resource server
-    }
-
-    /**
-     * Obtain an Entitlement API Token or EAT from the server. Usually, EATs are going to be obtained by clients using a
-     * authorization_code grant type. Here we are using resource owner credentials for demonstration purposes.
-     *
-     * @param authzClient the authorization client instance
-     * @return a string representing a EAT
-     */
-    private static String getEntitlementAPIToken(AuthzClient authzClient) {
-        return authzClient.obtainAccessToken("alice", "alice").getToken();
     }
 }

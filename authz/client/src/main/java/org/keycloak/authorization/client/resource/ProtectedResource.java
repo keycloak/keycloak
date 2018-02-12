@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
@@ -53,14 +52,14 @@ public class ProtectedResource {
      * @param resource the resource data
      * @return a {@link RegistrationResponse}
      */
-    public RegistrationResponse create(final ResourceRepresentation resource) {
-        Callable<RegistrationResponse> callable = new Callable<RegistrationResponse>() {
+    public ResourceRepresentation create(final ResourceRepresentation resource) {
+        Callable<ResourceRepresentation> callable = new Callable<ResourceRepresentation>() {
             @Override
-            public RegistrationResponse call() throws Exception {
-                return http.<RegistrationResponse>post(serverConfiguration.getResourceRegistrationEndpoint())
+            public ResourceRepresentation call() throws Exception {
+                return http.<ResourceRepresentation>post(serverConfiguration.getResourceRegistrationEndpoint())
                         .authorizationBearer(pat.call())
                         .json(JsonSerialization.writeValueAsBytes(resource))
-                        .response().json(RegistrationResponse.class).execute();
+                        .response().json(ResourceRepresentation.class).execute();
             }
         };
         try {
@@ -84,7 +83,7 @@ public class ProtectedResource {
         Callable callable = new Callable() {
             @Override
             public Object call() throws Exception {
-                http.<RegistrationResponse>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
+                http.<ResourceRepresentation>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
                         .authorizationBearer(pat.call())
                         .json(JsonSerialization.writeValueAsBytes(resource)).execute();
                 return null;

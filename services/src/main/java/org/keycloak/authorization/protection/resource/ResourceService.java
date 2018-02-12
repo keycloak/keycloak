@@ -70,6 +70,9 @@ public class ResourceService {
     @Produces("application/json")
     public Response create(@Context  UriInfo uriInfo, UmaResourceRepresentation umaResource) {
         checkResourceServerSettings();
+        if (umaResource == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
         return this.resourceManager.create(uriInfo, toResourceRepresentation(umaResource), (Function<Resource, UmaResourceRepresentation>) this::toUmaRepresentation);
     }
 

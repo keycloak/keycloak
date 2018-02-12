@@ -25,7 +25,6 @@ import javax.ws.rs.core.Response.Status;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthorizationContext;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
@@ -143,7 +142,7 @@ public class AlbumService {
             albumResource.setOwner(album.getUserId());
             albumResource.setOwnerManagedAccess(true);
 
-            RegistrationResponse response = getAuthzClient().protection().resource().create(albumResource);
+            ResourceRepresentation response = getAuthzClient().protection().resource().create(albumResource);
 
             album.setExternalId(response.getId());
         } catch (Exception e) {

@@ -34,7 +34,6 @@ import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectedResource;
@@ -189,7 +188,7 @@ public class PolicyEnforcer {
 
                     representation.setScopes(scopes);
 
-                    RegistrationResponse registrationResponse = protectedResource.create(representation);
+                    ResourceRepresentation registrationResponse = protectedResource.create(representation);
 
                     pathConfig.setId(registrationResponse.getId());
                 } else {
