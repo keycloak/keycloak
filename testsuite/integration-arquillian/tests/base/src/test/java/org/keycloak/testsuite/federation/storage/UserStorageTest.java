@@ -28,6 +28,8 @@ import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.adapters.saml.SamlAuthenticationError;
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
@@ -368,7 +370,9 @@ public class UserStorageTest extends AbstractAuthTest {
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
+                .addPackages(true, "org.keycloak.testsuite")
+                .addClass(SamlAuthenticationError.class)
+                .addClass(AuthenticationError.class);
     }
 
     @Test
