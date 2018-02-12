@@ -910,6 +910,11 @@ public class OAuthClient {
             } catch (IllegalArgumentException iae) {
                 fragment = false;
             }
+
+            if ("fragment".equals(client.responseMode)) {
+                fragment = true;
+            }
+
             init (client, fragment);
         }
 

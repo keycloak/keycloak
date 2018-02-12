@@ -165,8 +165,11 @@
                 var callback = parseCallback(window.location.href);
 
                 if (callback) {
+                    window.history.replaceState({}, null, callback.newUrl);
+                }
+
+                if (callback && callback.valid) {
                     return setupCheckLoginIframe().success(function() {
-                        window.history.replaceState({}, null, callback.newUrl);
                         processCallback(callback, initPromise);
                     }).error(function (e) {
                         initPromise.setError();
@@ -861,20 +864,97 @@
         }
 
         function parseCallback(url) {
-            var oauth = new CallbackParser(url, kc.responseMode).parseUri();
+            var oauth = parseCallbackUrl(url);
+            if (!oauth) {
+                return;
+            }
+
             var oauthState = callbackStorage.get(oauth.state);
 
-            if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
+            if (oauthState) {
+                oauth.valid = true;
                 oauth.redirectUri = oauthState.redirectUri;
                 oauth.storedNonce = oauthState.nonce;
                 oauth.prompt = oauthState.prompt;
-
-                if (oauth.fragment) {
-                    oauth.newUrl += '#' + oauth.fragment;
-                }
-
-                return oauth;
             }
+
+            return oauth;
+        }
+
+        function parseCallbackUrl(url) {
+            var supportedParams;
+            switch (kc.flow) {
+                case 'standard':
+                    supportedParams = ['code', 'state', 'session_state'];
+                    break;
+                case 'implicit':
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'not-before-policy'];
+                    break;
+                case 'hybrid':
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'not-before-policy'];
+                    break;
+            }
+
+            supportedParams.push('error');
+            supportedParams.push('error_description');
+            supportedParams.push('error_uri');
+
+            var queryIndex = url.indexOf('?');
+            var fragmentIndex = url.indexOf('#');
+
+            var newUrl;
+            var parsed;
+
+            if (kc.responseMode === 'query' && queryIndex !== -1) {
+                newUrl = url.substring(0, queryIndex);
+                parsed = parseCallbackParams(url.substring(queryIndex + 1, fragmentIndex !== -1 ? fragmentIndex : url.length), supportedParams);
+                if (parsed.paramsString !== '') {
+                    newUrl += '?' + parsed.paramsString;
+                }
+                if (fragmentIndex !== -1) {
+                    newUrl += url.substring(fragmentIndex);
+                }
+            } else if (kc.responseMode === 'fragment' && fragmentIndex !== -1) {
+                newUrl = url.substring(0, fragmentIndex);
+                parsed = parseCallbackParams(url.substring(fragmentIndex + 1), supportedParams);
+                if (parsed.paramsString !== '') {
+                    newUrl += '#' + parsed.paramsString;
+                }
+            }
+
+            if (parsed && parsed.oauthParams) {
+                if (kc.flow === 'standard' || kc.flow === 'hybrid') {
+                    if ((parsed.oauthParams.code || parsed.oauthParams.error) && parsed.oauthParams.state) {
+                        parsed.oauthParams.newUrl = newUrl;
+                        return parsed.oauthParams;
+                    }
+                } else if (kc.flow === 'implicit') {
+                    if ((parsed.oauthParams.access_token || parsed.oauthParams.error) && parsed.oauthParams.state) {
+                        parsed.oauthParams.newUrl = newUrl;
+                        return parsed.oauthParams;
+                    }
+                }
+            }
+        }
+
+        function parseCallbackParams(paramsString, supportedParams) {
+            var p = paramsString.split('&');
+            var result = {
+                paramsString: '',
+                oauthParams: {}
+            }
+            for (var i = 0; i < p.length; i++) {
+                var t = p[i].split('=');
+                if (supportedParams.indexOf(t[0]) !== -1) {
+                    result.oauthParams[t[0]] = t[1];
+                } else {
+                    if (result.paramsString !== '') {
+                        result.paramsString += '&';
+                    }
+                    result.paramsString += p[i];
+                }
+            }
+            return result;
         }
 
         function createPromise() {
@@ -1081,12 +1161,7 @@
                         } else if (kc.redirectUri) {
                             return kc.redirectUri;
                         } else {
-                            var redirectUri = location.href;
-                            if (location.hash && encodeHash) {
-                                redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
-                            }
-                            return redirectUri;
+                            return location.href;
                         }
                     }
                 };
@@ -1327,99 +1402,6 @@
 
             return new CookieStorage();
         }
-
-        var CallbackParser = function(uriToParse, responseMode) {
-            if (!(this instanceof CallbackParser)) {
-                return new CallbackParser(uriToParse, responseMode);
-            }
-            var parser = this;
-
-            var initialParse = function() {
-                var baseUri = null;
-                var queryString = null;
-                var fragmentString = null;
-
-                var questionMarkIndex = uriToParse.indexOf("?");
-                var fragmentIndex = uriToParse.indexOf("#", questionMarkIndex + 1);
-                if (questionMarkIndex == -1 && fragmentIndex == -1) {
-                    baseUri = uriToParse;
-                } else if (questionMarkIndex != -1) {
-                    baseUri = uriToParse.substring(0, questionMarkIndex);
-                    queryString = uriToParse.substring(questionMarkIndex + 1);
-                    if (fragmentIndex != -1) {
-                        fragmentIndex = queryString.indexOf("#");
-                        fragmentString = queryString.substring(fragmentIndex + 1);
-                        queryString = queryString.substring(0, fragmentIndex);
-                    }
-                } else {
-                    baseUri = uriToParse.substring(0, fragmentIndex);
-                    fragmentString = uriToParse.substring(fragmentIndex + 1);
-                }
-
-                return { baseUri: baseUri, queryString: queryString, fragmentString: fragmentString };
-            }
-
-            var parseParams = function(paramString) {
-                var result = {};
-                var params = paramString.split('&');
-                for (var i = 0; i < params.length; i++) {
-                    var p = params[i].split('=');
-                    var paramName = decodeURIComponent(p[0]);
-                    var paramValue = decodeURIComponent(p[1]);
-                    result[paramName] = paramValue;
-                }
-                return result;
-            }
-
-            var handleQueryParam = function(paramName, paramValue, oauth) {
-                var supportedOAuthParams = [ 'code', 'state', 'error', 'error_description' ];
-
-                for (var i = 0 ; i< supportedOAuthParams.length ; i++) {
-                    if (paramName === supportedOAuthParams[i]) {
-                        oauth[paramName] = paramValue;
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-
-            parser.parseUri = function() {
-                var parsedUri = initialParse();
-
-                var queryParams = {};
-                if (parsedUri.queryString) {
-                    queryParams = parseParams(parsedUri.queryString);
-                }
-
-                var oauth = { newUrl: parsedUri.baseUri };
-                for (var param in queryParams) {
-                    switch (param) {
-                        case 'redirect_fragment':
-                            oauth.fragment = queryParams[param];
-                            break;
-                        default:
-                            if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {
-                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + encodeURIComponent(queryParams[param]);
-                            }
-                            break;
-                    }
-                }
-
-                if (responseMode === 'fragment') {
-                    var fragmentParams = {};
-                    if (parsedUri.fragmentString) {
-                        fragmentParams = parseParams(parsedUri.fragmentString);
-                    }
-                    for (var param in fragmentParams) {
-                        oauth[param] = fragmentParams[param];
-                    }
-                }
-
-                return oauth;
-            }
-        }
-
     }
 
     if ( typeof module === "object" && module && typeof module.exports === "object" ) {
