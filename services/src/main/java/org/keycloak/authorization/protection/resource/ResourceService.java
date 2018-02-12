@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.protection.resource;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,8 +43,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -119,54 +115,6 @@ public class ResourceService {
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
         return resourceManager.find(id, name, uri, owner, type, scope, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
-    }
-
-    private Set<String> findByFilter(String filter) {
-        Set<ResourceRepresentation> resources = new HashSet<>();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-
-        if (filter != null) {
-            for (String currentFilter : filter.split("&")) {
-                String[] parts = currentFilter.split("=");
-                String filterType = parts[0];
-                final String filterValue;
-
-                if (parts.length > 1) {
-                    filterValue = parts[1];
-                } else {
-                    filterValue = null;
-                }
-
-
-                if ("name".equals(filterType)) {
-                    Resource resource = storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId());
-
-                    if (resource != null) {
-                        resources.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorization));
-                    }
-                } else if ("type".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("uri".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByUri(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("owner".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByOwner(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                }
-            }
-        } else {
-            resources = storeFactory.getResourceStore().findByOwner(identity.getId(), resourceServer.getId()).stream()
-                    .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                    .collect(Collectors.toSet());
-        }
-
-        return resources.stream()
-                .map(ResourceRepresentation::getId)
-                .collect(Collectors.toSet());
     }
 
     private ResourceRepresentation toResourceRepresentation(UmaResourceRepresentation umaResource) {
