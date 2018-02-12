@@ -40,6 +40,8 @@
             }
         }
 
+        var useNonce = true;
+        
         kc.init = function (initOptions) {
             kc.authenticated = false;
 
@@ -58,6 +60,10 @@
             }
 
             if (initOptions) {
+                if (typeof initOptions.useNonce !== 'undefined') {
+                    useNonce = initOptions.useNonce;
+                }
+
                 if (typeof initOptions.checkLoginIframe !== 'undefined') {
                     loginIframe.enable = initOptions.checkLoginIframe;
                 }
@@ -232,22 +238,25 @@
 
             callbackStorage.add(callbackState);
 
-            var action = 'auth';
+            var baseUrl;
             if (options && options.action == 'register') {
-                action = 'registrations';
+                baseUrl = kc.endpoints.register();
+            } else {
+                baseUrl = kc.endpoints.authorize();
             }
 
             var scope = (options && options.scope) ? "openid " + options.scope : "openid";
 
-            var url = getRealmUrl()
-                + '/protocol/openid-connect/' + action
+            var url = baseUrl
                 + '?client_id=' + encodeURIComponent(kc.clientId)
                 + '&redirect_uri=' + encodeURIComponent(redirectUri)
                 + '&state=' + encodeURIComponent(state)
-                + '&nonce=' + encodeURIComponent(nonce)
                 + '&response_mode=' + encodeURIComponent(kc.responseMode)
                 + '&response_type=' + encodeURIComponent(kc.responseType)
                 + '&scope=' + encodeURIComponent(scope);
+                if (useNonce) {
+                    url = url + '&nonce=' + encodeURIComponent(nonce);
+                }
 
             if (options && options.prompt) {
                 url += '&prompt=' + encodeURIComponent(options.prompt);
@@ -277,8 +286,7 @@
         }
 
         kc.createLogoutUrl = function(options) {
-            var url = getRealmUrl()
-                + '/protocol/openid-connect/logout'
+            var url = kc.endpoints.logout()
                 + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
 
             return url;
@@ -297,11 +305,14 @@
         }
 
         kc.createAccountUrl = function(options) {
-            var url = getRealmUrl()
+            var realm = getRealmUrl();
+            var url = undefined;
+            if (typeof realm !== 'undefined') {
+                url = realm
                 + '/account'
                 + '?referrer=' + encodeURIComponent(kc.clientId)
                 + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
-
+            }
             return url;
         }
 
@@ -349,7 +360,7 @@
         }
 
         kc.loadUserInfo = function() {
-            var url = getRealmUrl() + '/protocol/openid-connect/userinfo';
+            var url = kc.endpoints.userinfo();
             var req = new XMLHttpRequest();
             req.open('GET', url, true);
             req.setRequestHeader('Accept', 'application/json');
@@ -414,7 +425,7 @@
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
-                    var url = getRealmUrl() + '/protocol/openid-connect/token';
+                    var url = kc.endpoints.token();
 
                     refreshQueue.push(promise);
 
@@ -488,10 +499,14 @@
         }
 
         function getRealmUrl() {
-            if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
-                return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
+            if (typeof kc.authServerUrl !== 'undefined') {
+                if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
+                    return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
+                } else {
+                    return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+                }
             } else {
-                return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+            	return undefined;
             }
         }
 
@@ -525,7 +540,7 @@
 
             if ((kc.flow != 'implicit') && code) {
                 var params = 'code=' + code + '&grant_type=authorization_code';
-                var url = getRealmUrl() + '/protocol/openid-connect/token';
+                var url = kc.endpoints.token();
 
                 var req = new XMLHttpRequest();
                 req.open('POST', url, true);
@@ -562,9 +577,9 @@
 
                 setToken(accessToken, refreshToken, idToken, timeLocal);
 
-                if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
+                if (useNonce && ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
-                    (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
+                    (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce))) {
 
                     console.info('[KEYCLOAK] Invalid nonce, clearing token');
                     kc.clearToken();
@@ -589,6 +604,65 @@
                 configUrl = config;
             }
 
+            function setupOidcEndoints(oidcConfiguration) {
+                if (! oidcConfiguration) {
+                    kc.endpoints = {
+                        authorize: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/auth';
+                        },
+                        token: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/token';
+                        },
+                        logout: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/logout';
+                        },
+                        checkSessionIframe: function() {
+                            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
+                            if (kc.iframeVersion) {
+                              src = src + '?version=' + kc.iframeVersion;
+                            }
+                            return src;
+                        },
+                        register: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/registrations';
+                        },
+                        userinfo: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/userinfo';
+                        }
+                    };
+                } else {
+                    kc.endpoints = {
+                        authorize: function() {
+                            return oidcConfiguration.authorization_endpoint;
+                        },
+                        token: function() {
+                            return oidcConfiguration.token_endpoint;
+                        },
+                        logout: function() {
+                            if (!oidcConfiguration.end_session_endpoint) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.end_session_endpoint;
+                        },
+                        checkSessionIframe: function() {
+                            if (!oidcConfiguration.check_session_iframe) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.check_session_iframe;
+                        },
+                        register: function() {
+                            throw 'Redirection to "Register user" page not supported in standard OIDC mode';
+                        },
+                        userinfo: function() {
+                            if (!oidcConfiguration.userinfo_endpoint) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.userinfo_endpoint;
+                        }
+                    }
+                }
+            }
+
             if (configUrl) {
                 var req = new XMLHttpRequest();
                 req.open('GET', configUrl, true);
@@ -603,7 +677,7 @@
                             kc.realm = config['realm'];
                             kc.clientId = config['resource'];
                             kc.clientSecret = (config['credentials'] || {})['secret'];
-
+                            setupOidcEndoints(null);
                             promise.setSuccess();
                         } else {
                             promise.setError();
@@ -613,30 +687,62 @@
 
                 req.send();
             } else {
-                if (!config['url']) {
-                    var scripts = document.getElementsByTagName('script');
-                    for (var i = 0; i < scripts.length; i++) {
-                        if (scripts[i].src.match(/.*keycloak\.js/)) {
-                            config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
-                            break;
-                        }
-                    }
-                }
-
-                if (!config.realm) {
-                    throw 'realm missing';
-                }
-
                 if (!config.clientId) {
                     throw 'clientId missing';
                 }
 
-                kc.authServerUrl = config.url;
-                kc.realm = config.realm;
                 kc.clientId = config.clientId;
                 kc.clientSecret = (config.credentials || {}).secret;
 
-                promise.setSuccess();
+                var oidcProvider = config['oidcProvider'];
+                if (!oidcProvider) {
+                    if (!config['url']) {
+                        var scripts = document.getElementsByTagName('script');
+                        for (var i = 0; i < scripts.length; i++) {
+                            if (scripts[i].src.match(/.*keycloak\.js/)) {
+                                config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
+                                break;
+                            }
+                        }
+                    }
+                    if (!config.realm) {
+                        throw 'realm missing';
+                    }
+
+                    kc.authServerUrl = config.url;
+                    kc.realm = config.realm;
+                    setupOidcEndoints(null);
+                    promise.setSuccess();
+                } else {
+                    if (typeof oidcProvider === 'string') {
+                        var oidcProviderConfigUrl;
+                        if (oidcProvider.charAt(oidcProvider.length - 1) == '/') {
+                            oidcProviderConfigUrl = oidcProvider + '.well-known/openid-configuration';
+                        } else {
+                            oidcProviderConfigUrl = oidcProvider + '/.well-known/openid-configuration';
+                        }
+                        var req = new XMLHttpRequest();
+                        req.open('GET', oidcProviderConfigUrl, true);
+                        req.setRequestHeader('Accept', 'application/json');
+
+                        req.onreadystatechange = function () {
+                            if (req.readyState == 4) {
+                                if (req.status == 200 || fileLoaded(req)) {
+                                    var oidcProviderConfig = JSON.parse(req.responseText);
+                                    setupOidcEndoints(oidcProviderConfig);
+                                    promise.setSuccess();
+                                } else {
+                                    promise.setError();
+                                }
+                            }
+                        };
+
+                        req.send();
+                    } else {
+                        setupOidcEndoints(oidcProvider);
+                        promise.setSuccess();
+                    }
+                }
             }
 
             return promise.promise;
@@ -865,22 +971,18 @@
             loginIframe.iframe = iframe;
 
             iframe.onload = function() {
-                var realmUrl = getRealmUrl();
-                if (realmUrl.charAt(0) === '/') {
+                var authUrl = kc.endpoints.authorize();
+                if (authUrl.charAt(0) === '/') {
                     loginIframe.iframeOrigin = getOrigin();
                 } else {
-                    loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
+                    loginIframe.iframeOrigin = authUrl.substring(0, authUrl.indexOf('/', 8));
                 }
                 promise.setSuccess();
 
                 setTimeout(check, loginIframe.interval * 1000);
             }
 
-            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
-            if (kc.iframeVersion) {
-                src = src + '?version=' + kc.iframeVersion;
-            }
-
+            var src = kc.endpoints.checkSessionIframe();
             iframe.setAttribute('src', src );
             iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
@@ -960,7 +1062,12 @@
                     },
 
                     accountManagement : function() {
-                        window.location.href = kc.createAccountUrl();
+                        var accountUrl = kc.createAccountUrl();
+                        if (typeof accountUrl !== 'undefined') {
+                            window.location.href = accountUrl;
+                        } else {
+                            throw "Not supported by the OIDC server";
+                        }
                         return createPromise().promise;
                     },
 
@@ -1081,12 +1188,16 @@
 
                     accountManagement : function() {
                         var accountUrl = kc.createAccountUrl();
-                        var ref = cordovaOpenWindowWrapper(accountUrl, '_blank', 'location=no');
-                        ref.addEventListener('loadstart', function(event) {
-                            if (event.url.indexOf('http://localhost') == 0) {
-                                ref.close();
-                            }
-                        });
+                        if (typeof accountUrl !== 'undefined') {
+                            var ref = cordovaOpenWindowWrapper(accountUrl, '_blank', 'location=no');
+                            ref.addEventListener('loadstart', function(event) {
+                                if (event.url.indexOf('http://localhost') == 0) {
+                                    ref.close();
+                                }
+                            });
+                        } else {
+                            throw "Not supported by the OIDC server";
+                        }
                     },
 
                     redirectUri: function(options) {
