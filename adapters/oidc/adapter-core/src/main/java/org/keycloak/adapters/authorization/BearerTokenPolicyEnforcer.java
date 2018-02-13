@@ -42,14 +42,15 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
-        challengeUmaAuthentication(pathConfig, methodConfig, facade);
-        return true;
-    }
-
-    private void challengeUmaAuthentication(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
         HttpFacade.Response response = facade.getResponse();
         AuthzClient authzClient = getAuthzClient();
         String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient);
+
+        if (ticket == null) {
+            response.setStatus(403);
+            return true;
+        }
+
         String realm = authzClient.getConfiguration().getRealm();
         String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString();
         response.setStatus(401);
@@ -63,6 +64,7 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Sending UMA challenge");
         }
+        return true;
     }
 
     private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient) {
