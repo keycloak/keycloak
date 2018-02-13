@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAttributeQueryParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloRequestParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloResponseParser;
@@ -53,8 +54,6 @@ import java.io.InputStream;
  */
 public class SAMLParser extends AbstractParser {
 
-    private static final SAMLEntityDescriptorParser SAML_ENTITY_DESCRIPTOR_PARSER = new SAMLEntityDescriptorParser();
-    private static final SAMLEntitiesDescriptorParser SAML_ENTITIES_DESCRIPTOR_PARSER = new SAMLEntitiesDescriptorParser();
     private static final SAML11ResponseParser SAML_11_RESPONSE_PARSER = new SAML11ResponseParser();
     private static final SAML11RequestParser SAML_11_REQUEST_PARSER = new SAML11RequestParser();
 
@@ -88,9 +87,8 @@ public class SAMLParser extends AbstractParser {
 
         PARSERS.put(SAMLAssertionQNames.AUTHN_STATEMENT.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLAuthnStatementParser.getInstance(); }});
 
-        // TODO: Change to SamlMetadataElements
-        PARSERS.put(JBossSAMLConstants.ENTITY_DESCRIPTOR.getAsQName(),  new ParserFactory() { @Override public StaxParser create() { return SAML_ENTITY_DESCRIPTOR_PARSER; }});
-        PARSERS.put(JBossSAMLConstants.ENTITIES_DESCRIPTOR.getAsQName(),new ParserFactory() { @Override public StaxParser create() { return SAML_ENTITIES_DESCRIPTOR_PARSER; }});
+        PARSERS.put(SAMLMetadataQNames.ENTITY_DESCRIPTOR.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLEntityDescriptorParser.getInstance(); }});
+        PARSERS.put(SAMLMetadataQNames.ENTITIES_DESCRIPTOR.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEntitiesDescriptorParser.getInstance(); }});
 
         PARSERS.put(SAMLProtocolQNames.ATTRIBUTE_QUERY.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLAttributeQueryParser.getInstance(); }});
     }

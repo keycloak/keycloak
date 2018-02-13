@@ -16,24 +16,24 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 import org.keycloak.dom.saml.v2.metadata.ExtensionsType;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
+
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
 
 /**
  * Parses &lt;samlp:Extensions&gt; SAML2 element into series of DOM nodes.
  *
  * @author hmlnarik
  */
-public class SAMLExtensionsParser extends AbstractStaxSamlParser<ExtensionsType> {
+public class SAMLExtensionsParser extends AbstractStaxSamlMetadataParser<ExtensionsType> {
 
     private static final SAMLExtensionsParser INSTANCE = new SAMLExtensionsParser();
 
     private SAMLExtensionsParser() {
-        super(JBossSAMLConstants.EXTENSIONS__METADATA);
+        super(SAMLMetadataQNames.EXTENSIONS);
     }
 
     public static SAMLExtensionsParser getInstance() {
@@ -46,7 +46,7 @@ public class SAMLExtensionsParser extends AbstractStaxSamlParser<ExtensionsType>
     }
 
     @Override
-    protected void processSubElement(XMLEventReader xmlEventReader, ExtensionsType target, JBossSAMLConstants element, StartElement elementDetail) throws ParsingException {
-        target.setElement(StaxParserUtil.getDOMElement(xmlEventReader));
+    protected void processSubElement(XMLEventReader xmlEventReader, ExtensionsType target, SAMLMetadataQNames element, StartElement elementDetail) throws ParsingException {
+        target.addExtension(StaxParserUtil.getDOMElement(xmlEventReader));
     }
 }

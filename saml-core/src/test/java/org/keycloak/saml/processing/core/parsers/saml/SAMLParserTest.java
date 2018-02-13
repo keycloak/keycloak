@@ -16,24 +16,12 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
-
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.StreamUtil;
@@ -50,7 +38,21 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.metadata.AttributeAuthorityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
+import org.keycloak.dom.saml.v2.metadata.AuthnAuthorityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.EndpointType;
+import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
+import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
+import org.keycloak.dom.saml.v2.metadata.PDPDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
+import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -60,6 +62,7 @@ import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509CertificateType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509DataType;
+import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -67,10 +70,37 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import java.net.URI;
-import java.util.List;
-import org.hamcrest.Matcher;
 import org.w3c.dom.Element;
+
+import javax.xml.namespace.QName;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
+import java.util.Collections;
+import java.util.List;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyCollectionOf;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for SAML parser.
@@ -251,12 +281,341 @@ public class SAMLParserTest {
 
     @Test
     public void testSaml20MetadataEntityDescriptorIdP() throws Exception {
-        assertParsed("saml20-entity-descriptor-idp.xml", EntityDescriptorType.class);
+        EntityDescriptorType entityDescriptor = assertParsed("saml20-entity-descriptor-idp.xml", EntityDescriptorType.class);
+
+        List<EntityDescriptorType.EDTChoiceType> descriptors = entityDescriptor.getChoiceType();
+        assertThat(descriptors, hasSize(2));
+
+        // IDPSSO descriptor
+        IDPSSODescriptorType idpDescriptor = descriptors.get(0).getDescriptors().get(0).getIdpDescriptor();
+        assertThat(idpDescriptor, is(notNullValue()));
+        assertThat(idpDescriptor.isWantAuthnRequestsSigned(), is(true));
+        assertThat(idpDescriptor.getProtocolSupportEnumeration(), contains("urn:oasis:names:tc:SAML:2.0:protocol"));
+
+        // Key descriptor
+        List<KeyDescriptorType> keyDescriptors = idpDescriptor.getKeyDescriptor();
+        assertThat(keyDescriptors, hasSize(1));
+
+        KeyDescriptorType signingKey = keyDescriptors.get(0);
+        assertThat(signingKey.getUse(), is(KeyTypes.SIGNING));
+        assertThat(signingKey.getEncryptionMethod(), is(emptyCollectionOf(EncryptionMethodType.class)));
+        assertThat(signingKey.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent(), is("IdentityProvider.com SSO Key"));
+
+        // Single logout services
+        assertThat(idpDescriptor.getSingleLogoutService(), hasSize(2));
+        EndpointType singleLS1 = idpDescriptor.getSingleLogoutService().get(0);
+        assertThat(singleLS1.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:SOAP")));
+        assertThat(singleLS1.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/SLO/SOAP")));
+        assertThat(singleLS1.getResponseLocation(), is(nullValue()));
+        assertThat(singleLS1.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleLS1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        EndpointType singleLS2 = idpDescriptor.getSingleLogoutService().get(1);
+        assertThat(singleLS2.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")));
+        assertThat(singleLS2.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/SLO/Browser")));
+        assertThat(singleLS2.getResponseLocation(), is(URI.create("https://IdentityProvider.com/SAML/SLO/Response")));
+        assertThat(singleLS2.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleLS2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // NameID
+        assertThat(idpDescriptor.getNameIDFormat(),
+                containsInAnyOrder("urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName",
+                        "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+                        "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+                ));
+
+        // Single sign on services
+        assertThat(idpDescriptor.getSingleSignOnService(), hasSize(2));
+
+        EndpointType singleSO1 = idpDescriptor.getSingleSignOnService().get(0);
+        assertThat(singleSO1.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")));
+        assertThat(singleSO1.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/SSO/Browser")));
+        assertThat(singleSO1.getResponseLocation(), is(nullValue()));
+        assertThat(singleSO1.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleSO1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        EndpointType singleSO2 = idpDescriptor.getSingleSignOnService().get(1);
+        assertThat(singleSO2.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")));
+        assertThat(singleSO2.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/SSO/Browser")));
+        assertThat(singleSO2.getResponseLocation(), is(nullValue()));
+        assertThat(singleSO2.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleSO2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // Attributes
+        assertThat(idpDescriptor.getAttribute(), hasSize(2));
+
+        AttributeType attr1 = idpDescriptor.getAttribute().get(0);
+        assertThat(attr1.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
+        assertThat(attr1.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.6"));
+        assertThat(attr1.getFriendlyName(), is("eduPersonPrincipalName"));
+        assertThat(attr1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+        assertThat(attr1.getAttributeValue(), is(emptyCollectionOf(Object.class)));
+
+        AttributeType attr2 = idpDescriptor.getAttribute().get(1);
+        assertThat(attr2.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
+        assertThat(attr2.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.1"));
+        assertThat(attr2.getFriendlyName(), is("eduPersonAffiliation"));
+        assertThat(attr2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+        assertThat(attr2.getAttributeValue(), containsInAnyOrder((Object) "member", "student", "faculty", "employee", "staff"));
+
+        // Organization
+        assertThat(entityDescriptor.getOrganization().getOrganizationName(), hasSize(1));
+        LocalizedNameType orgName = entityDescriptor.getOrganization().getOrganizationName().get(0);
+        assertThat(orgName.getLang(), is("en"));
+        assertThat(orgName.getValue(), is("Identity Providers R\n            US"));
+
+        assertThat(entityDescriptor.getOrganization().getOrganizationDisplayName(), hasSize(1));
+        LocalizedNameType orgDispName = entityDescriptor.getOrganization().getOrganizationDisplayName().get(0);
+        assertThat(orgDispName.getLang(), is("en"));
+        assertThat(orgDispName.getValue(), is("Identity Providers R US, a Division of Lerxst Corp."));
+
+        assertThat(entityDescriptor.getOrganization().getOrganizationURL(), hasSize(1));
+        LocalizedURIType orgURL = entityDescriptor.getOrganization().getOrganizationURL().get(0);
+        assertThat(orgURL.getLang(), is("en"));
+        assertThat(orgURL.getValue(), is(URI.create("https://IdentityProvider.com")));
+    }
+
+    @Test
+    public void testSAML20MetadataEntityDescriptorAttrA() throws Exception{
+        EntityDescriptorType entityDescriptor = assertParsed("saml20-entity-descriptor-idp.xml", EntityDescriptorType.class);
+
+        List<EntityDescriptorType.EDTChoiceType> descriptors = entityDescriptor.getChoiceType();
+        assertThat(descriptors, hasSize(2));
+
+        AttributeAuthorityDescriptorType aaDescriptor = descriptors.get(1).getDescriptors().get(0).getAttribDescriptor();
+        assertThat(aaDescriptor, is(notNullValue()));
+        assertThat(aaDescriptor.getProtocolSupportEnumeration(), contains("urn:oasis:names:tc:SAML:2.0:protocol"));
+
+        // Key descriptor
+        List<KeyDescriptorType> keyDescriptors = aaDescriptor.getKeyDescriptor();
+        assertThat(keyDescriptors, hasSize(1));
+
+        KeyDescriptorType signingKey = keyDescriptors.get(0);
+        assertThat(signingKey.getUse(), is(KeyTypes.SIGNING));
+        assertThat(signingKey.getEncryptionMethod(), is(emptyCollectionOf(EncryptionMethodType.class)));
+        assertThat(signingKey.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent(), is("IdentityProvider.com AA Key"));
+
+        // Attribute service
+        assertThat(aaDescriptor.getAttributeService(), hasSize(1));
+        EndpointType attrServ = aaDescriptor.getAttributeService().get(0);
+        assertThat(attrServ.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:SOAP")));
+        assertThat(attrServ.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/AA/SOAP")));
+        assertThat(attrServ.getResponseLocation(), is(nullValue()));
+        assertThat(attrServ.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(attrServ.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // AssertionIDRequestService
+        assertThat(aaDescriptor.getAssertionIDRequestService(), hasSize(1));
+        EndpointType assertIDRServ = aaDescriptor.getAssertionIDRequestService().get(0);
+        assertThat(assertIDRServ.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:URI")));
+        assertThat(assertIDRServ.getLocation(), is(URI.create("https://IdentityProvider.com/SAML/AA/URI")));
+        assertThat(assertIDRServ.getResponseLocation(), is(nullValue()));
+        assertThat(assertIDRServ.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(assertIDRServ.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // NameID
+        assertThat(aaDescriptor.getNameIDFormat(),
+                containsInAnyOrder("urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName",
+                        "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+                        "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+                ));
+
+        assertThat(aaDescriptor.getAttribute(), hasSize(2));
+
+        AttributeType attr1 = aaDescriptor.getAttribute().get(0);
+        assertThat(attr1.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
+        assertThat(attr1.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.6"));
+        assertThat(attr1.getFriendlyName(), is("eduPersonPrincipalName"));
+        assertThat(attr1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+        assertThat(attr1.getAttributeValue(), is(emptyCollectionOf(Object.class)));
+
+        AttributeType attr2 = aaDescriptor.getAttribute().get(1);
+        assertThat(attr2.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
+        assertThat(attr2.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.1"));
+        assertThat(attr2.getFriendlyName(), is("eduPersonAffiliation"));
+        assertThat(attr2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+        assertThat(attr2.getAttributeValue(), containsInAnyOrder((Object) "member", "student", "faculty", "employee", "staff"));
     }
 
     @Test
     public void testSaml20MetadataEntityDescriptorSP() throws Exception {
-        assertParsed("saml20-entity-descriptor-sp.xml", EntityDescriptorType.class);
+        EntityDescriptorType entityDescriptor = assertParsed("saml20-entity-descriptor-sp.xml", EntityDescriptorType.class);
+
+        assertThat(entityDescriptor.getEntityID(), is("https://ServiceProvider.com/SAML"));
+        assertThat(entityDescriptor.getValidUntil(), is(nullValue()));
+        assertThat(entityDescriptor.getCacheDuration(), is(nullValue()));
+        assertThat(entityDescriptor.getID(), is(nullValue()));
+
+        assertThat(entityDescriptor.getExtensions(), is(nullValue()));
+
+        List<EntityDescriptorType.EDTChoiceType> descriptors = entityDescriptor.getChoiceType();
+        assertThat(descriptors, hasSize(1));
+
+        // SP Descriptor
+        SPSSODescriptorType spDescriptor = descriptors.get(0).getDescriptors().get(0).getSpDescriptor();
+        assertThat(spDescriptor, is(notNullValue()));
+
+        assertThat(spDescriptor.isAuthnRequestsSigned(), is(true));
+        assertThat(spDescriptor.isWantAssertionsSigned(), is(false));
+        assertThat(spDescriptor.getProtocolSupportEnumeration(), contains("urn:oasis:names:tc:SAML:2.0:protocol"));
+
+        // Key descriptor
+        List<KeyDescriptorType> keyDescriptors = spDescriptor.getKeyDescriptor();
+        assertThat(keyDescriptors, hasSize(2));
+
+        KeyDescriptorType signingKey = keyDescriptors.get(0);
+        assertThat(signingKey.getUse(), is(KeyTypes.SIGNING));
+        assertThat(signingKey.getEncryptionMethod(), is(emptyCollectionOf(EncryptionMethodType.class)));
+        assertThat(signingKey.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent(), is("ServiceProvider.com SSO Key"));
+
+        KeyDescriptorType encryptionKey = keyDescriptors.get(1);
+        assertThat(encryptionKey.getUse(), is(KeyTypes.ENCRYPTION));
+        assertThat(encryptionKey.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent(), is("ServiceProvider.com Encrypt Key"));
+
+        List<EncryptionMethodType> encryptionMethods = encryptionKey.getEncryptionMethod();
+        assertThat(encryptionMethods, Matchers.<EncryptionMethodType>hasSize(1));
+        assertThat(encryptionMethods.get(0).getAlgorithm(), is("http://www.w3.org/2001/04/xmlenc#rsa-1_5"));
+        assertThat(encryptionMethods.get(0).getEncryptionMethod(), is(nullValue()));
+
+        // Single logout services
+        assertThat(spDescriptor.getSingleLogoutService(), hasSize(2));
+        EndpointType singleLS1 = spDescriptor.getSingleLogoutService().get(0);
+        assertThat(singleLS1.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:SOAP")));
+        assertThat(singleLS1.getLocation(), is(URI.create("https://ServiceProvider.com/SAML/SLO/SOAP")));
+        assertThat(singleLS1.getResponseLocation(), is(nullValue()));
+        assertThat(singleLS1.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleLS1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        EndpointType singleLS2 = spDescriptor.getSingleLogoutService().get(1);
+        assertThat(singleLS2.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")));
+        assertThat(singleLS2.getLocation(), is(URI.create("https://ServiceProvider.com/SAML/SLO/Browser")));
+        assertThat(singleLS2.getResponseLocation(), is(URI.create("https://ServiceProvider.com/SAML/SLO/Response")));
+        assertThat(singleLS2.getAny(), is(emptyCollectionOf(Object.class)));
+        assertThat(singleLS2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // NameID
+        assertThat(spDescriptor.getNameIDFormat(), contains("urn:oasis:names:tc:SAML:2.0:nameid-format:transient"));
+
+        // Assertion consumer services
+        List<IndexedEndpointType> assertionConsumerServices = spDescriptor.getAssertionConsumerService();
+        assertThat(assertionConsumerServices, hasSize(2));
+
+        IndexedEndpointType assertionCS1 = assertionConsumerServices.get(0);
+        assertThat(assertionCS1.getIndex(), is(0));
+        assertThat(assertionCS1.isIsDefault(), is(true));
+        assertThat(assertionCS1.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact")));
+        assertThat(assertionCS1.getLocation(), is(URI.create("https://ServiceProvider.com/SAML/SSO/Artifact")));
+        assertThat(assertionCS1.getResponseLocation(), is(nullValue()));
+        assertThat(assertionCS1.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        IndexedEndpointType assertionCS2 = assertionConsumerServices.get(1);
+        assertThat(assertionCS2.getIndex(), is(1));
+        assertThat(assertionCS2.isIsDefault(), is(nullValue()));
+        assertThat(assertionCS2.getBinding(), is(URI.create("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")));
+        assertThat(assertionCS2.getLocation(), is(URI.create("https://ServiceProvider.com/SAML/SSO/POST")));
+        assertThat(assertionCS2.getResponseLocation(), is(nullValue()));
+        assertThat(assertionCS2.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // Attribute consuming services
+        List<AttributeConsumingServiceType> attributeConsumingServices = spDescriptor.getAttributeConsumingService();
+        assertThat(attributeConsumingServices, hasSize(1));
+
+        AttributeConsumingServiceType attributeConsumingService = attributeConsumingServices.get(0);
+        assertThat(attributeConsumingService.getIndex(), is(0));
+        assertThat(attributeConsumingService.getServiceName(), hasSize(1));
+        LocalizedNameType servName = attributeConsumingService.getServiceName().get(0);
+        assertThat(servName.getLang(), is("en"));
+        assertThat(servName.getValue(), is("Academic Journals R US"));
+        assertThat(attributeConsumingService.getServiceDescription(), is(emptyCollectionOf(LocalizedNameType.class)));
+
+        List<RequestedAttributeType> requestedAttributes = attributeConsumingService.getRequestedAttribute();
+        assertThat(requestedAttributes, hasSize(1));
+
+        // Requested attribute
+        RequestedAttributeType requestedAttribute = requestedAttributes.get(0);
+        assertThat(requestedAttribute.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
+        assertThat(requestedAttribute.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.7"));
+        assertThat(requestedAttribute.getFriendlyName(), is("eduPersonEntitlement"));
+
+        assertThat(requestedAttribute.getAttributeValue(), hasSize(1));
+        assertThat((String) requestedAttribute.getAttributeValue().get(0), is("https://ServiceProvider.com/entitlements/123456789"));
+
+        assertThat(requestedAttribute.getOtherAttributes(), is(Collections.<QName, String>emptyMap()));
+
+        // Organization
+        assertThat(entityDescriptor.getOrganization().getOrganizationName(), hasSize(1));
+        LocalizedNameType orgName = entityDescriptor.getOrganization().getOrganizationName().get(0);
+        assertThat(orgName.getLang(), is("en"));
+        assertThat(orgName.getValue(), is("Academic Journals R\n            US"));
+
+        assertThat(entityDescriptor.getOrganization().getOrganizationDisplayName(), hasSize(1));
+        LocalizedNameType orgDispName = entityDescriptor.getOrganization().getOrganizationDisplayName().get(0);
+        assertThat(orgDispName.getLang(), is("en"));
+        assertThat(orgDispName.getValue(), is("Academic Journals R US, a Division of Dirk Corp."));
+
+        assertThat(entityDescriptor.getOrganization().getOrganizationURL(), hasSize(1));
+        LocalizedURIType orgURL = entityDescriptor.getOrganization().getOrganizationURL().get(0);
+        assertThat(orgURL.getLang(), is("en"));
+        assertThat(orgURL.getValue(), is(URI.create("https://ServiceProvider.com")));
+    }
+
+    @Test
+    public void testSaml20MetadataEntityDescriptorPDP() throws Exception {
+        EntityDescriptorType descriptor = assertParsed("saml20-entity-descriptor-pdp.xml", EntityDescriptorType.class);
+
+        assertThat(descriptor.getChoiceType(), Matchers.<EntityDescriptorType.EDTChoiceType>hasSize(1));
+        assertThat(descriptor.getChoiceType().get(0).getDescriptors().get(0).getPdpDescriptor(), is(notNullValue()));
+
+        PDPDescriptorType pdpDescriptor = descriptor.getChoiceType().get(0).getDescriptors().get(0).getPdpDescriptor();
+
+        assertThat(pdpDescriptor.getKeyDescriptor(), Matchers.<KeyDescriptorType>hasSize(1));
+
+        KeyDescriptorType keyDescriptorType = pdpDescriptor.getKeyDescriptor().get(0);
+        assertThat(keyDescriptorType.getEncryptionMethod(), Matchers.<EncryptionMethodType>hasSize(1));
+
+        EncryptionMethodType encryptionMethodType = keyDescriptorType.getEncryptionMethod().get(0);
+        assertThat(encryptionMethodType.getAlgorithm(), is("http://www.example.com/"));
+
+        EncryptionMethodType.EncryptionMethod encryptionMethod = encryptionMethodType.getEncryptionMethod();
+        assertThat(encryptionMethod.getKeySize(), is(BigInteger.ONE));
+        assertThat(encryptionMethod.getOAEPparams(), is("GpM7".getBytes()));
+
+        // EndpointType parser already tested so we are not checking further
+        assertThat(pdpDescriptor.getAuthzService(), Matchers.<EndpointType>hasSize(1));
+        assertThat(pdpDescriptor.getAssertionIDRequestService(), Matchers.<EndpointType>hasSize(1));
+    }
+
+    @Test
+    public void testSaml20MetadataEntityDescriptorAuthnAuthority() throws Exception {
+        EntityDescriptorType descriptor = assertParsed("saml20-entity-descriptor-authn-authority.xml", EntityDescriptorType.class);
+
+        assertThat(descriptor.getChoiceType(), Matchers.<EntityDescriptorType.EDTChoiceType>hasSize(1));
+        assertThat(descriptor.getChoiceType().get(0).getDescriptors().get(0).getAuthnDescriptor(), is(notNullValue()));
+
+        AuthnAuthorityDescriptorType authnDescriptor = descriptor.getChoiceType().get(0).getDescriptors().get(0).getAuthnDescriptor();
+
+        assertThat(authnDescriptor.getAssertionIDRequestService(), hasSize(1));
+        assertThat(authnDescriptor.getAuthnQueryService(),  hasSize(1));
+        assertThat(authnDescriptor.getProtocolSupportEnumeration(), containsInAnyOrder("http://www.example.com/", "http://www.example2.com/"));
+    }
+
+    @Test
+    public void testSaml20MetadataEntitiesDescriptor() throws Exception {
+        EntitiesDescriptorType entities = assertParsed("saml20-entities-descriptor.xml", EntitiesDescriptorType.class);
+
+        assertThat(entities.getName(), is("https://your-federation.org/metadata/federation-name.xml"));
+        assertThat(entities.getID(), is(nullValue()));
+        assertThat(entities.getCacheDuration(), is(nullValue()));
+        assertThat(entities.getExtensions(), is(nullValue()));
+        assertThat(entities.getSignature(), is(nullValue()));
+        assertThat(entities.getValidUntil(), is(nullValue()));
+        assertThat(entities.getEntityDescriptor(), hasSize(3));
+        assertThat(entities.getEntityDescriptor().get(0), instanceOf(EntityDescriptorType.class));
+        assertThat(entities.getEntityDescriptor().get(1), instanceOf(EntityDescriptorType.class));
+        assertThat(entities.getEntityDescriptor().get(2), instanceOf(EntitiesDescriptorType.class));
+
+        EntitiesDescriptorType nestedEntities = (EntitiesDescriptorType) entities.getEntityDescriptor().get(2);
+        assertThat(nestedEntities.getEntityDescriptor(), hasSize(2));
     }
 
     @Test
@@ -339,6 +698,86 @@ public class SAMLParserTest {
         thrown.expectMessage(containsString("Unknown Start Element"));
 
         assertParsed("saml20-authnrequest-invalid-namespace.xml", AuthnRequestType.class);
+    }
+
+    @Test
+    public void testInvalidEndElement() throws Exception {
+        thrown.expect(ParsingException.class);
+        thrown.expectMessage(containsString("The element type \"NameIDFormat\" must be terminated by the matching end-tag \"</NameIDFormat>\"."));
+
+        assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
+    }
+
+    @Test
+    public void testMissingRequiredAttributeIDPSSODescriptorType()  throws Exception {
+        testMissingAttribute("IDPSSODescriptorType", "protocolSupportEnumeration");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeSPSSODescriptorType()  throws Exception {
+        testMissingAttribute("SPSSODescriptorType", "protocolSupportEnumeration");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeAttributeAuthorityDescriptorType()  throws Exception {
+        testMissingAttribute("AttributeAuthorityDescriptorType", "protocolSupportEnumeration");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeAuthnAuthorityDescriptorType()  throws Exception {
+        testMissingAttribute("AuthnAuthorityDescriptorType", "protocolSupportEnumeration");
+    }
+
+    @Test
+    public void testMissingRequiredAttributePDPDescriptorType()  throws Exception {
+        testMissingAttribute("PDPDescriptorType", "protocolSupportEnumeration");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeAttributeConsumingServiceType()  throws Exception {
+        testMissingAttribute("AttributeConsumingServiceType", "index");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeAttributeType()  throws Exception {
+        testMissingAttribute("AttributeType", "Name");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeContactType()  throws Exception {
+        testMissingAttribute("ContactType", "contactType");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeEncryptionMethodType()  throws Exception {
+        testMissingAttribute("EncryptionMethodType", "Algorithm");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeEndpointTypeBinding()  throws Exception {
+        testMissingAttribute("EndpointType", "Binding");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeEndpointTypeLocation()  throws Exception {
+        testMissingAttribute("EndpointType", "Location");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeEntityDescriptorType()  throws Exception {
+        testMissingAttribute("EntityDescriptorType", "entityID");
+    }
+
+    @Test
+    public void testMissingRequiredAttributeRequestedAttributeType()  throws Exception {
+        testMissingAttribute("RequestedAttributeType", "Name");
+    }
+
+    private void testMissingAttribute(String type, String attributeName) throws Exception {
+        thrown.expect(ParsingException.class);
+        thrown.expectMessage(containsString("Parser: Required attribute missing: " + attributeName));
+
+        assertParsed("missing-attribute/saml20-" + type + "-" + attributeName + ".xml", EntityDescriptorType.class);
     }
 
     @Test
