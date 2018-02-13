@@ -40,6 +40,12 @@
             }
         }
 
+        var addDefaultInAppOptionsTo = function (options) {
+            var optionsWithDefaultValues = (options || "");
+            optionsWithDefaultValues += (optionsWithDefaultValues.length > 0 ? "," : "") + "zoom=no"; // Android only
+            return optionsWithDefaultValues;
+        };
+
         var useNonce = true;
         
         kc.init = function (initOptions) {
@@ -1097,7 +1103,7 @@
                 var cordovaOpenWindowWrapper = function(loginUrl, target, options) {
                     if (window.cordova && window.cordova.InAppBrowser) {
                         // Use inappbrowser for IOS and Android if available
-                        return window.cordova.InAppBrowser.open(loginUrl, target, options);
+                        return window.cordova.InAppBrowser.open(loginUrl, target, addDefaultInAppOptionsTo(options));
                     } else {
                         return window.open(loginUrl, target, options);
                     }
