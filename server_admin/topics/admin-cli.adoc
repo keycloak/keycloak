@@ -1513,14 +1513,14 @@ $ kcadm.sh create identity-provider/instances -r demorealm -s alias=stackoverflo
 [discrete]
 ==== Configuring a Kerberos storage provider
 
-. Use the [command]`create` command against the [filename]`user-federation/instances` endpoint.
-. Specify [command]`kerberos` as a value of the [command]`providerName` attribute.
-+
-For example:
+. Use the [command]`create` command against the [filename]`components` endpoint.
+. Specify realm id as a value of the [command]`parentId` attribute.
+. Specify [command]`kerberos` as the value of the [command]`providerId` attribute, and [command]`org.keycloak.storage.UserStorageProvider` as the value of the [command]`providerType` attribute.
+. For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh create user-federation/instances -r demorealm -s providerName=kerberos -s priority=0 -s config.debug=false -s config.allowPasswordAuthentication=true -s 'config.editMode="UNSYNCED"' -s config.updateProfileFirstLogin=true -s config.allowKerberosAuthentication=true -s 'config.kerberosRealm="KEYCLOAK.ORG"' -s 'config.keyTab="http.keytab"' -s 'config.serverPrincipal="HTTP/localhost@KEYCLOAK.ORG"'
+$ kcadm.sh create components -r demorealm -s parentId=demorealmId -s id=demokerberos -s name=demokerberos -s providerId=kerberos -s providerType=org.keycloak.storage.UserStorageProvider -s 'config.priority=["0"]' -s 'config.debug=["false"]' -s 'config.allowPasswordAuthentication=["true"]' -s 'config.editMode=["UNSYNCED"]' -s 'config.updateProfileFirstLogin=["true"]' -s 'config.allowKerberosAuthentication=["true"]' -s 'config.kerberosRealm=["KEYCLOAK.ORG"]' -s 'config.keyTab=["http.keytab"]' -s 'config.serverPrincipal=["HTTP/localhost@KEYCLOAK.ORG"]' -s 'config.cachePolicy=["DEFAULT"]'
 ----
 
 [discrete]
