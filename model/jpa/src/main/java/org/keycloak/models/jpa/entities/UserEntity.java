@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.Access;
@@ -90,12 +92,15 @@ public class UserEntity {
     protected String realmId;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
     @Column(name="FEDERATION_LINK")

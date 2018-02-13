@@ -59,6 +59,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -945,6 +946,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity userRef = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userRef);
         em.persist(entity);
+
         MultivaluedHashMap<String, String> config = cred.getConfig();
         if (config != null && !config.isEmpty()) {
 
@@ -962,6 +964,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             }
 
         }
+
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (userEntity != null) {
+            userEntity.getCredentials().add(entity);
+        }
         return toModel(entity);
     }
 
@@ -970,6 +977,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         CredentialEntity entity = em.find(CredentialEntity.class, id);
         if (entity == null) return false;
         em.remove(entity);
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (userEntity != null) {
+            userEntity.getCredentials().remove(entity);
+        }
         return true;
     }
 
@@ -1017,11 +1028,19 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
-        TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUserAndType", CredentialEntity.class)
-                .setParameter("type", type)
-                .setParameter("user", userEntity);
-        List<CredentialEntity> results = query.getResultList();
+        List<CredentialEntity> results;
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (userEntity != null) {
+
+            // user already in persistence context, no need to execute a query
+            results = userEntity.getCredentials().stream().filter(it -> it.getType().equals(type)).collect(Collectors.toList());
+        } else {
+            userEntity = em.getReference(UserEntity.class, user.getId());
+            TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUserAndType", CredentialEntity.class)
+                    .setParameter("type", type)
+                    .setParameter("user", userEntity);
+            results = query.getResultList();
+        }
         List<CredentialModel> rtn = new LinkedList<>();
         for (CredentialEntity entity : results) {
             rtn.add(toModel(entity));
@@ -1061,5 +1080,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             user.setEmailConstraint(user.getEmail());
             em.persist(user);
         }  
+    }
+
+    private UserEntity userInEntityManagerContext(String id) {
+        UserEntity user = em.getReference(UserEntity.class, id);
+        boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
+        return isLoaded ? user : null;
     }
 }
