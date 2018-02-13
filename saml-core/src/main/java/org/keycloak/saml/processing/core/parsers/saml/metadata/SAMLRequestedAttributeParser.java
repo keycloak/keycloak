@@ -17,31 +17,25 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
 import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.StartElement;
-import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeValueParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeValueParser;
+
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
 
 /**
  * Parse the <conditions> in the saml assertion
  *
  * @since Oct 14, 2010
  */
-public class SAMLRequestedAttributeParser extends AbstractStaxSamlParser<RequestedAttributeType> {
+public class SAMLRequestedAttributeParser extends AbstractStaxSamlMetadataParser<RequestedAttributeType> {
 
     private static final SAMLRequestedAttributeParser INSTANCE = new SAMLRequestedAttributeParser();
-    private static final QName X500_ENCODING = new QName(JBossSAMLURIConstants.X500_NSURI.get(), JBossSAMLConstants.ENCODING.get(),
-      JBossSAMLURIConstants.X500_PREFIX.get());
-
 
     private SAMLRequestedAttributeParser() {
-        super(JBossSAMLConstants.REQUESTED_ATTRIBUTE);
+        super(SAMLMetadataQNames.REQUESTED_ATTRIBUTE);
     }
 
     public static SAMLRequestedAttributeParser getInstance() {
@@ -50,24 +44,22 @@ public class SAMLRequestedAttributeParser extends AbstractStaxSamlParser<Request
 
     @Override
     protected RequestedAttributeType instantiateElement(XMLEventReader xmlEventReader, StartElement element) throws ParsingException {
-        RequestedAttributeType attributeType;
+        RequestedAttributeType attributeType = new RequestedAttributeType(StaxParserUtil.getRequiredAttributeValue(element, SAMLAssertionQNames.ATTR_NAME));
 
-        // TODO: replace all constants with SamlMetadataQNames ones
-        attributeType = new RequestedAttributeType(StaxParserUtil.getRequiredAttributeValue(element, SAMLAssertionQNames.ATTR_NAME));
-        attributeType.setFriendlyName(StaxParserUtil.getAttributeValue(element, JBossSAMLConstants.FRIENDLY_NAME.get()));
-        attributeType.setIsRequired(StaxParserUtil.getBooleanAttributeValue(element, JBossSAMLConstants.IS_REQUIRED.get()));
-        attributeType.setNameFormat(StaxParserUtil.getAttributeValue(element, JBossSAMLConstants.NAME_FORMAT.get()));
+        attributeType.setFriendlyName(StaxParserUtil.getAttributeValue(element, SAMLMetadataQNames.ATTR_FRIENDLY_NAME));
+        attributeType.setIsRequired(StaxParserUtil.getBooleanAttributeValue(element, SAMLMetadataQNames.ATTR_IS_REQUIRED));
+        attributeType.setNameFormat(StaxParserUtil.getAttributeValue(element, SAMLMetadataQNames.ATTR_NAME_FORMAT));
 
-        Attribute x500EncodingAttr = element.getAttributeByName(X500_ENCODING);
-        if (x500EncodingAttr != null) {
-            attributeType.getOtherAttributes().put(x500EncodingAttr.getName(), StaxParserUtil.getAttributeValue(x500EncodingAttr));
+        String encoding = StaxParserUtil.getAttributeValue(element, SAMLMetadataQNames.ATTR_X500_ENCODING);
+        if (encoding != null && !encoding.isEmpty()) {
+            attributeType.getOtherAttributes().put(SAMLMetadataQNames.ATTR_X500_ENCODING.getQName(), encoding);
         }
 
         return attributeType;
     }
 
     @Override
-    protected void processSubElement(XMLEventReader xmlEventReader, RequestedAttributeType target, JBossSAMLConstants element, StartElement elementDetail) throws ParsingException {
+    protected void processSubElement(XMLEventReader xmlEventReader, RequestedAttributeType target, SAMLMetadataQNames element, StartElement elementDetail) throws ParsingException {
         switch (element) {
             case ATTRIBUTE_VALUE:
                 target.addAttributeValue(SAMLAttributeValueParser.getInstance().parse(xmlEventReader));

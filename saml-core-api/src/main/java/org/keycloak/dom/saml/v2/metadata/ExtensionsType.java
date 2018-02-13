@@ -18,6 +18,10 @@ package org.keycloak.dom.saml.v2.metadata;
 
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * <p>
  * Java class for ExtensionsType complex type.
@@ -39,13 +43,49 @@ import org.w3c.dom.Element;
  */
 public class ExtensionsType {
 
-    protected Element element = null;
+    protected List<Object> any = new ArrayList<Object>();
 
+    /**
+     * Function is obsoleted with getAny
+     * @return
+     */
+    @Deprecated
     public Element getElement() {
-        return element;
+        return (any.isEmpty()) ? null : (Element) any.get(0);
     }
 
+    /**
+     * Function is obsoleted with addExtension
+     * @return
+     */
+    @Deprecated
     public void setElement(Element element) {
-        this.element = element;
+        any.clear();
+        any.add(element);
+    }
+
+    /**
+     * Add an extension
+     *
+     * @param extension
+     */
+    public void addExtension(Object extension) {
+        any.add(extension);
+    }
+
+    /**
+     * Remove an extension
+     *
+     * @param extension
+     */
+    public void removeExtension(Object extension) {
+        any.remove(extension);
+    }
+
+    /**
+     * Gets the value of the any property.
+     */
+    public List<Object> getAny() {
+        return Collections.unmodifiableList(this.any);
     }
 }

@@ -32,6 +32,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.XMLConstants;
+import javax.xml.datatype.Duration;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
@@ -52,7 +53,10 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -296,6 +300,20 @@ public class StaxParserUtil {
      *
      * @return
      */
+    public static Duration getXmlDurationAttributeValue(StartElement startElement, HasQName attrName) throws ParsingException {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValue(attr);
+        return value == null ? null : XMLTimeUtil.parseAsDuration(value);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @return
+     */
     public static Integer getIntegerAttributeValue(StartElement startElement, HasQName attrName) {
         Attribute attr = startElement.getAttributeByName(attrName.getQName());
         String value = getAttributeValue(attr);
@@ -389,6 +407,29 @@ public class StaxParserUtil {
         if (attr == null)
             throw logger.parserRequiredAttribute(qName.getLocalPart());
         return StaxParserUtil.getAttributeValueRP(attr);
+    }
+
+    /**
+     * Parse a space delimited list of strings
+     *
+     * @param startElement
+     * @param attrName
+     *
+     * @return
+     */
+    public static List<String> getRequiredStringListAttributeValue(StartElement startElement, HasQName attrName) throws ParsingException{
+        List<String> protocolEnum = new ArrayList<>();
+
+        String val = StaxParserUtil.getRequiredAttributeValue(startElement, attrName);
+        if (StringUtil.isNotNull(val)) {
+            StringTokenizer st = new StringTokenizer(val);
+            while (st.hasMoreTokens()) {
+                protocolEnum.add(st.nextToken());
+            }
+
+        }
+
+        return protocolEnum;
     }
 
     private static final String JDK_TRANSFORMER_PROPERTY = "picketlink.jdk.transformer";
