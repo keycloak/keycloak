@@ -1,7 +1,8 @@
 include::topics/templates/document-attributes-community.adoc[]
 
 :api_documentation:
+:linkattrs:
 
 = {apidocs_name}
 
-include::topics/overview.adoc[]
+include::topics.adoc[]

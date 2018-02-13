@@ -16,6 +16,15 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.keycloak.documentation</groupId>
+                <artifactId>header-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-file-headers</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
                 <executions>
