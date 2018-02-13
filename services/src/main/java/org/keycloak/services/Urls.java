@@ -79,7 +79,7 @@ public class Urls {
                 .path(IdentityBrokerService.class, "performLogin");
 
         if (accessCode != null) {
-            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
+            uriBuilder.replaceQueryParam(LoginActionsService.SESSION_CODE, accessCode);
         }
         if (clientId != null) {
             uriBuilder.replaceQueryParam(Constants.CLIENT_ID, clientId);
@@ -112,7 +112,7 @@ public class Urls {
     public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "afterFirstBrokerLogin")
-                .replaceQueryParam(OAuth2Constants.CODE, accessCode)
+                .replaceQueryParam(LoginActionsService.SESSION_CODE, accessCode)
                 .replaceQueryParam(Constants.CLIENT_ID, clientId)
                 .replaceQueryParam(Constants.TAB_ID, tabId)
                 .build(realmName);
@@ -121,7 +121,7 @@ public class Urls {
     public static URI identityProviderAfterPostBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "afterPostBrokerLoginFlow")
-                .replaceQueryParam(OAuth2Constants.CODE, accessCode)
+                .replaceQueryParam(LoginActionsService.SESSION_CODE, accessCode)
                 .replaceQueryParam(Constants.CLIENT_ID, clientId)
                 .replaceQueryParam(Constants.TAB_ID, tabId)
                 .build(realmName);

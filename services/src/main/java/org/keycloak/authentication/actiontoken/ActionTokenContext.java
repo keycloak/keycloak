@@ -46,7 +46,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
 
     @FunctionalInterface
     public interface ProcessBrokerFlow {
-        Response brokerLoginFlow(String code, String execution, String clientId, String tabId, String flowPath);
+        Response brokerLoginFlow(String authSessionId, String code, String execution, String clientId, String tabId, String flowPath);
     };
 
     private final KeycloakSession session;
@@ -160,8 +160,8 @@ public class ActionTokenContext<T extends JsonWebToken> {
         return processAuthenticateFlow.processFlow(action, getExecutionId(), getAuthenticationSession(), flowPath, flow, errorMessage, processor);
     }
 
-    public Response brokerFlow(String code, String flowPath) {
+    public Response brokerFlow(String authSessionId, String code, String flowPath) {
         ClientModel client = authenticationSession.getClient();
-        return processBrokerFlow.brokerLoginFlow(code, getExecutionId(), client.getClientId(), authenticationSession.getTabId(), flowPath);
+        return processBrokerFlow.brokerLoginFlow(authSessionId, code, getExecutionId(), client.getClientId(), authenticationSession.getTabId(), flowPath);
     }
 }
