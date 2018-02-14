@@ -1180,7 +1180,7 @@
 
                 var shallowCloneCordovaOptions = function (userOptions) {
                     if (userOptions && userOptions.cordovaOptions) {
-                        return Object.keys(userOptions.cordovaOptions).reduce((options, optionName) => {
+                        return Object.keys(userOptions.cordovaOptions).reduce(function (options, optionName) {
                             options[optionName] = userOptions.cordovaOptions[optionName];
                             return options;
                         }, {});
@@ -1190,7 +1190,7 @@
                 };
 
                 var formatCordovaOptions = function (cordovaOptions) {
-                    return Object.keys(cordovaOptions).reduce((options, optionName) => {
+                    return Object.keys(cordovaOptions).reduce(function (options, optionName) {
                         options.push(optionName+"="+cordovaOptions[optionName]);
                         return options;
                     }, []).join(",");
