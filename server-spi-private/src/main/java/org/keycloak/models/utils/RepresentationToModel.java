@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -61,7 +62,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -91,6 +92,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -144,6 +146,7 @@ public class RepresentationToModel {
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
+        convertDeprecatedClientTemplates(rep);
 
         newRealm.setName(rep.getRealm());
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
@@ -258,8 +261,29 @@ public class RepresentationToModel {
         importIdentityProviders(rep, newRealm);
         importIdentityProviderMappers(rep, newRealm);
 
-        if (rep.getClientTemplates() != null) {
-            createClientTemplates(session, rep, newRealm);
+        Map<String, ClientScopeModel> clientScopes = new HashMap<>();
+        if (rep.getClientScopes() != null) {
+            clientScopes = createClientScopes(session, rep.getClientScopes(), newRealm);
+        }
+        if (rep.getDefaultDefaultClientScopes() != null) {
+            for (String clientScopeName : rep.getDefaultDefaultClientScopes()) {
+                ClientScopeModel clientScope = clientScopes.get(clientScopeName);
+                if (clientScope != null) {
+                    newRealm.addDefaultClientScope(clientScope, true);
+                } else {
+                    logger.warnf("Referenced client scope '%s' doesn't exists", clientScopeName);
+                }
+            }
+        }
+        if (rep.getDefaultOptionalClientScopes() != null) {
+            for (String clientScopeName : rep.getDefaultOptionalClientScopes()) {
+                ClientScopeModel clientScope = clientScopes.get(clientScopeName);
+                if (clientScope != null) {
+                    newRealm.addDefaultClientScope(clientScope, false);
+                } else {
+                    logger.warnf("Referenced client scope '%s' doesn't exists", clientScopeName);
+                }
+            }
         }
 
         if (rep.getClients() != null) {
@@ -471,8 +495,6 @@ public class RepresentationToModel {
                     // Application role may already exists (for example if it is defaultRole)
                     RoleModel role = roleRep.getId() != null ? client.addRole(roleRep.getId(), roleRep.getName()) : client.addRole(roleRep.getName());
                     role.setDescription(roleRep.getDescription());
-                    boolean scopeParamRequired = roleRep.isScopeParamRequired() == null ? false : roleRep.isScopeParamRequired();
-                    role.setScopeParamRequired(scopeParamRequired);
                 }
             }
         }
@@ -762,6 +784,28 @@ public class RepresentationToModel {
         }
     }
 
+    private static void convertDeprecatedClientTemplates(RealmRepresentation realm) {
+        if (realm.getClientTemplates() != null) {
+
+            logger.warnf("Using deprecated 'clientTemplates' configuration in JSON representation for realm '%s'. It will be removed in future versions", realm.getRealm());
+
+            List<ClientScopeRepresentation> clientScopes = new LinkedList<>();
+            for (ClientTemplateRepresentation template : realm.getClientTemplates()) {
+                ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+                scopeRep.setId(template.getId());
+                scopeRep.setName(template.getName());
+                scopeRep.setProtocol(template.getProtocol());
+                scopeRep.setDescription(template.getDescription());
+                scopeRep.setAttributes(template.getAttributes());
+                scopeRep.setProtocolMappers(template.getProtocolMappers());
+
+                clientScopes.add(scopeRep);
+            }
+
+            realm.setClientScopes(clientScopes);
+        }
+    }
+
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) return;
 
@@ -973,8 +1017,6 @@ public class RepresentationToModel {
     public static void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
         RoleModel role = roleRep.getId() != null ? newRealm.addRole(roleRep.getId(), roleRep.getName()) : newRealm.addRole(roleRep.getName());
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
-        boolean scopeParamRequired = roleRep.isScopeParamRequired() == null ? false : roleRep.isScopeParamRequired();
-        role.setScopeParamRequired(scopeParamRequired);
     }
 
     private static void addComposites(RoleModel role, RoleRepresentation roleRep, RealmModel realm) {
@@ -1159,38 +1201,49 @@ public class RepresentationToModel {
         }
 
         if (resourceRep.getClientTemplate() != null) {
-            for (ClientTemplateModel template : realm.getClientTemplates()) {
-                if (template.getName().equals(resourceRep.getClientTemplate())) {
-                    client.setClientTemplate(template);
-                    break;
-                }
-                MigrationUtils.updateProtocolMappers(template);
+            String clientTemplateName = KeycloakModelUtils.convertClientScopeName(resourceRep.getClientTemplate());
+            addClientScopeToClient(realm, client, clientTemplateName, true);
+        }
+
+        if (resourceRep.getDefaultClientScopes() != null) {
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope : client.getClientScopes(true, false).values()) {
+                client.removeClientScope(clientScope);
+            }
+
+            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
+                addClientScopeToClient(realm, client, clientScopeName, true);
+            }
+        }
+        if (resourceRep.getOptionalClientScopes() != null) {
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope : client.getClientScopes(false, false).values()) {
+                client.removeClientScope(clientScope);
+            }
+
+            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
+                addClientScopeToClient(realm, client, clientScopeName, false);
             }
         }
 
         if (resourceRep.isFullScopeAllowed() != null) {
             client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         } else {
-            if (client.getClientTemplate() != null) {
-                client.setFullScopeAllowed(!client.isConsentRequired() && client.getClientTemplate().isFullScopeAllowed());
-
-            } else {
-                client.setFullScopeAllowed(!client.isConsentRequired());
-            }
+            client.setFullScopeAllowed(!client.isConsentRequired());
         }
-        if (resourceRep.isUseTemplateConfig() != null) client.setUseTemplateConfig(resourceRep.isUseTemplateConfig());
-        else client.setUseTemplateConfig(false); // default to false for now
-
-        if (resourceRep.isUseTemplateScope() != null) client.setUseTemplateScope(resourceRep.isUseTemplateScope());
-        else client.setUseTemplateScope(resourceRep.getClientTemplate() != null);
-
-        if (resourceRep.isUseTemplateMappers() != null)
-            client.setUseTemplateMappers(resourceRep.isUseTemplateMappers());
-        else client.setUseTemplateMappers(resourceRep.getClientTemplate() != null);
 
         client.updateClient();
 
         return client;
+    }
+
+    private static void addClientScopeToClient(RealmModel realm, ClientModel client, String clientScopeName, boolean defaultScope) {
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, clientScopeName);
+        if (clientScope != null) {
+            client.addClientScope(clientScope, defaultScope);
+        } else {
+            logger.warnf("Referenced client scope '%s' doesn't exists. Ignoring", clientScopeName);
+        }
     }
 
     public static void updateClient(ClientRepresentation rep, ClientModel resource) {
@@ -1267,107 +1320,56 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.isUseTemplateConfig() != null) resource.setUseTemplateConfig(rep.isUseTemplateConfig());
-        if (rep.isUseTemplateScope() != null) resource.setUseTemplateScope(rep.isUseTemplateScope());
-        if (rep.isUseTemplateMappers() != null) resource.setUseTemplateMappers(rep.isUseTemplateMappers());
-
         if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
-
-        if (rep.getClientTemplate() != null) {
-            if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
-                resource.setClientTemplate(null);
-            } else {
-                RealmModel realm = resource.getRealm();
-                for (ClientTemplateModel template : realm.getClientTemplates()) {
-
-                    if (template.getName().equals(rep.getClientTemplate())) {
-                        resource.setClientTemplate(template);
-                        if (rep.isUseTemplateConfig() == null) resource.setUseTemplateConfig(true);
-                        if (rep.isUseTemplateScope() == null) resource.setUseTemplateScope(true);
-                        if (rep.isUseTemplateMappers() == null) resource.setUseTemplateMappers(true);
-                        break;
-                    }
-                }
-            }
-        }
 
         resource.updateClient();
     }
 
-    // CLIENT TEMPLATES
+    // CLIENT SCOPES
 
-    private static Map<String, ClientTemplateModel> createClientTemplates(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
-        Map<String, ClientTemplateModel> appMap = new HashMap<>();
-        for (ClientTemplateRepresentation resourceRep : rep.getClientTemplates()) {
-            ClientTemplateModel app = createClientTemplate(session, realm, resourceRep);
+    private static Map<String, ClientScopeModel> createClientScopes(KeycloakSession session, List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
+        Map<String, ClientScopeModel> appMap = new HashMap<>();
+        for (ClientScopeRepresentation resourceRep : clientScopes) {
+            ClientScopeModel app = createClientScope(session, realm, resourceRep);
             appMap.put(app.getName(), app);
         }
         return appMap;
     }
 
-    public static ClientTemplateModel createClientTemplate(KeycloakSession session, RealmModel realm, ClientTemplateRepresentation resourceRep) {
-        logger.debug("Create client template: {0}" + resourceRep.getName());
+    public static ClientScopeModel createClientScope(KeycloakSession session, RealmModel realm, ClientScopeRepresentation resourceRep) {
+        logger.debug("Create client scope: {0}" + resourceRep.getName());
 
-        ClientTemplateModel client = resourceRep.getId() != null ? realm.addClientTemplate(resourceRep.getId(), resourceRep.getName()) : realm.addClientTemplate(resourceRep.getName());
-        if (resourceRep.getName() != null) client.setName(resourceRep.getName());
-        if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
-        if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
-        if (resourceRep.isFullScopeAllowed() != null) client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
+        ClientScopeModel clientScope = resourceRep.getId() != null ? realm.addClientScope(resourceRep.getId(), resourceRep.getName()) : realm.addClientScope(resourceRep.getName());
+        if (resourceRep.getName() != null) clientScope.setName(resourceRep.getName());
+        if (resourceRep.getDescription() != null) clientScope.setDescription(resourceRep.getDescription());
+        if (resourceRep.getProtocol() != null) clientScope.setProtocol(resourceRep.getProtocol());
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+            Set<ProtocolMapperModel> mappers = clientScope.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) clientScope.removeProtocolMapper(mapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
-                client.addProtocolMapper(toModel(mapper));
+                clientScope.addProtocolMapper(toModel(mapper));
             }
+            MigrationUtils.updateProtocolMappers(clientScope);
         }
-        if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
-        if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
-
-        if (resourceRep.isStandardFlowEnabled() != null)
-            client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
-        if (resourceRep.isImplicitFlowEnabled() != null)
-            client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
-        if (resourceRep.isDirectAccessGrantsEnabled() != null)
-            client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
-        if (resourceRep.isServiceAccountsEnabled() != null)
-            client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
-
-        if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
-        if (resourceRep.isFrontchannelLogout() != null)
-            client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
 
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
-                client.setAttribute(entry.getKey(), entry.getValue());
+                clientScope.setAttribute(entry.getKey(), entry.getValue());
             }
         }
 
 
-        return client;
+        return clientScope;
     }
 
-    public static void updateClientTemplate(ClientTemplateRepresentation rep, ClientTemplateModel resource) {
+    public static void updateClientScope(ClientScopeRepresentation rep, ClientScopeModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-        if (rep.isFullScopeAllowed() != null) {
-            resource.setFullScopeAllowed(rep.isFullScopeAllowed());
-        }
 
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
-
-        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
-        if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
-        if (rep.isStandardFlowEnabled() != null) resource.setStandardFlowEnabled(rep.isStandardFlowEnabled());
-        if (rep.isImplicitFlowEnabled() != null) resource.setImplicitFlowEnabled(rep.isImplicitFlowEnabled());
-        if (rep.isDirectAccessGrantsEnabled() != null)
-            resource.setDirectAccessGrantsEnabled(rep.isDirectAccessGrantsEnabled());
-        if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
-        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
-        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
 
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
@@ -1456,14 +1458,21 @@ public class RepresentationToModel {
                 throw new RuntimeException("Unknown client specification in scope mappings: " + scope.getClient());
             }
             return client;
-        } else if (scope.getClientTemplate() != null) {
-            ClientTemplateModel clientTemplate = KeycloakModelUtils.getClientTemplateByName(realm, scope.getClientTemplate());
+        } else if (scope.getClientScope() != null) {
+            ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, scope.getClientScope());
+            if (clientScope == null) {
+                throw new RuntimeException("Unknown clientScope specification in scope mappings: " + scope.getClientScope());
+            }
+            return clientScope;
+        } else if (scope.getClientTemplate() != null) { // Backwards compatibility
+            String templateName = KeycloakModelUtils.convertClientScopeName(scope.getClientTemplate());
+            ClientScopeModel clientTemplate = KeycloakModelUtils.getClientScopeByName(realm, templateName);
             if (clientTemplate == null) {
-                throw new RuntimeException("Unknown clientTemplate specification in scope mappings: " + scope.getClientTemplate());
+                throw new RuntimeException("Unknown clientScope specification in scope mappings: " + templateName);
             }
             return clientTemplate;
         } else {
-            throw new RuntimeException("Either client or clientTemplate needs to be specified in scope mappings");
+            throw new RuntimeException("Either client or clientScope needs to be specified in scope mappings");
         }
     }
 
@@ -1734,8 +1743,6 @@ public class RepresentationToModel {
         ProtocolMapperModel model = new ProtocolMapperModel();
         model.setId(rep.getId());
         model.setName(rep.getName());
-        model.setConsentRequired(rep.isConsentRequired());
-        model.setConsentText(rep.getConsentText());
         model.setProtocol(rep.getProtocol());
         model.setProtocolMapper(rep.getProtocolMapper());
         model.setConfig(removeEmptyString(rep.getConfig()));
@@ -1762,44 +1769,27 @@ public class RepresentationToModel {
         consentModel.setCreatedDate(consentRep.getCreatedDate());
         consentModel.setLastUpdatedDate(consentRep.getLastUpdatedDate());
 
-        if (consentRep.getGrantedRealmRoles() != null) {
-            for (String roleName : consentRep.getGrantedRealmRoles()) {
-                RoleModel role = newRealm.getRole(roleName);
-                if (role == null) {
-                    throw new RuntimeException("Unable to find realm role referenced in consent mappings of user. Role name: " + roleName);
+        if (consentRep.getGrantedClientScopes() != null) {
+            for (String scopeName : consentRep.getGrantedClientScopes()) {
+                ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
+                if (clientScope == null) {
+                    throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
                 }
-                consentModel.addGrantedRole(role);
+                consentModel.addGrantedClientScope(clientScope);
             }
         }
-        if (consentRep.getGrantedClientRoles() != null) {
-            for (Map.Entry<String, List<String>> entry : consentRep.getGrantedClientRoles().entrySet()) {
-                String clientId2 = entry.getKey();
-                ClientModel client2 = newRealm.getClientByClientId(clientId2);
-                if (client2 == null) {
-                    throw new RuntimeException("Unable to find client referenced in consent mappings. Client ID: " + clientId2);
-                }
-                for (String clientRoleName : entry.getValue()) {
-                    RoleModel clientRole = client2.getRole(clientRoleName);
-                    if (clientRole == null) {
-                        throw new RuntimeException("Unable to find client role referenced in consent mappings of user. Role name: " + clientRole + ", Client: " + clientId2);
-                    }
-                    consentModel.addGrantedRole(clientRole);
-                }
-            }
-        }
-        if (consentRep.getGrantedProtocolMappers() != null) {
-            for (Map.Entry<String, List<String>> protocolEntry : consentRep.getGrantedProtocolMappers().entrySet()) {
-                String protocol = protocolEntry.getKey();
-                for (String protocolMapperName : protocolEntry.getValue()) {
-                    ProtocolMapperModel protocolMapper = client.getProtocolMapperByName(protocol, protocolMapperName);
-                    if (protocolMapper == null) {
-                        throw new RuntimeException("Unable to find protocol mapper for protocol " + protocol + ", mapper name " + protocolMapperName);
-                    }
 
-                    consentModel.addGrantedProtocolMapper(protocolMapper);
+        // Backwards compatibility. If user had consent for "offline_access" role, we treat it as he has consent for "offline_access" client scope
+        if (consentRep.getGrantedRealmRoles() != null) {
+            if (consentRep.getGrantedRealmRoles().contains(OAuth2Constants.OFFLINE_ACCESS)) {
+                ClientScopeModel offlineScope = client.getClientScopes(false, true).get(OAuth2Constants.OFFLINE_ACCESS);
+                if (offlineScope == null) {
+                    logger.warn("Unable to find offline_access scope referenced in grantedRoles of user");
                 }
+                consentModel.addGrantedClientScope(offlineScope);
             }
         }
+
         return consentModel;
     }
 

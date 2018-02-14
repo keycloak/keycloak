@@ -18,11 +18,12 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -32,52 +33,65 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientTemplatesClientRegistrationPolicyFactory extends AbstractClientRegistrationPolicyFactory {
+public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientRegistrationPolicyFactory {
 
     private List<ProviderConfigProperty> configProperties;
 
+    // Keeping the name for backwards compatibility
     public static final String PROVIDER_ID = "allowed-client-templates";
 
-    public static final String ALLOWED_CLIENT_TEMPLATES = "allowed-client-templates";
+    public static final String ALLOWED_CLIENT_SCOPES = "allowed-client-scopes";
+
+    public static final String ALLOW_DEFAULT_SCOPES = "allow-default-scopes";
 
     @Override
     public ClientRegistrationPolicy create(KeycloakSession session, ComponentModel model) {
-        return new ClientTemplatesClientRegistrationPolicy(session, model);
+        return new ClientScopesClientRegistrationPolicy(session, model);
     }
 
     @Override
     public String getHelpText() {
-        return "When present, it allows to specify whitelist of client templates, which will be allowed in representation of registered (or updated) client";
+        return "When present, it allows to specify whitelist of client scopes, which will be allowed in representation of registered (or updated) client";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties(KeycloakSession session) {
+        List<ProviderConfigProperty> configProps = new LinkedList<>();
+
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
-        property.setName(ALLOWED_CLIENT_TEMPLATES);
-        property.setLabel("allowed-client-templates.label");
-        property.setHelpText("allowed-client-templates.tooltip");
+        property.setName(ALLOWED_CLIENT_SCOPES);
+        property.setLabel("allowed-client-scopes.label");
+        property.setHelpText("allowed-client-scopes.tooltip");
         property.setType(ProviderConfigProperty.MULTIVALUED_LIST_TYPE);
 
         if (session != null) {
-            property.setOptions(getClientTemplates(session));
+            property.setOptions(getClientScopes(session));
         }
+        configProps.add(property);
 
-        configProperties = Collections.singletonList(property);
+        property = new ProviderConfigProperty();
+        property.setName(ALLOW_DEFAULT_SCOPES);
+        property.setLabel("allow-default-scopes.label");
+        property.setHelpText("allow-default-scopes.tooltip");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(true);
+        configProps.add(property);
 
+        configProperties = configProps;
         return configProperties;
     }
 
-    private List<String> getClientTemplates(KeycloakSession session) {
+    private List<String> getClientScopes(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) {
             return Collections.emptyList();
         } else {
-            List<ClientTemplateModel> clientTemplates = realm.getClientTemplates();
+            List<ClientScopeModel> clientScopes = realm.getClientScopes();
 
-            return clientTemplates.stream().map((ClientTemplateModel clientTemplate) -> {
+            return clientScopes.stream().map((ClientScopeModel clientScope) -> {
 
-                return clientTemplate.getName();
+                return clientScope.getName();
 
             }).collect(Collectors.toList());
         }

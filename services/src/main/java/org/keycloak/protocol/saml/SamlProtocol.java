@@ -34,6 +34,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -353,8 +354,8 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
-        ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
+    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String requestID = clientSession.getNote(SAML_REQUEST_ID);
@@ -386,7 +387,7 @@ public class SamlProtocol implements LoginProtocol {
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
         ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
 
-        Set<ProtocolMapperModel> mappings = accessCode.getRequestedProtocolMappers();
+        Set<ProtocolMapperModel> mappings = clientSessionCtx.getProtocolMappers();
         for (ProtocolMapperModel mapping : mappings) {
 
             ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
@@ -416,7 +417,7 @@ public class SamlProtocol implements LoginProtocol {
 
             ResponseType samlModel = builder.buildModel();
             final AttributeStatementType attributeStatement = populateAttributeStatements(attributeStatementMappers, session, userSession, clientSession);
-            populateRoles(roleListMapper, session, userSession, clientSession, attributeStatement);
+            populateRoles(roleListMapper, session, userSession, clientSessionCtx, attributeStatement);
 
             // SAML Spec 2.7.3 AttributeStatement must contain one or more Attribute or EncryptedAttribute
             if (attributeStatement.getAttributes().size() > 0) {
@@ -501,11 +502,11 @@ public class SamlProtocol implements LoginProtocol {
         return response;
     }
 
-    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession,
-                              final AttributeStatementType existingAttributeStatement) {
+    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, KeycloakSession session, UserSessionModel userSession,
+                              ClientSessionContext clientSessionCtx, final AttributeStatementType existingAttributeStatement) {
         if (roleListMapper == null)
             return;
-        roleListMapper.mapper.mapRoles(existingAttributeStatement, roleListMapper.model, session, userSession, clientSession);
+        roleListMapper.mapper.mapRoles(existingAttributeStatement, roleListMapper.model, session, userSession, clientSessionCtx);
     }
 
     public static String getLogoutServiceUrl(UriInfo uriInfo, ClientModel client, String bindingType) {

@@ -115,11 +115,11 @@ module.factory('ClientProtocolMapperLoader', function(Loader, ClientProtocolMapp
     });
 });
 
-module.factory('ClientTemplateProtocolMapperLoader', function(Loader, ClientTemplateProtocolMapper, $route, $q) {
-    return Loader.get(ClientTemplateProtocolMapper, function() {
+module.factory('ClientScopeProtocolMapperLoader', function(Loader, ClientScopeProtocolMapper, $route, $q) {
+    return Loader.get(ClientScopeProtocolMapper, function() {
         return {
             realm : $route.current.params.realm,
-            template : $route.current.params.template,
+            clientScope : $route.current.params.clientScope,
             id: $route.current.params.id
         }
     });
@@ -286,8 +286,17 @@ module.factory('ClientOfflineSessionCountLoader', function(Loader, ClientOffline
     });
 });
 
-module.factory('ClientClaimsLoader', function(Loader, ClientClaims, $route, $q) {
-    return Loader.get(ClientClaims, function() {
+module.factory('ClientDefaultClientScopesLoader', function(Loader, ClientDefaultClientScopes, $route, $q) {
+    return Loader.query(ClientDefaultClientScopes, function() {
+        return {
+            realm : $route.current.params.realm,
+            client : $route.current.params.client
+        }
+    });
+});
+
+module.factory('ClientOptionalClientScopesLoader', function(Loader, ClientOptionalClientScopes, $route, $q) {
+    return Loader.query(ClientOptionalClientScopes, function() {
         return {
             realm : $route.current.params.realm,
             client : $route.current.params.client
@@ -323,17 +332,33 @@ module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
     });
 });
 
-module.factory('ClientTemplateLoader', function(Loader, ClientTemplate, $route, $q) {
-    return Loader.get(ClientTemplate, function() {
+module.factory('ClientScopeLoader', function(Loader, ClientScope, $route, $q) {
+    return Loader.get(ClientScope, function() {
         return {
             realm : $route.current.params.realm,
-            template : $route.current.params.template
+            clientScope : $route.current.params.clientScope
         }
     });
 });
 
-module.factory('ClientTemplateListLoader', function(Loader, ClientTemplate, $route, $q) {
-    return Loader.query(ClientTemplate, function() {
+module.factory('ClientScopeListLoader', function(Loader, ClientScope, $route, $q) {
+    return Loader.query(ClientScope, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('RealmDefaultClientScopesLoader', function(Loader, RealmDefaultClientScopes, $route, $q) {
+    return Loader.query(RealmDefaultClientScopes, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('RealmOptionalClientScopesLoader', function(Loader, RealmOptionalClientScopes, $route, $q) {
+    return Loader.query(RealmOptionalClientScopes, function() {
         return {
             realm : $route.current.params.realm
         }

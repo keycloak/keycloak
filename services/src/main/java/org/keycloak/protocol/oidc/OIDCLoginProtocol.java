@@ -28,6 +28,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -175,7 +176,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public Response authenticated(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        AuthenticatedClientSessionModel clientSession= clientSessionCtx.getClientSession();
         ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
 
         String responseTypeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
@@ -204,7 +206,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
             TokenManager tokenManager = new TokenManager();
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
                     .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {

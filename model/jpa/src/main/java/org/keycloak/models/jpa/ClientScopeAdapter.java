@@ -17,17 +17,17 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ClientTemplateEntity;
+import org.keycloak.models.jpa.entities.ClientScopeEntity;
+import org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.TemplateScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -42,21 +42,21 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<ClientTemplateEntity> {
+public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScopeEntity> {
 
     protected KeycloakSession session;
     protected RealmModel realm;
     protected EntityManager em;
-    protected ClientTemplateEntity entity;
+    protected ClientScopeEntity entity;
 
-    public ClientTemplateAdapter(RealmModel realm, EntityManager em, KeycloakSession session, ClientTemplateEntity entity) {
+    public ClientScopeAdapter(RealmModel realm, EntityManager em, KeycloakSession session, ClientScopeEntity entity) {
         this.session = session;
         this.realm = realm;
         this.em = em;
         this.entity = entity;
     }
 
-    public ClientTemplateEntity getEntity() {
+    public ClientScopeEntity getEntity() {
         return entity;
     }
 
@@ -77,6 +77,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
 
     @Override
     public void setName(String name) {
+        name = KeycloakModelUtils.convertClientScopeName(name);
         entity.setName(name);
     }
 
@@ -106,8 +107,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
             mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
             mapping.setProtocolMapper(entity.getProtocolMapper());
-            mapping.setConsentRequired(entity.isConsentRequired());
-            mapping.setConsentText(entity.getConsentText());
             Map<String, String> config = new HashMap<String, String>();
             if (entity.getConfig() != null) {
                 config.putAll(entity.getConfig());
@@ -129,10 +128,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         entity.setName(model.getName());
         entity.setProtocol(model.getProtocol());
         entity.setProtocolMapper(model.getProtocolMapper());
-        entity.setClientTemplate(this.entity);
+        entity.setClientScope(this.entity);
         entity.setConfig(model.getConfig());
-        entity.setConsentRequired(model.isConsentRequired());
-        entity.setConsentText(model.getConsentText());
 
         em.persist(entity);
         this.entity.getProtocolMappers().add(entity);
@@ -175,8 +172,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
         entity.setProtocolMapper(mapping.getProtocolMapper());
-        entity.setConsentRequired(mapping.isConsentRequired());
-        entity.setConsentText(mapping.getConsentText());
         if (entity.getConfig() == null) {
             entity.setConfig(mapping.getConfig());
         } else {
@@ -207,22 +202,10 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         mapping.setName(entity.getName());
         mapping.setProtocol(entity.getProtocol());
         mapping.setProtocolMapper(entity.getProtocolMapper());
-        mapping.setConsentRequired(entity.isConsentRequired());
-        mapping.setConsentText(entity.getConsentText());
         Map<String, String> config = new HashMap<String, String>();
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
-    }
-
-    @Override
-    public boolean isFullScopeAllowed() {
-        return entity.isFullScopeAllowed();
-    }
-
-    @Override
-    public void setFullScopeAllowed(boolean value) {
-        entity.setFullScopeAllowed(value);
     }
 
     @Override
@@ -233,7 +216,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(realm.getId())) {
+                if (container.getId().equals(realm.getId())) {
                     appRoles.add(role);
                 }
             }
@@ -244,8 +227,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
 
     @Override
     public Set<RoleModel> getScopeMappings() {
-        TypedQuery<String> query = em.createNamedQuery("clientTemplateScopeMappingIds", String.class);
-        query.setParameter("template", getEntity());
+        TypedQuery<String> query = em.createNamedQuery("clientScopeRoleMappingIds", String.class);
+        query.setParameter("clientScope", getEntity());
         List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String roleId : ids) {
@@ -259,8 +242,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
     @Override
     public void addScopeMapping(RoleModel role) {
         if (hasScope(role)) return;
-        TemplateScopeMappingEntity entity = new TemplateScopeMappingEntity();
-        entity.setTemplate(getEntity());
+        ClientScopeRoleMappingEntity entity = new ClientScopeRoleMappingEntity();
+        entity.setClientScope(getEntity());
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         entity.setRole(roleEntity);
         em.persist(entity);
@@ -270,17 +253,17 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        TypedQuery<TemplateScopeMappingEntity> query = getRealmScopeMappingQuery(role);
-        List<TemplateScopeMappingEntity> results = query.getResultList();
+        TypedQuery<ClientScopeRoleMappingEntity> query = getRealmScopeMappingQuery(role);
+        List<ClientScopeRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
-        for (TemplateScopeMappingEntity entity : results) {
+        for (ClientScopeRoleMappingEntity entity : results) {
             em.remove(entity);
         }
     }
 
-    protected TypedQuery<TemplateScopeMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
-        TypedQuery<TemplateScopeMappingEntity> query = em.createNamedQuery("templateHasScope", TemplateScopeMappingEntity.class);
-        query.setParameter("template", getEntity());
+    protected TypedQuery<ClientScopeRoleMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
+        TypedQuery<ClientScopeRoleMappingEntity> query = em.createNamedQuery("clientScopeHasRole", ClientScopeRoleMappingEntity.class);
+        query.setParameter("clientScope", getEntity());
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         query.setParameter("role", roleEntity);
         return query;
@@ -288,7 +271,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
 
     @Override
     public boolean hasScope(RoleModel role) {
-        if (isFullScopeAllowed()) return true;
         Set<RoleModel> roles = getScopeMappings();
         if (roles.contains(role)) return true;
 
@@ -296,26 +278,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
             if (mapping.hasRole(role)) return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean isPublicClient() {
-        return entity.isPublicClient();
-    }
-
-    @Override
-    public void setPublicClient(boolean flag) {
-        entity.setPublicClient(flag);
-    }
-
-    @Override
-    public boolean isFrontchannelLogout() {
-        return entity.isFrontchannelLogout();
-    }
-
-    @Override
-    public void setFrontchannelLogout(boolean flag) {
-        entity.setFrontchannelLogout(flag);
     }
 
     @Override
@@ -334,6 +296,13 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         return entity.getAttributes().get(name);
     }
 
+    public static ClientScopeEntity toClientScopeEntity(ClientScopeModel model, EntityManager em) {
+        if (model instanceof ClientScopeAdapter) {
+            return ((ClientScopeAdapter)model).getEntity();
+        }
+        return em.getReference(ClientScopeEntity.class, model.getId());
+    }
+
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> copy = new HashMap<>();
@@ -341,74 +310,13 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         return copy;
     }
 
-    @Override
-    public boolean isBearerOnly() {
-        return entity.isBearerOnly();
-    }
-
-    @Override
-    public void setBearerOnly(boolean only) {
-        entity.setBearerOnly(only);
-    }
-
-    @Override
-    public boolean isConsentRequired() {
-        return entity.isConsentRequired();
-    }
-
-    @Override
-    public void setConsentRequired(boolean consentRequired) {
-        entity.setConsentRequired(consentRequired);
-    }
-
-    @Override
-    public boolean isStandardFlowEnabled() {
-        return entity.isStandardFlowEnabled();
-    }
-
-    @Override
-    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
-        entity.setStandardFlowEnabled(standardFlowEnabled);
-    }
-
-    @Override
-    public boolean isImplicitFlowEnabled() {
-        return entity.isImplicitFlowEnabled();
-    }
-
-    @Override
-    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
-        entity.setImplicitFlowEnabled(implicitFlowEnabled);
-    }
-
-    @Override
-    public boolean isDirectAccessGrantsEnabled() {
-        return entity.isDirectAccessGrantsEnabled();
-    }
-
-    @Override
-    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
-        entity.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
-    }
-
-    @Override
-    public boolean isServiceAccountsEnabled() {
-        return entity.isServiceAccountsEnabled();
-    }
-
-    @Override
-    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
-        entity.setServiceAccountsEnabled(serviceAccountsEnabled);
-    }
-
-
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientTemplateModel)) return false;
+        if (o == null || !(o instanceof ClientScopeModel)) return false;
 
-        ClientTemplateModel that = (ClientTemplateModel) o;
+        ClientScopeModel that = (ClientScopeModel) o;
         return that.getId().equals(getId());
     }
 

@@ -91,14 +91,11 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
     public static ProtocolMapperModel create(String name,
                                       String hardcodedName,
                                       String hardcodedValue, String claimType,
-                                      boolean consentRequired, String consentText,
                                       boolean accessToken, boolean idToken) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(consentRequired);
-        mapper.setConsentText(consentText);
         Map<String, String> config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, hardcodedName);
         config.put(CLAIM_VALUE, hardcodedValue);

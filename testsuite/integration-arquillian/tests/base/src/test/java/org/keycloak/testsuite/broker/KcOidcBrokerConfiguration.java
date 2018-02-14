@@ -65,7 +65,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         emailMapper.setName("email");
         emailMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         emailMapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
-        emailMapper.setConsentRequired(false);
 
         Map<String, String> emailMapperConfig = emailMapper.getConfig();
         emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
@@ -79,7 +78,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         userAttrMapper.setName("attribute - name");
         userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        userAttrMapper.setConsentRequired(false);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
         userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);

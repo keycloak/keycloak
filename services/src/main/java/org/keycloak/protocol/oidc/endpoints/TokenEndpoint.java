@@ -49,6 +49,8 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -81,6 +83,7 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -399,9 +402,20 @@ public class TokenEndpoint {
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
-        AccessToken token = tokenManager.createClientAccessToken(session, parseResult.getCode().getRequestedRoles(), realm, client, user, userSession, clientSession);
+        // Compute client scopes again from scope parameter. Check if user still has them granted
+        // (but in code-to-token request, it could just theoretically happen that they are not available)
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopes)) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        }
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes);
+
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .accessToken(token)
                 .generateRefreshToken();
 
@@ -418,7 +432,6 @@ public class TokenEndpoint {
             }
         }
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -544,17 +557,17 @@ public class TokenEndpoint {
 
         }
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
 
-        AuthenticatedClientSessionModel clientSession = processor.attachSession();
+        ClientSessionContext clientSessionCtx = processor.attachSession();
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -613,8 +626,8 @@ public class TokenEndpoint {
                 clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
-        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
@@ -623,11 +636,11 @@ public class TokenEndpoint {
 
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -830,12 +843,12 @@ public class TokenEndpoint {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
-        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
         updateUserSessionFromClientAuth(targetUserSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
@@ -844,7 +857,7 @@ public class TokenEndpoint {
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }

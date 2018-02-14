@@ -61,6 +61,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -80,6 +81,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.services.util.DefaultClientSessionContext;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -224,7 +226,10 @@ public class AuthorizationTokenService {
         UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(getRealm(), accessToken.getSessionState());
         ClientModel client = getRealm().getClientByClientId(accessToken.getIssuedFor());
         AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
-        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(getRealm(), clientSession.getClient(), event, keycloakSession, userSessionModel, clientSession)
+
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(getRealm(), clientSession.getClient(), event, keycloakSession, userSessionModel, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 

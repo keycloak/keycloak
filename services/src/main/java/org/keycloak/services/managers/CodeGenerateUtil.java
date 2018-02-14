@@ -93,6 +93,8 @@ class CodeGenerateUtil {
         int getTimestamp(CS clientSession);
         void setTimestamp(CS clientSession, int timestamp);
 
+        String getClientNote(CS clientSession, String noteKey);
+
     }
 
 
@@ -155,6 +157,11 @@ class CodeGenerateUtil {
         @Override
         public void setTimestamp(AuthenticationSessionModel clientSession, int timestamp) {
             clientSession.getParentSession().setTimestamp(timestamp);
+        }
+
+        @Override
+        public String getClientNote(AuthenticationSessionModel clientSession, String noteKey) {
+            return clientSession.getClientNote(noteKey);
         }
     }
 
@@ -265,6 +272,11 @@ class CodeGenerateUtil {
         @Override
         public void setTimestamp(AuthenticatedClientSessionModel clientSession, int timestamp) {
             clientSession.setTimestamp(timestamp);
+        }
+
+        @Override
+        public String getClientNote(AuthenticatedClientSessionModel clientSession, String noteKey) {
+            return clientSession.getNote(noteKey);
         }
     }
 

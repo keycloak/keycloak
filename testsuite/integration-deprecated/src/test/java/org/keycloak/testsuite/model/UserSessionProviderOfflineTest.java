@@ -31,7 +31,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -189,7 +188,7 @@ public class UserSessionProviderOfflineTest {
         session.users().addUser(fooRealm, "user3");
 
         UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
-        AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
 
         resetSession();
 
@@ -238,8 +237,8 @@ public class UserSessionProviderOfflineTest {
         session.users().addUser(fooRealm, "user3");
 
         UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
-        createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
-        createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
+        createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state");
 
         resetSession();
 
@@ -299,7 +298,7 @@ public class UserSessionProviderOfflineTest {
         session.users().addUser(fooRealm, "user3");
 
         UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
-        AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
 
         resetSession();
 
@@ -414,12 +413,10 @@ public class UserSessionProviderOfflineTest {
         persister = session.getProvider(UserSessionPersisterProvider.class);
     }
 
-    private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
+    private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state) {
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(client.getRealm(), client, userSession);
         clientSession.setRedirectUri(redirect);
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
-        if (roles != null) clientSession.setRoles(roles);
-        if (protocolMappers != null) clientSession.setProtocolMappers(protocolMappers);
         return clientSession;
     }
 
@@ -435,14 +432,14 @@ public class UserSessionProviderOfflineTest {
         protocolMappers.add("mapper-one");
         protocolMappers.add("mapper-two");
 
-        createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles, protocolMappers);
-        createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
+        createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
         sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-        createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
         sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
-        createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         return sessions;
     }

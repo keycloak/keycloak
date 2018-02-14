@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -48,8 +48,8 @@ public class TestCacheUtils {
             cacheGroupRecursive(realm, group);
         }
 
-        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-            realm.getClientTemplateById(clientTemplate.getId());
+        for (ClientScopeModel clientTemplate : realm.getClientScopes()) {
+            realm.getClientScopeById(clientTemplate.getId());
         }
 
         for (UserModel user : session.users().getUsers(realm)) {

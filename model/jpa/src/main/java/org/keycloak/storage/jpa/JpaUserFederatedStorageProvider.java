@@ -22,6 +22,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,7 +33,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -41,9 +41,8 @@ import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.jpa.entity.BrokerLinkEntity;
 import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity;
+import org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentEntity;
-import org.keycloak.storage.jpa.entity.FederatedUserConsentProtocolMapperEntity;
-import org.keycloak.storage.jpa.entity.FederatedUserConsentRoleEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialAttributeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
@@ -361,21 +360,13 @@ public class JpaUserFederatedStorageProvider implements
         model.setCreatedDate(entity.getCreatedDate());
         model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
-        Collection<FederatedUserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
-        if (grantedRoleEntities != null) {
-            for (FederatedUserConsentRoleEntity grantedRole : grantedRoleEntities) {
-                RoleModel grantedRoleModel = realm.getRoleById(grantedRole.getRoleId());
-                if (grantedRoleModel != null) {
-                    model.addGrantedRole(grantedRoleModel);
+        Collection<FederatedUserConsentClientScopeEntity> grantedClientScopeEntities = entity.getGrantedClientScopes();
+        if (grantedClientScopeEntities != null) {
+            for (FederatedUserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
+                ClientScopeModel grantedClientScopeModel = realm.getClientScopeById(grantedClientScope.getScopeId());
+                if (grantedClientScopeModel != null) {
+                    model.addGrantedClientScope(grantedClientScopeModel);
                 }
-            }
-        }
-
-        Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
-        if (grantedProtocolMapperEntities != null) {
-            for (FederatedUserConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
-                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
-                model.addGrantedProtocolMapper(protocolMapper);
             }
         }
 
@@ -384,48 +375,26 @@ public class JpaUserFederatedStorageProvider implements
 
     // Update roles and protocolMappers to given consentEntity from the consentModel
     private void updateGrantedConsentEntity(FederatedUserConsentEntity consentEntity, UserConsentModel consentModel) {
-        Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMapperEntities = consentEntity.getGrantedProtocolMappers();
-        Collection<FederatedUserConsentProtocolMapperEntity> mappersToRemove = new HashSet<>(grantedProtocolMapperEntities);
+        Collection<FederatedUserConsentClientScopeEntity> grantedClientScopeEntities = consentEntity.getGrantedClientScopes();
+        Collection<FederatedUserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
-        for (ProtocolMapperModel protocolMapper : consentModel.getGrantedProtocolMappers()) {
-            FederatedUserConsentProtocolMapperEntity grantedProtocolMapperEntity = new FederatedUserConsentProtocolMapperEntity();
-            grantedProtocolMapperEntity.setUserConsent(consentEntity);
-            grantedProtocolMapperEntity.setProtocolMapperId(protocolMapper.getId());
+        for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
+            FederatedUserConsentClientScopeEntity grantedClientScopeEntity = new FederatedUserConsentClientScopeEntity();
+            grantedClientScopeEntity.setUserConsent(consentEntity);
+            grantedClientScopeEntity.setScopeId(clientScope.getId());
 
             // Check if it's already there
-            if (!grantedProtocolMapperEntities.contains(grantedProtocolMapperEntity)) {
-                em.persist(grantedProtocolMapperEntity);
+            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+                em.persist(grantedClientScopeEntity);
                 em.flush();
-                grantedProtocolMapperEntities.add(grantedProtocolMapperEntity);
+                grantedClientScopeEntities.add(grantedClientScopeEntity);
             } else {
-                mappersToRemove.remove(grantedProtocolMapperEntity);
+                scopesToRemove.remove(grantedClientScopeEntity);
             }
         }
         // Those mappers were no longer on consentModel and will be removed
-        for (FederatedUserConsentProtocolMapperEntity toRemove : mappersToRemove) {
-            grantedProtocolMapperEntities.remove(toRemove);
-            em.remove(toRemove);
-        }
-
-        Collection<FederatedUserConsentRoleEntity> grantedRoleEntities = consentEntity.getGrantedRoles();
-        Set<FederatedUserConsentRoleEntity> rolesToRemove = new HashSet<>(grantedRoleEntities);
-        for (RoleModel role : consentModel.getGrantedRoles()) {
-            FederatedUserConsentRoleEntity consentRoleEntity = new FederatedUserConsentRoleEntity();
-            consentRoleEntity.setUserConsent(consentEntity);
-            consentRoleEntity.setRoleId(role.getId());
-
-            // Check if it's already there
-            if (!grantedRoleEntities.contains(consentRoleEntity)) {
-                em.persist(consentRoleEntity);
-                em.flush();
-                grantedRoleEntities.add(consentRoleEntity);
-            } else {
-                rolesToRemove.remove(consentRoleEntity);
-            }
-        }
-        // Those roles were no longer on consentModel and will be removed
-        for (FederatedUserConsentRoleEntity toRemove : rolesToRemove) {
-            grantedRoleEntities.remove(toRemove);
+        for (FederatedUserConsentClientScopeEntity toRemove : scopesToRemove) {
+            grantedClientScopeEntities.remove(toRemove);
             em.remove(toRemove);
         }
 
@@ -804,9 +773,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(RealmModel realm) {
-        int num = em.createNamedQuery("deleteFederatedUserConsentRolesByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteFederatedUserConsentProtMappersByRealm")
+        int num = em.createNamedQuery("deleteFederatedUserConsentClientScopesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUserConsentsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -831,7 +798,6 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         em.createNamedQuery("deleteFederatedUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
-        em.createNamedQuery("deleteFederatedUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 
     @Override
@@ -843,15 +809,10 @@ public class JpaUserFederatedStorageProvider implements
     public void preRemove(RealmModel realm, ClientModel client) {
         StorageId clientStorageId = new StorageId(client.getId());
         if (clientStorageId.isLocal()) {
-            em.createNamedQuery("deleteFederatedUserConsentProtMappersByClient").setParameter("clientId", client.getId()).executeUpdate();
-            em.createNamedQuery("deleteFederatedUserConsentRolesByClient").setParameter("clientId", client.getId()).executeUpdate();
+            em.createNamedQuery("deleteFederatedUserConsentClientScopesByClient").setParameter("clientId", client.getId()).executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByClient").setParameter("clientId", client.getId()).executeUpdate();
         } else {
-            em.createNamedQuery("deleteFederatedUserConsentProtMappersByExternalClient")
-                    .setParameter("clientStorageProvider", clientStorageId.getProviderId())
-                    .setParameter("externalClientId",clientStorageId.getExternalId())
-                    .executeUpdate();
-            em.createNamedQuery("deleteFederatedUserConsentRolesByExternalClient")
+            em.createNamedQuery("deleteFederatedUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
                     .setParameter("externalClientId",clientStorageId.getExternalId())
                     .executeUpdate();
@@ -865,8 +826,13 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
-        em.createNamedQuery("deleteFederatedUserConsentProtMappersByProtocolMapper")
-                .setParameter("protocolMapperId", protocolMapper.getId())
+        // No op
+    }
+
+    @Override
+    public void preRemove(ClientScopeModel clientScope) {
+        em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientScope")
+                .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
     }
 
@@ -880,11 +846,7 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
-        em.createNamedQuery("deleteFederatedUserConsentProtMappersByUser")
-                .setParameter("userId", user.getId())
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
-        em.createNamedQuery("deleteFederatedUserConsentRolesByUser")
+        em.createNamedQuery("deleteFederatedUserConsentClientScopesByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
@@ -929,10 +891,7 @@ public class JpaUserFederatedStorageProvider implements
             em.createNamedQuery("deleteFederatedAttributesByStorageProvider")
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
-            em.createNamedQuery("deleteFederatedUserConsentProtMappersByStorageProvider")
-                    .setParameter("storageProviderId", model.getId())
-                    .executeUpdate();
-            em.createNamedQuery("deleteFederatedUserRoleMappingsByStorageProvider")
+            em.createNamedQuery("deleteFederatedUserConsentClientScopesByStorageProvider")
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByStorageProvider")
@@ -957,10 +916,7 @@ public class JpaUserFederatedStorageProvider implements
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
         } else if (model.getProviderType().equals(ClientStorageProvider.class.getName())) {
-            em.createNamedQuery("deleteFederatedUserConsentProtMappersByClientStorageProvider")
-                    .setParameter("clientStorageProvider", model.getId())
-                    .executeUpdate();
-            em.createNamedQuery("deleteFederatedUserConsentRolesByClientStorageProvider")
+            em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientStorageProvider")
                     .setParameter("clientStorageProvider",  model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByClientStorageProvider")

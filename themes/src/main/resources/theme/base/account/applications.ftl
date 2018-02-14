@@ -15,9 +15,8 @@
             <thead>
               <tr>
                 <td>${msg("application")}</td>
-                <td>${msg("availablePermissions")}</td>
+                <td>${msg("availableRoles")}</td>
                 <td>${msg("grantedPermissions")}</td>
-                <td>${msg("grantedPersonalInfo")}</td>
                 <td>${msg("additionalGrants")}</td>
                 <td>${msg("action")}</td>
               </tr>
@@ -49,26 +48,7 @@
 
                     <td>
                         <#if application.client.consentRequired>
-                            <#list application.realmRolesGranted as role>
-                                <#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if>
-                                <#if role_has_next>, </#if>
-                            </#list>
-                            <#list application.resourceRolesGranted?keys as resource>
-                                <#if application.realmRolesGranted?has_content>, </#if>
-                                <#list application.resourceRolesGranted[resource] as clientRole>
-                                    <#if clientRole.roleDescription??>${advancedMsg(clientRole.roleDescription)}<#else>${advancedMsg(clientRole.roleName)}</#if>
-                                    ${msg("inResource")} <strong><#if clientRole.clientName??>${advancedMsg(clientRole.clientName)}<#else>${clientRole.clientId}</#if></strong>
-                                    <#if clientRole_has_next>, </#if>
-                                </#list>
-                            </#list>
-                        <#else>
-                            <strong>${msg("fullAccess")}</strong>
-                        </#if>
-                    </td>
-
-                    <td>
-                        <#if application.client.consentRequired>
-                            <#list application.claimsGranted as claim>
+                            <#list application.clientScopesGranted as claim>
                                 ${advancedMsg(claim)}<#if claim_has_next>, </#if>
                             </#list>
                         <#else>
@@ -83,7 +63,7 @@
                     </td>
 
                     <td>
-                        <#if (application.client.consentRequired && application.claimsGranted?has_content) || application.additionalGrants?has_content>
+                        <#if (application.client.consentRequired && application.clientScopesGranted?has_content) || application.additionalGrants?has_content>
                             <button type='submit' class='${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!}' id='revoke-${application.client.clientId}' name='clientId' value="${application.client.id}">${msg("revoke")}</button>
                         </#if>
                     </td>

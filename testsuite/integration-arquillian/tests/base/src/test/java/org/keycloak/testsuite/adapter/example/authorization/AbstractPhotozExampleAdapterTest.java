@@ -363,8 +363,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         RoleResource roleResource = resourceServerClient.roles().get("manage-albums");
         RoleRepresentation roleRepresentation = roleResource.toRepresentation();
 
-        roleRepresentation.setScopeParamRequired(true);
-
         roleResource.update(roleRepresentation);
 
         loginToClientPage("alice", "alice");
@@ -396,8 +394,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
         RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");
         RoleRepresentation roleRepresentation = manageAlbumRole.toRepresentation();
-
-        roleRepresentation.setScopeParamRequired(true);
 
         manageAlbumRole.update(roleRepresentation);
 

@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.apache.directory.api.ldap.aci.UserPermission;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
@@ -26,8 +25,9 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.client.admin.cli.util.ConfigUtil;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.models.GroupModel;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -48,6 +48,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -109,7 +110,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel realmRole = realm.addRole("realm-role");
         RoleModel realmRole2 = realm.addRole("realm-role2");
         ClientModel client1 = realm.addClient(CLIENT_NAME);
-        ClientTemplateModel template = realm.addClientTemplate("template");
+        realm.addClientScope("scope");
         client1.setFullScopeAllowed(false);
         RoleModel client1Role = client1.addRole("client-role");
         GroupModel group = realm.createGroup("top");
@@ -413,7 +414,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole2);
         ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(CLIENT_NAME).get(0);
-        ClientTemplateRepresentation template = adminClient.realm(TEST).clientTemplates().findAll().get(0);
+        ClientScopeRepresentation scope = adminClient.realm(TEST).clientScopes().findAll().get(0);
         RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);
@@ -435,16 +436,13 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             client.setFullScopeAllowed(false);
             realmClient.realm(TEST).clients().get(client.getId()).update(client);
 
-            client.setClientTemplate(template.getName());
             try {
-                realmClient.realm(TEST).clients().get(client.getId()).update(client);
+                realmClient.realm(TEST).clients().get(client.getId()).addDefaultClientScope(scope.getId());
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
                 Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
-            client.setClientTemplate(null);
-            realmClient.realm(TEST).clients().get(client.getId()).update(client);
 
             try {
                 realmClient.realm(TEST).clients().get(client.getId()).getScopeMappings().realmLevel().add(realmRoleSet);

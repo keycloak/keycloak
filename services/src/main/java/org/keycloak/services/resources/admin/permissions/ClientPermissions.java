@@ -27,7 +27,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
@@ -486,24 +486,24 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public boolean canManage(ClientTemplateModel template) {
+    public boolean canManage(ClientScopeModel template) {
         return canManageClientsDefault();
     }
 
     @Override
-    public void requireManage(ClientTemplateModel template) {
+    public void requireManage(ClientScopeModel template) {
         if (!canManage(template)) {
             throw new ForbiddenException();
         }
     }
 
     @Override
-    public boolean canView(ClientTemplateModel template) {
+    public boolean canView(ClientScopeModel template) {
         return canViewClientDefault();
     }
 
     @Override
-    public void requireView(ClientTemplateModel template) {
+    public void requireView(ClientScopeModel template) {
         if (!canView(template)) {
             throw new ForbiddenException();
         }

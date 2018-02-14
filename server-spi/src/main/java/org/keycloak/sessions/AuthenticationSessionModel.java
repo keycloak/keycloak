@@ -129,4 +129,14 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
      */
     void clearClientNotes();
 
+    /**
+     * Get client scope IDs
+     */
+    Set<String> getClientScopes();
+
+    /**
+     * Set client scope IDs
+     */
+    void setClientScopes(Set<String> clientScopes);
+
 }

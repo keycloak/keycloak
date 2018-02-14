@@ -87,11 +87,9 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean consentRequired, String consentText,
                                                         boolean accessToken, boolean idToken) {
         return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
-                consentRequired, consentText,
                 accessToken, idToken,
                 PROVIDER_ID);
     }

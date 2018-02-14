@@ -32,7 +32,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -190,9 +190,9 @@ public class ClusterInvalidationTest {
         assertInvalidations(listener1realms.getInvalidationsAndClear(), 1, 1, "test.top.groups");
         assertInvalidations(listener2realms.getInvalidationsAndClear(), 1, 1, "test.top.groups");
 
-        logger.info("CREATE CLIENT TEMPLATE");
+        logger.info("CREATE CLIENT SCOPE");
         realm = session1.realms().getRealmByName(REALM_NAME);
-        realm.addClientTemplate("foo-template");
+        realm.addClientScope("foo-scope");
         session1 = commit(server1, session1, true);
 
         assertInvalidations(listener1realms.getInvalidationsAndClear(), 2, 3, realm.getId());
@@ -229,21 +229,21 @@ public class ClusterInvalidationTest {
         assertInvalidations(listener1realms.getInvalidationsAndClear(), 2, 3, testApp.getId());
         assertInvalidations(listener2realms.getInvalidationsAndClear(), 2, 3, testApp.getId());
 
-        // Cache client template on server2
+        // Cache client scope on server2
         KeycloakSession session2 = server2.startSession();
         realm = session2.realms().getRealmByName(REALM_NAME);
-        realm.getClientTemplates().get(0);
+        realm.getClientScopes().get(0);
 
 
-        logger.info("UPDATE CLIENT TEMPLATE");
+        logger.info("UPDATE CLIENT SCOPE");
         realm = session1.realms().getRealmByName(REALM_NAME);
-        ClientTemplateModel clientTemplate = realm.getClientTemplates().get(0);
-        clientTemplate.setDescription("bar");
+        ClientScopeModel clientScope = realm.getClientScopes().get(0);
+        clientScope.setDescription("bar");
 
         session1 = commit(server1, session1, true);
 
-        assertInvalidations(listener1realms.getInvalidationsAndClear(), 1, 1, clientTemplate.getId());
-        assertInvalidations(listener2realms.getInvalidationsAndClear(), 1, 1, clientTemplate.getId());
+        assertInvalidations(listener1realms.getInvalidationsAndClear(), 1, 1, clientScope.getId());
+        assertInvalidations(listener2realms.getInvalidationsAndClear(), 1, 1, clientScope.getId());
 
         // Nothing yet invalidated in user cache
         assertInvalidations(listener1users.getInvalidationsAndClear(), 0, 0);
@@ -283,13 +283,13 @@ public class ClusterInvalidationTest {
 
         cacheEverything();
 
-        logger.info("REMOVE CLIENT TEMPLATE");
+        logger.info("REMOVE CLIENT SCOPE");
         realm = session1.realms().getRealmByName(REALM_NAME);
-        realm.removeClientTemplate(clientTemplate.getId());
+        realm.removeClientScope(clientScope.getId());
         session1 = commit(server1, session1, true);
 
-        assertInvalidations(listener1realms.getInvalidationsAndClear(), 2, 5, realm.getId(), clientTemplate.getId());
-        assertInvalidations(listener2realms.getInvalidationsAndClear(), 2, 5, realm.getId(), clientTemplate.getId());
+        assertInvalidations(listener1realms.getInvalidationsAndClear(), 2, 5, realm.getId(), clientScope.getId());
+        assertInvalidations(listener2realms.getInvalidationsAndClear(), 2, 5, realm.getId(), clientScope.getId());
 
         cacheEverything();
 

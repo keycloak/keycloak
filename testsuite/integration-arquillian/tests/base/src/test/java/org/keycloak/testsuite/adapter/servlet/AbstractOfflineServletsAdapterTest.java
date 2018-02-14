@@ -166,7 +166,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
         loginPage.login("test-user@localhost", "password");
         oauthGrantPage.assertCurrent();
-        waitUntilElement(By.xpath("//body")).text().contains("Offline access");
+        waitUntilElement(By.xpath("//body")).text().contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT);
 
         oauthGrantPage.accept();
 
@@ -175,7 +175,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
         accountAppPage.open();
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get("offline-client");
-        Assert.assertTrue(offlineClient.getRolesGranted().contains("Offline access"));
+        Assert.assertTrue(offlineClient.getClientScopesGranted().contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
         Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail

@@ -23,7 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,9 +39,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialAttributeEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
-import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
-import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -132,8 +131,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteUserConsentRolesByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteUserConsentProtMappersByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
         em.flush();
         // not sure why i have to do a clear() here.  I was getting some messed up errors that Hibernate couldn't
@@ -297,36 +295,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         model.setCreatedDate(entity.getCreatedDate());
         model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
-        Collection<UserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
-        if (grantedRoleEntities != null) {
-            for (UserConsentRoleEntity grantedRole : grantedRoleEntities) {
-                RoleModel grantedRoleModel = realm.getRoleById(grantedRole.getRoleId());
-                if (grantedRoleModel != null) {
-                    model.addGrantedRole(grantedRoleModel);
-                }
-            }
-        }
-
-        Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
-        if (grantedProtocolMapperEntities != null) {
-
-            ClientTemplateModel clientTemplate = null;
-            if (client.useTemplateMappers()) {
-                clientTemplate = client.getClientTemplate();
-            }
-
-            for (UserConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
-                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
-
-                // Fallback to client template
-                if (protocolMapper == null) {
-                    if (clientTemplate != null) {
-                        protocolMapper = clientTemplate.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
-                    }
-                }
-
-                if (protocolMapper != null) {
-                    model.addGrantedProtocolMapper(protocolMapper);
+        Collection<UserConsentClientScopeEntity> grantedClientScopeEntities = entity.getGrantedClientScopes();
+        if (grantedClientScopeEntities != null) {
+            for (UserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
+                ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, grantedClientScope.getScopeId());
+                if (grantedClientScopeModel != null) {
+                    model.addGrantedClientScope(grantedClientScopeModel);
                 }
             }
         }
@@ -336,48 +310,26 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     // Update roles and protocolMappers to given consentEntity from the consentModel
     private void updateGrantedConsentEntity(UserConsentEntity consentEntity, UserConsentModel consentModel) {
-        Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = consentEntity.getGrantedProtocolMappers();
-        Collection<UserConsentProtocolMapperEntity> mappersToRemove = new HashSet<UserConsentProtocolMapperEntity>(grantedProtocolMapperEntities);
+        Collection<UserConsentClientScopeEntity> grantedClientScopeEntities = consentEntity.getGrantedClientScopes();
+        Collection<UserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
-        for (ProtocolMapperModel protocolMapper : consentModel.getGrantedProtocolMappers()) {
-            UserConsentProtocolMapperEntity grantedProtocolMapperEntity = new UserConsentProtocolMapperEntity();
-            grantedProtocolMapperEntity.setUserConsent(consentEntity);
-            grantedProtocolMapperEntity.setProtocolMapperId(protocolMapper.getId());
-
-            // Check if it's already there
-            if (!grantedProtocolMapperEntities.contains(grantedProtocolMapperEntity)) {
-                em.persist(grantedProtocolMapperEntity);
-                em.flush();
-                grantedProtocolMapperEntities.add(grantedProtocolMapperEntity);
-            } else {
-                mappersToRemove.remove(grantedProtocolMapperEntity);
-            }
-        }
-        // Those mappers were no longer on consentModel and will be removed
-        for (UserConsentProtocolMapperEntity toRemove : mappersToRemove) {
-            grantedProtocolMapperEntities.remove(toRemove);
-            em.remove(toRemove);
-        }
-
-        Collection<UserConsentRoleEntity> grantedRoleEntities = consentEntity.getGrantedRoles();
-        Set<UserConsentRoleEntity> rolesToRemove = new HashSet<UserConsentRoleEntity>(grantedRoleEntities);
-        for (RoleModel role : consentModel.getGrantedRoles()) {
-            UserConsentRoleEntity consentRoleEntity = new UserConsentRoleEntity();
-            consentRoleEntity.setUserConsent(consentEntity);
-            consentRoleEntity.setRoleId(role.getId());
+        for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
+            UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
+            grantedClientScopeEntity.setUserConsent(consentEntity);
+            grantedClientScopeEntity.setScopeId(clientScope.getId());
 
             // Check if it's already there
-            if (!grantedRoleEntities.contains(consentRoleEntity)) {
-                em.persist(consentRoleEntity);
+            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+                em.persist(grantedClientScopeEntity);
                 em.flush();
-                grantedRoleEntities.add(consentRoleEntity);
+                grantedClientScopeEntities.add(grantedClientScopeEntity);
             } else {
-                rolesToRemove.remove(consentRoleEntity);
+                scopesToRemove.remove(grantedClientScopeEntity);
             }
         }
-        // Those roles were no longer on consentModel and will be removed
-        for (UserConsentRoleEntity toRemove : rolesToRemove) {
-            grantedRoleEntities.remove(toRemove);
+        // Those client scopes were no longer on consentModel and will be removed
+        for (UserConsentClientScopeEntity toRemove : scopesToRemove) {
+            grantedClientScopeEntities.remove(toRemove);
             em.remove(toRemove);
         }
 
@@ -409,9 +361,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void preRemove(RealmModel realm) {
-        int num = em.createNamedQuery("deleteUserConsentRolesByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteUserConsentProtMappersByRealm")
+        int num = em.createNamedQuery("deleteUserConsentClientScopesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserConsentsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -463,11 +413,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
-        num = em.createNamedQuery("deleteUserConsentProtMappersByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", storageProviderId)
-                .executeUpdate();
-        num = em.createNamedQuery("deleteUserConsentRolesByRealmAndLink")
+        num = em.createNamedQuery("deleteUserConsentClientScopesByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
@@ -491,7 +437,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        em.createNamedQuery("deleteUserConsentRolesByRole").setParameter("roleId", role.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 
@@ -499,21 +444,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public void preRemove(RealmModel realm, ClientModel client) {
         StorageId clientStorageId = new StorageId(client.getId());
         if (clientStorageId.isLocal()) {
-            em.createNamedQuery("deleteUserConsentProtMappersByClient")
+            int num = em.createNamedQuery("deleteUserConsentClientScopesByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
-            em.createNamedQuery("deleteUserConsentRolesByClient")
-                    .setParameter("clientId", client.getId())
-                    .executeUpdate();
-            em.createNamedQuery("deleteUserConsentsByClient")
+            num = em.createNamedQuery("deleteUserConsentsByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
         } else {
-            em.createNamedQuery("deleteUserConsentProtMappersByExternalClient")
-                    .setParameter("clientStorageProvider", clientStorageId.getProviderId())
-                    .setParameter("externalClientId",clientStorageId.getExternalId())
-                    .executeUpdate();
-            em.createNamedQuery("deleteUserConsentRolesByExternalClient")
+            em.createNamedQuery("deleteUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
                     .setParameter("externalClientId", clientStorageId.getExternalId())
                     .executeUpdate();
@@ -527,8 +465,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
-        em.createNamedQuery("deleteUserConsentProtMappersByProtocolMapper")
-                .setParameter("protocolMapperId", protocolMapper.getId())
+        // No-op
+    }
+
+    @Override
+    public void preRemove(ClientScopeModel clientScope) {
+        em.createNamedQuery("deleteUserConsentClientScopesByClientScope")
+                .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
     }
 
@@ -863,10 +806,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     protected void removeConsentByClientStorageProvider(RealmModel realm, String providerId) {
-        em.createNamedQuery("deleteUserConsentProtMappersByClientStorageProvider")
-                .setParameter("clientStorageProvider", providerId)
-                .executeUpdate();
-        em.createNamedQuery("deleteUserConsentRolesByClientStorageProvider")
+        em.createNamedQuery("deleteUserConsentClientScopesByClientStorageProvider")
                 .setParameter("clientStorageProvider", providerId)
                 .executeUpdate();
         em.createNamedQuery("deleteUserConsentsByClientStorageProvider")

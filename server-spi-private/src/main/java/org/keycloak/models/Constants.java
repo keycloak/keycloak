@@ -69,4 +69,6 @@ public interface Constants {
     String GENERATE = "GENERATE";
 
     int DEFAULT_MAX_RESULTS = 100;
+
+    String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
 }

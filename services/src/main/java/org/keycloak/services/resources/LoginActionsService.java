@@ -41,6 +41,8 @@ import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -50,6 +52,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -826,21 +829,23 @@ public class LoginActionsService {
             grantedConsent = new UserConsentModel(client);
             session.users().addConsent(realm, user.getId(), grantedConsent);
         }
-        for (RoleModel role : ClientSessionCode.getRequestedRoles(authSession, realm)) {
-            grantedConsent.addGrantedRole(role);
-        }
-        for (ProtocolMapperModel protocolMapper : ClientSessionCode.getRequestedProtocolMappers(authSession.getProtocolMappers(), client)) {
-            if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
-                grantedConsent.addGrantedProtocolMapper(protocolMapper);
+
+        for (String clientScopeId : authSession.getClientScopes()) {
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
+            if (clientScope != null) {
+                grantedConsent.addGrantedClientScope(clientScope);
+            } else {
+                logger.warn("Client scope with ID '%s' not found");
             }
         }
+
         session.users().updateConsent(realm, user.getId(), grantedConsent);
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
-        AuthenticatedClientSessionModel clientSession = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSession.getUserSession(), clientSession, request, uriInfo, clientConnection, event, authSession.getProtocol());
+        ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, uriInfo, clientConnection, event, authSession.getProtocol());
     }
 
     private void initLoginEvent(AuthenticationSessionModel authSession) {

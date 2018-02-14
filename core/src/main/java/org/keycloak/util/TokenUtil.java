@@ -48,6 +48,8 @@ public class TokenUtil {
     public static String attachOIDCScope(String scopeParam) {
         if (scopeParam == null || scopeParam.isEmpty()) {
             return OAuth2Constants.SCOPE_OPENID;
+        } else if (hasScope(scopeParam, OAuth2Constants.SCOPE_OPENID)) {
+            return scopeParam;
         } else {
             return OAuth2Constants.SCOPE_OPENID + " " + scopeParam;
         }

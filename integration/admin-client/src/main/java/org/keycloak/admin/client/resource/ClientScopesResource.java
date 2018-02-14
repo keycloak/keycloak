@@ -17,7 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -32,18 +32,18 @@ import java.util.List;
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-public interface ClientTemplatesResource {
+public interface ClientScopesResource {
 
     @Path("{id}")
-    public ClientTemplateResource get(@PathParam("id") String id);
+    ClientScopeResource get(@PathParam("id") String id);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(ClientTemplateRepresentation clientRepresentation);
+    public Response create(ClientScopeRepresentation clientScopeRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientTemplateRepresentation> findAll();
+    public List<ClientScopeRepresentation> findAll();
 
 
 

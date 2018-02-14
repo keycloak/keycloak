@@ -90,7 +90,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         emailMapper.setName("email");
         emailMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         emailMapper.setProtocolMapper(UserPropertyAttributeStatementMapper.PROVIDER_ID);
-        emailMapper.setConsentRequired(false);
 
         Map<String, String> emailMapperConfig = emailMapper.getConfig();
         emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
@@ -102,7 +101,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userAttrMapper.setName("attribute - name");
         userAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         userAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
-        userAttrMapper.setConsentRequired(false);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
         userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
@@ -114,7 +112,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userFriendlyAttrMapper.setName("attribute - friendly name");
         userFriendlyAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         userFriendlyAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
-        userFriendlyAttrMapper.setConsentRequired(false);
 
         Map<String, String> userFriendlyAttrMapperConfig = userFriendlyAttrMapper.getConfig();
         userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);

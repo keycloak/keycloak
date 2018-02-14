@@ -45,7 +45,6 @@ import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
@@ -75,11 +74,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected String accessCode;
     protected Response.Status status;
     protected javax.ws.rs.core.MediaType contentType;
-    protected List<RoleModel> realmRolesRequested;
-    protected MultivaluedMap<String, RoleModel> resourceRolesRequested;
-    protected List<ProtocolMapperModel> protocolMappersRequested;
+    protected List<ClientScopeModel> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<String, String>();
-    protected String accessRequestMessage;
     protected URI actionUri;
     protected String execution;
 
@@ -202,7 +198,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth",
-                        new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
+                        new OAuthGrantBean(accessCode, client, clientScopesRequested));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
@@ -613,17 +609,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
-            List<ProtocolMapperModel> protocolMappersRequested) {
-        this.realmRolesRequested = realmRolesRequested;
-        this.resourceRolesRequested = resourceRolesRequested;
-        this.protocolMappersRequested = protocolMappersRequested;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setAccessRequest(String accessRequestMessage) {
-        this.accessRequestMessage = accessRequestMessage;
+    public LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested) {
+        this.clientScopesRequested = clientScopesRequested;
         return this;
     }
 

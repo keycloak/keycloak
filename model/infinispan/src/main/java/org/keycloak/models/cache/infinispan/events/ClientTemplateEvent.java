@@ -28,6 +28,9 @@ import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 
 /**
+ * TODO Leave the name ClientTemplateEvent just due the backwards compatibility of infinispan migration. See if can be renamed based on
+ * rolling upgrades plan...
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @SerializeWith(ClientTemplateEvent.ExternalizerImpl.class)

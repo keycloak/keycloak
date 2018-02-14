@@ -269,7 +269,7 @@ public class ServerInfoAdminResource {
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
             LoginProtocolFactory factory = (LoginProtocolFactory)p;
             List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
-            for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
+            for (ProtocolMapperModel mapper : factory.getBuiltinMappers().values()) {
                 mappers.add(ModelToRepresentation.toRepresentation(mapper));
             }
             info.getBuiltinProtocolMappers().put(p.getId(), mappers);

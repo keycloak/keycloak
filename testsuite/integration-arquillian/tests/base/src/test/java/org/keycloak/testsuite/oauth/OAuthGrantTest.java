@@ -31,7 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -49,6 +49,7 @@ import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.openqa.selenium.By;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -96,8 +97,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_USER));
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_CUSTOMER));
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
 
         grantPage.accept();
 
@@ -146,8 +146,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_USER));
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_CUSTOMER));
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
 
         grantPage.cancel();
 
@@ -179,10 +178,8 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Assert permissions granted on Account mgmt. applications page
         accountAppsPage.open();
         AccountApplicationsPage.AppEntry thirdPartyEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
-        Assert.assertTrue(thirdPartyEntry.getRolesGranted().contains(ROLE_USER));
-        Assert.assertTrue(thirdPartyEntry.getRolesGranted().contains("Have Customer User privileges in test-app"));
-        Assert.assertTrue(thirdPartyEntry.getProtocolMappersGranted().contains("Full name"));
-        Assert.assertTrue(thirdPartyEntry.getProtocolMappersGranted().contains("Email"));
+        thirdPartyEntry.getClientScopesGranted().contains(OAuthGrantPage.PROFILE_CONSENT_TEXT);
+        thirdPartyEntry.getClientScopesGranted().contains(OAuthGrantPage.EMAIL_CONSENT_TEXT);
 
         // Open login form and assert grantPage not shown
         oauth.openLoginForm();
@@ -203,36 +200,29 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Open login form again and assert grant Page is shown
         oauth.openLoginForm();
         grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_USER));
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_CUSTOMER));
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
     }
 
     @Test
-    public void oauthGrantAddAnotherRoleAndMapper() {
+    public void oauthGrantAddAnotherScope() {
         // Grant permissions on grant screen
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         oauth.scope(OAuth2Constants.GRANT_TYPE);
 
-        // Add new protocolMapper and role before showing grant page
-        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createClaimMapper(
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                true, false);
-
-
+        // Create new clientScope and add to client
         RealmResource appRealm = adminClient.realm(REALM_NAME);
-        appRealm.roles().create(RoleBuilder.create().name("new-role").build());
-        RoleRepresentation newRole = appRealm.roles().get("new-role").toRepresentation();
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-scope");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+        getCleanup().addClientScopeId(fooScopeId);
 
-        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(THIRD_PARTY_APP)
-                .addProtocolMapper(protocolMapper)
-                .addScopeMapping(newRole);
-
-        UserResource userResource = findUserByUsernameId(appRealm, "test-user@localhost");
-        userResource.roles().realmLevel().add(Collections.singletonList(newRole));
+        // Add clientScope to client
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+        thirdParty.addDefaultClientScope(fooScopeId);
 
         // Confirm grant page
         grantPage.assertCurrent();
@@ -242,20 +232,16 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        // Assert new role and protocol mapper not in account mgmt.
+        // Assert new clientScope not yet in account mgmt
         accountAppsPage.open();
         AccountApplicationsPage.AppEntry appEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
-        Assert.assertFalse(appEntry.getRolesGranted().contains("new-role"));
-        Assert.assertFalse(appEntry.getProtocolMappersGranted().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
+        Assert.assertFalse(appEntry.getClientScopesGranted().contains("foo-scope"));
 
-        // Show grant page another time. Just new role and protocol mapper are on the page
+        // Show grant page another time. Just new clientScope is on the page
         oauth.openLoginForm();
         grantPage.assertCurrent();
+        grantPage.assertGrants("foo-scope");
 
-        Assert.assertFalse(driver.getPageSource().contains(ROLE_USER));
-        Assert.assertFalse(driver.getPageSource().contains("Full name"));
-        Assert.assertTrue(driver.getPageSource().contains("new-role"));
-        Assert.assertTrue(driver.getPageSource().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
         grantPage.accept();
         events.expectLogin()
                 .client(THIRD_PARTY_APP)
@@ -265,8 +251,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Go to account mgmt. Everything is granted now
         accountAppsPage.open();
         appEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
-        Assert.assertTrue(appEntry.getRolesGranted().contains("new-role"));
-        Assert.assertTrue(appEntry.getProtocolMappersGranted().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
+        Assert.assertTrue(appEntry.getClientScopesGranted().contains("foo-scope"));
 
         // Revoke
         accountAppsPage.revokeGrant(THIRD_PARTY_APP);
@@ -274,39 +259,32 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
         // Cleanup
-        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(THIRD_PARTY_APP)
-                .removeProtocolMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME)
-                .removeScopeMapping(newRole);
-
-        appRealm.roles().deleteRole("new-role");
-
+        thirdParty.removeDefaultClientScope(fooScopeId);
     }
 
     @Test
     public void oauthGrantScopeParamRequired() throws Exception {
-
         RealmResource appRealm = adminClient.realm(REALM_NAME);
-
         ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
-        thirdParty.roles().create(RoleBuilder.create().id("bar-role").name("bar-role").scopeParamRequired(true).build());
-        RoleRepresentation barAppRole = thirdParty.roles().get("bar-role").toRepresentation();
 
-        appRealm.roles().create(RoleBuilder.create().id("foo-role").name("foo-role").scopeParamRequired(true).build());
-        RoleRepresentation fooRole = appRealm.roles().get("foo-role").toRepresentation();
-        ClientManager.realm(appRealm).clientId(THIRD_PARTY_APP).addScopeMapping(fooRole);
+        // Create clientScope
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-scope");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+        getCleanup().addClientScopeId(fooScopeId);
 
-        UserResource testUser = findUserByUsernameId(appRealm, "test-user@localhost");
+        // Add clientScope as optional to client
+        thirdParty.addOptionalClientScope(fooScopeId);
 
-        testUser.roles().clientLevel(thirdParty.toRepresentation().getId()).add(Collections.singletonList(barAppRole));
-        testUser.roles().realmLevel().add(Collections.singletonList(fooRole));
-
-        // Assert roles not on grant screen when not requested
-
+        // Assert clientScope not on grant screen when not requested
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
-        Assert.assertFalse(driver.getPageSource().contains("foo-role"));
-        Assert.assertFalse(driver.getPageSource().contains("bar-role"));
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assert.assertFalse(grants.contains("foo-scope"));
         grantPage.cancel();
 
         events.expectLogin()
@@ -316,11 +294,11 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .session(Matchers.nullValue(String.class))
                 .assertEvent();
 
-        oauth.scope("foo-role third-party/bar-role");
+        oauth.scope("foo-scope");
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains("foo-role"));
-        Assert.assertTrue(driver.getPageSource().contains("bar-role"));
+        grants = grantPage.getDisplayedGrants();
+        Assert.assertTrue(grants.contains("foo-scope"));
         grantPage.accept();
 
         events.expectLogin()
@@ -333,44 +311,40 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         accountAppsPage.revokeGrant(THIRD_PARTY_APP);
         events.expect(EventType.REVOKE_GRANT)
                 .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
-        // cleanup
-        appRealm.roles().deleteRole(fooRole.getName());
-        thirdParty.roles().deleteRole(barAppRole.getName());
 
+        // cleanup
+        oauth.scope(null);
+        thirdParty.removeOptionalClientScope(fooScopeId);
     }
 
 
     // KEYCLOAK-4326
     @Test
-    public void oauthGrantClientTemplateMappers() throws Exception {
-        // Add client template with some protocol mapper
+    public void oauthGrantClientScopeMappers() throws Exception {
+        // Add client scope with some protocol mapper
         RealmResource appRealm = adminClient.realm(REALM_NAME);
 
-        ClientTemplateRepresentation template1 = new ClientTemplateRepresentation();
-        template1.setName("foo");
-        template1.setFullScopeAllowed(false);
-        template1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = appRealm.clientTemplates().create(template1);
-        String templateId = ApiUtil.getCreatedId(response);
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-addr");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
-        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createAddressMapper(true, true);
-        response = appRealm.clientTemplates().get(templateId).getProtocolMappers().createMapper(protocolMapper);
+        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createAddressMapper(true, true, true);
+        response = appRealm.clientScopes().get(fooScopeId).getProtocolMappers().createMapper(protocolMapper);
         response.close();
 
-        // Add template to client
+        // Add clientScope to client
         ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
-        ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
-        thirdPartyRep.setClientTemplate("foo");
-        thirdPartyRep.setUseTemplateMappers(true);
-        thirdParty.update(thirdPartyRep);
+        thirdParty.addDefaultClientScope(fooScopeId);
+        getCleanup().addClientScopeId(fooScopeId);
 
         // Login
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains("Email"));
-        Assert.assertTrue(driver.getPageSource().contains("Address"));
+        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, "foo-addr");
         grantPage.accept();
 
         events.expectLogin()
@@ -383,7 +357,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         Assert.assertTrue(accountAppsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = accountAppsPage.getApplications();
         Assert.assertTrue(apps.containsKey("third-party"));
-        Assert.assertTrue(apps.get("third-party").getProtocolMappersGranted().contains("Address"));
+        Assert.assertTrue(apps.get("third-party").getClientScopesGranted().contains("foo-addr"));
 
         // Login as admin and see the consent screen of particular user
         UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
@@ -405,7 +379,8 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         events.expect(EventType.REVOKE_GRANT)
                 .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
-
+        // Cleanup
+        thirdParty.removeDefaultClientScope(fooScopeId);
     }
 
     @Test

@@ -148,12 +148,6 @@ public class UserSessionProviderTest {
         assertEquals(sessions[0].getId(), session1.getUserSession().getId());
         assertEquals("http://redirect", session1.getRedirectUri());
         assertEquals("state", session1.getNote(OIDCLoginProtocol.STATE_PARAM));
-        assertEquals(2, session1.getRoles().size());
-        assertTrue(session1.getRoles().contains("one"));
-        assertTrue(session1.getRoles().contains("two"));
-        assertEquals(2, session1.getProtocolMappers().size());
-        assertTrue(session1.getProtocolMappers().contains("mapper-one"));
-        assertTrue(session1.getProtocolMappers().contains("mapper-two"));
     }
 
     @Test
@@ -385,7 +379,6 @@ public class UserSessionProviderTest {
                 UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false, null, null);
                 AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app"), userSession);
                 clientSession.setRedirectUri("http://redirect");
-                clientSession.setRoles(new HashSet<String>());
                 clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state");
                 clientSession.setTimestamp(userSession.getStarted());
                 userSession.setLastSessionRefresh(userSession.getStarted());
@@ -407,7 +400,7 @@ public class UserSessionProviderTest {
     public void testCreateAndGetInSameTransaction() {
         ClientModel client = realm.getClientByClientId("test-app");
         UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-        AuthenticatedClientSessionModel clientSession = createClientSession(client, userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        AuthenticatedClientSessionModel clientSession = createClientSession(client, userSession, "http://redirect", "state");
 
         UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, userSession.getId());
         AuthenticatedClientSessionModel clientSessionLoaded = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
@@ -588,12 +581,10 @@ public class UserSessionProviderTest {
         assertNotNull(session.sessions().getUserLoginFailure(realm, user2.getId()));
     }
 
-    private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
+    private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state) {
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
         clientSession.setRedirectUri(redirect);
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
-        if (roles != null) clientSession.setRoles(roles);
-        if (protocolMappers != null) clientSession.setProtocolMappers(protocolMappers);
         return clientSession;
     }
 
@@ -601,22 +592,14 @@ public class UserSessionProviderTest {
         UserSessionModel[] sessions = new UserSessionModel[3];
         sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
 
-        Set<String> roles = new HashSet<String>();
-        roles.add("one");
-        roles.add("two");
-
-        Set<String> protocolMappers = new HashSet<String>();
-        protocolMappers.add("mapper-one");
-        protocolMappers.add("mapper-two");
-
-        createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles, protocolMappers);
-        createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
+        createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
         sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-        createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
         sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
-        createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         resetSession();
 

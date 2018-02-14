@@ -22,6 +22,7 @@ import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -693,6 +694,12 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public void preRemove(ProtocolMapperModel protocolMapper) {
         localStorage().preRemove(protocolMapper);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(protocolMapper);
+    }
+
+    @Override
+    public void preRemove(ClientScopeModel clientScope) {
+        localStorage().preRemove(clientScope);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(clientScope);
     }
 
     @Override

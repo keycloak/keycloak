@@ -17,7 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -30,7 +30,7 @@ import javax.ws.rs.core.MediaType;
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-public interface ClientTemplateResource {
+public interface ClientScopeResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers();
@@ -40,11 +40,11 @@ public interface ClientTemplateResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientTemplateRepresentation toRepresentation();
+    public ClientScopeRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(ClientTemplateRepresentation rep);
+    public void update(ClientScopeRepresentation rep);
 
     @DELETE
     public void remove();

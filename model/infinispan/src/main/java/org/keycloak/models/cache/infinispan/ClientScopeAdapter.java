@@ -18,12 +18,12 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,14 +34,14 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientTemplateAdapter implements ClientTemplateModel {
+public class ClientScopeAdapter implements ClientScopeModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
 
-    protected ClientTemplateModel updated;
-    protected CachedClientTemplate cached;
+    protected ClientScopeModel updated;
+    protected CachedClientScope cached;
 
-    public ClientTemplateAdapter(RealmModel cachedRealm, CachedClientTemplate cached, RealmCacheSession cacheSession) {
+    public ClientScopeAdapter(RealmModel cachedRealm, CachedClientScope cached, RealmCacheSession cacheSession) {
         this.cachedRealm = cachedRealm;
         this.cacheSession = cacheSession;
         this.cached = cached;
@@ -49,8 +49,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerClientTemplateInvalidation(cached.getId());
-            updated = cacheSession.getRealmDelegate().getClientTemplateById(cached.getId(), cachedRealm);
+            cacheSession.registerClientScopeInvalidation(cached.getId());
+            updated = cacheSession.getRealmDelegate().getClientScopeById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -63,7 +63,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getRealmDelegate().getClientTemplateById(cached.getId(), cachedRealm);
+        updated = cacheSession.getRealmDelegate().getClientScopeById(cached.getId(), cachedRealm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -157,19 +157,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
         updated.setProtocol(protocol);
     }
 
-    @Override
-    public boolean isFullScopeAllowed() {
-        if (isUpdated()) return updated.isFullScopeAllowed();
-        return cached.isFullScopeAllowed();
-    }
-
-    @Override
-    public void setFullScopeAllowed(boolean value) {
-        getDelegateForUpdate();
-        updated.setFullScopeAllowed(value);
-
-    }
-
     public Set<RoleModel> getScopeMappings() {
         if (isUpdated()) return updated.getScopeMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
@@ -209,7 +196,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     @Override
     public boolean hasScope(RoleModel role) {
         if (isUpdated()) return updated.hasScope(role);
-        if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
+        if (cached.getScope().contains(role.getId())) return true;
 
         Set<RoleModel> roles = getScopeMappings();
 
@@ -219,25 +206,6 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
        return false;
     }
 
-    public boolean isPublicClient() {
-        if (isUpdated()) return updated.isPublicClient();
-        return cached.isPublicClient();
-    }
-
-    public void setPublicClient(boolean flag) {
-        getDelegateForUpdate();
-        updated.setPublicClient(flag);
-    }
-
-    public boolean isFrontchannelLogout() {
-        if (isUpdated()) return updated.isPublicClient();
-        return cached.isFrontchannelLogout();
-    }
-
-    public void setFrontchannelLogout(boolean flag) {
-        getDelegateForUpdate();
-        updated.setFrontchannelLogout(flag);
-    }
 
     @Override
     public void setAttribute(String name, String value) {
@@ -267,87 +235,13 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
         return copy;
     }
 
-    @Override
-    public boolean isBearerOnly() {
-        if (isUpdated()) return updated.isBearerOnly();
-        return cached.isBearerOnly();
-    }
-
-    @Override
-    public void setBearerOnly(boolean only) {
-        getDelegateForUpdate();
-        updated.setBearerOnly(only);
-    }
-
-    @Override
-    public boolean isConsentRequired() {
-        if (isUpdated()) return updated.isConsentRequired();
-        return cached.isConsentRequired();
-    }
-
-    @Override
-    public void setConsentRequired(boolean consentRequired) {
-        getDelegateForUpdate();
-        updated.setConsentRequired(consentRequired);
-    }
-
-    @Override
-    public boolean isStandardFlowEnabled() {
-        if (isUpdated()) return updated.isStandardFlowEnabled();
-        return cached.isStandardFlowEnabled();
-    }
-
-    @Override
-    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
-        getDelegateForUpdate();
-        updated.setStandardFlowEnabled(standardFlowEnabled);
-    }
-
-    @Override
-    public boolean isImplicitFlowEnabled() {
-        if (isUpdated()) return updated.isImplicitFlowEnabled();
-        return cached.isImplicitFlowEnabled();
-    }
-
-    @Override
-    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
-        getDelegateForUpdate();
-        updated.setImplicitFlowEnabled(implicitFlowEnabled);
-    }
-
-    @Override
-    public boolean isDirectAccessGrantsEnabled() {
-        if (isUpdated()) return updated.isDirectAccessGrantsEnabled();
-        return cached.isDirectAccessGrantsEnabled();
-    }
-
-    @Override
-    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
-        getDelegateForUpdate();
-        updated.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
-    }
-
-    @Override
-    public boolean isServiceAccountsEnabled() {
-        if (isUpdated()) return updated.isServiceAccountsEnabled();
-        return cached.isServiceAccountsEnabled();
-    }
-
-    @Override
-    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
-        getDelegateForUpdate();
-        updated.setServiceAccountsEnabled(serviceAccountsEnabled);
-    }
-
-
-
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ClientModel)) return false;
 
-        ClientTemplateModel that = (ClientTemplateModel) o;
+        ClientScopeModel that = (ClientScopeModel) o;
         return that.getId().equals(getId());
     }
 

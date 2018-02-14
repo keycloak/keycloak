@@ -172,24 +172,20 @@ public class OIDCAttributeMapperHelper {
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean consentRequired, String consentText,
                                                         boolean accessToken, boolean idToken,
                                                         String mapperId) {
-        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, true, mapperId);
+        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, accessToken, idToken, true, mapperId);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
                                   String userAttribute,
                                   String tokenClaimName, String claimType,
-                                  boolean consentRequired, String consentText,
                                   boolean accessToken, boolean idToken, boolean userinfo,
                                   String mapperId) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(consentRequired);
-        mapper.setConsentText(consentText);
         Map<String, String> config = new HashMap<String, String>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(TOKEN_CLAIM_NAME, tokenClaimName);

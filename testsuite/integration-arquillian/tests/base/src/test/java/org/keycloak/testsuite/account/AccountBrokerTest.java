@@ -30,9 +30,12 @@ import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.core.Response;
+
+import java.util.Collections;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
@@ -87,6 +90,9 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+
+                // Remove default client scopes for this test
+                client.setDefaultClientScopes(Collections.emptyList());
 
                 providerRealm.clients().create(client).close();
             }

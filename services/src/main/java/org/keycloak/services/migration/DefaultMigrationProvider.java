@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class DefaultMigrationProvider implements MigrationProvider {
     }
 
     @Override
-    public List<ProtocolMapperModel> getBuiltinMappers(String protocol) {
+    public Map<String, ProtocolMapperModel> getBuiltinMappers(String protocol) {
         LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
         return providerFactory.getBuiltinMappers();
     }
@@ -86,21 +87,10 @@ public class DefaultMigrationProvider implements MigrationProvider {
     public void close() {
     }
 
+
+    // With change to client scopes, there are not default protocolMappers dedicated to single client anymore. Instead, there are default client scopes
+    // and mappers dedicated to those scopes. So returning empty map for now
     private static Map<String, ProtocolMapperRepresentation> getAllDefaultMappers(KeycloakSession session) {
-        Map<String, ProtocolMapperRepresentation> allMappers = new HashMap<String, ProtocolMapperRepresentation>();
-
-        List<ProviderFactory> loginProtocolFactories = session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class);
-
-        for (ProviderFactory factory : loginProtocolFactories) {
-            LoginProtocolFactory loginProtocolFactory = (LoginProtocolFactory) factory;
-            List<ProtocolMapperModel> currentMappers = loginProtocolFactory.getDefaultBuiltinMappers();
-
-            for (ProtocolMapperModel protocolMapper : currentMappers) {
-                ProtocolMapperRepresentation rep = ModelToRepresentation.toRepresentation(protocolMapper);
-                allMappers.put(protocolMapper.getName(), rep);
-            }
-        }
-
-        return allMappers;
+        return Collections.emptyMap();
     }
 }
