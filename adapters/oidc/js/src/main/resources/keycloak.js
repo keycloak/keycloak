@@ -1189,12 +1189,18 @@
                         var loginUrl = kc.createLoginUrl(options);
                         var ref = cordovaOpenWindowWrapper(loginUrl, '_blank', o);
                         var completed = false;
+                        
+                        var closed = false;
+                        var closeBrowser = function() {
+                            closed = true;
+                            ref.close();
+                        };
 
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
                                 var callback = parseCallback(event.url);
                                 processCallback(callback, promise);
-                                ref.close();
+                                closeBrowser();
                                 completed = true;
                             }
                         });
@@ -1204,12 +1210,20 @@
                                 if (event.url.indexOf('http://localhost') == 0) {
                                     var callback = parseCallback(event.url);
                                     processCallback(callback, promise);
-                                    ref.close();
+                                    closeBrowser();
                                     completed = true;
                                 } else {
                                     promise.setError();
-                                    ref.close();
+                                    closeBrowser();
                                 }
+                            }
+                        });
+
+                        ref.addEventListener('exit', function(event) {
+                            if (!closed) {
+                                promise.setError({
+                                    reason: "closed_by_user"
+                                });
                             }
                         });
 
