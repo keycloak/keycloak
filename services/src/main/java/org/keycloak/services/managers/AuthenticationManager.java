@@ -211,7 +211,7 @@ public class AuthenticationManager {
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
 
         if (offlineSession) {
-            session.sessions().removeOfflineUserSession(realm, userSession);
+            new UserSessionManager(session).revokeOfflineUserSession(userSession);
         } else {
             session.sessions().removeUserSession(realm, userSession);
         }
