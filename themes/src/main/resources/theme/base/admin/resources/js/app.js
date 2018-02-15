@@ -2964,6 +2964,7 @@ module.directive('kcPassword', function ($compile, Notifications) {
         link: function ($scope, elem, attr, ctrl) {
             elem.addClass("password-conceal");
             elem.attr("type","text");
+            elem.attr("autocomplete", "off");
         }
     }
 });
