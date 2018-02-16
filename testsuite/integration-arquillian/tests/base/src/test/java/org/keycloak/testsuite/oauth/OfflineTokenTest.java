@@ -567,5 +567,53 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
         assertEquals(400, response.getStatusCode());
     }
+    
+    @Test
+    public void browserOfflineTokenLogoutFollowedByLoginSameSession() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        oauth.redirectUri(offlineClientAppUri);
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+
+        final String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+        oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectCodeToToken(codeId, sessionId)
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        assertEquals(0, offlineToken.getExpiration());
+
+        CloseableHttpResponse logoutResponse = oauth.doLogout(offlineTokenString, "secret1");
+        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+
+        // after KEYCLOAK-6617 this will no longer work - will need to login again.
+        oauth.openLoginForm();
+
+        String code2 = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2, "secret1");
+        assertEquals(200, tokenResponse2.getStatusCode());
+        oauth.verifyToken(tokenResponse2.getAccessToken());
+        String offlineTokenString2 = tokenResponse2.getRefreshToken();
+        RefreshToken offlineToken2 = oauth.verifyRefreshToken(offlineTokenString2);
+
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken2.getType());
+        assertEquals(0, offlineToken2.getExpiration());
+    }
 
 }
