@@ -57,6 +57,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN = "Match SubjectDN using regular expression";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL = "Subject's e-mail";
+    public static final String MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL = "Subject's Alternative Name E-mail";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_CN = "Subject's Common Name";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN = "Match IssuerDN using regular expression";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN_EMAIL = "Issuer's e-mail";
@@ -145,6 +146,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     extractor = UserIdentityExtractor
                             .either(UserIdentityExtractor.getX500NameExtractor(BCStyle.EmailAddress, subject))
                             .or(UserIdentityExtractor.getX500NameExtractor(BCStyle.E, subject));
+                    break;
+                case SUBJECTALTNAME_EMAIL:
+                    extractor = UserIdentityExtractor.getSubjectAltNameExtractor(1);
                     break;
                 case ISSUERDN_CN:
                     extractor = UserIdentityExtractor.getX500NameExtractor(BCStyle.CN, issuer);
