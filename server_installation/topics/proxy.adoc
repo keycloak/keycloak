@@ -148,6 +148,9 @@ adapter-config::
   Same configuration as any other {project_name} adapter.
 // See <<_adapter_config,Adapter Config>>                                        
 
+proxy-address-forwarding::
+  Enable usage of X-Forwarded-For, X-Forwarded-Host, X-Forwarded-Proto when hosted behind another proxy/load-balancer.
+
 ==== Constraint Config
 
 Next under each application you can define one or more constraints in the `constraints` array attribute.
