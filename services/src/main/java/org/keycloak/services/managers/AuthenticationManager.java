@@ -195,7 +195,7 @@ public class AuthenticationManager {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
-        logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
+        logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(), userSession.isOffline());
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
@@ -212,6 +212,12 @@ public class AuthenticationManager {
 
         if (offlineSession) {
             new UserSessionManager(session).revokeOfflineUserSession(userSession);
+
+            // Check if "online" session still exists and remove it too
+            UserSessionModel onlineUserSession = session.sessions().getUserSession(realm, userSession.getId());
+            if (onlineUserSession != null) {
+                session.sessions().removeUserSession(realm, onlineUserSession);
+            }
         } else {
             session.sessions().removeUserSession(realm, userSession);
         }

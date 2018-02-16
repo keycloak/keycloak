@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findRealmRoleByName;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -598,12 +599,17 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         assertEquals(0, offlineToken.getExpiration());
 
-        CloseableHttpResponse logoutResponse = oauth.doLogout(offlineTokenString, "secret1");
-        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+        try (CloseableHttpResponse logoutResponse = oauth.doLogout(offlineTokenString, "secret1")) {
+            assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+        }
 
-        // after KEYCLOAK-6617 this will no longer work - will need to login again.
-        oauth.openLoginForm();
+        events.expectLogout(offlineToken.getSessionState())
+                .client("offline-client")
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
 
+        // Need to login again now
+        oauth.doLogin("test-user@localhost", "password");
         String code2 = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2, "secret1");
@@ -612,8 +618,23 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         String offlineTokenString2 = tokenResponse2.getRefreshToken();
         RefreshToken offlineToken2 = oauth.verifyRefreshToken(offlineTokenString2);
 
+        loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+
+        codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        events.expectCodeToToken(codeId, offlineToken2.getSessionState())
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken2.getType());
         assertEquals(0, offlineToken2.getExpiration());
+
+        // Assert session changed
+        assertNotEquals(offlineToken.getSessionState(), offlineToken2.getSessionState());
     }
 
 }
