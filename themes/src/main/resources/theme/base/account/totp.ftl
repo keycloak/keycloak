@@ -30,7 +30,7 @@
 
 <ol>
     <li>
-        <p>${msg("totpStep1")}</p>
+        <p>${msg("totpStep1")?no_esc}</p>
 
         <ul>
             <#list totp.policy.supportedApplications as app>
