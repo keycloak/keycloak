@@ -262,3 +262,12 @@ Make sure to set 'Use classpath of module' to 'performance-test'.
 When tests are executed via maven, the Engine object is not used. It exists only for running tests in IDE.
 
 If test startup fails due to not being able to find the test classes try reimporting the 'performance' module from pom.xml (right click on 'performance' directory, select 'Maven' at the bottom of context menu, then 'Reimport')
+
+If you want to run a different simulation - not DefaultSimulation - you can edit Engine object source, or create another Engine object for a different simulation.
+
+## Troubleshoot
+
+### Verbose logging
+You can find `logback-test.xml` file in `tests/src/test/resources` directory. This files contains logging information in log4j xml format.
+Root logger is by default set to WARN, but if you want to increase verbosity you can change it to DEBUG or INFO.
+
