@@ -25,7 +25,7 @@
 
     <servlet>
         <servlet-name>Servlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.adapter.InputServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.InputServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>

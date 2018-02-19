@@ -76,6 +76,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @SecondBrowser
     protected WebDriver driver2;
 
+    //KEYCLOAK-732
     @Test
     public void testSingleSessionInvalidated() {
 
@@ -116,6 +117,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
     }
 
+    //KEYCLOAK-741
     @Test
     public void testSessionInvalidatedAfterFailedRefresh() {
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
@@ -152,6 +154,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         testRealmResource().update(testRealmRep);
     }
 
+    //KEYCLOAK-942
     @Test
     public void testAdminApplicationLogout() {
         // login as bburke
@@ -171,6 +174,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         driver.navigate().to(logoutUri);
     }
 
+    //KEYCLOAK-1216
     @Test
     public void testAccountManagementSessionsLogout() {
         // login as bburke
