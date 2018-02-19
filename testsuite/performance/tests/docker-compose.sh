@@ -4,7 +4,7 @@
 
 function runCommand() {
     echo "$1"
-    if ! eval "$1" ; then 
+    if ! eval "$1" ; then
         echo "Execution of command failed."
         echo "Command: \"$1\""
         exit 1;
@@ -124,8 +124,8 @@ function generateProvisionedSystemProperties() {
 function loadProvisionedSystemProperties() {
     if [ -f $PROVISIONED_SYSTEM_PROPERTIES_FILE ]; then 
         echo "Loading $PROVISIONED_SYSTEM_PROPERTIES_FILE"
-        export DEPLOYMENT=$( grep -Po "(?<=^deployment=).*" $PROVISIONED_SYSTEM_PROPERTIES_FILE )
-        export KEYCLOAK_SERVICES=$( grep -Po "(?<=^keycloak.docker.services=).*" $PROVISIONED_SYSTEM_PROPERTIES_FILE )
+        export DEPLOYMENT=$( sed -n -e '/deployment=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
+        export KEYCLOAK_SERVICES=$( sed -n -e '/keycloak.docker.services=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
     else
         echo "$PROVISIONED_SYSTEM_PROPERTIES_FILE not found."
     fi

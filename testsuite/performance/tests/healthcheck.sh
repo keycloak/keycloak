@@ -12,8 +12,8 @@ function isKeycloakServerReady {
 
 if [ -f "$PROVISIONED_SYSTEM_PROPERTIES_FILE" ] ; then 
 
-    FRONTEND_SERVERS=$( grep -Po "(?<=^keycloak.frontend.servers=).*" "$PROVISIONED_SYSTEM_PROPERTIES_FILE" )
-    BACKEND_SERVERS=$( grep -Po "(?<=^keycloak.backend.servers=).*" "$PROVISIONED_SYSTEM_PROPERTIES_FILE" )
+    FRONTEND_SERVERS=$( sed -n -e '/keycloak.frontend.servers=/ s/.*\= *//p' "$PROVISIONED_SYSTEM_PROPERTIES_FILE" )
+    BACKEND_SERVERS=$( sed -n -e '/keycloak.backend.servers=/ s/.*\= *//p' "$PROVISIONED_SYSTEM_PROPERTIES_FILE" )
     KEYCLOAK_SERVERS="$FRONTEND_SERVERS $BACKEND_SERVERS"
 
     HEALTHCHECK_ITERATIONS=${HEALTHCHECK_ITERATIONS:-20}
@@ -30,7 +30,7 @@ if [ -f "$PROVISIONED_SYSTEM_PROPERTIES_FILE" ] ; then
             echo System healthcheck failed.
             exit 1
         fi
-        echo $( date -Iseconds )
+        echo $( date "+%Y-%m-%d %H:%M:%S" )
         READY=true
         for SERVER in $KEYCLOAK_SERVERS ; do
             if isKeycloakServerReady $SERVER; then 
