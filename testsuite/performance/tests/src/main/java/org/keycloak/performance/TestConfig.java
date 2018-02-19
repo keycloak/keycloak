@@ -58,9 +58,7 @@ public class TestConfig {
     public static final int rampUpPeriod = Integer.getInteger("rampUpPeriod", 0);
     public static final int warmUpPeriod = Integer.getInteger("warmUpPeriod", 0);
     public static final int measurementPeriod = Integer.getInteger("measurementPeriod", 30);
-    public static final boolean rampDownASAP = Boolean.getBoolean("rampDownASAP"); // check for rampdown condition after each scenario step
     public static final boolean filterResults = Boolean.getBoolean("filterResults"); // filter out results outside of measurementPeriod
-    public static final int pace = Integer.getInteger("pace", 0); // additional dynamic "pause buffer" between scenario loops
     public static final int userThinkTime = Integer.getInteger("userThinkTime", 0);
     public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 0);
 

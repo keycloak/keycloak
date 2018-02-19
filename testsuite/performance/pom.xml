@@ -32,6 +32,7 @@
     <packaging>pom</packaging>
     
     <properties>
+        <server.version>${product.version}</server.version>
         <management.user/>
         <management.user.password/>
     </properties>

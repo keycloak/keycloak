@@ -366,13 +366,16 @@ case "$OPERATION" in
             crossdc) export DB_CONTAINER=${PROJECT_NAME}_mariadb_dc1_1 ;;
             *) echo "Deployment '$DEPLOYMENT' doesn't support operation '$OPERATION'." ; exit 1 ;;
         esac
-        if [ -z "$DATASET" ]; then echo "Operation '$OPERATION' requires DATASET parameter."; exit 1; fi
+        if [ ! -f "$DATASET_PROPERTIES_FILE" ]; then echo "Operation '$OPERATION' requires a valid DATASET_PROPERTIES_FILE parameter."; exit 1; fi
+        DATASET_PROPERTIES_FILENAME=`basename $DATASET_PROPERTIES_FILE`
+        DATASET=${DATASET_PROPERTIES_FILENAME%.properties}
+        echo "DATASET_PROPERTIES_FILE: $DATASET_PROPERTIES_FILE"
         echo "DATASET: $DATASET"
 
         echo "Stopping Keycloak services."
         runCommand "docker-compose -f $DOCKER_COMPOSE_FILE -p ${PROJECT_NAME} stop $KEYCLOAK_SERVICES"
 
-        cd $PROJECT_BASEDIR/datasets
+        cd `dirname $DATASET_PROPERTIES_FILE`
         case "$OPERATION" in
             export-dump)
                 echo "Exporting $DATASET.sql."
@@ -384,7 +387,7 @@ case "$OPERATION" in
             import-dump) 
                 DUMP_DOWNLOAD_SITE=${DUMP_DOWNLOAD_SITE:-https://downloads.jboss.org/keycloak-qe}
                 if [ ! -f "$DATASET.sql.gz" ]; then 
-                    echo "Downloading dump file."
+                    echo "Downloading dump file: $DUMP_DOWNLOAD_SITE/$DATASET.sql.gz"
                     if ! curl -f -O $DUMP_DOWNLOAD_SITE/$DATASET.properties -O $DUMP_DOWNLOAD_SITE/$DATASET.sql.gz ; then
                         echo Download failed.
                         exit 1
