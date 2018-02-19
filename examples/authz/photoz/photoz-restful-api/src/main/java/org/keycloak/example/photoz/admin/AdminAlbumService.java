@@ -46,7 +46,14 @@ public class AdminAlbumService {
         List<Album> result = this.entityManager.createQuery("from Album").getResultList();
 
         for (Album album : result) {
-            albums.computeIfAbsent(album.getUserId(), key -> new ArrayList<>()).add(album);
+            List<Album> userAlbums = albums.get(album.getUserId());
+
+            if (userAlbums == null) {
+                userAlbums = new ArrayList<>();
+                albums.put(album.getUserId(), userAlbums);
+            }
+
+            userAlbums.add(album);
         }
 
         return Response.ok(albums).build();

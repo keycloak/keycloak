@@ -31,6 +31,7 @@ import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.storage.StorageId;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -634,8 +635,8 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     public Map<String, Boolean> getAccess(ClientModel client) {
         Map<String, Boolean> map = new HashMap<>();
         map.put("view", canView(client));
-        map.put("manage", canManage(client));
-        map.put("configure", canConfigure(client));
+        map.put("manage", StorageId.isLocalStorage(client) && canManage(client));
+        map.put("configure", StorageId.isLocalStorage(client) && canConfigure(client));
         return map;
     }
 

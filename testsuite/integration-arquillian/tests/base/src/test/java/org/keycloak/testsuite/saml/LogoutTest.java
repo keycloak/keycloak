@@ -16,10 +16,15 @@
  */
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
@@ -28,15 +33,26 @@ import org.keycloak.events.EventType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.xml.transform.dom.DOMSource;
 import org.junit.Before;
@@ -63,6 +79,8 @@ public class LogoutTest extends AbstractSamlTest {
     private final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
     private final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
 
+    private static final String SAML_BROKER_ALIAS = "saml-broker";
+
     @Before
     public void setup() {
         salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
@@ -86,25 +104,29 @@ public class LogoutTest extends AbstractSamlTest {
         return true;
     }
 
+    private SAML2Object extractNameIdAndSessionIndexAndTerminate(SAML2Object so) {
+        assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        ResponseType loginResp1 = (ResponseType) so;
+        final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
+        assertThat(firstAssertion, org.hamcrest.Matchers.notNullValue());
+        assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
+
+        NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
+        AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
+
+        nameIdRef.set(nameId);
+        sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
+
+        return null;
+    }
+
     private SamlClientBuilder prepareLogIntoTwoApps() {
         return new SamlClientBuilder()
           .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
           .login().user(bburkeUser).build()
-          .processSamlResponse(POST).transformObject(so -> {
-            assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
-            ResponseType loginResp1 = (ResponseType) so;
-            final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
-            assertThat(firstAssertion, org.hamcrest.Matchers.notNullValue());
-            assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
-
-            NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
-            AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
-
-            nameIdRef.set(nameId);
-            sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
-            return null;    // Do not follow the redirect to the app from the returned response
-          }).build()
-
+          .processSamlResponse(POST)
+            .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+            .build()
           .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST2, SAML_ASSERTION_CONSUMER_URL_SALES_POST2, POST).build()
           .login().sso(true).build()    // This is a formal step
           .processSamlResponse(POST).transformObject(so -> {
@@ -291,4 +313,109 @@ public class LogoutTest extends AbstractSamlTest {
         assertEquals("saml", logoutEvent.getDetails().get(Details.AUTH_METHOD));
         assertNotNull(logoutEvent.getDetails().get(SamlProtocol.SAML_LOGOUT_REQUEST_ID));
     }
+
+    private IdentityProviderRepresentation addIdentityProvider() {
+        IdentityProviderRepresentation identityProvider = IdentityProviderBuilder.create()
+          .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
+          .alias(SAML_BROKER_ALIAS)
+          .displayName("SAML")
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml.idp/saml")
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://saml.idp/saml")
+          .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
+          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+          .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+          .build();
+        return identityProvider;
+    }
+
+    private SAML2Object createAuthnResponse(SAML2Object so) {
+        AuthnRequestType req = (AuthnRequestType) so;
+        try {
+            return new SAML2LoginResponseBuilder()
+              .requestID(req.getID())
+              .destination(req.getAssertionConsumerServiceURL().toString())
+              .issuer("http://saml.idp/saml")
+              .assertionExpiration(1000000)
+              .subjectExpiration(1000000)
+              .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
+              .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get(), "a@b.c")
+              .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get())
+              .sessionIndex("idp:" + UUID.randomUUID())
+              .buildModel();
+        } catch (ConfigurationException | ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private SAML2Object createIdPLogoutResponse(SAML2Object so) {
+        LogoutRequestType req = (LogoutRequestType) so;
+        try {
+            return new SAML2LogoutResponseBuilder()
+              .logoutRequestID(req.getID())
+              .destination(getSamlBrokerUrl(REALM_NAME).toString())
+              .issuer("http://saml.idp/saml")
+              .buildModel();
+        } catch (ConfigurationException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Test
+    public void testLogoutPropagatesToSamlIdentityProvider() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        final ClientsResource clients = realm.clients();
+
+        try (
+          Closeable sales = new ClientAttributeUpdater(clients.get(salesRep.getId()))
+          .setFrontchannelLogout(true)
+          .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+          .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
+          .update();
+
+          Closeable idp = new IdentityProviderCreator(realm, addIdentityProvider())
+          ) {
+            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+
+              // Virtually perform login at IdP (return artificial SAML response)
+              .login().idp(SAML_BROKER_ALIAS).build()
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createAuthnResponse)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .build()
+              .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
+              .followOneRedirect()
+
+              // Now returning back to the app
+              .processSamlResponse(POST)
+                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                .build()
+
+              // ----- Logout phase ------
+
+              // Logout initiated from the app
+              .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, REDIRECT)
+                .nameId(nameIdRef::get)
+                .sessionIndex(sessionIndexRef::get)
+                .build()
+
+              // Should redirect now to logout from IdP
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createIdPLogoutResponse)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .build()
+
+              .getSamlResponse(REDIRECT);
+
+            assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        }
+    }
+
+    private URI getSamlBrokerUrl(String realmName) {
+        return URI.create(getAuthServerRealmBase(realmName).toString() + "/broker/" + SAML_BROKER_ALIAS + "/endpoint");
+    }
+
 }

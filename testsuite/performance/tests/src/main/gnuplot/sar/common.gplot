@@ -1,0 +1,11 @@
+set datafile separator ";"
+set datafile commentschar ""
+set xlabel "Time"
+set xdata time
+set timefmt "%Y-%m-%d %H:%M:%S"
+set format x '%H:%M:%S'
+set terminal pngcairo size 800,500
+set xtics rotate
+set yrange [0:*]
+set key below
+set grid

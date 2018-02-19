@@ -58,6 +58,7 @@
         <db.dc1.docker.cpusets>1</db.dc1.docker.cpusets>
         <db.dc2.docker.cpusets>1</db.dc2.docker.cpusets>
         <db.docker.memlimit>2g</db.docker.memlimit>
+        <db.max.connections>100</db.max.connections>
         <db.dump.download.site>https://downloads.jboss.org/keycloak-qe</db.dump.download.site>
 
         <!-- Load Balancer Settings -->
@@ -338,9 +339,11 @@
                                         <copy todir="${project.build.directory}/docker-compose" overwrite="false" >
                                             <fileset dir="${project.basedir}/..">
                                                 <include name="db/**"/>
-                                                <include name="infinispan/**"/>
                                                 <include name="monitoring/**"/>
                                             </fileset>
+                                        </copy>
+                                        <copy todir="${project.build.directory}/docker-compose/infinispan" overwrite="false" >
+                                            <fileset dir="${project.basedir}/../infinispan/target/docker"/>
                                         </copy>
                                         <copy todir="${project.build.directory}/docker-compose/load-balancer/wildfly-modcluster" overwrite="false" >
                                             <fileset dir="${project.basedir}/../load-balancer/wildfly-modcluster/target/docker"/>
@@ -418,6 +421,7 @@
                                         <DB_DC1_CPUSETS>${db.dc1.docker.cpusets}</DB_DC1_CPUSETS>
                                         <DB_DC2_CPUSETS>${db.dc2.docker.cpusets}</DB_DC2_CPUSETS>
                                         <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
+                                        <DB_MAX_CONNECTIONS>${db.max.connections}</DB_MAX_CONNECTIONS>
 
                                         <LB_CPUSETS>${lb.docker.cpusets}</LB_CPUSETS>
                                         <LB_DC1_CPUSETS>${lb.dc1.docker.cpusets}</LB_DC1_CPUSETS>
@@ -743,6 +747,58 @@
             <id>delete-monitoring-data</id>
             <properties>
                 <delete.monitoring.data>true</delete.monitoring.data>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>sar</id>
+            <properties>
+                <gnuplot>false</gnuplot>
+                <bzip>false</bzip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>start-sar</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./sar.sh</executable>
+                                    <environmentVariables>
+                                        <SAR_OPERATION>start</SAR_OPERATION>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-sar</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./sar.sh</executable>
+                                    <environmentVariables>
+                                        <SAR_OPERATION>stop</SAR_OPERATION>
+                                        <GNUPLOT>${gnuplot}</GNUPLOT>
+                                        <BZIP>${bzip}</BZIP>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>gnuplot</id>
+            <properties>
+                <gnuplot>true</gnuplot>
             </properties>
         </profile>
 

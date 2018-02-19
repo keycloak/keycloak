@@ -38,7 +38,9 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserConsentProtMappersByUser", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.user = :user)"),
         @NamedQuery(name="deleteUserConsentProtMappersByRealmAndLink", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link))"),
         @NamedQuery(name="deleteUserConsentProtMappersByProtocolMapper", query="delete from UserConsentProtocolMapperEntity csm where csm.protocolMapperId = :protocolMapperId)"),
-        @NamedQuery(name="deleteUserConsentProtMappersByClient", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId))"),
+        @NamedQuery(name="deleteUserConsentProtMappersByClient", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId)"),
+        @NamedQuery(name="deleteUserConsentProtMappersByExternalClient", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
+        @NamedQuery(name="deleteUserConsentProtMappersByClientStorageProvider", query="delete from UserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)"),
 })
 @Entity
 @Table(name="USER_CONSENT_PROT_MAPPER")

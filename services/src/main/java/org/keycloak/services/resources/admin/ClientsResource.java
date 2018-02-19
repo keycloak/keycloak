@@ -98,7 +98,7 @@ public class ClientsResource {
     public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId, @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly) {
         List<ClientRepresentation> rep = new ArrayList<>();
 
-        if (clientId == null) {
+        if (clientId == null || clientId.trim().equals("")) {
             List<ClientModel> clientModels = realm.getClients();
             auth.clients().requireList();
             boolean view = auth.clients().canView();

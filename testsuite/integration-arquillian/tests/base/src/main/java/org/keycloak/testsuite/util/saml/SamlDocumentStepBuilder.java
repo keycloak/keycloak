@@ -24,7 +24,9 @@ import org.keycloak.dom.saml.v2.protocol.AttributeQueryType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
@@ -33,9 +35,11 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import org.junit.Assert;
 import org.w3c.dom.Document;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
  *
@@ -87,21 +91,23 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             XMLStreamWriter xmlStreamWriter = StaxUtil.getXMLStreamWriter(bos);
 
-            if (saml2Object instanceof AuthnRequestType) {
-                new SAMLRequestWriter(xmlStreamWriter).write((AuthnRequestType) saml2Object);
-            } else if (saml2Object instanceof LogoutRequestType) {
-                new SAMLRequestWriter(xmlStreamWriter).write((LogoutRequestType) saml2Object);
-            } else if (saml2Object instanceof ArtifactResolveType) {
-                new SAMLRequestWriter(xmlStreamWriter).write((ArtifactResolveType) saml2Object);
-            } else if (saml2Object instanceof AttributeQueryType) {
-                new SAMLRequestWriter(xmlStreamWriter).write((AttributeQueryType) saml2Object);
-            } else if (saml2Object instanceof ResponseType) {
-                new SAMLResponseWriter(xmlStreamWriter).write((ResponseType) saml2Object);
-            } else if (saml2Object instanceof ArtifactResponseType) {
-                new SAMLResponseWriter(xmlStreamWriter).write((ArtifactResponseType) saml2Object);
+            if (transformed instanceof AuthnRequestType) {
+                new SAMLRequestWriter(xmlStreamWriter).write((AuthnRequestType) transformed);
+            } else if (transformed instanceof LogoutRequestType) {
+                new SAMLRequestWriter(xmlStreamWriter).write((LogoutRequestType) transformed);
+            } else if (transformed instanceof ArtifactResolveType) {
+                new SAMLRequestWriter(xmlStreamWriter).write((ArtifactResolveType) transformed);
+            } else if (transformed instanceof AttributeQueryType) {
+                new SAMLRequestWriter(xmlStreamWriter).write((AttributeQueryType) transformed);
+            } else if (transformed instanceof ResponseType) {
+                new SAMLResponseWriter(xmlStreamWriter).write((ResponseType) transformed);
+            } else if (transformed instanceof ArtifactResponseType) {
+                new SAMLResponseWriter(xmlStreamWriter).write((ArtifactResponseType) transformed);
+            } else if (transformed instanceof StatusResponseType) {
+                new SAMLResponseWriter(xmlStreamWriter).write((StatusResponseType) transformed, new QName(PROTOCOL_NSURI.get(), JBossSAMLConstants.LOGOUT_RESPONSE.get(), "samlp"));
             } else {
-                Assert.assertNotNull("Unknown type: <null>", saml2Object);
-                Assert.fail("Unknown type: " + saml2Object.getClass().getName());
+                Assert.assertNotNull("Unknown type: <null>", transformed);
+                Assert.fail("Unknown type: " + transformed.getClass().getName());
             }
             return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         };

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Tables - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Tables</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+      <h2>PatternFly recommendation:  Bootstrap striped, bordered, hover, and responsive</h2>
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th class="text-right">Course Number</th>
+              <th>Title</th>
+              <th>Level</th>
+              <th>Course Format</th>
+              <th>Days</th>
+              <th class="text-right">CRN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6020</td>
+              <td>Ethical Issues in Organizational Communication</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>T </td>
+              <td class="text-right">20115</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6020</td>
+              <td>Ethical Issues in Organizational Communication</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>W </td>
+              <td class="text-right">21509</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6050</td>
+              <td>Crisis Communication</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>W </td>
+              <td class="text-right">20915</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6050</td>
+              <td>Crisis Communication</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>Th </td>
+              <td class="text-right">21550</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6060</td>
+              <td>Negotiation, Mediation, and Facilitation</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>Th </td>
+              <td class="text-right">20119</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6060</td>
+              <td>Negotiation, Mediation, and Facilitation</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>T </td>
+              <td class="text-right">20122</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6060</td>
+              <td>Negotiation, Mediation, and Facilitation</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>T </td>
+              <td class="text-right">21511</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6060</td>
+              <td>Negotiation, Mediation, and Facilitation</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>Th </td>
+              <td class="text-right">21330</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6061</td>
+              <td>Personal Branding</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>Th </td>
+              <td class="text-right">20124</td>
+            </tr>
+            <tr>
+              <td><a href="#">Winter 2014 Full-Term Session</a></td>
+              <td class="text-right">CMN 6080</td>
+              <td>Intercultural Communication</td>
+              <td>Graduate</td>
+              <td>Online</td>
+              <td>W </td>
+              <td class="text-right">20126</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <hr>
+      <h2>TreeGrid tables</h2>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-treegrid">
+          <thead>
+            <tr>
+              <th>Column heading</th>
+              <th>Column heading</th>
+              <th>Column heading</th>
+              <th>Column heading</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-folder"></span>
+                Parent 1
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="0">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Child 1
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="1">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Grandchild 1
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="1">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Grandchild 2
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="1">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Grandchild 3
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="0">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Child 2
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr>
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-folder"></span>
+                Parent 2
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr id="parent-3">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-folder"></span>
+                Parent 3
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="#parent-3">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Child 3
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr id="parent-4" class="collapsed">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-folder"></span>
+                Parent 4
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="#parent-4" id="child-4">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Child 4
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+            <tr data-parent="#child-4">
+              <td class="treegrid-node">
+                <span class="icon node-icon fa fa-file-o"></span>
+                Grandchild 4
+              </td>
+              <td>Column content</td>
+              <td>Column content</td>
+              <td>Column content</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <script>
+        $('.table-treegrid').treegrid();
+      </script>
+      <hr>
+      <h2>Bootstrap examples</h2>
+      <h3>Basic example</h3>
+      <table class="table">
+        <caption>Optional table caption.</caption>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Mark</td>
+            <td>Otto</td>
+            <td>@mdo</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>Jacob</td>
+            <td>Thornton</td>
+            <td>@fat</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>Larry</td>
+            <td>the Bird</td>
+            <td>@twitter</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Striped rows</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Mark</td>
+            <td>Otto</td>
+            <td>@mdo</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>Jacob</td>
+            <td>Thornton</td>
+            <td>@fat</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>Larry</td>
+            <td>the Bird</td>
+            <td>@twitter</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Bordered table</h3>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Mark</td>
+            <td>Otto</td>
+            <td>@mdo</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>Jacob</td>
+            <td>Thornton</td>
+            <td>@fat</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>Larry</td>
+            <td>the Bird</td>
+            <td>@twitter</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Hover rows</h3>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Mark</td>
+            <td>Otto</td>
+            <td>@mdo</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>Jacob</td>
+            <td>Thornton</td>
+            <td>@fat</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>Larry</td>
+            <td>the Bird</td>
+            <td>@twitter</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Condensed table</h3>
+      <table class="table table-condensed">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Mark</td>
+            <td>Otto</td>
+            <td>@mdo</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>Jacob</td>
+            <td>Thornton</td>
+            <td>@fat</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>Larry</td>
+            <td>the Bird</td>
+            <td>@twitter</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Contextual classes</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Column heading</th>
+            <th>Column heading</th>
+            <th>Column heading</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="active">
+            <td>1</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr class="success">
+            <td>3</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr class="warning">
+            <td>5</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+          <tr class="danger">
+            <td>7</td>
+            <td>Column content</td>
+            <td>Column content</td>
+            <td>Column content</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Responsive tables</h3>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Table heading</th>
+              <th>Table heading</th>
+              <th>Table heading</th>
+              <th>Table heading</th>
+              <th>Table heading</th>
+              <th>Table heading</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1</th>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+            </tr>
+            <tr>
+              <th scope="row">2</th>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+            </tr>
+            <tr>
+              <th scope="row">3</th>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+              <td>Table cell</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /container -->
+  </body>
+</html>

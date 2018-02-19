@@ -122,7 +122,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
 
-        return tokenContext.brokerFlow(null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
+        return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
 
 }

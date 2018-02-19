@@ -9,7 +9,10 @@ networks:
 services:
 
     mariadb:
-        build: db/mariadb
+        build: 
+            context: db/mariadb
+            args:
+                MAX_CONNECTIONS: ${DB_MAX_CONNECTIONS:-100}
         image: keycloak_test_mariadb:${KEYCLOAK_VERSION:-latest}
         cpuset: ${DB_CPUSET:-1}
         mem_limit: ${DB_MEMLIMIT:-2g}

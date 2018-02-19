@@ -17,6 +17,12 @@
 
 package org.keycloak.provider;
 
+import org.keycloak.theme.ClasspathThemeProviderFactory;
+import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
+import org.keycloak.theme.ThemeResourceSpi;
+import org.keycloak.theme.ThemeSpi;
+
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -26,27 +32,46 @@ import java.util.ServiceLoader;
  */
 public class DefaultProviderLoader implements ProviderLoader {
 
+    private KeycloakDeploymentInfo info;
     private ClassLoader classLoader;
 
-    public DefaultProviderLoader(ClassLoader classLoader) {
+    public DefaultProviderLoader(KeycloakDeploymentInfo info, ClassLoader classLoader) {
+        this.info = info;
         this.classLoader = classLoader;
     }
 
     @Override
     public List<Spi> loadSpis() {
-        LinkedList<Spi> list = new LinkedList<>();
-        for (Spi spi : ServiceLoader.load(Spi.class, classLoader)) {
-            list.add(spi);
+        if (info.hasServices()) {
+            LinkedList<Spi> list = new LinkedList<>();
+            for (Spi spi : ServiceLoader.load(Spi.class, classLoader)) {
+                list.add(spi);
+            }
+            return list;
+        } else {
+            return Collections.emptyList();
         }
-        return list;
     }
 
     @Override
     public List<ProviderFactory> load(Spi spi) {
-        LinkedList<ProviderFactory> list = new LinkedList<ProviderFactory>();
-        for (ProviderFactory f : ServiceLoader.load(spi.getProviderFactoryClass(), classLoader)) {
-            list.add(f);
+        List<ProviderFactory> list = new LinkedList<>();
+        if (info.hasServices()) {
+            for (ProviderFactory f : ServiceLoader.load(spi.getProviderFactoryClass(), classLoader)) {
+                list.add(f);
+            }
         }
+
+        if (spi.getClass().equals(ThemeResourceSpi.class) && info.hasThemeResources()) {
+            ClasspathThemeResourceProviderFactory resourceProviderFactory = new ClasspathThemeResourceProviderFactory(info.getName(), classLoader);
+            list.add(resourceProviderFactory);
+        }
+
+        if (spi.getClass().equals(ThemeSpi.class) && info.hasThemes()) {
+            ClasspathThemeProviderFactory themeProviderFactory = new ClasspathThemeProviderFactory(info.getName(), classLoader);
+            list.add(themeProviderFactory);
+        }
+
         return list;
     }
 

@@ -161,6 +161,12 @@
                 <module>server-config-migration</module>
             </modules>
         </profile>
+        <profile>
+            <id>welcome-page</id>
+            <modules>
+                <module>welcome-page</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

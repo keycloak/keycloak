@@ -22,6 +22,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -72,7 +73,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
 
-        ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
+        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
         spis.addAll(pm.loadSpis());
         factoriesMap = loadFactories(pm);
         for (ProviderManager manager : ProviderManagerRegistry.SINGLETON.getPreBoot()) {

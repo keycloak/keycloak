@@ -83,7 +83,7 @@ public class RulePolicyForm extends Form {
         setInputValue(artifactVersion, expected.getArtifactVersion());
 
         clickLink(resolveModuleButton);
-        waitGui().withTimeout(30, TimeUnit.SECONDS).until().element(id("moduleName")).is().enabled();
+        waitGui().withTimeout(150, TimeUnit.SECONDS).until().element(id("moduleName")).is().enabled(); // The module load time could be long at some conditions
 
         moduleName.selectByVisibleText(expected.getModuleName());
         WaitUtils.pause(1000);

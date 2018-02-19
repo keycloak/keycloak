@@ -59,55 +59,6 @@ public class StringUtil {
         return str == null || str.isEmpty();
     }
 
-    private static final Pattern PROPERTY_REPLACEMENT = Pattern.compile("(.*?)"    + "\\$\\{(.*?)"   + "(?:::(.*?))?\\}");
-                                                                      // 1: PREFIX | START  2: NAME  |       3: OPTIONAL DEFAULT VALUE
-
-    /**
-     * <p>
-     * Get the system property value if the string is of the format ${sysproperty}
-     * </p>
-     * <p>
-     * You can insert default value when the system property is not set, by separating it at the beginning with ::
-     * </p>
-     * <p>
-     * <b>Examples:</b>
-     * </p>
-     *
-     * <p>
-     * ${idp} should resolve to a value if the system property "idp" is set.
-     * </p>
-     * <p>
-     * ${idp::http://localhost:8080} will resolve to http://localhost:8080 if the system property "idp" is not set.
-     * </p>
-     *
-     * @param str
-     *
-     * @return
-     */
-    public static String getSystemPropertyAsString(String str) {
-        if (str == null)
-            throw logger.nullArgumentError("str");
-
-        Matcher m = PROPERTY_REPLACEMENT.matcher(str);
-        StringBuilder sb = new StringBuilder();
-        int lastPosition = 0;
-        while (m.find()) {
-            String propertyName = m.group(2);
-            String defaultValue = m.group(3);
-
-            String sysPropertyValue = SecurityActions.getSystemProperty(propertyName, defaultValue);
-            if (sysPropertyValue.isEmpty()) {
-                throw logger.systemPropertyMissingError(propertyName);
-            }
-
-            sb.append(m.group(1)).append(sysPropertyValue);
-
-            lastPosition = m.end();
-        }
-
-        return sb.append(str.substring(lastPosition)).toString();
-    }
-
     /**
      * Match two strings else throw a {@link RuntimeException}
      *
@@ -117,68 +68,5 @@ public class StringUtil {
     public static void match(String first, String second) {
         if (!first.equals(second))
             throw logger.notEqualError(first, second);
-    }
-
-    /**
-     * Given a comma separated string, get the tokens as a {@link List}
-     *
-     * @param str
-     *
-     * @return
-     */
-    public static List<String> tokenize(String str) {
-        return tokenize(str, ",");
-    }
-
-    /**
-     * Given a delimited string, get the tokens as a {@link List}
-     *
-     * @param str
-     * @param delimiter the delimiter
-     *
-     * @return
-     */
-    public static List<String> tokenize(String str, String delimiter) {
-        List<String> list = new ArrayList<String>();
-        StringTokenizer tokenizer = new StringTokenizer(str, delimiter);
-        while (tokenizer.hasMoreTokens()) {
-            list.add(tokenizer.nextToken());
-        }
-        return list;
-    }
-
-    /**
-     * Given a string that is comma delimited and contains key-value pairs
-     *
-     * @param keyValuePairString
-     *
-     * @return
-     */
-    public static Map<String, String> tokenizeKeyValuePair(String keyValuePairString) {
-        Map<String, String> map = new HashMap<String, String>();
-
-        List<String> tokens = tokenize(keyValuePairString);
-        for (String token : tokens) {
-            int location = token.indexOf('=');
-            map.put(token.substring(0, location), token.substring(location + 1));
-        }
-        return map;
-    }
-
-    public static String[] split(String toSplit, String delimiter) {
-        if (delimiter.length() != 1) {
-            throw new IllegalArgumentException("Delimiter can only be one character in length");
-        }
-
-        int offset = toSplit.indexOf(delimiter);
-
-        if (offset < 0) {
-            return null;
-        }
-
-        String beforeDelimiter = toSplit.substring(0, offset);
-        String afterDelimiter = toSplit.substring(offset + 1);
-
-        return new String[]{beforeDelimiter, afterDelimiter};
     }
 }

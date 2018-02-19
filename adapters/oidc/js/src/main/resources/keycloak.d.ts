@@ -39,8 +39,13 @@ declare namespace Keycloak {
 		/**
 		 * @private Undocumented.
 		 */
-		adapter?: KeycloakAdapterName;
+		useNonce?: boolean;
 
+		/**
+		 * @private Undocumented.
+		 */
+		adapter?: KeycloakAdapterName;
+		
 		/**
 		 * Specifies an action to do on load.
 		 */

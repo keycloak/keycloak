@@ -41,6 +41,7 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResource;
@@ -64,6 +65,7 @@ import org.keycloak.models.cache.infinispan.authorization.events.ScopeRemovedEve
 import org.keycloak.models.cache.infinispan.authorization.events.ScopeUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.storage.StorageId;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -348,6 +350,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected class ResourceServerCache implements ResourceServerStore {
         @Override
         public ResourceServer create(String clientId) {
+            if (!StorageId.isLocalStorage(clientId)) {
+                throw new ModelException("Creating resource server from federated ClientModel not supported");
+            }
             ResourceServer server = getResourceServerStoreDelegate().create(clientId);
             registerResourceServerInvalidation(server.getId());
             return server;

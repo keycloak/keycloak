@@ -341,7 +341,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @POST
     @Path("/{provider_id}/login")
     public Response performPostLogin(@PathParam("provider_id") String providerId,
-                                     @QueryParam("code") String code,
+                                     @QueryParam(LoginActionsService.SESSION_CODE) String code,
                                      @QueryParam("client_id") String clientId,
                                      @QueryParam(Constants.TAB_ID) String tabId) {
         return performLogin(providerId, code, clientId, tabId);
@@ -351,7 +351,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @NoCache
     @Path("/{provider_id}/login")
     public Response performLogin(@PathParam("provider_id") String providerId,
-                                 @QueryParam("code") String code,
+                                 @QueryParam(LoginActionsService.SESSION_CODE) String code,
                                  @QueryParam("client_id") String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
         this.event.detail(Details.IDENTITY_PROVIDER, providerId);
@@ -594,7 +594,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @NoCache
     @Path("/after-first-broker-login")
-    public Response afterFirstBrokerLogin(@QueryParam("code") String code,
+    public Response afterFirstBrokerLogin(@QueryParam(LoginActionsService.SESSION_CODE) String code,
                                           @QueryParam("client_id") String clientId,
                                           @QueryParam(Constants.TAB_ID) String tabId) {
         ParsedCodeContext parsedCode = parseSessionCode(code, clientId, tabId);
@@ -725,7 +725,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @NoCache
     @Path("/after-post-broker-login")
-    public Response afterPostBrokerLoginFlow(@QueryParam("code") String code,
+    public Response afterPostBrokerLoginFlow(@QueryParam(LoginActionsService.SESSION_CODE) String code,
                                              @QueryParam("client_id") String clientId,
                                              @QueryParam(Constants.TAB_ID) String tabId) {
         ParsedCodeContext parsedCode = parseSessionCode(code, clientId, tabId);
@@ -991,7 +991,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return ParsedCodeContext.response(staleCodeError);
         }
 
-        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, request, clientConnection, session, event, code, null, clientId, tabId, LoginActionsService.AUTHENTICATE_PATH);
+        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, request, clientConnection, session, event, null, code, null, clientId, tabId, LoginActionsService.AUTHENTICATE_PATH);
         checks.initialVerify();
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
 

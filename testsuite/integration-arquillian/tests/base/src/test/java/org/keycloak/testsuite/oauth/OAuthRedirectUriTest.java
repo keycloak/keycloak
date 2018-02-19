@@ -131,6 +131,11 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                 .secret("password");
         realm.client(installedApp7);
 
+        ClientBuilder installedApp8 = ClientBuilder.create().id("test-fragment").name("test-fragment")
+                .redirectUris("http://localhost/*")
+                .secret("password");
+        realm.client(installedApp8);
+
         testRealms.add(realm.build());
     }
 
@@ -225,6 +230,20 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         Assert.assertTrue(url.getQuery().contains("key=value"));
         Assert.assertTrue(url.getQuery().contains("state="));
         Assert.assertTrue(url.getQuery().contains("code="));
+    }
+
+    @Test
+    public void testWithFragment() throws IOException {
+        oauth.clientId("test-fragment");
+        oauth.responseMode("fragment");
+
+        oauth.redirectUri(APP_ROOT + "/auth#key=value");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        URL url = new URL(driver.getCurrentUrl());
+        Assert.assertTrue(url.toString().startsWith(APP_ROOT));
+        Assert.assertTrue(url.toString().contains("key=value"));
     }
 
     @Test

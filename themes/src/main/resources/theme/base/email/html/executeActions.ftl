@@ -4,6 +4,6 @@
 
 <html>
 <body>
-${msg("executeActionsBodyHtml",link, linkExpiration, realmName, requiredActionsText)?no_esc}
+${msg("executeActionsBodyHtml",link, linkExpiration, realmName, requiredActionsText, linkExpirationFormatter(linkExpiration))?no_esc}
 </body>
 </html>

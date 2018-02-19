@@ -25,6 +25,8 @@ import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.models.ModelException;
+import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -46,6 +48,9 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer create(String clientId) {
+        if (!StorageId.isLocalStorage(clientId)) {
+            throw new ModelException("Creating resource server from federated ClientModel not supported");
+        }
         ResourceServerEntity entity = new ResourceServerEntity();
 
         entity.setId(clientId);

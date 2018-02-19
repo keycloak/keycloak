@@ -43,7 +43,15 @@
              <outputDirectory>bin</outputDirectory>
         </file>
         <file>
+             <source>../../shared-cli/adapter-install-saml-offline.cli</source>
+             <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
             <source>../../shared-cli/adapter-elytron-install-saml.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>../../shared-cli/adapter-elytron-install-saml-offline.cli</source>
             <outputDirectory>bin</outputDirectory>
         </file>
     </files>

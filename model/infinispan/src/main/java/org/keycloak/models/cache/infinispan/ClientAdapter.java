@@ -23,6 +23,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.CachedObject;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 
 import java.security.MessageDigest;
@@ -36,17 +37,15 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientAdapter implements ClientModel {
+public class ClientAdapter implements ClientModel, CachedObject {
     protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
-    protected RealmCache cache;
 
     protected ClientModel updated;
     protected CachedClient cached;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCacheSession cacheSession, RealmCache cache) {
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCacheSession cacheSession) {
         this.cachedRealm = cachedRealm;
-        this.cache = cache;
         this.cacheSession = cacheSession;
         this.cached = cached;
     }
@@ -54,7 +53,7 @@ public class ClientAdapter implements ClientModel {
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientInvalidation(cached.getId(), cached.getClientId(), cachedRealm.getId());
-            updated = cacheSession.getDelegate().getClientById(cached.getId(), cachedRealm);
+            updated = cacheSession.getRealmDelegate().getClientById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -66,9 +65,14 @@ public class ClientAdapter implements ClientModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getClientById(cached.getId(), cachedRealm);
+        updated = cacheSession.getRealmDelegate().getClientById(cached.getId(), cachedRealm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
+    }
+
+    @Override
+    public long getCacheTimestamp() {
+        return cached.getCacheTimestamp();
     }
 
     @Override
