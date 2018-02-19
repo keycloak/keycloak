@@ -37,6 +37,11 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
+    protected static WebArchive servletDeploymentMultiTenant(String name, Class... servletClasses) {
+        WebArchive servletDeployment = servletDeployment(name, null, servletClasses);
+        return servletDeployment;
+    }
+    
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
     }

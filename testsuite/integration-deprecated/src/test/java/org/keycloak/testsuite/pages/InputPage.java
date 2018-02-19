@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.WebElement;
