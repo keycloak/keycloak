@@ -1198,8 +1198,10 @@
 
                 var createCordovaOptions = function (userOptions) {
                     var cordovaOptions = shallowCloneCordovaOptions(userOptions);
-                    cordovaOptions.location = "no";
-                    cordovaOptions.hidden = userOptions && userOptions.prompt == "none" ? "yes" : "no";
+                    cordovaOptions.location = 'no';
+                    if (userOptions && userOptions.prompt == 'none') {
+                        cordovaOptions.hidden = 'yes';
+                    }                    
                     return formatCordovaOptions(cordovaOptions);
                 };
 
