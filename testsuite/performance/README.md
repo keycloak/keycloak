@@ -27,7 +27,7 @@ mvn clean install
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
 mvn verify -Pgenerate-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DnumOfIterations=3
+mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DsteadyLoadPeriod=10
 
 ```
 
@@ -139,7 +139,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
-| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.DefaultSimulation`  |
+| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.BasicOIDCSimulation`  |
 | `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
 | `runUsers` | Number of users for the simulation run. | `1` |
 | `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
@@ -149,7 +149,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
-#### Addtional Parameters of `keycloak.DefaultSimulation`
+#### Addtional Parameters of `keycloak.BasicOIDCSimulation`
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
@@ -159,7 +159,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
 Example:
 
-`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminSimulation -Ddataset=100u -DrunUsers=1 -DsteadyLoadPeriod=30 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
+`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DrunUsers=1 -DsteadyLoadPeriod=30 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
 
 
 ## Monitoring
@@ -246,12 +246,16 @@ Thus, it's best to download and install [this SDK version](http://scala-lang.org
 Open Preferences in IntelliJ. Type 'plugins' in the search box. In the right pane click on 'Install JetBrains plugin'.
 Type 'scala' in the search box, and click Install button of the Scala plugin.
 
-#### Run DefaultSimulation from IntelliJ
+#### Run BasicOIDCSimulation from IntelliJ
 
-In ProjectExplorer find Engine object (you can use ctrl-N / cmd-O). Right click on class name and select Run or Debug like for
-JUnit tests.
+Make sure that `performance` maven profile is enabled for IDEA to treat `performance` directory as a project module. 
 
-You'll have to create a test profile, and set 'VM options' with -Dkey=value to override default configuration values in TestConfig class.
+You may also need to rebuild the module in IDEA for scala objects to become available.
+
+Then find Engine object In ProjectExplorer (you can use ctrl-N / cmd-O). Right click on class name and select Run or Debug as if it was
+a JUnit tests.
+
+You'll have to edit a test configuration, and set 'VM options' to a list of -Dkey=value pairs to override default configuration values in TestConfig class.
 
 Make sure to set 'Use classpath of module' to 'performance-test'. 
 
