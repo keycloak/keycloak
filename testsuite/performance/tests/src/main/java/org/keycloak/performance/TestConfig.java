@@ -68,7 +68,7 @@ public class TestConfig {
     public static final long rampDownPeriodStartTime = simulationStartTime + (rampUpPeriod + steadyLoadPeriod) * 1000;
 
     //
-    // Settings used by DefaultSimulation to control behavior specific to DefaultSimulation
+    // Settings used by BasicOIDCSimulation to control behavior specific to BasicOIDCSimulation
     //
     public static final int badLoginAttempts = Integer.getInteger("badLoginAttempts", 0);
     public static final int refreshTokenCount = Integer.getInteger("refreshTokenCount", 0);

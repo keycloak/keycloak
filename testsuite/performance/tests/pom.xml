@@ -93,7 +93,7 @@
         <scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
         <jboss-logging.version>3.3.0.Final</jboss-logging.version>
 
-        <gatling.simulationClass>keycloak.DefaultSimulation</gatling.simulationClass>
+        <gatling.simulationClass>keycloak.BasicOIDCSimulation</gatling.simulationClass>
         <gatling.skip.run>true</gatling.skip.run>
     </properties>
 
