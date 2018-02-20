@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.drone;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
@@ -25,9 +28,11 @@ import org.jboss.arquillian.drone.spi.Configurator;
 import org.jboss.arquillian.drone.spi.DronePoint;
 import org.jboss.arquillian.drone.webdriver.configuration.WebDriverConfiguration;
 import org.jboss.arquillian.drone.webdriver.factory.BrowserCapabilitiesList;
+import org.jboss.arquillian.drone.webdriver.factory.BrowserCapabilitiesList.PhantomJS;
 import org.jboss.arquillian.drone.webdriver.factory.WebDriverFactory;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -47,9 +52,34 @@ public class KeycloakWebDriverConfigurator extends WebDriverFactory implements C
 
         if (webDriverCfg.getBrowser().equals("htmlUnit")) {
             updateCapabilities(webDriverCfg);
+        } else if (webDriverCfg.getBrowser().equals("phantomjs")) {
+            configurePhantomJSDriver(webDriverCfg);
         }
 
         return webDriverCfg;
+    }
+
+    private void configurePhantomJSDriver(WebDriverConfiguration webDriverCfg) {
+        webDriverCfg.setBrowserInternal(new PhantomJS() {
+            @Override
+            public Map<String, ?> getRawCapabilities() {
+                List<String> cliArgs = new ArrayList<>();
+                String cliArgsProperty = System.getProperty("keycloak.phantomjs.cli.args");
+
+                if (cliArgsProperty != null) {
+                    cliArgs = Arrays.asList(cliArgsProperty.split(" "));
+                } else {
+                    cliArgs.add("--ignore-ssl-errors=true");
+                    cliArgs.add("--web-security=false");
+                }
+
+                Map<String, Object> mergedCapabilities = new HashMap<>(super.getRawCapabilities());
+
+                mergedCapabilities.put(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs.toArray(new String[cliArgs.size()]));
+
+                return mergedCapabilities;
+            }
+        });
     }
 
 

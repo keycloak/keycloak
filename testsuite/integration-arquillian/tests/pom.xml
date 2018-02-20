@@ -108,7 +108,6 @@
         <js.browser>phantomjs</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</phantomjs.cli.args>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
         <firefoxLegacyDriver>true</firefoxLegacyDriver>
         <chromeBinary/>
@@ -285,7 +284,6 @@
                             <ieDriverArch>${ieDriverArch}</ieDriverArch>
 
                             <firefox_binary>${firefox_binary}</firefox_binary>
-                            <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
                             <chromeBinary>${chromeBinary}</chromeBinary>
                             <chromeArguments>${chromeArguments}</chromeArguments>
 
