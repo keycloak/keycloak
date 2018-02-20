@@ -346,6 +346,21 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         checkRedirectUri("http://localhost/myapp2", false);
     }
 
+    @Test
+    public void okThenNull() throws IOException {
+        oauth.clientId("test-wildcard");
+        oauth.redirectUri("http://localhost:8280/foo");
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        Assert.assertNotNull(code);
+        oauth.redirectUri(null);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals("Expected 400, but got something else", 400, tokenResponse.getStatusCode());
+    }
+
     private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
         checkRedirectUri(redirectUri, expectValid, false);
     }
