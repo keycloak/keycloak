@@ -51,7 +51,7 @@ Unicode characters are properly handled provided the database was created with U
 fields in the `CREATE DATABASE` command (e.g. by using `utf8` character set as the default database character set in
 MySQL 5.5. Please note that `utf8mb4` character set does not work due to different storage requirements to `utf8`
 character set footnote:[Tracked as https://issues.jboss.org/browse/KEYCLOAK-3873]). Note that in this case, length
-restriction to non-special fields does not apply because columns are created to accomodate given amount of characters,
+restriction to non-special fields does not apply because columns are created to accommodate given amount of characters,
 not bytes. If the database default character set does not allow storing Unicode, only the special fields allow storing
 Unicode values.
 

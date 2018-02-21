@@ -5,7 +5,7 @@ There are multiple different caches configured for {project_name}.
 There is a realm cache that holds information about secured applications, general security data, and configuration options.
 There is also a user cache that contains user metadata.  Both caches default to a maximum of 10000 entries and use a least recently used eviction strategy.
 Each of them is also tied to an object revisions cache that controls eviction in a clustered setup.
-This cache is created implicitely and has twice the configured size.
+This cache is created implicitly and has twice the configured size.
 There are also separate caches for user sessions, offline tokens, and login failures.  These caches are unbounded in size as well.
 
 The eviction policy and max entries for these caches can be configured in the _standalone.xml_, _standalone-ha.xml_, or

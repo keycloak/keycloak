@@ -23,7 +23,7 @@ so that the actual client IP address is forwarded to and processed by the {proje
 
 * Configure your reverse proxy or loadbalancer to properly set `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers.
 * Configure your reverse proxy or loadbalancer to preserve the original 'Host' HTTP header.
-* Configure the authentication server to read the client's IP address from `X-Forwarded-For header`.
+* Configure the authentication server to read the client's IP address from `X-Forwarded-For` header.
 
 Configuring your proxy to generate the `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers and preserving the
  original `Host` HTTP header is beyond the scope of this guide.  Take extra precautions to ensure that the

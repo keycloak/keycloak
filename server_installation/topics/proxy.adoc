@@ -87,47 +87,47 @@ Here's an example configuration file.
 The basic configuration options for the server are as follows: 
 
 target-url::
-  The URL this server is proxying _REQUIRED._. 
+  The URL this server is proxying. _REQUIRED_. 
 
 send-access-token::
   Boolean flag.
-  If true, this will send the access token via the KEYCLOAK_ACCESS_TOKEN header to the proxied server. _OPTIONAL._.
+  If true, this will send the access token via the KEYCLOAK_ACCESS_TOKEN header to the proxied server. _OPTIONAL_.
   Default is false. 
 
 bind-address::
-  DNS name or IP address to bind the proxy server's sockets to. _OPTIONAL._.
+  DNS name or IP address to bind the proxy server's sockets to. _OPTIONAL_.
   The default value is _localhost_                        
 
 http-port::
   Port to listen for HTTP requests.
-  If you do not specify this value, then the proxy will not listen for regular HTTP requests. _OPTIONAL._. 
+  If you do not specify this value, then the proxy will not listen for regular HTTP requests. _OPTIONAL_. 
 
 https-port::
   Port to listen for HTTPS requests.
-  If you do not specify this value, then the proxy will not listen for HTTPS requests. _OPTIONAL._. 
+  If you do not specify this value, then the proxy will not listen for HTTPS requests. _OPTIONAL_. 
 
 keystore::
   Path to a Java keystore file that contains private key and certificate for the server to be able to handle HTTPS requests.
-  Can be a file path, or, if you prefix it with `classpath:`                            it will look for this file in the classpath. _OPTIONAL._.
+  Can be a file path, or, if you prefix it with `classpath:`                            it will look for this file in the classpath. _OPTIONAL_.
   If you have enabled HTTPS, but have not defined a keystore, the proxy will auto-generate a self-signed certificate and use that. 
 
 buffer-size::
   HTTP server socket buffer size.
-  Usually the default is good enough. _OPTIONAL._. 
+  Usually the default is good enough. _OPTIONAL_. 
 
 buffers-per-region::
   HTTP server socket buffers per region.
-  Usually the default is good enough. _OPTIONAL._. 
+  Usually the default is good enough. _OPTIONAL_. 
 
 io-threads::
   Number of threads to handle IO.
   Usually default is good enough.
-   _OPTIONAL._.
+   _OPTIONAL_.
   The default is the number of available processors * 2. 
 
 worker-threads::
   Number of threads to handle requests.
-  Usually the default is good enough. _OPTIONAL._.
+  Usually the default is good enough. _OPTIONAL_.
   The default is the number of available processors * 16.         
 
 === Application Config
@@ -136,15 +136,15 @@ Next under the `applications` array attribute, you can define one or more applic
 
 base-path::
   The base context root for the application.
-  Must start with '/' _REQUIRED._. 
+  Must start with '/'. _REQUIRED_. 
 
 error-page::
-  If the proxy has an error, it will display the target application's error page relative URL _OPTIONAL._.
+  If the proxy has an error, it will display the target application's error page relative URL. _OPTIONAL_.
   This is a relative path to the base-path.
   In the example above it would be `/customer-portal/error.html`. 
 
 adapter-config::
-  _REQUIRED._.
+  _REQUIRED_.
   Same configuration as any other {project_name} adapter.
 // See <<_adapter_config,Adapter Config>>                                        
 
@@ -161,36 +161,36 @@ More specific constraints will take precedence over more general ones.
 
 pattern::
   URL pattern to match relative to the base-path of the application.
-  Must start with '/' _REQUIRED._
+  Must start with '/'. _REQUIRED._
   You may only have one wildcard and it must come at the end of the pattern.
   
   * Valid: [x-]`/foo/bar/*` and  [x-]`/foo/*.txt`
   * Not valid: [x-]`/*/foo/*`. 
 
 roles-allowed::
-  Array of strings of roles allowed to access this url pattern. _OPTIONAL._. 
+  Array of strings of roles allowed to access this url pattern. _OPTIONAL_. 
 
 methods::
-  Array of strings of HTTP methods that will exclusively match this pattern and HTTP request. _OPTIONAL._. 
+  Array of strings of HTTP methods that will exclusively match this pattern and HTTP request. _OPTIONAL_. 
 
 excluded-methods::
-  Array of strings of HTTP methods that will be ignored when match this pattern. _OPTIONAL._. 
+  Array of strings of HTTP methods that will be ignored when match this pattern. _OPTIONAL_. 
 
 deny::
-  Deny all access to this URL pattern. _OPTIONAL._. 
+  Deny all access to this URL pattern. _OPTIONAL_. 
 
 permit::
-  Permit all access without requiring authentication or a role mapping. _OPTIONAL._. 
+  Permit all access without requiring authentication or a role mapping. _OPTIONAL_. 
 
 permit-and-inject::
-  Permit all access, but inject the headers, if user is already authenticated._OPTIONAL._. 
+  Permit all access, but inject the headers, if user is already authenticated. _OPTIONAL_. 
 
 authenticate::
-  Require authentication for this pattern, but no role mapping. _OPTIONAL._.                 
+  Require authentication for this pattern, but no role mapping. _OPTIONAL_.                 
 
 ==== Header Names Config
 
-Next under the list of applications you can override the defaults for the names of the header fields injected by the proxy (see {project_name} Identity Headers). This mapping is optional.
+Next under the list of applications you can override the defaults for the names of the header fields injected by the proxy (see <<_identity_headers, {project_name} Identity Headers>>). This mapping is optional.
 
 keycloak-subject::
   e.g.
@@ -212,6 +212,7 @@ keycloak-access-token::
   e.g.
   MYAPP_ACCESS_TOKEN             
 
+[[_identity_headers]]
 === {project_name} Identity Headers
 
 When forwarding requests to the proxied server, {project_name} Proxy will set some additional headers with values from the OIDC identity token it received for authentication.
@@ -222,7 +223,7 @@ KEYCLOAK_SUBJECT::
 
 KEYCLOAK_USERNAME::
   Username.
-  Corresponds to JWT `preferred_username`                        
+  Corresponds to JWT `preferred_username`.                        
 
 KEYCLOAK_EMAIL::
   Email address of user if set. 

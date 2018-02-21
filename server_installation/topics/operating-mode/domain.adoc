@@ -83,7 +83,7 @@ If you scroll down further, you'll see various `socket-binding-groups` defined.
         <socket-binding-group name="ha-sockets" default-interface="public">
            ...
         </socket-binding-group>
-        <!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one -->
+        <!-- load-balancer-sockets should be removed in production systems and replaced with a better software or hardware based one -->
         <socket-binding-group name="load-balancer-sockets" default-interface="public">
            ...
         </socket-binding-group>
@@ -92,7 +92,7 @@ If you scroll down further, you'll see various `socket-binding-groups` defined.
 
 
 This config defines the default port mappings for various connectors that are opened with each
-{project_name} server instance.  Any value that contains `${...}` is a value that can be overriden on the command line
+{project_name} server instance.  Any value that contains `${...}` is a value that can be overridden on the command line
 with the `-D` switch, i.e.
 
 ----
@@ -107,7 +107,7 @@ binds a `socket-binding-group` to the server group.
 [source,xml]
 ----
     <server-groups>
-        <!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one -->
+        <!-- load-balancer-group should be removed in production systems and replaced with a better software or hardware based one -->
         <server-group name="load-balancer-group" profile="load-balancer">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>
@@ -285,4 +285,4 @@ $ domain.sh --host-config=host-master.xml
 $ domain.sh --host-config=host-slave.xml
 ----
 
-To try it out, open your browser and go to http://localhost:8080/auth
+To try it out, open your browser and go to http://localhost:8080/auth.

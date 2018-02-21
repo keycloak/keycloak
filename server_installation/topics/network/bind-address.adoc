@@ -40,7 +40,7 @@ interface corresponds to sockets opened up by the management layer of the {appse
 which allow you to use the `jboss-cli.sh` command line interface and the {appserver_name} web console.
 
 In looking at the `public` interface you see that it has a special string `${jboss.bind.address:127.0.0.1}`.  This string
-denotes a value `127.0.0.1` that can be overriden on the command line by setting a Java system property, i.e.:
+denotes a value `127.0.0.1` that can be overridden on the command line by setting a Java system property, i.e.:
 
 [source]
 ----

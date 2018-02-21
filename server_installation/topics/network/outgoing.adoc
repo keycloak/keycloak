@@ -132,7 +132,7 @@ The truststore is used when connecting securely to identity brokers, LDAP identi
 
 WARNING:  By default, a truststore provider is not configured, and any https connections fall back to standard java truststore configuration as described in
           https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html[Java's JSSE Reference Guide].  If there is no trust
-          establised, then these outgoing HTTPS requests will fail.
+          established, then these outgoing HTTPS requests will fail.
 
 You can use _keytool_ to create a new truststore file or add trusted host certificates to an existing one:
 
