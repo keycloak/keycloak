@@ -99,7 +99,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -118,7 +122,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -135,7 +143,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -177,7 +189,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -196,7 +212,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -231,7 +251,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
