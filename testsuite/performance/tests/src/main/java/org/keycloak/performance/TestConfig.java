@@ -57,15 +57,18 @@ public class TestConfig {
     //
     public static final int runUsers = Integer.getInteger("runUsers", 1);
     public static final int rampUpPeriod = Integer.getInteger("rampUpPeriod", 0);
-    public static final int steadyLoadPeriod = Integer.getInteger("steadyLoadPeriod", 30);
+    public static final int warmUpPeriod = Integer.getInteger("warmUpPeriod", 0);
+    public static final int measurementPeriod = Integer.getInteger("measurementPeriod", 30);
     public static final boolean rampDownASAP = Boolean.getBoolean("rampDownASAP"); // check for rampdown condition after each scenario step
     public static final int pace = Integer.getInteger("pace", 0); // additional dynamic "pause buffer" between scenario loops
-    public static final int userThinkTime = Integer.getInteger("userThinkTime", 5);
-    public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 10);
+    public static final int userThinkTime = Integer.getInteger("userThinkTime", 0);
+    public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 0);
 
     // Computed timestamps
-    public static final long simulationStartTime = System.currentTimeMillis();//new Date().getTime();
-    public static final long rampDownPeriodStartTime = simulationStartTime + (rampUpPeriod + steadyLoadPeriod) * 1000;
+    public static final long simulationStartTime = System.currentTimeMillis();
+    public static final long warmUpStartTime = simulationStartTime + rampUpPeriod * 1000;
+    public static final long measurementStartTime = warmUpStartTime + warmUpPeriod * 1000;
+    public static final long measurementEndTime = measurementStartTime + measurementPeriod * 1000;
 
     //
     // Settings used by BasicOIDCSimulation to control behavior specific to BasicOIDCSimulation
@@ -114,15 +117,15 @@ public class TestConfig {
     }
 
     public static String toStringCommonTestParameters() {
-        return String.format(
-        "  runUsers: %s\n" + 
-        "  rampUpPeriod: %s\n"+ 
-        "  steadyLoadPeriod: %s\n"+
-        "  rampDownASAP: %s\n"+ 
-        "  pace: %s\n"+ 
-        "  userThinkTime: %s\n"+ 
-        "  refreshTokenPeriod: %s",
-                runUsers, rampUpPeriod, steadyLoadPeriod, rampDownASAP, pace, userThinkTime, refreshTokenPeriod
+        return String.format("  runUsers: %s\n"
+                + "  rampUpPeriod: %s\n"
+                + "  warmUpPeriod: %s\n"
+                + "  measurementPeriod: %s\n"
+                + "  rampDownASAP: %s\n"
+                + "  pace: %s\n"
+                + "  userThinkTime: %s\n"
+                + "  refreshTokenPeriod: %s",
+                runUsers, rampUpPeriod, warmUpPeriod, measurementPeriod, rampDownASAP, pace, userThinkTime, refreshTokenPeriod
         );
     }
 

@@ -27,7 +27,7 @@ mvn clean install
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
 mvn verify -Pgenerate-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DsteadyLoadPeriod=10
+mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60
 
 ```
 
@@ -143,7 +143,8 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 | `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
 | `runUsers` | Number of users for the simulation run. | `1` |
 | `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
-| `steadyLoadPeriod` | A period of steady load. (seconds) | `30` |
+| `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `0` |
+| `measurementPeriod` | A measurement period after the system is warmed up. (seconds) | `30` |
 | `rampDownASAP` | When `true` the test will be checking for ramp-down condition after each *scenario step*. When `false` the check will be done only at the end of a *scenario iteration*. | `false` |
 | `pace` | A dynamic pause after each *scenario iteration*. For example if the pace is 30s and one scenario iteration takes only 20s, the simulation will wait additional 10s before continuing to the next iteration. | `0` |
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
@@ -159,7 +160,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
 Example:
 
-`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DrunUsers=1 -DsteadyLoadPeriod=30 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
+`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DrunUsers=1 -DmeasurementPeriod=60 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
 
 
 ## Monitoring

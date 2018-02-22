@@ -2,6 +2,7 @@ package keycloak
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
+import keycloak.CommonScenarioBuilder._
 import keycloak.BasicOIDCScenarioBuilder._
 
 import org.keycloak.performance.TestConfig
@@ -49,7 +50,7 @@ class BasicOIDCSimulation extends Simulation {
 
 
   val usersScenario = scenario("users")
-    .asLongAs(s => rampDownPeriodNotReached(), null, TestConfig.rampDownASAP) {
+    .asLongAs(s => rampDownNotStarted(), null, TestConfig.rampDownASAP) {
       pace(TestConfig.pace)
       userSession.chainBuilder
     }
