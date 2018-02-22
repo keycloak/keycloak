@@ -86,11 +86,6 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                     return policies;
                 }, consumer);
             }
-
-            if (scopes.isEmpty() && !resource.getScopes().isEmpty()) {
-                scopes.removeAll(resource.getScopes());
-                evaluatePolicies(() -> policyStore.findByScopeIds(resource.getScopes().stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
-            }
         }
 
         if (!scopes.isEmpty()) {

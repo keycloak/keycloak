@@ -51,9 +51,8 @@ public class ResourceRepresentation {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
-    private List<ScopeRepresentation> typedScopes;
-    private String displayName;
 
+    private String displayName;
     /**
      * Creates a new instance.
      *
@@ -185,14 +184,6 @@ public class ResourceRepresentation {
 
     public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
         this.ownerManagedAccess = ownerManagedAccess;
-    }
-
-    public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
-        this.typedScopes = typedScopes;
-    }
-
-    public List<ScopeRepresentation> getTypedScopes() {
-        return typedScopes;
     }
 
     public void addScope(String... scopeNames) {

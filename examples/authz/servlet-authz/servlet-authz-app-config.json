@@ -25,7 +25,6 @@
     {
       "name": "Premium Resource",
       "uri": "/protected/premium/*",
-      "type": "urn:servlet-authz:protected:resource",
       "scopes": [
         {
           "name": "urn:servlet-authz:protected:premium:access"
@@ -34,7 +33,6 @@
     },
     {
       "name": "Main Page",
-      "type": "urn:servlet-authz:protected:resource",
       "scopes": [
         {
           "name": "urn:servlet-authz:page:main:actionForAdmin"
