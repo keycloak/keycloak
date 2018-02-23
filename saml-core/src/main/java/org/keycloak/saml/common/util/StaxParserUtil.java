@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.util;
 
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
@@ -190,6 +191,23 @@ public class StaxParserUtil {
     }
 
     /**
+     * Given an {@code Attribute}, get its trimmed value, replacing every occurrence of ${..} by corresponding system property value
+     *
+     * @param attribute
+     *
+     * @return
+     */
+    public static String getAttributeValueRP(Attribute attribute) {
+        if (attribute == null) {
+            return null;
+        }
+
+        final String value = attribute.getValue();
+
+        return value == null ? null : trim(StringPropertyReplacer.replaceProperties(value));
+    }
+
+    /**
      * Get the Attribute value
      *
      * @param startElement
@@ -212,6 +230,21 @@ public class StaxParserUtil {
      */
     public static String getAttributeValue(StartElement startElement, HasQName attrName) {
         return getAttributeValue(startElement, attrName.getQName());
+    }
+
+    /**
+     * Get the Attribute value, replacing every occurrence of ${..} by corresponding system property value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @see StringPropertyReplacer#replaceProperties(java.lang.String)
+     *
+     * @return
+     */
+    public static String getAttributeValueRP(StartElement startElement, HasQName attrName) {
+        final String value = getAttributeValue(startElement, attrName.getQName());
+        return value == null ? null : StringPropertyReplacer.replaceProperties(value);
     }
 
     /**
@@ -270,6 +303,20 @@ public class StaxParserUtil {
     }
 
     /**
+     * Get the Attribute value, replacing every occurrence of ${..} by corresponding system property value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @return
+     */
+    public static Integer getIntegerAttributeValueRP(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValueRP(attr);
+        return value == null ? null : Integer.valueOf(value);
+    }
+
+    /**
      * Get the Attribute value
      *
      * @param startElement
@@ -280,6 +327,20 @@ public class StaxParserUtil {
     public static Boolean getBooleanAttributeValue(StartElement startElement, HasQName attrName) {
         Attribute attr = startElement.getAttributeByName(attrName.getQName());
         String value = getAttributeValue(attr);
+        return value == null ? null : Boolean.valueOf(value);
+    }
+
+    /**
+     * Get the Attribute value, replacing every occurrence of ${..} by corresponding system property value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @return
+     */
+    public static Boolean getBooleanAttributeValueRP(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValueRP(attr);
         return value == null ? null : Boolean.valueOf(value);
     }
 
@@ -320,6 +381,14 @@ public class StaxParserUtil {
         if (attr == null)
             throw logger.parserRequiredAttribute(qName.getLocalPart());
         return StaxParserUtil.getAttributeValue(attr);
+    }
+
+    public static String getRequiredAttributeValueRP(StartElement startElement, HasQName attrName) throws ParsingException {
+        final QName qName = attrName.getQName();
+        Attribute attr = startElement.getAttributeByName(qName);
+        if (attr == null)
+            throw logger.parserRequiredAttribute(qName.getLocalPart());
+        return StaxParserUtil.getAttributeValueRP(attr);
     }
 
     private static final String JDK_TRANSFORMER_PROPERTY = "picketlink.jdk.transformer";

@@ -15,10 +15,8 @@
   ~ limitations under the License.
   -->
 
-<keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
-                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                       xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd">
-    <SP entityID="sp"
+<keycloak-saml-adapter>
+    <SP entityID="${keycloak-saml-properties.entityID:sp}"
         sslPolicy="EXTERNAL"
         nameIDPolicyFormat="format"
         forceAuthentication="true"
@@ -57,7 +55,7 @@
             <SingleLogoutService
                     validateRequestSignature="true"
                     validateResponseSignature="true"
-                    signRequest="false"
+                    signRequest="true"
                     signResponse="true"
                     requestBinding="REDIRECT"
                     responseBinding="POST"

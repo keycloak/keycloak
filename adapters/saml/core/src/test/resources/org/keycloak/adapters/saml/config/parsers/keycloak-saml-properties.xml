@@ -18,8 +18,8 @@
 <keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                        xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd">
-    <SP entityID="sp"
-        sslPolicy="EXTERNAL"
+    <SP entityID="${keycloak-saml-properties.entityID:sp}"
+        sslPolicy="${keycloak-saml-properties.sslPolicy}"
         nameIDPolicyFormat="format"
         forceAuthentication="true"
         isPassive="true">
@@ -46,7 +46,7 @@
         <IDP entityID="idp"
              signatureAlgorithm="RSA_SHA256"
              signatureCanonicalizationMethod="canon"
-             signaturesRequired="true"
+             signaturesRequired="${keycloak-saml-properties.signaturesRequired:false}"
                 >
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
@@ -55,10 +55,8 @@
                     />
 
             <SingleLogoutService
-                    validateRequestSignature="true"
-                    validateResponseSignature="true"
-                    signRequest="false"
-                    signResponse="true"
+                    signRequest="true"
+                    signResponse="false"
                     requestBinding="REDIRECT"
                     responseBinding="POST"
                     postBindingUrl="posturl"

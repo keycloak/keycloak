@@ -53,6 +53,11 @@ public class QNameEnumLookup<E extends Enum<E> & HasQName> {
         this.qNameConstants = Collections.unmodifiableMap(q);
     }
 
+    /**
+     * Looks up the given {@code name} and returns the corresponding constant.
+     * @param name
+     * @return
+     */
     public E from(QName name) {
         E c = qNameConstants.get(name);
         if (c == null) {
