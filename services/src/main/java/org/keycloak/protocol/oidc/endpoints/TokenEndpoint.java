@@ -23,6 +23,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
@@ -532,10 +533,10 @@ public class TokenEndpoint {
                 .setUriInfo(uriInfo)
                 .setRequest(request);
         Response challenge = processor.authenticateOnly();
-        if (challenge != null) {
-            cors.build(httpResponse);
-            return challenge;
-        }
+		if (challenge != null) {
+			cors.build(httpResponse);
+			return challenge;
+		}
         processor.evaluateRequiredActionTriggers();
         UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
@@ -1133,5 +1134,5 @@ public class TokenEndpoint {
         String codeVerifierEncoded = Base64Url.encode(digestBytes);
         return codeVerifierEncoded;
     }
- 
+
 }

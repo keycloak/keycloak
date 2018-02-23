@@ -856,6 +856,7 @@ public class AuthenticationProcessor {
         }
         UserModel authUser = authenticationSession.getAuthenticatedUser();
         validateUser(authUser);
+        validateClientProtocol(authenticationSession);
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");
@@ -908,6 +909,7 @@ public class AuthenticationProcessor {
         }
         UserModel authUser = authenticationSession.getAuthenticatedUser();
         validateUser(authUser);
+        validateClientProtocol(authenticationSession);
         AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
@@ -915,6 +917,12 @@ public class AuthenticationProcessor {
             throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         return challenge;
+    }
+
+    private void validateClientProtocol(final AuthenticationSessionModel authenticationSession) {
+        if (!authenticationSession.getProtocol().equals(authenticationSession.getClient().getProtocol())) {
+            throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_PROTOCOL);
+        }
     }
 
     // May create userSession too
