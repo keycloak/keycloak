@@ -12,18 +12,12 @@ import org.keycloak.performance.TestConfig
   * @author Radim Vansa &lt;rvansa@redhat.com&gt;
   * @author Marko Strukelj &lt;mstrukel@redhat.com&gt;
   */
-class BasicOIDCSimulation extends Simulation {
+class BasicOIDCSimulation extends CommonSimulation {
 
-  println()
-  println("Target servers: " + TestConfig.serverUrisList)
-  println()
-
-  println("Using test parameters:\n" + TestConfig.toStringCommonTestParameters);
-  println("  refreshTokenCount: " + TestConfig.refreshTokenCount)
-  println("  badLoginAttempts: " + TestConfig.badLoginAttempts)
-  println()
-  println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
-
+  override def printSpecificTestParameters {
+    println("  refreshTokenCount: " + TestConfig.refreshTokenCount)
+    println("  badLoginAttempts: " + TestConfig.badLoginAttempts)
+  }
 
   val httpDefault = http
     .acceptHeader("application/json")
@@ -49,18 +43,15 @@ class BasicOIDCSimulation extends Simulation {
       .thinkPause()
 
 
-  val usersScenario = scenario("users")
-    .asLongAs(s => rampDownNotStarted(), null, TestConfig.rampDownASAP) {
-      pace(TestConfig.pace)
-      userSession.chainBuilder
-    }
+  val usersScenario = scenario("users").exec(userSession.chainBuilder)
 
-  setUp(usersScenario
-    .inject(rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod)
-    .protocols(httpDefault))
-
-  after {
-    filterResults(getClass)
-  }
+  setUp(usersScenario.inject(
+      rampUsersPerSec(0.001) to TestConfig.usersPerSec during(TestConfig.rampUpPeriod),
+      constantUsersPerSec(TestConfig.usersPerSec) during(TestConfig.warmUpPeriod + TestConfig.measurementPeriod) 
+    ).protocols(httpDefault))
+  
+//  after {
+//    filterResults(getClass)
+//  }
 
 }

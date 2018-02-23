@@ -5,22 +5,13 @@ import io.gatling.http.Predef._
 
 import keycloak.CommonScenarioBuilder._
 
-import io.gatling.core.validation.Validation
 import org.keycloak.performance.TestConfig
 
 
 /**
   * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
   */
-class AdminConsoleSimulation extends Simulation {
-
-  println()
-  println("Target server: " + TestConfig.serverUrisList.get(0))
-  println()
-  println("Using test parameters:\n" + TestConfig.toStringCommonTestParameters);
-  println()
-  println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
-
+class AdminConsoleSimulation extends CommonSimulation {
 
   val httpProtocol = http
     .baseURL("http://localhost:8080")
@@ -30,9 +21,6 @@ class AdminConsoleSimulation extends Simulation {
     .acceptEncodingHeader("gzip, deflate")
     .acceptLanguageHeader("en-US,en;q=0.5")
     .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0")
-
-
-
 
   val adminSession = new AdminConsoleScenarioBuilder()
     .openAdminConsoleHome()
@@ -90,18 +78,12 @@ class AdminConsoleSimulation extends Simulation {
     .thinkPause()
 
 
-  val adminScenario = scenario("AdminConsole")
-    .asLongAs(s => rampDownNotStarted(), null, TestConfig.rampDownASAP) {
-      pace(TestConfig.pace)
-      adminSession.chainBuilder
-    }
+  val adminScenario = scenario("AdminConsole").exec(adminSession.chainBuilder)
 
   setUp(adminScenario
-    .inject(rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod)
-    .protocols(httpProtocol))
-
-  after {
-    filterResults(getClass)
-  }
+    .inject(
+       rampUsersPerSec(0.001) to TestConfig.usersPerSec during(TestConfig.rampUpPeriod) ,
+       constantUsersPerSec(TestConfig.usersPerSec) during(TestConfig.warmUpPeriod + TestConfig.measurementPeriod) 
+    ).protocols(httpProtocol))
 
 }

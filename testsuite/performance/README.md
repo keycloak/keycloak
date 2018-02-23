@@ -27,7 +27,7 @@ mvn clean install
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
 mvn verify -Pgenerate-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60
+mvn verify -Ptest -Ddataset=100u -DusersPerSec=4.5 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60 -DfilterResults=true
 
 ```
 
@@ -40,7 +40,7 @@ mvn verify -Pteardown
 
 You can perform all phases in a single run:
 ```
-mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100 -DrunUsers=200 -DrampUpPeriod=10
+mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100 -DusersPerSec=5 -DrampUpPeriod=10
 ```
 Note: The order in which maven profiles are listed does not determine the order in which profile related plugins are executed. `teardown` profile always executes last.
 
@@ -141,13 +141,11 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 | --- | --- | --- | 
 | `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.BasicOIDCSimulation`  |
 | `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
-| `runUsers` | Number of users for the simulation run. | `1` |
+| `usersPerSec` | Arrival rate of new users per second. Can be a floating point number. | `1.0` |
 | `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
 | `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `0` |
 | `measurementPeriod` | A measurement period after the system is warmed up. (seconds) | `30` |
-| `rampDownASAP` | When `true` the test will be checking for ramp-down condition after each *scenario step*. When `false` the check will be done only at the end of a *scenario iteration*. | `false` |
 | `filterResults` | Whether to filter out requests which are outside of the `measurementPeriod`. | `false` |
-| `pace` | A dynamic pause after each *scenario iteration*. For example if the pace is 30s and one scenario iteration takes only 20s, the simulation will wait additional 10s before continuing to the next iteration. | `0` |
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
@@ -161,7 +159,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
 Example:
 
-`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DrunUsers=1 -DmeasurementPeriod=60 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
+`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DusersPerSec=1 -DmeasurementPeriod=60 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
 
 
 ## Monitoring
@@ -210,25 +208,25 @@ Results will be stored in folder: `tests/target/sar`.
 
 - Provision single node of KC + DB, generate data, run test, and tear down the provisioned system:
 
-    `mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DrunUsers=100`
+    `mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DusersPerSec=5`
 
 - Provision single node of KC + DB, generate data, no test, no teardown:
 
     `mvn verify -Pprovision,generate-data -Ddataset=100u`
 
-- Run test against provisioned system using 100 concurrent users ramped up over 10 seconds, then tear it down:
+- Run test against provisioned system generating 5 new users per second, ramped up over 10 seconds, then tear it down:
 
-    `mvn verify -Ptest,teardown -Ddataset=100u -DrunUsers=100 -DrampUpPeriod=10`
+    `mvn verify -Ptest,teardown -Ddataset=100u -DusersPerSec=5 -DrampUpPeriod=10`
 
 ### Cluster
 
 - Provision a 1-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
 
-    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Ddataset=100u -DrunUsers=100`
+    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Ddataset=100u -DusersPerSec=5`
 
 - Provision a 2-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
 
-    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Dkeycloak.scale=2 -DusersPerRealm=200 -DrunUsers=200`
+    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Dkeycloak.scale=2 -DusersPerRealm=200 -DusersPerSec=5`
 
 
 ## Developing tests in IntelliJ IDEA
