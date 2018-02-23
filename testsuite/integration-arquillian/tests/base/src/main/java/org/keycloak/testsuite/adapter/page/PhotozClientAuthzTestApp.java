@@ -130,7 +130,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void login(String username, String password, String... scopes) throws InterruptedException {
-        if (this.driver.getCurrentUrl().startsWith(getInjectedUrl().toString())) {
+        String currentUrl = this.driver.getCurrentUrl();
+
+        if (currentUrl.startsWith(getInjectedUrl().toString())) {
             Thread.sleep(1000);
             logOut();
             navigateTo();
@@ -148,7 +150,21 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
                 scopesValue.append(scope);
             }
 
-            URLUtils.navigateToUri(this.driver.getCurrentUrl() + " " + scopesValue, true);
+            scopesValue.append(" openid");
+
+            int scopeIndex = currentUrl.indexOf("scope");
+
+            if (scopeIndex != -1) {
+                StringBuilder url = new StringBuilder(currentUrl);
+
+                url.delete(scopeIndex, currentUrl.indexOf('&', scopeIndex));
+
+                url.append("&").append("scope=").append(scopesValue);
+
+                currentUrl = url.toString();
+            }
+
+            URLUtils.navigateToUri(currentUrl + " " + scopesValue, true);
         }
 
         this.loginPage.form().login(username, password);
