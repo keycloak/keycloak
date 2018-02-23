@@ -100,6 +100,8 @@
                 ${auth.server.profile}
                 ${auth.server.feature}
                 ${kie.maven.settings}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.jboss.jvm.debug.args}
