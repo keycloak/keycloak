@@ -4,6 +4,7 @@ import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 import org.keycloak.gatling.Predef._
 import keycloak.BasicOIDCScenarioBuilder._
+import org.keycloak.performance.log.LogProcessor
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -25,6 +26,15 @@ object CommonScenarioBuilder {
 
   def rampDownNotStarted(): Validation[Boolean] = {
     System.currentTimeMillis < TestConfig.measurementEndTime
+  }
+
+  def filterResults(clazz: Class[_]) = {
+    if (TestConfig.filterResults) {
+      new LogProcessor(clazz).filterLog(
+        TestConfig.measurementStartTime, 
+        TestConfig.measurementEndTime,
+        false, true, true)
+    }
   }
 
 }

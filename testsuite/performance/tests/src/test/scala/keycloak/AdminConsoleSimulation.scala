@@ -99,4 +99,9 @@ class AdminConsoleSimulation extends Simulation {
   setUp(adminScenario
     .inject(rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod)
     .protocols(httpProtocol))
+
+  after {
+    filterResults(getClass)
+  }
+
 }

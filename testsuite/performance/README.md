@@ -146,6 +146,7 @@ Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 | `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `0` |
 | `measurementPeriod` | A measurement period after the system is warmed up. (seconds) | `30` |
 | `rampDownASAP` | When `true` the test will be checking for ramp-down condition after each *scenario step*. When `false` the check will be done only at the end of a *scenario iteration*. | `false` |
+| `filterResults` | Whether to filter out requests which are outside of the `measurementPeriod`. | `false` |
 | `pace` | A dynamic pause after each *scenario iteration*. For example if the pace is 30s and one scenario iteration takes only 20s, the simulation will wait additional 10s before continuing to the next iteration. | `0` |
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
