@@ -24,6 +24,7 @@ org.keycloak.broker.oidc.mappers.UserAttributeMapper
 org.keycloak.broker.oidc.mappers.UsernameTemplateMapper
 org.keycloak.broker.saml.mappers.AttributeToRoleMapper
 org.keycloak.broker.saml.mappers.UserAttributeMapper
+org.keycloak.broker.saml.mappers.UserAttributeStatementMapper
 org.keycloak.broker.saml.mappers.UsernameTemplateMapper
 org.keycloak.social.facebook.FacebookUserAttributeMapper
 org.keycloak.social.github.GitHubUserAttributeMapper
