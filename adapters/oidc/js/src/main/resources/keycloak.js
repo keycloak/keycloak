@@ -1239,14 +1239,17 @@
                             }
                         });
 
-                        ref.addEventListener('exit', function(event) {
+                        var handleExit = function (event) {
                             if (error) {
                                 promise.setError();
                             } else {
                                 kc.clearToken();
                                 promise.setSuccess();
                             }
-                        });
+                        };
+
+                        ref.addEventListener('exit', handleExit);
+                        ref.addEventListener('loadstop', handleExit);
 
                         return promise.promise;
                     },
