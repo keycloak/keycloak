@@ -1204,7 +1204,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         Client client = ClientBuilder.newClient();
 
         // Do not redirect client to login page if it's an XHR
-        WebTarget target = client.target(salesPostAutodetectServletPage.toString());
+        WebTarget target = client.target(salesPostAutodetectServletPage.toString() + "/");
         Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
         Assert.assertEquals(401, response.getStatus());
         response.close();

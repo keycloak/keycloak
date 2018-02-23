@@ -37,7 +37,7 @@ import javax.xml.stream.events.XMLEvent;
 public abstract class AbstractStaxParser<T, E> implements StaxParser {
 
     protected static final PicketLinkLogger LOGGER = PicketLinkLoggerFactory.getLogger();
-    private final QName expectedStartElement;
+    protected final QName expectedStartElement;
     private final E unknownElement;
 
     public AbstractStaxParser(QName expectedStartElement, E unknownElement) {
@@ -51,7 +51,8 @@ public abstract class AbstractStaxParser<T, E> implements StaxParser {
 
         // Get the start element and validate it is the expected one
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-        StaxParserUtil.validate(startElement, expectedStartElement);
+        final QName actualQName = startElement.getName();
+        validateStartElement(startElement);
         T target = instantiateElement(xmlEventReader, startElement);
 
         // STATE: Start element has been read.
@@ -76,7 +77,7 @@ public abstract class AbstractStaxParser<T, E> implements StaxParser {
                 }
 
                 // If end element corresponding to this start element, stop processing.
-                if (Objects.equals(qName, expectedStartElement)) {
+                if (Objects.equals(qName, actualQName)) {
                     // consume the end element and finish parsing of this tag
                     StaxParserUtil.advance(xmlEventReader);
                     break;
@@ -105,13 +106,21 @@ public abstract class AbstractStaxParser<T, E> implements StaxParser {
 
             // In case of recursive nesting the same element, the corresponding end element MUST be handled
             // in the {@code processSubElement} method and MUST NOT be consumed here.
-            if (Objects.equals(expectedStartElement, currentSubelement) || isUnknownElement(token)) {
+            if (Objects.equals(actualQName, currentSubelement) || isUnknownElement(token)) {
                 currentSubelement = null;
             }
         }
         return target;
     }
 
+    /**
+     * Validates that the given startElement has the expected properties (namely {@link QName} matches the expected one).
+     * @param startElement
+     * @return
+     */
+    protected void validateStartElement(StartElement startElement) {
+        StaxParserUtil.validate(startElement, expectedStartElement);
+    }
 
     protected boolean isUnknownElement(E token) {
         return token == null || Objects.equals(token, unknownElement);

@@ -59,7 +59,7 @@ public class DeploymentBuilder {
         idp.setSingleSignOnService(sso);
         idp.setSingleLogoutService(slo);
 
-        KeycloakSamlAdapter adapter = (KeycloakSamlAdapter)(new KeycloakSamlAdapterXMLParser().parse(xml));
+        KeycloakSamlAdapter adapter = (KeycloakSamlAdapter) KeycloakSamlAdapterParser.getInstance().parse(xml);
         SP sp = adapter.getSps().get(0);
         deployment.setConfigured(true);
         deployment.setEntityID(sp.getEntityID());
