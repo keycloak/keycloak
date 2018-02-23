@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.model.Policy;
@@ -25,11 +24,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
@@ -42,6 +38,7 @@ import org.keycloak.testsuite.pages.social.GitLabLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
+import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
@@ -53,7 +50,6 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -110,7 +106,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
-        OPENSHIFT("openshift-v3", null),
+        OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
         BITBUCKET("bitbucket", BitbucketLoginPage.class);
 
@@ -225,20 +221,11 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @Ignore
-    // TODO: Fix and revamp this test
-    public void openshiftLogin() throws Exception {
-        loginPage.clickSocial("openshift-v3");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("inputUsername")));
-        driver.findElement(By.id("inputUsername")).sendKeys(config.getProperty("openshift-v3.username", config.getProperty("common.username")));
-        driver.findElement(By.id("inputPassword")).sendKeys(config.getProperty("openshift-v3.password", config.getProperty("common.password")));
-        driver.findElement(By.cssSelector("button[type=submit]")).click();
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[name=approve]")));
-        driver.findElement(By.cssSelector("input[name=approve]")).click();
-
-        assertEquals(config.getProperty("openshift-v3.username", config.getProperty("common.profile.username")), accountPage.getUsername());
+    public void openshiftLogin() {
+        setTestProvider(OPENSHIFT);
+        performLogin();
+        assertUpdateProfile(false, false, true);
+        assertAccount();
     }
 
     @Test
@@ -336,7 +323,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
         if (provider == OPENSHIFT) {
-            idp.getConfig().put("baseUrl", config.getProperty(provider.id() + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
+            idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
         }
         if (provider == PAYPAL) {
             idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));
@@ -345,7 +332,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private String getConfig(Provider provider, String key) {
-        return config.getProperty(provider.configId() + "." + key, config.getProperty("common." + key));
+        String providerKey = provider.configId() + "." + key;
+        return System.getProperty(providerKey, config.getProperty(providerKey, config.getProperty("common." + key)));
     }
 
     private String getConfig(String key) {
