@@ -1666,6 +1666,11 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm, server
         max : 5,
         first : 0
     }
+    
+    $scope.disablePaste = function(e) {
+        e.preventDefault();
+        return false;
+    }
 
     $scope.update = function() {
     	$scope.query.first = 0;
@@ -1740,6 +1745,11 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
         'simple_tags': true,
         'tags': serverInfo.enums['resourceType']
     };
+    
+    $scope.disablePaste = function(e) {
+        e.preventDefault();
+        return false;
+    }
     
     $scope.update = function() {
     	$scope.query.first = 0;
