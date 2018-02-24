@@ -88,6 +88,12 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected void handleAccessDenied(OIDCHttpFacade facade) {
+        KeycloakSecurityContext securityContext = facade.getSecurityContext();
+
+        if (securityContext == null) {
+            return;
+        }
+
         String accessDeniedPath = getEnforcerConfig().getOnDenyRedirectTo();
         HttpFacade.Response response = facade.getResponse();
 
