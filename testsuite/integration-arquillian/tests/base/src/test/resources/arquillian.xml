@@ -44,14 +44,23 @@
         <!-- chrome -->
         <property name="chromeArguments">${chromeArguments}</property>
     </extension>
-    
+
     <extension qualifier="graphene">
         <property name="waitGuiInterval">5</property>
         <property name="waitAjaxInterval">5</property>
         <property name="waitModelInterval">10</property>
         <property name="waitGuardInterval">5</property>
     </extension>
-    
+
+    <extension qualifier="webdriver-javascriptbrowser">
+        <property name="browser">${js.browser}</property>
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="chromeDriverBinary">${webdriver.chrome.driver}</property>
+        <property name="chromeArguments">${js.chromeArguments}</property>
+        <property name="phantomjs.cli.args">${phantomjs.cli.args} --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</property>
+    </extension>
+
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
         <property name="firefox_binary">${firefox_binary}</property>

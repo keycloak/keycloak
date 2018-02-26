@@ -14,17 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.testsuite.util;
 
-package org.keycloak.example.oauth;
+import org.jboss.arquillian.drone.api.annotation.Qualifier;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ *
+ * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
-@ApplicationPath("/")
-public class DataApplication extends Application
-{
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Qualifier
+public @interface JavascriptBrowser {
 }
