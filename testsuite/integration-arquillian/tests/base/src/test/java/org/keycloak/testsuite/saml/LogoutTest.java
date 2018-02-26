@@ -369,7 +369,7 @@ public class LogoutTest extends AbstractSamlTest {
         try (
           Closeable sales = new ClientAttributeUpdater(clients.get(salesRep.getId()))
           .setFrontchannelLogout(true)
-          .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+          .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
           .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
           .update();
 

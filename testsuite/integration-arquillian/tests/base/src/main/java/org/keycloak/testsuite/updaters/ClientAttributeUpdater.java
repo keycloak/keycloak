@@ -36,7 +36,7 @@ public class ClientAttributeUpdater {
     }
 
     public ClientAttributeUpdater removeAttribute(String name) {
-        this.rep.getAttributes().put(name, null);
+        this.rep.getAttributes().remove(name);
         return this;
     }
 
