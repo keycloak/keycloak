@@ -3,6 +3,8 @@ package keycloak
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 
+import keycloak.CommonScenarioBuilder._
+
 import io.gatling.core.validation.Validation
 import org.keycloak.performance.TestConfig
 
@@ -11,12 +13,6 @@ import org.keycloak.performance.TestConfig
   * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
   */
 class AdminConsoleSimulation extends Simulation {
-
-  def rampDownPeriodNotReached(): Validation[Boolean] = {
-    System.currentTimeMillis < TestConfig.rampDownPeriodStartTime
-  }
-
-
 
   println()
   println("Target server: " + TestConfig.serverUrisList.get(0))
@@ -95,7 +91,7 @@ class AdminConsoleSimulation extends Simulation {
 
 
   val adminScenario = scenario("AdminConsole")
-    .asLongAs(s => rampDownPeriodNotReached(), null, TestConfig.rampDownASAP) {
+    .asLongAs(s => rampDownNotStarted(), null, TestConfig.rampDownASAP) {
       pace(TestConfig.pace)
       adminSession.chainBuilder
     }

@@ -45,9 +45,6 @@ object BasicOIDCScenarioBuilder {
     missCounter.getAndDecrement() > 0
   }
 
-  def rampDownPeriodNotReached(): Validation[Boolean] = {
-    System.currentTimeMillis < TestConfig.rampDownPeriodStartTime
-  }
 }
 
 
