@@ -240,6 +240,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             public int getPriority() {
                 return 0;
             }
+
+            @Override
+            public void closeLogFile() {}
         };
 
         @Override
