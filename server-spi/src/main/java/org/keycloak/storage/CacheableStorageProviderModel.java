@@ -197,11 +197,8 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
                         invalidate = true;
                     }
                 } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_DAILY) {
-                    long dailyTimeout = dailyTimeout(getEvictionHour(), getEvictionMinute());
-                    dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
-                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(dailyTimeout));
-                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
-                    if (cached.getCacheTimestamp() <= dailyTimeout) {
+                    long dailyBoundary = dailyEvictionBoundary(getEvictionHour(), getEvictionMinute());
+                    if (cached.getCacheTimestamp() <= dailyBoundary) {
                         invalidate = true;
                     }
                 } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY) {
@@ -231,7 +228,20 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
             int add = (24 * 60 * 60 * 1000);
             cal.add(Calendar.MILLISECOND, add);
         } else {
-            cal.add(Calendar.MILLISECOND, (int)(cal2.getTimeInMillis() - cal.getTimeInMillis()));
+            cal = cal2;
+        }
+        return cal.getTimeInMillis();
+    }
+
+    public static long dailyEvictionBoundary(int hour, int minute) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(Time.currentTimeMillis());
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, minute);
+        if (cal.getTimeInMillis() > Time.currentTimeMillis()) {
+            // if daily evict for today hasn't happened yet set boundary
+            // to yesterday's time of eviction
+            cal.add(Calendar.DAY_OF_YEAR, -1);
         }
         return cal.getTimeInMillis();
     }
