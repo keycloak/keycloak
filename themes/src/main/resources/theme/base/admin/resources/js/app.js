@@ -1451,7 +1451,57 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientImportCtrl'
         })
-        .when('/', {
+       .when('/realms/:realm/client-stores', {
+            templateUrl : resourceUrl + '/partials/client-storage-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientStoresCtrl'
+        })
+        .when('/realms/:realm/client-storage/providers/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/client-storage-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericClientStorageCtrl'
+        })
+        .when('/create/client-storage/:realm/providers/:provider', {
+             templateUrl : resourceUrl + '/partials/client-storage-generic.html',
+             resolve : {
+                 realm : function(RealmLoader) {
+                     return RealmLoader();
+                 },
+                 instance : function() {
+                     return {
+
+                     };
+                 },
+                 providerId : function($route) {
+                     return $route.current.params.provider;
+                 },
+                 serverInfo : function(ServerInfoLoader) {
+                     return ServerInfoLoader();
+                 }
+             },
+             controller : 'GenericClientStorageCtrl'
+         })
+       .when('/', {
             templateUrl : resourceUrl + '/partials/home.html',
             controller : 'HomeCtrl'
         })
@@ -2406,6 +2456,15 @@ module.directive('kcTabsUsers', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-users.html'
+    }
+});
+
+module.directive('kcTabsClients', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-clients.html'
     }
 });
 
