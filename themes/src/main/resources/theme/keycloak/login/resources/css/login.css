@@ -15,7 +15,7 @@
     background-color: #fff;
     list-style: none;
     right: 0;
-    top: 30px;
+    top: 20px;
     min-width: 100px;
     padding: 2px 0;
     border: solid 1px #bbb;
@@ -52,7 +52,7 @@
 
 a#kc-current-locale-link {
     display: block;
-    padding: 5px;
+    padding: 0 5px;
 }
 
 /* a#kc-current-locale-link:hover {
@@ -85,10 +85,11 @@ a#kc-current-locale-link::after {
 }
 
 div.kc-logo-text {
-    background-image: url("../img/keycloak-logo-text.png");
+    background-image: url(../img/keycloak-logo-text.png);
     background-repeat: no-repeat;
-    width: 250px;
-    height: 38px;
+    height: 63px;
+    width: 300px;
+    margin: 0 auto;
 }
 
 div.kc-logo-text span {
@@ -96,17 +97,17 @@ div.kc-logo-text span {
 }
 
 #kc-header {
-    color: #fff;
+    color: #ededed;
     overflow: visible;
-    padding-left: 80px;
     white-space: nowrap;
 }
 
 #kc-header-wrapper {
-    font-size: 26px;
+    font-size: 42px;
     text-transform: uppercase;
+    letter-spacing: 3px;
     line-height: 1.2em;
-    margin-bottom: 15px;
+    margin: 62px auto 15px;
 }
 
 #kc-content {
@@ -227,6 +228,7 @@ a.zocial  {
     border: 0;
     background: #f5f5f5;
     color: #72767b;
+    border-radius: 0;
 }
 .zocial:before {
   border-right: 0;
@@ -290,7 +292,22 @@ a.zocial  {
         padding-left: 15px;
         padding-right: 15px;
         float: none;
-        text-align: center;
+        text-align: left;
+    }
+
+    #kc-header-wrapper {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 20px 0 0 0;
+      color: #72767b;
+      letter-spacing: 0;
+    }
+
+    div.kc-logo-text {
+        margin: 20px 0 0 0;
+        width: 150px;
+        height: 32px;
+        background-size: 100%;
     }
 
     #kc-form {
@@ -394,12 +411,10 @@ a.zocial  {
   .login-pf-page .login-pf-social-section:first-of-type {
     padding-left: 39px;
     padding-right: 39px;
-    border-right: 1px solid #d1d1d1;
   }
   .login-pf-page .login-pf-social-section:last-of-type {
     padding-left: 40px;
     padding-right: 40px;
-    border-left: 0;
   }
   .login-pf-page .login-pf-social-section .login-pf-social-link:last-of-type {
     margin-bottom: 0;
