@@ -278,6 +278,7 @@
                         <include>keycloak.DemoSimulation2</include>
                     </includes-->
                     <jvmArgs>
+                        <param>-Dproject.build.directory=${project.build.directory}</param>
                         <param>-Dkeycloak.server.uris=${keycloak.frontend.servers}</param>
                         <param>-DnumOfRealms=${numOfRealms}</param>
                         <param>-DusersPerRealm=${usersPerRealm}</param>

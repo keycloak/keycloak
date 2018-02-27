@@ -5,13 +5,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -29,6 +35,7 @@ public class LogProcessor {
 
     static boolean INLAYED_INCLUDED = false;
     static boolean OUTLAYED_INCLUDED = false;
+    static boolean COMPLETE_SESSIONS = false;
 
     File simulationLogFile;
     String lastRequestLabel;
@@ -56,6 +63,25 @@ public class LogProcessor {
         simulationLogFile = new File(logFilePath);
     }
 
+    public LogProcessor(Class simulationClass) {
+        this(getLatestSimulationLogDir(getSimulationId(simulationClass)).getAbsoluteFile().toString() + "/simulation.log");
+    }
+
+    public static String getSimulationId(Class simulationClass) {
+        return simulationClass.getSimpleName().toLowerCase();
+    }
+    
+    private static File getLatestSimulationLogDir(String simulationId) {
+        String buildDirPath = System.getProperty("project.build.directory", "target");
+        String resultsDirPath = System.getProperty("gatling.core.directory.results", buildDirPath + "/gatling");
+        File resultsDir = new File(resultsDirPath);
+        
+        return Arrays.stream(resultsDir.listFiles((dir, name) -> name.startsWith(simulationId)))
+                .sorted((a, b) -> -a.compareTo(b))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Latest simulation.log not found."));
+    }
+    
     public Stats stats() throws IOException {
 
         Stats stats = new Stats();
@@ -125,7 +151,43 @@ public class LogProcessor {
         currentIterations.put(scenario, 1 + currentIterations.getOrDefault(scenario, 1));
     }
 
+    public void filterLog(long start, long end) throws IOException {
+        filterLog(start, end, INLAYED_INCLUDED, OUTLAYED_INCLUDED, COMPLETE_SESSIONS);
+    }
+    
+    public void filterLog(long start, long end, boolean inlayedIncluded, boolean outlayedIncluded, boolean completeSessions) throws IOException {
+        INLAYED_INCLUDED = inlayedIncluded;
+        OUTLAYED_INCLUDED = outlayedIncluded;
+        COMPLETE_SESSIONS = completeSessions;
+        
+        System.out.println(String.format("Filtering %s/%s \nINLAYED_INCLUDED: %s \nOUTLAYED_INCLUDED: %s \nCOMPLETE_SESSIONS: %s", 
+                simulationLogFile.getParentFile().getName(), simulationLogFile.getName(), INLAYED_INCLUDED, OUTLAYED_INCLUDED, COMPLETE_SESSIONS));
+
+        File simulationLogFileFiltered = new File(simulationLogFile.getAbsoluteFile() + ".filtered");
+        File simulationLogFileUnfiltered = new File(simulationLogFile.getAbsoluteFile() + ".unfiltered");
+
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(simulationLogFileFiltered), "utf-8"));
+        copyPartialLog(out, start, end);
+
+        simulationLogFile.renameTo(simulationLogFileUnfiltered);
+        simulationLogFileFiltered.renameTo(simulationLogFile);
+    }
+    
     public void copyPartialLog(PrintWriter output, long start, long end) throws IOException {
+
+        File tmpFile = null, headFile = null;
+        PrintWriter tmp = null, startHead = null;
+        HashMap<String, LogLine> starts = new HashMap<>();
+        HashSet<String> actives = new HashSet<>();
+
+        if (COMPLETE_SESSIONS) {
+            tmp = output;
+            tmpFile = getTmpFile();
+            output = new PrintWriter(new OutputStreamWriter(new FileOutputStream(tmpFile), "utf-8"));
+
+            headFile = getTmpFile();
+            startHead = new PrintWriter(new OutputStreamWriter(new FileOutputStream(headFile), "utf-8"));
+        }
 
         LogReader reader = new LogReader(simulationLogFile);
         try {
@@ -133,7 +195,11 @@ public class LogProcessor {
             while ((line = reader.readLine()) != null) {
 
                 if (line.type() == LogLine.Type.RUN) {
-                    output.println(line.rawLine());
+                    if (COMPLETE_SESSIONS) {
+                        startHead.println(line.rawLine());
+                    } else {
+                        output.println(line.rawLine());
+                    }
                     continue;
                 }
 
@@ -149,11 +215,71 @@ public class LogProcessor {
                 } else if (INLAYED_INCLUDED && endTime >= start && endTime < end) {
                     output.println(line.rawLine());
                 }
+
+                if (COMPLETE_SESSIONS) {
+                    if (line.type() == LogLine.Type.USER_START) {
+                        if (startTime < end) {
+                            starts.put(line.userId(), line);
+                        }
+                    } else if (line.type() == LogLine.Type.USER_END) {
+                        if (endTime < start) {
+                            starts.remove(line.userId());
+                        } else if (endTime >= start && endTime < end) {
+                            LogLine sline = starts.remove(line.userId());
+                            if (sline != null) {
+                                startHead.println(sline.rawLine());
+                            }
+                            actives.remove(line.userId());
+                        } else if (endTime >= end) {
+                            boolean was = actives.remove(line.userId());
+                            if (was) {
+                                output.println(line.rawLine());
+                            }
+                        }
+                    } else if (line.type() == LogLine.Type.REQUEST) {
+                        if ((startTime >= start && startTime < end) || (endTime >= start && endTime < end)) {
+                            LogLine sline = starts.remove(line.userId());
+                            if (sline != null) {
+                                startHead.println(sline.rawLine());
+                            }
+                            actives.add(line.userId());
+                        }
+                    }
+                }
             }
         } finally {
             reader.close();
             output.flush();
+
+            if (COMPLETE_SESSIONS) {
+                startHead.close();
+                output.close();
+
+
+                BufferedReader tmpIn = new BufferedReader(new FileReader(headFile));
+                copyStream(tmpIn, tmp);
+
+                tmpIn = new BufferedReader(new FileReader(tmpFile));
+                copyStream(tmpIn, tmp);
+
+                tmp.flush();
+
+                Files.delete(headFile.toPath());
+                Files.delete(tmpFile.toPath());
+            }
         }
+    }
+
+    private static void copyStream(Reader reader, Writer writer) throws IOException {
+        char [] buff = new char[16 * 1024];
+        int rc;
+        while ((rc = reader.read(buff)) != -1) {
+            writer.write(buff, 0, rc);
+        }
+    }
+
+    private File getTmpFile() throws IOException {
+        return Files.createTempFile("perftest", ".log").toFile();
     }
 
     public void setLastRequestLabel(String lastRequestLabel) {
@@ -333,7 +459,7 @@ public class LogProcessor {
                 start = Long.parseLong(cols[4]);
                 end = Long.parseLong(cols[5]);
             } else {
-                throw new RuntimeException("Unknow log entry type: " + cols[3]);
+                throw new RuntimeException("Unknow log entry type: " + cols[2]);
             }
 
             return this;
@@ -406,6 +532,11 @@ public class LogProcessor {
                             throw new RuntimeException("Argument " + arg + " requires a timestamp in milliseconds");
                         }
                         endMillis = Long.valueOf(args[++i]);
+                        break;
+                    case "--completeSessions":
+                        //INLAYED_INCLUDED = true;
+                        OUTLAYED_INCLUDED = true;
+                        COMPLETE_SESSIONS = true;
                         break;
                     case "--lastRequest":
                         if (i == args.length - 1) {

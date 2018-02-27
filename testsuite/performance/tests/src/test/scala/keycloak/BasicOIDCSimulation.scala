@@ -59,4 +59,8 @@ class BasicOIDCSimulation extends Simulation {
     .inject(rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod)
     .protocols(httpDefault))
 
+  after {
+    filterResults(getClass)
+  }
+
 }
