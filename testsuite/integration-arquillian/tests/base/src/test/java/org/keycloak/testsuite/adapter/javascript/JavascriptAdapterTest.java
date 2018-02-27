@@ -22,6 +22,7 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -93,6 +94,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events) {
+        waitUntilElement(By.tagName("body")).is().present();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
 
@@ -222,8 +224,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void implicitFlowQueryTest() {
         setImplicitFlowForClient();
         testExecutor.init(defaultArguments().implicitFlow().queryResponse(), this::assertInitNotAuth)
-                .login(((driver1, output, events) ->
-                        Assert.assertThat(driver1.getCurrentUrl(), containsString("Response_mode+%27query%27+not+allowed"))));
+                .login(((driver1, output, events) -> {
+                    waitUntilElement(By.tagName("body")).is().present();
+                    Assert.assertThat(driver1.getCurrentUrl(), containsString("Response_mode+%27query%27+not+allowed"));
+                }));
         setStandardFlowForClient();
     }
 
