@@ -20,6 +20,7 @@ package org.keycloak.admin.client.resource;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -54,6 +55,9 @@ public interface ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
 
+    @DELETE
+    @Path("{id}")
+    public Response delete(@PathParam("id") String id);
 
 
 }
