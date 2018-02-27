@@ -738,6 +738,7 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
     $scope.currentPageInput = 1;
     $scope.numberOfPages = 1;
     $scope.pageSize = 20;
+    $scope.clientStorageProviders = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
     
     Client.query({realm: realm.realm, viewableOnly: true}).$promise.then(function(clients) {
         $scope.numberOfPages = Math.ceil(clients.length/$scope.pageSize);
@@ -2393,6 +2394,7 @@ module.controller('ClientStoresCtrl', function($scope, $location, $route, realm,
     console.log('ClientStoresCtrl ++++****');
     $scope.realm = realm;
     $scope.providers = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
+    $scope.clientStorageProviders = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
     $scope.instancesLoaded = false;
 
     if (!$scope.providers) $scope.providers = [];
