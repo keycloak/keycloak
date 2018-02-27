@@ -9,8 +9,7 @@
         <h1>
             {{:: 'client-storage' | translate}}
         </h1>
-        <p>Keycloak can federate external client databases. Out of the box we have support for Openshift OAuth clients and service accounts.</p>
-        <p>To get started select a provider from the dropdown below:</p>
+        {{:: 'client-storage-list-no-entries' | translate}}
         <div class="blank-slate-pf-main-action">
             <div class="row" data-ng-show="access.manageRealm">
                 <div class="col-sm-4 col-sm-offset-4">
