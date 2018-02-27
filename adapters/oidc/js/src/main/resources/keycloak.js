@@ -888,10 +888,10 @@
                     supportedParams = ['code', 'state', 'session_state'];
                     break;
                 case 'implicit':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in'];
+                    supportedParams = ['access_token', 'id_token', 'state', 'session_state'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in'];
+                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state'];
                     break;
             }
 
