@@ -88,7 +88,7 @@
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
             <column name="HASH_ITERATIONS" type="INT"/>
-            <column name="SALT" type="BLOB(16)"/>
+            <column name="SALT" type="OID"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
             <column name="CREATED_DATE" type="BIGINT"/>
