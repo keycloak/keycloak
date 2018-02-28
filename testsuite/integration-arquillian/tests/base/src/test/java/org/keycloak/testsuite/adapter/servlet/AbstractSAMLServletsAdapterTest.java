@@ -105,6 +105,7 @@ import org.w3c.dom.NodeList;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
@@ -798,6 +799,48 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void salesPostSigEmailTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage, "principal=bburke@redhat.com");
+    }
+
+    @Test
+    public void salesPostSigStaxParsingFlawEmailTest() {
+        UserRepresentation user = createUserRepresentation("bburke-additional-domain", "bburke@redhat.com.additional.domain", "Bill", "Burke", true);
+        setPasswordFor(user, PASSWORD);
+
+        String resultPage = new SamlClientBuilder()
+          .navigateTo(salesPostSigEmailServletPage.buildUri())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(user).build()
+          .processSamlResponse(Binding.POST)
+            .transformString(s -> {
+                assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com<!-- comment -->.additional.domain");
+                return s;
+            })
+            .build()
+          .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
+
+        assertThat(resultPage, org.hamcrest.Matchers.containsString("principal=bburke@redhat.com.additional.domain"));
+    }
+
+    @Test
+    public void salesPostSigChangeContents() {
+        UserRepresentation user = createUserRepresentation("bburke-additional-domain", "bburke@redhat.com.additional.domain", "Bill", "Burke", true);
+        setPasswordFor(user, PASSWORD);
+
+        String resultPage = new SamlClientBuilder()
+          .navigateTo(salesPostSigEmailServletPage.buildUri())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(user).build()
+          .processSamlResponse(Binding.POST)
+            .transformString(s -> {
+                assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com");
+                return s;
+            })
+            .build()
+          .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
+
+        assertThat(resultPage, org.hamcrest.Matchers.containsString("INVALID_SIGNATURE"));
     }
 
     @Test
