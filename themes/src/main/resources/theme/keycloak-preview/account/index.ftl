@@ -8,7 +8,7 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm}';
             var resourceUrl = '${resourceUrl}';
-            
+                
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrer_uri = '${referrer_uri}';
@@ -61,7 +61,8 @@
         <!-- iPhone non-retina icon (iOS < 7) -->
         <link rel="apple-touch-icon-precomposed" sizes="57x57"
               href="${resourceUrl}/node_modules/patternfly/dist/img/apple-touch-icon-precomposed-57.png">
-        <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly.min.css" rel="stylesheet"
+        
+        <!--<link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly.min.css" rel="stylesheet"
               media="screen, print">
         <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
               media="screen, print">
@@ -69,31 +70,43 @@
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
         <script src="${resourceUrl}/node_modules/jquery-match-height/dist/jquery.matchHeight-min.js"></script>
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
+        <script src="${resourceUrl}/node_modules/rxjs/bundles/Rx.min.js"></script>-->
 
         <!-- Polyfill(s) for older browsers -->
         <script src="${resourceUrl}/node_modules/core-js/client/shim.min.js"></script>
-
+        
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
             <script type="text/javascript" src="${resourceUrl}/${script}"></script>
             </#list>
         </#if>
 
-        <script src="${resourceUrl}/node_modules/zone.js/dist/zone.js"></script>
+        <script src="${resourceUrl}/node_modules/zone.js/dist/zone.min.js"></script>
         <script src="${resourceUrl}/node_modules/systemjs/dist/system.src.js"></script>
 
         <script src="${resourceUrl}/systemjs.config.js"></script>
+        <script src="${authUrl}/js/keycloak.js"></script>
         <script>
+            var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
+            keycloak.init({onLoad: 'login-required'}).success(function(authenticated) {
+                System.import('${resourceUrl}/main.js').catch(function (err) {
+                    console.error(err);
+                });
+            }).error(function() {
+                alert('failed to initialize keycloak');
+            });
+        </script>
+     <!--   <script>
             System.import('${resourceUrl}/main.js').catch(function (err) {
                 console.error(err);
             });
-        </script>
+        </script>-->
     </head>
 
     <app-root>
         <style>
             .kc-background {
-                background: url('${resourceUrl}/img/keycloak-bg.png') top left no-repeat;
+                background: url('${resourceUrl}/app/assets/img/keycloak-bg.png') top left no-repeat;
                 background-size: cover;
             }
 
@@ -105,7 +118,7 @@
             }
 
             .kc-logo-text {
-                background-image: url("${resourceUrl}/img/keycloak-logo-text.png");
+                background-image: url("${resourceUrl}/app/assets/img/keycloak-logo-text.png");
                 background-repeat: no-repeat;
                 width: 250px;
                 height: 38px;

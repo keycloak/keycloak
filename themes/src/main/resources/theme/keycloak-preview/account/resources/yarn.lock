@@ -2310,6 +2310,10 @@ rx@4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/rx/-/rx-4.1.0.tgz#a5f13ff79ef3b740fe30aa803fb09f98805d4782"
 
+rxjs-system-bundle@^5.5.6:
+  version "5.5.6"
+  resolved "https://registry.yarnpkg.com/rxjs-system-bundle/-/rxjs-system-bundle-5.5.6.tgz#3af9c02a36938f750fe33751cca2397fcf3d04b8"
+
 rxjs@^5.4.2:
   version "5.4.2"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.4.2.tgz#2a3236fcbf03df57bae06fd6972fd99e5c08fcf7"

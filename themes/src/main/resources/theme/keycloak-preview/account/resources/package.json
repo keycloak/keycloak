@@ -36,6 +36,7 @@
     "core-js": "^2.4.1",
     "patternfly": "^3.23.2",
     "rxjs": "^5.4.2",
+    "rxjs-system-bundle": "^5.5.6",
     "systemjs": "^0.20.17",
     "zone.js": "^0.8.4"
   },

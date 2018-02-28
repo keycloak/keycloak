@@ -23,7 +23,7 @@ import {Injectable} from '@angular/core';
 // 
 import * as Keycloak from './keycloak';
 
-type KeycloakClient = Keycloak.KeycloakInstance;
+export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;
 
 @Injectable()
@@ -51,6 +51,10 @@ export class KeycloakService {
                     reject(errorData);
                 });
         });
+    }
+    
+    static setKeycloakAuth(kc:KeycloakClient) {
+        this.keycloakAuth = kc;
     }
 
     authenticated(): boolean {
