@@ -38,6 +38,7 @@ public class ProtocolMapperUtils {
     public static final String MULTIVALUED = "multivalued";
     public static final String USER_MODEL_PROPERTY_LABEL = "usermodel.prop.label";
     public static final String USER_MODEL_PROPERTY_HELP_TEXT = "usermodel.prop.tooltip";
+    public static final String SAML_USER_MODEL_PROPERTY_HELP_TEXT = "saml.usermodel.prop.tooltip";
     public static final String USER_MODEL_ATTRIBUTE_LABEL = "usermodel.attr.label";
     public static final String USER_MODEL_ATTRIBUTE_HELP_TEXT = "usermodel.attr.tooltip";
 

@@ -18,16 +18,14 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.
@@ -36,25 +34,26 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
+
+    public static final String PROVIDER_ID = "saml-user-property-mapper";
 
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_PROPERTY_LABEL);
-        property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
-        configProperties.add(property);
-        AttributeStatementHelper.setConfigProperties(configProperties);
+        property.setHelpText(ProtocolMapperUtils.SAML_USER_MODEL_PROPERTY_HELP_TEXT);
+        CONFIG_PROPERTIES.add(property);
+        AttributeStatementHelper.setConfigProperties(CONFIG_PROPERTIES);
 
     }
 
-    public static final String PROVIDER_ID = "saml-user-property-mapper";
-
-
+    @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        return CONFIG_PROPERTIES;
     }
+
     @Override
     public String getId() {
         return PROVIDER_ID;
@@ -62,7 +61,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
 
     @Override
     public String getDisplayType() {
-        return "User Property";
+        return "User Property(ies)";
     }
 
     @Override
@@ -72,25 +71,43 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
 
     @Override
     public String getHelpText() {
-        return "Map a built in user property (email, firstName, lastName) to a SAML attribute type.";
+        return "Map a built in user property(ies) like email, firstName, lastName or all together to a SAML attribute type.";
     }
 
     @Override
-    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    public void transformAttributeStatement(AttributeStatementType attributeStatement,
+                                            ProtocolMapperModel mappingModel,
+                                            KeycloakSession session,
+                                            UserSessionModel userSession,
+                                            AuthenticatedClientSessionModel clientSession) {
+        String[] propertiesNames = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE).split(",");
+        List<String> propertiesParts = new LinkedList<>();
         UserModel user = userSession.getUser();
-        String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
-        if (propertyValue == null) return;
-        AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, propertyValue);
+
+        for(String propertyName : propertiesNames) {
+            Optional.ofNullable(ProtocolMapperUtils.getUserModelValue(user, propertyName))
+                    .filter(propertyValue -> !propertyValue.isEmpty())
+                    .ifPresent(propertiesParts::add);
+        }
+
+        if (propertiesParts.isEmpty()) return;
+
+        AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, String.join(" ", propertiesParts));
 
     }
 
-    public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute,
-                                                            String samlAttributeName, String nameFormat, String friendlyName,
-                                                            boolean consentRequired, String consentText) {
-        String mapperId = PROVIDER_ID;
-        return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, nameFormat, friendlyName,
-                consentRequired, consentText, mapperId);
+    public static ProtocolMapperModel createAttributeMapper(String name,
+                                                            String userAttribute,
+                                                            String samlAttributeName,
+                                                            String nameFormat,
+                                                            String friendlyName,
+                                                            boolean consentRequired,
+                                                            String consentText) {
+        return AttributeStatementHelper
+                .createAttributeMapper(name, userAttribute,
+                        samlAttributeName, nameFormat,
+                        friendlyName, consentRequired,
+                        consentText, PROVIDER_ID);
 
     }
 }
