@@ -44,6 +44,7 @@ import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -115,6 +116,7 @@ public class ScopePermissionForm extends Form {
             resourceSelect.update(resources);
             resourceScopeSelect.update(expected.getScopes());
         } else {
+            driver.findElement(By.className("select2-search-choice-close")).click();
             scopeSelect.update(expected.getScopes());
         }
 

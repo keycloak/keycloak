@@ -79,8 +79,10 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                 evaluatePolicies(() -> {
                     List<Policy> policies = policyStore.findByResourceType(resource.getType(), resourceServer.getId());
 
-                    for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
-                        policies.addAll(policyStore.findByResource(typedResource.getId(), resourceServer.getId()));
+                    if (!resource.getOwner().equals(resourceServer.getId())) {
+                        for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
+                            policies.addAll(policyStore.findByResource(typedResource.getId(), resourceServer.getId()));
+                        }
                     }
 
                     return policies;
@@ -89,7 +91,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
 
         if (!scopes.isEmpty()) {
-            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
+            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId()), consumer);
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && !verified.get()) {

@@ -271,8 +271,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId, owner));
     }
 
-    public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String serverId) {
+    public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String defaultResourceType, String serverId) {
         Set<String> resourceTypes = getResourceTypes(resources, serverId);
+        if (Objects.nonNull(defaultResourceType)) {
+            resourceTypes.add(defaultResourceType);
+        }
         cache.policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
         PolicyAdapter adapter = managedPolicies.get(id);
         if (adapter != null) adapter.invalidateFlag();
@@ -367,6 +370,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
     public static String getPolicyByScope(String scope, String serverId) {
         return "policy.scope." + scope + "." + serverId;
+    }
+
+    public static String getPolicyByResourceScope(String scope, String resourceId, String serverId) {
+        return "policy.resource. " + resourceId + ".scope." + scope + "." + serverId;
     }
 
     public static String getPermissionTicketByResource(String resourceId, String serverId) {
@@ -664,8 +671,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
             Policy policy = getPolicyStoreDelegate().create(representation, resourceServer);
-            registerPolicyInvalidation(policy.getId(), representation.getName(), representation.getResources(), representation.getScopes(), resourceServer.getId());
-            return policy;
+            Policy cached = findById(policy.getId(), resourceServer.getId());
+            registerPolicyInvalidation(policy.getId(), representation.getName(), representation.getResources(), representation.getScopes(), null, resourceServer.getId());
+            return cached;
         }
 
         @Override
@@ -678,6 +686,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             Set<String> resources = policy.getResources().stream().map(resource -> resource.getId()).collect(Collectors.toSet());
             ResourceServer resourceServer = policy.getResourceServer();
             Set<String> resourceTypes = getResourceTypes(resources, resourceServer.getId());
+            String defaultResourceType = policy.getConfig().get("defaultResourceType");
+            if (Objects.nonNull(defaultResourceType)) {
+                resourceTypes.add(defaultResourceType);
+            }
             Set<String> scopes = policy.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet());
             invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId()));
             cache.policyRemoval(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId(), invalidations);
@@ -766,6 +778,19 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             for (String id : scopeIds) {
                 String cacheKey = getPolicyByScope(id, resourceServerId);
                 result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
+            }
+
+            return result;
+        }
+
+        @Override
+        public List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
+            if (scopeIds == null) return null;
+            List<Policy> result = new ArrayList<>();
+
+            for (String id : scopeIds) {
+                String cacheKey = getPolicyByResourceScope(id, resourceId, resourceServerId);
+                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceId, resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
             }
 
             return result;

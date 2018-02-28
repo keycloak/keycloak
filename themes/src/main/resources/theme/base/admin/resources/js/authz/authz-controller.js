@@ -1292,7 +1292,7 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
             if ($scope.selectedResource != null) {
                 $scope.policy.resources = [$scope.selectedResource._id];
             } else {
-                delete $scope.policy.resources;
+                $scope.policy.resources = [];
             }
 
             var scopes = [];

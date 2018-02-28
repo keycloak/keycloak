@@ -386,6 +386,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
+                return policyStore.findByScopeIds(scopeIds, resourceId, resourceServerId);
+            }
+
+            @Override
             public List<Policy> findByType(String type, String resourceServerId) {
                 return policyStore.findByType(type, resourceServerId);
             }

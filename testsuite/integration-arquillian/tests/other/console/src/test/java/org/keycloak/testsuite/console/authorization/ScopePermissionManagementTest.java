@@ -88,7 +88,7 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testCreateWithoutPolicies() throws InterruptedException {
+    public void testCreateWithoutPolicies() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
@@ -105,7 +105,7 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testUpdateResourceScope() throws InterruptedException {
+    public void testUpdateResourceScope() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
@@ -149,7 +149,32 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testUpdateScopeOnly() throws InterruptedException {
+    public void testUpdateWithoutResource() {
+        authorizationPage.navigateTo();
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName("testUpdateWithoutResource Permission");
+        expected.setDescription("description");
+        expected.addResource("Resource A");
+        expected.addScope("Scope A");
+        expected.addPolicy("Policy C");
+
+        expected = createPermission(expected);
+
+        expected.getResources().clear();
+        expected.addScope("Scope B");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testUpdateScopeOnly() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
@@ -180,7 +205,7 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testDelete() throws InterruptedException {
+    public void testDelete() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
@@ -198,7 +223,7 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testDeleteFromList() throws InterruptedException {
+    public void testDeleteFromList() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
