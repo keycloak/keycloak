@@ -1,0 +1,43 @@
+[[_service_authorization_api_aapi]]
+= Managing Access to Users Resources
+
+Users can manage access to their resources using the {project_name} User Account Service.
+
+image:{project_images}/service/account-my-resource.png[alt="My Resources"]
+
+On the left side menu, the `My Resources` option leads to a page where users are able to:
+
+* Manage Permission Requests that *Need my approval*
++
+This section contains a list of all permission requests awaiting approval. These requests are connected to the parties (users) requesting access to
+a particular resource. Users are allowed to approve or deny these requests.
++
+* Manage *My resources*
++
+This section contains a list of all resources owned by the user. Users can click on a resource for more details
+and share the resource with others.
++
+* Managed *Resources shared with me*
++
+This section contains a list of all resources shared with the user.
++
+* Manage *Your requests waiting approval*
++
+This section contains a list of permission requests sent by the user that are waiting for the approval of another user or
+resource owner.
+
+When the user choose to detail own of his resources by clicking on any resource in the "My resources" listing, he is redirect to a
+page as follows:
+
+image:{project_images}/service/account-my-resource-detail.png[alt="Resource Detail"]
+
+From this page the users are able to:
+
+* Manage *People with access to the resource*
++
+This section contains a list of people with access to the resource. Users are allowed to revoke access by clicking
+on the `Revoke` button or by removing a specific `Permission`.
++
+* Share the resource with others
++
+By typing the username or e-mail of another user, the user is able to share the resource and select the permissions he want to grant access.

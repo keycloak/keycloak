@@ -31,14 +31,7 @@ Here is an example of a response from a resource server that is using UMA as the
 
 ```bash
 HTTP/1.1 401 Unauthorized
-WWW-Authenticate: UMA realm="photoz-restful-api",as_uri="http://localhost:8080/auth/realms/photoz/authz/authorize",ticket="${PERMISSION_TICKET}"
-```
-
-And another example when the resource server is using the Entitlement protocol:
-
-```bash
-HTTP/1.1 401 Unauthorized
-WWW-Authenticate: KC_ETT realm="photoz-restful-api",as_uri="http://localhost:8080/auth/realms/photoz/authz/entitlement"
+WWW-Authenticate: UMA realm="photoz-restful-api",as_uri="https://${host}:${post}/auth/realms/${realm}",ticket="${PERMISSION_TICKET}"
 ```
 
 Once  a client receives a response from the server, it examines the status code and `WWW-Authenticate` header to obtain an RPT from the {project_name} Server.

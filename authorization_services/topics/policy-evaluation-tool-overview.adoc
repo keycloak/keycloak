@@ -11,8 +11,6 @@ image:{project_images}/policy-evaluation-tool/policy-evaluation-tool.png[alt="Po
 
 The *Identity Information* filters can be used to specify the user requesting permissions.
 
-You can also click *Entitlement* to obtain all permissions for the user you selected.
-
 == Providing Contextual Information
 
 The *Contextual Information* filters can be used to define additional attributes to the evaluation context, so that policies can obtain these same attributes.

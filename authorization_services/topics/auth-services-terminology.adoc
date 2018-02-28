@@ -66,12 +66,12 @@ policy providers, and you can create your own policy types to support your speci
 [[_overview_terminology_permission_ticket]]
 == Permission Ticket
 
-A permission ticket is a special type of token defined by the https://docs.kantarainitiative.org/uma/rec-uma-core.html[OAuth2's User-Managed Access (UMA) Profile] specification that provides an opaque structure whose form is determined by the authorization server. This
-structure represents the resources and/or scopes being requested by a client as well as the policies that must be applied to a request for authorization data (requesting party token [RPT]).
+A permission ticket is a special type of token defined by the User-Managed Access (UMA) specification that provides an opaque structure whose form is determined by the authorization server. This
+structure represents the resources and/or scopes being requested by a client, the access context, as well as the policies that must be applied to a request for authorization data (requesting party token [RPT]).
 
 In UMA, permission tickets are crucial to support person-to-person sharing and also person-to-organization sharing. Using permission tickets for authorization workflows enables a range of scenarios from simple to complex, where resource owners and resource servers have complete control over their resources based on fine-grained policies that govern the access to these resources.
 
 In the UMA workflow, permission tickets are issued by the authorization server to a resource server, which returns the permission ticket to the client trying to access a protected resource. Once the client receives the ticket, it can make a request for an RPT (a final token holding authorization data) by sending the ticket back to the authorization server.
 
-For more information on permission tickets, see <<_service_authorization_api, Authorization API>> and the https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA] specification.
+For more information on permission tickets, see <<_service_user_managed_access, User-Managed Access>> and the https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html[UMA] specification.
 

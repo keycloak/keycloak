@@ -42,7 +42,7 @@ if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')
 }
 ```
 
-You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if an user is granted with a `keycloak_user` *realm* role:
+You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if a user is granted with a `keycloak_user` *realm* role:
 
 ```javascript
 var context = $evaluation.getContext();
@@ -53,7 +53,7 @@ if (identity.hasRealmRole('keycloak_user')) {
 }
 ```
 
-Or you can check if an user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
+Or you can check if a user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
 
 ```javascript
 var context = $evaluation.getContext();

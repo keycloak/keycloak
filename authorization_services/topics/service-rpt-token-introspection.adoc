@@ -45,8 +45,8 @@ As a result, the server response is:
 {
   "permissions": [
     {
-      "resource_set_id": "90ccc6fc-b296-4cd1-881e-089e1ee15957",
-      "resource_set_name": "Hello World Resource"
+      "resource_id": "90ccc6fc-b296-4cd1-881e-089e1ee15957",
+      "resource_name": "Hello World Resource"
     }
   ],
   "exp": 1465314139,
@@ -67,8 +67,8 @@ If the RPT is not active, this response is returned instead:
 
 = Do I Need to Invoke the Server Every Time I Want to Introspect an RPT?
 
-No. Both <<_service_entitlement_api, Entitlement>> APIs use the
- https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] specification as the default format for RPTs.
+No. Just like a regular access token issued by a {project_name} server, RPTs also use the
+ https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] specification as the default format.
 
 If you want to validate these tokens without a call to the remote introspection endpoint, you can decode the RPT and query for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.
