@@ -126,6 +126,8 @@
                     -Djboss.node.name=node1
                     ${adapter.test.props}
                     ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -148,6 +150,8 @@
                     -Djboss.node.name=node2
                     ${adapter.test.props}
                     ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -220,6 +224,8 @@
                     -Djboss.node.name=cache-server-dc-1
                     ${adapter.test.props}
                     ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -246,6 +252,8 @@
                     -Djboss.node.name=cache-server-dc-2
                     ${adapter.test.props}
                     ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -373,6 +381,8 @@
                     -Dremote.cache.port=12232
                     -Djboss.site.name=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -396,6 +406,8 @@
                     -Dremote.cache.port=12232
                     -Djboss.site.name=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -420,6 +432,8 @@
                     -Dremote.cache.port=13232
                     -Djboss.site.name=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -443,6 +457,8 @@
                     -Dremote.cache.port=13232
                     -Djboss.site.name=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -463,7 +479,9 @@
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${auth.server.balancer.home}</property>
             <property name="jbossArguments">
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset} 
+                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="javaVmArguments">
                 -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
@@ -498,6 +516,8 @@
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 ${migration.import.props.previous}
                 ${auth.server.memory.settings}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
