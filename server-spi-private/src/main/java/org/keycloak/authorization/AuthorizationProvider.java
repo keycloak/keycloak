@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -32,6 +33,7 @@ import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -122,159 +124,6 @@ public final class AuthorizationProvider implements Provider {
         return storeFactoryDelegate;
     }
 
-    private StoreFactory createStoreFactory(StoreFactory storeFactory) {
-        return new StoreFactory() {
-            @Override
-            public ResourceStore getResourceStore() {
-                return storeFactory.getResourceStore();
-            }
-
-            @Override
-            public ResourceServerStore getResourceServerStore() {
-                return storeFactory.getResourceServerStore();
-            }
-
-            @Override
-            public ScopeStore getScopeStore() {
-                return storeFactory.getScopeStore();
-            }
-
-            @Override
-            public PolicyStore getPolicyStore() {
-                PolicyStore policyStore = storeFactory.getPolicyStore();
-                return new PolicyStore() {
-                    @Override
-                    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
-                        Set<String> resources = representation.getResources();
-
-                        if (resources != null) {
-                            representation.setResources(resources.stream().map(id -> {
-                                Resource resource = getResourceStore().findById(id, resourceServer.getId());
-
-                                if (resource == null) {
-                                    resource = getResourceStore().findByName(id, resourceServer.getId());
-                                }
-
-                                if (resource == null) {
-                                    throw new RuntimeException("Resource [" + id + "] does not exist");
-                                }
-
-                                return resource.getId();
-                            }).collect(Collectors.toSet()));
-                        }
-
-                        Set<String> scopes = representation.getScopes();
-
-                        if (scopes != null) {
-                            representation.setScopes(scopes.stream().map(id -> {
-                                Scope scope = getScopeStore().findById(id, resourceServer.getId());
-
-                                if (scope == null) {
-                                    scope = getScopeStore().findByName(id, resourceServer.getId());
-                                }
-
-                                if (scope == null) {
-                                    throw new RuntimeException("Scope [" + id + "] does not exist");
-                                }
-
-                                return scope.getId();
-                            }).collect(Collectors.toSet()));
-                        }
-
-
-                        Set<String> policies = representation.getPolicies();
-
-                        if (policies != null) {
-                            representation.setPolicies(policies.stream().map(id -> {
-                                Policy policy = getPolicyStore().findById(id, resourceServer.getId());
-
-                                if (policy == null) {
-                                    policy = getPolicyStore().findByName(id, resourceServer.getId());
-                                }
-
-                                if (policy == null) {
-                                    throw new RuntimeException("Policy [" + id + "] does not exist");
-                                }
-
-                                return policy.getId();
-                            }).collect(Collectors.toSet()));
-                        }
-
-                        return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(representation, resourceServer));
-                    }
-
-                    @Override
-                    public void delete(String id) {
-                        Policy policy = findById(id, null);
-
-                        if (policy != null) {
-                            ResourceServer resourceServer = policy.getResourceServer();
-
-                            findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-                                dependentPolicy.removeAssociatedPolicy(policy);
-                                if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
-                                    delete(dependentPolicy.getId());
-                                }
-                            });
-
-                            policyStore.delete(id);
-                        }
-                    }
-
-                    @Override
-                    public Policy findById(String id, String resourceServerId) {
-                        return policyStore.findById(id, resourceServerId);
-                    }
-
-                    @Override
-                    public Policy findByName(String name, String resourceServerId) {
-                        return policyStore.findByName(name, resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findByResourceServer(String resourceServerId) {
-                        return policyStore.findByResourceServer(resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-                        return policyStore.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
-                    }
-
-                    @Override
-                    public List<Policy> findByResource(String resourceId, String resourceServerId) {
-                        return policyStore.findByResource(resourceId, resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
-                        return policyStore.findByResourceType(resourceType, resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
-                        return policyStore.findByScopeIds(scopeIds, resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findByType(String type, String resourceServerId) {
-                        return policyStore.findByType(type, resourceServerId);
-                    }
-
-                    @Override
-                    public List<Policy> findDependentPolicies(String id, String resourceServerId) {
-                        return policyStore.findDependentPolicies(id, resourceServerId);
-                    }
-                };
-            }
-
-            @Override
-            public void close() {
-                storeFactory.close();
-            }
-        };
-    }
-
     /**
      * Returns the registered {@link PolicyProviderFactory}.
      *
@@ -323,5 +172,292 @@ public final class AuthorizationProvider implements Provider {
     @Override
     public void close() {
 
+    }
+
+    private StoreFactory createStoreFactory(StoreFactory storeFactory) {
+        return new StoreFactory() {
+
+            ResourceStore resourceStore;
+            ScopeStore scopeStore;
+            PolicyStore policyStore;
+
+            @Override
+            public ResourceStore getResourceStore() {
+                if (resourceStore == null) {
+                    resourceStore = createResourceStoreWrapper(storeFactory);
+                }
+                return resourceStore;
+            }
+
+            @Override
+            public ResourceServerStore getResourceServerStore() {
+                return storeFactory.getResourceServerStore();
+            }
+
+            @Override
+            public ScopeStore getScopeStore() {
+                if (scopeStore == null) {
+                    scopeStore = createScopeWrapper(storeFactory);
+                }
+                return scopeStore;
+            }
+
+            @Override
+            public PolicyStore getPolicyStore() {
+                if (policyStore == null) {
+                    policyStore = createPolicyWrapper(storeFactory);
+                }
+                return policyStore;
+            }
+
+            @Override
+            public PermissionTicketStore getPermissionTicketStore() {
+                return storeFactory.getPermissionTicketStore();
+            }
+
+            @Override
+            public void close() {
+                storeFactory.close();
+            }
+        };
+    }
+
+    private ScopeStore createScopeWrapper(StoreFactory storeFactory) {
+        return new ScopeStore() {
+
+            ScopeStore delegate = storeFactory.getScopeStore();
+
+            @Override
+            public Scope create(String name, ResourceServer resourceServer) {
+                return delegate.create(name, resourceServer);
+            }
+
+            @Override
+            public void delete(String id) {
+                Scope scope = findById(id, null);
+                PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
+                List<PermissionTicket> permissions = ticketStore.findByScope(id, scope.getResourceServer().getId());
+
+                for (PermissionTicket permission : permissions) {
+                    ticketStore.delete(permission.getId());
+                }
+
+                delegate.delete(id);
+            }
+
+            @Override
+            public Scope findById(String id, String resourceServerId) {
+                return delegate.findById(id, resourceServerId);
+            }
+
+            @Override
+            public Scope findByName(String name, String resourceServerId) {
+                return delegate.findByName(name, resourceServerId);
+            }
+
+            @Override
+            public List<Scope> findByResourceServer(String id) {
+                return delegate.findByResourceServer(id);
+            }
+
+            @Override
+            public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+                return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
+            }
+        };
+    }
+
+    private PolicyStore createPolicyWrapper(StoreFactory storeFactory) {
+        return new PolicyStore() {
+
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+
+            @Override
+            public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+                Set<String> resources = representation.getResources();
+
+                if (resources != null) {
+                    representation.setResources(resources.stream().map(id -> {
+                        Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+
+                        if (resource == null) {
+                            resource = storeFactory.getResourceStore().findByName(id, resourceServer.getId());
+                        }
+
+                        if (resource == null) {
+                            throw new RuntimeException("Resource [" + id + "] does not exist");
+                        }
+
+                        return resource.getId();
+                    }).collect(Collectors.toSet()));
+                }
+
+                Set<String> scopes = representation.getScopes();
+
+                if (scopes != null) {
+                    representation.setScopes(scopes.stream().map(id -> {
+                        Scope scope = storeFactory.getScopeStore().findById(id, resourceServer.getId());
+
+                        if (scope == null) {
+                            scope = storeFactory.getScopeStore().findByName(id, resourceServer.getId());
+                        }
+
+                        if (scope == null) {
+                            throw new RuntimeException("Scope [" + id + "] does not exist");
+                        }
+
+                        return scope.getId();
+                    }).collect(Collectors.toSet()));
+                }
+
+
+                Set<String> policies = representation.getPolicies();
+
+                if (policies != null) {
+                    representation.setPolicies(policies.stream().map(id -> {
+                        Policy policy = storeFactory.getPolicyStore().findById(id, resourceServer.getId());
+
+                        if (policy == null) {
+                            policy = storeFactory.getPolicyStore().findByName(id, resourceServer.getId());
+                        }
+
+                        if (policy == null) {
+                            throw new RuntimeException("Policy [" + id + "] does not exist");
+                        }
+
+                        return policy.getId();
+                    }).collect(Collectors.toSet()));
+                }
+
+                return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(representation, resourceServer));
+            }
+
+            @Override
+            public void delete(String id) {
+                Policy policy = findById(id, null);
+
+                if (policy != null) {
+                    ResourceServer resourceServer = policy.getResourceServer();
+
+                    findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
+                        dependentPolicy.removeAssociatedPolicy(policy);
+                        if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
+                            delete(dependentPolicy.getId());
+                        }
+                    });
+
+                    policyStore.delete(id);
+                }
+            }
+
+            @Override
+            public Policy findById(String id, String resourceServerId) {
+                return policyStore.findById(id, resourceServerId);
+            }
+
+            @Override
+            public Policy findByName(String name, String resourceServerId) {
+                return policyStore.findByName(name, resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findByResourceServer(String resourceServerId) {
+                return policyStore.findByResourceServer(resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+                return policyStore.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
+            }
+
+            @Override
+            public List<Policy> findByResource(String resourceId, String resourceServerId) {
+                return policyStore.findByResource(resourceId, resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
+                return policyStore.findByResourceType(resourceType, resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
+                return policyStore.findByScopeIds(scopeIds, resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findByType(String type, String resourceServerId) {
+                return policyStore.findByType(type, resourceServerId);
+            }
+
+            @Override
+            public List<Policy> findDependentPolicies(String id, String resourceServerId) {
+                return policyStore.findDependentPolicies(id, resourceServerId);
+            }
+        };
+    }
+
+    private ResourceStore createResourceStoreWrapper(StoreFactory storeFactory) {
+        return new ResourceStore() {
+            ResourceStore delegate = storeFactory.getResourceStore();
+
+            @Override
+            public Resource create(String name, ResourceServer resourceServer, String owner) {
+                return delegate.create(name, resourceServer, owner);
+            }
+
+            @Override
+            public void delete(String id) {
+                Resource resource = findById(id, null);
+                PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
+                List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer().getId());
+
+                for (PermissionTicket permission : permissions) {
+                    ticketStore.delete(permission.getId());
+                }
+
+                delegate.delete(id);
+            }
+
+            @Override
+            public Resource findById(String id, String resourceServerId) {
+                return delegate.findById(id, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByOwner(String ownerId, String resourceServerId) {
+                return delegate.findByOwner(ownerId, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByUri(String uri, String resourceServerId) {
+                return delegate.findByUri(uri, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByResourceServer(String resourceServerId) {
+                return delegate.findByResourceServer(resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+                return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
+            }
+
+            @Override
+            public List<Resource> findByScope(List<String> id, String resourceServerId) {
+                return delegate.findByScope(id, resourceServerId);
+            }
+
+            @Override
+            public Resource findByName(String name, String resourceServerId) {
+                return delegate.findByName(name, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByType(String type, String resourceServerId) {
+                return delegate.findByType(type, resourceServerId);
+            }
+        };
     }
 }

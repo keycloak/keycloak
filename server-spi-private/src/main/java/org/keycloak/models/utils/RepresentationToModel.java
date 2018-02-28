@@ -33,11 +33,13 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -109,6 +111,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
@@ -145,6 +148,7 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
+        if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -817,6 +821,7 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
+        if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -2308,9 +2313,11 @@ public class RepresentationToModel {
 
         if (existing != null) {
             existing.setName(resource.getName());
+            existing.setDisplayName(resource.getDisplayName());
             existing.setType(resource.getType());
             existing.setUri(resource.getUri());
             existing.setIconUri(resource.getIconUri());
+            existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
             existing.updateScopes(resource.getScopes().stream()
                     .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
                     .collect(Collectors.toSet()));
@@ -2356,9 +2363,11 @@ public class RepresentationToModel {
 
         Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
 
+        model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
         model.setUri(resource.getUri());
         model.setIconUri(resource.getIconUri());
+        model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
 
         Set<ScopeRepresentation> scopes = resource.getScopes();
 
@@ -2384,15 +2393,33 @@ public class RepresentationToModel {
 
         if (existing != null) {
             existing.setName(scope.getName());
+            existing.setDisplayName(scope.getDisplayName());
             existing.setIconUri(scope.getIconUri());
             return existing;
         }
 
         Scope model = scopeStore.create(scope.getName(), resourceServer);
+
+        model.setDisplayName(scope.getDisplayName());
         model.setIconUri(scope.getIconUri());
+
         scope.setId(model.getId());
 
         return model;
+    }
+
+    public static PermissionTicket toModel(PermissionTicketRepresentation representation, String resourceServerId, AuthorizationProvider authorization) {
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        PermissionTicket ticket = ticketStore.findById(representation.getId(), resourceServerId);
+        boolean granted = representation.isGranted();
+
+        if (granted && !ticket.isGranted()) {
+            ticket.setGrantedTimestamp(System.currentTimeMillis());
+        } else if (!granted) {
+            ticket.setGrantedTimestamp(null);
+        }
+
+        return ticket;
     }
 
     public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {

@@ -17,36 +17,205 @@
  */
 package org.keycloak.authorization.client.resource;
 
-import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
-
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.Throwables;
+import org.keycloak.authorization.client.util.TokenCallable;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
+import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 /**
+ * An entry point for managing permission tickets using the Protection API.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PermissionResource {
 
     private final Http http;
-    private final Callable<String> pat;
+    private final ServerConfiguration serverConfiguration;
+    private final TokenCallable pat;
 
-    public PermissionResource(Http http, Callable<String> pat) {
+    public PermissionResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
         this.http = http;
+        this.serverConfiguration = serverConfiguration;
         this.pat = pat;
     }
 
+    /**
+     * @deprecated use {@link #create(PermissionRequest)}
+     * @param request
+     * @return
+     */
+    @Deprecated
     public PermissionResponse forResource(PermissionRequest request) {
+        return create(request);
+    }
+
+    /**
+     * Creates a new permission ticket for a single resource and scope(s).
+     *
+     * @param request the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
+     * @return a permission response holding a permission ticket with the requested permissions
+     */
+    public PermissionResponse create(PermissionRequest request) {
+        return create(Arrays.asList(request));
+    }
+
+    /**
+     * Creates a new permission ticket for a set of one or more resource and scope(s).
+     *
+     * @param request the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
+     * @return a permission response holding a permission ticket with the requested permissions
+     */
+    public PermissionResponse create(final List<PermissionRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalArgumentException("Permission request must not be null or empty");
+        }
+        Callable<PermissionResponse> callable = new Callable<PermissionResponse>() {
+            @Override
+            public PermissionResponse call() throws Exception {
+                return http.<PermissionResponse>post(serverConfiguration.getPermissionEndpoint())
+                        .authorizationBearer(pat.call())
+                        .json(JsonSerialization.writeValueAsBytes(requests))
+                        .response().json(PermissionResponse.class).execute();
+            }
+        };
         try {
-            return this.http.<PermissionResponse>post("/authz/protection/permission")
-                    .authorizationBearer(this.pat.call())
-                    .json(JsonSerialization.writeValueAsBytes(request))
-                    .response().json(PermissionResponse.class).execute();
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Error obtaining permission ticket", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error creating permission ticket", cause);
+        }
+    }
+
+    /**
+     * Query the server for any permission ticket associated with the given <code>scopeId</code>.
+     *
+     * @param scopeId the scope id (not {@code null})
+     * @return a list of permission tickets associated with the given <code>scopeId</code>
+     */
+    public List<PermissionTicketRepresentation> findByScope(final String scopeId) {
+        if (scopeId == null) {
+            throw new IllegalArgumentException("Scope id must not be null");
+        }
+        Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
+            @Override
+            public List<PermissionTicketRepresentation> call() throws Exception {
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                        .authorizationBearer(pat.call())
+                        .param("scopeId", scopeId)
+                        .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+            }
+        };
+        try {
+            return callable.call();
+        } catch (Exception cause) {
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket by scope", cause);
+        }
+    }
+
+    /**
+     * Query the server for any permission ticket associated with the given <code>resourceId</code>.
+     *
+     * @param resourceId the resource id (not {@code null})
+     * @return a list of permission tickets associated with the given <code>resourceId</code>
+     */
+    public List<PermissionTicketRepresentation> findByResource(final String resourceId) {
+        if (resourceId == null) {
+            throw new IllegalArgumentException("Resource id must not be null");
+        }
+        Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
+            @Override
+            public List<PermissionTicketRepresentation> call() throws Exception {
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                        .authorizationBearer(pat.call())
+                        .param("resourceId", resourceId)
+                        .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+            }
+        };
+        try {
+            return callable.call();
+        } catch (Exception cause) {
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket by resource", cause);
+        }
+    }
+
+    /**
+     * Query the server for any permission ticket with the matching arguments.
+     *
+     * @param resourceId the resource id or name
+     * @param scopeId the scope id or name
+     * @param owner the owner id or name
+     * @param requester the requester id or name
+     * @param granted if true, only permission tickets marked as granted are returned.
+     * @param returnNames if the response should include names for resource, scope and owner
+     * @param firstResult the position of the first resource to retrieve
+     * @param maxResult the maximum number of resources to retrieve
+     * @return a list of permission tickets with the matching arguments
+     */
+    public List<PermissionTicketRepresentation> find(final String resourceId,
+                                                     final String scopeId,
+                                                     final String owner,
+                                                     final String requester,
+                                                     final Boolean granted,
+                                                     final Boolean returnNames,
+                                                     final Integer firstResult,
+                                                     final Integer maxResult) {
+        Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
+            @Override
+            public List<PermissionTicketRepresentation> call() throws Exception {
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                        .authorizationBearer(pat.call())
+                        .param("resourceId", resourceId)
+                        .param("scopeId", scopeId)
+                        .param("owner", owner)
+                        .param("requester", requester)
+                        .param("granted", granted == null ? null : granted.toString())
+                        .param("returnNames", returnNames == null ? null : returnNames.toString())
+                        .param("firstResult", firstResult == null ? null : firstResult.toString())
+                        .param("maxResult", maxResult == null ? null : maxResult.toString())
+                        .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+            }
+        };
+        try {
+            return callable.call();
+        } catch (Exception cause) {
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket", cause);
+        }
+    }
+
+    /**
+     * Updates a permission ticket.
+     *
+     * @param ticket the permission ticket
+     */
+    public void update(final PermissionTicketRepresentation ticket) {
+        if (ticket == null) {
+            throw new IllegalArgumentException("Permission ticket must not be null or empty");
+        }
+        if (ticket.getId() == null) {
+            throw new IllegalArgumentException("Permission ticket must have an id");
+        }
+        Callable callable = new Callable() {
+            @Override
+            public Object call() throws Exception {
+                http.<List>put(serverConfiguration.getPermissionEndpoint())
+                        .json(JsonSerialization.writeValueAsBytes(ticket))
+                        .authorizationBearer(pat.call())
+                        .response().json(List.class).execute();
+                return null;
+            }
+        };
+        try {
+            callable.call();
+        } catch (Exception cause) {
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating permission ticket", cause);
         }
     }
 }

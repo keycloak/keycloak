@@ -88,11 +88,20 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByOwner", String.class);
+        String queryName = "findResourceIdByOwner";
+
+        if (resourceServerId == null) {
+            queryName = "findAnyResourceIdByOwner";
+        }
+
+        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
-        query.setParameter("serverId", resourceServerId);
+
+        if (resourceServerId != null) {
+            query.setParameter("serverId", resourceServerId);
+        }
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
@@ -161,13 +170,17 @@ public class JPAResourceStore implements ResourceStore {
         querybuilder.select(root.get("id"));
         List<Predicate> predicates = new ArrayList();
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        if (resourceServerId != null) {
+            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        }
 
         attributes.forEach((name, value) -> {
             if ("id".equals(name)) {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
+            } else if ("ownerManagedAccess".equals(name)) {
+                predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }

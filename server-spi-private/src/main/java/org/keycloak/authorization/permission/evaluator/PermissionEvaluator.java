@@ -30,6 +30,6 @@ import org.keycloak.authorization.policy.evaluation.Result;
  */
 public interface PermissionEvaluator {
 
-    void evaluate(Decision decision);
+    <D extends Decision> D evaluate(D decision);
     List<Result> evaluate();
 }

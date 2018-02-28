@@ -27,6 +27,7 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import java.net.URL;
 
@@ -41,7 +42,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "photoz-html5-client";
-    public static final int WAIT_AFTER_OPERATION = 2000;
+    public static final int WAIT_AFTER_OPERATION = 1000;
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -62,11 +63,22 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @FindBy(id = "entitlements")
     private WebElement entitlements;
 
+    @FindBy(id = "get-all-resources")
+    private WebElement viewAllAlbums;
+
     @FindBy(id = "output")
     private WebElement output;
-    
+
     public void createAlbum(String name) {
-        createAlbum(name, "save-album");
+        createAlbum(name, false);
+    }
+
+    public void createAlbum(String name, boolean managed) {
+        if (managed) {
+            createAlbum(name, "save-managed-album");
+        } else {
+            createAlbum(name, "save-album");
+        }
     }
 
     public void createAlbum(String name, String buttonId) {
@@ -118,13 +130,15 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void login(String username, String password, String... scopes) throws InterruptedException {
-        if (this.driver.getCurrentUrl().startsWith(getInjectedUrl().toString())) {
-            Thread.sleep(2000);
+        String currentUrl = this.driver.getCurrentUrl();
+
+        if (currentUrl.startsWith(getInjectedUrl().toString())) {
+            Thread.sleep(1000);
             logOut();
             navigateTo();
         }
 
-        Thread.sleep(2000);
+        Thread.sleep(1000);
 
         if (scopes.length > 0) {
             StringBuilder scopesValue = new StringBuilder();
@@ -136,7 +150,21 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
                 scopesValue.append(scope);
             }
 
-            URLUtils.navigateToUri(this.driver.getCurrentUrl() + " " + scopesValue, true);
+            scopesValue.append(" openid");
+
+            int scopeIndex = currentUrl.indexOf("scope");
+
+            if (scopeIndex != -1) {
+                StringBuilder url = new StringBuilder(currentUrl);
+
+                url.delete(scopeIndex, currentUrl.indexOf('&', scopeIndex));
+
+                url.append("&").append("scope=").append(scopesValue);
+
+                currentUrl = url.toString();
+            }
+
+            URLUtils.navigateToUri(currentUrl + " " + scopesValue, true);
         }
 
         this.loginPage.form().login(username, password);
@@ -154,10 +182,80 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void viewAlbum(String name) throws InterruptedException {
+        viewAlbum(name, true);
+    }
+
+    public void viewAllAlbums() {
+        viewAllAlbums.click();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void viewAlbum(String name, boolean refresh) throws InterruptedException {
         this.driver.findElement(By.xpath("//a[text() = '" + name + "']")).click();
         waitForPageToLoad();
-        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        if (refresh) {
+            driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        }
         pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void accountPage() throws InterruptedException {
+        navigateTo();
+        this.driver.findElement(By.id("my-account")).click();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void accountMyResources() throws InterruptedException {
+        accountPage();
+        this.driver.findElement(By.xpath("//a[text() = 'My Resources']")).click();
+        waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void accountMyResource(String name) throws InterruptedException {
+        accountMyResources();
+        this.driver.findElement(By.id("detail-" + name)).click();
+        waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void accountGrantResource(String name, String requester) throws InterruptedException {
+        accountMyResources();
+        this.driver.findElement(By.id("grant-" + name + "-" + requester)).click();
+        waitForPageToLoad();
+    }
+
+    public void accountGrantRemoveScope(String name, String requester, String scope) throws InterruptedException {
+        accountMyResources();
+        this.driver.findElement(By.id("grant-remove-scope-" + name + "-" + requester + "-" + scope)).click();
+        waitForPageToLoad();
+    }
+
+    public void accountRevokeResource(String name, String requester) throws InterruptedException {
+        accountMyResource(name);
+        this.driver.findElement(By.id("revoke-" + name + "-" + requester)).click();
+        waitForPageToLoad();
+    }
+
+    public void accountShareResource(String name, String user) throws InterruptedException {
+        accountMyResource(name);
+        this.driver.findElement(By.id("user_id")).sendKeys(user);
+        this.driver.findElement(By.id("share-button")).click();
+        waitForPageToLoad();
+    }
+
+    public void accountShareRemoveScope(String name, String user, String scope) throws InterruptedException {
+        accountMyResource(name);
+        this.driver.findElement(By.id("user_id")).sendKeys(user);
+        this.driver.findElement(By.id("share-remove-scope-" + name + "-" + scope)).click();
+        this.driver.findElement(By.id("share-button")).click();
+        waitForPageToLoad();
+    }
+
+    public void accountDenyResource(String name) throws InterruptedException {
+        accountMyResource(name);
+        this.driver.findElement(By.xpath("//a[text() = 'Deny']")).click();
+        waitForPageToLoad();
     }
 
     public void requestResourceProtectedAnyScope() throws InterruptedException {

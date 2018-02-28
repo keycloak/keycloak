@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -234,6 +235,7 @@ public class ModelToRepresentation {
         rep.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds());
         rep.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds());
         rep.setFailureFactor(realm.getFailureFactor());
+        rep.setUserManagedAccessAllowed(realm.isUserManagedAccessAllowed());
 
         rep.setEventsEnabled(realm.isEventsEnabled());
         if (realm.getEventsExpiration() != 0) {
@@ -741,6 +743,7 @@ public class ModelToRepresentation {
 
         scope.setId(model.getId());
         scope.setName(model.getName());
+        scope.setDisplayName(model.getDisplayName());
         scope.setIconUri(model.getIconUri());
 
         return scope;
@@ -800,8 +803,10 @@ public class ModelToRepresentation {
         resource.setId(model.getId());
         resource.setType(model.getType());
         resource.setName(model.getName());
+        resource.setDisplayName(model.getDisplayName());
         resource.setUri(model.getUri());
         resource.setIconUri(model.getIconUri());
+        resource.setOwnerManagedAccess(model.isOwnerManagedAccess());
 
         ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
 
@@ -857,5 +862,36 @@ public class ModelToRepresentation {
         }
 
         return resource;
+    }
+
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket) {
+        return toRepresentation(ticket, false);
+    }
+
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, boolean returnNames) {
+        PermissionTicketRepresentation representation = new PermissionTicketRepresentation();
+
+        representation.setId(ticket.getId());
+        representation.setGranted(ticket.isGranted());
+        representation.setOwner(ticket.getOwner());
+
+        Resource resource = ticket.getResource();
+
+        representation.setResource(resource.getId());
+
+        if (returnNames) {
+            representation.setResourceName(resource.getName());
+        }
+
+        Scope scope = ticket.getScope();
+
+        if (scope != null) {
+            representation.setScope(scope.getId());
+            if (returnNames) {
+                representation.setScopeName(scope.getName());
+            }
+        }
+
+        return representation;
     }
 }

@@ -24,8 +24,10 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.authorization.AuthorizationTokenService;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.authorization.util.Tokens;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -47,7 +49,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -57,33 +58,31 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ErrorPage;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
-import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
@@ -95,8 +94,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-import java.net.URI;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,7 +116,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -166,7 +166,10 @@ public class TokenEndpoint {
         checkSsl();
         checkRealm();
         checkGrantType();
-        checkClient();
+
+        if (!action.equals(Action.PERMISSION)) {
+            checkClient();
+        }
 
         switch (action) {
             case AUTHORIZATION_CODE:
@@ -179,6 +182,8 @@ public class TokenEndpoint {
                 return clientCredentialsGrant();
             case TOKEN_EXCHANGE:
                 return tokenExchange();
+            case PERMISSION:
+                return permissionGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -247,7 +252,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
             event.event(EventType.TOKEN_EXCHANGE);
             action = Action.TOKEN_EXCHANGE;
-
+        } else if (grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
+            event.event(EventType.PERMISSION_TOKEN);
+            action = Action.PERMISSION;
         } else {
             throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
@@ -973,6 +980,90 @@ public class TokenEndpoint {
         return user;
     }
 
+    public Response permissionGrant() {
+        event.detail(Details.AUTH_METHOD, "oauth_credentials");
+
+        String accessTokenString = null;
+        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+        if (authorizationHeader != null && authorizationHeader.toLowerCase().startsWith("bearer")) {
+            accessTokenString = new AppAuthManager().extractAuthorizationHeaderToken(headers);
+        }
+
+        if (accessTokenString != null) {
+            AccessToken accessToken = Tokens.getAccessToken(session);
+
+            if (accessToken == null) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Status.UNAUTHORIZED);
+            }
+
+            cors.allowedOrigins(uriInfo, realm.getClientByClientId(accessToken.getIssuedFor()));
+        }
+
+        String claimToken = null;
+
+        // claim_token is optional, if provided we just grab it from the request
+        if (formParams.containsKey("claim_token")) {
+            claimToken = formParams.get("claim_token").get(0);
+        }
+
+        if (accessTokenString == null) {
+            // in case no bearer token is provided, we force client authentication
+            checkClient();
+            // Clients need to authenticate in order to obtain a RPT from the server.
+            // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
+            accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken();
+        }
+
+        AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));
+
+        authorizationRequest.setClaimToken(claimToken);
+        authorizationRequest.setClaimTokenFormat(formParams.getFirst("claim_token_format"));
+        authorizationRequest.setPct(formParams.getFirst("pct"));
+        authorizationRequest.setRpt(formParams.getFirst("rpt"));
+        authorizationRequest.setScope(formParams.getFirst("scope"));
+        authorizationRequest.setAudience(formParams.getFirst("audience"));
+        authorizationRequest.setAccessToken(accessTokenString);
+
+        String submitRequest = formParams.getFirst("submit_request");
+
+        authorizationRequest.setSubmitRequest(submitRequest == null ? true : Boolean.valueOf(submitRequest));
+
+        // permissions have a format like RESOURCE#SCOPE1,SCOPE2
+        List<String> permissions = formParams.get("permission");
+
+        if (permissions != null) {
+            for (String permission : permissions) {
+                String[] parts = permission.split("#");
+                String resource = parts[0];
+
+                if (parts.length == 1) {
+                    authorizationRequest.addPermission(resource);
+                } else {
+                    String[] scopes = parts[1].split(",");
+                    authorizationRequest.addPermission(parts[0], scopes);
+                }
+            }
+        }
+
+        Metadata metadata = new Metadata();
+
+        String responseIncludeResourceName = formParams.getFirst("response_include_resource_name");
+
+        if (responseIncludeResourceName != null) {
+            metadata.setIncludeResourceName(Boolean.parseBoolean(responseIncludeResourceName));
+        }
+
+        String responsePermissionsLimit = formParams.getFirst("response_permissions_limit");
+
+        if (responsePermissionsLimit != null) {
+            metadata.setLimit(Integer.parseInt(responsePermissionsLimit));
+        }
+
+        authorizationRequest.setMetadata(metadata);
+
+        return new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class), tokenManager, event, request, cors).authorize(authorizationRequest);
+    }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1
     private boolean isValidPkceCodeVerifier(String codeVerifier) {

@@ -66,6 +66,7 @@
         <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>
         <class>org.keycloak.authorization.jpa.entities.ScopeEntity</class>
         <class>org.keycloak.authorization.jpa.entities.PolicyEntity</class>
+        <class>org.keycloak.authorization.jpa.entities.PermissionTicketEntity</class>
 
         <!-- User Federation Storage -->
         <class>org.keycloak.storage.jpa.entity.BrokerLinkEntity</class>

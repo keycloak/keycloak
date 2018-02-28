@@ -115,6 +115,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isUserManagedAccessAllowed() {
+        return realm.isAllowUserManagedAccess();
+    }
+
+    @Override
+    public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
+        realm.setAllowUserManagedAccess(userManagedAccessAllowed);
+        em.flush();
+    }
+
+    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }

@@ -35,23 +35,31 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private String owner;
     private String type;
     private String name;
+    private String displayName;
     private String uri;
     private Set<String> scopesIds;
+    private boolean ownerManagedAccess;
 
     public CachedResource(Long revision, Resource resource) {
         super(revision, resource.getId());
         this.name = resource.getName();
+        this.displayName = resource.getDisplayName();
         this.uri = resource.getUri();
         this.type = resource.getType();
         this.owner = resource.getOwner();
         this.iconUri = resource.getIconUri();
         this.resourceServerId = resource.getResourceServer().getId();
         this.scopesIds = resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+        ownerManagedAccess = resource.isOwnerManagedAccess();
     }
 
 
     public String getName() {
         return this.name;
+    }
+
+    public String getDisplayName() {
+        return this.displayName;
     }
 
     public String getUri() {
@@ -68,6 +76,10 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
 
     public String getOwner() {
         return this.owner;
+    }
+
+    public boolean isOwnerManagedAccess() {
+        return ownerManagedAccess;
     }
 
     public String getResourceServerId() {

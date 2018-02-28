@@ -63,6 +63,16 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
     }
 
     @Override
+    public String getDisplayName() {
+        return entity.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        entity.setDisplayName(name);
+    }
+
+    @Override
     public void setName(String name) {
         entity.setName(name);
 
@@ -119,6 +129,16 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
     @Override
     public String getOwner() {
         return entity.getOwner();
+    }
+
+    @Override
+    public boolean isOwnerManagedAccess() {
+        return entity.isOwnerManagedAccess();
+    }
+
+    @Override
+    public void setOwnerManagedAccess(boolean ownerManagedAccess) {
+        entity.setOwnerManagedAccess(ownerManagedAccess);
     }
 
     @Override

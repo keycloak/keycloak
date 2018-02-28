@@ -17,9 +17,8 @@
  */
 package org.keycloak.authorization.protection.resource;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
@@ -36,6 +35,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
@@ -43,8 +43,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -72,14 +70,10 @@ public class ResourceService {
     @Produces("application/json")
     public Response create(@Context  UriInfo uriInfo, UmaResourceRepresentation umaResource) {
         checkResourceServerSettings();
-        ResourceRepresentation resource = toResourceRepresentation(umaResource);
-        Response response = this.resourceManager.create(uriInfo, resource);
-
-        if (response.getEntity() instanceof ResourceRepresentation) {
-            return Response.status(Status.CREATED).entity(toUmaRepresentation((ResourceRepresentation) response.getEntity())).build();
+        if (umaResource == null) {
+            return Response.status(Status.BAD_REQUEST).build();
         }
-
-        return response;
+        return this.resourceManager.create(uriInfo, toResourceRepresentation(umaResource), (Function<Resource, UmaResourceRepresentation>) this::toUmaRepresentation);
     }
 
     @Path("{id}")
@@ -107,79 +101,23 @@ public class ResourceService {
     @Path("/{id}")
     @GET
     @Produces("application/json")
-    public RegistrationResponse findById(@PathParam("id") String id) {
-        Response response = this.resourceManager.findById(id);
-        UmaResourceRepresentation resource = toUmaRepresentation((ResourceRepresentation) response.getEntity());
-
-        if (resource == null) {
-            throw new ErrorResponseException("not_found", "Resource with id [" + id + "] not found.", Status.NOT_FOUND);
-        }
-
-        return new RegistrationResponse(resource);
+    public Response findById(@PathParam("id") String id) {
+        return this.resourceManager.findById(id, (Function<Resource, UmaResourceRepresentation>) resource -> toUmaRepresentation(resource));
     }
 
     @GET
+    @NoCache
     @Produces("application/json")
-    public Set<String> find(@QueryParam("filter") String filter) {
-        if (filter == null) {
-            return findAll();
-        } else {
-            return findByFilter(filter);
-        }
-    }
-
-    private Set<String> findAll() {
-        Response response = this.resourceManager.find(null, null, null, null, null, null, true, -1, -1);
-        List<ResourceRepresentation> resources = (List<ResourceRepresentation>) response.getEntity();
-        return resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet());
-    }
-
-    private Set<String> findByFilter(String filter) {
-        Set<ResourceRepresentation> resources = new HashSet<>();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-
-        if (filter != null) {
-            for (String currentFilter : filter.split("&")) {
-                String[] parts = currentFilter.split("=");
-                String filterType = parts[0];
-                final String filterValue;
-
-                if (parts.length > 1) {
-                    filterValue = parts[1];
-                } else {
-                    filterValue = null;
-                }
-
-
-                if ("name".equals(filterType)) {
-                    Resource resource = storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId());
-
-                    if (resource != null) {
-                        resources.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorization));
-                    }
-                } else if ("type".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("uri".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByUri(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("owner".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByOwner(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                }
-            }
-        } else {
-            resources = storeFactory.getResourceStore().findByOwner(identity.getId(), resourceServer.getId()).stream()
-                    .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                    .collect(Collectors.toSet());
-        }
-
-        return resources.stream()
-                .map(ResourceRepresentation::getId)
-                .collect(Collectors.toSet());
+    public Response find(@QueryParam("_id") String id,
+                         @QueryParam("name") String name,
+                         @QueryParam("uri") String uri,
+                         @QueryParam("owner") String owner,
+                         @QueryParam("type") String type,
+                         @QueryParam("scope") String scope,
+                         @QueryParam("deep") Boolean deep,
+                         @QueryParam("first") Integer firstResult,
+                         @QueryParam("max") Integer maxResult) {
+        return resourceManager.find(id, name, uri, owner, type, scope, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
     }
 
     private ResourceRepresentation toResourceRepresentation(UmaResourceRepresentation umaResource) {
@@ -190,6 +128,7 @@ public class ResourceService {
         resource.setName(umaResource.getName());
         resource.setUri(umaResource.getUri());
         resource.setType(umaResource.getType());
+        resource.setOwnerManagedAccess(umaResource.getOwnerManagedAccess());
 
         ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
         String ownerId = umaResource.getOwner();
@@ -214,24 +153,24 @@ public class ResourceService {
         return resource;
     }
 
-    private UmaResourceRepresentation toUmaRepresentation(ResourceRepresentation representation) {
-        if (representation == null) {
+    private UmaResourceRepresentation toUmaRepresentation(Resource model) {
+        if (model == null) {
             return null;
         }
 
         UmaResourceRepresentation resource = new UmaResourceRepresentation();
 
-        resource.setId(representation.getId());
-        resource.setIconUri(representation.getIconUri());
-        resource.setName(representation.getName());
-        resource.setUri(representation.getUri());
-        resource.setType(representation.getType());
+        resource.setId(model.getId());
+        resource.setIconUri(model.getIconUri());
+        resource.setName(model.getName());
+        resource.setUri(model.getUri());
+        resource.setType(model.getType());
 
-        if (representation.getOwner() != null) {
-            resource.setOwner(representation.getOwner().getId());
+        if (model.getOwner() != null) {
+            resource.setOwner(model.getOwner());
         }
 
-        resource.setScopes(representation.getScopes().stream().map(scopeRepresentation -> {
+        resource.setScopes(model.getScopes().stream().map(scopeRepresentation -> {
             UmaScopeRepresentation umaScopeRep = new UmaScopeRepresentation();
             umaScopeRep.setId(scopeRepresentation.getId());
             umaScopeRep.setName(scopeRepresentation.getName());

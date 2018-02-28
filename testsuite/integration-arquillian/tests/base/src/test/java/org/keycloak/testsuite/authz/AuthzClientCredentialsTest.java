@@ -19,12 +19,16 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -35,15 +39,9 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
@@ -53,9 +51,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -111,15 +112,12 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     public void testSuccessfulAuthorizationRequest() throws Exception {
         AuthzClient authzClient = getAuthzClient("keycloak-with-jwt-authentication.json");
         ProtectionResource protection = authzClient.protection();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Default Resource");
-
-        PermissionResponse ticketResponse = protection.permission().forResource(request);
+        PermissionRequest request = new PermissionRequest("Default Resource");
+        PermissionResponse ticketResponse = protection.permission().create(request);
         String ticket = ticketResponse.getTicket();
 
         AuthorizationResponse authorizationResponse = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
-        String rpt = authorizationResponse.getRpt();
+        String rpt = authorizationResponse.getToken();
 
         assertNotNull(rpt);
 
@@ -132,35 +130,17 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         List<Permission> permissions = authorization.getPermissions();
 
         assertFalse(permissions.isEmpty());
-        assertEquals("Default Resource", permissions.get(0).getResourceSetName());
-    }
-
-    @Test
-    public void failUserWithoutUmaAuthorizationScope() throws Exception {
-        AuthzClient authzClient = getAuthzClient("keycloak-with-jwt-authentication.json");
-        ProtectionResource protection = authzClient.protection();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Default Resource");
-
-        PermissionResponse ticketResponse = protection.permission().forResource(request);
-        String ticket = ticketResponse.getTicket();
-
-        try {
-            authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-            fail("Should fail because user does not have uma_authorization");
-        } catch (AuthorizationDeniedException cause) {
-            assertEquals(403, ((HttpResponseException) cause.getCause()).getStatusCode());
-        }
+        assertEquals("Default Resource", permissions.get(0).getResourceName());
     }
 
     @Test
     public void failJWTAuthentication() {
         try {
-            getAuthzClient("keycloak-with-invalid-keys-jwt-authentication.json").protection();
+            getAuthzClient("keycloak-with-invalid-keys-jwt-authentication.json").protection().resource().findAll();
             fail("Should fail due to invalid signature");
-        } catch (HttpResponseException cause) {
-            assertEquals(400, cause.getStatusCode());
+        } catch (Exception cause) {
+            assertTrue(HttpResponseException.class.isInstance(cause.getCause().getCause()));
+            assertEquals(400, HttpResponseException.class.cast(cause.getCause().getCause()).getStatusCode());
         }
     }
 
@@ -181,14 +161,14 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
         ProtectionResource protection = authzClient.protection();
 
-        protection.resource().findByFilter("name=Default Resource");
+        protection.resource().findByName("Default Resource");
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
         assertEquals(1, userSessions.size());
 
         Thread.sleep(2000);
         protection = authzClient.protection();
-        protection.resource().findByFilter("name=Default Resource");
+        protection.resource().findByName("Default Resource");
 
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
@@ -211,8 +191,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         ResourceRepresentation expected = new ResourceRepresentation("Resource A", Collections.emptySet());
 
         String id = protection.resource().create(expected).getId();
-        RegistrationResponse response = protection.resource().findById(id);
-        ResourceRepresentation actual = response.getResourceDescription();
+        ResourceRepresentation actual = protection.resource().findById(id);
 
         assertNotNull(actual);
         assertEquals(expected.getName(), actual.getName());
@@ -224,8 +203,12 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
             @Override
-            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
-                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, requestParams);
+            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
+                Map<String, String> formparams = new HashMap<>();
+                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, formparams);
+                for (Entry<String, String> param : formparams.entrySet()) {
+                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
+                }
             }
         });
     }

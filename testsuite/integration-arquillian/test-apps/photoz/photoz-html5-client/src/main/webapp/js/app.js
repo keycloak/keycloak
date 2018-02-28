@@ -60,6 +60,12 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
         $http.get(apiUrl + '/scope-all').success(function (data) {
         });
     }
+
+    $scope.getAllResources = function () {
+        Album.getAll(function (albums) {
+            $scope.albums = albums;
+        });
+    }
 });
 
 module.controller('TokenCtrl', function ($scope, Identity) {
@@ -78,8 +84,13 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     }
     
     $scope.requestEntitlement = function () {
-        var param={"permissions" : [{"resource_set_name" : "Album Resource"}]};
-        Identity.authorization.entitlement('photoz-restful-api', param).then(function (rpt) {
+        Identity.authorization.entitlement('photoz-restful-api', {
+            "permissions": [
+                {
+                    "id" : "Album Resource"
+                }
+            ]
+        }).then(function (rpt) {
             document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
         });
     }
@@ -93,6 +104,14 @@ module.controller('AlbumCtrl', function ($scope, $http, $routeParams, $location,
         $scope.album = Album.get({id: $routeParams.id});
     }
     $scope.create = function () {
+        var newAlbum = new Album($scope.album);
+        newAlbum.$save({}, function (data) {
+            $location.path('/');
+        });
+    };
+
+    $scope.createManaged = function () {
+        $scope.album.userManaged = true;
         var newAlbum = new Album($scope.album);
         newAlbum.$save({}, function (data) {
             $location.path('/');
@@ -127,7 +146,9 @@ module.controller('AdminAlbumCtrl', function ($scope, $http, $route, $location, 
 });
 
 module.factory('Album', ['$resource', function ($resource) {
-    return $resource(apiUrl + '/album/:id');
+    return $resource(apiUrl + '/album/:id', {id: '@id'}, {
+        getAll: {method: 'GET', params: {getAll: true}, isArray: true}
+    });
 }]);
 
 module.factory('Profile', ['$resource', function ($resource) {
@@ -162,11 +183,46 @@ module.factory('authInterceptor', function ($q, $injector, $timeout, Identity) {
                 }
 
                 if (rejection.config.url.indexOf('/authorize') == -1 && retry) {
-                    var deferred = $q.defer();
-
                     // here is the authorization logic, which tries to obtain an authorization token from the server in case the resource server
                     // returns a 403 or 401.
-                    Identity.authorization.authorize(rejection.headers('WWW-Authenticate')).then(function (rpt) {
+                    var wwwAuthenticateHeader = rejection.headers('WWW-Authenticate');
+
+                    // when using UMA, a WWW-Authenticate header should be returned by the resource server
+                    if (!wwwAuthenticateHeader) {
+                        return $q.reject(rejection);
+                    }
+
+                    // when using UMA, a WWW-Authenticate header should contain UMA data
+                    if (wwwAuthenticateHeader.indexOf('UMA') == -1) {
+                        return $q.reject(rejection);
+                    }
+
+                    var deferred = $q.defer();
+
+                    var params = wwwAuthenticateHeader.split(',');
+                    var ticket;
+
+                    // try to extract the permission ticket from the WWW-Authenticate header
+                    for (i = 0; i < params.length; i++) {
+                        var param = params[i].split('=');
+
+                        if (param[0] == 'ticket') {
+                            ticket = param[1].substring(1, param[1].length - 1).trim();
+                            break;
+                        }
+                    }
+
+                    // a permission ticket must exist in order to send an authorization request
+                    if (!ticket) {
+                        return $q.reject(rejection);
+                    }
+
+                    // prepare a authorization request with the permission ticket
+                    var authorizationRequest = {};
+                    authorizationRequest.ticket = ticket;
+
+                    // send the authorization request, if successful retry the request
+                    Identity.authorization.authorize(authorizationRequest).then(function (rpt) {
                         deferred.resolve(rejection);
                     }, function () {
                         document.getElementById("output").innerHTML = 'You can not access or perform the requested operation on this resource.';

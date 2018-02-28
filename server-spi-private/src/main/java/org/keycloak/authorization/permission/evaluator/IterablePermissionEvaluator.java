@@ -44,7 +44,7 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
     }
 
     @Override
-    public void evaluate(Decision decision) {
+    public Decision evaluate(Decision decision) {
         try {
             while (this.permissions.hasNext()) {
                 this.policyEvaluator.evaluate(this.permissions.next(), this.executionContext, decision);
@@ -53,6 +53,7 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
         } catch (Throwable cause) {
             decision.onError(cause);
         }
+        return decision;
     }
 
     @Override

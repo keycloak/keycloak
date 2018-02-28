@@ -50,6 +50,20 @@ public interface Resource {
     void setName(String name);
 
     /**
+     * Returns the end user friendly name for this resource. If not defined, value for {@link #getName()} is returned.
+     *
+     * @return the friendly name for this resource
+     */
+    String getDisplayName();
+
+    /**
+     * Sets an end user friendly name for this resource.
+     *
+     * @param name the name of this resource
+     */
+    void setDisplayName(String name);
+
+    /**
      * Returns a {@link java.net.URI} that uniquely identify this resource.
      *
      * @return an {@link java.net.URI} for this resource or null if not defined.
@@ -111,6 +125,9 @@ public interface Resource {
      * @return the owner of this resource
      */
     String getOwner();
+
+    boolean isOwnerManagedAccess();
+    void setOwnerManagedAccess(boolean ownerManagedAccess);
 
     void updateScopes(Set<Scope> scopes);
 }

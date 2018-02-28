@@ -43,17 +43,17 @@ public class HttpMethod<R> {
 
     private final HttpClient httpClient;
     private final ClientAuthenticator authenticator;
-    private final RequestBuilder builder;
+    protected final RequestBuilder builder;
     protected final Configuration configuration;
-    protected final HashMap<String, String> headers;
-    protected final HashMap<String, String> params;
+    protected final Map<String, String> headers;
+    protected final Map<String, List<String>> params;
     private HttpMethodResponse<R> response;
 
     public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder) {
-        this(configuration, authenticator, builder, new HashMap<String, String>(), new HashMap<String, String>());
+        this(configuration, authenticator, builder, new HashMap<String, List<String>>(), new HashMap<String, String>());
     }
 
-    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder, HashMap<String, String> params, HashMap<String, String> headers) {
+    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder, Map<String, List<String>> params, Map<String, String> headers) {
         this.configuration = configuration;
         this.httpClient = configuration.getHttpClient();
         this.authenticator = authenticator;
@@ -108,8 +108,10 @@ public class HttpMethod<R> {
     }
 
     protected void preExecute(RequestBuilder builder) {
-        for (Map.Entry<String, String> param : params.entrySet()) {
-            builder.addParameter(param.getKey(), param.getValue());
+        for (Map.Entry<String, List<String>> param : params.entrySet()) {
+            for (String value : param.getValue()) {
+                builder.addParameter(param.getKey(), value);
+            }
         }
     }
 
@@ -128,7 +130,30 @@ public class HttpMethod<R> {
     }
 
     public HttpMethod<R> param(String name, String value) {
-        this.params.put(name, value);
+        if (value != null) {
+            List<String> values = params.get(name);
+
+            if (values == null || !values.isEmpty()) {
+                values = new ArrayList<>();
+                params.put(name, values);
+            }
+
+            values.add(value);
+        }
+        return this;
+    }
+
+    public HttpMethod<R> params(String name, String value) {
+        if (value != null) {
+            List<String> values = params.get(name);
+
+            if (values == null) {
+                values = new ArrayList<>();
+                params.put(name, values);
+            }
+
+            values.add(value);
+        }
         return this;
     }
 
@@ -145,8 +170,10 @@ public class HttpMethod<R> {
                 if (params != null) {
                     List<NameValuePair> formparams = new ArrayList<>();
 
-                    for (Map.Entry<String, String> param : params.entrySet()) {
-                        formparams.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+                    for (Map.Entry<String, List<String>> param : params.entrySet()) {
+                        for (String value : param.getValue()) {
+                            formparams.add(new BasicNameValuePair(param.getKey(), value));
+                        }
                     }
 
                     try {

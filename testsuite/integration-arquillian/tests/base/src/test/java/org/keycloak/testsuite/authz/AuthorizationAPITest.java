@@ -18,10 +18,8 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -32,17 +30,14 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -108,45 +103,12 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     @Test
     public void testAccessTokenWithUmaAuthorization() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
+        PermissionRequest request = new PermissionRequest("Resource A");
 
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-    }
-
-    @Test
-    public void failAccessTokenWithoutUmaAuthorization() {
-        AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
-
-        try {
-            authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-            fail("Should fail because user does not have uma_authorization");
-        } catch (AuthorizationDeniedException cause) {
-            assertEquals(403, ((HttpResponseException) cause.getCause()).getStatusCode());
-        }
-    }
-
-    @Test
-    public void failClientMockingUmaAuthorization() throws Exception {
-        RealmResource realm = getRealm();
-        ClientResource client = getClient(realm);
-        RoleRepresentation umaAuthorizationRole = new RoleRepresentation("uma_authorization", "", false);
-
-        client.roles().create(umaAuthorizationRole);
-        umaAuthorizationRole = client.roles().get(umaAuthorizationRole.getName()).toRepresentation();
-
-        realm.users().get(realm.users().search("kolo").get(0).getId()).roles().clientLevel(client.toRepresentation().getId()).add(Arrays.asList(umaAuthorizationRole));
-
-        failAccessTokenWithoutUmaAuthorization();
+        assertNotNull(response.getToken());
     }
 
     @Test
@@ -154,14 +116,14 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName("Resource A");
+        request.setResourceId("Resource A");
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 

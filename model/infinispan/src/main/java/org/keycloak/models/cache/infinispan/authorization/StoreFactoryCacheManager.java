@@ -68,6 +68,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getScopeByNameCacheKey(name, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByScopeCacheKey(id, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(id, serverId));
     }
 
     public void scopeRemoval(String id, String name, String serverId, Set<String> invalidations) {
@@ -79,6 +80,8 @@ public class StoreFactoryCacheManager extends CacheManager {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
+        invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, null));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(id, serverId));
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
@@ -125,9 +128,21 @@ public class StoreFactoryCacheManager extends CacheManager {
         }
     }
 
+    public void permissionTicketUpdated(String id, String owner, String resource, String scope, String serverId, Set<String> invalidations) {
+        invalidations.add(id);
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByOwner(owner, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(resource, serverId));
+        if (scope != null) {
+            invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(scope, serverId));
+        }
+    }
+
     public void policyRemoval(String id, String name, Set<String> resources, Set<String> resourceTypes, Set<String> scopes, String serverId, Set<String> invalidations) {
         policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 
+    public void permissionTicketRemoval(String id, String owner, String resource, String scope, String serverId, Set<String> invalidations) {
+        permissionTicketUpdated(id, owner, resource, scope, serverId, invalidations);
+    }
 
 }

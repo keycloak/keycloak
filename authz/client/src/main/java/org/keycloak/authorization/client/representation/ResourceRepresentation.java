@@ -17,13 +17,13 @@
  */
 package org.keycloak.authorization.client.representation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -38,13 +38,17 @@ public class ResourceRepresentation {
     private String id;
 
     private String name;
+    private String displayName;
     private String uri;
     private String type;
+
+    @JsonProperty("resource_scopes")
     private Set<ScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")
     private String iconUri;
     private String owner;
+    private Boolean ownerManagedAccess;
 
     /**
      * Creates a new instance.
@@ -106,6 +110,10 @@ public class ResourceRepresentation {
         return this.name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public String getUri() {
         return this.uri;
     }
@@ -127,6 +135,10 @@ public class ResourceRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setUri(String uri) {
@@ -151,6 +163,14 @@ public class ResourceRepresentation {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
+    public Boolean getOwnerManagedAccess() {
+        return ownerManagedAccess;
     }
 
     public void addScope(ScopeRepresentation scopeRepresentation) {

@@ -142,6 +142,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isUserManagedAccessAllowed() {
+        if (isUpdated()) return updated.isEnabled();
+        return cached.isAllowUserManagedAccess();
+    }
+
+    @Override
+    public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
+        getDelegateForUpdate();
+        updated.setUserManagedAccessAllowed(userManagedAccessAllowed);
+    }
+
+    @Override
     public SslRequired getSslRequired() {
         if (isUpdated()) return updated.getSslRequired();
         return cached.getSslRequired();

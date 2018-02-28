@@ -14,35 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authorization.client.representation;
+package org.keycloak.models.cache.infinispan.authorization.entities;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AuthorizationRequestMetadata {
+public class PermissionTicketResourceListQuery extends PermissionTicketListQuery implements InResource {
 
-    public static final String INCLUDE_RESOURCE_NAME = "include_resource_name";
+    private final String resourceId;
 
-    @JsonProperty(INCLUDE_RESOURCE_NAME)
-    private boolean includeResourceName = true;
-
-    private int limit;
-
-    public boolean isIncludeResourceName() {
-        return includeResourceName;
+    public PermissionTicketResourceListQuery(Long revision, String id, String resourceId, Set<String> permissions, String serverId) {
+        super(revision, id, permissions, serverId);
+        this.resourceId = resourceId;
     }
 
-    public void setIncludeResourceName(boolean includeResourceName) {
-        this.includeResourceName = includeResourceName;
+    @Override
+    public boolean isInvalid(Set<String> invalidations) {
+        return super.isInvalid(invalidations) || invalidations.contains(getResourceId());
     }
 
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    public int getLimit() {
-        return limit;
+    @Override
+    public String getResourceId() {
+        return resourceId;
     }
 }

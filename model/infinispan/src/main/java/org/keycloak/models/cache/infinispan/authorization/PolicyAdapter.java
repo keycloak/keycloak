@@ -25,6 +25,7 @@ import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -206,14 +207,15 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public void addScope(Scope scope) {
         getDelegateForUpdate();
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), new HashSet<>(Arrays.asList(scope.getId())), cached.getResourceServerId());
         updated.addScope(scope);
     }
 
     @Override
     public void removeScope(Scope scope) {
         getDelegateForUpdate();
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), new HashSet<>(Arrays.asList(scope.getId())), cached.getResourceServerId());
         updated.removeScope(scope);
-
     }
 
     @Override

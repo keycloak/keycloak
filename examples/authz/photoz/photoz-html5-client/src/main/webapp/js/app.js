@@ -42,6 +42,9 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
     Album.query(function (albums) {
         $scope.albums = albums;
     });
+    Album.shares(function (albums) {
+        $scope.shares = albums;
+    });
 
     $scope.Identity = Identity;
 
@@ -49,6 +52,23 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
         new Album(album).$delete({id: album.id}, function () {
             $route.reload();
         });
+    }
+
+    $scope.requestDeleteAccess = function (album) {
+        new Album(album).$delete({id: album.id}, function () {
+            // no-op
+        }, function () {
+            document.getElementById("output").innerHTML = 'Sent authorization request to resource owner, please, wait for approval.';
+        });
+    }
+
+    $scope.hasAccess = function (share, scope) {
+        for (i = 0; i < share.scopes.length; i++) {
+            if (share.scopes[i] == scope) {
+                return true;
+            }
+        }
+        return false;
     }
 });
 
@@ -98,7 +118,9 @@ module.controller('AdminAlbumCtrl', function ($scope, $http, $route, $location, 
 });
 
 module.factory('Album', ['$resource', function ($resource) {
-    return $resource(apiUrl + '/album/:id');
+    return $resource(apiUrl + '/album/:id', {id: '@id'}, {
+            shares: {url: apiUrl + '/album/shares', method: 'GET', isArray: true}
+        });
 }]);
 
 module.factory('Profile', ['$resource', function ($resource) {
@@ -133,11 +155,46 @@ module.factory('authInterceptor', function ($q, $injector, $timeout, Identity) {
                 }
 
                 if (rejection.config.url.indexOf('/authorize') == -1 && retry) {
-                    var deferred = $q.defer();
-
                     // here is the authorization logic, which tries to obtain an authorization token from the server in case the resource server
                     // returns a 403 or 401.
-                    Identity.authorization.authorize(rejection.headers('WWW-Authenticate')).then(function (rpt) {
+                    var wwwAuthenticateHeader = rejection.headers('WWW-Authenticate');
+
+                    // when using UMA, a WWW-Authenticate header should be returned by the resource server
+                    if (!wwwAuthenticateHeader) {
+                        return $q.reject(rejection);
+                    }
+
+                    // when using UMA, a WWW-Authenticate header should contain UMA data
+                    if (wwwAuthenticateHeader.indexOf('UMA') == -1) {
+                        return $q.reject(rejection);
+                    }
+
+                    var deferred = $q.defer();
+
+                    var params = wwwAuthenticateHeader.split(',');
+                    var ticket;
+
+                    // try to extract the permission ticket from the WWW-Authenticate header
+                    for (i = 0; i < params.length; i++) {
+                        var param = params[i].split('=');
+
+                        if (param[0] == 'ticket') {
+                            ticket = param[1].substring(1, param[1].length - 1).trim();
+                            break;
+                        }
+                    }
+
+                    // a permission ticket must exist in order to send an authorization request
+                    if (!ticket) {
+                        return $q.reject(rejection);
+                    }
+
+                    // prepare a authorization request with the permission ticket
+                    var authorizationRequest = {};
+                    authorizationRequest.ticket = ticket;
+
+                    // send the authorization request, if successful retry the request
+                    Identity.authorization.authorize(authorizationRequest).then(function (rpt) {
                         deferred.resolve(rejection);
                     }, function () {
                         document.getElementById("output").innerHTML = 'You can not access or perform the requested operation on this resource.';
