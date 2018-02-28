@@ -120,6 +120,30 @@ public class LdapUserProviderForm extends Form {
     @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='changedSyncEnabled']]")
     private OnOffSwitch periodicChangedUsersSync;
 
+    @FindByJQuery("a:contains('Connection Pooling Settings')")
+    private WebElement connectionPoolingSettingsButton;
+
+    @FindBy(id = "connectionPoolingAuthentication")
+    private WebElement connectionPoolingAuthenticationInput;
+
+    @FindBy(id = "connectionPoolingDebug")
+    private WebElement connectionPoolingDebugInput;
+
+    @FindBy(id = "connectionPoolingInitSize")
+    private WebElement connectionPoolingInitSizeInput;
+
+    @FindBy(id = "connectionPoolingMaxSize")
+    private WebElement connectionPoolingMaxSizeInput;
+
+    @FindBy(id = "connectionPoolingPrefSize")
+    private WebElement connectionPoolingPrefSizeInput;
+
+    @FindBy(id = "connectionPoolingProtocol")
+    private WebElement connectionPoolingProtocolInput;
+
+    @FindBy(id = "connectionPoolingTimeout")
+    private WebElement connectionPoolingTimeoutInput;
+
     public void setConsoleDisplayNameInput(String name) {
         setInputValue(consoleDisplayNameInput, name);
     }
@@ -254,6 +278,38 @@ public class LdapUserProviderForm extends Form {
 
     public void setPeriodicChangedUsersSyncEnabled(boolean periodicChangedUsersSyncEnabled) {
         this.periodicChangedUsersSync.setOn(periodicChangedUsersSyncEnabled);
+    }
+
+    public void connectionPoolingSettings() {
+        connectionPoolingSettingsButton.click();
+    }
+
+    public void setConnectionPoolingAuthentication(String connectionPoolingAuthentication) {
+        setInputValue(connectionPoolingAuthenticationInput, connectionPoolingAuthentication);
+    }
+
+    public void setConnectionPoolingDebug(String connectionPoolingDebug) {
+        setInputValue(connectionPoolingDebugInput, connectionPoolingDebug);
+    }
+
+    public void setConnectionPoolingInitSize(String connectionPoolingInitSize) {
+        setInputValue(connectionPoolingInitSizeInput, connectionPoolingInitSize);
+    }
+
+    public void setConnectionPoolingMaxSize(String connectionPoolingMaxSize) {
+        setInputValue(connectionPoolingMaxSizeInput, connectionPoolingMaxSize);
+    }
+
+    public void setConnectionPoolingPrefSize(String connectionPoolingPrefSize) {
+        setInputValue(connectionPoolingPrefSizeInput, connectionPoolingPrefSize);
+    }
+
+    public void setConnectionPoolingProtocol(String connectionPoolingProtocol) {
+        setInputValue(connectionPoolingProtocolInput, connectionPoolingProtocol);
+    }
+
+    public void setConnectionPoolingTimeout(String connectionPoolingTimeout) {
+        setInputValue(connectionPoolingTimeoutInput, connectionPoolingTimeout);
     }
 
     public void testConnection() {
