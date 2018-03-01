@@ -237,11 +237,17 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource findByName(String name, String resourceServerId) {
+        return findByName(name, resourceServerId, resourceServerId);
+    }
+
+    @Override
+    public Resource findByName(String name, String ownerId, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByName", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
+        query.setParameter("ownerId", ownerId);
 
         try {
             String id = query.getSingleResult();

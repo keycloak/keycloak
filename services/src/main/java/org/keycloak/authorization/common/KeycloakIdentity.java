@@ -224,7 +224,7 @@ public class KeycloakIdentity implements Identity {
         return this.accessToken;
     }
 
-    private  boolean isResourceServer() {
+    public boolean isResourceServer() {
         UserModel clientUser = null;
 
         ClientModel clientModel = getTargetClient();

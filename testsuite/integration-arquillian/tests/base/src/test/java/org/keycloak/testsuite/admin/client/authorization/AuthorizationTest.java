@@ -24,6 +24,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -44,17 +45,38 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         ClientResource clientResource = getClientResource();
         ClientRepresentation resourceServer = getResourceServer();
 
-        enableAuthorizationServices();
+        enableAuthorizationServices(false);
+        enableAuthorizationServices(true);
+
+        clientResource.authorization().resources().create(new ResourceRepresentation("Should be removed"));
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName("should be removed");
+        policy.setCode("");
+
+        clientResource.authorization().policies().js().create(policy);
+
+        List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
+
+        assertEquals(2, defaultResources.size());
+
+        List<PolicyRepresentation> defaultPolicies = clientResource.authorization().policies().policies();
+
+        assertEquals(3, defaultPolicies.size());
+
+        enableAuthorizationServices(false);
+        enableAuthorizationServices(true);
 
         ResourceServerRepresentation settings = clientResource.authorization().getSettings();
 
         assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING.name(), settings.getPolicyEnforcementMode().name());
         assertEquals(resourceServer.getId(), settings.getClientId());
-        List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
+        defaultResources = clientResource.authorization().resources().resources();
 
         assertEquals(1, defaultResources.size());
 
-        List<PolicyRepresentation> defaultPolicies = clientResource.authorization().policies().policies();
+        defaultPolicies = clientResource.authorization().policies().policies();
 
         assertEquals(2, defaultPolicies.size());
     }
@@ -71,8 +93,6 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
 
         ClientResource clientResource = getClientResource();
         ClientRepresentation resourceServer = getResourceServer();
-
-        enableAuthorizationServices();
 
         ResourceServerRepresentation settings = clientResource.authorization().getSettings();
 

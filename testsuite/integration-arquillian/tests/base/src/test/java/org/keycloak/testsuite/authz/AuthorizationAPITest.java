@@ -127,7 +127,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 
-    private RealmResource getRealm() throws Exception {
+    private RealmResource getRealm() {
         return adminClient.realm("authz-test");
     }
 

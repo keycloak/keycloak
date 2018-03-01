@@ -172,13 +172,13 @@ public class AuthorizationTokenService {
 
     private List<Result> evaluatePermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
         return authorization.evaluators()
-                .from(createPermissions(ticket, authorizationRequest, resourceServer, authorization), evaluationContext)
+                .from(createPermissions(ticket, authorizationRequest, resourceServer, identity, authorization), evaluationContext)
                 .evaluate();
     }
 
     private List<Result> evaluateUserManagedPermissions(AuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
         return authorization.evaluators()
-                .from(createPermissions(ticket, request, resourceServer, authorization), evaluationContext)
+                .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
                 .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
     }
 
@@ -276,7 +276,7 @@ public class AuthorizationTokenService {
         return evaluationContextProvider.apply(authorizationRequest, authorization);
     }
 
-    private List<ResourcePermission> createPermissions(PermissionTicketToken ticket, AuthorizationRequest request, ResourceServer resourceServer, AuthorizationProvider authorization) {
+    private List<ResourcePermission> createPermissions(PermissionTicketToken ticket, AuthorizationRequest request, ResourceServer resourceServer, KeycloakIdentity identity, AuthorizationProvider authorization) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         Map<String, Set<String>> permissionsToEvaluate = new LinkedHashMap<>();
         ResourceStore resourceStore = storeFactory.getResourceStore();
@@ -294,17 +294,31 @@ public class AuthorizationTokenService {
                 requestedScopes = new HashSet<>();
             }
 
-            Resource existingResource = null;
+            List<Resource> existingResources = new ArrayList<>();
 
             if (requestedResource.getResourceId() != null) {
-                existingResource = resourceStore.findById(requestedResource.getResourceId(), resourceServer.getId());
+                Resource resource = resourceStore.findById(requestedResource.getResourceId(), resourceServer.getId());
 
-                if (existingResource == null) {
-                    existingResource = resourceStore.findByName(requestedResource.getResourceId(), resourceServer.getId());
+                if (resource != null) {
+                    existingResources.add(resource);
+                } else {
+                    Resource ownerResource = resourceStore.findByName(requestedResource.getResourceId(), identity.getId(), resourceServer.getId());
+
+                    if (ownerResource != null) {
+                        existingResources.add(ownerResource);
+                    }
+
+                    if (!identity.isResourceServer()) {
+                        Resource serverResource = resourceStore.findByName(requestedResource.getResourceId(), resourceServer.getId());
+
+                        if (serverResource != null) {
+                            existingResources.add(serverResource);
+                        }
+                    }
                 }
             }
 
-            if (existingResource == null && (requestedScopes == null || requestedScopes.isEmpty())) {
+            if (existingResources.isEmpty() && (requestedScopes == null || requestedScopes.isEmpty())) {
                 throw new CorsErrorResponseException(cors, "invalid_resource", "Resource with id [" + requestedResource.getResourceId() + "] does not exist.", Status.FORBIDDEN);
             }
 
@@ -314,18 +328,20 @@ public class AuthorizationTokenService {
                 requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
             }
 
-            if (existingResource != null) {
-                Set<String> scopes = permissionsToEvaluate.get(existingResource.getId());
+            if (!existingResources.isEmpty()) {
+                for (Resource resource : existingResources) {
+                    Set<String> scopes = permissionsToEvaluate.get(resource.getId());
 
-                if (scopes == null) {
-                    scopes = new HashSet<>();
-                    permissionsToEvaluate.put(existingResource.getId(), scopes);
-                    if (limit != null) {
-                        limit--;
+                    if (scopes == null) {
+                        scopes = new HashSet<>();
+                        permissionsToEvaluate.put(resource.getId(), scopes);
+                        if (limit != null) {
+                            limit--;
+                        }
                     }
-                }
 
-                scopes.addAll(requestedScopes);
+                    scopes.addAll(requestedScopes);
+                }
             } else {
                 List<Resource> resources = resourceStore.findByScope(new ArrayList<>(requestedScopes), ticket.getAudience()[0]);
 
