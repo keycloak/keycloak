@@ -85,7 +85,9 @@ import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -634,22 +636,32 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testVersion() {
+        driver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+                "/auth/admin/master/console/#/server-info");
+        testRealmLoginPage.form().login("admin", "admin");
+
+        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+
+        Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
+                "\\s+<td [^>]+>([^<]+)</td>");
+        Matcher matcher = pattern.matcher(driver.getPageSource());
+        String serverVersion = null;
+        if (matcher.find()) {
+            serverVersion = matcher.group(1);
+        }
+
+        assertNotNull(serverVersion);
+
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(authServerPage.createUriBuilder()).path("version");
-        VersionRepresentation version = target.request().get(VersionRepresentation.class);
-        assertNotNull(version);
-        assertNotNull(version.getVersion());
-        assertNotNull(version.getBuildTime());
-        assertNotEquals(version.getVersion(), Version.UNKNOWN);
-        assertNotEquals(version.getBuildTime(), Version.UNKNOWN);
 
         VersionRepresentation version2 = client.target(securePortal.toString()).path(AdapterConstants.K_VERSION).request().get(VersionRepresentation.class);
         assertNotNull(version2);
         assertNotNull(version2.getVersion());
         assertNotNull(version2.getBuildTime());
+
+        log.info("version is " + version2.getVersion());
         if (!suiteContext.isAdapterCompatTesting()) {
-            assertEquals(version.getVersion(), version2.getVersion());
-            assertEquals(version.getBuildTime(), version2.getBuildTime());
+            assertEquals(serverVersion, version2.getVersion());
         }
         client.close();
     }
