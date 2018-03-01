@@ -79,7 +79,7 @@ public class StoreFactoryCacheManager extends CacheManager {
 
     public void resourceUpdated(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner, Set<String> invalidations) {
         invalidations.add(id);
-        invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, serverId));
+        invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, null));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(id, serverId));

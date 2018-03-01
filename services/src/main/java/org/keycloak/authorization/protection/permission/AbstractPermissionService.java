@@ -67,41 +67,61 @@ public class AbstractPermissionService {
 
     private List<ResourceRepresentation> verifyRequestedResource(List<PermissionRequest> request) {
         ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        List<ResourceRepresentation> requestedResources = new ArrayList<>();
 
-        return request.stream().map(permissionRequest -> {
+        for (PermissionRequest permissionRequest : request) {
             String resourceSetId = permissionRequest.getResourceId();
-            Resource resource = null;
+            List<Resource> resources = new ArrayList<>();
 
             if (resourceSetId == null) {
                 if (permissionRequest.getScopes() == null || permissionRequest.getScopes().isEmpty()) {
                     throw new ErrorResponseException("invalid_resource_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
                 }
             } else {
-                resource = resourceStore.findById(resourceSetId, resourceServer.getId());
+                Resource resource = resourceStore.findById(resourceSetId, resourceServer.getId());
 
-                if (resource == null) {
-                    resource = resourceStore.findByName(resourceSetId, this.resourceServer.getId());
+                if (resource != null) {
+                    resources.add(resource);
+                } else {
+                    Resource userResource = resourceStore.findByName(resourceSetId, identity.getId(), this.resourceServer.getId());
+
+                    if (userResource != null) {
+                        resources.add(userResource);
+                    }
+
+                    if (!identity.isResourceServer()) {
+                        Resource serverResource = resourceStore.findByName(resourceSetId, this.resourceServer.getId());
+
+                        if (serverResource != null) {
+                            resources.add(serverResource);
+                        }
+                    }
                 }
 
-                if (resource == null) {
+                if (resources.isEmpty()) {
                     throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + resourceSetId + "] does not exists in this server.", Response.Status.BAD_REQUEST);
                 }
             }
 
-            Set<ScopeRepresentation> scopes = verifyRequestedScopes(permissionRequest, resource);
+            if (resources.isEmpty()) {
+                requestedResources.add(new ResourceRepresentation(null, verifyRequestedScopes(permissionRequest, null)));
 
-            if (resource != null) {
-                ResourceRepresentation representation = new ResourceRepresentation(resource.getName(), scopes);
+            } else {
+                for (Resource resource : resources) {
+                    Set<ScopeRepresentation> scopes = verifyRequestedScopes(permissionRequest, resource);
 
-                representation.setId(resource.getId());
-                representation.setOwnerManagedAccess(resource.isOwnerManagedAccess());
-                representation.setOwner(new ResourceOwnerRepresentation(resource.getOwner()));
+                    ResourceRepresentation representation = new ResourceRepresentation(resource.getName(), scopes);
 
-                return representation;
+                    representation.setId(resource.getId());
+                    representation.setOwnerManagedAccess(resource.isOwnerManagedAccess());
+                    representation.setOwner(new ResourceOwnerRepresentation(resource.getOwner()));
+
+                    requestedResources.add(representation);
+                }
             }
+        }
 
-            return new ResourceRepresentation(null, scopes);
-        }).collect(Collectors.toList());
+        return requestedResources;
     }
 
     private Set<ScopeRepresentation> verifyRequestedScopes(PermissionRequest request, Resource resource) {

@@ -39,7 +39,7 @@ public final class Throwables {
      */
     public static RuntimeException handleWrapException(String message, Throwable cause) {
         if (cause instanceof HttpResponseException) {
-            throw handleAndWrapHttpResponseException(message, HttpResponseException.class.cast(cause));
+            throw handleAndWrapHttpResponseException(HttpResponseException.class.cast(cause));
         }
 
         return new RuntimeException(message, cause);
@@ -91,19 +91,11 @@ public final class Throwables {
         throw new RuntimeException(message, cause);
     }
 
-    private static RuntimeException handleAndWrapHttpResponseException(String message, HttpResponseException exception) {
-        HttpResponseException hre = HttpResponseException.class.cast(exception);
-        StringBuilder detail = new StringBuilder(message);
-        byte[] bytes = hre.getBytes();
-
-        if (bytes != null) {
-            detail.append(". Server message: ").append(new String(bytes));
-        }
-
+    private static RuntimeException handleAndWrapHttpResponseException(HttpResponseException exception) {
         if (403 == exception.getStatusCode()) {
-            throw new AuthorizationDeniedException(detail.toString(), exception);
+            throw new AuthorizationDeniedException(exception);
         }
 
-        return new RuntimeException(detail.toString(), exception);
+        return new RuntimeException(exception);
     }
 }
