@@ -27,6 +27,7 @@ import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicat
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -112,6 +113,11 @@ public class StoreFactoryCacheManager extends CacheManager {
         if (resources != null) {
             for (String resource : resources) {
                 invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId));
+                if (Objects.nonNull(scopes)) {
+                    for (String scope : scopes) {
+                        invalidations.add(StoreFactoryCacheSession.getPolicyByResourceScope(scope, resource, serverId));
+                    }
+                }
             }
         }
 
@@ -124,6 +130,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         if (scopes != null) {
             for (String scope : scopes) {
                 invalidations.add(StoreFactoryCacheSession.getPolicyByScope(scope, serverId));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceScope(scope, null, serverId));
             }
         }
     }

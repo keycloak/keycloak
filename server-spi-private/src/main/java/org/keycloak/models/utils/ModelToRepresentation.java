@@ -841,24 +841,6 @@ public class ModelToRepresentation {
                 }
                 return scope;
             }).collect(Collectors.toSet()));
-
-            if (resource.getType() != null) {
-                ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
-                for (Resource typed : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
-                    if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(resource.getId())) {
-                        resource.setTypedScopes(typed.getScopes().stream().map(model1 -> {
-                            ScopeRepresentation scope = new ScopeRepresentation();
-                            scope.setId(model1.getId());
-                            scope.setName(model1.getName());
-                            String iconUri = model1.getIconUri();
-                            if (iconUri != null) {
-                                scope.setIconUri(iconUri);
-                            }
-                            return scope;
-                        }).filter(scopeRepresentation -> !resource.getScopes().contains(scopeRepresentation)).collect(Collectors.toList()));
-                    }
-                }
-            }
         }
 
         return resource;
