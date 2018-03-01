@@ -22,7 +22,7 @@ import { AppModule } from './app/app.module';
 //import { environment } from './environments/environment';
 
 import { KeycloakService, KeycloakClient } from './app/keycloak-service/keycloak.service';
-import * as Keycloak from './keycloak';
+//import * as Keycloak from './keycloak';
 
 
 //if (environment.production) {

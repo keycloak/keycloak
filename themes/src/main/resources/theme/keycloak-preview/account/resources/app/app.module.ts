@@ -38,55 +38,16 @@ import { TopNavComponent } from './top-nav/top-nav.component';
 import { NotificationComponent } from './top-nav/notification.component';
 import { ToastNotifier } from './top-nav/toast.notifier';
 import { SideNavComponent } from './side-nav/side-nav.component';
-import { AccountPageComponent } from './content/account-page/account-page.component';
-import { PasswordPageComponent } from './content/password-page/password-page.component';
 import { PageNotFoundComponent } from './content/page-not-found/page-not-found.component';
 
-import { AuthenticatorPageComponent } from './content/authenticator-page/authenticator-page.component';
-
-import { SessionsPageComponent } from './content/sessions-page/sessions-page.component';
-import { LargeSessionCardComponent } from './content/sessions-page/large-session-card.component';
-import { SmallSessionCardComponent } from './content/sessions-page/small-session-card.component';
-
-import { ApplicationsPageComponent } from './content/applications-page/applications-page.component';
-import { LargeAppCardComponent } from './content/applications-page/large-app-card.component';
-import { SmallAppCardComponent } from './content/applications-page/small-app-card.component';
-import { RowAppCardComponent } from './content/applications-page/row-app-card.component';
-
-import { ToolbarComponent } from './content/widgets/toolbar.component';
-
-import {OrderbyPipe} from './pipes/orderby.pipe';
-import {FilterbyPipe} from './pipes/filterby.pipe';
-
-const routes: Routes = [
-    { path: 'account', component: AccountPageComponent },
-    { path: 'password', component: PasswordPageComponent },
-    { path: 'authenticator', component: AuthenticatorPageComponent },
-    { path: 'sessions', component: SessionsPageComponent },
-    { path: 'applications', component: ApplicationsPageComponent },
-    { path: '', redirectTo: '/account', pathMatch: 'full' },
-    { path: '**', component: PageNotFoundComponent}
-];
+/* Routing Module */
+import { AppRoutingModule } from './app-routing.module';
 
 const decs = [
     AppComponent,
     TopNavComponent,
     NotificationComponent,
     SideNavComponent,
-    AccountPageComponent,
-    PasswordPageComponent,
-    PageNotFoundComponent,
-    AuthenticatorPageComponent,
-    SessionsPageComponent,
-    LargeSessionCardComponent,
-    SmallSessionCardComponent,
-    ApplicationsPageComponent,
-    LargeAppCardComponent,
-    SmallAppCardComponent,
-    RowAppCardComponent,
-    ToolbarComponent,
-    OrderbyPipe,
-    FilterbyPipe
 ];
 
 export const ORIGINAL_INCOMING_URL: Location = window.location;
@@ -100,7 +61,7 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
     TranslateModule.forRoot({
         loader: {provide: TranslateLoader, useClass: DeclaredVarTranslateLoader}
     }),
-    RouterModule.forRoot(routes)
+    AppRoutingModule,
   ],
   providers: [
     KeycloakService,

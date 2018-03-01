@@ -25,7 +25,6 @@
       
       // other libraries
       '@ngx-translate/core':       'npm:@ngx-translate/core/bundles/core.umd.js',
-     // 'rxjs':                      'npm:rxjs',
       'angular-in-memory-web-api': 'npm:angular-in-memory-web-api/bundles/in-memory-web-api.umd.js'
     },
     bundles: {
