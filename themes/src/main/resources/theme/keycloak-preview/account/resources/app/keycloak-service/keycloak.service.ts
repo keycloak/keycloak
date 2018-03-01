@@ -21,7 +21,9 @@ import {Injectable} from '@angular/core';
 // method below.  I'm not sure how to fix this, but it's certainly cleaner
 // to get keycloak.js from the server.
 // 
-import * as Keycloak from './keycloak';
+//import * as Keycloak from './keycloak';
+
+declare var Keycloak: any;
 
 export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;

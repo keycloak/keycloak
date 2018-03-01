@@ -38,9 +38,7 @@ KeycloakService.setKeycloakAuth(keycloak);
 
 const noLogin: boolean = false; // convenient for development
 
-loadScript('/node_modules/jquery/dist/jquery.min.js');
 loadScript('/node_modules/bootstrap/dist/js/bootstrap.min.js');
-loadScript('/node_modules/jquery-match-height/dist/jquery.matchHeight-min.js');
 loadScript('/node_modules/patternfly/dist/js/patternfly.min.js');
 loadCss('/node_modules/patternfly/dist/css/patternfly.min.css');
 loadCss('/node_modules/patternfly/dist/css/patternfly-additions.min.css');

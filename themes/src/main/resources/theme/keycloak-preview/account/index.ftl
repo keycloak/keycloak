@@ -35,7 +35,7 @@
             </#list>
         </#if>
 
-        <link rel="stylesheet" href="${resourceUrl}/styles.css">
+        <!--<link rel="stylesheet" href="${resourceUrl}/styles.css">-->
 
         <!--<script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>-->
 
@@ -106,7 +106,7 @@
     <app-root>
         <style>
             .kc-background {
-                background: url('${resourceUrl}/app/assets/img/keycloak-bg.png') top left no-repeat;
+                background: url('${resourceUrl}/app/assets/img/keycloak-bg-min.png') top left no-repeat;
                 background-size: cover;
             }
 
@@ -118,7 +118,7 @@
             }
 
             .kc-logo-text {
-                background-image: url("${resourceUrl}/app/assets/img/keycloak-logo-text.png");
+                background-image: url("${resourceUrl}/app/assets/img/keycloak-logo-text-min.png");
                 background-repeat: no-repeat;
                 width: 250px;
                 height: 38px;

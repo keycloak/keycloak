@@ -11,7 +11,7 @@
             <span class="icon-bar"></span>
         </button>
         <a href="http://www.keycloak.org" class="navbar-brand">
-            <img class="navbar-brand-icon" type="image/svg+xml" src="{{resourceUrl}}/app/assets/img/keycloak-logo.png" alt="" width="auto" height="30px"/>
+            <img class="navbar-brand-icon" type="image/svg+xml" src="{{resourceUrl}}/app/assets/img/keycloak-logo-min.png" alt="" width="auto" height="30px"/>
         </a>
     </div>
     <nav class="collapse navbar-collapse">
@@ -31,7 +31,7 @@
                     <li><a href="#">About</a></li>
                 </ul>
             </li>
-            <li class="dropdown">
+            <li class="dropdown" (click)="logout()">
                 <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                     <span title="Username" class="fa pficon-user"></span>
                     <span class="caret"></span>

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import {Component, HostListener} from '@angular/core';
-
+import 'rxjs/add/observable/of'; // needed for ngx-translate
 import {TranslateService} from '@ngx-translate/core';
 
 import {ResponsivenessService, ContentWidthClass, MenuClickListener} from "./responsiveness-service/responsiveness.service";

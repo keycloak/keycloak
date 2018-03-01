@@ -24,7 +24,7 @@
       '@angular/forms': 'npm:@angular/forms/bundles/forms.umd.min.js',
       
       // other libraries
-      '@ngx-translate/core':       'npm:@ngx-translate/core/bundles/core.umd.js',
+      '@ngx-translate/core':       'npm:@ngx-translate/core/bundles/core.umd.min.js',
       'angular-in-memory-web-api': 'npm:angular-in-memory-web-api/bundles/in-memory-web-api.umd.js'
     },
     bundles: {
