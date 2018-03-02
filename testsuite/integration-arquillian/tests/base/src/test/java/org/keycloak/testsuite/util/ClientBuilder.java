@@ -198,4 +198,12 @@ public class ClientBuilder {
         rep.getProtocolMappers().addAll(Arrays.asList(mappers));
         return this;
     }
+
+    public ClientBuilder pairwise(String sectorIdentifierUri, String salt) {
+        return protocolMapper(ProtocolMapperUtil.createPairwiseMapper(sectorIdentifierUri, salt));
+    }
+
+    public ClientBuilder pairwise(String sectorIdentifierUri) {
+        return protocolMapper(ProtocolMapperUtil.createPairwiseMapper(sectorIdentifierUri, null));
+    }
 }
