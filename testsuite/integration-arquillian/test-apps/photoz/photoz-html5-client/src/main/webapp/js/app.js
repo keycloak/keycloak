@@ -166,8 +166,10 @@ module.factory('authInterceptor', function ($q, $injector, $timeout, Identity) {
             if (Identity.authorization && Identity.authorization.rpt && request.url.indexOf('/authorize') == -1) {
                 retries = 0;
                 request.headers.Authorization = 'Bearer ' + Identity.authorization.rpt;
+                document.getElementById("bearer").innerHTML = 'rpt: Bearer ' + Identity.authorization.rpt;
             } else {
                 request.headers.Authorization = 'Bearer ' + Identity.authc.token;
+                document.getElementById("bearer").innerHTML = 'authc: Bearer ' + Identity.authc.token;
             }
             return request;
         },

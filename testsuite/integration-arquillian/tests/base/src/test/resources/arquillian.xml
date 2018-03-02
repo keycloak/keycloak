@@ -45,6 +45,10 @@
         <property name="chromeArguments">${chromeArguments}</property>
     </extension>
 
+    <extension qualifier="drone">
+       <property name="instantiationTimeoutInSeconds">${droneInstantiationTimeoutInSeconds}</property>
+    </extension>
+    
     <extension qualifier="graphene">
         <property name="waitGuiInterval">5</property>
         <property name="waitAjaxInterval">5</property>
