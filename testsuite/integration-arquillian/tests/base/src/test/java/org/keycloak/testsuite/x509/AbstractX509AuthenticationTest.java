@@ -104,7 +104,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     @BeforeClass
     public static void onBeforeTestClass() {
-        if (System.getProperty("auth.server.container", "undefined").endsWith("wildfly")) {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
             String authServerHome = System.getProperty("auth.server.home");
 
             if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
