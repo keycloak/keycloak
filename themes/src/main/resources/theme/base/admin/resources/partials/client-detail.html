@@ -422,6 +422,32 @@
             </div>
         </fieldset>
 
+        <fieldset>
+            <legend collapsed><span class="text">{{:: 'client-flow-bindings' | translate}}</span>  <kc-tooltip>{{:: 'client-flow-bindings.tooltip' | translate}}</kc-tooltip></legend>
+            <div class="form-group">
+                <label for="browser" class="col-md-2 control-label">{{:: 'browser-flow' | translate}}</label>
+                <div class="col-md-2">
+                    <div>
+                        <select id="browser" data-ng-model="clientEdit.authenticationFlowBindingOverrides['browser']" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'browser-flow.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label for="grant" class="col-md-2 control-label">{{:: 'direct-grant-flow' | translate}}</label>
+                <div class="col-md-2">
+                    <div>
+                        <select id="grant" ng-model="clientEdit.authenticationFlowBindingOverrides['direct_grant']" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'direct-grant-flow.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+
+
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
