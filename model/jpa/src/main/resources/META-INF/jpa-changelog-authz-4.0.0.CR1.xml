@@ -17,8 +17,8 @@
   -->
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet author="psilva@redhat.com" id="authz-3.3.0.CR1">
-        <createTable tableName="RESOURCE_SERVER_PERMISSION_TICKET">
+    <changeSet author="psilva@redhat.com" id="authz-4.0.0.CR1">
+        <createTable tableName="RESOURCE_SERVER_PERM_TICKET">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
@@ -45,11 +45,11 @@
             </column>
         </createTable>
 
-        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FAPMT" tableName="RESOURCE_SERVER_PERMISSION_TICKET"/>
-        <addForeignKeyConstraint baseColumnNames="RESOURCE_SERVER_ID" baseTableName="RESOURCE_SERVER_PERMISSION_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG82SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER"/>
-        <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_SERVER_PERMISSION_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG83SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
-        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="RESOURCE_SERVER_PERMISSION_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG84SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_SCOPE"/>
-        <addUniqueConstraint columnNames="OWNER, REQUESTER, RESOURCE_SERVER_ID, RESOURCE_ID, SCOPE_ID" constraintName="UK_FRSR6T700S9V50BU18WS5PMT" tableName="RESOURCE_SERVER_PERMISSION_TICKET"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FAPMT" tableName="RESOURCE_SERVER_PERM_TICKET"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_SERVER_ID" baseTableName="RESOURCE_SERVER_PERM_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG82SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_SERVER_PERM_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG83SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="RESOURCE_SERVER_PERM_TICKET" constraintName="FK_FRSRHO213XCX4WNKOG84SSPMT" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_SCOPE"/>
+        <addUniqueConstraint columnNames="OWNER, REQUESTER, RESOURCE_SERVER_ID, RESOURCE_ID, SCOPE_ID" constraintName="UK_FRSR6T700S9V50BU18WS5PMT" tableName="RESOURCE_SERVER_PERM_TICKET"/>
 
         <addColumn tableName="RESOURCE_SERVER_RESOURCE">
             <column name="OWNER_MANAGED_ACCESS" type="BOOLEAN" defaultValueBoolean="false">
