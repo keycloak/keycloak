@@ -212,7 +212,7 @@ public class KeycloakIdentity implements Identity {
             return client==null ? null : client.getId();
         }
 
-        return this.accessToken.getSubject();
+        return this.getUserFromSessionState().getId();
     }
 
     @Override
@@ -237,7 +237,7 @@ public class KeycloakIdentity implements Identity {
             return false;
         }
 
-        return this.accessToken.getSubject().equals(clientUser.getId());
+        return this.getUserFromSessionState().getId().equals(clientUser.getId());
     }
 
     private ClientModel getTargetClient() {
@@ -251,5 +251,10 @@ public class KeycloakIdentity implements Identity {
         }
 
         return null;
+    }
+
+    private UserModel getUserFromSessionState() {
+        UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, accessToken.getSessionState());
+        return userSession.getUser();
     }
 }
