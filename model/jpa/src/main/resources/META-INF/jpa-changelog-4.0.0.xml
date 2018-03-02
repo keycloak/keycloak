@@ -30,9 +30,6 @@
         <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="C_CLI_FLOW_BIND" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
     </changeSet>
     <changeSet author="bburke@redhat.com" id="4.0.0-CLEANUP-UNUSED-TABLE">
-        <dropIndex tableName="CLIENT_IDENTITY_PROV_MAPPING" indexName="IDX_CLIENT_ID_PROV_MAP_CLIENT"/>
-        <dropForeignKeyConstraint baseTableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="FK_56ELWNIBJI49AVXSRTUF6XJ23" />
-        <dropPrimaryKey tableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="CONSTR_CLIENT_IDEN_PROV_MAP"/>
         <dropTable tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
     </changeSet>
     <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6228">
