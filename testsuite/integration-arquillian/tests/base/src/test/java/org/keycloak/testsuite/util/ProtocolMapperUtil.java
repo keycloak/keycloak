@@ -6,6 +6,7 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
+import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
@@ -164,4 +165,7 @@ public class ProtocolMapperUtil {
         );
     }
 
+    public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
+        return SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, salt);
+    }
 }

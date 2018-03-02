@@ -1082,24 +1082,28 @@ public class AuthenticationManager {
                 }
             }
 
-            UserModel user = session.users().getUserById(token.getSubject(), realm);
-            if (user == null || !user.isEnabled() ) {
-                logger.debug("Unknown user in identity token");
-                return null;
-            }
-
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-            if (token.getIssuedAt() < userNotBefore) {
-                logger.debug("User notBefore newer than token");
-                return null;
-            }
-
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+            UserModel user = null;
+            if (userSession != null) {
+                user = userSession.getUser();
+                if (user == null || !user.isEnabled()) {
+                    logger.debug("Unknown user in identity token");
+                    return null;
+                }
+
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (token.getIssuedAt() < userNotBefore) {
+                    logger.debug("User notBefore newer than token");
+                    return null;
+                }
+            }
+
             if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
+                        user = offlineUserSession.getUser();
                         return new AuthResult(user, offlineUserSession, token);
                     }
                 }
