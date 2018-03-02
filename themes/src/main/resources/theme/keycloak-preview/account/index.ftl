@@ -29,16 +29,6 @@
 
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
 
-        <#if properties.styles?has_content>
-            <#list properties.styles?split(' ') as style>
-            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-            </#list>
-        </#if>
-
-        <!--<link rel="stylesheet" href="${resourceUrl}/styles.css">-->
-
-        <!--<script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>-->
-
         <!-- PatternFly -->
         <!-- iPad retina icon -->
         <link rel="apple-touch-icon-precomposed" sizes="152x152"
@@ -62,25 +52,47 @@
         <link rel="apple-touch-icon-precomposed" sizes="57x57"
               href="${resourceUrl}/node_modules/patternfly/dist/img/apple-touch-icon-precomposed-57.png">
         
-        <!--<link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly.min.css" rel="stylesheet"
-              media="screen, print">
-        <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
-              media="screen, print">
-        <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js"></script>
-        <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
-        <script src="${resourceUrl}/node_modules/jquery-match-height/dist/jquery.matchHeight-min.js"></script>
-        <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
-        <script src="${resourceUrl}/node_modules/rxjs/bundles/Rx.min.js"></script>-->
+        <script src="${authUrl}/js/keycloak.js"></script>
+        
+        <!--
+          This somewhat complicated script is a performance enahancement. We
+          don't want to load the systemjs and angular stuff until Keycloak has
+          checked with the server to see if we are logged in.  So, the js below
+          is only loaded after the redirect.  This was made more complex by the
+          fact that to do it this way we needed to make sure that some scripts
+          are not loaded until others are finished.
 
-        <!-- Polyfill(s) for older browsers -->
+          It's possible that this enhancement could cause slower performance in
+          some cases because of the aformentioned serial loading.  So I've left
+          the old code commented out.
+         -->
+        <script>
+            var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
+            keycloak.init({onLoad: 'login-required'}).success(function(authenticated) {
+                var loadjs = function (url,loadListener) {
+                    const script = document.createElement("script");
+                    script.src = resourceUrl + url;
+                    if (loadListener) script.addEventListener("load", loadListener);
+                    document.head.appendChild(script); 
+                };
+                loadjs("/node_modules/core-js/client/shim.min.js", function(){
+                    loadjs("/node_modules/zone.js/dist/zone.min.js");
+                    loadjs("/node_modules/systemjs/dist/system.src.js", function() {
+                        loadjs("/systemjs.config.js");
+                        System.import('${resourceUrl}/main.js').catch(function (err) {
+                            console.error(err);
+                        });
+                    });
+                });
+            }).error(function() {
+                alert('failed to initialize keycloak');
+            });
+        </script>
+        
+    <!-- Old code to kick off angular ---------------------
+        // Polyfill(s) for older browsers
         <script src="${resourceUrl}/node_modules/core-js/client/shim.min.js"></script>
         
-        <#if properties.scripts?has_content>
-            <#list properties.scripts?split(' ') as script>
-            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
-            </#list>
-        </#if>
-
         <script src="${resourceUrl}/node_modules/zone.js/dist/zone.min.js"></script>
         <script src="${resourceUrl}/node_modules/systemjs/dist/system.src.js"></script>
 
@@ -95,12 +107,22 @@
             }).error(function() {
                 alert('failed to initialize keycloak');
             });
-        </script>
-     <!--   <script>
-            System.import('${resourceUrl}/main.js').catch(function (err) {
-                console.error(err);
-            });
         </script>-->
+     
+        <!-- We should save these css and js into variables and then load in
+             main.ts for better performance.  These might be loaded twice.
+        -->
+        <#if properties.styles?has_content>
+            <#list properties.styles?split(' ') as style>
+            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+            </#list>
+        </#if>
+            
+        <#if properties.scripts?has_content>
+            <#list properties.scripts?split(' ') as script>
+            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+            </#list>
+        </#if>
     </head>
 
     <app-root>

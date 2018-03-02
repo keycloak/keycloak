@@ -17,10 +17,12 @@
 import { NgModule }             from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
+import { HomePageComponent } from './content/home-page/home-page.component';
+
 declare const resourceUrl: string;
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'account', pathMatch: 'full' },
+    { path: '', component: HomePageComponent },
     { path: 'account', loadChildren: resourceUrl + '/app/content/account-page/account.module.js#AccountModule' },
     { path: 'password', loadChildren: resourceUrl + '/app/content/password-page/password.module.js#PasswordModule' },
     { path: 'authenticator', loadChildren: resourceUrl + '/app/content/authenticator-page/authenticator.module.js#AuthenticatorModule' },
@@ -31,7 +33,8 @@ export const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  declarations: [HomePageComponent]
 })
 export class AppRoutingModule {}
 

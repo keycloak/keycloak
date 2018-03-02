@@ -42,6 +42,7 @@ loadScript('/node_modules/bootstrap/dist/js/bootstrap.min.js');
 loadScript('/node_modules/patternfly/dist/js/patternfly.min.js');
 loadCss('/node_modules/patternfly/dist/css/patternfly.min.css');
 loadCss('/node_modules/patternfly/dist/css/patternfly-additions.min.css');
+loadCss('/styles.css');
 platformBrowserDynamic().bootstrapModule(AppModule);
 
 /*
