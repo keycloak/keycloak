@@ -56,7 +56,6 @@
         <property name="firefox_binary">${firefox_binary}</property>
         <property name="chromeDriverBinary">${webdriver.chrome.driver}</property>
         <property name="chromeArguments">${js.chromeArguments}</property>
-        <property name="phantomjs.cli.args">${phantomjs.cli.args} --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</property>
     </extension>
 
     <extension qualifier="graphene-secondbrowser">
