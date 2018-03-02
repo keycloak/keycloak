@@ -102,6 +102,7 @@
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
+        <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch/>
@@ -278,6 +279,7 @@
                             <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+                            <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
 
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
