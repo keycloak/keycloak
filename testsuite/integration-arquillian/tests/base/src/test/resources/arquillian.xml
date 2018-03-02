@@ -42,6 +42,7 @@
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
 
         <!-- chrome -->
+        <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${chromeArguments}</property>
     </extension>
 
