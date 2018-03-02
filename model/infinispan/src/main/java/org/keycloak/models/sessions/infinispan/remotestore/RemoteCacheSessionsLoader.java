@@ -32,7 +32,6 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -87,7 +86,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
     @Override
     public void init(KeycloakSession session) {
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(getCache(session));
+        RemoteCache remoteCache = getRemoteCache(session);
 
         RemoteCache<String, String> scriptCache = remoteCache.getRemoteCacheManager().getCache("___script_cache");
 
@@ -100,7 +99,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
     @Override
     public int getSessionsCount(KeycloakSession session) {
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(getCache(session));
+        RemoteCache remoteCache = getRemoteCache(session);
         return remoteCache.size();
     }
 
@@ -109,7 +108,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
         Cache cache = getCache(session);
         Cache decoratedCache = cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE, Flag.IGNORE_RETURN_VALUES);
 
-        RemoteCache<?, ?> remoteCache = InfinispanUtil.getRemoteCache(cache);
+        RemoteCache<?, ?> remoteCache = getRemoteCache(session);
 
         log.debugf("Will do bulk load of sessions from remote cache '%s' . First: %d, max: %d", cache.getName(), first, max);
 
@@ -166,5 +165,11 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
     @Override
     public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {
 
+    }
+
+    // Get remoteCache, which may be secured
+    private RemoteCache getRemoteCache(KeycloakSession session) {
+        InfinispanConnectionProvider ispn = session.getProvider(InfinispanConnectionProvider.class);
+        return ispn.getRemoteCache(cacheName);
     }
 }
