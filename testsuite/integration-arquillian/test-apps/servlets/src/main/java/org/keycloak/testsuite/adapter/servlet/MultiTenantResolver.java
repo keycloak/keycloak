@@ -31,10 +31,19 @@ public class MultiTenantResolver implements KeycloakConfigResolver {
 
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
-        String realm = request.getQueryParamValue("realm");
 
-        // FIXME doesn't work - need to load resources from WEB-INF
-        InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak.json");
+        String path = request.getURI();
+        int multitenantIndex = path.indexOf("multi-tenant/");
+        if (multitenantIndex == -1) {
+            throw new IllegalStateException("Not able to resolve realm from the request path!");
+        }
+
+        String realm = path.substring(path.indexOf("multi-tenant/")).split("/")[1];
+        if (realm.contains("?")) {
+            realm = realm.split("\\?")[0];
+        }
+        
+        InputStream is = getClass().getResourceAsStream("/adapter-test/multi-tenant/WEB-INF/" + realm + "-keycloak.json");
 
         if (is == null) {
             throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak.json");

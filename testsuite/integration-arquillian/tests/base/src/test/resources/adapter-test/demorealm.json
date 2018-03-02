@@ -141,7 +141,8 @@
             "redirectUris": [
                 "/customer-portal/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "directAccessGrantsEnabled": true
         },
         {
             "clientId": "customer-portal-subsystem",

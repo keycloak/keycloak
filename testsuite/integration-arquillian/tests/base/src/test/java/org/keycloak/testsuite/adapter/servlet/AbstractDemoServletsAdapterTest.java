@@ -39,12 +39,13 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.openqa.selenium.Cookie;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
@@ -65,6 +66,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
+import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
 import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
 import org.keycloak.testsuite.adapter.page.CustomerPortal;
@@ -101,6 +103,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -148,7 +151,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private Config configPage;
     @Page
     private ClientSecretJwtSecurePortal clientSecretJwtSecurePortal;
-
+    @Page
+    private CustomerCookiePortal customerCookiePortal;
+    
     @Rule
     public AssertEvents assertEvents = new AssertEvents(this);
 
@@ -157,6 +162,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
+    @Deployment(name = CustomerCookiePortal.DEPLOYMENT_NAME)
+    protected static WebArchive customerCookiePortal() {
+        return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
+    }
+    
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalNoConf() {
         return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class);
@@ -233,6 +243,127 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         driver.manage().deleteAllCookies();
     }
 
+    //KEYCLOAK-702
+    @Test
+    public void testTokenInCookieSSO() {
+        // Login
+        String tokenCookie = loginToCustomerCookiePortal();
+        
+        // SSO to second app
+        customerPortal.navigateTo();
+        assertLogged();
+        
+        // return to customer-cookie-portal and assert still same cookie (accessToken didn't expire)
+        customerCookiePortal.navigateTo();
+        assertLogged();
+        String tokenCookie2 = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+        assertEquals(tokenCookie, tokenCookie2);
+        
+        // Logout with httpServletRequest
+        logoutFromCustomerCookiePortal();
+        
+        // Also should be logged-out from the second app
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+    
+    //KEYCLOAK-702
+    @Test
+    public void testTokenInCookieRefresh() {
+        // Set token timeout 3 sec
+        RealmRepresentation demo = adminClient.realm("demo").toRepresentation();
+        int originalTokenTimeout = demo.getAccessCodeLifespan();
+        demo.setAccessTokenLifespan(3);
+        adminClient.realm("demo").update(demo);
+        
+        try {
+            // login to customer-cookie-portal
+            String tokenCookie1 = loginToCustomerCookiePortal();
+            
+            // Simulate waiting 4 seconds
+            setTimeOffset(4);
+            
+            // assert cookie was refreshed
+            customerCookiePortal.navigateTo();
+            assertCurrentUrlEquals(customerCookiePortal);
+            assertLogged();
+            String tokenCookie2 = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+            assertNotEquals(tokenCookie1, tokenCookie2);
+            
+            // login to 2nd app and logout from it
+            customerPortal.navigateTo();
+            assertCurrentUrlEquals(customerPortal);
+            assertLogged();
+            
+            driver.navigate().to(customerCookiePortal.logoutURL());
+            assertTrue(driver.getPageSource().contains("servlet logout ok"));
+            customerPortal.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+            
+            // Simulate another 4 seconds
+            setTimeOffset(8);
+            
+            // assert not logged in customer-cookie-portal
+            customerCookiePortal.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        } finally {
+            // Set token timeout 3 sec
+            demo.setAccessTokenLifespan(originalTokenTimeout);
+            adminClient.realm("demo").update(demo);
+            
+            resetTimeOffset();
+        }
+    }
+    
+    //KEYCLOAK-702
+    @Test
+    public void testInvalidTokenCookie() {
+        // Login
+        String tokenCookie = loginToCustomerCookiePortal();
+        String changedTokenCookie = tokenCookie.replace("a", "b");
+        
+        // change cookie to invalid value
+        driver.manage().addCookie(new Cookie(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, changedTokenCookie, "/customer-cookie-portal"));
+        
+        // visit page and assert re-logged and cookie was refreshed
+        customerCookiePortal.navigateTo();
+        assertCurrentUrlEquals(customerCookiePortal);
+        String currentCookie = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+        assertNotEquals(currentCookie, tokenCookie);
+        assertNotEquals(currentCookie, changedTokenCookie);
+        
+        // logout
+        logoutFromCustomerCookiePortal();
+    }
+    
+    // login to customer-cookie-portal and return the KEYCLOAK_ADAPTER_STATE cookie established on adapter
+    private String loginToCustomerCookiePortal() {
+        customerCookiePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerCookiePortal);
+        assertLogged();
+        
+        // Assert no JSESSIONID cookie
+        Assert.assertNull(driver.manage().getCookieNamed("JSESSIONID"));
+        
+        return driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+    }
+    
+    private void logoutFromCustomerCookiePortal() {
+        String logout = customerCookiePortal.logoutURL();
+        driver.navigate().to(logout);
+        assertTrue(driver.getPageSource().contains("servlet logout ok"));
+        assertNull(driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE));
+        customerCookiePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+    
+    private void assertLogged() {
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+    }
+    
     @Test
     public void testSavedPostRequest() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
@@ -437,6 +568,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         driver.navigate().to(logoutUri);
     }
 
+    //KEYCLOAK-518
     @Test
     public void testNullBearerToken() {
         Client client = ClientBuilder.newClient();
@@ -450,41 +582,39 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         client.close();
     }
 
+    //KEYCLOAK-1368
     @Test
-    @Ignore
     public void testNullBearerTokenCustomErrorPage() {
+        ErrorServlet.authError = null;
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(customerDbErrorPage.toString());
+        
         Response response = target.request().get();
 
-        // TODO: follow redirects automatically if possible
-        if (response.getStatus() == 302) {
-            String location = response.getHeaderString(HttpHeaders.LOCATION);
-            response.close();
-            response = client.target(location).request().get();
-        }
-        assertEquals(200, response.getStatus());
+        assertEquals(401, response.getStatus());
         String errorPageResponse = response.readEntity(String.class);
         assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
+        Assert.assertNotNull(ErrorServlet.authError);
+        OIDCAuthenticationError error = (OIDCAuthenticationError) ErrorServlet.authError;
+        Assert.assertEquals(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, error.getReason());
 
+        ErrorServlet.authError = null;
         response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
-        // TODO: follow redirects automatically if possible
-        if (response.getStatus() == 302) {
-            String location = response.getHeaderString(HttpHeaders.LOCATION);
-            response.close();
-            response = client.target(location).request().get();
-        }
-        assertEquals(200, response.getStatus());
+
+        assertEquals(401, response.getStatus());
         errorPageResponse = response.readEntity(String.class);
         assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
-
+        Assert.assertNotNull(ErrorServlet.authError);
+        error = (OIDCAuthenticationError) ErrorServlet.authError;
+        Assert.assertEquals(OIDCAuthenticationError.Reason.INVALID_TOKEN, error.getReason());
+        
         client.close();
     }
 
+    //KEYCLOAK-518
     @Test
-    @Ignore
     public void testBadUser() {
         Client client = ClientBuilder.newClient();
         URI uri = OIDCLoginProtocolService.tokenUrl(authServerPage.createUriBuilder()).build("demo");
@@ -1016,7 +1146,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     
     //KEYCLOAK-4765
     @Test
-    @Ignore
     public void testCallURLWithAccessToken() {
         // test login to customer-portal which does a bearer request to customer-db
         String applicationURL = inputPortalNoAccessToken.getInjectedUrl().toString() + "?access_token=invalid_token";
@@ -1026,6 +1155,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Assert.assertEquals(applicationURL, driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
         inputPortalNoAccessToken.execute("hello");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
     @Test

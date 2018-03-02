@@ -14,19 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.helper.adapter;
 
-import org.apache.http.conn.params.ConnManagerParams;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.keycloak.testsuite.pages.InputPage;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -34,7 +30,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -65,7 +60,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Tests Undertow Adapter
+ * Tests Jetty/Tomcat Adapter
+ * 
+ * Methods from this class are used by testsuite/jetty/* and testsuite/tomcat* modules
+ * 
+ * TODO: remove this when testsuite/jetty/* and testsuite/tomcat* modules will be migrated to arquillian testsuite
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  * @author <a href="mailto:john.ament@spartasystems.com">John Ament</a>
@@ -411,55 +410,6 @@ public class AdapterTestStrategy extends ExternalResource {
         Time.setOffset(0);
     }
 
-    public void testAutodetectBearerOnly() throws Exception {
-        Client client = ClientBuilder.newClient();
-
-        // Do not redirect client to login page if it's an XHR
-        WebTarget target = client.target(APP_SERVER_BASE_URL + "/product-portal-autodetect-bearer-only");
-        Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        // Do not redirect client to login page if it's a partial Faces request
-        response = target.request().header("Faces-Request", "partial/ajax").get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-        
-        // Do not redirect client to login page if it's a SOAP request
-        response = target.request().header("SOAPAction", "").get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        // Do not redirect client to login page if Accept header is missing
-        response = target.request().get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        // Do not redirect client to login page if client does not understand HTML reponses
-        response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        // Redirect client to login page if it's not an XHR
-        response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
-        Assert.assertEquals(302, response.getStatus());
-        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
-        response.close();
-
-        // Redirect client to login page if client explicitely understands HTML responses
-        response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
-        Assert.assertEquals(302, response.getStatus());
-        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
-        response.close();
-
-        // Redirect client to login page if client understands all response types
-        response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
-        Assert.assertEquals(302, response.getStatus());
-        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
-        response.close();
-        client.close();
-    }
-
     /**
      * KEYCLOAK-518
      * @throws Exception
@@ -475,26 +425,6 @@ public class AdapterTestStrategy extends ExternalResource {
         response.close();
         client.close();
 
-    }
-
-    /**
-     * KEYCLOAK-1733
-     *
-     * @throws Exception
-     */
-    public void testNullQueryParameterAccessToken() throws Exception {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
-        Response response = target.request().get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        target = client.target(APP_SERVER_BASE_URL + "/customer-db?access_token=");
-        response = target.request().get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        client.close();
     }
 
     /**
@@ -543,29 +473,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
     /**
-     * KEYCLOAK-3016
-     * @throws Exception
-     */
-    public void testBasicAuthErrorHandling() throws Exception {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
-        Response response = target.request().get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-
-        // The number of iterations should be HttpClient's connection pool size + 1.
-        final int LIMIT = ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS + 1;
-        for (int i = 0; i < LIMIT; i++) {
-            System.out.println("Testing Basic Auth with bad credentials " + i);
-            response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
-            Assert.assertEquals(401, response.getStatus());
-            response.close();
-        }
-
-        client.close();
-    }
-
-    /**
      * KEYCLOAK-518
      * @throws Exception
      */
@@ -586,77 +493,6 @@ public class AdapterTestStrategy extends ExternalResource {
         response.close();
         client.close();
 
-    }
-    
-    public void testAuthenticated() throws Exception {
-        // test login to customer-portal which does a bearer request to customer-db
-        driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/secure-portal" + slash);
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
-
-        // test logout
-
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
-                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/secure-portal").build("demo").toString();
-        driver.navigate().to(logoutUri);
-        String currentUrl = driver.getCurrentUrl();
-        pageSource = driver.getPageSource();
-        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
-        driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-    }
-
-    /**
-     * KEYCLOAK-1733
-     *
-     * @throws Exception
-     */
-    public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
-        String accessToken = getAccessToken();
-        Client client = ClientBuilder.newClient();
-        try {
-            // test without token
-            Response response = client.target(APP_SERVER_BASE_URL + "/customer-db").request().get();
-            Assert.assertEquals(401, response.getStatus());
-            response.close();
-            // test with access_token as QueryParamter
-            response = client.target(APP_SERVER_BASE_URL + "/customer-db").queryParam("access_token", accessToken).request().get();
-            Assert.assertEquals(200, response.getStatus());
-            response.close();
-        } finally {
-            client.close();
-        }
-    }
-
-    private String getAccessToken() throws JSONException {
-        String tokenUrl = AUTH_SERVER_URL + "/realms/demo/protocol/openid-connect/token";
-
-        Client client = ClientBuilder.newClient();
-        try {
-            WebTarget webTarget = client.target(tokenUrl);
-
-            Form form = new Form();
-            form.param("grant_type", "password");
-            form.param("client_id", "customer-portal-public");
-            form.param("username", "bburke@redhat.com");
-            form.param("password", "password");
-            Response response = webTarget.request().post(Entity.form(form));
-
-            Assert.assertEquals(200, response.getStatus());
-
-            JSONObject jsonObject = new JSONObject(response.readEntity(String.class));
-            System.out.println(jsonObject);
-            response.close();
-            return jsonObject.getString("access_token");
-        } finally {
-            client.close();
-        }
     }
 
     /**
@@ -803,14 +639,4 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(pageSource.contains("Counter=2"));
 
     }
-
-    void checkThatAccessTokenCanBeSentPublicly() {
-        // test login to customer-portal which does a bearer request to customer-db
-        final String applicationURL = APP_SERVER_BASE_URL + "/no-access-token?access_token=invalid_token";
-        driver.navigate().to(applicationURL);
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(applicationURL, driver.getCurrentUrl());
-        inputPage.execute("hello");
-    }
-
 }
