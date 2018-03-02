@@ -1,7 +1,7 @@
 {
   "realm" : "demo",
   "resource" : "input-portal",
-  "auth-server-url" : "http://${my.host.name}:8180/auth",
+  "auth-server-url" : "http://localhost:8180/auth",
   "ssl-required" : "external",
   "min-time-between-jwks-requests": 120,
   "credentials" : {

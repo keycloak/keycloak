@@ -39,5 +39,9 @@ public class CustomerPortal extends AbstractPageWithInjectedUrl {
     public URL getInjectedUrl() {
         return url;
     }
+    
+    public String logout() {
+        return url + "/logout";
+    }
 
 }

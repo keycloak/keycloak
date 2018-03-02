@@ -56,6 +56,8 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAp
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWASAppServer;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
 import static org.keycloak.testsuite.util.IOUtil.appendChildInDocument;
 import static org.keycloak.testsuite.util.IOUtil.documentToString;
 import static org.keycloak.testsuite.util.IOUtil.getElementTextContent;
@@ -186,8 +188,9 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     AdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
                             .getAsset().openStream(), AdapterConfig.class);
 
-                    log.info(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
-                    if (relative) {
+                    // TODO find out if this is necessary
+                    if (relative && !AUTH_SERVER_CONTAINER.equals(AUTH_SERVER_CONTAINER_DEFAULT)) {
+                        log.info(" setting relative auth-server-url");
                         adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                     } else {

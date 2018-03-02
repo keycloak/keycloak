@@ -20,11 +20,13 @@ import org.junit.Test;
 import org.keycloak.testsuite.adapter.servlet.AbstractClientInitiatedAccountLinkTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
+
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@AppServerContainer("auth-server-undertow")
+@AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
 public class UndertowClientInitiatedAccountLinkTest extends AbstractClientInitiatedAccountLinkTest {
 
     //@Test

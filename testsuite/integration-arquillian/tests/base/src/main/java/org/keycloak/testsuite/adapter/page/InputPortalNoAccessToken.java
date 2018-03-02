@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.page;
 
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -28,9 +29,9 @@ import java.net.URL;
  *
  * @author vramik
  */
-public class InputPortalNoAccessToken extends SAMLServlet {
+public class InputPortalNoAccessToken extends AbstractPageWithInjectedUrl {
 
-    public static final String DEPLOYMENT_NAME = "input-portal-no-access-token";
+    public static final String DEPLOYMENT_NAME = "no-access-token";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

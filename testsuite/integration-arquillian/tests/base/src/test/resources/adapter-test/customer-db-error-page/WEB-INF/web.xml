@@ -32,6 +32,23 @@
         <servlet-class>org.keycloak.testsuite.adapter.servlet.ErrorServlet</servlet-class>
     </servlet>
 
+    <error-page>
+        <error-code>400</error-code>
+        <location>/error.html</location>
+    </error-page>
+    <error-page>
+        <error-code>401</error-code>
+        <location>/error.html</location>
+    </error-page>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error.html</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error.html</location>
+    </error-page>
+    
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>
         <url-pattern>/*</url-pattern>

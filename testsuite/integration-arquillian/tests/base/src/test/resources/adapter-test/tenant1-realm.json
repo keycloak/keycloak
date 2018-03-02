@@ -22,7 +22,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "multi-tenant": [ "user" ]
             }
         },
@@ -37,7 +37,7 @@
                     "value" : "user-tenant1" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "multi-tenant": [ "user" ]
             }
         }
@@ -61,20 +61,10 @@
         {
             "clientId": "multi-tenant",
             "enabled": true,
-            "adminUrl": "/multi-tenant",
-            "baseUrl": "/multi-tenant",
+            "adminUrl": "/multi-tenant/tenant1",
+            "baseUrl": "/multi-tenant/tenant1",
             "redirectUris": [
-                "/multi-tenant/*"
-            ],
-            "secret": "password"
-        },
-        {
-            "clientId": "multitenant",
-            "enabled": true,
-            "adminUrl": "/multitenant/tenant1",
-            "baseUrl": "/multitenant/tenant1",
-            "redirectUris": [
-                "/multitenant/tenant1/*"
+                "/multi-tenant/tenant1/*"
             ],
             "secret": "password"
         }
