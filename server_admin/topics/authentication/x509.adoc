@@ -25,6 +25,7 @@ A typical workflow is as follows:
 Supported Certificate Identity Sources::
 - Match SubjectDN using regular expression
 - X500 Subject's e-mail attribute
+- X500 Subject's e-mail from Subject Alternative Name Extension (RFC822Name General Name)
 - X500 Subject's Common Name attribute
 - Match IssuerDN using regular expression
 - X500 Issuer's e-mail attribute
