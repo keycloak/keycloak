@@ -1332,6 +1332,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 client : function() {
                     return {};
                 },
+                flows : function(AuthenticationFlowsLoader) {
+                     return AuthenticationFlowsLoader();
+                },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 }
@@ -1352,6 +1355,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
