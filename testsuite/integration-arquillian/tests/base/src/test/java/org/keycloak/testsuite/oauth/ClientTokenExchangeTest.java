@@ -34,6 +34,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -57,8 +59,12 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -110,6 +116,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientExchanger.setFullScopeAllowed(false);
         clientExchanger.addScopeMapping(impersonateRole);
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
 
 
         ClientModel directExchanger = realm.addClient("direct-exchanger");
@@ -302,8 +310,15 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             AccessToken exchangedToken = verifier.parse().getToken();
             Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
             Assert.assertNull(exchangedToken.getAudience());
-            Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
+            Assert.assertEquals("impersonated-user", exchangedToken.getPreferredUsername());
             Assert.assertNull(exchangedToken.getRealmAccess());
+
+            Object impersonatorRaw = exchangedToken.getOtherClaims().get("impersonator");
+            Assert.assertThat(impersonatorRaw, instanceOf(Map.class));
+            Map impersonatorClaim = (Map) impersonatorRaw;
+
+            Assert.assertEquals(token.getSubject(), impersonatorClaim.get("id"));
+            Assert.assertEquals("user", impersonatorClaim.get("username"));
         }
 
         // client-exchanger can impersonate from token "user" to user "impersonated-user" and to "target" client
@@ -449,7 +464,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
                                     .param(OAuth2Constants.AUDIENCE, "target")
 
                     ));
-            org.junit.Assert.assertEquals(403, response.getStatus());
+            Assert.assertEquals(403, response.getStatus());
             response.close();
         }
 
@@ -464,7 +479,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
                                     .param(OAuth2Constants.AUDIENCE, "target")
 
                     ));
-            org.junit.Assert.assertTrue(response.getStatus() >= 400);
+            Assert.assertTrue(response.getStatus() >= 400);
             response.close();
         }
 

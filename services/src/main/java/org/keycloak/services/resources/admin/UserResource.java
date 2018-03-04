@@ -40,6 +40,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -104,6 +105,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
 /**
  * Base resource for managing users
@@ -281,6 +285,13 @@ public class UserResource {
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+
+        UserModel adminUser = auth.adminAuth().getUser();
+        String impersonatorId = adminUser.getId();
+        String impersonator = adminUser.getUsername();
+        userSession.setNote(IMPERSONATOR_ID.toString(), impersonatorId);
+        userSession.setNote(IMPERSONATOR_USERNAME.toString(), impersonator);
+
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = AccountFormService.accountServiceApplicationPage(session.getContext().getUri()).build(realm.getName());
         Map<String, Object> result = new HashMap<>();
@@ -289,8 +300,8 @@ public class UserResource {
         event.event(EventType.IMPERSONATE)
              .session(userSession)
              .user(user)
-             .detail(Details.IMPERSONATOR_REALM,authenticatedRealm.getName())
-             .detail(Details.IMPERSONATOR, auth.adminAuth().getUser().getUsername()).success();
+             .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
+             .detail(Details.IMPERSONATOR, impersonator).success();
 
         return result;
     }
