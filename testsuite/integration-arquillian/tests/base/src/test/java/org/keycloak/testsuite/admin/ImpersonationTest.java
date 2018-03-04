@@ -17,11 +17,15 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
@@ -35,6 +39,10 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
+import org.keycloak.models.ImpersonationSessionNote;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -46,24 +54,24 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.Cookie;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.openqa.selenium.Cookie;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -73,6 +81,25 @@ import static org.hamcrest.Matchers.containsString;
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 public class ImpersonationTest extends AbstractKeycloakTest {
+
+    static class UserSessionNotesHolder {
+        private Map<String, String> notes = new HashMap<>();
+
+        public UserSessionNotesHolder() {
+        }
+
+        public UserSessionNotesHolder(final Map<String, String> notes) {
+            this.notes = notes;
+        }
+
+        public void setNotes(final Map<String, String> notes) {
+            this.notes = notes;
+        }
+
+        public Map<String, String> getNotes() {
+            return notes;
+        }
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -84,6 +111,12 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     protected LoginPage loginPage;
 
     private String impersonatedUserId;
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(ImpersonationTest.class, AbstractKeycloakTest.class, UserResource.class)
+                .addPackages(true, "org.keycloak.testsuite", "org.keycloak.admin.client", "org.openqa.selenium");
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -234,8 +267,21 @@ public class ImpersonationTest extends AbstractKeycloakTest {
                     .detail(Details.IMPERSONATOR_REALM, adminRealm)
                     .client((String) null).assertEvent();
 
-            NewCookie cookie = response.getCookies().get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+            // Fetch user session notes
+            final String userId = impersonatedUserId;
+            final UserSessionNotesHolder notesHolder = testingClient.server("test").fetch(session -> {
+                final RealmModel realm = session.realms().getRealmByName("test");
+                final UserModel user = session.users().getUserById(userId, realm);
+                final UserSessionModel userSession = session.sessions().getUserSessions(realm, user).get(0);
+                return new UserSessionNotesHolder(userSession.getNotes());
+            }, UserSessionNotesHolder.class);
 
+            // Check impersonation details
+            final Map<String, String> notes = notesHolder.getNotes();
+            Assert.assertNotNull(notes.get(ImpersonationSessionNote.IMPERSONATOR_ID.toString()));
+            Assert.assertEquals(admin, notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
+
+            NewCookie cookie = response.getCookies().get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
             Assert.assertNotNull(cookie);
 
             return new Cookie(cookie.getName(), cookie.getValue(), cookie.getDomain(), cookie.getPath(), cookie.getExpiry(), cookie.isSecure(), cookie.isHttpOnly());
