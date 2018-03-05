@@ -1073,7 +1073,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
         IdentityProviderEntity entity = new IdentityProviderEntity();
 
-        entity.setInternalId(KeycloakModelUtils.generateId());
+        if (identityProvider.getInternalId() == null) {
+            entity.setInternalId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setInternalId(identityProvider.getInternalId());
+        }
         entity.setAlias(identityProvider.getAlias());
         entity.setDisplayName(identityProvider.getDisplayName());
         entity.setProviderId(identityProvider.getProviderId());
