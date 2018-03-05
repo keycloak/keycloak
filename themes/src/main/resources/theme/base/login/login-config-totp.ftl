@@ -57,7 +57,7 @@
             <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
         </div>
 
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
     </form>
     </#if>
 </@layout.registrationLayout>
