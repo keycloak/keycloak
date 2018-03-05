@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keycloaksaml;
+package org.keycloak.testsuite.helper.adapter;
 
 import org.junit.Assert;
 
