@@ -38,7 +38,7 @@
     </div>
     <div class="${properties.kcFormCardClass!} <#if displayWide>${properties.kcFormCardAccountClass!}</#if>">
       <header class="${properties.kcFormHeaderClass!}">
-        <#if realm.internationalizationEnabled>
+        <#if realm.internationalizationEnabled && locale.supported?size gt 1>
             <div id="kc-locale">
                 <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
                     <div class="kc-dropdown" id="kc-locale-dropdown">
