@@ -27,7 +27,7 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
-import org.keycloak.testsuite.samlfilter.SamlAdapterTest;
+import org.keycloak.testsuite.helper.adapter.SamlKeycloakRule;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -73,10 +73,10 @@ public class SamlEcpProfileTest {
     protected String APP_SERVER_BASE_URL = "http://localhost:8081";
 
     @ClassRule
-    public static org.keycloak.testsuite.samlfilter.SamlKeycloakRule keycloakRule = new org.keycloak.testsuite.samlfilter.SamlKeycloakRule() {
+    public static SamlKeycloakRule keycloakRule = new SamlKeycloakRule() {
         @Override
         public void initWars() {
-            ClassLoader classLoader = SamlAdapterTest.class.getClassLoader();
+            ClassLoader classLoader = SamlEcpProfileTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/keycloak-saml/ecp/ecp-sp", "/ecp-sp",  "ecp-sp.war", classLoader);
         }
