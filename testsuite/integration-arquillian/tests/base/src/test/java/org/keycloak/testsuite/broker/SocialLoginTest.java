@@ -159,7 +159,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @After
     public void afterSocialLoginTest() {
-        currentSocialLoginPage.logout();
         currentTestProvider = null;
     }
 
@@ -178,7 +177,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         log.infof("added '%s' identity provider", provider.id());
         currentTestProvider = provider;
         currentSocialLoginPage = Graphene.createPageFragment(currentTestProvider.pageObjectClazz(), driver.findElement(By.tagName("html")));
-        accountPage.navigateTo();
     }
 
     @Override
@@ -333,7 +331,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     private String getConfig(Provider provider, String key) {
         String providerKey = provider.configId() + "." + key;
-        return System.getProperty(providerKey, config.getProperty(providerKey, config.getProperty("common." + key)));
+        return System.getProperty("social." + providerKey, config.getProperty(providerKey, config.getProperty("common." + key)));
     }
 
     private String getConfig(String key) {
@@ -341,6 +339,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void performLogin() {
+        currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
+        accountPage.navigateTo();
         loginPage.clickSocial(currentTestProvider.id());
 
         // Just to be sure there's no redirect in progress
