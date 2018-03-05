@@ -44,7 +44,6 @@ import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -81,6 +80,9 @@ public class ScopePermissionForm extends Form {
     @FindBy(id = "s2id_resources")
     private ResourceSelect resourceSelect;
 
+    @FindBy(className = "select2-search-choice-close")
+    private WebElement resourceSelectRemoveChoice;
+
     @FindBy(id = "create-policy")
     private Select createPolicySelect;
 
@@ -116,7 +118,9 @@ public class ScopePermissionForm extends Form {
             resourceSelect.update(resources);
             resourceScopeSelect.update(expected.getScopes());
         } else {
-            driver.findElement(By.className("select2-search-choice-close")).click();
+            if (resourceSelectRemoveChoice.isDisplayed()) {
+                resourceSelectRemoveChoice.click();
+            }
             scopeSelect.update(expected.getScopes());
         }
 
