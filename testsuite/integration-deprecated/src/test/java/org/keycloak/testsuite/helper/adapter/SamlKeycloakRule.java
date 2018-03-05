@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keycloaksaml;
+package org.keycloak.testsuite.helper.adapter;
 
 import io.undertow.security.idm.Account;
 import io.undertow.security.idm.Credential;
@@ -25,14 +25,14 @@ import io.undertow.server.handlers.resource.ResourceChangeListener;
 import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.LoginConfig;
-import io.undertow.servlet.api.SecurityConstraint;
+import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
-import io.undertow.servlet.api.WebResourceCollection;
+import org.keycloak.adapters.saml.servlet.SamlFilter;
 import org.keycloak.adapters.saml.undertow.SamlServletExtension;
+import org.keycloak.testsuite.helper.adapter.SendUsernameServlet;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
-import javax.servlet.Servlet;
+import javax.servlet.DispatcherType;
 import java.io.IOException;
 import java.net.URL;
 
@@ -110,23 +110,11 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
 
     public void initializeSamlSecuredWar(String warResourcePath, String contextPath, String warDeploymentName, ClassLoader classLoader) {
 
-        Class<SendUsernameServlet> servletClass = SendUsernameServlet.class;
-        String constraintUrl = "/*";
-
-        initializeSamlSecuredWar(warResourcePath, contextPath, warDeploymentName, classLoader, servletClass, constraintUrl);
-    }
-
-    public void initializeSamlSecuredWar(String warResourcePath, String contextPath, String warDeploymentName, ClassLoader classLoader, Class<? extends Servlet> servletClass, String constraintUrl) {
-        ServletInfo regularServletInfo = new ServletInfo("servlet", servletClass)
+        ServletInfo regularServletInfo = new ServletInfo("servlet", SendUsernameServlet.class)
                 .addMapping("/*");
 
-        SecurityConstraint constraint = new SecurityConstraint();
-        WebResourceCollection collection = new WebResourceCollection();
-        collection.addUrlPattern(constraintUrl);
-        constraint.addWebResourceCollection(collection);
-        constraint.addRoleAllowed("manager");
-        constraint.addRoleAllowed("el-jefe");
-        LoginConfig loginConfig = new LoginConfig("KEYCLOAK-SAML", "Test Realm");
+        FilterInfo samlFilter = new FilterInfo("saml-filter", SamlFilter.class);
+
 
         ResourceManager resourceManager = new TestResourceManager(warResourcePath);
 
@@ -135,10 +123,10 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
                 .setIdentityManager(new TestIdentityManager())
                 .setContextPath(contextPath)
                 .setDeploymentName(warDeploymentName)
-                .setLoginConfig(loginConfig)
                 .setResourceManager(resourceManager)
                 .addServlets(regularServletInfo)
-                .addSecurityConstraint(constraint)
+                .addFilter(samlFilter)
+                .addFilterUrlMapping("saml-filter", "/*", DispatcherType.REQUEST)
                 .addServletExtension(new SamlServletExtension());
         addErrorPage("/error.html", deploymentInfo);
         server.getServer().deploy(deploymentInfo);
