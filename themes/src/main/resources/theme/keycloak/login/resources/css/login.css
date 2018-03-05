@@ -103,7 +103,7 @@ div.kc-logo-text span {
 }
 
 #kc-header-wrapper {
-    font-size: 42px;
+    font-size: 29px;
     text-transform: uppercase;
     letter-spacing: 3px;
     line-height: 1.2em;
@@ -148,15 +148,11 @@ div.kc-logo-text span {
 
 ol#kc-totp-settings {
     margin: 0;
-    padding: 0;
+    padding-left: 20px;
 }
 
-ol#kc-totp-settings li {
-    margin-top: 1em;
-}
-
-ol#kc-totp-settings li:first-of-type {
-    margin-top: 0;
+ul#kc-totp-supported-apps {
+  margin-bottom: 10px;
 }
 
 #kc-totp-secret-qr-code {
@@ -411,10 +407,12 @@ a.zocial  {
   .login-pf-page .login-pf-social-section:first-of-type {
     padding-left: 39px;
     padding-right: 39px;
+    border-right: 1px solid #d1d1d1;
   }
   .login-pf-page .login-pf-social-section:last-of-type {
     padding-left: 40px;
     padding-right: 40px;
+    border-left: 0;
   }
   .login-pf-page .login-pf-social-section .login-pf-social-link:last-of-type {
     margin-bottom: 0;
