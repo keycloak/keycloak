@@ -122,6 +122,11 @@ public class SamlClient {
             }
 
             @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
             public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
                 return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey);
             }
@@ -206,7 +211,38 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
-                return null;
+                try {
+                    URI responseURI = new BaseSAML2BindingBuilder()
+                            .relayState(relayState)
+                            .redirectBinding(samlRequest)
+                            .responseURI(samlEndpoint.toString());
+                    return new HttpGet(responseURI);
+                } catch (ProcessingException | ConfigurationException | IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+
+                try {
+                    BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+
+                    if (realmPrivateKey != null && realmPublicKey != null) {
+                        PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(realmPrivateKey);
+                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        binding
+                                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signDocument();
+                    }
+
+                    binding.relayState(relayState);
+
+                    return new HttpGet(binding.redirectBinding(samlRequest).responseURI(samlEndpoint.toString()));
+                } catch (IOException | ConfigurationException | ProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
 
             @Override
@@ -224,6 +260,8 @@ public class SamlClient {
         public abstract URI getBindingUri();
 
         public abstract HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest);
+
+        public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
     }
 
     private static final Logger LOG = Logger.getLogger(SamlClient.class);
