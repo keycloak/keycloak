@@ -20,7 +20,6 @@ package org.keycloak.connections.infinispan;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +39,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import java.util.stream.Collectors;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 
 /**
  * Get either just remoteCache associated with remoteStore associated with infinispan cache of given name. If security is enabled, then
@@ -52,6 +53,8 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
  */
 public class RemoteCacheProvider {
 
+    public static final String SCRIPT_CACHE_NAME = "___script_cache";
+
     protected static final Logger logger = Logger.getLogger(RemoteCacheProvider.class);
 
     private final Config.Scope config;
@@ -60,7 +63,7 @@ public class RemoteCacheProvider {
     private final Map<String, RemoteCache> availableCaches = new HashMap<>();
 
     // Enlist secured managers, which are managed by us and should be shutdown on stop
-    private final List<RemoteCacheManager> managedManagers = new LinkedList<>();
+    private final Map<String, RemoteCacheManager> managedManagers = new HashMap<>();
 
     public RemoteCacheProvider(Config.Scope config, EmbeddedCacheManager cacheManager) {
         this.config = config;
@@ -81,48 +84,67 @@ public class RemoteCacheProvider {
     }
 
     public void stop() {
-        // TODO:mposolda
-        logger.infof("Shutdown %d registered secured remoteCache managers", managedManagers.size());
+        logger.debugf("Shutdown %d registered secured remoteCache managers", managedManagers.size());
 
-        for (RemoteCacheManager mgr : managedManagers) {
+        for (RemoteCacheManager mgr : managedManagers.values()) {
             mgr.stop();
         }
     }
 
 
-    protected RemoteCache loadRemoteCache(String cacheName) {
+    protected synchronized RemoteCache loadRemoteCache(String cacheName) {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cacheManager.getCache(cacheName));
 
-        if (config.getBoolean("remoteStoreSecurityEnabled", false)) {
-            // TODO:mposolda
-            logger.info("Remote store security is enabled");
-            RemoteCacheManager securedMgr = createSecuredRemoteCacheManager(config, remoteCache.getRemoteCacheManager());
-            managedManagers.add(securedMgr);
+        Boolean remoteStoreSecurity = config.getBoolean("remoteStoreSecurityEnabled");
+        if (remoteStoreSecurity == null) {
+            try {
+                logger.debugf("Detecting remote security settings of HotRod server, cache %s. Disable by explicitly setting \"remoteStoreSecurityEnabled\" property in spi=connectionsInfinispan/provider=default", cacheName);
+                remoteStoreSecurity = false;
+                final RemoteCache<Object, Object> scriptCache = remoteCache.getRemoteCacheManager().getCache(SCRIPT_CACHE_NAME);
+                if (scriptCache == null) {
+                    logger.debug("Cannot detect remote security settings of HotRod server, disabling.");
+                } else {
+                    scriptCache.containsKey("");
+                }
+            } catch (HotRodClientException ex) {
+                logger.debug("Seems that HotRod server requires authentication, enabling.");
+                remoteStoreSecurity = true;
+            }
+        }
+
+        if (remoteStoreSecurity) {
+            logger.infof("Remote store security for cache %s is enabled. Disable by setting \"remoteStoreSecurityEnabled\" property to \"false\" in spi=connectionsInfinispan/provider=default", cacheName);
+            RemoteCacheManager securedMgr = getOrCreateSecuredRemoteCacheManager(config, cacheName, remoteCache.getRemoteCacheManager());
             return securedMgr.getCache(remoteCache.getName());
         } else {
-            // TODO:mposolda
-            logger.info("Remote store security is disabled");
+            logger.infof("Remote store security for cache %s is disabled. If server fails to connect to remote JDG server, enable it.", cacheName);
             return remoteCache;
         }
     }
 
 
-    protected RemoteCacheManager createSecuredRemoteCacheManager(Config.Scope config, RemoteCacheManager origManager) {
-        String serverName = config.get("remoteStoreSecurityServerName", "keycloak-server");
-        String realm = config.get("remoteStoreSecurityRealm", "ApplicationRealm");
+    protected RemoteCacheManager getOrCreateSecuredRemoteCacheManager(Config.Scope config, String cacheName, RemoteCacheManager origManager) {
+        String serverName = config.get("remoteStoreSecurityServerName", "keycloak-jdg-server");
+        String realm = config.get("remoteStoreSecurityRealm", "AllowScriptManager");
 
-        String securedHotRodEndpoint = config.get("remoteStoreSecurityHotRodEndpoint");
-        String username = config.get("remoteStoreSecurityUsername");
-        String password = config.get("remoteStoreSecurityPassword");
-
-        // TODO:mposolda
-        logger.infof("Server: '%s', Realm: '%s', Username: '%s', Secured HotRod endpoint: '%s'", serverName, realm, username, securedHotRodEndpoint);
+        String username = config.get("remoteStoreSecurityUsername", "___script_manager");
+        String password = config.get("remoteStoreSecurityPassword", "not-so-secret-password");
 
         // Create configuration template from the original configuration provided at remoteStore level
         Configuration origConfig = origManager.getConfiguration();
 
         ConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
                 .read(origConfig);
+
+        String securedHotRodEndpoint = origConfig.servers().stream()
+              .map(serverConfiguration -> serverConfiguration.host() + ":" + serverConfiguration.port())
+              .collect(Collectors.joining(";"));
+
+        if (managedManagers.containsKey(securedHotRodEndpoint)) {
+            return managedManagers.get(securedHotRodEndpoint);
+        }
+
+        logger.infof("Creating secured RemoteCacheManager for Server: '%s', Cache: '%s', Realm: '%s', Username: '%s', Secured HotRod endpoint: '%s'", serverName, cacheName, realm, username, securedHotRodEndpoint);
 
         // Workaround as I need a way to override servers and it's not possible to remove existing :/
         try {
@@ -145,7 +167,9 @@ public class RemoteCacheProvider {
                     .enable()
                 .build();
 
-        return new RemoteCacheManager(newConfig);
+        final RemoteCacheManager remoteCacheManager = new RemoteCacheManager(newConfig);
+        managedManagers.put(securedHotRodEndpoint, remoteCacheManager);
+        return remoteCacheManager;
     }
 
 
