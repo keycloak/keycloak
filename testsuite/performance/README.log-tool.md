@@ -7,7 +7,7 @@ Perform the usual test run:
 mvn verify -Pteardown
 mvn verify -Pprovision
 mvn verify -Pgenerate-data -Ddataset=100users -Dimport.workers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100users -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60
+mvn verify -Ptest -Ddataset=100users -DusersPerSec=5 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60
 ```
 
 Now analyze the generated simulation.log (adjust LOG_DIR, FROM, and TO):
