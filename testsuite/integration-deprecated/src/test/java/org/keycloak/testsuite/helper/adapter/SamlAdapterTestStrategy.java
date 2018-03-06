@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keycloaksaml;
+package org.keycloak.testsuite.helper.adapter;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
-
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.*;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -40,18 +40,22 @@ import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.saml.*;
-import org.keycloak.saml.common.constants.*;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.SAML2ErrorResponseBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.adapter.servlet.SamlSPFacade;
+import org.keycloak.testsuite.pages.InputPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.ErrorServlet;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-
 import org.openqa.selenium.WebDriver;
 import org.w3c.dom.Document;
 
@@ -62,11 +66,20 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
-import java.security.*;
-import java.security.spec.*;
-import java.util.*;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.logging.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -74,7 +87,7 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlAdapterTestStrategy  extends ExternalResource {
+public class SamlAdapterTestStrategy extends ExternalResource {
     protected String AUTH_SERVER_URL = "http://localhost:8081/auth";
     protected String APP_SERVER_BASE_URL = "http://localhost:8081";
     protected AbstractKeycloakRule keycloakRule;

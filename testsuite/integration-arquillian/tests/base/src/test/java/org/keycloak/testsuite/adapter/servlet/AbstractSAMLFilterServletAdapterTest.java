@@ -81,4 +81,11 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     public void testErrorHandlingUnsigned() {
 
     }
+
+    @Test
+    @Override
+    @Ignore
+    public void testErrorHandlingSigned() {
+
+    }
 }
