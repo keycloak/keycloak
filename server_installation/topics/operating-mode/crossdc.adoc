@@ -233,10 +233,62 @@ Details of this more-detailed setup are out-of-scope of the {project_name} docum
 NOTE: Details about the configuration options inside `replicated-cache-configuration` are explained in <<tuningcache>>, which includes information about tweaking some of those options.
 
 +  
+. Newer {jdgserver_name} releases require authorization before accessing protected caches over network. {project_name} requires updates to
+`___script_cache` cache containing scripts. If you get errors accessing this cache, you will need to set up authorization in
+`clustered.xml` configuration as described below:
++
+.. In the `<management>` section, add a security realm:
++
+```xml
+<management>
+    <security-realms>
+        ...
+        <security-realm name="AllowScriptManager">
+            <authentication>
+                <users>
+                    <user username="___script_manager">
+                        <password>not-so-secret-password</password>
+                    </user>
+                </users>
+            </authentication>
+        </security-realm>
+    </security-realms>
 
-. Copy the server into the second location, which will be referred to later as `JDG2_HOME`.
+```
 
-. In the `JDG2_HOME/standalone/configuration/clustered.xml` exchange `site1` with `site2` and viceversa in the configuration of `relay` in the JGroups subsystem and in configuration of `backups` in the cache-subsystem. For example:
+.. In the server core subsystem, add `<security>` as below:
++
+```xml
+<subsystem xmlns="urn:infinispan:server:core:8.4">
+    <cache-container name="clustered" default-cache="default" statistics="true">
+        <security>
+            <authorization>
+                <identity-role-mapper/>
+                <role name="___script_manager" permissions="ALL"/>
+            </authorization>
+        </security> 
+        ...
+```
+
+.. In the endpoint subsystem, add authentication configuration to Hot Rod connector:
++
+```xml
+<subsystem xmlns="urn:infinispan:server:endpoint:8.1">
+    <hotrod-connector cache-container="clustered" socket-binding="hotrod">
+        ...
+        <authentication security-realm="AllowScriptManager">
+            <sasl mechanisms="DIGEST-MD5" qop="auth" server-name="keycloak-jdg-server">
+                <policy>
+                    <no-anonymous value="false" />
+                </policy>
+            </sasl>
+        </authentication>
+```
+
++
+. Copy the server to the second location, which will be referred to later as `JDG2_HOME`.
+
+. In the `JDG2_HOME/standalone/configuration/clustered.xml` exchange `site1` with `site2` and vice versa, both in the configuration of `relay` in the JGroups subsystem and in configuration of `backups` in the cache-subsystem. For example:
 .. The `relay` element should look like this:
 +
 ```xml
@@ -738,9 +790,36 @@ writing keys [[B0x033E243034396234..[39]]: org.infinispan.util.concurrent.Timeou
 0 milliseconds for key [B0x033E243034396234..[39] and requestor GlobalTx:jdg1:4353. Lock is held by GlobalTx:jdg1:4352
 ```
 +
-Those exceptions are not necessarily an issue. They may happen anytime when concurrent edit of same entity is triggered on both DCs. This can be the often case in a deployment. Usually the {project_name} server is notified about the failed operation and will retry it, so from the user's point of view, there is usually not any issue.
+Those exceptions are not necessarily an issue. They may happen anytime when a concurrent edit of the same entity is triggered on both DCs. This is common in a deployment. Usually the {project_name} server is notified about the failed operation and will retry it, so from the user's point of view, there is usually not any issue.
 
-* If you try to authenticate with {project_name} to your application, but it failed with the infinite number 
+* If there are exceptions during startup of {project_name} server, like this:
++
+```
+16:44:18,321 WARN  [org.infinispan.client.hotrod.impl.protocol.Codec21] (ServerService Thread Pool -- 55) ISPN004005: Error received from the server: java.lang.SecurityException: ISPN000287: Unauthorized access: subject 'Subject with principal(s): []' lacks 'READ' permission
+ ...
+```
++
+These log entries are the result of {project_name} automatically detecting whether authentication is required on {jdgserver_name} and
+mean that authentication is necessary. At this point you will notice that either the server starts successfully and you can safely
+ignore these or that the server fails to start. If the server fails to start, ensure that {jdgserver_name} has been configured
+properly for authentication as described in <<jdgsetup>>. To prevent this log entry from being included, you can force authentication
+by setting `remoteStoreSecurityEnabled` property to `true` in `spi=connectionsInfinispan/provider=default` configuration:
++
+```xml
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    ...
+    <spi name="connectionsInfinispan">
+        ...
+        <provider name="default" enabled="true">
+            <properties>
+                ...
+                <property name="remoteStoreSecurityEnabled" value="true"/>
+            </properties>
+        </provider>
+    </spi>
+```
+
+* If you try to authenticate with {project_name} to your application, but authentication fails with an infinite number
 of redirects in your browser and you see the errors like this in the {project_name} server log:
 +
 ```
