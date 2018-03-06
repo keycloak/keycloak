@@ -409,6 +409,19 @@ case "$OPERATION" in
 
     ;;
 
+    collect)
+        TIMESTAMP=`date +%s`
+        ARTIFACTS_DIR="${PROJECT_BUILD_DIRECTORY}/collected-artifacts/${DEPLOYMENT}-${TIMESTAMP}"
+        SERVICES=`docker-compose -f $DOCKER_COMPOSE_FILE -p ${PROJECT_NAME} config --services`
+        echo "Collecting docker container logs."
+        rm -rf ${ARTIFACTS_DIR}; mkdir -p ${ARTIFACTS_DIR}
+        for SERVICE in ${SERVICES}; do 
+            docker logs "${PROJECT_NAME}_${SERVICE}_1" > ${ARTIFACTS_DIR}/${SERVICE}.log 2>&1; 
+            if [[ $? != 0 ]]; then echo "ERROR collecting from: ${SERVICE}"; rm ${ARTIFACTS_DIR}/${SERVICE}.log; fi
+        done
+        if [ -z "$(ls -A ${ARTIFACTS_DIR})" ]; then echo "No logs were collected."; rm -rf ${ARTIFACTS_DIR}; fi
+    ;;
+
     *)
         echo "Unsupported operation: '$OPERATION'"
         exit 1
