@@ -27,6 +27,7 @@ import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.RemoteCacheProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
@@ -88,7 +89,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
     public void init(KeycloakSession session) {
         RemoteCache remoteCache = getRemoteCache(session);
 
-        RemoteCache<String, String> scriptCache = remoteCache.getRemoteCacheManager().getCache("___script_cache");
+        RemoteCache<String, String> scriptCache = remoteCache.getRemoteCacheManager().getCache(RemoteCacheProvider.SCRIPT_CACHE_NAME);
 
         if (!scriptCache.containsKey("load-sessions.js")) {
             scriptCache.put("load-sessions.js",
