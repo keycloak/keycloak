@@ -1,41 +1,28 @@
 package org.keycloak.performance.log;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import static org.keycloak.performance.TestConfig.SIMPLE_TIME;
 
 /**
  * To run use the following:
  *
- *   mvn -f testsuite/integration-arquillian/tests/performance/gatling-perf exec:java -Dexec.mainClass=org.keycloak.performance.log.LogProcessor -Dexec.args="ARGUMENTS"
+ *   mvn -f testsuite/integration-arquillian/performance/tests exec:java -Dexec.mainClass=org.keycloak.performance.log.LogProcessor -Dexec.args="ARGUMENTS"
  *
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class LogProcessor {
 
-    static boolean INLAYED_INCLUDED = false;
-    static boolean OUTLAYED_INCLUDED = false;
-    static boolean COMPLETE_SESSIONS = false;
+    boolean inlayedIncluded = false;
+    boolean outlayedIncluded = false;
 
     File simulationLogFile;
     String lastRequestLabel;
@@ -152,16 +139,30 @@ public class LogProcessor {
     }
 
     public void filterLog(long start, long end) throws IOException {
-        filterLog(start, end, INLAYED_INCLUDED, OUTLAYED_INCLUDED, COMPLETE_SESSIONS);
+        filterLog(start, end, inlayedIncluded, outlayedIncluded);
     }
-    
-    public void filterLog(long start, long end, boolean inlayedIncluded, boolean outlayedIncluded, boolean completeSessions) throws IOException {
-        INLAYED_INCLUDED = inlayedIncluded;
-        OUTLAYED_INCLUDED = outlayedIncluded;
-        COMPLETE_SESSIONS = completeSessions;
+
+    /**
+     *
+     * Setting inlayedIncluded to either true or false, results in first second anomaly towards lower values
+     * Setting outlayedIncluded to true, and inlayedIncluded to false seems to behave best balancing the first second
+     * downward skew with the last second upward skew. But it varies between test, and it's hard to say.
+     *
+     * All requests within time interval will also have their corresponding USER START and USER END entries copied
+     * over, and adjusted to time interval start and end boundaries.
+     *
+     * @param start Time stamp at which to start copying over logged entries
+     * @param end Time stamp beyond which logging entries are no longer copied over
+     * @param inlayedIncluded Requests that start before interval start time but end within time interval should be included
+     * @param outlayedIncluded Requests that start within time interval but end after interval end time should be included
+     * @throws IOException
+     */
+    public void filterLog(long start, long end, boolean inlayedIncluded, boolean outlayedIncluded) throws IOException {
+        this.inlayedIncluded = inlayedIncluded;
+        this.outlayedIncluded = outlayedIncluded;
         
-        System.out.println(String.format("Filtering %s/%s \nINLAYED_INCLUDED: %s \nOUTLAYED_INCLUDED: %s \nCOMPLETE_SESSIONS: %s", 
-                simulationLogFile.getParentFile().getName(), simulationLogFile.getName(), INLAYED_INCLUDED, OUTLAYED_INCLUDED, COMPLETE_SESSIONS));
+        System.out.println(String.format("Filtering %s/%s \ninlayedIncluded: %s \noutlayedIncluded: %s",
+                simulationLogFile.getParentFile().getName(), simulationLogFile.getName(), this.inlayedIncluded, this.outlayedIncluded));
 
         File simulationLogFileFiltered = new File(simulationLogFile.getAbsoluteFile() + ".filtered");
         File simulationLogFileUnfiltered = new File(simulationLogFile.getAbsoluteFile() + ".unfiltered");
@@ -175,19 +176,16 @@ public class LogProcessor {
     
     public void copyPartialLog(PrintWriter output, long start, long end) throws IOException {
 
-        File tmpFile = null, headFile = null;
-        PrintWriter tmp = null, startHead = null;
+        System.out.println(String.format("Extracting from: %s to %s   (%s - %s)", SIMPLE_TIME.format(start), SIMPLE_TIME.format(end), start, end));
+
         HashMap<String, LogLine> starts = new HashMap<>();
-        HashSet<String> actives = new HashSet<>();
+        HashMap<String, long[]> sessionTimes = new HashMap<>();
 
-        if (COMPLETE_SESSIONS) {
-            tmp = output;
-            tmpFile = getTmpFile();
-            output = new PrintWriter(new OutputStreamWriter(new FileOutputStream(tmpFile), "utf-8"));
 
-            headFile = getTmpFile();
-            startHead = new PrintWriter(new OutputStreamWriter(new FileOutputStream(headFile), "utf-8"));
-        }
+        // We adjust log entires so that stats are correctly calculated
+        //   - we add USER START entries for user sessions that cross the time period boundaries
+        //   - we adjust start time of USER START entries to time interval start time
+        //   - we adjust end time of USER END entries that occur beyond the time boundaries to time interval end time
 
         LogReader reader = new LogReader(simulationLogFile);
         try {
@@ -195,282 +193,104 @@ public class LogProcessor {
             while ((line = reader.readLine()) != null) {
 
                 if (line.type() == LogLine.Type.RUN) {
-                    if (COMPLETE_SESSIONS) {
-                        startHead.println(line.rawLine());
-                    } else {
-                        output.println(line.rawLine());
-                    }
+                    // adjust start time of simulation
+                    line.setStart(start);
+                    output.println(line.compose());
                     continue;
                 }
 
                 long startTime = line.startTime();
                 long endTime = line.endTime();
 
-                if (startTime >= start && startTime < end) {
-                    if (OUTLAYED_INCLUDED) {
-                        output.println(line.rawLine());
-                    } else if (endTime < end) {
-                        output.println(line.rawLine());
-                    }
-                } else if (INLAYED_INCLUDED && endTime >= start && endTime < end) {
-                    output.println(line.rawLine());
-                }
 
-                if (COMPLETE_SESSIONS) {
-                    if (line.type() == LogLine.Type.USER_START) {
-                        if (startTime < end) {
-                            starts.put(line.userId(), line);
+                if (line.type() == LogLine.Type.USER_END) {
+                    // if it is a USER_END we should adjust it to end time of the last and start time of the first REQUEST
+                    // for that session within the interval
+                    long[] times = sessionTimes.remove(line.userId());
+
+                    // We ignore USER END entries that end before interval start, and those with start time after interval end
+                    if (endTime >= start && startTime < end && startTime >= start) {
+                        if (times == null) {
+                            throw new IllegalStateException("There should be session info present for user: " + line.userId());
                         }
-                    } else if (line.type() == LogLine.Type.USER_END) {
-                        if (endTime < start) {
-                            starts.remove(line.userId());
-                        } else if (endTime >= start && endTime < end) {
-                            LogLine sline = starts.remove(line.userId());
-                            if (sline != null) {
-                                startHead.println(sline.rawLine());
-                            }
-                            actives.remove(line.userId());
-                        } else if (endTime >= end) {
-                            boolean was = actives.remove(line.userId());
-                            if (was) {
-                                output.println(line.rawLine());
-                            }
+                        line.setStart(times[0]);
+                        // if USER END ends outside the time interval adjust it to end time of last request
+                        if (line.endTime() >= end) {
+                            line.setEnd(end);
+                            //line.setEnd(times[1]);
+                            ////line.end = times[1] > end ? times[1] : end;
                         }
-                    } else if (line.type() == LogLine.Type.REQUEST) {
-                        if ((startTime >= start && startTime < end) || (endTime >= start && endTime < end)) {
-                            LogLine sline = starts.remove(line.userId());
-                            if (sline != null) {
-                                startHead.println(sline.rawLine());
+
+                        output.println(line.compose());
+                    }
+
+                    // make sure any cached start line is also cleaned
+                    starts.remove(line.userId());
+
+                } else if (line.type() == LogLine.Type.USER_START) {
+                    if (startTime < start) {
+                        // if it is a USER START before the time period start, we should adjust it to start time of the first
+                        // REQUEST for that session within the interval, so at this point we need to store the entry for later
+                        starts.put(line.userId(), line);
+                    } else if (startTime < end) {
+                        // it's within the interval thus no adjustment needed
+                        starts.put(line.userId(), line);
+                        //output.println(line.rawLine());
+                    }
+
+                    // we ignore USER START entries beyond the time interval
+
+                } else if (line.type() == LogLine.Type.REQUEST) {
+
+                    // REQUEST entry needs processing if it starts within the time interval or if it ends within time interval
+                    // - if we process INLAYED
+                    boolean process = (startTime >= start && startTime < end) ||
+                            (inlayedIncluded && endTime >= start && endTime < end);
+
+                    if (process) {
+                        // store start time of first request entry, and end time of last request entry for session within the interval
+                        long[] times = sessionTimes.get(line.userId());
+                        if (times == null) {
+                            times = new long[]{line.startTime(), line.endTime()};
+                            sessionTimes.put(line.userId(), times);
+
+                            // if this is the first REQUEST within interval there may be a cached start line
+                            LogLine startLine = starts.remove(line.userId());
+                            if (startLine != null) {
+                                // fix startLine's start time if necessary and recompose it writing it to output
+                                if (startLine.startTime() < start) {
+                                    startLine.setStart(start);
+                                    //startLine.setStart(line.startTime());
+                                    ////startLine.start = line.startTime() < start ? line.startTime() : start;
+                                    output.println(startLine.compose());
+                                } else {
+                                    output.println(startLine.rawLine());
+                                }
+                                times[0] = startLine.startTime();
                             }
-                            actives.add(line.userId());
+                        } else {
+                            times[1] = line.endTime();
                         }
+
+                        if (outlayedIncluded) {
+                            // if entry is started within the time interval we copy it over regardless if ended outside
+                            output.println(line.rawLine());
+                        } else if (endTime < end) {
+                            // if entry is started within the time interval and ended within a time interval we copy it over
+                            output.println(line.rawLine());
+                        }
+
                     }
                 }
             }
         } finally {
             reader.close();
             output.flush();
-
-            if (COMPLETE_SESSIONS) {
-                startHead.close();
-                output.close();
-
-
-                BufferedReader tmpIn = new BufferedReader(new FileReader(headFile));
-                copyStream(tmpIn, tmp);
-
-                tmpIn = new BufferedReader(new FileReader(tmpFile));
-                copyStream(tmpIn, tmp);
-
-                tmp.flush();
-
-                Files.delete(headFile.toPath());
-                Files.delete(tmpFile.toPath());
-            }
         }
-    }
-
-    private static void copyStream(Reader reader, Writer writer) throws IOException {
-        char [] buff = new char[16 * 1024];
-        int rc;
-        while ((rc = reader.read(buff)) != -1) {
-            writer.write(buff, 0, rc);
-        }
-    }
-
-    private File getTmpFile() throws IOException {
-        return Files.createTempFile("perftest", ".log").toFile();
     }
 
     public void setLastRequestLabel(String lastRequestLabel) {
         this.lastRequestLabel = lastRequestLabel;
-    }
-
-    static class Stats {
-        private long startTime;
-
-        // timestamp at which rampUp is complete
-        private long lastUserStart;
-
-        // timestamp at which first user completed the simulation
-        private long firstUserEnd;
-
-        // timestamp at which all users completed the simulation
-        private long lastUserEnd;
-
-        // timestamps of iteration completions - when all users achieved last step of the scenario - for each scenario in the log file
-        private ConcurrentHashMap<String, ArrayList<Long>> completedIterations = new ConcurrentHashMap<>();
-
-        private LinkedHashMap<String, Set<String>> scenarioRequests = new LinkedHashMap<>();
-
-        private HashMap<String, Integer> requestCounters = new HashMap<>();
-
-        public void setStartTime(long startTime) {
-            this.startTime = startTime;
-        }
-
-        public void setLastUserStart(long lastUserStart) {
-            this.lastUserStart = lastUserStart;
-        }
-
-        public void setFirstUserEnd(long firstUserEnd) {
-            this.firstUserEnd = firstUserEnd;
-        }
-
-        public long firstUserEnd() {
-            return firstUserEnd;
-        }
-
-        public void setLastUserEnd(long lastUserEnd) {
-            this.lastUserEnd = lastUserEnd;
-        }
-
-        public void addIterationCompletedByAll(String scenario, long time) {
-            this.completedIterations.computeIfAbsent(scenario, k -> new ArrayList<>())
-                    .add(time);
-        }
-
-        public void addRequest(String scenario, String request) {
-            Set<String> requests = scenarioRequests.get(scenario);
-            if (requests == null) {
-                requests = new LinkedHashSet<>();
-                scenarioRequests.put(scenario, requests);
-            }
-            requests.add(request);
-            incrementRequestCounter(scenario, request);
-        }
-
-        public Map<String, Set<String>> requestNames() {
-            return scenarioRequests;
-        }
-
-        private void incrementRequestCounter(String scenario, String requestName) {
-            String key = scenario + "." + requestName;
-            int count = requestCounters.getOrDefault(key, 0);
-            requestCounters.put(key, count+1);
-        }
-
-        public int requestCount(String scenario, String requestName) {
-            String key = scenario + "." + requestName;
-            return requestCounters.getOrDefault(key, 0);
-        }
-    }
-
-
-    static class LogReader {
-
-        private BufferedReader reader;
-
-        LogReader(File file) throws FileNotFoundException {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("utf-8")));
-        }
-
-        LogLine readLine() throws IOException {
-            String line = reader.readLine();
-            return line != null ? new LogLine(line) : null;
-        }
-
-        void close() throws IOException {
-            reader.close();
-        }
-    }
-
-    static class LogLine {
-
-        private String rawLine;
-        private Type type;
-        private String scenario;
-        private String userId;
-        private String request;
-        private long start = -1;
-        private long end = -1;
-        private boolean ok;
-
-        LogLine(String line) {
-            rawLine = line;
-        }
-
-        String rawLine() {
-            return rawLine;
-        }
-
-        Type type() {
-            return type != null ? type : parse().type;
-        }
-
-        long startTime() {
-            return type != null ? start : parse().start;
-        }
-
-        long endTime() {
-            return type != null ? end : parse().end;
-        }
-
-        String scenario() {
-            return type != null ? scenario : parse().scenario;
-        }
-
-        String userId() {
-            return type != null ? userId : parse().userId;
-        }
-
-        String request() {
-            return type != null ? request : parse().request;
-        }
-
-        long logTime() {
-            if (type == null) {
-                parse();
-            }
-            return type == Type.RUN || type == Type.USER_START ? start : end;
-        }
-
-        boolean ok() {
-            if (type == null) {
-                parse();
-            }
-            return type != null ? ok : parse().ok;
-        }
-
-        LogLine parse() {
-            String [] cols = rawLine.split("\\t");
-
-            if ("RUN".equals(cols[2])) {
-                type = Type.RUN;
-                start = Long.parseLong(cols[3]);
-            } else if ("REQUEST".equals(cols[2])) {
-                type = Type.REQUEST;
-                scenario = cols[0];
-                userId = cols[1];
-                request = cols[4];
-                start = Long.parseLong(cols[5]);
-                end = Long.parseLong(cols[8]);
-                ok = "OK".equals(cols[9]);
-            } else if ("USER".equals(cols[2])) {
-                if ("START".equals(cols[3])) {
-                    type = Type.USER_START;
-                } else if ("END".equals(cols[3])) {
-                    type = Type.USER_END;
-                } else {
-                    throw new RuntimeException("Unknown log entry type: USER " + cols[3]);
-                }
-                scenario = cols[0];
-                userId = cols[1];
-                start = Long.parseLong(cols[4]);
-                end = Long.parseLong(cols[5]);
-            } else {
-                throw new RuntimeException("Unknow log entry type: " + cols[2]);
-            }
-
-            return this;
-        }
-
-        enum Type {
-            RUN,
-            REQUEST,
-            USER_START,
-            USER_END
-        }
     }
 
 
@@ -533,11 +353,6 @@ public class LogProcessor {
                         }
                         endMillis = Long.valueOf(args[++i]);
                         break;
-                    case "--completeSessions":
-                        //INLAYED_INCLUDED = true;
-                        OUTLAYED_INCLUDED = true;
-                        COMPLETE_SESSIONS = true;
-                        break;
                     case "--lastRequest":
                         if (i == args.length - 1) {
                             throw new RuntimeException("Argument " + arg + " requires a LABEL");
@@ -567,11 +382,11 @@ public class LogProcessor {
             if (performStat) {
                 Stats stats = proc.stats();
                 // Print out results
-                System.out.println("Start time: " + stats.startTime);
-                System.out.println("End time: " + stats.lastUserEnd);
-                System.out.println("Duration (ms): " + (stats.lastUserEnd - stats.startTime));
-                System.out.println("Ramping up completes at: " + stats.lastUserStart);
-                System.out.println("Ramping down starts at: " + stats.firstUserEnd);
+                System.out.println("Start time: " + stats.getStartTime());
+                System.out.println("End time: " + stats.getLastUserEnd());
+                System.out.println("Duration (ms): " + (stats.getLastUserEnd() - stats.getStartTime()));
+                System.out.println("Ramping up completes at: " + stats.getLastUserStart());
+                System.out.println("Ramping down starts at: " + stats.getFirstUserEnd());
                 System.out.println();
 
                 System.out.println("HTTP Requests:");
@@ -583,7 +398,7 @@ public class LogProcessor {
                 System.out.println();
 
                 System.out.println("Times of completed iterations:");
-                for (Map.Entry<String, ArrayList<Long>> ent: stats.completedIterations.entrySet()) {
+                for (Map.Entry<String, ArrayList<Long>> ent: stats.getCompletedIterations().entrySet()) {
                     System.out.println("  " + ent.getKey() + ": " + ent.getValue());
                 }
             }

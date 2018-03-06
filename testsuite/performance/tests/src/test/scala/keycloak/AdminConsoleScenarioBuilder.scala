@@ -53,7 +53,7 @@ class AdminConsoleScenarioBuilder {
 
   var chainBuilder = exec(s => {
     val realm = TestConfig.randomRealmsIterator().next()
-    val serverUrl = TestConfig.serverUrisList.get(0)
+    val serverUrl = TestConfig.serverUrisIterator.next()
     s.setAll(
       "keycloakServer" -> serverUrl,
       "keycloakServerUrlEncoded" -> urlencode(serverUrl),
