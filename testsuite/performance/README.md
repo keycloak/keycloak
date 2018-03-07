@@ -80,6 +80,13 @@ it is necessary to update the generated Keycloak server configuration (inside `k
 adding a `clean` goal to the provisioning command like so: `mvn clean verify -Pprovision …`. It is *not* necessary to update this configuration 
 when switching between `singlenode` and `cluster` deployments.
 
+### Collect Artifacts
+
+Usage: `mvn verify -Pcollect`
+
+Collects artifacts such as logs from the provisioned system and stores them in `tests/target/collected-artifacts/${deployment}-TIMESTAMP/`.
+When used in combination with teardown (see below) the artifacts are collected just before the system is torn down.
+
 ### Teardown
 
 Usage: `mvn verify -Pteardown [-Dprovisioner=<PROVISIONER>]`
