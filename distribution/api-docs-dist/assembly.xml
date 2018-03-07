@@ -39,6 +39,7 @@
         <file>
             <source>src/index.html</source>
             <outputDirectory></outputDirectory>
+            <filtered>true</filtered>
         </file>
     </files>
 
