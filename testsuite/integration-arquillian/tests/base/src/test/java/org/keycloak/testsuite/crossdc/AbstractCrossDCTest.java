@@ -377,10 +377,10 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
             File dir = new File(cleanServerBaseDir);
             if (dir.exists()) {
                 try {
-                    FileUtils.cleanDirectory(dir);
+                    dir.renameTo(new File(dir.getParentFile(), dir.getName() + "--" + System.currentTimeMillis()));
 
                     File deploymentsDir = new File(dir, "deployments");
-                    deploymentsDir.mkdir();
+                    FileUtils.forceMkdir(deploymentsDir);
                 } catch (IOException ioe) {
                     throw new RuntimeException("Failed to clean directory: " + cleanServerBaseDir, ioe);
                 }

@@ -384,6 +384,7 @@
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -409,6 +410,7 @@
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -435,6 +437,7 @@
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
@@ -460,6 +463,7 @@
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                 </property>
                 <property name="javaVmArguments">
                     -Djava.net.preferIPv4Stack=true
