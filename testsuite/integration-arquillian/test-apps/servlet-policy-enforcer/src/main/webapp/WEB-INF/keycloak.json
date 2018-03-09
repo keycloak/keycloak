@@ -60,6 +60,14 @@
             {
                 "name": "Pattern 12",
                 "path": "/keycloak_json_uri"
+            },
+            {
+              "name": "Pattern 14",
+              "path": "/keycloak-6623/sub-resource/*"
+            },
+            {
+              "name": "Pattern 13",
+              "path": "/keycloak-6623/*"
             }
         ]
     }
