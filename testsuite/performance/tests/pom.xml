@@ -185,6 +185,7 @@
                             <goal>read-project-properties</goal>
                         </goals>
                         <configuration>
+                            <quiet>true</quiet>
                             <files>
                                 <file>${provisioning.properties.file}</file>
                                 <file>${dataset.properties.file}</file>
@@ -456,6 +457,12 @@
         
         <profile>
             <id>generate-data</id>
+            <properties>
+                <startAtRealmIdx>0</startAtRealmIdx>
+                <ignoreConflicts>false</ignoreConflicts>
+                <skipRealmRoles>false</skipRealmRoles>
+                <skipClientRoles>false</skipClientRoles>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -504,6 +511,10 @@
                                         <argument>-DauthUser=${keycloak.admin.user}</argument>
                                         <argument>-DauthPassword=${keycloak.admin.password}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
+                                        <argument>-DstartAtRealmIdx=${startAtRealmIdx}</argument>
+                                        <argument>-DignoreConflicts=${ignoreConflicts}</argument>
+                                        <argument>-DskipRealmRoles=${skipRealmRoles}</argument>
+                                        <argument>-DskipClientRoles=${skipClientRoles}</argument>
                                         <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
                                         <argument>benchmark-realms.json</argument>
                                     </arguments>
