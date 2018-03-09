@@ -17,7 +17,7 @@ image:{project_images}/login-tab.png[]
 The `Require SSL` option allows you to pick the SSL Mode you want.  Here is an explanation of each mode:
 
 external requests::
-  Users can interact with {project_name} so long as they stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
+  Users can interact with {project_name} so long as they stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172.16.x.x`.
   If you try to access {project_name} from a non-private IP address you will get an error.
 
 none::
