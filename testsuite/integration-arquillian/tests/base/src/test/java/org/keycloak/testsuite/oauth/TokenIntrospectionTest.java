@@ -36,6 +36,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
+import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
@@ -226,7 +227,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(loginEvent.getUserId(), rep.getSubject());
 
         // Assert expected scope
-        OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
+        AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
     @Test

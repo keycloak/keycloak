@@ -1,0 +1,46 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/client-scopes">{{:: 'client-scopes' | translate}}</a></li>
+        <li>{{:: 'add-client-scope-step-1' | translate}}</li>
+    </ol>
+
+    <h1>{{:: 'add-client-scope-step-1' | translate}}</h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="clientScopeTemplate">{{:: 'client-scope-template' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="clientScopeTemplate"
+                                ng-model="clientScopeTemplate"
+                                ng-options="temp.value as temp.name for temp in clientScopeTemplates">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'client-scope-template.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix" data-ng-show="clientScopeTemplate === 'audience'">
+                <label class="col-md-2 control-label" for="clients">{{:: 'audience-client' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input type="hidden" ui-select2="audienceClientUiSelect" id="clients" data-ng-model="selectedAudienceClient" data-ng-change="selectAudienceClient(selectedAudienceClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
+                    </input>
+                </div>
+
+                <kc-tooltip>{{:: 'audience-client.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
+                <button class="btn btn-primary" data-ng-click="next()">{{:: 'next' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

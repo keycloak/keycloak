@@ -22,12 +22,17 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -38,6 +43,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -115,6 +121,55 @@ public class ClientScopesResource {
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
+        }
+    }
+
+    /**
+     * Generate new client scope for specified service client. The "Frontend" clients, who will use this client scope, will be able to
+     * send their access token to authenticate against specified service client
+     *
+     * @param clientId Client ID of service client (typically bearer-only client)
+     * @return
+     */
+    @Path("generate-audience-client-scope")
+    @POST
+    @NoCache
+    public Response generateAudienceClientScope(final @QueryParam("clientId") String clientId) {
+        auth.clients().requireManageClientScopes();
+
+        logger.debugf("Generating audience scope for service client: " + clientId);
+
+        String clientScopeName = clientId;
+        try {
+            ClientModel serviceClient = realm.getClientByClientId(clientId);
+            if (serviceClient == null) {
+                logger.warnf("Referenced service client '%s' doesn't exists", clientId);
+                return ErrorResponse.exists("Referenced service client doesn't exists");
+            }
+
+            ClientScopeModel clientScopeModel = realm.addClientScope(clientScopeName);
+            clientScopeModel.setDescription("Client scope useful for frontend clients, which want to call service " + clientId);
+            clientScopeModel.setProtocol(serviceClient.getProtocol()==null ? OIDCLoginProtocol.LOGIN_PROTOCOL : serviceClient.getProtocol());
+            clientScopeModel.setDisplayOnConsentScreen(true);
+
+            String consentText = serviceClient.getName() != null ? serviceClient.getName() : serviceClient.getClientId();
+            consentText = consentText.substring(0, 1).toUpperCase() + consentText.substring(1);
+            clientScopeModel.setConsentScreenText(consentText);
+
+            // Add audience protocol mapper
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
+            clientScopeModel.addProtocolMapper(audienceMapper);
+
+            // Add scope to client roles
+            for (RoleModel role : serviceClient.getRoles()) {
+                clientScopeModel.addScopeMapping(role);
+            }
+
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).success();
+
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientScopeModel.getId()).build()).build();
+        } catch (ModelDuplicateException e) {
+            return ErrorResponse.exists("Client Scope " + clientScopeName + " already exists");
         }
     }
 
