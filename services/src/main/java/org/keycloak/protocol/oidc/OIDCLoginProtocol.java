@@ -221,7 +221,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 
                 // Financial API - Part 2: Read and Write API Security Profile
                 // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
-                if (state != null)
+                if (state != null && !state.isEmpty())
                     responseBuilder.generateStateHash(state);
             }
 
