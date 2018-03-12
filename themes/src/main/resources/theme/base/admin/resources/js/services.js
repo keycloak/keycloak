@@ -1210,6 +1210,13 @@ module.factory('Client', function($resource) {
     });
 });
 
+module.factory('ClientScopeGenerateAudienceClientScope', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/generate-audience-client-scope?clientId=:clientId', {
+        realm : '@realm',
+        clientId : "@clientId"
+    });
+});
+
 module.factory('ClientScope', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope', {
         realm : '@realm',
