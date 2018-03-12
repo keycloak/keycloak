@@ -118,7 +118,6 @@ public class ResourceSetService {
     public Response create(ResourceRepresentation resource, Function<Resource, ?> toRepresentation) {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
         ResourceOwnerRepresentation owner = resource.getOwner();
 
         if (owner == null) {
@@ -132,7 +131,9 @@ public class ResourceSetService {
             return ErrorResponse.error("You must specify the resource owner.", Status.BAD_REQUEST);
         }
 
-        if (existingResource != null && existingResource.getOwner().equals(ownerId)) {
+        Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), ownerId, this.resourceServer.getId());
+
+        if (existingResource != null) {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 

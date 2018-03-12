@@ -68,7 +68,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         resource = addResource("Resource A", "marta", true, "ScopeA", "ScopeB");
 
         permission.setName(resource.getName() + " Permission");
-        permission.addResource(resource.getName());
+        permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
@@ -91,7 +91,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         try {
-            response = authorize("kolo", "password", resource.getName(), new String[] {"ScopeA", "ScopeB"});
+            response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
             fail("User should have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
 
@@ -104,7 +104,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         resource = addResource("Resource A", "marta", true, "ScopeA", "ScopeB");
 
         permission.setName(resource.getName() + " Permission");
-        permission.addResource(resource.getName());
+        permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
@@ -127,7 +127,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         try {
-            response = authorize("kolo", "password", "Resource A", new String[] {});
+            response = authorize("kolo", "password", resource.getId(), new String[] {});
             fail("User should have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
 
@@ -156,7 +156,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
-        response = authorize("kolo", "password", resource.getName(), new String[] {"ScopeA", "ScopeB"});
+        response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
         rpt = response.getToken();
 
         assertNotNull(rpt);
@@ -180,7 +180,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         resource = addResource("Resource A", "marta", true);
 
         permission.setName(resource.getName() + " Permission");
-        permission.addResource(resource.getName());
+        permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
@@ -203,7 +203,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         try {
-            response = authorize("kolo", "password", "Resource A", new String[] {});
+            response = authorize("kolo", "password", resource.getId(), new String[] {});
             fail("User should have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
 
@@ -232,7 +232,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
-        response = authorize("kolo", "password", resource.getName(), new String[] {});
+        response = authorize("kolo", "password", resource.getId(), new String[] {});
         rpt = response.getToken();
 
         assertNotNull(rpt);
@@ -249,7 +249,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, resource.getName());
         assertTrue(permissions.isEmpty());
 
-        response = authorize("kolo", "password", resource.getName(), new String[] {});
+        response = authorize("kolo", "password", resource.getId(), new String[] {});
         rpt = response.getToken();
 
         assertNotNull(rpt);
@@ -282,7 +282,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         resource = addResource("Resource A", "marta", true, "ScopeA", "ScopeB");
 
         permission.setName(resource.getName() + " Permission");
-        permission.addResource(resource.getName());
+        permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
@@ -305,7 +305,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         try {
-            response = authorize("kolo", "password", "Resource A", new String[] {"ScopeA"});
+            response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA"});
             fail("User should have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
 
@@ -324,7 +324,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permissionResource.update(ticket);
 
-        response = authorize("kolo", "password", resource.getName(), new String[] {"ScopeA", "ScopeB"});
+        response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
         rpt = response.getToken();
 
         assertNotNull(rpt);

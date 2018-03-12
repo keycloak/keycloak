@@ -18,12 +18,11 @@
 
 package org.keycloak.testsuite.admin.client.authorization;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
@@ -35,6 +34,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -44,33 +44,6 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ResourceManagementTest extends AbstractAuthorizationTest {
-
-    @Before
-    @Override
-    public void onBeforeAuthzTests() {
-        super.onBeforeAuthzTests();
-        enableAuthorizationServices();
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setId("authz-test");
-        testRealmRep.setRealm("authz-test");
-        testRealmRep.setEnabled(true);
-        testRealms.add(testRealmRep);
-    }
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm("authz-test");
-    }
-
-    @Override
-    protected String getRealmId() {
-        return "authz-test";
-    }
 
     @Test
     public void testCreate() {
@@ -100,6 +73,28 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
 
         assertNotNull(newResource.getId());
         assertEquals("Test Resource Another", newResource.getName());
+    }
+
+    @Test
+    public void failCreateWithSameNameDifferentOwner() {
+        ResourceRepresentation martaResource = createResource("Resource A", "marta", null, null, null);
+        ResourceRepresentation koloResource = createResource("Resource A", "kolo", null, null, null);
+
+        assertNotNull(martaResource.getId());
+        assertNotNull(koloResource.getId());
+        assertNotEquals(martaResource.getId(), koloResource.getId());
+
+        assertEquals(2, getClientResource().authorization().resources().findByName(martaResource.getName()).size());
+
+        List<ResourceRepresentation> martaResources = getClientResource().authorization().resources().findByName(martaResource.getName(), "marta");
+
+        assertEquals(1, martaResources.size());
+        assertEquals(martaResource.getId(), martaResources.get(0).getId());
+
+        List<ResourceRepresentation> koloResources = getClientResource().authorization().resources().findByName(martaResource.getName(), "kolo");
+
+        assertEquals(1, koloResources.size());
+        assertEquals(koloResource.getId(), koloResources.get(0).getId());
     }
 
     @Test
@@ -198,12 +193,17 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
     }
 
     private ResourceRepresentation createResource() {
+        return createResource("Test Resource", null, "/test/*", "test-resource", "icon-test-resource");
+    }
+
+    private ResourceRepresentation createResource(String name, String owner, String uri, String type, String iconUri) {
         ResourceRepresentation newResource = new ResourceRepresentation();
 
-        newResource.setName("Test Resource");
-        newResource.setUri("/test/*");
-        newResource.setType("test-resource");
-        newResource.setIconUri("icon-test-resource");
+        newResource.setName(name);
+        newResource.setUri(uri);
+        newResource.setType(type);
+        newResource.setIconUri(iconUri);
+        newResource.setOwner(owner != null ? new ResourceOwnerRepresentation(owner) : null);
 
         return doCreateResource(newResource);
     }
