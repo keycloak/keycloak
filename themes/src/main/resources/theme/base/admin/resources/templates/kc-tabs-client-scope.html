@@ -1,6 +1,6 @@
 <div data-ng-controller="ClientScopeTabCtrl">
 
-    <h1 data-ng-show="create">{{:: 'add-client-scope' | translate}}</h1>
+    <h1 data-ng-show="create">{{:: 'add-client-scope-step-2' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{clientScope.name|capitalize}}
         <i id="removeClientScope" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="removeClientScope()"></i>

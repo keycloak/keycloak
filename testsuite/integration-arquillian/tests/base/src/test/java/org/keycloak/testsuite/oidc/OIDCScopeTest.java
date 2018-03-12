@@ -18,17 +18,14 @@
 package org.keycloak.testsuite.oidc;
 
 import java.util.Arrays;
-import java.util.Collection;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -50,13 +47,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
@@ -70,28 +61,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
-    protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AccountApplicationsPage accountAppsPage;
-
-    @Page
-    protected ErrorPage errorPage;
+public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
     @Deployment
     public static WebArchive deploy() {
@@ -160,7 +130,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile", "test-app");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -181,7 +151,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid email profile address phone", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "test-app");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -256,7 +226,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid", "test-app");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, false);
@@ -277,7 +247,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid profile", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid profile", "test-app");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -313,7 +283,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -341,7 +311,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid email profile address phone", "third-party");
+        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "third-party");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -378,7 +348,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -408,7 +378,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
         RefreshToken refreshToken1 = oauth.parseRefreshToken(tokens.refreshToken);
 
@@ -496,7 +466,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens1 = sendTokenRequest(loginEvent, "openid email profile scope-role-1", "test-app");
+        Tokens tokens1 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-1", "test-app");
         Assert.assertTrue(tokens1.accessToken.getRealmAccess().isUserInRole("role-1"));
         Assert.assertFalse(tokens1.accessToken.getRealmAccess().isUserInRole("role-2"));
 
@@ -504,7 +474,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         oauth.scope("scope-role-2");
         oauth.openLoginForm();
         loginEvent = events.expectLogin().user(userId).removeDetail(Details.USERNAME).client("test-app").assertEvent();
-        Tokens tokens2 = sendTokenRequest(loginEvent, "openid email profile scope-role-2", "test-app");
+        Tokens tokens2 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-2", "test-app");
         Assert.assertFalse(tokens2.accessToken.getRealmAccess().isUserInRole("role-1"));
         Assert.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
 
@@ -527,57 +497,6 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         testApp.update(testAppRep);
         testApp.removeOptionalClientScope(scope1Id);
         testApp.removeOptionalClientScope(scope2Id);
-    }
-
-
-    protected Tokens sendTokenRequest(EventRepresentation loginEvent, String expectedScope, String clientId) {
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertEquals(200, response.getStatusCode());
-
-        // Test scopes
-        log.info("expectedScopes = " + expectedScope);
-        log.info("responseScopes = " + response.getScope());
-        assertScopes(expectedScope, response.getScope());
-
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-
-        // Test scope in the access token
-        assertScopes(expectedScope, accessToken.getScope());
-
-        EventRepresentation codeToTokenEvent = events.expectCodeToToken(codeId, sessionId)
-                .user(userId)
-                .client(clientId)
-                .assertEvent();
-
-        // Test scope in the event
-        assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));
-
-        return new Tokens(idToken, accessToken, response.getRefreshToken());
-    }
-
-    public static void assertScopes(String expectedScope, String receivedScope) {
-        Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
-        Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
-    }
-
-
-    private static class Tokens {
-        private final IDToken idToken;
-        private final AccessToken accessToken;
-        private final String refreshToken;
-
-        private Tokens(IDToken idToken, AccessToken accessToken, String refreshToken) {
-            this.idToken = idToken;
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
-        }
     }
 
 }
