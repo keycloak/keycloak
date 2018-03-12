@@ -1,0 +1,51 @@
+<div id="{{include.id}}"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var groupedcCategories = ['2013', '2014', '2015'];
+  var groupedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var groupedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var groupedHorizontalBarChartConfig = $().c3ChartDefaults().getDefaultGroupedBarConfig();
+  groupedHorizontalBarChartConfig.bindto = '#{{include.id}}';
+  groupedHorizontalBarChartConfig.axis = {
+    rotated: true,
+    x: {
+      categories: groupedcCategories,
+      type: 'category'
+    }
+  };
+  groupedHorizontalBarChartConfig.data = {
+    type: 'bar',
+    columns: groupedColumnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  groupedHorizontalBarChartConfig.color = groupedColors;
+  var groupedHorizontalBarChart = c3.generate(groupedHorizontalBarChartConfig);
+</script>

@@ -237,6 +237,9 @@ public class RealmEntity {
     @Column(name="DEFAULT_LOCALE")
     protected String defaultLocale;
 
+    @Column(name="ALLOW_USER_MANAGED_ACCESS")
+    private boolean allowUserManagedAccess;
+
 
     public String getId() {
         return id;
@@ -762,6 +765,14 @@ public class RealmEntity {
         this.clientTemplates = clientTemplates;
     }
 
+    public void setAllowUserManagedAccess(boolean allowUserManagedAccess) {
+        this.allowUserManagedAccess = allowUserManagedAccess;
+    }
+
+    public boolean isAllowUserManagedAccess() {
+        return allowUserManagedAccess;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -779,6 +790,5 @@ public class RealmEntity {
     public int hashCode() {
         return id.hashCode();
     }
-
 }
 

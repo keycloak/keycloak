@@ -1,0 +1,39 @@
+{% include widgets/layouts/navbar-primary.html %}
+{% include widgets/layouts/toolbar.html %}
+<div class="container-fluid container-cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-single-select" %}
+    </div>
+  </div>
+</div>
+<script>
+  $(function() {
+    // matchHeight the contents of each .card-pf and then the .card-pf itself
+    $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+  });
+  $(document).ready(function() {
+    // Card Single Select
+    $('.card-pf-view-single-select').click(function() {
+      if ($(this).hasClass('active'))
+      { $(this).removeClass('active'); }
+      else
+      { $('.card-pf-view-single-select').removeClass('active'); $(this).addClass('active'); }
+    });
+  });
+</script>

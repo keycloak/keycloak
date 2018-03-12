@@ -47,11 +47,12 @@ public class ResourceRepresentation {
     @JsonProperty("icon_uri")
     private String iconUri;
     private ResourceOwnerRepresentation owner;
+    private Boolean ownerManagedAccess;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
-    private List<ScopeRepresentation> typedScopes;
 
+    private String displayName;
     /**
      * Creates a new instance.
      *
@@ -121,6 +122,10 @@ public class ResourceRepresentation {
         return this.name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public String getUri() {
         return this.uri;
     }
@@ -143,6 +148,10 @@ public class ResourceRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setUri(String uri) {
@@ -169,12 +178,21 @@ public class ResourceRepresentation {
         this.owner = owner;
     }
 
-    public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
-        this.typedScopes = typedScopes;
+    public Boolean getOwnerManagedAccess() {
+        return ownerManagedAccess;
     }
 
-    public List<ScopeRepresentation> getTypedScopes() {
-        return typedScopes;
+    public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
+    public void addScope(String... scopeNames) {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
+        for (String scopeName : scopeNames) {
+            scopes.add(new ScopeRepresentation(scopeName));
+        }
     }
 
     public boolean equals(Object o) {

@@ -138,7 +138,7 @@ public class SamlEcpProfileTest {
 
         SOAPHeader responseMessageHeaders = responseMessage.getSOAPHeader();
 
-        NodeList ecpResponse = responseMessageHeaders.getElementsByTagNameNS(JBossSAMLURIConstants.ECP_PROFILE.get(), JBossSAMLConstants.RESPONSE.get());
+        NodeList ecpResponse = responseMessageHeaders.getElementsByTagNameNS(JBossSAMLURIConstants.ECP_PROFILE.get(), JBossSAMLConstants.RESPONSE__ECP.get());
 
         assertEquals("No ECP Response", 1, ecpResponse.getLength());
 
@@ -146,7 +146,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        ResponseType responseType = (ResponseType) new SAMLParser().parse(samlResponse);
+        ResponseType responseType = (ResponseType) SAMLParser.getInstance().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertEquals(statusCode.getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
@@ -229,7 +229,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        StatusResponseType responseType = (StatusResponseType) new SAMLParser().parse(samlResponse);
+        StatusResponseType responseType = (StatusResponseType) SAMLParser.getInstance().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertNotEquals(statusCode.getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());

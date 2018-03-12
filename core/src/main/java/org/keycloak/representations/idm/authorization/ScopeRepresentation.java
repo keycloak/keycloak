@@ -35,6 +35,7 @@ public class ScopeRepresentation {
     private String iconUri;
     private List<PolicyRepresentation> policies;
     private List<ResourceRepresentation> resources;
+    private String displayName;
 
     /**
      * Creates an instance.
@@ -67,6 +68,10 @@ public class ScopeRepresentation {
         return this.name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public String getIconUri() {
         return this.iconUri;
     }
@@ -81,6 +86,10 @@ public class ScopeRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setIconUri(String iconUri) {

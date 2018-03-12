@@ -106,7 +106,7 @@ public class AuthenticationSessionManager {
     }
 
 
-    private String getAuthSessionCookieDecoded(RealmModel realm) {
+    public String getAuthSessionCookieDecoded(RealmModel realm) {
         String cookieVal = CookieHelper.getCookieValue(AUTH_SESSION_ID);
 
         if (cookieVal != null) {

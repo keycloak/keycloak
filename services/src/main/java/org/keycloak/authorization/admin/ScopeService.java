@@ -120,7 +120,7 @@ public class ScopeService {
         List<Resource> resources = storeFactory.getResourceStore().findByScope(Arrays.asList(id), resourceServer.getId());
 
         if (!resources.isEmpty()) {
-            return ErrorResponse.exists("Scopes can not be removed while associated with resources.");
+            return ErrorResponse.error("Scopes can not be removed while associated with resources.", Status.BAD_REQUEST);
         }
 
         Scope scope = storeFactory.getScopeStore().findById(id, resourceServer.getId());

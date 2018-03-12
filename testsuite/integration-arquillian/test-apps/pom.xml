@@ -15,9 +15,7 @@
     <name>Test apps</name>
 
     <modules>
-        <module>js-console</module>
         <module>test-apps-dist</module>
-        <module>js-database</module>
         <module>photoz</module>
         <module>hello-world-authz-service</module>
         <module>servlet-authz</module>

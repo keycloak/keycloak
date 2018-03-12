@@ -21,6 +21,7 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.keycloak.provider.DefaultProviderLoader;
+import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderLoader;
 import org.keycloak.provider.ProviderLoaderFactory;
 
@@ -35,11 +36,11 @@ public class ModuleProviderLoaderFactory implements ProviderLoaderFactory {
     }
 
     @Override
-    public ProviderLoader create(ClassLoader baseClassLoader, String resource) {
+    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
         try {
             Module module = Module.getContextModuleLoader().loadModule(ModuleIdentifier.fromString(resource));
             ModuleClassLoader classLoader = module.getClassLoader();
-            return new DefaultProviderLoader(classLoader);
+            return new DefaultProviderLoader(info, classLoader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -39,7 +39,6 @@
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.IdentityProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.IdentityProviderMapperEntity</class>
-        <class>org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentRoleEntity</class>
@@ -67,6 +66,7 @@
         <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>
         <class>org.keycloak.authorization.jpa.entities.ScopeEntity</class>
         <class>org.keycloak.authorization.jpa.entities.PolicyEntity</class>
+        <class>org.keycloak.authorization.jpa.entities.PermissionTicketEntity</class>
 
         <!-- User Federation Storage -->
         <class>org.keycloak.storage.jpa.entity.BrokerLinkEntity</class>

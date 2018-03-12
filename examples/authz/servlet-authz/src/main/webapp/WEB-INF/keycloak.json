@@ -1,6 +1,6 @@
 {
   "realm": "servlet-authz",
-  "auth-server-url": "http://localhost:8080/auth",
+  "auth-server-url": "http://localhost:8180/auth",
   "ssl-required": "external",
   "resource": "servlet-authz-app",
   "credentials": {

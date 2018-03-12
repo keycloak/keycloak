@@ -4,6 +4,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import java.io.Closeable;
 import java.util.HashMap;
+import java.util.function.Consumer;
 
 /**
  *
@@ -23,6 +24,11 @@ public class RealmAttributeUpdater {
         if (this.rep.getAttributes() == null) {
             this.rep.setAttributes(new HashMap<>());
         }
+    }
+
+    public RealmAttributeUpdater updateWith(Consumer<RealmRepresentation> updater) {
+        updater.accept(this.rep);
+        return this;
     }
 
     public RealmAttributeUpdater setAttribute(String name, String value) {

@@ -1,0 +1,25 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: cards
+resource: true
+title: Cards
+full-page: true
+url-js-extra: ['https://cdnjs.cloudflare.com/ajax/libs/jquery.matchHeight/0.7.2/jquery.matchHeight-min.js', 'https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js']
+weight: 8
+---
+{% include widgets/layouts/navbar-primary.html %}
+    <div class="container-fluid container-cards-pf">
+{% include widgets/layouts/cards.html %}
+    </div><!-- /container -->
+    <script>
+      $(function() {
+        // matchHeight the contents of each .card-pf and then the .card-pf itself
+        $(".row-cards-pf > [class*='col'] > .card-pf .card-pf-title").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-footer").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf").matchHeight();
+        // initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+      });
+    </script>

@@ -39,8 +39,13 @@ declare namespace Keycloak {
 		/**
 		 * @private Undocumented.
 		 */
-		adapter?: KeycloakAdapterName;
+		useNonce?: boolean;
 
+		/**
+		 * @private Undocumented.
+		 */
+		adapter?: KeycloakAdapterName;
+		
 		/**
 		 * Specifies an action to do on load.
 		 */
@@ -78,7 +83,7 @@ declare namespace Keycloak {
 		 * Set the interval to check login state (in seconds).
 		 * @default 5
 		 */
-		checkLoginIframeInterval?: boolean;
+		checkLoginIframeInterval?: number;
 
 		/**
 		 * Set the OpenID Connect response mode to send to Keycloak upon login.

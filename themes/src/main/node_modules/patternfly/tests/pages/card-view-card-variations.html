@@ -1,0 +1,57 @@
+---
+categories: [Widgets]
+layout: page
+title: Card View - Card Variations
+resource: true
+---
+
+<h2>Large Card</h2>
+<div class="cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+{% include widgets/cards/object-status.html %}
+    </div>
+  </div>
+</div>
+<h2>Small Card</h2>
+<div class="cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+  {% include widgets/cards/object-status.html %}
+    </div>
+  </div><!-- /row -->
+</div>
+<h2>Mini Card with status</h2>
+<div class="cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-3 col-md-2">
+  {% include widgets/cards/status-inline-actions-xs.html %}
+    </div>
+  </div><!-- /row -->
+</div>
+<h2>Mini Card with text</h2>
+<div class="cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-3 col-md-2">
+  {% include widgets/cards/summary-inline-actions-xs.html %}
+    </div>
+  </div>
+</div>
+<script>
+  $(document).ready(function() {
+    // Card Single Select
+    $('.card-pf-view-single-select').click(function() {
+      if ($(this).hasClass('active'))
+      { $(this).removeClass('active'); }
+      else
+      { $('.card-pf-view-single-select').removeClass('active'); $(this).addClass('active'); }
+    });
+    // Card Multi Select
+    $('input[type=checkbox]').click(function() {
+      if ($(this).parent().parent().hasClass('active'))
+      { $(this).parent().parent().removeClass('active'); }
+      else
+      { $(this).parent().parent().addClass('active'); }
+    });
+  });
+</script>

@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -179,11 +180,11 @@ public interface RealmResource {
     AttackDetectionResource attackDetection();
 
     @Path("testLDAPConnection")
-    @GET
+    @POST
     @NoCache
-    Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
-                                @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
+    Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
+                                @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
+                                @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout);
 
     @Path("testSMTPConnection/{config}")
     @POST

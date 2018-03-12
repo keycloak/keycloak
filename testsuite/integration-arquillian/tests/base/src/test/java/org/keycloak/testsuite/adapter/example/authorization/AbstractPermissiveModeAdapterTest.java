@@ -33,7 +33,7 @@ public abstract class AbstractPermissiveModeAdapterTest extends AbstractServletA
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID)
-                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/servlet-authz-realm.json"), "keycloak.-permissive-authz-service.json");
+                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/servlet-authz-realm.json"), "keycloak-permissive-authz-service.json");
     }
 
     @Test
@@ -41,8 +41,13 @@ public abstract class AbstractPermissiveModeAdapterTest extends AbstractServletA
         performTests(() -> {
             login("jdoe", "jdoe");
             driver.navigate().to(getResourceServerUrl() + "/enforcing/resource");
-            assertTrue(driver.getTitle().equals("Error"));
-            assertTrue(driver.getPageSource().contains("Not Found"));
+
+            if (System.getProperty("app.server","").startsWith("eap6")) {
+                assertTrue(driver.getPageSource().contains("HTTP Status 404"));
+            } else {
+                assertTrue(driver.getTitle().equals("Error"));
+                assertTrue(driver.getPageSource().contains("Not Found"));
+            }
 
             driver.navigate().to(getResourceServerUrl() + "/protected/admin");
             assertTrue(wasDenied());

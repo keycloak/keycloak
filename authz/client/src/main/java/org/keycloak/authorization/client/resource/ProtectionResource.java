@@ -17,38 +17,58 @@
  */
 package org.keycloak.authorization.client.resource;
 
-import java.util.concurrent.Callable;
-
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.TokenCallable;
 
 /**
+ * An entry point to access the Protection API endpoints.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ProtectionResource {
 
-    private final Callable<String> pat;
+    private final TokenCallable pat;
     private final Http http;
+    private ServerConfiguration serverConfiguration;
 
-    public ProtectionResource(Http http, Callable<String> pat) {
+    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
         if (pat == null) {
             throw new RuntimeException("No access token was provided when creating client for Protection API.");
         }
 
         this.http = http;
+        this.serverConfiguration = serverConfiguration;
         this.pat = pat;
     }
 
+    /**
+     * Creates a {@link ProtectedResource} which can be used to manage resources.
+     *
+     * @return a {@link ProtectedResource}
+     */
     public ProtectedResource resource() {
-        return new ProtectedResource(http, pat);
+        return new ProtectedResource(http, serverConfiguration, pat);
     }
 
+    /**
+     * Creates a {@link PermissionResource} which can be used to manage permission tickets.
+     *
+     * @return a {@link PermissionResource}
+     */
     public PermissionResource permission() {
-        return new PermissionResource(http, pat);
+        return new PermissionResource(http, serverConfiguration, pat);
     }
 
+    /**
+     * Introspects the given <code>rpt</code> using the token introspection endpoint.
+     *
+     * @param rpt the rpt to introspect
+     * @return the {@link TokenIntrospectionResponse}
+     */
     public TokenIntrospectionResponse introspectRequestingPartyToken(String rpt) {
-        return this.http.<TokenIntrospectionResponse>post("/protocol/openid-connect/token/introspect")
+        return this.http.<TokenIntrospectionResponse>post(serverConfiguration.getTokenIntrospectionEndpoint())
                 .authentication()
                     .client()
                 .form()

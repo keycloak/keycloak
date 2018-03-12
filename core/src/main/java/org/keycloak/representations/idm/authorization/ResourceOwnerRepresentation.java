@@ -24,6 +24,14 @@ public class ResourceOwnerRepresentation {
     private String id;
     private String name;
 
+    public ResourceOwnerRepresentation() {
+
+    }
+
+    public ResourceOwnerRepresentation(String id) {
+        this.id = id;
+    }
+
     public String getId() {
         return this.id;
     }

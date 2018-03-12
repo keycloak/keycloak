@@ -88,6 +88,7 @@ import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.processing.api.util.KeyInfoTools;
 
 /**

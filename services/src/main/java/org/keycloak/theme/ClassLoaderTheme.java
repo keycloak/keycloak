@@ -105,16 +105,6 @@ public class ClassLoaderTheme implements Theme {
     }
 
     @Override
-    public InputStream getTemplateAsStream(String name) {
-        return classLoader.getResourceAsStream(templateRoot + name);
-    }
-
-    @Override
-    public URL getResource(String path) {
-        return classLoader.getResource(resourceRoot + path);
-    }
-
-    @Override
     public InputStream getResourceAsStream(String path) {
         return classLoader.getResourceAsStream(resourceRoot + path);
     }

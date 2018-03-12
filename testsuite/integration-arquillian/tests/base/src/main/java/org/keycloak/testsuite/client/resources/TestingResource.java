@@ -286,4 +286,14 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     String runOnServer(String runOnServer);
 
+    @GET
+    @Path("js/keycloak.js")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    String getJavascriptAdapter();
+
+    @GET
+    @Path("/get-javascript-testing-environment")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    String getJavascriptTestingEnvironment();
+
 }

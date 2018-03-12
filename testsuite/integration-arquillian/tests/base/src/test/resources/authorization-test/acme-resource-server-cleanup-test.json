@@ -13,8 +13,7 @@
         {
           "name": "urn:acme.com:scopes:admin:view"
         }
-      ],
-      "typedScopes": []
+      ]
     },
     {
       "name": "Role resource",
@@ -24,8 +23,7 @@
         {
           "name": "urn:acme.com:scopes:role:view"
         }
-      ],
-      "typedScopes": []
+      ]
     },
     {
       "name": "User profile resource",
@@ -38,8 +36,7 @@
         {
           "name": "urn:acme.com:scopes:userprofile:view"
         }
-      ],
-      "typedScopes": []
+      ]
     },
     {
       "name": "Account resource",
@@ -49,8 +46,7 @@
         {
           "name": "urn:acme.com:scopes:account:manage"
         }
-      ],
-      "typedScopes": []
+      ]
     }
   ],
   "policies": [

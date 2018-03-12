@@ -38,8 +38,8 @@ public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
     }
 
     @Override
-    public ProviderLoader create(ClassLoader baseClassLoader, String resource) {
-        return new DefaultProviderLoader(createClassLoader(baseClassLoader, resource.split(";")));
+    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
+        return new DefaultProviderLoader(info, createClassLoader(baseClassLoader, resource.split(";")));
     }
 
     private static URLClassLoader createClassLoader(ClassLoader parent, String... files) {

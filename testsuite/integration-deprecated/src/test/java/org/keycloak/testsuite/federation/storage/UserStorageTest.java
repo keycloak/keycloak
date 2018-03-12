@@ -167,16 +167,36 @@ public class UserStorageTest {
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("test");
         CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
-        long thorTimestamp = thor.getCacheTimestamp();
+        long lastTimestamp = thor.getCacheTimestamp();
         realm.updateComponent(model);
         keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        lastTimestamp = thor.getCacheTimestamp();
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        // test is cached
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        // thor should be evicted because we changed the model
+        Assert.assertTrue(thor.getCacheTimestamp() > lastTimestamp);
+        lastTimestamp = thor.getCacheTimestamp();
+        keycloakRule.stopSession(session, true);
+
 
         Time.setOffset(60 * 2 * 60); // 2 hours
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
         UserModel thor2 = session.users().getUserByUsername("thor", realm);
-        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        // thor should be evicted because we put it 2 hours in the future
+        if (thor2 instanceof CachedUserModel) {
+            Assert.assertTrue(((CachedUserModel)thor2).getCacheTimestamp() > lastTimestamp);
+        }
         model.getConfig().remove("cachePolicy");
         model.getConfig().remove("evictionHour");
         model.getConfig().remove("evictionMinute");
@@ -199,8 +219,25 @@ public class UserStorageTest {
 
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("test");
-        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
         realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        long lastTimestamp = thor.getCacheTimestamp();
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        lastTimestamp = thor.getCacheTimestamp();
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        lastTimestamp = thor.getCacheTimestamp();
         keycloakRule.stopSession(session, true);
 
         Time.setOffset(60 * 60 * 24 * 2); // 2 days in future, should be cached still
@@ -208,15 +245,20 @@ public class UserStorageTest {
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
         // test still
-        UserModel thor2 = session.users().getUserByUsername("thor", realm);
-        Assert.assertTrue(thor2 instanceof CachedUserModel);
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        Assert.assertEquals(thor.getCacheTimestamp(), lastTimestamp);
+        lastTimestamp = thor.getCacheTimestamp();
         keycloakRule.stopSession(session, true);
+
         Time.setOffset(Time.getOffset() + 60 * 60 * 24 * 3); // 3 days into future, cache will be invalidated
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
-        thor2 = session.users().getUserByUsername("thor", realm);
-        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        // thor should be evicted because we put it 2 hours in the future
+        if (thor2 instanceof CachedUserModel) {
+            Assert.assertTrue(((CachedUserModel)thor2).getCacheTimestamp() > lastTimestamp);
+        }
         model.getConfig().remove("cachePolicy");
         model.getConfig().remove("evictionHour");
         model.getConfig().remove("evictionMinute");
@@ -233,24 +275,44 @@ public class UserStorageTest {
 
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("test");
-        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
         realm.updateComponent(model);
         keycloakRule.stopSession(session, true);
 
-        Time.setOffset(60 * 5); // 5 minutes in future, should be cached still
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        long lastTimestamp = thor.getCacheTimestamp();
+        keycloakRule.stopSession(session, true);
+
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
-        // test still
-        UserModel thor2 = session.users().getUserByUsername("thor", realm);
-        Assert.assertTrue(thor2 instanceof CachedUserModel);
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        lastTimestamp = thor.getCacheTimestamp();
         keycloakRule.stopSession(session, true);
+
+
+        Time.setOffset(60 * 5); // 5 minutes in future, should be cached still
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        Assert.assertEquals(thor.getCacheTimestamp(), lastTimestamp);
+        lastTimestamp = thor.getCacheTimestamp();
+        keycloakRule.stopSession(session, true);
+
         Time.setOffset(60 * 20); // 20 minutes into future, cache will be invalidated
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
-        thor2 = session.users().getUserByUsername("thor", realm);
-        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        // thor should be evicted because we put it 2 hours in the future
+        if (thor2 instanceof CachedUserModel) {
+            Assert.assertTrue(((CachedUserModel)thor2).getCacheTimestamp() > lastTimestamp);
+        }
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
         model.getConfig().remove("cachePolicy");
         model.getConfig().remove("maxLifespan");
         realm.updateComponent(model);

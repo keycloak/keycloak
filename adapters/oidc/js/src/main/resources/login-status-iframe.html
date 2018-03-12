@@ -79,6 +79,10 @@
 
     function receiveMessage(event)
     {
+        if (typeof event.data !== 'string') {
+            return
+        }
+
         var origin = event.origin;
         var data = event.data.split(' ');
         if (data.length != 2) {

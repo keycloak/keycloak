@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source
- *
- * Copyright 2015 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,219 +16,194 @@
  */
 package org.keycloak.authorization.client.representation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-import java.net.URI;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ServerConfiguration {
 
-    private String version;
-    private URI issuer;
-
-    @JsonProperty("pat_profiles_supported")
-    private Set<String> patProfiles;
-
-    @JsonProperty("pat_grant_types_supported")
-    private Set<String> patGrantTypes;
-
-    @JsonProperty("aat_profiles_supported")
-    private Set<String> aatProfiles;
-
-    @JsonProperty("aat_grant_types_supported")
-    private Set<String> aatGrantTypes;
-
-    @JsonProperty("rpt_profiles_supported")
-    private Set<String> rptProfiles;
-
-    @JsonProperty("claim_token_profiles_supported")
-    private Set<String> claimTokenProfiles;
-
-    @JsonProperty("dynamic_client_endpoint")
-    private URI dynamicClientEndpoint;
-
-    @JsonProperty("token_endpoint")
-    private URI tokenEndpoint;
+    @JsonProperty("issuer")
+    private String issuer;
 
     @JsonProperty("authorization_endpoint")
-    private URI authorizationEndpoint;
+    private String authorizationEndpoint;
 
-    @JsonProperty("requesting_party_claims_endpoint")
-    private URI requestingPartyClaimsEndpoint;
+    @JsonProperty("token_endpoint")
+    private String tokenEndpoint;
 
-    @JsonProperty("resource_set_registration_endpoint")
-    private URI resourceSetRegistrationEndpoint;
+    @JsonProperty("token_introspection_endpoint")
+    private String tokenIntrospectionEndpoint;
 
-    @JsonProperty("introspection_endpoint")
-    private URI introspectionEndpoint;
+    @JsonProperty("userinfo_endpoint")
+    private String userinfoEndpoint;
 
-    @JsonProperty("permission_registration_endpoint")
-    private URI permissionRegistrationEndpoint;
+    @JsonProperty("end_session_endpoint")
+    private String logoutEndpoint;
 
-    @JsonProperty("rpt_endpoint")
-    private URI rptEndpoint;
+    @JsonProperty("jwks_uri")
+    private String jwksUri;
 
-    /**
-     * Non-standard, Keycloak specific configuration options
-     */
-    private String realm;
+    @JsonProperty("check_session_iframe")
+    private String checkSessionIframe;
 
-    private String realmPublicKey;
+    @JsonProperty("grant_types_supported")
+    private List<String> grantTypesSupported;
 
-    private URI serverUrl;
+    @JsonProperty("response_types_supported")
+    private List<String> responseTypesSupported;
 
-    public String getVersion() {
-        return this.version;
+    @JsonProperty("subject_types_supported")
+    private List<String> subjectTypesSupported;
+
+    @JsonProperty("id_token_signing_alg_values_supported")
+    private List<String> idTokenSigningAlgValuesSupported;
+
+    @JsonProperty("userinfo_signing_alg_values_supported")
+    private List<String> userInfoSigningAlgValuesSupported;
+
+    @JsonProperty("request_object_signing_alg_values_supported")
+    private List<String> requestObjectSigningAlgValuesSupported;
+
+    @JsonProperty("response_modes_supported")
+    private List<String> responseModesSupported;
+
+    @JsonProperty("registration_endpoint")
+    private String registrationEndpoint;
+
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    private List<String> tokenEndpointAuthMethodsSupported;
+
+    @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
+    private List<String> tokenEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("claims_supported")
+    private List<String> claimsSupported;
+
+    @JsonProperty("claim_types_supported")
+    private List<String> claimTypesSupported;
+
+    @JsonProperty("claims_parameter_supported")
+    private Boolean claimsParameterSupported;
+
+    @JsonProperty("scopes_supported")
+    private List<String> scopesSupported;
+
+    @JsonProperty("request_parameter_supported")
+    private Boolean requestParameterSupported;
+
+    @JsonProperty("request_uri_parameter_supported")
+    private Boolean requestUriParameterSupported;
+
+    @JsonProperty("resource_registration_endpoint")
+    private String resourceRegistrationEndpoint;
+
+    @JsonProperty("permission_endpoint")
+    private String permissionEndpoint;
+
+    public String getIssuer() {
+        return issuer;
     }
 
-    void setVersion(final String version) {
-        this.version = version;
+    public String getAuthorizationEndpoint() {
+        return authorizationEndpoint;
     }
 
-    public URI getIssuer() {
-        return this.issuer;
+    public String getTokenEndpoint() {
+        return tokenEndpoint;
     }
 
-    void setIssuer(final URI issuer) {
-        this.issuer = issuer;
+    public String getTokenIntrospectionEndpoint() {
+        return tokenIntrospectionEndpoint;
     }
 
-    public Set<String> getPatProfiles() {
-        return this.patProfiles;
+    public String getUserinfoEndpoint() {
+        return userinfoEndpoint;
     }
 
-    void setPatProfiles(final Set<String> patProfiles) {
-        this.patProfiles = patProfiles;
+    public String getLogoutEndpoint() {
+        return logoutEndpoint;
     }
 
-    public Set<String> getPatGrantTypes() {
-        return this.patGrantTypes;
+    public String getJwksUri() {
+        return jwksUri;
     }
 
-    void setPatGrantTypes(final Set<String> patGrantTypes) {
-        this.patGrantTypes = patGrantTypes;
+    public String getCheckSessionIframe() {
+        return checkSessionIframe;
     }
 
-    public Set<String> getAatProfiles() {
-        return this.aatProfiles;
+    public List<String> getGrantTypesSupported() {
+        return grantTypesSupported;
     }
 
-    void setAatProfiles(final Set<String> aatProfiles) {
-        this.aatProfiles = aatProfiles;
+    public List<String> getResponseTypesSupported() {
+        return responseTypesSupported;
     }
 
-    public Set<String> getAatGrantTypes() {
-        return this.aatGrantTypes;
+    public List<String> getSubjectTypesSupported() {
+        return subjectTypesSupported;
     }
 
-    void setAatGrantTypes(final Set<String> aatGrantTypes) {
-        this.aatGrantTypes = aatGrantTypes;
+    public List<String> getIdTokenSigningAlgValuesSupported() {
+        return idTokenSigningAlgValuesSupported;
     }
 
-    public Set<String> getRptProfiles() {
-        return this.rptProfiles;
+    public List<String> getUserInfoSigningAlgValuesSupported() {
+        return userInfoSigningAlgValuesSupported;
     }
 
-    void setRptProfiles(final Set<String> rptProfiles) {
-        this.rptProfiles = rptProfiles;
+    public List<String> getRequestObjectSigningAlgValuesSupported() {
+        return requestObjectSigningAlgValuesSupported;
     }
 
-    public Set<String> getClaimTokenProfiles() {
-        return this.claimTokenProfiles;
+    public List<String> getResponseModesSupported() {
+        return responseModesSupported;
     }
 
-    void setClaimTokenProfiles(final Set<String> claimTokenProfiles) {
-        this.claimTokenProfiles = claimTokenProfiles;
+    public String getRegistrationEndpoint() {
+        return registrationEndpoint;
     }
 
-    public URI getDynamicClientEndpoint() {
-        return this.dynamicClientEndpoint;
+    public List<String> getTokenEndpointAuthMethodsSupported() {
+        return tokenEndpointAuthMethodsSupported;
     }
 
-    void setDynamicClientEndpoint(final URI dynamicClientEndpoint) {
-        this.dynamicClientEndpoint = dynamicClientEndpoint;
+    public List<String> getTokenEndpointAuthSigningAlgValuesSupported() {
+        return tokenEndpointAuthSigningAlgValuesSupported;
     }
 
-    public URI getTokenEndpoint() {
-        return this.tokenEndpoint;
+    public List<String> getClaimsSupported() {
+        return claimsSupported;
     }
 
-    void setTokenEndpoint(final URI tokenEndpoint) {
-        this.tokenEndpoint = tokenEndpoint;
+    public List<String> getClaimTypesSupported() {
+        return claimTypesSupported;
     }
 
-    public URI getAuthorizationEndpoint() {
-        return this.authorizationEndpoint;
+    public Boolean getClaimsParameterSupported() {
+        return claimsParameterSupported;
     }
 
-    void setAuthorizationEndpoint(final URI authorizationEndpoint) {
-        this.authorizationEndpoint = authorizationEndpoint;
+    public List<String> getScopesSupported() {
+        return scopesSupported;
     }
 
-    public URI getRequestingPartyClaimsEndpoint() {
-        return this.requestingPartyClaimsEndpoint;
+    public Boolean getRequestParameterSupported() {
+        return requestParameterSupported;
     }
 
-    void setRequestingPartyClaimsEndpoint(final URI requestingPartyClaimsEndpoint) {
-        this.requestingPartyClaimsEndpoint = requestingPartyClaimsEndpoint;
+    public Boolean getRequestUriParameterSupported() {
+        return requestUriParameterSupported;
     }
 
-    public URI getResourceSetRegistrationEndpoint() {
-        return this.resourceSetRegistrationEndpoint;
+    public String getResourceRegistrationEndpoint() {
+        return resourceRegistrationEndpoint;
     }
 
-    void setResourceSetRegistrationEndpoint(final URI resourceSetRegistrationEndpoint) {
-        this.resourceSetRegistrationEndpoint = resourceSetRegistrationEndpoint;
-    }
-
-    public URI getIntrospectionEndpoint() {
-        return this.introspectionEndpoint;
-    }
-
-    void setIntrospectionEndpoint(final URI introspectionEndpoint) {
-        this.introspectionEndpoint = introspectionEndpoint;
-    }
-
-    public URI getPermissionRegistrationEndpoint() {
-        return this.permissionRegistrationEndpoint;
-    }
-
-    void setPermissionRegistrationEndpoint(final URI permissionRegistrationEndpoint) {
-        this.permissionRegistrationEndpoint = permissionRegistrationEndpoint;
-    }
-
-    public URI getRptEndpoint() {
-        return this.rptEndpoint;
-    }
-
-    void setRptEndpoint(final URI rptEndpoint) {
-        this.rptEndpoint = rptEndpoint;
-    }
-
-    public String getRealm() {
-        return this.realm;
-    }
-
-    public void setRealm(final String realm) {
-        this.realm = realm;
-    }
-
-    public String getRealmPublicKey() {
-        return this.realmPublicKey;
-    }
-
-    public void setRealmPublicKey(String realmPublicKey) {
-        this.realmPublicKey = realmPublicKey;
-    }
-
-    public URI getServerUrl() {
-        return this.serverUrl;
-    }
-
-    public void setServerUrl(URI serverUrl) {
-        this.serverUrl = serverUrl;
+    public String getPermissionEndpoint() {
+        return permissionEndpoint;
     }
 }

@@ -14,7 +14,7 @@ import javax.xml.crypto.dsig.keyinfo.X509Data;
 import static org.hamcrest.CoreMatchers.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.keycloak.adapters.saml.config.parsers.ConfigXmlConstants;
+import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterV1QNames;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -41,15 +41,15 @@ public class HttpAdapterUtilsTest {
 
         assertThat(res, notNullValue());
         assertThat(res.keySet(), hasItems(KeyTypes.SIGNING.value()));
-        assertThat(res.get(ConfigXmlConstants.SIGNING_ATTR), notNullValue());
-        assertThat(res.get(ConfigXmlConstants.SIGNING_ATTR).size(), equalTo(2));
+        assertThat(res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()), notNullValue());
+        assertThat(res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()).size(), equalTo(2));
 
         KeyInfo ki;
         KeyName keyName;
         X509Data x509data;
         X509Certificate x509certificate;
 
-        ki = res.get(ConfigXmlConstants.SIGNING_ATTR).get(0);
+        ki = res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()).get(0);
         assertThat(ki.getContent().size(), equalTo(2));
         assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(X509Data.class)));
         assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(KeyName.class)));
@@ -63,7 +63,7 @@ public class HttpAdapterUtilsTest {
         assertThat(x509certificate, notNullValue());
         assertThat(x509certificate.getSigAlgName(), equalTo("SHA256withRSA"));
 
-        ki = res.get(ConfigXmlConstants.SIGNING_ATTR).get(1);
+        ki = res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()).get(1);
         assertThat(ki.getContent().size(), equalTo(2));
         assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(X509Data.class)));
         assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(KeyName.class)));

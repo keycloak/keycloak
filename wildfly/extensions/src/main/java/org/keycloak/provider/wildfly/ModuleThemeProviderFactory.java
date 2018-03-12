@@ -21,12 +21,17 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.keycloak.Config;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.theme.JarThemeProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ModuleThemeProviderFactory extends JarThemeProviderFactory {
+public class ModuleThemeProviderFactory extends ClasspathThemeProviderFactory {
+
+    public ModuleThemeProviderFactory() {
+        super("module");
+    }
 
     @Override
     public void init(Config.Scope config) {
@@ -42,11 +47,6 @@ public class ModuleThemeProviderFactory extends JarThemeProviderFactory {
                 throw new RuntimeException("Failed to load themes", e);
             }
         }
-    }
-
-    @Override
-    public String getId() {
-        return "module";
     }
 
 }

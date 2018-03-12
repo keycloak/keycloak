@@ -37,6 +37,23 @@
             }
         },
         {
+            "username" : "bburke-additional-domain",
+            "enabled": true,
+            "email" : "bburke@redhat.com.additional.domain",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"],
+            "applicationRoles": {
+                "http://localhost:8081/employee/": [ "employee" ],
+                "http://localhost:8081/employee2/": [ "employee" ]
+            }
+        },
+        {
             "username" : "unauthorized",
             "enabled": true,
             "email" : "unauthorized@redhat.com",

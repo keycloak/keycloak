@@ -18,34 +18,82 @@
 package org.keycloak.authorization.client.resource;
 
 
-import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
+import java.util.concurrent.Callable;
 
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
+import org.keycloak.authorization.client.AuthorizationDeniedException;
+import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.authorization.client.util.HttpMethod;
+import org.keycloak.authorization.client.util.Throwables;
+import org.keycloak.authorization.client.util.TokenCallable;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 
 /**
+ * An entry point for obtaining permissions from the server.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationResource {
 
-    private final Http http;
-    private final String accessToken;
+    private Configuration configuration;
+    private ServerConfiguration serverConfiguration;
+    private Http http;
+    private TokenCallable token;
 
-    public AuthorizationResource(Http http, String aat) {
+    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, TokenCallable token) {
+        this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
         this.http = http;
-        this.accessToken = aat;
+        this.token = token;
     }
 
-    public AuthorizationResponse authorize(AuthorizationRequest request) {
+    /**
+     * Query the server for all permissions.
+     *
+     * @return an {@link AuthorizationResponse} with a RPT holding all granted permissions
+     * @throws AuthorizationDeniedException in case the request was denied by the server
+     */
+    public AuthorizationResponse authorize() throws AuthorizationDeniedException {
+        return authorize(new AuthorizationRequest());
+    }
+
+    /**
+     * Query the server for permissions given an {@link AuthorizationRequest}.
+     *
+     * @param request an {@link AuthorizationRequest} (not {@code null})
+     * @return an {@link AuthorizationResponse} with a RPT holding all granted permissions
+     * @throws AuthorizationDeniedException in case the request was denied by the server
+     */
+    public AuthorizationResponse authorize(final AuthorizationRequest request) throws AuthorizationDeniedException {
+        if (request == null) {
+            throw new IllegalArgumentException("Authorization request must not be null");
+        }
+
+        Callable<AuthorizationResponse> callable = new Callable<AuthorizationResponse>() {
+            @Override
+            public AuthorizationResponse call() throws Exception {
+                request.setAudience(configuration.getResource());
+
+                HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
+
+                if (token != null) {
+                    method = method.authorizationBearer(token.call());
+                }
+
+                return method
+                        .authentication()
+                        .uma(request)
+                        .response()
+                        .json(AuthorizationResponse.class)
+                        .execute();
+            }
+        };
         try {
-            return this.http.<AuthorizationResponse>post("/authz/authorize")
-                    .authorizationBearer(this.accessToken)
-                    .json(JsonSerialization.writeValueAsBytes(request))
-                    .response().json(AuthorizationResponse.class).execute();
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Failed to obtain authorization data", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, token, "Failed to obtain authorization data", cause);
         }
     }
 }

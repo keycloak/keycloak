@@ -40,6 +40,8 @@
             }
         }
 
+        var useNonce = true;
+        
         kc.init = function (initOptions) {
             kc.authenticated = false;
 
@@ -58,6 +60,10 @@
             }
 
             if (initOptions) {
+                if (typeof initOptions.useNonce !== 'undefined') {
+                    useNonce = initOptions.useNonce;
+                }
+
                 if (typeof initOptions.checkLoginIframe !== 'undefined') {
                     loginIframe.enable = initOptions.checkLoginIframe;
                 }
@@ -159,8 +165,11 @@
                 var callback = parseCallback(window.location.href);
 
                 if (callback) {
+                    window.history.replaceState({}, null, callback.newUrl);
+                }
+
+                if (callback && callback.valid) {
                     return setupCheckLoginIframe().success(function() {
-                        window.history.replaceState({}, null, callback.newUrl);
                         processCallback(callback, initPromise);
                     }).error(function (e) {
                         initPromise.setError();
@@ -232,22 +241,25 @@
 
             callbackStorage.add(callbackState);
 
-            var action = 'auth';
+            var baseUrl;
             if (options && options.action == 'register') {
-                action = 'registrations';
+                baseUrl = kc.endpoints.register();
+            } else {
+                baseUrl = kc.endpoints.authorize();
             }
 
             var scope = (options && options.scope) ? "openid " + options.scope : "openid";
 
-            var url = getRealmUrl()
-                + '/protocol/openid-connect/' + action
+            var url = baseUrl
                 + '?client_id=' + encodeURIComponent(kc.clientId)
                 + '&redirect_uri=' + encodeURIComponent(redirectUri)
                 + '&state=' + encodeURIComponent(state)
-                + '&nonce=' + encodeURIComponent(nonce)
                 + '&response_mode=' + encodeURIComponent(kc.responseMode)
                 + '&response_type=' + encodeURIComponent(kc.responseType)
                 + '&scope=' + encodeURIComponent(scope);
+                if (useNonce) {
+                    url = url + '&nonce=' + encodeURIComponent(nonce);
+                }
 
             if (options && options.prompt) {
                 url += '&prompt=' + encodeURIComponent(options.prompt);
@@ -277,8 +289,7 @@
         }
 
         kc.createLogoutUrl = function(options) {
-            var url = getRealmUrl()
-                + '/protocol/openid-connect/logout'
+            var url = kc.endpoints.logout()
                 + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
 
             return url;
@@ -297,11 +308,14 @@
         }
 
         kc.createAccountUrl = function(options) {
-            var url = getRealmUrl()
+            var realm = getRealmUrl();
+            var url = undefined;
+            if (typeof realm !== 'undefined') {
+                url = realm
                 + '/account'
                 + '?referrer=' + encodeURIComponent(kc.clientId)
                 + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
-
+            }
             return url;
         }
 
@@ -349,7 +363,7 @@
         }
 
         kc.loadUserInfo = function() {
-            var url = getRealmUrl() + '/protocol/openid-connect/userinfo';
+            var url = kc.endpoints.userinfo();
             var req = new XMLHttpRequest();
             req.open('GET', url, true);
             req.setRequestHeader('Accept', 'application/json');
@@ -414,7 +428,7 @@
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
-                    var url = getRealmUrl() + '/protocol/openid-connect/token';
+                    var url = kc.endpoints.token();
 
                     refreshQueue.push(promise);
 
@@ -488,10 +502,14 @@
         }
 
         function getRealmUrl() {
-            if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
-                return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
+            if (typeof kc.authServerUrl !== 'undefined') {
+                if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
+                    return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
+                } else {
+                    return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+                }
             } else {
-                return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+            	return undefined;
             }
         }
 
@@ -525,7 +543,7 @@
 
             if ((kc.flow != 'implicit') && code) {
                 var params = 'code=' + code + '&grant_type=authorization_code';
-                var url = getRealmUrl() + '/protocol/openid-connect/token';
+                var url = kc.endpoints.token();
 
                 var req = new XMLHttpRequest();
                 req.open('POST', url, true);
@@ -562,9 +580,9 @@
 
                 setToken(accessToken, refreshToken, idToken, timeLocal);
 
-                if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
+                if (useNonce && ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
-                    (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
+                    (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce))) {
 
                     console.info('[KEYCLOAK] Invalid nonce, clearing token');
                     kc.clearToken();
@@ -589,6 +607,65 @@
                 configUrl = config;
             }
 
+            function setupOidcEndoints(oidcConfiguration) {
+                if (! oidcConfiguration) {
+                    kc.endpoints = {
+                        authorize: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/auth';
+                        },
+                        token: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/token';
+                        },
+                        logout: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/logout';
+                        },
+                        checkSessionIframe: function() {
+                            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
+                            if (kc.iframeVersion) {
+                              src = src + '?version=' + kc.iframeVersion;
+                            }
+                            return src;
+                        },
+                        register: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/registrations';
+                        },
+                        userinfo: function() {
+                            return getRealmUrl() + '/protocol/openid-connect/userinfo';
+                        }
+                    };
+                } else {
+                    kc.endpoints = {
+                        authorize: function() {
+                            return oidcConfiguration.authorization_endpoint;
+                        },
+                        token: function() {
+                            return oidcConfiguration.token_endpoint;
+                        },
+                        logout: function() {
+                            if (!oidcConfiguration.end_session_endpoint) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.end_session_endpoint;
+                        },
+                        checkSessionIframe: function() {
+                            if (!oidcConfiguration.check_session_iframe) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.check_session_iframe;
+                        },
+                        register: function() {
+                            throw 'Redirection to "Register user" page not supported in standard OIDC mode';
+                        },
+                        userinfo: function() {
+                            if (!oidcConfiguration.userinfo_endpoint) {
+                                throw "Not supported by the OIDC server";
+                            }
+                            return oidcConfiguration.userinfo_endpoint;
+                        }
+                    }
+                }
+            }
+
             if (configUrl) {
                 var req = new XMLHttpRequest();
                 req.open('GET', configUrl, true);
@@ -603,7 +680,7 @@
                             kc.realm = config['realm'];
                             kc.clientId = config['resource'];
                             kc.clientSecret = (config['credentials'] || {})['secret'];
-
+                            setupOidcEndoints(null);
                             promise.setSuccess();
                         } else {
                             promise.setError();
@@ -613,30 +690,62 @@
 
                 req.send();
             } else {
-                if (!config['url']) {
-                    var scripts = document.getElementsByTagName('script');
-                    for (var i = 0; i < scripts.length; i++) {
-                        if (scripts[i].src.match(/.*keycloak\.js/)) {
-                            config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
-                            break;
-                        }
-                    }
-                }
-
-                if (!config.realm) {
-                    throw 'realm missing';
-                }
-
                 if (!config.clientId) {
                     throw 'clientId missing';
                 }
 
-                kc.authServerUrl = config.url;
-                kc.realm = config.realm;
                 kc.clientId = config.clientId;
                 kc.clientSecret = (config.credentials || {}).secret;
 
-                promise.setSuccess();
+                var oidcProvider = config['oidcProvider'];
+                if (!oidcProvider) {
+                    if (!config['url']) {
+                        var scripts = document.getElementsByTagName('script');
+                        for (var i = 0; i < scripts.length; i++) {
+                            if (scripts[i].src.match(/.*keycloak\.js/)) {
+                                config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
+                                break;
+                            }
+                        }
+                    }
+                    if (!config.realm) {
+                        throw 'realm missing';
+                    }
+
+                    kc.authServerUrl = config.url;
+                    kc.realm = config.realm;
+                    setupOidcEndoints(null);
+                    promise.setSuccess();
+                } else {
+                    if (typeof oidcProvider === 'string') {
+                        var oidcProviderConfigUrl;
+                        if (oidcProvider.charAt(oidcProvider.length - 1) == '/') {
+                            oidcProviderConfigUrl = oidcProvider + '.well-known/openid-configuration';
+                        } else {
+                            oidcProviderConfigUrl = oidcProvider + '/.well-known/openid-configuration';
+                        }
+                        var req = new XMLHttpRequest();
+                        req.open('GET', oidcProviderConfigUrl, true);
+                        req.setRequestHeader('Accept', 'application/json');
+
+                        req.onreadystatechange = function () {
+                            if (req.readyState == 4) {
+                                if (req.status == 200 || fileLoaded(req)) {
+                                    var oidcProviderConfig = JSON.parse(req.responseText);
+                                    setupOidcEndoints(oidcProviderConfig);
+                                    promise.setSuccess();
+                                } else {
+                                    promise.setError();
+                                }
+                            }
+                        };
+
+                        req.send();
+                    } else {
+                        setupOidcEndoints(oidcProvider);
+                        promise.setSuccess();
+                    }
+                }
             }
 
             return promise.promise;
@@ -755,20 +864,97 @@
         }
 
         function parseCallback(url) {
-            var oauth = new CallbackParser(url, kc.responseMode).parseUri();
+            var oauth = parseCallbackUrl(url);
+            if (!oauth) {
+                return;
+            }
+
             var oauthState = callbackStorage.get(oauth.state);
 
-            if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
+            if (oauthState) {
+                oauth.valid = true;
                 oauth.redirectUri = oauthState.redirectUri;
                 oauth.storedNonce = oauthState.nonce;
                 oauth.prompt = oauthState.prompt;
-
-                if (oauth.fragment) {
-                    oauth.newUrl += '#' + oauth.fragment;
-                }
-
-                return oauth;
             }
+
+            return oauth;
+        }
+
+        function parseCallbackUrl(url) {
+            var supportedParams;
+            switch (kc.flow) {
+                case 'standard':
+                    supportedParams = ['code', 'state', 'session_state'];
+                    break;
+                case 'implicit':
+                    supportedParams = ['access_token', 'id_token', 'state', 'session_state'];
+                    break;
+                case 'hybrid':
+                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state'];
+                    break;
+            }
+
+            supportedParams.push('error');
+            supportedParams.push('error_description');
+            supportedParams.push('error_uri');
+
+            var queryIndex = url.indexOf('?');
+            var fragmentIndex = url.indexOf('#');
+
+            var newUrl;
+            var parsed;
+
+            if (kc.responseMode === 'query' && queryIndex !== -1) {
+                newUrl = url.substring(0, queryIndex);
+                parsed = parseCallbackParams(url.substring(queryIndex + 1, fragmentIndex !== -1 ? fragmentIndex : url.length), supportedParams);
+                if (parsed.paramsString !== '') {
+                    newUrl += '?' + parsed.paramsString;
+                }
+                if (fragmentIndex !== -1) {
+                    newUrl += url.substring(fragmentIndex);
+                }
+            } else if (kc.responseMode === 'fragment' && fragmentIndex !== -1) {
+                newUrl = url.substring(0, fragmentIndex);
+                parsed = parseCallbackParams(url.substring(fragmentIndex + 1), supportedParams);
+                if (parsed.paramsString !== '') {
+                    newUrl += '#' + parsed.paramsString;
+                }
+            }
+
+            if (parsed && parsed.oauthParams) {
+                if (kc.flow === 'standard' || kc.flow === 'hybrid') {
+                    if ((parsed.oauthParams.code || parsed.oauthParams.error) && parsed.oauthParams.state) {
+                        parsed.oauthParams.newUrl = newUrl;
+                        return parsed.oauthParams;
+                    }
+                } else if (kc.flow === 'implicit') {
+                    if ((parsed.oauthParams.access_token || parsed.oauthParams.error) && parsed.oauthParams.state) {
+                        parsed.oauthParams.newUrl = newUrl;
+                        return parsed.oauthParams;
+                    }
+                }
+            }
+        }
+
+        function parseCallbackParams(paramsString, supportedParams) {
+            var p = paramsString.split('&');
+            var result = {
+                paramsString: '',
+                oauthParams: {}
+            }
+            for (var i = 0; i < p.length; i++) {
+                var t = p[i].split('=');
+                if (supportedParams.indexOf(t[0]) !== -1) {
+                    result.oauthParams[t[0]] = t[1];
+                } else {
+                    if (result.paramsString !== '') {
+                        result.paramsString += '&';
+                    }
+                    result.paramsString += p[i];
+                }
+            }
+            return result;
         }
 
         function createPromise() {
@@ -865,22 +1051,18 @@
             loginIframe.iframe = iframe;
 
             iframe.onload = function() {
-                var realmUrl = getRealmUrl();
-                if (realmUrl.charAt(0) === '/') {
+                var authUrl = kc.endpoints.authorize();
+                if (authUrl.charAt(0) === '/') {
                     loginIframe.iframeOrigin = getOrigin();
                 } else {
-                    loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
+                    loginIframe.iframeOrigin = authUrl.substring(0, authUrl.indexOf('/', 8));
                 }
                 promise.setSuccess();
 
                 setTimeout(check, loginIframe.interval * 1000);
             }
 
-            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
-            if (kc.iframeVersion) {
-                src = src + '?version=' + kc.iframeVersion;
-            }
-
+            var src = kc.endpoints.checkSessionIframe();
             iframe.setAttribute('src', src );
             iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
@@ -960,7 +1142,12 @@
                     },
 
                     accountManagement : function() {
-                        window.location.href = kc.createAccountUrl();
+                        var accountUrl = kc.createAccountUrl();
+                        if (typeof accountUrl !== 'undefined') {
+                            window.location.href = accountUrl;
+                        } else {
+                            throw "Not supported by the OIDC server";
+                        }
                         return createPromise().promise;
                     },
 
@@ -974,12 +1161,7 @@
                         } else if (kc.redirectUri) {
                             return kc.redirectUri;
                         } else {
-                            var redirectUri = location.href;
-                            if (location.hash && encodeHash) {
-                                redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
-                            }
-                            return redirectUri;
+                            return location.href;
                         }
                     }
                 };
@@ -1081,12 +1263,16 @@
 
                     accountManagement : function() {
                         var accountUrl = kc.createAccountUrl();
-                        var ref = cordovaOpenWindowWrapper(accountUrl, '_blank', 'location=no');
-                        ref.addEventListener('loadstart', function(event) {
-                            if (event.url.indexOf('http://localhost') == 0) {
-                                ref.close();
-                            }
-                        });
+                        if (typeof accountUrl !== 'undefined') {
+                            var ref = cordovaOpenWindowWrapper(accountUrl, '_blank', 'location=no');
+                            ref.addEventListener('loadstart', function(event) {
+                                if (event.url.indexOf('http://localhost') == 0) {
+                                    ref.close();
+                                }
+                            });
+                        } else {
+                            throw "Not supported by the OIDC server";
+                        }
                     },
 
                     redirectUri: function(options) {
@@ -1216,99 +1402,6 @@
 
             return new CookieStorage();
         }
-
-        var CallbackParser = function(uriToParse, responseMode) {
-            if (!(this instanceof CallbackParser)) {
-                return new CallbackParser(uriToParse, responseMode);
-            }
-            var parser = this;
-
-            var initialParse = function() {
-                var baseUri = null;
-                var queryString = null;
-                var fragmentString = null;
-
-                var questionMarkIndex = uriToParse.indexOf("?");
-                var fragmentIndex = uriToParse.indexOf("#", questionMarkIndex + 1);
-                if (questionMarkIndex == -1 && fragmentIndex == -1) {
-                    baseUri = uriToParse;
-                } else if (questionMarkIndex != -1) {
-                    baseUri = uriToParse.substring(0, questionMarkIndex);
-                    queryString = uriToParse.substring(questionMarkIndex + 1);
-                    if (fragmentIndex != -1) {
-                        fragmentIndex = queryString.indexOf("#");
-                        fragmentString = queryString.substring(fragmentIndex + 1);
-                        queryString = queryString.substring(0, fragmentIndex);
-                    }
-                } else {
-                    baseUri = uriToParse.substring(0, fragmentIndex);
-                    fragmentString = uriToParse.substring(fragmentIndex + 1);
-                }
-
-                return { baseUri: baseUri, queryString: queryString, fragmentString: fragmentString };
-            }
-
-            var parseParams = function(paramString) {
-                var result = {};
-                var params = paramString.split('&');
-                for (var i = 0; i < params.length; i++) {
-                    var p = params[i].split('=');
-                    var paramName = decodeURIComponent(p[0]);
-                    var paramValue = decodeURIComponent(p[1]);
-                    result[paramName] = paramValue;
-                }
-                return result;
-            }
-
-            var handleQueryParam = function(paramName, paramValue, oauth) {
-                var supportedOAuthParams = [ 'code', 'state', 'error', 'error_description' ];
-
-                for (var i = 0 ; i< supportedOAuthParams.length ; i++) {
-                    if (paramName === supportedOAuthParams[i]) {
-                        oauth[paramName] = paramValue;
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-
-            parser.parseUri = function() {
-                var parsedUri = initialParse();
-
-                var queryParams = {};
-                if (parsedUri.queryString) {
-                    queryParams = parseParams(parsedUri.queryString);
-                }
-
-                var oauth = { newUrl: parsedUri.baseUri };
-                for (var param in queryParams) {
-                    switch (param) {
-                        case 'redirect_fragment':
-                            oauth.fragment = queryParams[param];
-                            break;
-                        default:
-                            if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {
-                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + encodeURIComponent(queryParams[param]);
-                            }
-                            break;
-                    }
-                }
-
-                if (responseMode === 'fragment') {
-                    var fragmentParams = {};
-                    if (parsedUri.fragmentString) {
-                        fragmentParams = parseParams(parsedUri.fragmentString);
-                    }
-                    for (var param in fragmentParams) {
-                        oauth[param] = fragmentParams[param];
-                    }
-                }
-
-                return oauth;
-            }
-        }
-
     }
 
     if ( typeof module === "object" && module && typeof module.exports === "object" ) {

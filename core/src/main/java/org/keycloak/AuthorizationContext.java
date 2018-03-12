@@ -68,7 +68,7 @@ public class AuthorizationContext {
         if (hasResourcePermission(resourceName)) {
             for (Permission permission : authorization.getPermissions()) {
                 for (PathConfig pathHolder : paths.values()) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
+                    if (pathHolder.getId().equals(permission.getResourceId())) {
                         if (permission.getScopes().contains(scopeName)) {
                             return true;
                         }
@@ -98,7 +98,7 @@ public class AuthorizationContext {
         }
 
         for (Permission permission : authorization.getPermissions()) {
-            if (permission.getResourceSetName().equals(resourceName) || permission.getResourceSetId().equals(resourceName)) {
+            if (permission.getResourceName().equals(resourceName) || permission.getResourceId().equals(resourceName)) {
                 return true;
             }
         }

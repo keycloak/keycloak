@@ -738,6 +738,7 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
     $scope.currentPageInput = 1;
     $scope.numberOfPages = 1;
     $scope.pageSize = 20;
+    $scope.clientStorageProviders = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
     
     Client.query({realm: realm.realm, viewableOnly: true}).$promise.then(function(clients) {
         $scope.numberOfPages = Math.ceil(clients.length/$scope.pageSize);
@@ -762,6 +763,15 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
                 Notifications.success("The client has been deleted.");
             });
         });
+    };
+
+    $scope.searchClient = function() {
+        console.log('searchQuery!!! ' + $scope.search.clientId);
+        Client.query({realm: realm.realm, viewableOnly: true, clientId: $scope.search.clientId}).$promise.then(function(clients) {
+            $scope.numberOfPages = Math.ceil(clients.length/$scope.pageSize);
+            $scope.clients = clients;
+        });
+
     };
 
     $scope.exportClient = function(client) {
@@ -819,7 +829,16 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
     }
 });
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, templates, flows, $route, serverInfo, Client, ClientDescriptionConverter, Components, ClientStorageOperations, $location, $modal, Dialog, Notifications) {
+    $scope.flows = [];
+    $scope.clientFlows = [];
+    for (var i=0 ; i<flows.length ; i++) {
+        if (flows[i].providerId == 'client-flow') {
+            $scope.clientFlows.push(flows[i]);
+        } else {
+            $scope.flows.push(flows[i]);
+        }
+    }
 
 
 
@@ -888,6 +907,25 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
+
+    if(client.origin) {
+        if ($scope.access.viewRealm) {
+            Components.get({realm: realm.realm, componentId: client.origin}, function (link) {
+                $scope.originName = link.name;
+                //$scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+            })
+        }
+        else {
+            // KEYCLOAK-4328
+            ClientStorageOperations.simpleName.get({realm: realm.realm, componentId: client.origin}, function (link) {
+                $scope.originName = link.name;
+                //$scope.originLink = $location.absUrl();
+            })
+        }
+    } else {
+        console.log("origin is null");
+    }
+
 
     function updateProperties() {
         if (!$scope.client.attributes) {
@@ -1023,6 +1061,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         $scope.clientEdit = angular.copy(client);
     }
 
+
+    $scope.samlIdpInitiatedUrl = function(ssoName) {
+        return encodeURI($location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/protocol/saml/clients/") + encodeURIComponent(ssoName)
+    }
 
     $scope.importFile = function(fileContent){
         console.debug(fileContent);
@@ -2356,3 +2398,211 @@ module.controller('ClientTemplateScopeMappingCtrl', function($scope, $http, real
 
     updateTemplateRealmRoles();
 });
+
+module.controller('ClientStoresCtrl', function($scope, $location, $route, realm, serverInfo, Components, Notifications, Dialog) {
+    console.log('ClientStoresCtrl ++++****');
+    $scope.realm = realm;
+    $scope.providers = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
+    $scope.clientStorageProviders = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
+    $scope.instancesLoaded = false;
+
+    if (!$scope.providers) $scope.providers = [];
+
+    $scope.addProvider = function(provider) {
+        console.log('Add provider: ' + provider.id);
+        $location.url("/create/client-storage/" + realm.realm + "/providers/" + provider.id);
+    };
+
+    $scope.getInstanceLink = function(instance) {
+        return "/realms/" + realm.realm + "/client-storage/providers/" + instance.providerId + "/" + instance.id;
+    }
+
+    $scope.getInstanceName = function(instance) {
+        return instance.name;
+    }
+    $scope.getInstanceProvider = function(instance) {
+        return instance.providerId;
+    }
+
+    $scope.isProviderEnabled = function(instance) {
+        return !instance.config['enabled'] || instance.config['enabled'][0] == 'true';
+    }
+
+    $scope.getInstancePriority = function(instance) {
+        if (!instance.config['priority']) {
+            return "0";
+        }
+        return instance.config['priority'][0];
+    }
+
+    Components.query({realm: realm.realm,
+        parent: realm.id,
+        type: 'org.keycloak.storage.client.ClientStorageProvider'
+    }, function(data) {
+        $scope.instances = data;
+        $scope.instancesLoaded = true;
+    });
+
+    $scope.removeInstance = function(instance) {
+        Dialog.confirmDelete(instance.name, 'client storage provider', function() {
+            Components.remove({
+                realm : realm.realm,
+                componentId : instance.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+module.controller('GenericClientStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
+                                                     serverInfo, instance, providerId, Components) {
+    console.log('GenericClientStorageCtrl');
+    console.log('providerId: ' + providerId);
+    $scope.create = !instance.providerId;
+    console.log('create: ' + $scope.create);
+    var providers = serverInfo.componentTypes['org.keycloak.storage.client.ClientStorageProvider'];
+    console.log('providers length ' + providers.length);
+    var providerFactory = null;
+    for (var i = 0; i < providers.length; i++) {
+        var p = providers[i];
+        console.log('provider: ' + p.id);
+        if (p.id == providerId) {
+            $scope.providerFactory = p;
+            providerFactory = p;
+            break;
+        }
+
+    }
+    $scope.changed = false;
+
+    console.log("providerFactory: " + providerFactory.id);
+
+    function initClientStorageSettings() {
+        if ($scope.create) {
+            $scope.changed = true;
+            instance.name = providerFactory.id;
+            instance.providerId = providerFactory.id;
+            instance.providerType = 'org.keycloak.storage.client.ClientStorageProvider';
+            instance.parentId = realm.id;
+            instance.config = {
+
+            };
+            instance.config['priority'] = ["0"];
+            instance.config['enabled'] = ["true"];
+
+            $scope.fullSyncEnabled = false;
+            $scope.changedSyncEnabled = false;
+            instance.config['cachePolicy'] = ['DEFAULT'];
+            instance.config['evictionDay'] = [''];
+            instance.config['evictionHour'] = [''];
+            instance.config['evictionMinute'] = [''];
+            instance.config['maxLifespan'] = [''];
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (configProperty.defaultValue) {
+                        instance.config[configProperty.name] = [configProperty.defaultValue];
+                    } else {
+                        instance.config[configProperty.name] = [''];
+                    }
+
+                }
+            }
+
+        } else {
+            $scope.changed = false;
+             if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
+            }
+            if (!instance.config['cachePolicy']) {
+                instance.config['cachePolicy'] = ['DEFAULT'];
+
+            }
+            if (!instance.config['evictionDay']) {
+                instance.config['evictionDay'] = [''];
+
+            }
+            if (!instance.config['evictionHour']) {
+                instance.config['evictionHour'] = [''];
+
+            }
+            if (!instance.config['evictionMinute']) {
+                instance.config['evictionMinute'] = [''];
+
+            }
+            if (!instance.config['maxLifespan']) {
+                instance.config['maxLifespan'] = [''];
+
+            }
+            if (!instance.config['priority']) {
+                instance.config['priority'] = ['0'];
+            }
+
+            if (providerFactory.properties) {
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (!instance.config[configProperty.name]) {
+                        instance.config[configProperty.name] = [''];
+                    }
+                }
+            }
+
+        }
+    }
+
+    initClientStorageSettings();
+    $scope.instance = angular.copy(instance);
+    $scope.realm = realm;
+
+     $scope.$watch('instance', function() {
+        if (!angular.equals($scope.instance, instance)) {
+            $scope.changed = true;
+        }
+
+    }, true);
+
+    $scope.save = function() {
+        console.log('save provider');
+        $scope.changed = false;
+        if ($scope.create) {
+            console.log('saving new provider');
+            Components.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/client-storage/providers/" + $scope.instance.providerId + "/" + id);
+                Notifications.success("The provider has been created.");
+            });
+        } else {
+            console.log('update existing provider');
+            Components.update({realm: realm.realm,
+                    componentId: instance.id
+                },
+                $scope.instance,  function () {
+                    $route.reload();
+                    Notifications.success("The provider has been updated.");
+                });
+        }
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+    $scope.cancel = function() {
+        console.log('cancel');
+        if ($scope.create) {
+            $location.url("/realms/" + realm.realm + "/client-stores");
+        } else {
+            $route.reload();
+        }
+    };
+
+
+
+});
+
+

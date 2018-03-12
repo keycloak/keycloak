@@ -115,6 +115,9 @@ public class LoginActionsService {
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
+    public static final String SESSION_CODE = "session_code";
+    public static final String AUTH_SESSION_ID = "auth_session_id";
+
     private RealmModel realm;
 
     @Context
@@ -184,8 +187,8 @@ public class LoginActionsService {
         }
     }
 
-    private SessionCodeChecks checksForCode(String code, String execution, String clientId, String tabId, String flowPath) {
-        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, code, execution, clientId, tabId, flowPath);
+    private SessionCodeChecks checksForCode(String authSessionId, String code, String execution, String clientId, String tabId, String flowPath) {
+        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, authSessionId, code, execution, clientId, tabId, flowPath);
         res.initialVerify();
         return res;
     }
@@ -204,10 +207,11 @@ public class LoginActionsService {
      */
     @Path(RESTART_PATH)
     @GET
-    public Response restartSession(@QueryParam("client_id") String clientId,
+    public Response restartSession(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                   @QueryParam("client_id") String clientId,
                                    @QueryParam(Constants.TAB_ID) String tabId) {
         event.event(EventType.RESTART_AUTHENTICATION);
-        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, null, null, clientId,  tabId, null);
+        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, authSessionId, null, null, clientId,  tabId, null);
 
         AuthenticationSessionModel authSession = checks.initialVerifyAuthSession();
         if (authSession == null) {
@@ -235,13 +239,14 @@ public class LoginActionsService {
      */
     @Path(AUTHENTICATE_PATH)
     @GET
-    public Response authenticate(@QueryParam("code") String code,
+    public Response authenticate(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                 @QueryParam(SESSION_CODE) String code,
                                  @QueryParam("execution") String execution,
                                  @QueryParam("client_id") String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
         event.event(EventType.LOGIN);
 
-        SessionCodeChecks checks = checksForCode(code, execution, clientId, tabId, AUTHENTICATE_PATH);
+        SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
@@ -305,27 +310,29 @@ public class LoginActionsService {
      */
     @Path(AUTHENTICATE_PATH)
     @POST
-    public Response authenticateForm(@QueryParam("code") String code,
+    public Response authenticateForm(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                     @QueryParam(SESSION_CODE) String code,
                                      @QueryParam("execution") String execution,
                                      @QueryParam("client_id") String clientId,
                                      @QueryParam(Constants.TAB_ID) String tabId) {
-        return authenticate(code, execution, clientId, tabId);
+        return authenticate(authSessionId, code, execution, clientId, tabId);
     }
 
     @Path(RESET_CREDENTIALS_PATH)
     @POST
-    public Response resetCredentialsPOST(@QueryParam("code") String code,
+    public Response resetCredentialsPOST(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                         @QueryParam(SESSION_CODE) String code,
                                          @QueryParam("execution") String execution,
                                          @QueryParam("client_id") String clientId,
                                          @QueryParam(Constants.TAB_ID) String tabId,
                                          @QueryParam(Constants.KEY) String key) {
         if (key != null) {
-            return handleActionToken(key, execution, clientId, tabId);
+            return handleActionToken(authSessionId, key, execution, clientId, tabId);
         }
 
         event.event(EventType.RESET_PASSWORD);
 
-        return resetCredentials(code, execution, clientId, tabId);
+        return resetCredentials(authSessionId, code, execution, clientId, tabId);
     }
 
     /**
@@ -338,7 +345,8 @@ public class LoginActionsService {
      */
     @Path(RESET_CREDENTIALS_PATH)
     @GET
-    public Response resetCredentialsGET(@QueryParam("code") String code,
+    public Response resetCredentialsGET(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                        @QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
@@ -358,7 +366,7 @@ public class LoginActionsService {
         }
 
         event.event(EventType.RESET_PASSWORD);
-        return resetCredentials(code, execution, clientId, tabId);
+        return resetCredentials(authSessionId, code, execution, clientId, tabId);
     }
 
     AuthenticationSessionModel createAuthenticationSessionForClient()
@@ -388,8 +396,8 @@ public class LoginActionsService {
      * @param execution
      * @return
      */
-    protected Response resetCredentials(String code, String execution, String clientId, String tabId) {
-        SessionCodeChecks checks = checksForCode(code, execution, clientId, tabId, RESET_CREDENTIALS_PATH);
+    protected Response resetCredentials(String authSessionId, String code, String execution, String clientId, String tabId) {
+        SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, RESET_CREDENTIALS_PATH);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
             return checks.getResponse();
         }
@@ -414,14 +422,15 @@ public class LoginActionsService {
      */
     @Path("action-token")
     @GET
-    public Response executeActionToken(@QueryParam("key") String key,
+    public Response executeActionToken(@QueryParam(AUTH_SESSION_ID) String authSessionId,
+                                       @QueryParam("key") String key,
                                        @QueryParam("execution") String execution,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
-        return handleActionToken(key, execution, clientId, tabId);
+        return handleActionToken(authSessionId, key, execution, clientId, tabId);
     }
 
-    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId) {
+    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String authSessionId, String tokenString, String execution, String clientId, String tabId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -435,9 +444,11 @@ public class LoginActionsService {
         if (clientId != null) {
             client = realm.getClientByClientId(clientId);
         }
+        AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
         if (client != null) {
             session.getContext().setClient(client);
-            authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
+            authSessionId = authSessionId == null ? authenticationSessionManager.getAuthSessionCookieDecoded(realm) : authSessionId;
+            authSession = authenticationSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         }
 
         event.event(EventType.EXECUTE_ACTION_TOKEN);
@@ -520,7 +531,7 @@ public class LoginActionsService {
               ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
                 // There exists an authentication session but no auth session ID was received in the action token
                 logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
-                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
+                authenticationSessionManager.removeAuthenticationSession(realm, authSession, false);
 
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
@@ -617,11 +628,12 @@ public class LoginActionsService {
      */
     @Path(REGISTRATION_PATH)
     @GET
-    public Response registerPage(@QueryParam("code") String code,
+    public Response registerPage(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                 @QueryParam(SESSION_CODE) String code,
                                  @QueryParam("execution") String execution,
                                  @QueryParam("client_id") String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
-        return registerRequest(code, execution, clientId,  tabId,false);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,false);
     }
 
 
@@ -633,22 +645,23 @@ public class LoginActionsService {
      */
     @Path(REGISTRATION_PATH)
     @POST
-    public Response processRegister(@QueryParam("code") String code,
+    public Response processRegister(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                    @QueryParam(SESSION_CODE) String code,
                                     @QueryParam("execution") String execution,
                                     @QueryParam("client_id") String clientId,
                                     @QueryParam(Constants.TAB_ID) String tabId) {
-        return registerRequest(code, execution, clientId,  tabId,true);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,true);
     }
 
 
-    private Response registerRequest(String code, String execution, String clientId, String tabId, boolean isPostRequest) {
+    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, boolean isPostRequest) {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
-        SessionCodeChecks checks = checksForCode(code, execution, clientId, tabId, REGISTRATION_PATH);
+        SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, REGISTRATION_PATH);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
@@ -663,48 +676,52 @@ public class LoginActionsService {
 
     @Path(FIRST_BROKER_LOGIN_PATH)
     @GET
-    public Response firstBrokerLoginGet(@QueryParam("code") String code,
+    public Response firstBrokerLoginGet(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                        @QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
-        return brokerLoginFlow(code, execution, clientId, tabId, FIRST_BROKER_LOGIN_PATH);
+        return brokerLoginFlow(authSessionId, code, execution, clientId, tabId, FIRST_BROKER_LOGIN_PATH);
     }
 
     @Path(FIRST_BROKER_LOGIN_PATH)
     @POST
-    public Response firstBrokerLoginPost(@QueryParam("code") String code,
+    public Response firstBrokerLoginPost(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                         @QueryParam(SESSION_CODE) String code,
                                          @QueryParam("execution") String execution,
                                          @QueryParam("client_id") String clientId,
                                          @QueryParam(Constants.TAB_ID) String tabId) {
-        return brokerLoginFlow(code, execution, clientId, tabId, FIRST_BROKER_LOGIN_PATH);
+        return brokerLoginFlow(authSessionId, code, execution, clientId, tabId, FIRST_BROKER_LOGIN_PATH);
     }
 
     @Path(POST_BROKER_LOGIN_PATH)
     @GET
-    public Response postBrokerLoginGet(@QueryParam("code") String code,
+    public Response postBrokerLoginGet(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                       @QueryParam(SESSION_CODE) String code,
                                        @QueryParam("execution") String execution,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
-        return brokerLoginFlow(code, execution, clientId, tabId, POST_BROKER_LOGIN_PATH);
+        return brokerLoginFlow(authSessionId, code, execution, clientId, tabId, POST_BROKER_LOGIN_PATH);
     }
 
     @Path(POST_BROKER_LOGIN_PATH)
     @POST
-    public Response postBrokerLoginPost(@QueryParam("code") String code,
+    public Response postBrokerLoginPost(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                        @QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
-        return brokerLoginFlow(code, execution, clientId, tabId, POST_BROKER_LOGIN_PATH);
+        return brokerLoginFlow(authSessionId, code, execution, clientId, tabId, POST_BROKER_LOGIN_PATH);
     }
 
 
-    protected Response brokerLoginFlow(String code, String execution, String clientId, String tabId, String flowPath) {
+    protected Response brokerLoginFlow(String authSessionId, String code, String execution, String clientId, String tabId, String flowPath) {
         boolean firstBrokerLogin = flowPath.equals(FIRST_BROKER_LOGIN_PATH);
 
         EventType eventType = firstBrokerLogin ? EventType.IDENTITY_PROVIDER_FIRST_LOGIN : EventType.IDENTITY_PROVIDER_POST_LOGIN;
         event.event(eventType);
 
-        SessionCodeChecks checks = checksForCode(code, execution, clientId, tabId, flowPath);
+        SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, flowPath);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
@@ -783,10 +800,10 @@ public class LoginActionsService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processConsent(final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN);
-        String code = formData.getFirst("code");
+        String code = formData.getFirst(SESSION_CODE);
         String clientId = uriInfo.getQueryParameters().getFirst(Constants.CLIENT_ID);
         String tabId = uriInfo.getQueryParameters().getFirst(Constants.TAB_ID);
-        SessionCodeChecks checks = checksForCode(code, null, clientId, tabId, REQUIRED_ACTION);
+        SessionCodeChecks checks = checksForCode(null, code, null, clientId, tabId, REQUIRED_ACTION);
         if (!checks.verifyRequiredAction(AuthenticationSessionModel.Action.OAUTH_GRANT.name())) {
             return checks.getResponse();
         }
@@ -874,26 +891,28 @@ public class LoginActionsService {
 
     @Path(REQUIRED_ACTION)
     @POST
-    public Response requiredActionPOST(@QueryParam("code") final String code,
+    public Response requiredActionPOST(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                       @QueryParam(SESSION_CODE) final String code,
                                        @QueryParam("execution") String action,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
-        return processRequireAction(code, action, clientId, tabId);
+        return processRequireAction(authSessionId, code, action, clientId, tabId);
     }
 
     @Path(REQUIRED_ACTION)
     @GET
-    public Response requiredActionGET(@QueryParam("code") final String code,
+    public Response requiredActionGET(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
+                                      @QueryParam(SESSION_CODE) final String code,
                                       @QueryParam("execution") String action,
                                       @QueryParam("client_id") String clientId,
                                       @QueryParam(Constants.TAB_ID) String tabId) {
-        return processRequireAction(code, action, clientId, tabId);
+        return processRequireAction(authSessionId, code, action, clientId, tabId);
     }
 
-    private Response processRequireAction(final String code, String action, String clientId, String tabId) {
+    private Response processRequireAction(final String authSessionId, final String code, String action, String clientId, String tabId) {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
 
-        SessionCodeChecks checks = checksForCode(code, action, clientId, tabId, REQUIRED_ACTION);
+        SessionCodeChecks checks = checksForCode(authSessionId, code, action, clientId, tabId, REQUIRED_ACTION);
         if (!checks.verifyRequiredAction(action)) {
             return checks.getResponse();
         }

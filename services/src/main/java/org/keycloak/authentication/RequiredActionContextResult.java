@@ -136,7 +136,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public URI getActionUrl(String code) {
         ClientModel client = authenticationSession.getClient();
         return LoginActionsService.requiredActionProcessor(getUriInfo())
-                .queryParam(OAuth2Constants.CODE, code)
+                .queryParam(LoginActionsService.SESSION_CODE, code)
                 .queryParam(Constants.EXECUTION, getExecution())
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, authenticationSession.getTabId())

@@ -48,6 +48,20 @@ public interface Scope {
     void setName(String name);
 
     /**
+     * Returns the end user friendly name for this scope. If not defined, value for {@link #getName()} is returned.
+     *
+     * @return the friendly name for this scope
+     */
+    String getDisplayName();
+
+    /**
+     * Sets an end user friendly name for this scope.
+     *
+     * @param name the name of this scope
+     */
+    void setDisplayName(String name);
+
+    /**
      * Returns an icon {@link java.net.URI} for this scope.
      *
      * @return a uri for an icon

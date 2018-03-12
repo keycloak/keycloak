@@ -1099,6 +1099,12 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
+    
+    var refresh = function() {
+        Realm.get($scope.realm, function () {
+            $scope.changed = false;
+        });
+    };
 
     $scope.$watch('realm', function() {
         if (!angular.equals($scope.realm, oldCopy)) {
@@ -1108,6 +1114,10 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 
     $scope.$watch('actionLifespanId', function () {
         $scope.actionTokenAttribute = TimeUnit2.asUnit($scope.realm.attributes['actionTokenGeneratedByUserLifespan.' + $scope.actionLifespanId]);
+        //Refresh and disable the button if attribute is empty
+        if (!$scope.actionTokenAttribute.toSeconds()) {
+            refresh();
+        }
     }, true);
 
     $scope.$watch('actionTokenAttribute', function () {

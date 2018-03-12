@@ -153,6 +153,11 @@ public class CompositeKeyLocator implements KeyLocator, Iterable<Key> {
                     }
                     return this;
                 }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException("remove");  // Same as default implementation in JDK 8 - to support JDK 7 compilation
+                }
             }.findNext();
         }
     }

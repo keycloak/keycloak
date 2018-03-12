@@ -113,6 +113,11 @@ public interface AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     Response addExecution(AuthenticationExecutionRepresentation model);
 
+    @Path("/executions/{executionId}")
+	@GET
+    @Produces(MediaType.APPLICATION_JSON)
+    AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId);
+
     @Path("/executions/{executionId}/raise-priority")
     @POST
     void raisePriority(@PathParam("executionId") String execution);

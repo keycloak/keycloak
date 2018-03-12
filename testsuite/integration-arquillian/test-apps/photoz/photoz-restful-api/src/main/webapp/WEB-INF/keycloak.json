@@ -16,32 +16,20 @@
     }
   },
   "policy-enforcer": {
-    "user-managed-access" : {},
+    "enforcement-mode": "PERMISSIVE",
+    "user-managed-access": {},
     "paths": [
-      {
-        "path" : "/album/*",
-        "methods" : [
-          {
-            "method": "POST",
-            "scopes" : ["urn:photoz.com:scopes:album:create"]
-          },
-          {
-            "method": "GET",
-            "scopes" : ["urn:photoz.com:scopes:album:view"]
-          }
-        ]
-      },
       {
         "name" : "Album Resource",
         "path" : "/album/{id}",
         "methods" : [
           {
             "method": "DELETE",
-            "scopes" : ["urn:photoz.com:scopes:album:delete"]
+            "scopes" : ["album:delete"]
           },
           {
             "method": "GET",
-            "scopes" : ["urn:photoz.com:scopes:album:view"]
+            "scopes" : ["album:view"]
           }
         ]
       },

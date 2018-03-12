@@ -50,7 +50,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientTemplateInvalidation(cached.getId());
-            updated = cacheSession.getDelegate().getClientTemplateById(cached.getId(), cachedRealm);
+            updated = cacheSession.getRealmDelegate().getClientTemplateById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -63,7 +63,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getClientTemplateById(cached.getId(), cachedRealm);
+        updated = cacheSession.getRealmDelegate().getClientTemplateById(cached.getId(), cachedRealm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }

@@ -53,7 +53,13 @@ public class KeycloakCliSso {
             login();
         } else if (args[0].equalsIgnoreCase("login-manual")) {
             loginManual();
-        } else if (args[0].equalsIgnoreCase("token")) {
+        }
+        /*
+        else if (args[0].equalsIgnoreCase("login-cli")) {
+            loginCli();
+        }
+        */
+        else if (args[0].equalsIgnoreCase("token")) {
             token();
         } else if (args[0].equalsIgnoreCase("logout")) {
             logout();
@@ -69,6 +75,7 @@ public class KeycloakCliSso {
         System.err.println("Commands:");
         System.err.println("  login - login with desktop browser if available, otherwise do manual login.  Output is access token.");
         System.err.println("  login-manual - manual login");
+        //System.err.println("  login-cli - attempt Keycloak proprietary cli protocol.  Otherwise do normal login");
         System.err.println("  token - print access token if logged in");
         System.err.println("  logout - logout.");
         System.exit(1);
@@ -110,7 +117,7 @@ public class KeycloakCliSso {
         return config;
     }
 
-    public boolean checkToken() throws Exception {
+    public boolean checkToken(boolean outputToken) throws Exception {
         String token = getTokenResponse();
         if (token == null) return false;
 
@@ -127,7 +134,7 @@ public class KeycloakCliSso {
                     AdapterConfig config = getConfig();
                     KeycloakInstalled installed = new KeycloakInstalled(KeycloakDeploymentBuilder.build(config));
                     installed.refreshToken(tokenResponse.getRefreshToken());
-                    processResponse(installed);
+                    processResponse(installed, outputToken);
                     return true;
                 } catch (Exception e) {
                     System.err.println("Error processing existing token");
@@ -184,11 +191,19 @@ public class KeycloakCliSso {
     }
 
     public void login() throws Exception {
-        if (checkToken()) return;
+        if (checkToken(true)) return;
         AdapterConfig config = getConfig();
         KeycloakInstalled installed = new KeycloakInstalled(KeycloakDeploymentBuilder.build(config));
         installed.login();
-        processResponse(installed);
+        processResponse(installed, true);
+    }
+
+    public void loginCli() throws Exception {
+        if (checkToken(false)) return;
+        AdapterConfig config = getConfig();
+        KeycloakInstalled installed = new KeycloakInstalled(KeycloakDeploymentBuilder.build(config));
+        if (!installed.loginCommandLine()) installed.login();
+        processResponse(installed, false);
     }
 
     public String getHome() {
@@ -210,7 +225,7 @@ public class KeycloakCliSso {
         return Paths.get(getHome(), System.getProperty("basepath", ".keycloak-sso"), System.getProperty("KEYCLOAK_REALM"), System.getProperty("KEYCLOAK_CLIENT") + ".json").toFile();
     }
 
-    private void processResponse(KeycloakInstalled installed) throws IOException {
+    private void processResponse(KeycloakInstalled installed, boolean outputToken) throws IOException {
         AccessTokenResponse tokenResponse = installed.getTokenResponse();
         tokenResponse.setExpiresIn(Time.currentTime() + tokenResponse.getExpiresIn());
         tokenResponse.setIdToken(null);
@@ -220,16 +235,16 @@ public class KeycloakCliSso {
         fos.write(output.getBytes("UTF-8"));
         fos.flush();
         fos.close();
-        System.out.println(tokenResponse.getToken());
+        if (outputToken) System.out.println(tokenResponse.getToken());
     }
 
     public void loginManual() throws Exception {
-        if (checkToken()) return;
+        if (checkToken(true)) return;
         AdapterConfig config = getConfig();
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(config);
         KeycloakInstalled installed = new KeycloakInstalled(deployment);
         installed.loginManual();
-        processResponse(installed);
+        processResponse(installed, true);
     }
 
     public void logout() throws Exception {

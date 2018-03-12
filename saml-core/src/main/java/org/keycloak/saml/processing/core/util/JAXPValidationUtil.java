@@ -21,6 +21,7 @@ import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;

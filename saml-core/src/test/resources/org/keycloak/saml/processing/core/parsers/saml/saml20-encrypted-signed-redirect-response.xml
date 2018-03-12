@@ -1,5 +1,5 @@
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:8080/sales-post-enc/saml" ID="ID_0b43d444-d1a8-44a5-8caf-38e176489e1f" InResponseTo="ID_223d3591-22fb-4b3c-9e38-4719293b2d94" IssueInstant="2016-11-01T13:52:43.054Z" Version="2.0">
-    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">http://localhost:8081/auth/realms/saml-demo</saml:Issuer>
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">http://localhost:8081/auth/realms/saml-demo</saml:Issuer>
     <samlp:Extensions>
         <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
     </samlp:Extensions>

@@ -37,9 +37,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -47,10 +44,12 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
@@ -138,14 +137,11 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     @Test
     public void testExactNameMatch() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource A");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
@@ -166,11 +162,8 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     public void testOnlyChildrenPolicy() throws Exception {
         RealmResource realm = getRealm();
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource B");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource B");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
@@ -181,7 +174,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
 
         AuthorizationResponse response = authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         try {
             authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
@@ -190,15 +183,10 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
 
         }
 
-        request = new PermissionRequest();
-
-        request.setResourceSetName("Resource C");
-
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
-
+        request = new PermissionRequest("Resource C");
+        ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
     }
 
     private void createGroupPolicy(String name, String groupPath, boolean extendChildren) {

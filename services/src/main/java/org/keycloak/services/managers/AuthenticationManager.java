@@ -195,7 +195,7 @@ public class AuthenticationManager {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
-        logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
+        logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(), userSession.isOffline());
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
@@ -211,7 +211,13 @@ public class AuthenticationManager {
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
 
         if (offlineSession) {
-            session.sessions().removeOfflineUserSession(realm, userSession);
+            new UserSessionManager(session).revokeOfflineUserSession(userSession);
+
+            // Check if "online" session still exists and remove it too
+            UserSessionModel onlineUserSession = session.sessions().getUserSession(realm, userSession.getId());
+            if (onlineUserSession != null) {
+                session.sessions().removeUserSession(realm, onlineUserSession);
+            }
         } else {
             session.sessions().removeUserSession(realm, userSession);
         }
@@ -1076,24 +1082,28 @@ public class AuthenticationManager {
                 }
             }
 
-            UserModel user = session.users().getUserById(token.getSubject(), realm);
-            if (user == null || !user.isEnabled() ) {
-                logger.debug("Unknown user in identity token");
-                return null;
-            }
-
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-            if (token.getIssuedAt() < userNotBefore) {
-                logger.debug("User notBefore newer than token");
-                return null;
-            }
-
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+            UserModel user = null;
+            if (userSession != null) {
+                user = userSession.getUser();
+                if (user == null || !user.isEnabled()) {
+                    logger.debug("Unknown user in identity token");
+                    return null;
+                }
+
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (token.getIssuedAt() < userNotBefore) {
+                    logger.debug("User notBefore newer than token");
+                    return null;
+                }
+            }
+
             if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
+                        user = offlineUserSession.getUser();
                         return new AuthResult(user, offlineUserSession, token);
                     }
                 }

@@ -112,6 +112,16 @@ public interface PolicyStore {
     List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId);
 
     /**
+     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>resourceId</code> and <code>scopeIds</code>.
+     *
+     * @param scopeIds the id of the scopes
+     * @param resourceId the id of the resource
+     * @param resourceServerId the resource server id
+     * @return a list of policies associated with the given scopes
+     */
+    List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId);
+
+    /**
      * Returns a list of {@link Policy} with the given <code>type</code>.
      *
      * @param type the type of the policy

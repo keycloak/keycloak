@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
@@ -114,7 +115,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -157,7 +161,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -173,7 +180,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -189,7 +199,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -210,7 +223,41 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
+        if (scopeIds==null || scopeIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Use separate subquery to handle DB2 and MSSSQL
+        TypedQuery<String> query;
+
+        if (resourceId == null) {
+            query = entityManager.createNamedQuery("findPolicyIdByNullResourceScope", String.class);
+        } else {
+            query = entityManager.createNamedQuery("findPolicyIdByResourceScope", String.class);
+            query.setParameter("resourceId", resourceId);
+        }
+
+        query.setFlushMode(FlushModeType.COMMIT);
+        query.setParameter("scopeIds", scopeIds);
+        query.setParameter("serverId", resourceServerId);
+
+        List<String> result = query.getResultList();
+        List<Policy> list = new LinkedList<>();
+        for (String id : result) {
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -226,7 +273,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }
@@ -243,7 +293,10 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId));
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            if (Objects.nonNull(policy)) {
+                list.add(policy);
+            }
         }
         return list;
     }

@@ -91,27 +91,49 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         try {
             CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser(sessionClass);
             result.clientSession = getClientSession(code, tabId, session, realm, client, event, clientSessionParser);
-            if (result.clientSession == null) {
-                result.authSessionNotFound = true;
-                return result;
-            }
-
-            if (!clientSessionParser.verifyCode(session, code, result.clientSession)) {
-                result.illegalHash = true;
-                return result;
-            }
-
-            if (clientSessionParser.isExpired(session, code, result.clientSession)) {
-                result.expiredToken = true;
-                return result;
-            }
-
-            result.code = new ClientSessionCode<CLIENT_SESSION>(session, realm, result.clientSession);
-            return result;
+            return parseResult(code, session, realm, result, clientSessionParser);
         } catch (RuntimeException e) {
             result.illegalHash = true;
             return result;
         }
+    }
+
+    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, String tabId,
+                                                                                                            KeycloakSession session, RealmModel realm, ClientModel client,
+                                                                                                            EventBuilder event, CLIENT_SESSION clientSession) {
+        ParseResult<CLIENT_SESSION> result = new ParseResult<>();
+        result.clientSession = clientSession;
+        if (code == null) {
+            result.illegalHash = true;
+            return result;
+        }
+        try {
+            CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser((Class<CLIENT_SESSION>)clientSession.getClass());
+            return parseResult(code, session, realm, result, clientSessionParser);
+        } catch (RuntimeException e) {
+            result.illegalHash = true;
+            return result;
+        }
+    }
+
+    private static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, ParseResult<CLIENT_SESSION> result, CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser) {
+        if (result.clientSession == null) {
+            result.authSessionNotFound = true;
+            return result;
+        }
+
+        if (!clientSessionParser.verifyCode(session, code, result.clientSession)) {
+            result.illegalHash = true;
+            return result;
+        }
+
+        if (clientSessionParser.isExpired(session, code, result.clientSession)) {
+            result.expiredToken = true;
+            return result;
+        }
+
+        result.code = new ClientSessionCode<CLIENT_SESSION>(session, realm, result.clientSession);
+        return result;
     }
 
 

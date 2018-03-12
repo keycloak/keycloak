@@ -18,12 +18,14 @@
         <tr>
             <th>{{:: 'client' | translate}}</th>
             <th>{{:: 'active-sessions' | translate}}</th>
+            <th>{{:: 'offline-sessions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
         <tr data-ng-repeat="data in stats">
             <td><a href="#/realms/{{realm.realm}}/clients/{{data.id}}/sessions">{{data.clientId}}</a></td>
             <td>{{data.active}}</td>
+            <td>{{data.offline}}</td>
         </tr>
         </tbody>
     </table>

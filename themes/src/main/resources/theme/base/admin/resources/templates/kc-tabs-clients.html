@@ -1,0 +1,16 @@
+<div >
+    <h1>
+        <span>{{:: 'clients' | translate}}</span>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: path[2] == 'clients'}">
+            <a href="#/realms/{{realm.realm}}/clients">{{:: 'lookup' | translate}}</a>
+            <kc-tooltip>{{:: 'clients.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li ng-class="{active: path[2] == 'client-stores'}" data-ng-hide="!clientStorageProviders || clientStorageProviders.length == 0">
+            <a href="#/realms/{{realm.realm}}/client-stores">{{:: 'client-storage' | translate}}</a>
+            <kc-tooltip>{{:: 'client-stores.tooltip' | translate}}</kc-tooltip>
+        </li>
+    </ul>
+</div>

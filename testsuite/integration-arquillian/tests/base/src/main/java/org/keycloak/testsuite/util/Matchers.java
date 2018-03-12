@@ -126,7 +126,7 @@ public class Matchers {
     public static <T> Matcher<SAML2Object> isSamlResponse(JBossSAMLURIConstants expectedStatus) {
         return allOf(
           instanceOf(ResponseType.class),
-          new SamlResponseTypeMatcher(is(URI.create(expectedStatus.get())))
+          new SamlResponseTypeMatcher(is(expectedStatus.getUri()))
         );
     }
 
@@ -150,7 +150,7 @@ public class Matchers {
     public static <T> Matcher<SAML2Object> isSamlStatusResponse(JBossSAMLURIConstants expectedStatus) {
         return allOf(
           instanceOf(StatusResponseType.class),
-          new SamlStatusResponseTypeMatcher(is(URI.create(expectedStatus.get())))
+          new SamlStatusResponseTypeMatcher(is(expectedStatus.getUri()))
         );
     }
 }

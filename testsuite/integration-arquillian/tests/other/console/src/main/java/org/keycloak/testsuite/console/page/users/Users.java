@@ -78,7 +78,7 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void clickUser(String username) {
-            clickLink(getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")));
+            clickLink(getRowByUsername(username).findElement(By.xpath("./td[position()=1]")));
         }
 
         public void editUser(String username) {

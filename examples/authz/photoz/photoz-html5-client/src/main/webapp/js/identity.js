@@ -34,6 +34,10 @@
             keycloak.logout();
         };
 
+        this.account = function () {
+            keycloak.accountManagement();
+        }
+
         this.hasRole = function (name) {
             if (keycloak && keycloak.hasRealmRole(name)) {
                 return true;

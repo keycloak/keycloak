@@ -52,6 +52,15 @@ public class Time {
     }
 
     /**
+     * Returns {@link Date} object, its value set to time
+     * @param time Time in milliseconds since the epoch
+     * @return see description
+     */
+    public static Date toDate(long time) {
+        return new Date(time);
+    }
+
+    /**
      * Returns time in milliseconds for a time in seconds. No adjustment is made to the parameter.
      * @param time Time in seconds since the epoch
      * @return Time in milliseconds

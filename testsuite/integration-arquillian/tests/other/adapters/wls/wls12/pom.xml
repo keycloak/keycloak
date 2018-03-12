@@ -41,7 +41,8 @@
     <dependencies>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-wls-remote-12.1.x</artifactId>
+            <artifactId>arquillian-wls-custom-remote-12.1.x</artifactId>
+            <version>1.0.2.Final-SNAPSHOT</version>
         </dependency>
     </dependencies>
     

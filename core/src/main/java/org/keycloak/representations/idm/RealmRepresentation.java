@@ -145,6 +145,8 @@ public class RealmRepresentation {
 
     protected String keycloakVersion;
 
+    protected Boolean userManagedAccessAllowed;
+
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -963,5 +965,13 @@ public class RealmRepresentation {
 
     public void setFederatedUsers(List<UserRepresentation> federatedUsers) {
         this.federatedUsers = federatedUsers;
+    }
+
+    public void setUserManagedAccessAllowed(Boolean userManagedAccessAllowed) {
+        this.userManagedAccessAllowed = userManagedAccessAllowed;
+    }
+
+    public Boolean isUserManagedAccessAllowed() {
+        return userManagedAccessAllowed;
     }
 }
