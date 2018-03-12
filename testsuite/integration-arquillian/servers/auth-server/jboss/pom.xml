@@ -245,6 +245,13 @@
                                                 <include>empty.crl</include>
                                             </includes>
                                         </resource>
+                                        <resource>
+                                            <directory>${common.resources}/pki/root/ca</directory>
+                                            <includes>
+                                                <include>certs/clients/test-user-san-email@localhost.cert.pem</include>
+                                                <include>certs/clients/test-user@localhost.key.pem</include>
+                                            </includes>
+                                        </resource>
                                     </resources>
                                 </configuration>
                             </execution>
