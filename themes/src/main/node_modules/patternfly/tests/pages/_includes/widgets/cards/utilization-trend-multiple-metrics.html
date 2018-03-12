@@ -1,0 +1,171 @@
+<div class="card-pf card-pf-utilization">
+  <div class="card-pf-heading">
+    <p class="card-pf-heading-details">Last 30 days</p>
+    <h2 class="card-pf-title">
+      Utilization
+    </h2>
+  </div>
+  <div class="card-pf-body">
+    <div class="row">
+      <div class="col-xs-12 col-sm-4 col-md-4">
+        <h3 class="card-pf-subtitle">CPU</h3>
+        <p class="card-pf-utilization-details">
+          <span class="card-pf-utilization-card-details-count">50</span>
+            <span class="card-pf-utilization-card-details-description">
+              <span class="card-pf-utilization-card-details-line-1">Available</span>
+              <span class="card-pf-utilization-card-details-line-2">of 1000 MHz</span>
+            </span>
+        </p>
+        <div id="{{include.id3}}"></div>
+        <div class="chart-pf-sparkline" id="{{include.id4}}"></div>
+        <script>
+          var donutConfig = $().c3ChartDefaults().getDefaultDonutConfig('A');
+          donutConfig.bindto = '#{{include.id3}}';
+          donutConfig.color =  {
+            pattern: ["#cc0000","#D1D1D1"]
+          };
+          donutConfig.data = {
+            type: "donut",
+            columns: [
+              ["Used", 95],
+              ["Available", 5]
+            ],
+            groups: [
+              ["used", "available"]
+            ],
+            order: null
+          };
+          donutConfig.tooltip = {
+            contents: function (d) {
+              return '<span class="donut-tooltip-pf" style="white-space: nowrap;">' +
+                      Math.round(d[0].ratio * 100) + '%' + ' MHz ' + d[0].name +
+                      '</span>';
+            }
+          };
+
+          var chart1 = c3.generate(donutConfig);
+          var donutChartTitle = d3.select("#{{include.id3}}").select('text.c3-chart-arcs-title');
+          donutChartTitle.text("");
+          donutChartTitle.insert('tspan').text("950").classed('donut-title-big-pf', true).attr('dy', 0).attr('x', 0);
+          donutChartTitle.insert('tspan').text("MHz Used").classed('donut-title-small-pf', true).attr('dy', 20).attr('x', 0);
+
+          var sparklineConfig = $().c3ChartDefaults().getDefaultSparklineConfig();
+          sparklineConfig.bindto = '#{{include.id4}}';
+          sparklineConfig.data = {
+            columns: [
+              ['%', 10, 50, 28, 20, 31, 27, 60, 36, 52, 55, 62, 68, 69, 88, 74, 88, 95],
+            ],
+            type: 'area'
+          };
+          var chart2 = c3.generate(sparklineConfig);
+        </script>
+      </div>
+      <div class="col-xs-12 col-sm-4 col-md-4">
+        <h3 class="card-pf-subtitle">Memory</h3>
+        <p class="card-pf-utilization-details">
+          <span class="card-pf-utilization-card-details-count">256</span>
+            <span class="card-pf-utilization-card-details-description">
+              <span class="card-pf-utilization-card-details-line-1">Available</span>
+              <span class="card-pf-utilization-card-details-line-2">of 432 GB</span>
+            </span>
+        </p>
+        <div id="{{include.id5}}"></div>
+        <div class="chart-pf-sparkline" id="{{include.id6}}"></div>
+        <script>
+          var donutConfig = $().c3ChartDefaults().getDefaultDonutConfig('A');
+          donutConfig.bindto = '#{{include.id5}}';
+          donutConfig.color =  {
+            pattern: ["#3f9c35","#D1D1D1"]
+          };
+          donutConfig.data = {
+            type: "donut",
+            columns: [
+              ["Used", 41],
+              ["Available", 59]
+            ],
+            groups: [
+              ["used", "available"]
+            ],
+            order: null
+          };
+          donutConfig.tooltip = {
+            contents: function (d) {
+              return '<span class="donut-tooltip-pf" style="white-space: nowrap;">' +
+                      Math.round(d[0].ratio * 100) + '%' + ' GB ' + d[0].name +
+                      '</span>';
+            }
+          };
+
+          var chart3 = c3.generate(donutConfig);
+          var donutChartTitle = d3.select("#{{include.id5}}").select('text.c3-chart-arcs-title');
+          donutChartTitle.text("");
+          donutChartTitle.insert('tspan').text("176").classed('donut-title-big-pf', true).attr('dy', 0).attr('x', 0);
+          donutChartTitle.insert('tspan').text("GB Used").classed('donut-title-small-pf', true).attr('dy', 20).attr('x', 0);
+
+          var sparklineConfig = $().c3ChartDefaults().getDefaultSparklineConfig();
+          sparklineConfig.bindto = '#{{include.id6}}';
+          sparklineConfig.data = {
+            columns: [
+              ['%', 35, 36, 20, 30, 31, 22, 44, 36, 40, 41, 55, 52, 48, 48, 50, 40, 41],
+            ],
+            type: 'area'
+          };
+          var chart4 = c3.generate(sparklineConfig);
+        </script>
+      </div>
+      <div class="col-xs-12 col-sm-4 col-md-4">
+        <h3 class="card-pf-subtitle">Network</h3>
+        <p class="card-pf-utilization-details">
+          <span class="card-pf-utilization-card-details-count">200</span>
+            <span class="card-pf-utilization-card-details-description">
+              <span class="card-pf-utilization-card-details-line-1">Available</span>
+              <span class="card-pf-utilization-card-details-line-2">of 1300 Gbps</span>
+            </span>
+        </p>
+        <div id="{{include.id7}}"></div>
+        <div class="chart-pf-sparkline" id="{{include.id8}}"></div>
+        <script>
+          var donutConfig = $().c3ChartDefaults().getDefaultDonutConfig('A');
+          donutConfig.bindto = '#{{include.id7}}';
+          donutConfig.color =  {
+            pattern: ["#EC7A08","#D1D1D1"]
+          };
+          donutConfig.data = {
+            type: "donut",
+            columns: [
+              ["Used", 85],
+              ["Available", 15]
+            ],
+            groups: [
+              ["used", "available"]
+            ],
+            order: null
+          };
+          donutConfig.tooltip = {
+            contents: function (d) {
+              return '<span class="donut-tooltip-pf" style="white-space: nowrap;">' +
+                      Math.round(d[0].ratio * 100) + '%' + ' Gbps ' + d[0].name +
+                      '</span>';
+            }
+          };
+
+          var chart5 = c3.generate(donutConfig);
+          var donutChartTitle = d3.select("#{{include.id7}}").select('text.c3-chart-arcs-title');
+          donutChartTitle.text("");
+          donutChartTitle.insert('tspan').text("1100").classed('donut-title-big-pf', true).attr('dy', 0).attr('x', 0);
+          donutChartTitle.insert('tspan').text("Gbps Used").classed('donut-title-small-pf', true).attr('dy', 20).attr('x', 0);
+
+          var sparklineConfig = $().c3ChartDefaults().getDefaultSparklineConfig();
+          sparklineConfig.bindto = '#{{include.id8}}';
+          sparklineConfig.data = {
+            columns: [
+              ['%', 60, 55, 70, 44, 31, 67, 54, 46, 58, 75, 62, 68, 69, 88, 74, 88, 85],
+            ],
+            type: 'area'
+          };
+          var chart6 = c3.generate(sparklineConfig);
+        </script>
+      </div>
+    </div>
+  </div>
+</div>

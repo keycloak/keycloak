@@ -229,11 +229,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                 redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
-                redirectUri.addParam("token_type", res.getTokenType());
-                redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
             }
-
-            redirectUri.addParam("not-before-policy", String.valueOf(res.getNotBeforePolicy()));
         }
 
         return redirectUri.build();

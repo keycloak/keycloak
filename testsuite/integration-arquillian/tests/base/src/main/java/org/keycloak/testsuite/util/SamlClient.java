@@ -173,7 +173,7 @@ public class SamlClient {
 
             @Override
             public URI getBindingUri() {
-                return URI.create(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+                return JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             }
         },
 
@@ -201,7 +201,7 @@ public class SamlClient {
 
             @Override
             public URI getBindingUri() {
-                return URI.create(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+                return JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
             }
 
             @Override

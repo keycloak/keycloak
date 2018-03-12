@@ -70,7 +70,7 @@ public class SAMLResponseWriter extends BaseWriter {
     public void write(ResponseType response, boolean forceWriteDsigNamespace) throws ProcessingException {
         Element sig = response.getSignature();
 
-        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE__PROTOCOL.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
 
         if (forceWriteDsigNamespace && sig != null && sig.getPrefix() != null && ! sig.hasAttribute("xmlns:" + sig.getPrefix())) {
             StaxUtil.writeNameSpace(writer, sig.getPrefix(), XMLSignature.XMLNS);

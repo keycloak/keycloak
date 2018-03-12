@@ -216,6 +216,12 @@
            <type>test-jar</type>
            <scope>test</scope>
        </dependency>
+       <dependency>
+           <groupId>org.keycloak.testsuite</groupId>
+           <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+           <version>${project.version}</version>
+           <scope>test</scope>
+       </dependency>
 
        <dependency>
            <groupId>org.apache.tomcat</groupId>

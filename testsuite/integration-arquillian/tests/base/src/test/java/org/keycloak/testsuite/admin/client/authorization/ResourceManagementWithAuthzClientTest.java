@@ -20,10 +20,8 @@ package org.keycloak.testsuite.admin.client.authorization;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.NotNull;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -42,7 +40,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         org.keycloak.authorization.client.representation.ResourceRepresentation resource = toResourceRepresentation(newResource);
 
         AuthzClient authzClient = getAuthzClient();
-        RegistrationResponse response = authzClient.protection().resource().create(resource);
+        org.keycloak.authorization.client.representation.ResourceRepresentation response = authzClient.protection().resource().create(resource);
 
         return toResourceRepresentation(authzClient, response.getId());
     }
@@ -62,7 +60,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
     }
 
     private ResourceRepresentation toResourceRepresentation(AuthzClient authzClient, String id) {
-        org.keycloak.authorization.client.representation.ResourceRepresentation created = authzClient.protection().resource().findById(id).getResourceDescription();
+        org.keycloak.authorization.client.representation.ResourceRepresentation created = authzClient.protection().resource().findById(id);
         ResourceRepresentation resourceRepresentation = new ResourceRepresentation();
 
         resourceRepresentation.setId(created.getId());

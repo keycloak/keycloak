@@ -1,0 +1,75 @@
+<div id="{{include.id}}1" class="example-donut-chart"></div>
+<div id="{{include.id}}2" class="example-donut-chart-right-legend"></div>
+<div id="{{include.id}}3" class="example-donut-chart-bottom-legend"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var donutData = {
+    type : 'donut',
+    columns: [
+      ['Dogs', 2],
+      ['Cats', 2],
+      ['Fish', 3],
+      ['Hamsters', 1]
+    ],
+    onclick: function (d, i) { console.log("onclick", d, i); },
+    onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+    onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+  };
+
+  // Donut Chart without Legend
+  var donutChartConfig = c3ChartDefaults.getDefaultRelationshipDonutConfig();
+  donutChartConfig.bindto = '#{{include.id}}1';
+  donutChartConfig.tooltip = {show: true};
+  donutChartConfig.data = donutData;
+  donutChartConfig.size = {
+    width: 200,
+    height: 171
+  };
+  donutChartConfig.tooltip = {
+    contents: $().pfDonutTooltipContents
+  };
+
+  var donutChartNoLegend = c3.generate(donutChartConfig);
+  $().pfSetDonutChartTitle("#{{include.id}}1", "8", "Animals");
+
+  // Right Legend
+  var donutChartRightConfig = c3ChartDefaults.getDefaultRelationshipDonutConfig();
+  donutChartRightConfig.bindto = '#{{include.id}}2';
+  donutChartRightConfig.tooltip = {show: true};
+  donutChartRightConfig.data = donutData;
+  donutChartRightConfig.legend = {
+    show: true,
+    position: 'right'
+  };
+  donutChartRightConfig.size = {
+    width: 251,
+    height: 161
+  };
+  donutChartRightConfig.tooltip = {
+    contents: $().pfDonutTooltipContents
+  };
+
+  var donutChartRightLegend = c3.generate(donutChartRightConfig);
+  $().pfSetDonutChartTitle("#{{include.id}}2", "8", "Animals");
+
+  // Donut Chart Bottom Legend
+  var donutChartBottomConfig = c3ChartDefaults.getDefaultRelationshipDonutConfig();
+  donutChartBottomConfig.bindto = '#{{include.id}}3';
+  donutChartBottomConfig.tooltip = {show: true};
+  donutChartBottomConfig.data = donutData;
+  donutChartBottomConfig.legend = {
+    show: true,
+    position: 'bottom'
+  };
+  donutChartBottomConfig.size = {
+    width: 271,
+    height: 191
+  };
+  donutChartBottomConfig.tooltip = {
+    contents: $().pfDonutTooltipContents
+  };
+
+  var donutChartBottomLegend = c3.generate(donutChartBottomConfig);
+  $().pfSetDonutChartTitle("#{{include.id}}3", "8", "Animals");
+</script>

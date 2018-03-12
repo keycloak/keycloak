@@ -67,6 +67,7 @@ public class ClientRepresentation {
     private Boolean useTemplateMappers;
     private ResourceServerRepresentation authorizationSettings;
     private Map<String, Boolean> access;
+    protected String origin;
 
 
     public String getId() {
@@ -384,4 +385,19 @@ public class ClientRepresentation {
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
     }
+
+
+    /**
+     * Returns id of ClientStorageProvider that loaded this user
+     *
+     * @return NULL if user stored locally
+     */
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
 }

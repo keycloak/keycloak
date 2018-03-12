@@ -20,6 +20,7 @@
         <saml:AuthnStatement AuthnInstant="2016-12-15T12:42:49.788Z" SessionIndex="fb5d5a23-aa34-4528-a29a-6aad8c0ef0e8">
             <saml:AuthnContext>
                 <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef>
+                <saml:AuthnContextDeclRef>http://www.example.com/</saml:AuthnContextDeclRef>
             </saml:AuthnContext>
         </saml:AuthnStatement>
         <saml:AttributeStatement>

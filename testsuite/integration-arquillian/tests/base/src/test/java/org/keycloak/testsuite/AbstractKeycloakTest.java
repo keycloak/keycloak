@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -384,6 +385,35 @@ public abstract class AbstractKeycloakTest {
         }
 
         userResource.update(userRepresentation);
+    }
+
+    /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     */
+    public void setTimeOfDay(int hour, int minute, int second) {
+        setTimeOfDay(hour, minute, second, 0);
+    }
+
+    /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     * @param addSeconds additional seconds to add to offset time
+     */
+    public void setTimeOfDay(int hour, int minute, int second, int addSeconds) {
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.HOUR_OF_DAY, hour);
+        now.set(Calendar.MINUTE, minute);
+        now.set(Calendar.SECOND, second);
+        int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
+
+        setTimeOffset(offset + addSeconds);
     }
 
     /**

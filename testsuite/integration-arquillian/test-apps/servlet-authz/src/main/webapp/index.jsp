@@ -23,8 +23,8 @@
             for (Permission permission : authzContext.getPermissions()) {
         %>
         <li>
-            <p>Resource: <%= permission.getResourceSetName() %></p>
-            <p>ID: <%= permission.getResourceSetId() %></p>
+            <p>Resource: <%= permission.getResourceName() %></p>
+            <p>ID: <%= permission.getResourceId() %></p>
             <p>Scopes: <%= permission.getScopes() %></p>
         </li>
         <%

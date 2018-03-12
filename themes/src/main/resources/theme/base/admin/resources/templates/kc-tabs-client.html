@@ -9,11 +9,11 @@
     <ul class="nav nav-tabs"  data-ng-hide="create && !path[4]">
         <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'settings' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'credentials'}"
-            data-ng-show="!client.publicClient && client.protocol == 'openid-connect'">
+            data-ng-show="!client.publicClient && client.protocol == 'openid-connect' && !client.origin">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">{{:: 'credentials' | translate}}</a>
         </li>
         <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'saml-keys' | translate}}</a></li>
-        <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'roles'}" data-ng-show="!client.origin"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'mappers'}" data-ng-show="!client.bearerOnly">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">{{:: 'mappers' | translate}}</a>
             <kc-tooltip>{{:: 'mappers.tooltip' | translate}}</kc-tooltip>
@@ -23,10 +23,10 @@
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>
         <li ng-class="{active: path[4] == 'authz'}"
-            data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled">
+            data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled && !client.origin">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' |
                 translate}}</a></li>
-        <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2' && client.protocol != 'saml'"><a
+        <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2' && client.protocol != 'saml' && !client.origin"><a
                 href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">{{:: 'revocation' | translate}}</a>
         </li>
     <!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->
@@ -40,9 +40,9 @@
             <kc-tooltip>{{:: 'offline-access.tooltip' | translate}}</kc-tooltip>
         </li>
 
-        <li ng-class="{active: path[4] == 'clustering'}" data-ng-show="!client.publicClient"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'clustering' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'clustering'}" data-ng-show="!client.publicClient && !client.origin"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'clustering' | translate}}</a></li>
 
-        <li ng-class="{active: path[4] == 'installation'}">
+        <li ng-class="{active: path[4] == 'installation'}" data-ng-show="!client.origin">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/installation">{{:: 'installation' | translate}}</a>
             <kc-tooltip>{{:: 'installation.tooltip' | translate}}</kc-tooltip>
         </li>

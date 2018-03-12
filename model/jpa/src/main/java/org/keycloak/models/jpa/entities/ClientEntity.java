@@ -125,9 +125,6 @@ public class ClientEntity {
     @CollectionTable(name="CLIENT_AUTH_FLOW_BINDINGS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> authFlowBindings = new HashMap<String, String>();
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "client", cascade = CascadeType.REMOVE)
-    Collection<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
-
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
     Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
@@ -320,14 +317,6 @@ public class ClientEntity {
 
     public void setFrontchannelLogout(boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
-    }
-
-    public Collection<ClientIdentityProviderMappingEntity> getIdentityProviders() {
-        return this.identityProviders;
-    }
-
-    public void setIdentityProviders(Collection<ClientIdentityProviderMappingEntity> identityProviders) {
-        this.identityProviders = identityProviders;
     }
 
     public Collection<ProtocolMapperEntity> getProtocolMappers() {

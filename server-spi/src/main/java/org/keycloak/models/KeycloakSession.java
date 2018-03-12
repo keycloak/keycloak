@@ -124,6 +124,8 @@ public interface KeycloakSession {
     UserProvider users();
 
 
+    ClientProvider clientStorageManager();
+
     /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
      *
@@ -144,6 +146,15 @@ public interface KeycloakSession {
      * @return
      */
     UserProvider userLocalStorage();
+
+    RealmProvider realmLocalStorage();
+
+    /**
+     * Keycloak specific local storage for clients.  No cache in front, this api talks directly to database configured for Keycloak
+     *
+     * @return
+     */
+    ClientProvider clientLocalStorage();
 
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.

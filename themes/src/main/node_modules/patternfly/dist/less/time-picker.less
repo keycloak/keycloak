@@ -1,0 +1,81 @@
+//
+// Time Picker
+// --------------------------------------------------
+.bootstrap-datetimepicker-widget {
+  a[data-action] {
+    border: 0;
+    box-shadow: none;
+    color: @gray-dark;
+    display: block;
+    padding-bottom: 4px;
+    padding-top: 4px;
+    &:hover { color: @link-color; }
+  }
+  &.dropdown-menu {
+    left: 0!important;
+    padding: 0;
+    width: ~"calc(100% - 25px)";
+    &:before, &:after {
+      content: none;
+    }
+    &.top {
+      margin-bottom: -1px;
+    }
+    &.bottom {
+      margin-top: -1px;
+    }
+  }
+  .timepicker-hour {
+    width: 100%;
+    &:after {
+      content: ":";
+      float: right;
+    }
+  }
+}
+.timepicker-hours,
+.timepicker-minutes {
+  table td {
+    font-weight: bold;
+    line-height: 30px;
+    height: 30px;
+    &:hover { color: @link-color; }
+  }
+  .table-condensed > tbody > tr > td { padding: 0; }
+}
+.time-picker-pf {
+  .input-group-addon {
+    .fa,
+    .pficon { width: 12px; }
+    &:not(.active) { box-shadow: none; }
+  }
+}
+.timepicker-picker {
+  table td {
+    span,
+    a span {
+      height: 24px;
+      line-height: 24px;
+      margin: 0;
+      width: 100%;
+    }
+  }
+  .table-condensed > tbody > tr > td {
+    height: 25px;
+    line-height: 18px;
+    padding: 0;
+  }
+  button[data-action] { // provisional until the button is removed
+    padding-bottom: 0;
+    padding-top: 0;
+  }
+  .separator { display: none; }
+  tr:nth-child(2) td {
+    background-color: @dropdown-link-hover-bg;
+    border-color: @dropdown-link-hover-border-color;
+    border-style: solid;
+    border-width: 1px;
+    border-left: 0;
+    border-right: 0;
+  }
+}

@@ -38,3 +38,4 @@ org.keycloak.protocol.saml.profile.ecp.authenticator.HttpBasicAuthenticatorFacto
 org.keycloak.authentication.authenticators.x509.X509ClientCertificateAuthenticatorFactory
 org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory
 org.keycloak.protocol.docker.DockerAuthenticatorFactory
+org.keycloak.authentication.authenticators.cli.CliUsernamePasswordAuthenticatorFactory

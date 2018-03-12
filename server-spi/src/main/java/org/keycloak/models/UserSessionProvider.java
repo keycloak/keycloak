@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -48,6 +49,15 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);
 
     long getActiveUserSessions(RealmModel realm, ClientModel client);
+
+    /**
+     * Returns a summary of client sessions key is client.getId()
+     *
+     * @param realm
+     * @param offline
+     * @return
+     */
+    Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline);
 
     /** This will remove attached ClientLoginSessionModels too **/
     void removeUserSession(RealmModel realm, UserSessionModel session);

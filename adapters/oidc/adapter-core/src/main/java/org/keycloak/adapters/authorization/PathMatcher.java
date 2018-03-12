@@ -18,8 +18,8 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
@@ -221,11 +221,11 @@ class PathMatcher {
     private PathConfig resolvePathConfig(PathConfig originalConfig, String path) {
         if (originalConfig.hasPattern()) {
             ProtectedResource resource = this.authzClient.protection().resource();
-            Set<String> search = resource.findByFilter("uri=" + path);
+            List<ResourceRepresentation> search = resource.findByUri(path);
 
             if (!search.isEmpty()) {
                 // resource does exist on the server, cache it
-                ResourceRepresentation targetResource = resource.findById(search.iterator().next()).getResourceDescription();
+                ResourceRepresentation targetResource = search.get(0);
                 PathConfig config = PolicyEnforcer.createPathConfig(targetResource);
 
                 config.setScopes(originalConfig.getScopes());

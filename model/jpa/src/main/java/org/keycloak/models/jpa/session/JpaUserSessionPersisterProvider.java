@@ -30,6 +30,7 @@ import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -78,7 +79,17 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
-        entity.setClientId(clientSession.getClient().getId());
+        StorageId clientStorageId = new StorageId(clientSession.getClient().getId());
+        if (clientStorageId.isLocal()) {
+            entity.setClientId(clientStorageId.getId());
+            entity.setClientStorageProvider(PersistentClientSessionEntity.LOCAL);
+            entity.setExternalClientId(PersistentClientSessionEntity.LOCAL);
+
+        } else {
+            entity.setClientId(PersistentClientSessionEntity.EXTERNAL);
+            entity.setClientStorageProvider(clientStorageId.getProviderId());
+            entity.setExternalClientId(clientStorageId.getExternalId());
+        }
         entity.setTimestamp(clientSession.getTimestamp());
         String offlineStr = offlineToString(offline);
         entity.setOffline(offlineStr);
@@ -127,7 +138,18 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     @Override
     public void removeClientSession(String userSessionId, String clientUUID, boolean offline) {
         String offlineStr = offlineToString(offline);
-        PersistentClientSessionEntity sessionEntity = em.find(PersistentClientSessionEntity.class, new PersistentClientSessionEntity.Key(userSessionId, clientUUID, offlineStr));
+        StorageId clientStorageId = new StorageId(clientUUID);
+        String clientId = PersistentClientSessionEntity.EXTERNAL;
+        String clientStorageProvider = PersistentClientSessionEntity.LOCAL;
+        String externalId = PersistentClientSessionEntity.LOCAL;
+        if (clientStorageId.isLocal()) {
+            clientId = clientUUID;
+        } else {
+            clientStorageProvider = clientStorageId.getProviderId();
+            externalId = clientStorageId.getExternalId();
+
+        }
+        PersistentClientSessionEntity sessionEntity = em.find(PersistentClientSessionEntity.class, new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalId, offlineStr));
         if (sessionEntity != null) {
             em.remove(sessionEntity);
 
@@ -168,7 +190,16 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private void onClientRemoved(String clientUUID) {
-        int num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
+        int num = 0;
+        StorageId clientStorageId = new StorageId(clientUUID);
+        if (clientStorageId.isLocal()) {
+            num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
+        } else {
+            num = em.createNamedQuery("deleteClientSessionsByExternalClient")
+                    .setParameter("clientStorageProvider", clientStorageId.getProviderId())
+                    .setParameter("externalClientId", clientStorageId.getExternalId())
+                    .executeUpdate();
+        }
         num = em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
     }
 
@@ -282,10 +313,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
-        ClientModel client = realm.getClientById(entity.getClientId());
+        String clientId = entity.getClientId();
+        if (!entity.getExternalClientId().equals("local")) {
+            clientId = new StorageId(entity.getClientId(), entity.getExternalClientId()).getId();
+        }
+        ClientModel client = realm.getClientById(clientId);
 
         PersistentClientSessionModel model = new PersistentClientSessionModel();
-        model.setClientId(entity.getClientId());
+        model.setClientId(clientId);
         model.setUserSessionId(userSession.getId());
         model.setUserId(userSession.getUserId());
         model.setTimestamp(entity.getTimestamp());

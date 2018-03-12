@@ -20,8 +20,10 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -29,6 +31,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -54,5 +57,33 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         List<PolicyRepresentation> defaultPolicies = clientResource.authorization().policies().policies();
 
         assertEquals(2, defaultPolicies.size());
+    }
+
+    // KEYCLOAK-6321
+    @Test
+    public void testRemoveDefaultResourceWithAdminEventsEnabled() {
+        RealmResource realmResource = testRealmResource();
+        RealmRepresentation realmRepresentation = realmResource.toRepresentation();
+
+        realmRepresentation.setAdminEventsEnabled(true);
+
+        realmResource.update(realmRepresentation);
+
+        ClientResource clientResource = getClientResource();
+        ClientRepresentation resourceServer = getResourceServer();
+
+        enableAuthorizationServices();
+
+        ResourceServerRepresentation settings = clientResource.authorization().getSettings();
+
+        assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING.name(), settings.getPolicyEnforcementMode().name());
+        assertEquals(resourceServer.getId(), settings.getClientId());
+        List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
+
+        assertEquals(1, defaultResources.size());
+
+        clientResource.authorization().resources().resource(defaultResources.get(0).getId()).remove();
+
+        assertTrue(clientResource.authorization().resources().resources().isEmpty());
     }
 }

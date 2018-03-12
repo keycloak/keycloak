@@ -18,7 +18,6 @@
 package org.keycloak.storage;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -26,27 +25,12 @@ import org.keycloak.component.PrioritizedComponentModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class UserStorageProviderModel extends PrioritizedComponentModel {
+public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
-    public static final String CACHE_POLICY = "cachePolicy";
-    public static final String MAX_LIFESPAN = "maxLifespan";
-    public static final String EVICTION_HOUR = "evictionHour";
-    public static final String EVICTION_MINUTE = "evictionMinute";
-    public static final String EVICTION_DAY = "evictionDay";
-    public static final String CACHE_INVALID_BEFORE = "cacheInvalidBefore";
     public static final String IMPORT_ENABLED = "importEnabled";
     public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
     public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
     public static final String LAST_SYNC = "lastSync";
-    public static final String ENABLED = "enabled";
-
-    public static enum CachePolicy {
-        NO_CACHE,
-        DEFAULT,
-        EVICT_DAILY,
-        EVICT_WEEKLY,
-        MAX_LIFESPAN
-    }
 
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
@@ -60,105 +44,6 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     private transient Integer changedSyncPeriod;
     private transient Integer lastSync;
     private transient Boolean importEnabled;
-    private transient Boolean enabled;
-    private transient CachePolicy cachePolicy;
-    private transient long maxLifespan = -1;
-    private transient int evictionHour = -1;
-    private transient int evictionMinute = -1;
-    private transient int evictionDay = -1;
-    private transient long cacheInvalidBefore = -1;
-
-    public CachePolicy getCachePolicy() {
-        if (cachePolicy == null) {
-            String str = getConfig().getFirst(CACHE_POLICY);
-            if (str == null) return null;
-            cachePolicy = CachePolicy.valueOf(str);
-        }
-        return cachePolicy;
-    }
-
-    public void setCachePolicy(CachePolicy cachePolicy) {
-        this.cachePolicy = cachePolicy;
-        if (cachePolicy == null) {
-            getConfig().remove(CACHE_POLICY);
-
-        } else {
-            getConfig().putSingle(CACHE_POLICY, cachePolicy.name());
-        }
-    }
-
-    public long getMaxLifespan() {
-        if (maxLifespan < 0) {
-            String str = getConfig().getFirst(MAX_LIFESPAN);
-            if (str == null) return -1;
-            maxLifespan = Long.valueOf(str);
-        }
-        return maxLifespan;
-    }
-
-    public void setMaxLifespan(long maxLifespan) {
-        this.maxLifespan = maxLifespan;
-        getConfig().putSingle(MAX_LIFESPAN, Long.toString(maxLifespan));
-    }
-
-    public int getEvictionHour() {
-        if (evictionHour < 0) {
-            String str = getConfig().getFirst(EVICTION_HOUR);
-            if (str == null) return -1;
-            evictionHour = Integer.valueOf(str);
-        }
-        return evictionHour;
-    }
-
-    public void setEvictionHour(int evictionHour) {
-        if (evictionHour > 23 || evictionHour < 0) throw new IllegalArgumentException("Must be between 0 and 23");
-        this.evictionHour = evictionHour;
-        getConfig().putSingle(EVICTION_HOUR, Integer.toString(evictionHour));
-    }
-
-    public int getEvictionMinute() {
-        if (evictionMinute < 0) {
-            String str = getConfig().getFirst(EVICTION_MINUTE);
-            if (str == null) return -1;
-            evictionMinute = Integer.valueOf(str);
-        }
-        return evictionMinute;
-    }
-
-    public void setEvictionMinute(int evictionMinute) {
-        if (evictionMinute > 59 || evictionMinute < 0) throw new IllegalArgumentException("Must be between 0 and 59");
-        this.evictionMinute = evictionMinute;
-        getConfig().putSingle(EVICTION_MINUTE, Integer.toString(evictionMinute));
-    }
-
-    public int getEvictionDay() {
-        if (evictionDay < 0) {
-            String str = getConfig().getFirst(EVICTION_DAY);
-            if (str == null) return -1;
-            evictionDay = Integer.valueOf(str);
-        }
-        return evictionDay;
-    }
-
-    public void setEvictionDay(int evictionDay) {
-        if (evictionDay > 7 || evictionDay < 1) throw new IllegalArgumentException("Must be between 1 and 7");
-        this.evictionDay = evictionDay;
-        getConfig().putSingle(EVICTION_DAY, Integer.toString(evictionDay));
-    }
-
-    public long getCacheInvalidBefore() {
-        if (cacheInvalidBefore < 0) {
-            String str = getConfig().getFirst(CACHE_INVALID_BEFORE);
-            if (str == null) return -1;
-            cacheInvalidBefore = Long.valueOf(str);
-        }
-        return cacheInvalidBefore;
-    }
-
-    public void setCacheInvalidBefore(long cacheInvalidBefore) {
-        this.cacheInvalidBefore = cacheInvalidBefore;
-        getConfig().putSingle(CACHE_INVALID_BEFORE, Long.toString(cacheInvalidBefore));
-    }
 
     public boolean isImportEnabled() {
         if (importEnabled == null) {
@@ -178,24 +63,6 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
         getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
     }
 
-    public void setEnabled(boolean flag) {
-        enabled = flag;
-        getConfig().putSingle(ENABLED, Boolean.toString(flag));
-    }
-
-
-    public boolean isEnabled() {
-        if (enabled == null) {
-            String val = getConfig().getFirst(ENABLED);
-            if (val == null) {
-                enabled = true;
-            } else {
-                enabled = Boolean.valueOf(val);
-            }
-        }
-        return enabled;
-
-    }
 
     public int getFullSyncPeriod() {
         if (fullSyncPeriod == null) {

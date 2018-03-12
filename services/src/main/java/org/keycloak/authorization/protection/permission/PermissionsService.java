@@ -20,7 +20,7 @@ package org.keycloak.authorization.protection.permission;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;

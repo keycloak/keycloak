@@ -34,7 +34,7 @@
     </context-param>
     
     <servlet-mapping>
-        <servlet-name>Servlet</servlet-name>
+        <servlet-name>MultiTenantServlet</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
@@ -50,6 +50,7 @@
 
     <login-config>
         <auth-method>KEYCLOAK</auth-method>
+        <realm-name>not-important</realm-name>
     </login-config>
 
     <security-role>

@@ -51,6 +51,7 @@
                     responseBinding="REDIRECT"
                     redirectBindingUrl="http://localhost:8080/auth/realms/demo/protocol/saml"
                     />
+            <HttpClient truststore="classpath:keycloak.truststore" truststorePassword="secret" />
         </IDP>
      </SP>
 </keycloak-saml-adapter>

@@ -1,13 +1,12 @@
 package org.keycloak.performance;
 
+import java.text.SimpleDateFormat;
 import org.keycloak.performance.util.FilteredIterator;
 import org.keycloak.performance.util.LoopingIterator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -55,20 +54,22 @@ public class TestConfig {
     //
     // Settings used by tests to control common test parameters
     //
-    public static final int runUsers = Integer.getInteger("runUsers", 1);
+    public static final double usersPerSec = Double.valueOf(System.getProperty("usersPerSec", "1"));
     public static final int rampUpPeriod = Integer.getInteger("rampUpPeriod", 0);
-    public static final int steadyLoadPeriod = Integer.getInteger("steadyLoadPeriod", 30);
-    public static final boolean rampDownASAP = Boolean.getBoolean("rampDownASAP"); // check for rampdown condition after each scenario step
-    public static final int pace = Integer.getInteger("pace", 0); // additional dynamic "pause buffer" between scenario loops
-    public static final int userThinkTime = Integer.getInteger("userThinkTime", 5);
-    public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 10);
+    public static final int warmUpPeriod = Integer.getInteger("warmUpPeriod", 0);
+    public static final int measurementPeriod = Integer.getInteger("measurementPeriod", 30);
+    public static final boolean filterResults = Boolean.getBoolean("filterResults"); // filter out results outside of measurementPeriod
+    public static final int userThinkTime = Integer.getInteger("userThinkTime", 0);
+    public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 0);
 
     // Computed timestamps
-    public static final long simulationStartTime = System.currentTimeMillis();//new Date().getTime();
-    public static final long rampDownPeriodStartTime = simulationStartTime + (rampUpPeriod + steadyLoadPeriod) * 1000;
+    public static final long simulationStartTime = System.currentTimeMillis();
+    public static final long warmUpStartTime = simulationStartTime + rampUpPeriod * 1000;
+    public static final long measurementStartTime = warmUpStartTime + warmUpPeriod * 1000;
+    public static final long measurementEndTime = measurementStartTime + measurementPeriod * 1000;
 
     //
-    // Settings used by DefaultSimulation to control behavior specific to DefaultSimulation
+    // Settings used by BasicOIDCSimulation to control behavior specific to BasicOIDCSimulation
     //
     public static final int badLoginAttempts = Integer.getInteger("badLoginAttempts", 0);
     public static final int refreshTokenCount = Integer.getInteger("refreshTokenCount", 0);
@@ -115,15 +116,27 @@ public class TestConfig {
 
     public static String toStringCommonTestParameters() {
         return String.format(
-        "  runUsers: %s\n" + 
+        "  usersPerSec: %s\n" + 
         "  rampUpPeriod: %s\n"+ 
-        "  steadyLoadPeriod: %s\n"+
-        "  rampDownASAP: %s\n"+ 
-        "  pace: %s\n"+ 
+        "  warmUpPeriod: %s\n"+ 
+        "  measurementPeriod: %s\n"+
+        "  filterResults: %s\n"+
         "  userThinkTime: %s\n"+ 
         "  refreshTokenPeriod: %s",
-                runUsers, rampUpPeriod, steadyLoadPeriod, rampDownASAP, pace, userThinkTime, refreshTokenPeriod
-        );
+        usersPerSec, rampUpPeriod, warmUpPeriod, measurementPeriod, filterResults, userThinkTime, refreshTokenPeriod);
+    }
+    
+    public static SimpleDateFormat SIMPLE_TIME = new SimpleDateFormat("HH:mm:ss");
+    
+    public static String toStringTimestamps() {
+        return String.format("  simulationStartTime: %s\n"
+                + "  warmUpStartTime: %s\n"
+                + "  measurementStartTime: %s\n"
+                + "  measurementEndTime: %s",
+                SIMPLE_TIME.format(simulationStartTime), 
+                SIMPLE_TIME.format(warmUpStartTime), 
+                SIMPLE_TIME.format(measurementStartTime), 
+                SIMPLE_TIME.format(measurementEndTime));
     }
 
     public static String toStringDatasetProperties() {

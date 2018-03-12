@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import org.keycloak.saml.common.util.SecurityActions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;

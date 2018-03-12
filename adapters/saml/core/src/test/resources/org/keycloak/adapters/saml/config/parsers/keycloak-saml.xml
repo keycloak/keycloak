@@ -57,7 +57,7 @@
             <SingleLogoutService
                     validateRequestSignature="true"
                     validateResponseSignature="true"
-                    signRequest="true"
+                    signRequest="false"
                     signResponse="true"
                     requestBinding="REDIRECT"
                     responseBinding="POST"

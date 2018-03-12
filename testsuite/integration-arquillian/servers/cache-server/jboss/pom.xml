@@ -33,6 +33,7 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <cache.server.jboss.home>${containers.home}/${cache.server.jboss.unpacked.folder.name}</cache.server.jboss.home>
+        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
         <security.xslt>security.xsl</security.xslt>
     </properties>
 
@@ -59,6 +60,7 @@
                                     <rules>
                                         <requireProperty>
                                             <property>cache.server</property>
+                                            <property>cache.server.jboss.cache-authorization-enabled</property>
                                             <property>cache.server.jboss.groupId</property>
                                             <property>cache.server.jboss.artifactId</property>
                                             <property>cache.server.jboss.version</property>
@@ -160,6 +162,29 @@
                                             </fileMappers>
                                         </transformationSet>
 
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>configure-keycloak-authorization</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${cache.server.jboss.cache-authorization-disabled}</skip>
+                                    <transformationSets>
+                                        <!-- Configure authorization in files clustered-__dc__.xml -->
+                                        <transformationSet>
+                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>clustered-1.xml</include>
+                                                <include>clustered-2.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/cache-authorization.xsl</stylesheet>
+                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
                                     </transformationSets>
                                 </configuration>
                             </execution>

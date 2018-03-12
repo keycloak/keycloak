@@ -20,6 +20,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -30,6 +31,8 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
+import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 
 import java.util.List;
 
@@ -37,6 +40,8 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserConsentModelTest extends AbstractModelTest {
+
+    private ComponentModel clientStorageComponent;
 
     @Before
     public void setupEnv() {
@@ -87,6 +92,22 @@ public class UserConsentModelTest extends AbstractModelTest {
         maryFooGrant.addGrantedProtocolMapper(fooMapper);
         realmManager.getSession().users().addConsent(realm, mary.getId(), maryFooGrant);
 
+        ClientStorageProviderModel clientStorage = new ClientStorageProviderModel();
+        clientStorage.setProviderId(HardcodedClientStorageProviderFactory.PROVIDER_ID);
+        clientStorage.getConfig().putSingle(HardcodedClientStorageProviderFactory.CLIENT_ID, "hardcoded-client");
+        clientStorage.getConfig().putSingle(HardcodedClientStorageProviderFactory.REDIRECT_URI, "http://localhost:8081/*");
+        clientStorage.getConfig().putSingle(HardcodedClientStorageProviderFactory.CONSENT, "true");
+        clientStorage.setParentId(realm.getId());
+        clientStorageComponent = realm.addComponentModel(clientStorage);
+
+        ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
+
+        Assert.assertNotNull(hardcodedClient);
+
+        UserConsentModel maryHardcodedGrant = new UserConsentModel(hardcodedClient);
+        realmManager.getSession().users().addConsent(realm, mary.getId(), maryHardcodedGrant);
+
+
         commit();
     }
 
@@ -125,7 +146,15 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertNotNull("Created Date should be set", maryConsent.getCreatedDate());
         Assert.assertNotNull("Last Updated Date should be set", maryConsent.getLastUpdatedDate());
 
+        ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
+        UserConsentModel maryHardcodedConsent = realmManager.getSession().users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId());
+        Assert.assertEquals(maryHardcodedConsent.getGrantedRoles().size(), 0);
+        Assert.assertEquals(maryHardcodedConsent.getGrantedProtocolMappers().size(), 0);
+        Assert.assertNotNull("Created Date should be set", maryHardcodedConsent.getCreatedDate());
+        Assert.assertNotNull("Last Updated Date should be set", maryHardcodedConsent.getLastUpdatedDate());
+
         Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, mary.getId(), barClient.getId()));
+        Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, john.getId(), hardcodedClient.getId()));
     }
 
     @Test
@@ -139,14 +168,26 @@ public class UserConsentModelTest extends AbstractModelTest {
         List<UserConsentModel> johnConsents = realmManager.getSession().users().getConsents(realm, john.getId());
         Assert.assertEquals(2, johnConsents.size());
 
+        ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
+
         List<UserConsentModel> maryConsents = realmManager.getSession().users().getConsents(realm, mary.getId());
-        Assert.assertEquals(1, maryConsents.size());
+        Assert.assertEquals(2, maryConsents.size());
         UserConsentModel maryConsent = maryConsents.get(0);
+        UserConsentModel maryHardcodedConsent = maryConsents.get(1);
+        if (maryConsents.get(0).getClient().getId().equals(hardcodedClient.getId())) {
+            maryConsent = maryConsents.get(1);
+            maryHardcodedConsent = maryConsents.get(0);
+
+        }
         Assert.assertEquals(maryConsent.getClient().getId(), fooClient.getId());
         Assert.assertEquals(maryConsent.getGrantedRoles().size(), 1);
         Assert.assertEquals(maryConsent.getGrantedProtocolMappers().size(), 1);
         Assert.assertTrue(isRoleGranted(realm, "realm-role", maryConsent));
         Assert.assertTrue(isMapperGranted(fooClient, "foo", maryConsent));
+
+        Assert.assertEquals(maryHardcodedConsent.getClient().getId(), hardcodedClient.getId());
+        Assert.assertEquals(maryHardcodedConsent.getGrantedRoles().size(), 0);
+        Assert.assertEquals(maryHardcodedConsent.getGrantedProtocolMappers().size(), 0);
     }
 
     @Test
@@ -190,14 +231,19 @@ public class UserConsentModelTest extends AbstractModelTest {
         RealmModel realm = realmManager.getRealm("original");
         ClientModel fooClient = realm.getClientByClientId("foo-client");
         UserModel john = session.users().getUserByUsername("john", realm);
+        UserModel mary = session.users().getUserByUsername("mary", realm);
 
         realmManager.getSession().users().revokeConsentForClient(realm, john.getId(), fooClient.getId());
+        ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
+        realmManager.getSession().users().revokeConsentForClient(realm, mary.getId(), hardcodedClient.getId());
 
         commit();
 
         realm = realmManager.getRealm("original");
         john = session.users().getUserByUsername("john", realm);
         Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId()));
+        mary = session.users().getUserByUsername("mary", realm);
+        Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId()));
     }
 
     @Test
@@ -206,6 +252,8 @@ public class UserConsentModelTest extends AbstractModelTest {
         RealmModel realm = realmManager.getRealm("original");
         UserModel john = session.users().getUserByUsername("john", realm);
         session.users().removeUser(realm, john);
+        UserModel mary = session.users().getUserByUsername("mary", realm);
+        session.users().removeUser(realm, mary);
     }
 
     @Test
@@ -268,6 +316,24 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertTrue(isMapperGranted(fooClient, "foo", johnFooConsent));
 
         Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, john.getId(), barClient.getId()));
+    }
+
+    @Test
+    public void deleteClientStorageTest() {
+        RealmModel realm = realmManager.getRealm("original");
+        realm.removeComponent(clientStorageComponent);
+        commit();
+
+
+
+        realm = realmManager.getRealm("original");
+        ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
+        Assert.assertNull(hardcodedClient);
+
+        UserModel mary = session.users().getUserByUsername("mary", realm);
+
+        List<UserConsentModel> maryConsents = realmManager.getSession().users().getConsents(realm, mary.getId());
+        Assert.assertEquals(1, maryConsents.size());
     }
 
     private boolean isRoleGranted(RoleContainerModel roleContainer, String roleName, UserConsentModel consentModel) {

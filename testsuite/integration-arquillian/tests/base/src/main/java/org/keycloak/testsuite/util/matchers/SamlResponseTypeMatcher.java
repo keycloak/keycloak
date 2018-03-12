@@ -21,7 +21,7 @@ public class SamlResponseTypeMatcher extends BaseMatcher<SAML2Object> {
     private final Matcher<URI> statusMatcher;
 
     public SamlResponseTypeMatcher(JBossSAMLURIConstants expectedStatus) {
-        this.statusMatcher = is(URI.create(expectedStatus.get()));
+        this.statusMatcher = is(expectedStatus.getUri());
     }
 
     public SamlResponseTypeMatcher(Matcher<URI> statusMatcher) {

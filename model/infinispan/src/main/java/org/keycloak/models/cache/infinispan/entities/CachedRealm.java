@@ -128,6 +128,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
     protected List<String> defaultRoles;
+    private boolean allowUserManagedAccess;
 
     public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
         return identityProviderMapperSet;
@@ -151,6 +152,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         displayName = model.getDisplayName();
         displayNameHtml = model.getDisplayNameHtml();
         enabled = model.isEnabled();
+        allowUserManagedAccess = model.isUserManagedAccessAllowed();
         sslRequired = model.getSslRequired();
         registrationAllowed = model.isRegistrationAllowed();
         registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
@@ -628,5 +630,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    public boolean isAllowUserManagedAccess() {
+        return allowUserManagedAccess;
     }
 }

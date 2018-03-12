@@ -24,6 +24,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.GenerationType;
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +45,9 @@ public class Album {
 
     @Column(nullable = false)
     private String userId;
+
+    @Transient
+    private boolean userManaged = false;
 
     public Long getId() {
         return this.id;
@@ -75,5 +79,13 @@ public class Album {
 
     public String getUserId() {
         return this.userId;
+    }
+
+    public boolean isUserManaged() {
+        return userManaged;
+    }
+
+    public void setUserManaged(boolean userManaged) {
+        this.userManaged = userManaged;
     }
 }

@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -42,6 +42,7 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ErrorResponseException;
 
@@ -142,7 +143,11 @@ public final class Permissions {
         return permissions;
     }
 
-    public static List<Permission> permits(List<Result> evaluation, AuthorizationRequestMetadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
+    public static List<Permission> permits(List<Result> evaluation, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
+        return permits(evaluation, null, authorizationProvider, resourceServer);
+    }
+
+    public static List<Permission> permits(List<Result> evaluation, Metadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
         Map<String, Permission> permissions = new LinkedHashMap<>();
 
         for (Result result : evaluation) {
@@ -159,8 +164,12 @@ public final class Permissions {
 
                 if (Effect.PERMIT.equals(policyResult.getStatus())) {
                     if (isScopePermission(policy)) {
-                        // try to grant any scope from a scope-based permission
-                        grantedScopes.addAll(policyScopes);
+                        for (Scope scope : permission.getScopes()) {
+                            if (policyScopes.contains(scope)) {
+                                // try to grant any scope from a scope-based permission
+                                grantedScopes.add(scope);
+                            }
+                        }
                     } else if (isResourcePermission(policy)) {
                         // we assume that all requested scopes should be granted given that we are processing a resource-based permission.
                         // Later they will be filtered based on any denied scope, if any.
@@ -173,38 +182,35 @@ public final class Permissions {
                         // store all scopes associated with the scope-based permission
                         deniedScopes.addAll(policyScopes);
                     } else if (isResourcePermission(policy)) {
-                        // we should not grant anything
                         resourceDenied = true;
-                        break;
+                        deniedScopes.addAll(permission.getResource().getScopes());
                     }
                 }
             }
 
-            if (!resourceDenied) {
-                // remove any scope denied from the list of granted scopes
-                if (!deniedScopes.isEmpty()) {
-                    grantedScopes.removeAll(deniedScopes);
-                }
+            // remove any scope denied from the list of granted scopes
+            if (!deniedScopes.isEmpty()) {
+                grantedScopes.removeAll(deniedScopes);
+            }
 
-                // if there are no policy results is because the permission didn't match any policy.
-                // In this case, if results is empty is because we are in permissive mode.
-                if (!results.isEmpty()) {
-                    // update the current permission with the granted scopes
-                    permission.getScopes().clear();
-                    permission.getScopes().addAll(grantedScopes);
-                }
+            // if there are no policy results is because the permission didn't match any policy.
+            // In this case, if results is empty is because we are in permissive mode.
+            if (!results.isEmpty()) {
+                // update the current permission with the granted scopes
+                permission.getScopes().clear();
+                permission.getScopes().addAll(grantedScopes);
+            }
 
-                if (deniedCount == 0) {
+            if (deniedCount == 0) {
+                result.setStatus(Effect.PERMIT);
+                grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
+            } else {
+                // if a full deny or resource denied or the requested scopes were denied
+                if (deniedCount == results.size() || resourceDenied || (!deniedScopes.isEmpty() && grantedScopes.isEmpty())) {
+                    result.setStatus(Effect.DENY);
+                } else {
                     result.setStatus(Effect.PERMIT);
                     grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
-                } else {
-                    // if a full deny or resource denied or the requested scopes were denied
-                    if (deniedCount == results.size() || resourceDenied || (!deniedScopes.isEmpty() && grantedScopes.isEmpty())) {
-                        result.setStatus(Effect.DENY);
-                    } else {
-                        result.setStatus(Effect.PERMIT);
-                        grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
-                    }
                 }
             }
         }
@@ -220,7 +226,7 @@ public final class Permissions {
         return "scope".equals(policy.getType());
     }
 
-    private static void grantPermission(AuthorizationProvider authorizationProvider, Map<String, Permission> permissions, ResourcePermission permission, ResourceServer resourceServer, AuthorizationRequestMetadata metadata) {
+    private static void grantPermission(AuthorizationProvider authorizationProvider, Map<String, Permission> permissions, ResourcePermission permission, ResourceServer resourceServer, Metadata metadata) {
         List<Resource> resources = new ArrayList<>();
         Resource resource = permission.getResource();
         Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
@@ -239,7 +245,7 @@ public final class Permissions {
         if (!resources.isEmpty()) {
             for (Resource allowedResource : resources) {
                 String resourceId = allowedResource.getId();
-                String resourceName = metadata == null || metadata.isIncludeResourceName() ? allowedResource.getName() : null;
+                String resourceName = metadata == null || metadata.getIncludeResourceName() ? allowedResource.getName() : null;
                 Permission evalPermission = permissions.get(allowedResource.getId());
 
                 if (evalPermission == null) {

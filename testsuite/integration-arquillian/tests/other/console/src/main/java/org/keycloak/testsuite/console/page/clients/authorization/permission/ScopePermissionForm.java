@@ -80,6 +80,9 @@ public class ScopePermissionForm extends Form {
     @FindBy(id = "s2id_resources")
     private ResourceSelect resourceSelect;
 
+    @FindBy(className = "select2-search-choice-close")
+    private WebElement resourceSelectRemoveChoice;
+
     @FindBy(id = "create-policy")
     private Select createPolicySelect;
 
@@ -115,6 +118,9 @@ public class ScopePermissionForm extends Form {
             resourceSelect.update(resources);
             resourceScopeSelect.update(expected.getScopes());
         } else {
+            if (resourceSelectRemoveChoice.isDisplayed()) {
+                resourceSelectRemoveChoice.click();
+            }
             scopeSelect.update(expected.getScopes());
         }
 

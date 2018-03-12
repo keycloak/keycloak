@@ -38,18 +38,17 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -96,7 +95,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         List<Permission> permissions = getEntitlements("marta", "password");
 
         for (Permission permission : new ArrayList<>(permissions)) {
-            String resourceSetName = permission.getResourceSetName();
+            String resourceSetName = permission.getResourceName();
 
             switch (resourceSetName) {
                 case "Resource A":
@@ -122,11 +121,11 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     private List<Permission> getEntitlements(String username, String password) {
         AuthzClient authzClient = getAuthzClient();
-        EntitlementResponse response = authzClient.entitlement(authzClient.obtainAccessToken(username, password).getToken()).getAll("resource-server-test");
+        AuthorizationResponse response = authzClient.authorization(username, password).authorize();
         AccessToken accessToken;
 
         try {
-            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
+            accessToken = new JWSInput(response.getToken()).readJsonContent(AccessToken.class);
         } catch (JWSInputException cause) {
             throw new RuntimeException("Failed to deserialize RPT", cause);
         }

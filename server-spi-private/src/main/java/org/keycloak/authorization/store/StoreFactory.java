@@ -58,4 +58,10 @@ public interface StoreFactory extends Provider {
      */
     PolicyStore getPolicyStore();
 
+    /**
+     * Returns a {@link PermissionTicketStore}.
+     *
+     * @return the permission ticket store
+     */
+    PermissionTicketStore getPermissionTicketStore();
 }

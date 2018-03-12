@@ -64,6 +64,6 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
 
     @Override
     public Iterator<Key> iterator() {
-        return Collections.unmodifiableCollection(keys).iterator();
+        return (Iterator<Key>) Collections.unmodifiableCollection(keys).iterator();
     }
 }

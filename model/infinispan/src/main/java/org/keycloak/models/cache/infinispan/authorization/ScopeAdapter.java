@@ -92,6 +92,18 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
     }
 
     @Override
+    public String getDisplayName() {
+        if (isUpdated()) return updated.getDisplayName();
+        return cached.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        getDelegateForUpdate();
+        updated.setDisplayName(name);
+    }
+
+    @Override
     public String getIconUri() {
         if (isUpdated()) return updated.getIconUri();
         return cached.getIconUri();

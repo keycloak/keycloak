@@ -20,6 +20,8 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
+import org.infinispan.stream.CacheCollectors;
+import org.infinispan.stream.SerializableSupplier;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -59,16 +61,21 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -297,16 +304,21 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     protected List<UserSessionModel> getUserSessions(final RealmModel realm, ClientModel client, int firstResult, int maxResults, final boolean offline) {
+        final String clientUuid = client.getId();
+        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(clientUuid);
+
+        return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
+    }
+
+    protected List<UserSessionModel> getUserSessionModels(RealmModel realm, int firstResult, int maxResults, boolean offline, UserSessionPredicate predicate) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCacheDecorated = CacheDecorators.skipCacheLoaders(clientSessionCache);
 
-        final String clientUuid = client.getId();
-
         Stream<UserSessionEntity> stream = cache.entrySet().stream()
-                .filter(UserSessionPredicate.create(realm.getId()).client(clientUuid))
+                .filter(predicate)
                 .map(Mappers.userSessionEntity())
                 .sorted(Comparators.userSessionLastSessionRefresh());
 
@@ -329,7 +341,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         return sessions;
     }
-
 
     @Override
     public UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate) {
@@ -398,7 +409,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return getUserSessionsCount(realm, client, false);
     }
 
-    protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
+    @Override
+    public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
+        cache = CacheDecorators.skipCacheLoaders(cache);
+        return cache.entrySet().stream()
+                .filter(UserSessionPredicate.create(realm.getId()))
+                .map(Mappers.authClientSessionSetMapper())
+                .flatMap((Serializable & Function<Set<String>, Stream<? extends String>>)Mappers::toStream)
+                .collect(
+                        CacheCollectors.serializableCollector(
+                                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
+                        )
+                );
+    }
+
+     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 

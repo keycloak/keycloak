@@ -33,6 +33,18 @@ public class MultiTenantServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        
+        String realm = req.getPathInfo().split("/")[1];
+        if (realm.contains("?")) {
+            realm = realm.split("\\?")[0];
+        }
+        
+        if (req.getPathInfo() != null && req.getPathInfo().contains("logout")) {
+            req.logout();
+            resp.sendRedirect(req.getContextPath() + "/" + realm);
+            return;
+        }
+        
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());

@@ -71,10 +71,11 @@ public class SessionCodeChecks {
     private final String clientId;
     private final String tabId;
     private final String flowPath;
+    private final String authSessionId;
 
 
     public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
-                             String code, String execution, String clientId, String tabId, String flowPath) {
+                             String authSessionId, String code, String execution, String clientId, String tabId, String flowPath) {
         this.realm = realm;
         this.uriInfo = uriInfo;
         this.request = request;
@@ -87,6 +88,7 @@ public class SessionCodeChecks {
         this.clientId = clientId;
         this.tabId = tabId;
         this.flowPath = flowPath;
+        this.authSessionId = authSessionId;
     }
 
 
@@ -146,12 +148,30 @@ public class SessionCodeChecks {
             session.getContext().setClient(client);
         }
 
+
         // object retrieve
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel authSession = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
+        AuthenticationSessionModel authSession = null;
+        if (authSessionId != null) authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
+        AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
+
+        if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
+            event.detail(Details.REASON, "cookie does not match auth_session query parameter");
+            event.error(Errors.INVALID_CODE);
+            response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
+            return null;
+
+        }
+
         if (authSession != null) {
             session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
             return authSession;
+        }
+
+        if (authSessionCookie != null) {
+            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSessionCookie);
+            return authSessionCookie;
+
         }
 
         // See if we are already authenticated and userSession with same ID exists.
@@ -250,7 +270,7 @@ public class SessionCodeChecks {
                 return false;
             }
         } else {
-            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, tabId, session, realm, client, event, AuthenticationSessionModel.class);
+            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, tabId, session, realm, client, event, authSession);
             clientCode = result.getCode();
             if (clientCode == null) {
 

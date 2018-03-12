@@ -39,6 +39,8 @@ import java.io.Serializable;
         @NamedQuery(name="deleteFederatedUserConsentProtMappersByStorageProvider", query="delete from FederatedUserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.storageProviderId = :storageProviderId)"),
         @NamedQuery(name="deleteFederatedUserConsentProtMappersByProtocolMapper", query="delete from FederatedUserConsentProtocolMapperEntity csm where csm.protocolMapperId = :protocolMapperId"),
         @NamedQuery(name="deleteFederatedUserConsentProtMappersByClient", query="delete from FederatedUserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientId = :clientId)"),
+        @NamedQuery(name="deleteFederatedUserConsentProtMappersByExternalClient", query="delete from FederatedUserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
+        @NamedQuery(name="deleteFederatedUserConsentProtMappersByClientStorageProvider", query="delete from FederatedUserConsentProtocolMapperEntity csm where csm.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)"),
 })
 @Entity
 @Table(name="FED_USER_CONSENT_PROT_MAPPER")

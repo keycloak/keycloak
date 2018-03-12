@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.valueOf;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -82,24 +82,18 @@ public class TokenSettings extends RealmSettings {
         }
 
         public void setOperation(String tokenType, int time, TimeUnit unit) {
-            waitUntilElement(sessionTimeout).is().present();
-            actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
+            selectOperation(tokenType);
             setTimeout(actionTokenAttributeUnit, actionTokenAttributeTime, time, unit);
         }
 
         private void setTimeout(Select timeoutElement, WebElement unitElement,
                 int timeout, TimeUnit unit) {
-            waitUntilElement(sessionTimeout).is().present();
             timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
-            unitElement.clear();
-            unitElement.sendKeys(valueOf(timeout));
+            setInputValue(unitElement, valueOf(timeout));
         }
 
         public boolean isOperationEquals(String tokenType, int timeout, TimeUnit unit) {
             selectOperation(tokenType);
-
-            waitUntilElement(sessionTimeout).is().present();
-            actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
 
             return actionTokenAttributeTime.getAttribute("value").equals(Integer.toString(timeout)) &&
                     actionTokenAttributeUnit.getFirstSelectedOption().getText().equals(capitalize(unit.name().toLowerCase()));
@@ -107,13 +101,12 @@ public class TokenSettings extends RealmSettings {
 
         public void resetActionToken(String tokenType) {
             selectOperation(tokenType);
-            waitUntilElement(resetButton).is().visible();
             resetButton.click();
         }
 
         public void selectOperation(String tokenType) {
-            waitUntilElement(sessionTimeout).is().present();
             actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
+            pause(500); // wait for the form to be updated; there isn't currently a better way
         }
     }
 }

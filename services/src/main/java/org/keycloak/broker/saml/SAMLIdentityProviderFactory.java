@@ -57,7 +57,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     @Override
     public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
         try {
-            Object parsedObject = new SAMLParser().parse(inputStream);
+            Object parsedObject = SAMLParser.getInstance().parse(inputStream);
             EntityDescriptorType entityType;
 
             if (EntitiesDescriptorType.class.isInstance(parsedObject)) {

@@ -34,9 +34,9 @@
                     <property name="adapterImplClass">org.jboss.arquillian.container.wls.remote_12_1_2.WebLogicContainer</property>
                     <property name="adminUrl">t3://localhost:8280/</property>
                     <property name="adminUserName">weblogic</property>
-                    <property name="adminPassword">weblogic1</property>
+                    <property name="adminPassword">${wl.password}</property>
                     <property name="target">AdminServer</property>
-                    <property name="wlHome">/home/jenkins/Oracle/Middleware/Oracle_Home/wlserver</property>
+                    <property name="wlHome">${wl.home}</property>
                 </configuration>
             </container>
     

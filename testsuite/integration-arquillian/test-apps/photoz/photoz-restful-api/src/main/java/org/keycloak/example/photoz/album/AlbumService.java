@@ -39,8 +39,8 @@ public class AlbumService {
 
     private static volatile long nextId = 0;
 
-    public static final String SCOPE_ALBUM_VIEW = "urn:photoz.com:scopes:album:view";
-    public static final String SCOPE_ALBUM_DELETE = "urn:photoz.com:scopes:album:delete";
+    public static final String SCOPE_ALBUM_VIEW = "album:view";
+    public static final String SCOPE_ALBUM_DELETE = "album:delete";
 
     @Inject
     private EntityManager entityManager;
@@ -91,8 +91,12 @@ public class AlbumService {
 
     @GET
     @Produces("application/json")
-    public Response findAll() {
-        return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+    public Response findAll(@QueryParam("getAll") Boolean getAll) {
+        if (getAll != null && getAll) {
+            return Response.ok(this.entityManager.createQuery("from Album").getResultList()).build();
+        } else {
+            return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+        }
     }
 
     @GET
@@ -119,6 +123,10 @@ public class AlbumService {
 
             albumResource.setOwner(album.getUserId());
 
+            if (album.isUserManaged()) {
+                albumResource.setOwnerManagedAccess(true);
+            }
+
             getAuthzClient().protection().resource().create(albumResource);
         } catch (Exception e) {
             throw new RuntimeException("Could not register protected resource.", e);
@@ -130,13 +138,13 @@ public class AlbumService {
 
         try {
             ProtectionResource protection = getAuthzClient().protection();
-            Set<String> search = protection.resource().findByFilter("uri=" + uri);
+            List<ResourceRepresentation> search = protection.resource().findByUri(uri);
 
             if (search.isEmpty()) {
                 throw new RuntimeException("Could not find protected resource with URI [" + uri + "]");
             }
 
-            protection.resource().delete(search.iterator().next());
+            protection.resource().delete(search.get(0).getId());
         } catch (Exception e) {
             throw new RuntimeException("Could not search protected resource.", e);
         }

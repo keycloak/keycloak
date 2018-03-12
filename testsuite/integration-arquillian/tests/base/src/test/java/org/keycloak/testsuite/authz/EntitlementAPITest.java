@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -35,20 +33,15 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
-import org.keycloak.authorization.client.representation.EntitlementRequest;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -62,6 +55,13 @@ import org.keycloak.util.JsonSerialization;
  */
 public class EntitlementAPITest extends AbstractAuthzTest {
 
+    private static final String RESOURCE_SERVER_TEST = "resource-server-test";
+    private static final String TEST_CLIENT = "test-client";
+    private static final String AUTHZ_CLIENT_CONFIG = "default-keycloak.json";
+    private static final String PAIRWISE_RESOURCE_SERVER_TEST = "pairwise-resource-server-test";
+    private static final String PAIRWISE_TEST_CLIENT = "test-client-pairwise";
+    private static final String PAIRWISE_AUTHZ_CLIENT_CONFIG = "default-keycloak-pairwise.json";
+
     private AuthzClient authzClient;
 
     @Override
@@ -70,23 +70,41 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
                 .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
-                    .secret("secret")
-                    .authorizationServicesEnabled(true)
-                    .redirectUris("http://localhost/resource-server-test")
-                    .defaultRoles("uma_protection")
-                    .directAccessGrants())
-                .client(ClientBuilder.create().clientId("test-client")
-                    .secret("secret")
-                    .authorizationServicesEnabled(true)
-                    .redirectUris("http://localhost/test-client")
-                    .directAccessGrants())
+                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/resource-server-test")
+                        .defaultRoles("uma_protection")
+                        .directAccessGrants())
+                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/resource-server-test")
+                        .defaultRoles("uma_protection")
+                        .pairwise("http://pairwise.com")
+                        .directAccessGrants())
+                .client(ClientBuilder.create().clientId(TEST_CLIENT)
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/test-client")
+                        .directAccessGrants())
+                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/test-client")
+                        .pairwise("http://pairwise.com")
+                        .directAccessGrants())
                 .build());
     }
 
     @Before
     public void configureAuthorization() throws Exception {
-        ClientResource client = getClient(getRealm());
+        configureAuthorization(RESOURCE_SERVER_TEST);
+        configureAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
+    }
+
+    public void configureAuthorization(String clientId) throws Exception {
+        ClientResource client = getClient(getRealm(), clientId);
         AuthorizationResource authorization = client.authorization();
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
@@ -113,76 +131,104 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testRptRequestWithoutResourceName() {
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        testRptRequestWithoutResourceName(AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testRptRequestWithoutResourceNamePairwise() {
+        testRptRequestWithoutResourceName(PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    public void testRptRequestWithoutResourceName(String configFile) {
+        Metadata metadata = new Metadata();
 
         metadata.setIncludeResourceName(false);
 
         assertResponse(metadata, () -> {
-            EntitlementRequest request = new EntitlementRequest();
+            AuthorizationRequest request = new AuthorizationRequest();
 
             request.setMetadata(metadata);
-            request.addPermission(new PermissionRequest("Resource 1"));
+            request.addPermission("Resource 1");
 
-            return getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
+            return getAuthzClient(configFile).authorization("marta", "password").authorize(request);
         });
     }
 
     @Test
     public void testRptRequestWithResourceName() {
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        testRptRequestWithResourceName(AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testRptRequestWithResourceNamePairwise() {
+        testRptRequestWithResourceName(PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+
+    public void testRptRequestWithResourceName(String configFile) {
+        Metadata metadata = new Metadata();
 
         metadata.setIncludeResourceName(true);
 
-        assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).getAll("resource-server-test"));
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize());
 
-        EntitlementRequest request = new EntitlementRequest();
+        AuthorizationRequest request = new AuthorizationRequest();
 
         request.setMetadata(metadata);
-        request.addPermission(new PermissionRequest("Resource 13"));
+        request.addPermission("Resource 13");
 
-        assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request));
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
 
         request.setMetadata(null);
 
-        assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request));
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
     }
 
     @Test
     public void testPermissionLimit() {
-        EntitlementRequest request = new EntitlementRequest();
+        testPermissionLimit(AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testPermissionLimitPairwise() {
+        testPermissionLimit(PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    public void testPermissionLimit(String configFile) {
+        AuthorizationRequest request = new AuthorizationRequest();
 
         for (int i = 1; i <= 10; i++) {
-            request.addPermission(new PermissionRequest("Resource " + i));
+            request.addPermission("Resource " + i);
         }
 
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        Metadata metadata = new Metadata();
 
         metadata.setLimit(10);
 
         request.setMetadata(metadata);
 
-        EntitlementResponse response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        AccessToken rpt = toAccessToken(response.getRpt());
+        AuthorizationResponse response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
+        AccessToken rpt = toAccessToken(response.getToken());
 
         List<Permission> permissions = rpt.getAuthorization().getPermissions();
 
         assertEquals(10, permissions.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Resource " + (i + 1), permissions.get(i).getResourceSetName());
+            assertEquals("Resource " + (i + 1), permissions.get(i).getResourceName());
         }
 
-        request = new EntitlementRequest();
+        request = new AuthorizationRequest();
 
         for (int i = 11; i <= 15; i++) {
-            request.addPermission(new PermissionRequest("Resource " + i));
+            request.addPermission("Resource " + i);
         }
 
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
-        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response.getRpt());
+        response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -190,72 +236,103 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         for (int i = 0; i < 10; i++) {
             if (i < 5) {
-                assertEquals("Resource " + (i + 11), permissions.get(i).getResourceSetName());
+                assertEquals("Resource " + (i + 11), permissions.get(i).getResourceName());
             } else {
-                assertEquals("Resource " + (i - 4), permissions.get(i).getResourceSetName());
+                assertEquals("Resource " + (i - 4), permissions.get(i).getResourceName());
             }
         }
 
-        request = new EntitlementRequest();
+        request = new AuthorizationRequest();
 
         for (int i = 16; i <= 18; i++) {
-            request.addPermission(new PermissionRequest("Resource " + i));
+            request.addPermission("Resource " + i);
         }
 
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
-        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response.getRpt());
+        response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
         assertEquals(10, permissions.size());
-        assertEquals("Resource 16", permissions.get(0).getResourceSetName());
-        assertEquals("Resource 17", permissions.get(1).getResourceSetName());
-        assertEquals("Resource 18", permissions.get(2).getResourceSetName());
-        assertEquals("Resource 11", permissions.get(3).getResourceSetName());
-        assertEquals("Resource 12", permissions.get(4).getResourceSetName());
-        assertEquals("Resource 13", permissions.get(5).getResourceSetName());
-        assertEquals("Resource 14", permissions.get(6).getResourceSetName());
-        assertEquals("Resource 15", permissions.get(7).getResourceSetName());
-        assertEquals("Resource 1", permissions.get(8).getResourceSetName());
-        assertEquals("Resource 2", permissions.get(9).getResourceSetName());
+        assertEquals("Resource 16", permissions.get(0).getResourceName());
+        assertEquals("Resource 17", permissions.get(1).getResourceName());
+        assertEquals("Resource 18", permissions.get(2).getResourceName());
+        assertEquals("Resource 11", permissions.get(3).getResourceName());
+        assertEquals("Resource 12", permissions.get(4).getResourceName());
+        assertEquals("Resource 13", permissions.get(5).getResourceName());
+        assertEquals("Resource 14", permissions.get(6).getResourceName());
+        assertEquals("Resource 15", permissions.get(7).getResourceName());
+        assertEquals("Resource 1", permissions.get(8).getResourceName());
+        assertEquals("Resource 2", permissions.get(9).getResourceName());
 
-        request = new EntitlementRequest();
+        request = new AuthorizationRequest();
 
         metadata.setLimit(5);
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
-        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response.getRpt());
+        response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
         assertEquals(5, permissions.size());
-        assertEquals("Resource 16", permissions.get(0).getResourceSetName());
-        assertEquals("Resource 17", permissions.get(1).getResourceSetName());
-        assertEquals("Resource 18", permissions.get(2).getResourceSetName());
-        assertEquals("Resource 11", permissions.get(3).getResourceSetName());
-        assertEquals("Resource 12", permissions.get(4).getResourceSetName());
+        assertEquals("Resource 16", permissions.get(0).getResourceName());
+        assertEquals("Resource 17", permissions.get(1).getResourceName());
+        assertEquals("Resource 18", permissions.get(2).getResourceName());
+        assertEquals("Resource 11", permissions.get(3).getResourceName());
+        assertEquals("Resource 12", permissions.get(4).getResourceName());
     }
 
     @Test
     public void testResourceServerAsAudience() throws Exception {
-        EntitlementRequest request = new EntitlementRequest();
-
-        request.addPermission(new PermissionRequest("Resource 1"));
-
-        String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
-        EntitlementResponse response = getAuthzClient().entitlement(accessToken).get("resource-server-test", request);
-        AccessToken rpt = toAccessToken(response.getRpt());
-
-        assertEquals("resource-server-test", rpt.getAudience()[0]);
+        testResourceServerAsAudience(
+                TEST_CLIENT,
+                RESOURCE_SERVER_TEST,
+                AUTHZ_CLIENT_CONFIG);
     }
 
-    private void assertResponse(AuthorizationRequestMetadata metadata, Supplier<EntitlementResponse> responseSupplier) {
-        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getRpt()).getAuthorization();
+    @Test
+    public void testResourceServerAsAudienceWithPairwiseClient() throws Exception {
+        testResourceServerAsAudience(
+                PAIRWISE_TEST_CLIENT,
+                RESOURCE_SERVER_TEST,
+                AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testPairwiseResourceServerAsAudience() throws Exception {
+        testResourceServerAsAudience(
+                TEST_CLIENT,
+                PAIRWISE_RESOURCE_SERVER_TEST,
+                PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testPairwiseResourceServerAsAudienceWithPairwiseClient() throws Exception {
+        testResourceServerAsAudience(
+                PAIRWISE_TEST_CLIENT,
+                PAIRWISE_RESOURCE_SERVER_TEST,
+                PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    public void testResourceServerAsAudience(String testClientId, String resourceServerClientId, String configFile) throws Exception {
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource 1");
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(testClientId).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthorizationResponse response = getAuthzClient(configFile).authorization(accessToken).authorize(request);
+        AccessToken rpt = toAccessToken(response.getToken());
+
+        assertEquals(resourceServerClientId, rpt.getAudience()[0]);
+    }
+
+    private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {
+        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getToken()).getAuthorization();
 
         List<Permission> permissions = authorization.getPermissions();
 
@@ -263,10 +340,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertFalse(permissions.isEmpty());
 
         for (Permission permission : permissions) {
-            if (metadata.isIncludeResourceName()) {
-                assertNotNull(permission.getResourceSetName());
+            if (metadata.getIncludeResourceName()) {
+                assertNotNull(permission.getResourceName());
             } else {
-                assertNull(permission.getResourceSetName());
+                assertNull(permission.getResourceName());
             }
         }
     }
@@ -275,15 +352,15 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         return adminClient.realm("authz-test");
     }
 
-    private ClientResource getClient(RealmResource realm) {
+    private ClientResource getClient(RealmResource realm, String clientId) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 
-    private AuthzClient getAuthzClient() {
+    private AuthzClient getAuthzClient(String configFile) {
         if (authzClient == null) {
             try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
+                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
             } catch (IOException cause) {
                 throw new RuntimeException("Failed to create authz client", cause);
             }

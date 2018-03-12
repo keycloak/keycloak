@@ -80,7 +80,7 @@ public class JBossSAMLAuthnResponseFactory {
     public static StatusType createStatusTypeForResponder(String statusCodeURI) {
         StatusCodeType topLevelCode = new StatusCodeType();
 
-        topLevelCode.setValue(URI.create(JBossSAMLURIConstants.STATUS_RESPONDER.get()));
+        topLevelCode.setValue(JBossSAMLURIConstants.STATUS_RESPONDER.getUri());
 
         StatusCodeType secondLevelCode = new StatusCodeType();
 

@@ -24,9 +24,11 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse.PolicyResultRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -108,7 +110,13 @@ public class PolicyEvaluationResponseBuilder {
             List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new ArrayList<>();
 
             for (Result.PolicyResult policy : result.getResults()) {
-                policies.add(toRepresentation(policy, authorization));
+                PolicyResultRepresentation policyRep = toRepresentation(policy, authorization);
+
+                if ("resource".equals(policy.getPolicy().getType())) {
+                    policyRep.getPolicy().setScopes(result.getPermission().getResource().getScopes().stream().map(Scope::getName).collect(Collectors.toSet()));
+                }
+
+                policies.add(policyRep);
             }
 
             rep.setPolicies(policies);

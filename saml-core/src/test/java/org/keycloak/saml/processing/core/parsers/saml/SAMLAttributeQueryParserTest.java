@@ -43,7 +43,7 @@ public class SAMLAttributeQueryParserTest {
         this.parser = new SAMLParser();
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 2000000)
     public void testSaml20AttributeQuery() throws Exception {
         try (InputStream is = SAMLAttributeQueryParserTest.class.getResourceAsStream("saml20-attributequery.xml")) {
             Object parsedObject = parser.parse(is);

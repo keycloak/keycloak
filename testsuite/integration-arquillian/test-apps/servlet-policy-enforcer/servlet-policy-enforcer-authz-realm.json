@@ -62,64 +62,51 @@
                 "resources": [
                     {
                         "name": "Welcome Resource",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 1",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 2",
-                        "uri": "/resource/resource-a",
-                        "typedScopes": []
+                        "uri": "/resource/resource-a"
                     },
                     {
                         "name": "Pattern 3",
-                        "uri": "/resource/resource-b/test",
-                        "typedScopes": []
+                        "uri": "/resource/resource-b/test"
                     },
                     {
                         "name": "Pattern 4",
-                        "uri": "/resource-c",
-                        "typedScopes": []
+                        "uri": "/resource-c"
                     },
                     {
                         "name": "Pattern 5",
-                        "uri": "/resource/d/resource-d",
-                        "typedScopes": []
+                        "uri": "/resource/d/resource-d"
                     },
                     {
                         "name": "Pattern 6",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 7",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
-                        "name": "Pattern 8",
-                        "typedScopes": []
+                        "name": "Pattern 8"
                     },
                     {
-                        "name": "Pattern 9",
-                        "typedScopes": []
+                        "name": "Pattern 9"
                     },
                     {
-                        "name": "Pattern 10",
-                        "typedScopes": []
+                        "name": "Pattern 10"
                     },
                     {
-                        "name": "Pattern 11",
-                        "typedScopes": []
+                        "name": "Pattern 11"
                     },
                     {
                         "name": "Pattern 12",
-                        "uri": "/realm_uri",
-                        "typedScopes": []
+                        "uri": "/realm_uri"
                     }
                 ],
                 "policies": [

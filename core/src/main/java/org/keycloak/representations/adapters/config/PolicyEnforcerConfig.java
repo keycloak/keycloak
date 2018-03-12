@@ -17,13 +17,12 @@
  */
 package org.keycloak.representations.adapters.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -37,25 +36,17 @@ public class PolicyEnforcerConfig {
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
-    @JsonProperty("user-managed-access")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private UmaProtocolConfig userManagedAccess;
-
-    @JsonProperty("entitlement")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private EntitlementProtocolConfig entitlement;
-
     @JsonProperty("paths")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
-    @JsonProperty("online-introspection")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean onlineIntrospection = Boolean.FALSE;
-
     @JsonProperty("on-deny-redirect-to")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String onDenyRedirectTo;
+
+    @JsonProperty("user-managed-access")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private UserManagedAccessConfig userManagedAccess;
 
     public Boolean isCreateResources() {
         return this.createResources;
@@ -73,24 +64,12 @@ public class PolicyEnforcerConfig {
         this.enforcementMode = enforcementMode;
     }
 
-    public UmaProtocolConfig getUserManagedAccess() {
+    public UserManagedAccessConfig getUserManagedAccess() {
         return this.userManagedAccess;
-    }
-
-    public EntitlementProtocolConfig getEntitlement() {
-        return this.entitlement;
-    }
-
-    public Boolean isOnlineIntrospection() {
-        return onlineIntrospection;
     }
 
     public void setCreateResources(Boolean createResources) {
         this.createResources = createResources;
-    }
-
-    public void setOnlineIntrospection(Boolean onlineIntrospection) {
-        this.onlineIntrospection = onlineIntrospection;
     }
 
     public void setPaths(List<PathConfig> paths) {
@@ -101,12 +80,8 @@ public class PolicyEnforcerConfig {
         return onDenyRedirectTo;
     }
 
-    public void setUserManagedAccess(UmaProtocolConfig userManagedAccess) {
+    public void setUserManagedAccess(UserManagedAccessConfig userManagedAccess) {
         this.userManagedAccess = userManagedAccess;
-    }
-
-    public void setEntitlement(EntitlementProtocolConfig entitlement) {
-        this.entitlement = entitlement;
     }
 
     public void setOnDenyRedirectTo(String onDenyRedirectTo) {
@@ -259,11 +234,7 @@ public class PolicyEnforcerConfig {
         ANY
     }
 
-    public static class UmaProtocolConfig {
-
-    }
-
-    public static class EntitlementProtocolConfig {
+    public static class UserManagedAccessConfig {
 
     }
 }
