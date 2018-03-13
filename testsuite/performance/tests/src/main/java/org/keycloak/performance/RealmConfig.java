@@ -9,6 +9,6 @@ import java.util.List;
  */
 public class RealmConfig {
     public int accessTokenLifeSpan = 60;
-    public boolean registrationAllowed = false;
+    public boolean registrationAllowed = true;
     public List<String> requiredCredentials = Collections.unmodifiableList(Arrays.asList("password"));
 }
