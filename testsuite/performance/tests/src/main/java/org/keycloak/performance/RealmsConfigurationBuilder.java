@@ -120,9 +120,9 @@ public class RealmsConfigurationBuilder {
                 UserRepresentation user = new UserRepresentation();
                 user.setUsername(computeUsername(realmName, j));
                 user.setEnabled(true);
-                user.setEmail(user.getUsername() + "@example.com");
-                user.setFirstName("User" + j);
-                user.setLastName("O'realm" + i);
+                user.setEmail(computeEmail(user.getUsername()));
+                user.setFirstName(computeFirstName(j));
+                user.setLastName(computeLastName(realmName));
 
                 CredentialRepresentation creds = new CredentialRepresentation();
                 creds.setType("password");
@@ -307,6 +307,18 @@ public class RealmsConfigurationBuilder {
 
     static String computePassword(String username) {
         return "passOfUser_" + username;
+    }
+
+    static String computeFirstName(int userIdx) {
+        return "User" + userIdx;
+    }
+
+    static String computeLastName(String realm) {
+        return "O'" + realm.replace("_", "");
+    }
+
+    static String computeEmail(String username) {
+        return username + "@example.com";
     }
 
     

@@ -2,9 +2,10 @@ package keycloak
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
-import keycloak.CommonScenarioBuilder._
 import org.keycloak.performance.log.LogProcessor
 import io.gatling.core.validation.Validation
+
+import io.gatling.core.controller.inject.InjectionStep
 
 import org.keycloak.performance.TestConfig
 
@@ -24,13 +25,22 @@ abstract class CommonSimulation extends Simulation {
   println()
   println("Timestamps: \n" + TestConfig.toStringTimestamps)
   println()
-
+  
+  var defaultInjectionProfile = Array[InjectionStep] (
+      rampUsersPerSec(0.001) to TestConfig.usersPerSec during(TestConfig.rampUpPeriod),
+      constantUsersPerSec(TestConfig.usersPerSec) during(TestConfig.warmUpPeriod + TestConfig.measurementPeriod)   
+  )
+  
   def printSpecificTestParameters {
     // override in subclass
   }
   
   def rampDownNotStarted(): Validation[Boolean] = {
     System.currentTimeMillis < TestConfig.measurementEndTime
+  }
+
+  before {
+    TestConfig.validateConfiguration
   }
 
   after {

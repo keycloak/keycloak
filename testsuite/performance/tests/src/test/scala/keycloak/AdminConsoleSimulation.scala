@@ -3,11 +3,6 @@ package keycloak
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 
-import keycloak.CommonScenarioBuilder._
-
-import org.keycloak.performance.TestConfig
-
-
 /**
   * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
   */
@@ -80,10 +75,6 @@ class AdminConsoleSimulation extends CommonSimulation {
 
   val adminScenario = scenario("AdminConsole").exec(adminSession.chainBuilder)
 
-  setUp(adminScenario
-    .inject(
-       rampUsersPerSec(0.001) to TestConfig.usersPerSec during(TestConfig.rampUpPeriod) ,
-       constantUsersPerSec(TestConfig.usersPerSec) during(TestConfig.warmUpPeriod + TestConfig.measurementPeriod) 
-    ).protocols(httpProtocol))
+  setUp(adminScenario.inject(defaultInjectionProfile).protocols(httpProtocol))
 
 }
