@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.keycloak.testsuite.adapter.example.authorization.AbstractPhotozExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
