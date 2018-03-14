@@ -274,7 +274,7 @@ ol#kc-totp-settings li:first-of-type {
     #kc-locale {
         position: relative;
         width: 200px;
-        left: -230px;
+        left: 230px;
         text-align: right;
         z-index: 9999;
     }
