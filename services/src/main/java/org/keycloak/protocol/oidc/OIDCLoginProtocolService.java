@@ -27,16 +27,21 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
@@ -57,7 +62,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCLoginProtocolService {
+public class OIDCLoginProtocolService extends AuthorizationEndpointBase {
 
     private RealmModel realm;
     private TokenManager tokenManager;
@@ -76,6 +81,7 @@ public class OIDCLoginProtocolService {
     private HttpRequest request;
 
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
+        super(realm, event);
         this.realm = realm;
         this.tokenManager = new TokenManager();
         this.event = event;
@@ -226,6 +232,50 @@ public class OIDCLoginProtocolService {
         } else {
             return forms.setError(error).createCode();
         }
+    }
+
+
+    /**
+     * Creates a client session object for SAML IdP-initiated SSO session.
+     *
+     * The session takes the parameters from from client definition,
+     * namely the redirect URL.
+     *
+     * Keycloak will redirect to this redirectURL (RP site) after successful authentication.
+     *
+     * The RP can then initiate a OIDC authentication flow to keycloak, keycloak will
+     * create the necessary tokens assuming the user identity as per the previous IDP-initiated
+     * SSO Session.
+     *
+     * @param session KC session
+     * @param realm Realm to create client session in
+     * @param client Client to create client session for
+     * @param relayState Optional relay state - free field as per SAML specification
+     * @return
+     */
+    public AuthenticationSessionModel getOrCreateLoginSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
+
+        String redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+
+        if (redirect == null) {
+            redirect = client.getManagementUrl();
+        }
+
+        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
+
+        authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+        authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
+        authSession.setRedirectUri(redirect);
+
+        if (relayState == null) {
+            relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
+        }
+        if (relayState != null && !relayState.trim().equals("")) {
+            authSession.setClientNote(GeneralConstants.RELAY_STATE, relayState);
+        }
+
+        return authSession;
     }
 
 }

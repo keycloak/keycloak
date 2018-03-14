@@ -98,6 +98,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
     public static final String LOGIN_PROTOCOL = "saml";
+    public static final String SAML_IDP_INITIATED_PLAIN_REDIRECT = "saml_binding_plain_redirect";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
     public static final String SAML_POST_BINDING = "post";
@@ -467,7 +468,9 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
-        if (isPostBinding(clientSession)) {
+        if (redirectUri != null && clientSession.getNotes().get(SamlProtocol.SAML_IDP_INITIATED_PLAIN_REDIRECT) != null) {
+            return bindingBuilder.plainRedirectBinding(samlDocument).response(redirectUri);
+        } else if (isPostBinding(clientSession)) {
             return bindingBuilder.postBinding(samlDocument).response(redirectUri);
         } else {
             return bindingBuilder.redirectBinding(samlDocument).response(redirectUri);

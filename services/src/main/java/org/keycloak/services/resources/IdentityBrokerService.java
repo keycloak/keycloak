@@ -60,6 +60,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -1041,10 +1042,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return ParsedCodeContext.response(redirectToErrorPage(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND));
         }
 
-        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-        SamlService samlService = (SamlService) factory.createProtocolEndpoint(realmModel, event);
-        ResteasyProviderFactory.getInstance().injectProperties(samlService);
-        AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
+        AuthenticationSessionModel authSession;
+
+        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(oClient.get().getProtocol())) {
+            LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            OIDCLoginProtocolService oidcService = (OIDCLoginProtocolService) factory.createProtocolEndpoint(realmModel, event);
+            ResteasyProviderFactory.getInstance().injectProperties(oidcService);
+            authSession = oidcService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
+            authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_PLAIN_REDIRECT, Boolean.toString(true));
+        } else {
+            LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+            SamlService samlService = (SamlService) factory.createProtocolEndpoint(realmModel, event);
+            ResteasyProviderFactory.getInstance().injectProperties(samlService);
+            authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
+        }
 
         return ParsedCodeContext.clientSessionCode(new ClientSessionCode<>(session, this.realmModel, authSession));
     }
