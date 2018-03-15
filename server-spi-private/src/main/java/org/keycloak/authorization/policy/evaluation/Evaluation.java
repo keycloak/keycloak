@@ -51,6 +51,13 @@ public interface Evaluation {
      */
     Policy getPolicy();
 
+    /**
+     * Returns a {@link Realm} that can be used by policies to query information.
+     *
+     * @return a {@link Realm} instance
+     */
+    Realm getRealm();
+
     AuthorizationProvider getAuthorizationProvider();
 
     /**
