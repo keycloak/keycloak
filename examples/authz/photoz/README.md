@@ -73,7 +73,7 @@ open the ``Client Details`` page. Once there, click on the `Authorization` tab.
 
 Click on the ``Select file`` button, which means you want to import a resource server configuration. Now select the file that is located at:
 
-    examples/authz/photoz/photoz-restful-api/src/main/resources/photoz-restful-api-authz-service.json
+    examples/authz/photoz/photoz-restful-api/target/classes/photoz-restful-api-authz-service.json
     
 Now click ``Upload`` and the resource server will be updated accordingly.
 
