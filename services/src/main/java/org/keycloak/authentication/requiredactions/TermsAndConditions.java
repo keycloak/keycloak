@@ -18,6 +18,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -65,12 +66,20 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleTermsAndConditions.SINGLETON.requiredActionChallenge(context);
+            return;
+        }
         Response challenge = context.form().createForm("terms.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleTermsAndConditions.SINGLETON.processAction(context);
+            return;
+        }
         if (context.getHttpRequest().getDecodedFormParameters().containsKey("cancel")) {
             context.getUser().removeAttribute(USER_ATTRIBUTE);
             context.failure();

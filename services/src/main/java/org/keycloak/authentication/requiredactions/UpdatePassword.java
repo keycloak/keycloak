@@ -22,6 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -74,6 +75,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdatePassword.SINGLETON.requiredActionChallenge(context);
+            return;
+        }
         Response challenge = context.form()
                 .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                 .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
@@ -82,6 +87,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdatePassword.SINGLETON.processAction(context);
+            return;
+        }
         EventBuilder event = context.getEvent();
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         event.event(EventType.UPDATE_PASSWORD);
