@@ -33,6 +33,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.social.AbstractSocialLoginPage;
 import org.keycloak.testsuite.pages.social.BitbucketLoginPage;
 import org.keycloak.testsuite.pages.social.FacebookLoginPage;
+import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.GitHubLoginPage;
 import org.keycloak.testsuite.pages.social.GitLabLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
@@ -67,6 +68,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
@@ -108,7 +110,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
-        BITBUCKET("bitbucket", BitbucketLoginPage.class);
+        BITBUCKET("bitbucket", BitbucketLoginPage.class),
+        INSTAGRAM("instagram", InstagramLoginPage.class);
 
         private String id;
         private Class<? extends AbstractSocialLoginPage> pageObjectClazz;
@@ -258,6 +261,13 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         testTokenExchange();
     }
 
+    @Test
+    public void instagramLogin() throws InterruptedException {
+        setTestProvider(INSTAGRAM);
+        performLogin();
+        assertUpdateProfile(false, false, true);
+        assertAccount();
+    }
 
     @Test
     public void githubLogin() throws InterruptedException {
