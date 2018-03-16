@@ -18,6 +18,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -48,6 +49,10 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdateProfile.SINGLETON.requiredActionChallenge(context);
+            return;
+        }
         Response challenge = context.form()
                 .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
         context.challenge(challenge);
@@ -55,6 +60,10 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdateProfile.SINGLETON.processAction(context);
+            return;
+        }
         EventBuilder event = context.getEvent();
         event.event(EventType.UPDATE_PROFILE);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();

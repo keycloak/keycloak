@@ -332,9 +332,25 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         Properties messagesBundle = handleThemeResources(theme, locale);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
-
     }
-    
+
+    @Override
+    public String getMessage(String message, String... parameters) {
+        Theme theme;
+        try {
+            theme = getTheme();
+        } catch (IOException e) {
+            logger.error("Failed to create theme", e);
+            throw new RuntimeException("Failed to create theme");
+        }
+
+        Locale locale = session.getContext().resolveLocale(user);
+        Properties messagesBundle = handleThemeResources(theme, locale);
+        FormMessage msg = new FormMessage(message, parameters);
+        return formatMessage(msg, messagesBundle, locale);
+    }
+
+
     /**
      * Create common attributes used in all templates.
      * 

@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -45,6 +46,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdateTotp.SINGLETON.requiredActionChallenge(context);
+            return;
+        }
         Response challenge = context.form()
                 .setAttribute("mode", getMode(context))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
@@ -57,6 +62,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleUpdateTotp.SINGLETON.processAction(context);
+            return;
+        }
         EventBuilder event = context.getEvent();
         event.event(EventType.UPDATE_TOTP);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();

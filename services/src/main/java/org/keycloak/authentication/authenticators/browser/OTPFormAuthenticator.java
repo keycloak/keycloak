@@ -20,6 +20,8 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.DisplayUtils;
+import org.keycloak.authentication.authenticators.console.ConsoleOTPFormAuthenticator;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -39,11 +41,19 @@ import javax.ws.rs.core.Response;
 public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
     @Override
     public void action(AuthenticationFlowContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleOTPFormAuthenticator.SINGLETON.action(context);
+            return;
+        }
         validateOTP(context);
     }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleOTPFormAuthenticator.SINGLETON.authenticate(context);
+            return;
+        }
         Response challengeResponse = challenge(context, null);
         context.challenge(challengeResponse);
     }

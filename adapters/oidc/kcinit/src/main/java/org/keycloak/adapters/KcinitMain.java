@@ -16,30 +16,15 @@
  */
 package org.keycloak.adapters;
 
-import org.keycloak.adapters.installed.KeycloakCliSso;
-import org.keycloak.adapters.installed.KeycloakInstalled;
-import org.keycloak.common.util.Time;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.keycloak.adapters.installed.KcinitDriver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakCliSsoMain extends KeycloakCliSso {
+public class KcinitMain extends KcinitDriver {
 
     public static void main(String[] args) throws Exception {
-        new KeycloakCliSsoMain().mainCmd(args);
+        new KcinitMain().mainCmd(args);
     }
 }

@@ -23,6 +23,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
+import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -56,6 +57,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleVerifyEmail.SINGLETON.requiredActionChallenge(context);
+            return;
+        }
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (context.getUser().isEmailVerified()) {
@@ -88,6 +93,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (DisplayUtils.isConsole(context)) {
+            ConsoleVerifyEmail.SINGLETON.processAction(context);
+            return;
+        }
         logger.debugf("Re-sending email requested for user: %s", context.getUser().getUsername());
 
         // This will allow user to re-send email again

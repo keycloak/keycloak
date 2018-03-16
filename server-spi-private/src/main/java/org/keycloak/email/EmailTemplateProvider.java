@@ -23,6 +23,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -76,4 +77,24 @@ public interface EmailTemplateProvider extends Provider {
 
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
+    /**
+     * Send formatted email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException;
+
+    /**
+     * Send formatted email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param subjectAttributes attributes used to fill subject format message
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException;
 }
