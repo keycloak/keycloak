@@ -28,7 +28,7 @@
                 <tr>
                     <td>
                         <#if application.effectiveUrl?has_content><a href="${application.effectiveUrl}"></#if>
-                            <#if application.client.name??>${advancedMsg(application.client.name)}<#else>${application.client.clientId}</#if>
+                            <#if application.client.name?has_content>${advancedMsg(application.client.name)}<#else>${application.client.clientId}</#if>
                         <#if application.effectiveUrl?has_content></a></#if>
                     </td>
 

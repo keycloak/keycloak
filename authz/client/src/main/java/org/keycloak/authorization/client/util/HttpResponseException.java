@@ -44,4 +44,12 @@ public class HttpResponseException extends RuntimeException {
     public byte[] getBytes() {
         return bytes;
     }
+
+    @Override
+    public String toString() {
+        if (bytes != null) {
+            return new StringBuilder(super.toString()).append(" / Response from server: ").append(new String(bytes)).toString();
+        }
+        return super.toString();
+    }
 }

@@ -109,6 +109,8 @@ import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
@@ -978,22 +980,30 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testErrorHandlingUnsigned() throws Exception {
-        Client client = ClientBuilder.newClient();
-        // make sure
-        Response response = client.target(employeeServletPage.toString()).request().get();
-        response.close();
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeServletPage.toString() + "/saml")
+                .destination(employeeSigServletPage.toString() + "/saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
-        BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
-                .relayState(null);
         Document document = builder.buildDocument();
-        URI uri = binding.redirectBinding(document).generateURI(employeeServletPage.toString() + "/saml", false);
-        response = client.target(uri).request().get();
-        String errorPage = response.readEntity(String.class);
-        response.close();
-        Assert.assertEquals(403, response.getStatus());
+
+        new SamlClientBuilder()
+                .addStep((client, currentURI, currentResponse, context) ->
+                        Binding.REDIRECT.createSamlUnsignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document))
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("INVALID_SIGNATURE"))));
+    }
+
+    @Test
+    public void testErrorHandlingSigned() throws Exception {
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
+                .destination(employeeSigServletPage.toString() + "/saml")
+                .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
+                .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        Document document = builder.buildDocument();
+
+        new SamlClientBuilder()
+                .addStep((client, currentURI, currentResponse, context) ->
+                        Binding.REDIRECT.createSamlSignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document, REALM_PRIVATE_KEY, REALM_PUBLIC_KEY))
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("ERROR_STATUS"))));
     }
 
     @Test

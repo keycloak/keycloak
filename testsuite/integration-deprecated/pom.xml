@@ -280,6 +280,11 @@
             <artifactId>mariadb-java-client</artifactId>
             <version>${mariadb.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+            <version>4.0.0.CR1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

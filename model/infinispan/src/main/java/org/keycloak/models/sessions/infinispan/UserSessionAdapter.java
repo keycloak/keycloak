@@ -125,7 +125,7 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-        if (removedClientUUIDS == null || ! removedClientUUIDS.isEmpty()) {
+        if (removedClientUUIDS == null || removedClientUUIDS.isEmpty()) {
             return;
         }
 

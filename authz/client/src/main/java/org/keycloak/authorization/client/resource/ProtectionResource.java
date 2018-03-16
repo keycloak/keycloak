@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.client.resource;
 
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
@@ -31,15 +32,17 @@ public class ProtectionResource {
 
     private final TokenCallable pat;
     private final Http http;
+    private final Configuration configuration;
     private ServerConfiguration serverConfiguration;
 
-    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
+    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, Configuration configuration, TokenCallable pat) {
         if (pat == null) {
             throw new RuntimeException("No access token was provided when creating client for Protection API.");
         }
 
         this.http = http;
         this.serverConfiguration = serverConfiguration;
+        this.configuration = configuration;
         this.pat = pat;
     }
 
@@ -49,7 +52,7 @@ public class ProtectionResource {
      * @return a {@link ProtectedResource}
      */
     public ProtectedResource resource() {
-        return new ProtectedResource(http, serverConfiguration, pat);
+        return new ProtectedResource(http, serverConfiguration, configuration, pat);
     }
 
     /**

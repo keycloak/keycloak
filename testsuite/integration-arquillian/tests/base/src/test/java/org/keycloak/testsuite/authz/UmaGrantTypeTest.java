@@ -123,7 +123,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         ResourceRepresentation resourceA = addResource("Resource Marta", "marta", true, "ScopeA", "ScopeB", "ScopeC");
 
         permission.setName(resourceA.getName() + " Permission");
-        permission.addResource(resourceA.getName());
+        permission.addResource(resourceA.getId());
         permission.addPolicy("Default Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
@@ -131,7 +131,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         ResourceRepresentation resourceB = addResource("Resource B", "marta", "ScopeA", "ScopeB", "ScopeC");
 
         permission.setName(resourceB.getName() + " Permission");
-        permission.addResource(resourceB.getName());
+        permission.addResource(resourceB.getId());
         permission.addPolicy("Default Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
