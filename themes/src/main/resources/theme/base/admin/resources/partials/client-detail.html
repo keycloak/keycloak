@@ -409,6 +409,19 @@
                 </div>
                 <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="changeRequestObjectRequired">{{:: 'request-object-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectRequired"
+                                ng-change="changeRequestObjectRequired()"
+                                ng-model="requestObjectRequired"
+                                ng-options="sig for sig in requestObjectRequiredOptions">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-required.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">

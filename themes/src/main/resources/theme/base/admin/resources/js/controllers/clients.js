@@ -891,6 +891,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "none",
         "RS256"
     ];
+    
+    $scope.requestObjectRequiredOptions = [
+        "not required",
+        "request or request_uri",
+        "request only",
+        "request_uri only"
+    ];
 
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
@@ -1045,6 +1052,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
         $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
 
+        var attrVal3 = $scope.client.attributes['request.object.required'];
+        $scope.requestObjectRequired = attrVal3==null ? 'not required' : attrVal3;
+
         if ($scope.client.attributes["exclude.session.state.from.auth.response"]) {
             if ($scope.client.attributes["exclude.session.state.from.auth.response"] == "true") {
                 $scope.excludeSessionStateFromAuthResponse = true;
@@ -1141,6 +1151,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.clientEdit.attributes['request.object.signature.alg'] = null;
         } else {
             $scope.clientEdit.attributes['request.object.signature.alg'] = $scope.requestObjectSignatureAlg;
+        }
+    };
+    
+    $scope.changeRequestObjectRequired = function() {
+        if ($scope.requestObjectRequired === 'not required') {
+            $scope.clientEdit.attributes['request.object.required'] = null;
+        } else {
+            $scope.clientEdit.attributes['request.object.required'] = $scope.requestObjectRequired;
         }
     };
 
