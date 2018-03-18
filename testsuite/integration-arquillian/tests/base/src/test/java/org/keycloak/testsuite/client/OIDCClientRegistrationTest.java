@@ -200,6 +200,20 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
         Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
     }
+    
+    @Test
+    public void testRequestObjectRequired() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setRequestObjectRequired(OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI, response.getRequestObjectRequired());
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertEquals(OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI, config.getRequestObjectRequired());
+    }
 
     @Test
     public void createClientImplicitFlow() throws ClientRegistrationException {

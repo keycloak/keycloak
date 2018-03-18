@@ -85,6 +85,8 @@ public class OIDCClientRepresentation {
     private String request_object_encryption_alg;
 
     private String request_object_encryption_enc;
+    
+    private String request_object_required;
 
     private Integer default_max_age;
 
@@ -335,6 +337,14 @@ public class OIDCClientRepresentation {
 
     public void setRequestObjectEncryptionEnc(String request_object_encryption_enc) {
         this.request_object_encryption_enc = request_object_encryption_enc;
+    }
+    
+    public String getRequestObjectRequired() {
+        return request_object_required;
+    }
+
+    public void setRequestObjectRequired(String request_object_required) {
+        this.request_object_required = request_object_required;
     }
 
     public Integer getDefaultMaxAge() {
