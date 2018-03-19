@@ -5,8 +5,8 @@ When writing rule-based policies using JavaScript or JBoss Drools, {project_name
 
 This API consists of a few interfaces that provides you access to information such as:
 
-* The permission being requested
-* The identity that is requesting the permission, from which you can obtain claims/attributes
+* The permission being evaluated, representing both the resource and scopes being requested.
+* Obtain attributes associated with the resource being requested
 * Runtime environment and any other attribute associated with the execution context
 * Information about users such as group membership and roles
 
