@@ -462,8 +462,6 @@ public class KeycloakInstalled {
             //System.err.println("initial request");
             Response response = client.target(authUrl).request().get();
             while (true) {
-                System.err.println("looping");
-
                 if (response.getStatus() == 403) {
                     if (response.getMediaType() != null) {
                         String splash = response.readEntity(String.class);
@@ -471,6 +469,7 @@ public class KeycloakInstalled {
                     } else {
                         System.err.println("Forbidden to login");
                     }
+                    return false;
                 } else if (response.getStatus() == 401) {
                     String authenticationHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
                     if (authenticationHeader == null) {

@@ -125,7 +125,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             UserModel user = session.users().addUser(realm, "bburke");
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
             user.setEnabled(true);
-            user.setEmail("patriot1burke@gmail.com");
+            user.setEmail("p@p.com");
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
             user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
@@ -151,7 +151,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             smtp.put("replyTo", "reply-to@keycloak.org");
             smtp.put("ssl", "true");
             smtp.put("auth", "true");
-            smtp.put("user", "****");
+            smtp.put("user", "*****");
             smtp.put("password", "****");
             realm.setSmtpConfig(smtp);
 
@@ -194,7 +194,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         testInstall();
         // login
         KcinitExec exe = KcinitExec.newBuilder()
-                .argsLine("")
+                .argsLine("login")
                 .executeAsync();
         exe.waitForStderr("Username:");
         exe.sendLine("wburke");
@@ -258,7 +258,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         testInstall();
 
         KcinitExec exe = KcinitExec.newBuilder()
-                .argsLine("")
+                .argsLine("login")
                 .executeAsync();
         exe.waitForStderr("Username:");
         exe.sendLine("wburke");
@@ -288,7 +288,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             //Thread.sleep(100000000);
 
             KcinitExec exe = KcinitExec.newBuilder()
-                    .argsLine("")
+                    .argsLine("login")
                     .executeAsync();
             try {
                 exe.waitForStderr("Username:");
@@ -327,7 +327,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             testInstall();
 
             KcinitExec exe = KcinitExec.newBuilder()
-                    .argsLine("")
+                    .argsLine("login")
                     .executeAsync();
             exe.waitForStderr("Username:");
             exe.sendLine("wburke");
@@ -343,7 +343,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals(0, exe.stdoutLines().size());
 
             exe = KcinitExec.newBuilder()
-                    .argsLine("-f")
+                    .argsLine("login -f")
                     .executeAsync();
             exe.waitForStderr("Username:");
             exe.sendLine("wburke");
@@ -383,7 +383,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             testInstall();
 
             KcinitExec exe = KcinitExec.newBuilder()
-                    .argsLine("")
+                    .argsLine("login")
                     .executeAsync();
             exe.waitForStderr("Username:");
             exe.sendLine("wburke");
@@ -427,7 +427,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals(0, exe.exitCode());
 
             exe = KcinitExec.newBuilder()
-                    .argsLine("")
+                    .argsLine("login")
                     .executeAsync();
             exe.waitForStderr("Username:");
             exe.sendLine("wburke");
@@ -465,7 +465,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         testInstall();
 
         KcinitExec exe = KcinitExec.newBuilder()
-                .argsLine("")
+                .argsLine("login")
                 .executeAsync();
         exe.waitForStderr("Username:");
         exe.sendLine("test-user@localhost");

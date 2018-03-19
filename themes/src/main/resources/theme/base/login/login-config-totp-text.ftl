@@ -25,3 +25,7 @@ ${msg("loginTotpManualStep3")}
 
 </#if>
 
+Enter in your one time password so we can verify you have installed it correctly.
+
+
+
