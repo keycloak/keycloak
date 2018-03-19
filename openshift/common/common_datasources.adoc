@@ -1,0 +1,10 @@
+Datasources are automatically created based on the value of some environment variables. 
+
+The most important is the `*DB_SERVICE_PREFIX_MAPPING*` environment variable
+that defines JNDI mappings for data sources. This variable must be set to a
+comma-separated list of `*<name>_<database_type>=<PREFIX>*` triplets, where
+`name` is used as the  pool-name in the data source, `database_type` determines
+what database driver to use, and `PREFIX` is the prefix used in the names of
+environment variables, which are used to configure the data source.
+
+include::jndi_mappings.adoc[]

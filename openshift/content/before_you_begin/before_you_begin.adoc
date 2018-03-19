@@ -1,0 +1,24 @@
+=== Comparison: {xpaasproduct-shortname} Image and Red Hat Single Sign-On
+The {xpaasproduct-shortname} image version number 7.2 is based on Red Hat Single Sign-On 7.2. There are some differences in functionality between the {xpaasproduct-shortname} image and Red Hat Single Sign-On:
+
+* The {xpaasproduct-shortname} image includes all of the functionality of Red Hat Single Sign-On. In addition, the RH-SSO-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
+
+=== Version Compatibility and Support
+See the xPaaS part of the https://access.redhat.com/articles/2176281[OpenShift and Atomic Platform Tested Integrations page] for details about OpenShift image version compatibility.
+
+=== Deprecated Image Streams and Application Templates for {xpaasproduct-shortname}
+
+[IMPORTANT]
+====
+The {xpaasproduct-shortname} image version number 7.0 is deprecated and it will no longer receive updates of image and application templates.
+
+*To deploy new applications, it is recommended to use the version 7.1 or 7.2 of the {xpaasproduct-shortname} image along with the application templates specific to those versions.*
+====
+
+=== Initial Setup
+The Tutorials in this guide follow on from and assume an OpenShift instance similar to that created in the https://access.redhat.com/documentation/en/red-hat-application-services/0/openshift-primer[OpenShift Primer].
+
+[IMPORTANT]
+====
+For information related to updating the existing database when migrating {xpaasproduct-shortname} image from RH-SSO 7.0 to RH-SSO 7.1, or from RH-SSO 7.1 to RH-SSO 7.2, see the xref:../tutorials/tutorials.adoc#upgrading-sso-db-from-70-to-71[Updating Existing Database when Migrating {xpaasproduct-shortname} Image to a new version] section.
+====

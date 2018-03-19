@@ -1,0 +1,34 @@
+To configure a new Security Domain, the user must define the
+`SECDOMAIN_NAME` environment variable.
+
+This will result in the creation of a security domain named
+after the environment variable. The user may also define the following
+environment variables to customize the domain:
+
+|===
+|Variable name |Description |Example value
+
+|`SECDOMAIN_NAME`
+| Define in order to enable the definition of an additional security
+domain.
+| `myDomain`
+|`SECDOMAIN_PASSWORD_STACKING`
+| If defined, the password-stacking module option is enabled and
+  set to the value useFirstPass.
+| `true`
+
+|`SECDOMAIN_LOGIN_MODULE`
+| The login module to be used. +
+    Defaults to `UsersRoles`
+| `UsersRoles`
+
+|`SECDOMAIN_USERS_PROPERTIES`
+|   The name of the properties file containing user definitions. +
+    Defaults to `users.properties`
+| `users.properties`
+
+|`SECDOMAIN_ROLES_PROPERTIES`
+|   The name of the properties file containing role definitions. +
+    Defaults to `roles.properties`
+| `roles.properties`
+|===

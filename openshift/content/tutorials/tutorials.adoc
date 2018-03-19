@@ -1,0 +1,1245 @@
+[[Example-Deploying-SSO]]
+=== Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image
+[[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
+==== Preparing RH-SSO Authentication for OpenShift Deployment
+Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+
+. Create a new project:
++
+----
+$ oc new-project sso-app-demo
+----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
++
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
+. The RH-SSO template requires an SSL keystore and a JGroups keystore.
++
+[NOTE]
+====
+OpenShift does not permit login authentication from self-signed certificates. For demonstration purposes, this example uses _openssl_ to generate a CA certificate to sign the SSL keystore and create a truststore. This truststore is also included in the creation of the secret, and specified in the RH-SSO template. +
+This example also uses _keytool_, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
+====
++
+[WARNING]
+====
+For production environments, its recommended that you use your own SSL certificate purchased from a verified Certificate Authority (CA) for SSL-encrypted connections (HTTPS).
+====
++
+The following commands will prompt for passwords.
++
+.. Generate a CA certificate:
++
+[subs="verbatim,macros"]
+----
+$ openssl req -new -newkey rsa:4096 -x509 -keyout xpaas.key -out xpaas.crt -days 365 -subj "/CN=xpaas-sso-demo.ca"
+----
+.. Generate a Certificate for the SSL keystore:
++
+----
+$ keytool -genkeypair -keyalg RSA -keysize 2048 -dname "CN=secure-sso-sso-app-demo.openshift32.example.com" -alias sso-https-key -keystore sso-https.jks
+----
+.. Generate a Certificate Sign Request for the SSL keystore:
++
+----
+$ keytool -certreq -keyalg rsa -alias sso-https-key -keystore sso-https.jks -file sso.csr
+----
+.. Sign the Certificate Sign Request with the CA certificate:
++
+----
+$ openssl x509 -req -CA xpaas.crt -CAkey xpaas.key -in sso.csr -out sso.crt -days 365 -CAcreateserial
+----
+.. Import the CA into the SSL keystore:
++
+----
+$ keytool -import -file xpaas.crt -alias xpaas.ca -keystore sso-https.jks
+----
+.. Import the signed Certificate Sign Request into the SSL keystore:
++
+----
+$ keytool -import -file sso.crt -alias sso-https-key -keystore sso-https.jks
+----
+.. Import the CA into a new truststore keystore:
++
+----
+$ keytool -import -file xpaas.crt -alias xpaas.ca -keystore truststore.jks
+----
+.. Generate a secure key for the JGroups keystore:
++
+----
+$ keytool -genseckey -alias jgroups -storetype JCEKS -keystore jgroups.jceks
+----
+. Create the keystore secrets with the JGroups keystore, and with the SSL keystore and truststore. The truststore is included in this example because it was necessary to sign the example SSL keystore.
++
+----
+$ oc secret new sso-jgroup-secret jgroups.jceks
+$ oc secret new sso-ssl-secret sso-https.jks truststore.jks
+----
+. Link the secrets to the `default` service account:
++
+----
+$ oc secrets link default sso-jgroup-secret sso-ssl-secret
+----
+
+==== Deploying the RH-SSO Application Template
+
+. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+. Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
+. Use the *Filter by Keyword* search bar to limit the list to those that match _sso_. You may need to click *Middleware*, then *Integration* to show the desired application template.
+. Select an RH-SSO application template. This example uses *_sso72-https_*. Specify the application name, hostnames, and SSL keystore, JGroups keystore, and secret information:
++
+[cols="2*", options="header"]
+|===
+|Variable
+|Example Value
+|*_APPLICATION_NAME_*
+|_sso_
+
+|*_HOSTNAME_HTTPS_*
+|_secure-sso-sso-app-demo.openshift32.example.com_
+
+|*_HOSTNAME_HTTP_*
+|_sso-sso-app-demo.openshift32.example.com_
+
+|*_HTTPS_KEYSTORE_*
+|_sso-https.jks_
+
+|*_HTTPS_PASSWORD_*
+|_password_
+
+|*_HTTPS_SECRET_*
+|_sso-ssl-secret_
+
+|*_JGROUPS_ENCRYPT_KEYSTORE_*
+|_jgroups.jceks_
+
+|*_JGROUPS_ENCRYPT_PASSWORD_*
+|_password_
+
+|*_JGROUPS_ENCRYPT_SECRET_*
+|_sso-jgroup-secret_
+|===
++
+Include the following variables to create a new _demorealm_ realm when the RH-SSO server is deployed and a user to manage that realm.
++
+It is *required* to specify xref:../get_started/get_started.adoc#sso-administrator-setup[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* credentials] here. If not specified, they are auto generated and displayed as an OpenShift instructional message when the template is instantiated.
++
+[cols="2*", options="header"]
+|===
+|Variable
+|Example Value
+|*_SSO_REALM_*
+|_demorealm_
+
+|*_SSO_SERVICE_USERNAME_*
+|_sso-mgmtuser_
+
+|*_SSO_SERVICE_PASSWORD_*
+|_mgmt-password_
+
+|*_SSO_ADMIN_USERNAME_*
+|_admin_
+
+|*_SSO_ADMIN_PASSWORD_*
+|_adm-password_
+|===
++
+This example uses self-signed certificates and must additionally include information on the truststore. These variables are not required with SSL certificates purchased from a verified Certificate Authority:
++
+[cols="2*", options="header"]
+|===
+|Variable
+|Example Value
+|*_SSO_TRUSTSTORE_*
+|_truststore.jks_
+
+|*_SSO_TRUSTSTORE_SECRET_*
+|_sso-ssl-secret_
+
+|*_SSO_TRUSTSTORE_PASSWORD_*
+|_password_
+|===
+. Click *Create* to deploy the application template and start pod deployment. This may take a couple of minutes.
+
+Then access the RH-SSO web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator account].
+
+[NOTE]
+====
+This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. Accessing the RH-SSO web console will prompt an insecure connection warning. +
+For production environments, Red Hat recommends that you use an SSL certificate purchased from a verified Certificate Authority.
+====
+
+[[upgrading-sso-db-from-70-to-71]]
+=== Example Workflow: Updating Existing Database when Migrating {xpaasproduct-shortname} Image to a new version
+[IMPORTANT]
+====
+* Rolling updates from {xpaasproduct-shortname} 7.0 / 7.1 to 7.2 are not supported as databases and caches are not backward compatible.
+* Stop all {xpaasproduct-shortname} 7.0 / 7.1 instances before upgrading, they cannot run concurrently against the same database.
+* Pre-generated scripts are not available, they are generated dynamically depending on the database.
+====
+
+Red Hat Single Sign-On 7.2 can xref:automatic-db-migration[automatically migrate the database schema], or you can choose to do it xref:manual-db-migration[manually].
+
+[NOTE]
+====
+By default the database is automatically migrated when you start RH-SSO 7.2 for the first time.
+====
+
+[[automatic-db-migration]]
+==== Automatic Database Migration
+This process assumes that you are running RH-SSO 7.1 image link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_jboss_sso_for_openshift/#Example-Deploying-SSO[deployed using one of the following templates]:
+
+* *_sso71-mysql_*
+* *_sso71-postgresql_*
+* *_sso71-mysql-persistent_*
+* *_sso71-postgresql-persistent_*
+
+[IMPORTANT]
+====
+Stop all RH-SSO 7.1 pods before upgrading to RH-SSO 7.2, as they cannot run concurrently against the same database.
+====
+
+Use the following steps to automatically migrate the database schema:
+
+. Identify existing deployment config for RH-SSO 7.1 containers.
++
+----
+$ oc get dc -o name --selector=application=sso
+deploymentconfig/sso
+deploymentconfig/sso-postgresql
+----
+. Stop all RH-SSO 7.1 containers in the current namespace.
++
+----
+$ oc scale --replicas=0 dc/sso
+deploymentconfig "sso" scaled
+----
+. Update the image change trigger in the existing deployment config to reference the RH-SSO 7.2 image.
++
+----
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-sso72-openshift:1.0"}]'
+"sso" patched
+----
+. Start rollout of the new RH-SSO 7.2 images based on the latest image defined in the image change triggers.
++
+----
+$ oc rollout latest dc/sso
+deploymentconfig "sso" rolled out
+----
+. Deploy RH-SSO 7.2 containers using the modified deployment config.
++
+----
+$ oc scale --replicas=1 dc/sso
+deploymentconfig "sso" scaled
+----
+. (Optional) Verify the database has been successfully updated.
++
+----
+$ oc get pods --selector=application=sso
+NAME                     READY     STATUS    RESTARTS   AGE
+sso-4-vg21r              1/1       Running   0          1h
+sso-postgresql-1-t871r   1/1       Running   0          2h
+----
++
+----
+$ oc logs sso-4-vg21r | grep 'Updating'
+11:23:45,160 INFO  [org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider] (ServerService Thread Pool -- 58) Updating database. Using changelog META-INF/jpa-changelog-master.xml
+----
+
+[[manual-db-migration]]
+==== Manual Database Migration
+
+[IMPORTANT]
+====
+Pre-generated scripts are not available. They are generated dynamically depending on the database. With RH-SSO 7.2 one can generate and export these to an SQL file that can be manually applied to the database afterwards. To dynamically generate the SQL migration file for the database:
+
+. Configure RH-SSO 7.2 with the correct datasource,
+. Set following configuration options in the `standalone-openshift.xml` file:
+.. `initializeEmpty=false`,
+.. `migrationStrategy=manual`, and
+.. `migrationExport` to the location on the file system of the pod, where the output SQL migration file should be stored (e.g. `migrationExport="${jboss.home.dir}/keycloak-database-update.sql"`).
+
+See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_installation_and_configuration_guide/database-1#database_configuration[database configuration of RH-SSO 7.2] for further details.
+
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all RH-SSO 7.1 instances before dynamic generation of the SQL migration file.
+====
+
+This guide assumes the RH-SSO 7.1 for OpenShift image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_jboss_sso_for_openshift/#Example-Deploying-SSO[deployed using one of the following templates:]
+
+* *_sso71-mysql_*
+* *_sso71-postgresql_*
+* *_sso71-mysql-persistent_*
+* *_sso71-postgresql-persistent_*
+
+Perform the following to generate and get the SQL migration file for the database:
+
+. Prepare template of OpenShift link:https://docs.openshift.com/container-platform/latest/dev_guide/jobs.html[database migration job] to generate the SQL file.
++
+----
+$ cat sso71-to-sso72-db-migrate-job.yaml.orig
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sso71-to-sso72-db-migrate-job
+spec:
+  autoSelector: true
+  parallelism: 0
+  completions: 1
+  template:
+    metadata:
+      name: sso71-to-sso72-db-migrate-job
+    spec:
+      containers:
+      - env:
+        - name: DB_SERVICE_PREFIX_MAPPING
+          value: <<DB_SERVICE_PREFIX_MAPPING_VALUE>>
+        - name: <<PREFIX>>_JNDI
+          value: <<PREFIX_JNDI_VALUE>>
+        - name: <<PREFIX>>_USERNAME
+          value: <<PREFIX_USERNAME_VALUE>>
+        - name: <<PREFIX>>_PASSWORD
+          value: <<PREFIX_PASSWORD_VALUE>>
+        - name: <<PREFIX>>_DATABASE
+          value: <<PREFIX_DATABASE_VALUE>>
+        - name: TX_DATABASE_PREFIX_MAPPING
+          value: <<TX_DATABASE_PREFIX_MAPPING_VALUE>>
+        - name: <<SERVICE_HOST>>
+          value: <<SERVICE_HOST_VALUE>>
+        - name: <<SERVICE_PORT>>
+          value: <<SERVICE_PORT_VALUE>>
+        image: <<SSO_IMAGE_VALUE>>
+        imagePullPolicy: Always
+        name: sso71-to-sso72-db-migrate-job
+        # Keep the pod running after SQL migration file has been generated,
+        # so we can retrieve it
+        command: ["/bin/bash", "-c", "/opt/eap/bin/openshift-launch.sh || sleep 600"]
+      restartPolicy: Never
+----
++
+----
+$ cp sso71-to-sso72-db-migrate-job.yaml.orig sso71-to-sso72-db-migrate-job.yaml
+----
+. Copy the datasource definition and database access credentials from RH-SSO 7.1 deployment config to appropriate places in database job migration template.
++
+Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `sso71-to-sso72-db-migrate-job.yaml`.
++
+[NOTE]
+====
+Although the `DB_SERVICE_PREFIX_MAPPING` environment variable allows a link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_jboss_enterprise_application_platform_for_openshift/#datasources[comma-separated list of *<name>-<database_type>=<PREFIX>* triplets] as its value, this example script accepts only one datasource triplet definition for demonstration purposes. You can modify the script for handling multiple datasource definition triplets.
+====
++
+----
+$ cat mirror_sso_dc_db_vars.sh
+#!/bin/bash
+
+# IMPORTANT:
+#
+# If the name of the SSO deployment config differs from 'sso' or if the file name of the
+# YAML definition of the migration job is different, update the following two variables
+SSO_DC_NAME="sso"
+JOB_MIGRATION_YAML="sso71-to-sso72-db-migrate-job.yaml"
+
+# Get existing variables of the $SSO_DC_NAME deployment config in an array
+declare -a SSO_DC_VARS=($(oc set env dc/${SSO_DC_NAME} --list | sed '/^#/d'))
+
+# Get the PREFIX used in the names of environment variables
+PREFIX=$(grep -oP 'DB_SERVICE_PREFIX_MAPPING=[^ ]+' <<< "${SSO_DC_VARS[@]}")
+PREFIX=${PREFIX##*=}
+
+# Substitute (the order in which replacements are made is important):
+# * <<PREFIX>> with actual $PREFIX value and
+# * <<PREFIX with "<<$PREFIX" value
+sed -i "s#<<PREFIX>>#${PREFIX}#g" ${JOB_MIGRATION_YAML}
+sed -i "s#<<PREFIX#<<${PREFIX}#g" ${JOB_MIGRATION_YAML}
+
+# Construct the array of environment variables specific to the datasource
+declare -a DB_VARS=(JNDI USERNAME PASSWORD DATABASE)
+
+# Prepend $PREFIX to each item of the datasource array
+DB_VARS=( "${DB_VARS[@]/#/${PREFIX}_}" )
+
+# Add DB_SERVICE_PREFIX_MAPPING and TX_DATABASE_PREFIX_MAPPING variables
+# to datasource array
+DB_VARS=( "${DB_VARS[@]}" DB_SERVICE_PREFIX_MAPPING TX_DATABASE_PREFIX_MAPPING )
+
+# Construct the SERVICE from DB_SERVICE_PREFIX_MAPPING
+SERVICE=$(grep -oP 'DB_SERVICE_PREFIX_MAPPING=[^ ]+' <<< "${SSO_DC_VARS[@]}")
+SERVICE=${SERVICE#*=}
+SERVICE=${SERVICE%=*}
+SERVICE=${SERVICE^^}
+SERVICE=${SERVICE//-/_}
+
+# If the deployment config contains <<SERVICE>>_SERVICE_HOST and
+# <<SERVICE>>_SERVICE_PORT variables, add them to the datasource array.
+# Their values also need to be propagated into yaml definition of the migration job.
+if grep -Pq "${SERVICE}_SERVICE_HOST=[^ ]+" <<< "${SSO_DC_VARS[@]}" &&
+   grep -Pq "${SERVICE}_SERVICE_PORT=[^ ]+" <<< "${SSO_DC_VARS[@]}"
+then
+  DB_VARS=( "${DB_VARS[@]}" ${SERVICE}_SERVICE_HOST ${SERVICE}_SERVICE_PORT )
+# If they are not defined, delete their placeholder rows in yaml definition file
+# (since if not defined they are not expanded which make the yaml definition invalid).
+else
+  for KEY in "HOST" "PORT"
+  do
+    sed -i "/SERVICE_${KEY}/d" ${JOB_MIGRATION_YAML}
+  done
+fi
+
+# Substitute (the order in which replacements are made is important):
+# * <<SERVICE_HOST>> with ${SERVICE}_SERVICE_HOST and
+# * <<SERVICE_HOST_VALUE>> with "<<${SERVICE}_SERVICE_HOST_VALUE>>"
+# Do this for both "HOST" and "PORT"
+for KEY in "HOST" "PORT"
+do
+  sed -i "s#<<SERVICE_${KEY}>>#${SERVICE}_SERVICE_${KEY}#g" ${JOB_MIGRATION_YAML}
+  sed -i "s#<<SERVICE_${KEY}_VALUE>>#<<${SERVICE}_SERVICE_${KEY}_VALUE>>#g" \
+    ${JOB_MIGRATION_YAML}
+done
+
+# Propagate the values of the datasource array items into yaml definition of the
+# migration job
+for VAR in "${SSO_DC_VARS[@]}"
+do
+  IFS=$'=' read KEY VALUE <<< $VAR
+  if grep -q $KEY <<< ${DB_VARS[@]}
+  then
+    KEY+="_VALUE"
+    # Enwrap integer port value with double quotes
+    if [[ ${KEY} =~ ${SERVICE}_SERVICE_PORT_VALUE ]]
+    then
+      sed -i "s#<<${KEY}>>#\"${VALUE}\"#g" ${JOB_MIGRATION_YAML}
+    # Character values do not need quotes
+    else
+      sed -i "s#<<${KEY}>>#${VALUE}#g" ${JOB_MIGRATION_YAML}
+    fi
+    # Verify that the value has been successfully propagated.
+    if grep -q '(JNDI|USERNAME|PASSWORD|DATABASE)' <<< "${KEY}" &&
+       grep -q "<<PREFIX${KEY#${PREFIX}}" ${JOB_MIGRATION_YAML} ||
+       grep -q "<<${KEY}>>" ${JOB_MIGRATION_YAML}
+    then
+      echo "Failed to update value of ${KEY%_VALUE}! Aborting."
+      exit 1
+    else
+      printf '%-60s%-40s\n' "Successfully updated ${KEY%_VALUE} to:" "$VALUE"
+    fi
+  fi
+done
+----
++
+[[get-db-credentials]]
+Run the script.
++
+----
+$ chmod +x ./mirror_sso_dc_db_vars.sh
+$ ./mirror_sso_dc_db_vars.sh
+Successfully updated DB_SERVICE_PREFIX_MAPPING to:          sso-postgresql=DB
+Successfully updated DB_JNDI to:                            java:jboss/datasources/KeycloakDS
+Successfully updated DB_USERNAME to:                        userxOp
+Successfully updated DB_PASSWORD to:                        tsWNhQHK
+Successfully updated DB_DATABASE to:                        root
+Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
+----
+. Build the RH-SSO 7.2 database migration image using the link:https://github.com/iankko/openshift-examples/tree/sso_manual_db_migration[pre-configured source] and wait for the build to finish.
++
+----
+$ oc get is -n openshift | grep sso72 | cut -d ' ' -f1
+redhat-sso72-openshift
+----
++
+----
+$ oc new-build redhat-sso72-openshift:1.0~https://github.com/jboss-openshift/openshift-examples --context-dir=sso-manual-db-migration --name=sso72-db-migration-image
+--> Found image bf45ac2 (7 days old) in image stream "openshift/redhat-sso72-openshift" under tag "1.0" for "redhat-sso72-openshift:1.0"
+
+    Red Hat SSO 7.2
+    ---------------
+    Platform for running Red Hat SSO
+
+    Tags: sso, sso7, keycloak
+
+    * A source build using source code from https://github.com/jboss-openshift/openshift-examples will be created
+      * The resulting image will be pushed to image stream "sso72-db-migration-image:latest"
+      * Use 'start-build' to trigger a new build
+
+--> Creating resources with label build=sso72-db-migration-image ...
+    imagestream "sso72-db-migration-image" created
+    buildconfig "sso72-db-migration-image" created
+--> Success
+    Build configuration "sso72-db-migration-image" created and build triggered.
+    Run 'oc logs -f bc/sso72-db-migration-image' to stream the build progress.
+----
++
+----
+$ oc logs -f bc/sso72-db-migration-image --follow
+Cloning "https://github.com/iankko/openshift-examples.git" ...
+...
+Push successful
+----
+. Update the template of the database migration job (`sso71-to-sso72-db-migrate-job.yaml`) with reference to the built `sso72-db-migration-image` image.
+.. Get the docker pull reference for the image.
++
+----
+$ PULL_REF=$(oc get istag -n $(oc project -q) --no-headers | grep sso72-db-migration-image | tr -s ' ' | cut -d ' ' -f 2)
+----
+.. Replace the \<<SSO_IMAGE_VALUE>> field in the job template with the pull specification.
++
+----
+$ sed -i "s#<<SSO_IMAGE_VALUE>>#$PULL_REF#g" sso71-to-sso72-db-migrate-job.yaml
+----
+.. Verify that the field is updated.
+. Instantiate database migration job from the job template.
++
+----
+$ oc create -f sso71-to-sso72-db-migrate-job.yaml
+job "sso71-to-sso72-db-migrate-job" created
+----
++
+[IMPORTANT]
+====
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all RH-SSO 7.1 instances before dynamic generation of the SQL migration file.
+====
++
+. Identify existing deployment config for RH-SSO 7.1 containers.
++
+----
+$ oc get dc -o name --selector=application=sso
+deploymentconfig/sso
+deploymentconfig/sso-postgresql
+----
+. Stop all RH-SSO 7.1 containers in the current namespace.
++
+----
+$ oc scale --replicas=0 dc/sso
+deploymentconfig "sso" scaled
+----
+. Run the database migration job and wait for the pod to be running correctly.
++
+----
+$ oc get jobs
+NAME                            DESIRED   SUCCESSFUL   AGE
+sso71-to-sso72-db-migrate-job   1         0            3m
+----
++
+----
+$ oc scale --replicas=1 job/sso71-to-sso72-db-migrate-job
+job "sso71-to-sso72-db-migrate-job" scaled
+----
++
+----
+$ oc get pods
+NAME                                  READY     STATUS      RESTARTS   AGE
+sso-postgresql-1-n5p16                1/1       Running     1          19h
+sso71-to-sso72-db-migrate-job-b87bb   1/1       Running     0          1m
+sso72-db-migration-image-1-build      0/1       Completed   0          27m
+----
++
+[NOTE]
+====
+By default, the database migration job terminates automatically after `600 seconds` after the migration file is generated. You can adjust this time period.
+====
+. Get the dynamically generated SQL database migration file from the pod.
++
+----
+$ mkdir -p ./db-update
+$ oc rsync sso71-to-sso72-db-migrate-job-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
+receiving incremental file list
+keycloak-database-update.sql
+
+sent 30 bytes  received 29,726 bytes  59,512.00 bytes/sec
+total size is 29,621  speedup is 1.00
+----
+. Inspect the `keycloak-database-update.sql` file for changes to be performed within manual RH-SSO 7.2 database update.
+. Apply the database update manually.
+* Run the following commands for *_sso71-postgresql_* and *_sso71-postgresql-persistent_* templates (PostgreSQL database):
+... Copy the generated SQL migration file to the PostgreSQL pod.
++
+----
+$ oc rsync --no-perms=true ./db-update/ sso-postgresql-1-n5p16:/tmp
+sending incremental file list
+
+sent 77 bytes  received 11 bytes  176.00 bytes/sec
+total size is 26,333  speedup is 299.24
+----
+... Start a shell session to the PostgreSQL pod.
++
+----
+$ oc rsh sso-postgresql-1-n5p16
+sh-4.2$
+----
+... Use the `psql` tool to apply database update manually.
++
+----
+sh-4.2$ alias psql="/opt/rh/rh-postgresql95/root/bin/psql"
+sh-4.2$ psql --version
+psql (PostgreSQL) 9.5.4
+sh-4.2$ psql -U <PREFIX>_USERNAME -d <PREFIX>_DATABASE -W -f /tmp/keycloak-database-update.sql
+Password for user <PREFIX>_USERNAME:
+INSERT 0 1
+INSERT 0 1
+...
+----
++
+[IMPORTANT]
+====
+Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
+====
+... Close the shell session to the PostgreSQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
+* Run the following commands for *_sso71-mysql_* and *_sso71-mysql-persistent_* templates (MySQL database):
+... Given pod situation similar to the following:
++
+----
+$ oc get pods
+NAME                                  READY     STATUS      RESTARTS   AGE
+sso-mysql-1-zvhk3                     1/1       Running     0          1h
+sso71-to-sso72-db-migrate-job-m202t   1/1       Running     0          11m
+sso72-db-migration-image-1-build      0/1       Completed   0          13m
+----
+... Copy the generated SQL migration file to the MySQL pod.
++
+----
+$ oc rsync --no-perms=true ./db-update/ sso-mysql-1-zvhk3:/tmp
+sending incremental file list
+keycloak-database-update.sql
+
+sent 24,718 bytes  received 34 bytes  49,504.00 bytes/sec
+total size is 24,594  speedup is 0.99
+----
+... Start a shell session to the MySQL pod.
++
+----
+$ oc rsh sso-mysql-1-zvhk3
+sh-4.2$
+----
+... Use the `mysql` tool to apply database update manually.
++
+----
+sh-4.2$ alias mysql="/opt/rh/rh-mysql57/root/bin/mysql"
+sh-4.2$ mysql --version
+/opt/rh/rh-mysql57/root/bin/mysql  Ver 14.14 Distrib 5.7.16, for Linux (x86_64) using  EditLine wrapper
+sh-4.2$ mysql -D <PREFIX>_DATABASE -u <PREFIX>_USERNAME -p < /tmp/keycloak-database-update.sql
+Enter password:
+sh-4.2$ echo $?
+0
+----
++
+[IMPORTANT]
+====
+Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
+====
+... Close the shell session to the MySQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
+
+[[image-change-trigger-update-step]]
+[start=12]
+. Update image change trigger in the existing deployment config of RH-SSO 7.1 to reference the RH-SSO 7.2 image.
++
+----
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-sso72-openshift:1.0"}]'
+"sso" patched
+----
+. Start rollout of the new RH-SSO 7.2 images based on the latest image defined in the image change triggers.
++
+----
+$ oc rollout latest dc/sso
+deploymentconfig "sso" rolled out
+----
+. Deploy RH-SSO 7.2 containers using the modified deployment config.
++
+----
+$ oc scale --replicas=1 dc/sso
+deploymentconfig "sso" scaled
+----
+
+=== Example Workflow: Migrating Entire RH-SSO Server Database Across The Environments
+This tutorial focuses on migrating the Red Hat Single Sign-On server database from one environment to another or migrating to a different database. It assumes steps described in xref:Preparing-SSO-Authentication-for-OpenShift-Deployment[Preparing RH-SSO Authentication for OpenShift Deployment] section have been performed already.
+
+==== Deploying the RH-SSO MySQL Application Template
+
+. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+. Click *Add to project* to list the default image streams and templates.
+. Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
+. Select *_sso72-mysql_* RH-SSO application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
++
+[IMPORTANT]
+====
+Export and import of Red Hat Single Sign-On 7.2 database link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[is triggered at RH-SSO server boot time and its paramaters are passed in via Java system properties.] This means during one RH-SSO server boot only one of the possible migration actions (either *_export_*, or *_import_*) can be performed.
+====
++
+[WARNING]
+====
+When the *_SSO_REALM_* configuration variable is set on the {xpaasproduct-shortname} image, a database import is performed in order to create the RH-SSO server realm requested in the variable. For the database export to be performed correctly, the *_SSO_REALM_* configuration variable cannot be simultaneously defined on such image.
+====
++
+. Click *Create* to deploy the application template and start pod deployment. This may take a couple of minutes.
++
+Then access the RH-SSO web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator account].
++
+[NOTE]
+====
+This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. Accessing the RH-SSO web console will prompt an insecure connection warning. +
+For production environments, Red Hat recommends that you use an SSL certificate purchased from a verified Certificate Authority.
+====
+
+==== (Optional) Creating additional RH-SSO link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#core_concepts_and_terms[realm and users] to be also exported
+
+When performing link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[Red Hat Single Sign-On 7.2 server database export] only RH-SSO realms and users currently present in the database will be exported. If the exported JSON file should include also additional RH-SSO realms and users, these need to be created first:
+
+. link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#create-realm[Create a new realm]
+. link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#create-new-user[Create new users]
+
+Upon their creation xref:sso-export-the-database[the database can be exported.]
+
+[[sso-export-the-database]]
+==== Export the RH-SSO database as a JSON file on the OpenShift pod
+
+. Get the RH-SSO deployment config and scale it down to zero.
++
+----
+$ oc get dc -o name
+deploymentconfig/sso
+deploymentconfig/sso-mysql
+
+$ oc scale --replicas=0 dc sso
+deploymentconfig "sso" scaled
+----
+. Instruct the RH-SSO 7.2 server deployed on {xpaasproduct-shortname} image to perform database export at RH-SSO server boot time.
++
+----
+oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/tmp/demorealm-export.json"
+----
+. Scale the RH-SSO deployment config back up. This will start the RH-SSO server and export its database.
++
+----
+$ oc scale --replicas=1 dc sso
+deploymentconfig "sso" scaled
+----
+. (Optional) Verify that the export was successful.
++
+----
+$ oc get pods
+NAME                READY     STATUS    RESTARTS   AGE
+sso-4-ejr0k         1/1       Running   0          27m
+sso-mysql-1-ozzl0   1/1       Running   0          4h
+
+$ oc logs sso-4-ejr0k | grep 'Export'
+09:24:59,503 INFO  [org.keycloak.exportimport.singlefile.SingleFileExportProvider] (ServerService Thread Pool -- 57) Exporting model into file /tmp/demorealm-export.json
+09:24:59,998 INFO  [org.keycloak.services] (ServerService Thread Pool -- 57) KC-SERVICES0035: Export finished successfully
+----
+
+==== Retrieve and import the exported JSON file
+
+. Retrieve the JSON file of the RH-SSO database from the pod.
++
+----
+$ oc get pods
+NAME                READY     STATUS    RESTARTS   AGE
+sso-4-ejr0k         1/1       Running   0          2m
+sso-mysql-1-ozzl0   1/1       Running   0          4h
+
+$ oc rsync sso-4-ejr0k:/tmp/demorealm-export.json .
+----
+
+. (Optional) Import the JSON file of the RH-SSO database into an RH-SSO server running in another environment.
++
+[NOTE]
+====
+For importing into an RH-SSO server not running on OpenShift, see the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/export_import[Export and Import section] of the RH SSO Server Administration Guide.
+====
++
+Use the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#admin_console_export_import[administration console] of the RH-SSO server to import the resources from previously exported JSON file into the RH-SSO server's database, when the RH-SSO server is running as a Red Hat Single Sign-On 7.2 container on OpenShift:
+
+.. Log into the `master` realm's administration console of the RH-SSO server using the credentials used to create the administrator user. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the RH-SSO web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted RH-SSO web server.
+.. At the top of the sidebar choose the name of the RH-SSO realm, the users, clients, realm roles, and client roles should be imported to. This example uses `master` realm.
+.. Click the *Import* link under *Manage* section at the bottom of the sidebar.
+.. In the page that opens, click *Select file* and then specify the location of the exported `demorealm-export.json` JSON file on the local file system.
+.. From the *Import from realm* drop-down menu, select the name of the RH-SSO realm from which the data should be imported. This example uses `master` realm.
+.. Choose which of users, clients, realm roles, and client roles should be imported (all of them are imported by default).
+.. Choose a strategy to perform, when a resource already exists (one of *Fail*, *Skip*, or *Overwrite*).
++
+[NOTE]
+====
+The attempt to import an object (user, client, realm role, or client role) fails if object with the same identifier already exists in the current database. Use *Skip* strategy to import the objects that are present in the `demorealm-export.json` file, but do not exist in current database.
+====
+.. Click *Import* to perform the import.
++
+[NOTE]
+====
+When importing objects from a non-master realm to `master` realm or vice versa, after clicking the *Import* button, it is sometimes possible to encounter an error like the following one:
+
+[[realm-import-error-message]]
+[.text-center]
+image:../images/import_realm_error.svg[Example of Possible Error Message when Performing Partial Import from Previously Exported JSON File]
+
+In such cases, it is necessary first to create the missing clients, having the *Access Type* set to *bearer-only*. These clients can be created by manual copy of their characteristics from the source RH-SSO server, on which the export JSON file was created, to the target RH-SSO server, where the JSON file is imported. After creation of the necessary clients, click the *Import* button again.
+
+To suppress the xref:realm-import-error-message[above] error message, it is needed to create the missing `realm-management` client, of the *bearer-only* *Access Type*, and click the *Import* button again.
+====
++
+[NOTE]
+====
+For *Skip* import strategy, the newly added objects are marked as *ADDED* and the object which were skipped are marked as *SKIPPED*, in the *Action* column on the import result page.
+====
++
+[IMPORTANT]
+====
+The administration console import allows you to *overwrite* resources if you choose (*Overwrite* strategy). On a production system use this feature with caution.
+====
+
+[[OSE-SSO-AUTH-TUTE]]
+=== Example Workflow: Configuring OpenShift to use RH-SSO for Authentication
+Configure OpenShift to use the RH-SSO deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift.
+
+This example adds RH-SSO as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-application-services/0/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
+
+==== Configuring RH-SSO Credentials
+Log in to the encrypted RH-SSO web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator account] created during the RH-SSO deployment.
+
+*Create a Realm*
+
+. Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
+. Enter a realm name (this example uses _OpenShift_) and click *Create*.
+
+*Create a User*
+
+Create a test user that can be used to demonstrate the RH-SSO-enabled OpenShift login:
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User*.
+. Enter a valid *Username* (this example uses _testuser_) and any additional optional information and click *Save*.
+. Edit the user configuration:
+.. Click the *Credentials* tab in the user space and enter a password for the user.
+.. Ensure the *Temporary Password* option is set to *Off* so that it does not prompt for a password change later on, and click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+
+*Create and Configure an OpenID-Connect Client*
+
+See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#clients[Managing Clients] chapter of the Red Hat Single Sign-On Server Administration Guide for more information.
+
+. Click *Clients* in the *Manage* sidebar and click *Create*.
+. Enter the *Client ID*. This example uses _openshift-demo_.
+. Select a *Client Protocol* from the drop-down menu (this example uses *openid-connect*) and click *Save*. You will be taken to the configuration *Settings* page of the _openshift-demo_ client.
+. From the *Access Type* drop-down menu, select *confidential*. This is the access type for server-side applications.
+. In the *Valid Redirect URIs* dialog, enter the URI for the OpenShift web console, which is _$$https://openshift$$.example.com:8443/*_ in this example.
+
+The client *Secret* is needed to configure OpenID-Connect on the OpenShift master in the next section. You can copy it now from under the *Credentials* tab. The secret is <pass:quotes[_7b0384a2-b832-16c5-9d73-2957842e89h7_]> for this example.
+
+==== Configuring OpenShift Master for Red Hat Single Sign-On Authentication
+Log in to the OpenShift master CLI. You must have the required permissions to edit the */etc/origin/master/master-config.yaml* file.
+
+. Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. The OpenShift master, which was deployed using the OpenShift Primer, is configured with HTPassword and shows the following:
++
+----
+identityProviders:
+- challenge: true
+  login: true
+  name: htpasswd_auth
+  provider:
+    apiVersion: v1
+    file: /etc/origin/openshift-passwd
+    kind: HTPasswdPasswordIdentityProvider
+----
++
+Add RH-SSO as a secondary identity provider with content similar to the following snippet:
++
+[subs="verbatim,macros"]
+----
+- name: rh_sso
+  challenge: false
+  login: true
+  mappingInfo: add
+  provider:
+    apiVersion: v1
+    kind: OpenIDIdentityProvider
+    clientID: pass:quotes[_openshift-demo_]
+    clientSecret: pass:quotes[_7b0384a2-b832-16c5-9d73-2957842e89h7_]
+    pass:quotes[_ca: xpaas.crt_]
+    urls:
+      authorize: pass:quotes[_https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/protocol/openid-connect/auth_]
+      token: pass:quotes[_https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/protocol/openid-connect/token_]
+      userInfo: pass:quotes[_https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/protocol/openid-connect/userinfo_]
+    claims:
+      id:
+      - sub
+      preferredUsername:
+      - preferred_username
+      name:
+      - name
+      email:
+      - email
+----
+.. The RH-SSO *Secret* hash for the *clientSecret* can be found in the RH-SSO web console: *Clients* -> *_openshift-demo_* -> *Credentials*
+.. The endpoints for the *urls* can be found by making a request with the RH-SSO application. For example:
++
+[subs="verbatim,macros"]
+----
+<pass:quotes[_curl -k https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/.well-known/openid-configuration | python -m json.tool_]>
+----
++
+The response includes the *authorization_endpoint*, *token_endpoint*, and *userinfo_endpoint*.
++
+.. This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. For this reason, the *ca* is provided as <pass:quotes[_ca: xpaas.crt_]>. This CA certificate must also be copied into the */etc/origin/master* folder. This is not necessary if using a certificate purchased from a verified Certificate Authority.
+. Save the configuration and restart the OpenShift master:
++
+----
+$ systemctl restart atomic-openshift-master
+----
+
+==== Logging in to OpenShift
+
+Navigate to the OpenShift web console, which in this example is _https://openshift.example.com:8443/console_. The OpenShift login page now has the option to use either *htpasswd_auth* or *rh-sso*. The former is still available because it is present in the */etc/origin/master/master-config.yaml*.
+
+Select *rh-sso* and log in to OpenShift with the _testuser_ user created earlier in RH-SSO. No projects are visible to _testuser_ until they are added in the OpenShift CLI. This is the only way to provide user privileges in OpenShift because it currently does not accept external role mapping.
+
+To provide _testuser_ `view` privileges for the _sso-app-demo_, use the OpenShift CLI:
+----
+$ oadm policy add-role-to-user view testuser -n sso-app-demo
+----
+
+[[Example-EAP-Auto]]
+=== Example Workflow: Automatically Registering EAP Application in RH-SSO with OpenID-Connect Client
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift. This example prepares RH-SSO realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic RH-SSO client registration. Once deployed, the RH-SSO user can be used to authenticate and access JBoss EAP.
+
+[NOTE]
+====
+This example uses a OpenID-Connect client but an SAML client could also be used. See xref:SSO-Clients[RH-SSO Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual RH-SSO Client Registration Methods] for more information on the differences between OpenID-Connect and SAML clients.
+====
+
+==== Preparing RH-SSO Authentication for OpenShift Deployment
+Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+
+. Create a new project:
++
+----
+$ oc new-project eap-app-demo
+----
+//. Create a service account to be used for the RH-SSO deployment:
+//+
+//----
+//$ oc create serviceaccount eap-service-account
+//----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
++
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
+. The EAP template requires an xref:Configuring-Keystores[SSL keystore and a JGroups keystore]. +
+This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
+.. Generate a secure key for the SSL keystore:
++
+----
+$ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
+----
+.. Generate a secure key for the JGroups keystore:
++
+----
+$ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
+----
+. Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
++
+----
+$ oc secret new eap-ssl-secret eapkeystore.jks
+$ oc secret new eap-jgroup-secret eapjgroups.jceks
+----
+. Add the EAP secret to the `default` service account:
++
+----
+$ oc secrets link default eap-ssl-secret eap-jgroup-secret
+----
+
+==== Preparing the RH-SSO Credentials
+Log in to the encrypted RH-SSO web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator account] created during the RH-SSO deployment.
+
+*Create a Realm*
+
+. Hover your cursor over the realm namespace at the top of the sidebar and click*Add Realm*.
+. Enter a realm name (this example uses _eap-demo_) and click *Create*.
+
+*Copy the Public Key*
+
+In the newly created _eap-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _<realm-public-key>_ for brevity. This is used later to deploy the RH-SSO-enabled JBoss EAP image.
+
+*Create a Role*
+
+Create a role in RH-SSO with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role is assigned to an RH-SSO _application user_ to authenticate access to user applications.
+
+. Click *Roles* in the *Configure* sidebar to list the roles for this realm. This is a new realm, so there should only be the default _offline_access_ role.
+. Click *Add Role*.
+. Enter the role name (this example uses the role _eap-user-role_) and click *Save*.
+
+*Create Users and Assign Roles*
+
+Create two users:
+- Assign the _realm management user_ the *realm-management* roles to handle automatic RH-SSO client registration in the RH-SSO server.
+- Assign the _application user_ the JEE role, created in the previous step, to authenticate access to user applications.
+
+Create the _realm management user_:
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User*.
+. Enter a valid *Username* (this example uses the user _eap-mgmt-user_) and click *Save*.
+. Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user RH-SSO server rights that can be used by the JBoss EAP image to create clients.
+
+Create the _application user_:
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User*.
+. Enter a valid *Username* and any additional optional information for the _application user_ and click *Save*.
+. Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+. Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, add the role created earlier.
+
+==== Deploy the RH-SSO-enabled JBoss EAP Image
+
+. Return to the OpenShift web console and click *Add to project* to list the default image streams and templates.
+. Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
+. Select the *_eap71-sso-s2i_* image to list all of the deployment parameters. Include the following RH-SSO parameters to configure the RH-SSO credentials during the EAP build:
++
+[cols="2*", options="header"]
+|===
+|Variable
+|Example Value
+|*_APPLICATION_NAME_*
+|_sso_
+
+|*_HOSTNAME_HTTPS_*
+|_secure-sample-jsp.eap-app-demo.openshift32.example.com_
+
+|*_HOSTNAME_HTTP_*
+|_sample-jsp.eap-app-demo.openshift32.example.com_
+
+|*_SOURCE_REPOSITORY_URL_*
+|_$$https://repository-example.com/developer/application$$_
+
+|*_SSO_URL_*
+|_$$https://secure-sso-sso-app-demo.openshift32.example.com/auth$$_
+
+|*_SSO_REALM_*
+|_eap-demo_
+
+|*_SSO_USERNAME_*
+|_eap-mgmt-user_
+
+|*_SSO_PASSWORD_*
+| _password_
+
+|*_SSO_PUBLIC_KEY_*
+|_<realm-public-key>_
+
+|*_HTTPS_KEYSTORE_*
+|_eapkeystore.jks_
+
+|*_HTTPS_PASSWORD_*
+|_password_
+
+|*_HTTPS_SECRET_*
+|_eap-ssl-secret_
+
+|*_JGROUPS_ENCRYPT_KEYSTORE_*
+|_eapjgroups.jceks_
+
+|*_JGROUPS_ENCRYPT_PASSWORD_*
+|_password_
+
+|*_JGROUPS_ENCRYPT_SECRET_*
+|_eap-jgroup-secret_
+|===
+. Click *Create* to deploy the JBoss EAP image.
+
+It may take several minutes for the JBoss EAP image to deploy.
+
+==== Log in to the JBoss EAP Server Using RH-SSO
+
+. Access the JBoss EAP application server and click *Login*. You are redirected to the RH-SSO login.
+. Log in using the RH-SSO user created in the example. You are authenticated against the RH-SSO server and returned to the JBoss EAP application server.
+
+
+[[Example-EAP-Manual]]
+=== Example Workflow: Manually Registering EAP Application in RH-SSO with SAML Client
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift.
+
+This example prepares RH-SSO realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the RH-SSO user can be used to authenticate and access JBoss EAP.
+
+[NOTE]
+====
+This example uses a SAML client but an OpenID-Connect client could also be used. See xref:SSO-Clients[RH-SSO Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual RH-SSO Client Registration Methods] for more information on the differences between SAML and OpenID-Connect clients.
+====
+
+==== Preparing the RH-SSO Credentials
+Log in to the encrypted RH-SSO web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator account] created during the RH-SSO deployment.
+
+*Create a Realm*
+
+. Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
+. Enter a realm name (this example uses _saml-demo_) and click *Create*.
+
+*Copy the Public Key*
+
+In the newly created _saml-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _realm-public-key_ for brevity. This is needed later to deploy the RH-SSO-enabled JBoss EAP image.
+
+*Create a Role*
+
+Create a role in RH-SSO with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role will be assigned to an RH-SSO _application user_ to authenticate access to user applications.
+
+. Click *Roles* in the *Configure* sidebar to list the roles for this realm. This is a new realm, so there should only be the default _offline_access_ role.
+. Click *Add Role*.
+. Enter the role name (this example uses the role _saml-user-role_) and click *Save*.
+
+*Create Users and Assign Roles*
+
+Create two users:
+- Assign the _realm management user_ the *realm-management* roles to handle automatic RH-SSO client registration in the RH-SSO server.
+- Assign the _application user_ the JEE role, created in the previous step, to authenticate access to user applications.
+
+Create the _realm management user_:
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User*.
+. Enter a valid *Username* (this example uses the user _app-mgmt-user_) and click *Save*.
+. Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+////
+Need for the SAML?
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user RH-SSO server rights that can be used by the JBoss EAP image to create clients.
+////
+
+Create the _application user_:
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User*.
+. Enter a valid *Username* and any additional optional information for the _application user_ and click *Save*.
+. Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+. Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, add the role created earlier.
+
+*Create and Configure a SAML Client*:
+
+Clients are RH-SSO entities that request user authentication. This example configures a SAML client to handle authentication for the EAP application. This section saves two files, *keystore.jks* and *keycloak-saml-subsystem.xml* that are needed later in the procedure.
+
+Create the SAML Client:
+
+. Click *Clients* in the *Configure* sidebar to list the clients in the realm. Click *Create*.
+. Enter a valid *Client ID*. This example uses _sso-saml-demo_.
+. In the *Client Protocol* drop-down menu, select *saml*.
+. Enter the *Root URL* for the application. This example uses _$$https://demoapp-eap-app-demo.openshift32.example.com$$_.
+. Click *Save*.
+
+Configure the SAML Client:
+
+In the *Settings* tab, set the *Root URL* and the *Valid Redirect URLs* for the new *_sso-saml-demo_* client:
+
+. For the *Root URL*, enter the same address used when creating the client. This example uses _$$https://demoapp-eap-app-demo.openshift32.example.com$$_.
+. For the *Valid Redirect URLs*, enter an address for users to be redirected to at when they log in or out. This example uses a redirect address relative to the root _$$https://demoapp-eap-app-demo.openshift32.example.com/*$$_.
+
+Export the SAML Keys:
+
+. Click the *SAML Keys* tab in the _sso-saml-demo_ client space and click *Export*.
+. For this example, leave the *Archive Format* as *JKS*. This example uses the default *Key Alias* of _sso-saml-demo_ and default *Realm Certificate Alias* of _saml-demo_.
+. Enter the *Key Password* and the *Store Password*. This example uses _password_ for both.
+. Click *Download* and save the *keystore-saml.jks* file for use later.
+. Click the *_sso-saml-demo_* client to return to the client space ready for the next step.
+
+Download the Client Adapter:
+
+. Click *Installation*.
+. Use the *Format Option* drop-down menu to select a format. This example uses *Keycloak SAML Wildfly/JBoss Subsystem*.
+. Click *Download* and save the file *keycloak-saml-subsystem.xml*.
+
+The *keystore-saml.jks* will be used with the other EAP keystores in the next section to create an OpenShift secret for the EAP application project. Copy the *keystore-saml.jks* file to an OpenShift node. +
+The *keycloak-saml-subsystem.xml* will be modified and used in the application deployment. Copy it into the */configuration* folder of the application as *secure-saml-deployments*.
+
+==== Preparing RH-SSO Authentication for OpenShift Deployment
+Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+
+. Create a new project:
++
+----
+$ oc new-project eap-app-demo
+----
+//. Create a service account to be used for the SSO deployment:
+//+
+//----
+//$ oc create serviceaccount app-service-account
+//----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
++
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
++
+. The EAP template requires an xref:Configuring-Keystores[SSL keystore and a JGroups keystore]. +
+This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
+.. Generate a secure key for the SSL keystore:
++
+----
+$ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
+----
+.. Generate a secure key for the JGroups keystore:
++
+----
+$ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
+----
+. Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
++
+----
+$ oc secret new eap-ssl-secret eapkeystore.jks
+$ oc secret new eap-jgroup-secret eapjgroups.jceks
+----
+. Add the EAP application secret to the EAP service account created earlier:
++
+----
+$ oc secrets link default eap-ssl-secret eap-jgroup-secret
+----
+
+[[modified-saml-xml]]
+==== Modifying the *secure-saml-deployments* File
+
+The *keycloak-saml-subsystem.xml*, exported from the RH-SSO client in a previous section, should have been copied into the */configuration* folder of the application and renamed *secure-saml-deployments*. EAP searches for this file when it starts and copies it to the *standalone-openshift.xml* file inside the RH-SSO SAML adapter configuration.
+
+. Open the */configuration/secure-saml-deployments* file in a text editor.
+. Replace the *YOUR-WAR.war* value of the *secure-deployment name* tag with the application *.war* file. This example uses _sso-saml-demo.war_.
+. Replace the *SPECIFY YOUR LOGOUT PAGE!* value of the *logout page* tag with the url to redirect users when they log out of the application. This example uses */index.jsp*.
+. Delete the *<PrivateKeyPem>* and *<CertificatePem>* tags and keys and replace it with keystore information:
++
+----
+...
+<Keys>
+  <Key signing="true">
+    <KeyStore file= "/etc/eap-secret-volume/keystore-saml.jks" password="password">
+      <PrivateKey alias="sso-saml-demo" password="password"/>
+      <Certificate alias="sso-saml-demo"/>
+    </KeyStore>
+  </Key>
+</Keys>
+----
++
+The mount path of the *keystore-saml.jks* (in this example *_/etc/eap-secret-volume/keystore-saml.jks_*) can be specified in the application template with the parameter *EAP_HTTPS_KEYSTORE_DIR*. +
+The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the RH-SSO client.
+. Delete the second *<CertificatePem>* tag and key and replace it with the the realm certificate information:
++
+----
+...
+<Keys>
+  <Key signing="true">
+    <KeyStore file="/etc/eap-secret-volume/keystore-saml.jks" password="password">
+      <Certificate alias="saml-demo"/>
+    </KeyStore>
+  </Key>
+</Keys>
+...
+----
++
+The certificate alias and password were configured when the SAML Keys were exported from the RH-SSO client.
+. Save and close the */configuration/secure-saml-deployments* file.
+
+==== Configuring SAML Client Registration in the Application *web.xml*
+
+The client type must also be specified by the *<auth-method>* key in the application *web.xml*. This file is read by the image at deployment.
+
+Open the application *web.xml* file and ensure it includes the following:
+----
+...
+<login-config>
+  <auth-method>KEYCLOAK-SAML</auth-method>
+</login-config>
+...
+----
+
+==== Deploying the Application
+
+You do not need to include any RH-SSO configuration for the image because that has been configured in the application itself. Navigating to the application login page redirects you to the RH-SSO login. Log in to the application through RH-SSO using the _application user_ user created earlier.

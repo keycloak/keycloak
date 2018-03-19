@@ -1,0 +1,39 @@
+|`ARTIFACT_DIR`
+|`.war` and `.jar` files from this directory will be copied into the `deployments` directory.
+|`target`
+
+|`HTTP_PROXY_HOST`
+| Hostname or IP address of a HTTP proxy for Maven to use.
+|`192.168.1.1`
+
+|`HTTP_PROXY_PORT`
+| TCP Port of a HTTP proxy for Maven to use.
+|`8080`
+
+|`HTTP_PROXY_USERNAME`
+| If supplied with `HTTP_PROXY_PASSWORD`, use credentials for HTTP proxy.
+| myusername
+
+|`HTTP_PROXY_PASSWORD`
+| If supplied with `HTTP_PROXY_USERNAME`, use credentials for HTTP proxy.
+| mypassword
+
+|`HTTP_PROXY_NONPROXYHOSTS`
+| If supplied, a configured HTTP proxy will ignore these hosts.
+|`some.example.org\|*.example.net`
+
+|`MAVEN_ARGS`
+| Overrides the arguments supplied to maven during build.
+|`-e -Popenshift -DskipTests -Dcom.redhat.xpaas.repo.redhatga package`
+
+|`MAVEN_ARGS_APPEND`
+| Appends user arguments supplied to maven during build.
+|`-Dfoo=bar`
+
+|`MAVEN_MIRROR_URL`
+| URL of a Maven Mirror/repository manager to configure.
+|`\http://10.0.0.1:8080/repository/internal/`
+
+|`MAVEN_CLEAR_REPO`
+| Optionally clear the local maven repository after the build.
+|`true`

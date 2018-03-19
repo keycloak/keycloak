@@ -1,0 +1,20 @@
+include::common/attributes.adoc[]
+:xpaasproduct: Red Hat Single Sign-On for OpenShift
+:xpaasproduct-shortname: RH-SSO for OpenShift
+
+= {xpaasproduct}
+
+== Introduction
+include::content/introduction/introduction.adoc[]
+
+== Before You Begin
+include::content/before_you_begin/before_you_begin.adoc[]
+
+== Get Started
+include::content/get_started/get_started.adoc[]
+
+== Tutorials
+include::content/tutorials/tutorials.adoc[]
+
+== Reference
+include::content/reference/reference.adoc[]

@@ -1,0 +1,13 @@
+<productname>{productname}</productname>
+<productnumber>{productversion}</productnumber>
+<subtitle>Using {xpaasproduct}</subtitle>
+<abstract>
+ <para>Guide to using {xpaasproduct}</para>
+</abstract>
+<authorgroup>
+  <org>
+    <orgname>{productname} Documentation Team</orgname>
+    <email>{productdocsemail}</email>
+  </org>
+</authorgroup>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

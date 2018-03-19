@@ -1,0 +1,25 @@
+Clustering is achieved through one of two discovery mechanisms:
+Kubernetes or DNS. This is done by configuring the JGroups protocol stack in
+standalone-openshift.xml with either the `<openshift.KUBE_PING/>` or `<openshift.DNS_PING/>`
+elements. Out of the box, `KUBE_PING` is the pre-configured and supported protocol.
+
+For `KUBE_PING` to work, however, the following steps must be taken:
+
+. The `OPENSHIFT_KUBE_PING_NAMESPACE` environment variable must be set (see table above).
+If not set, the server will act as if it is a single-node cluster (a "cluster of one").
+. The `OPENSHIFT_KUBE_PING_LABELS` environment variables should be set (see table above).
+If not set, pods outside of your application (albeit in your namespace) will try to join.
+. Authorization must be granted to the service account the pod is running under to be
+allowed to access Kubernetes' REST api. This is done on the command line.
+
+.Policy commands
+====
+Using the default service account in the myproject namespace:
+....
+oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default -n $(oc project -q)
+....
+Using the eap-service-account in the myproject namespace:
+....
+oc policy add-role-to-user view system:serviceaccount:$(oc project -q):eap-service-account -n $(oc project -q)
+....
+====

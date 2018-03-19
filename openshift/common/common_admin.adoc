@@ -1,0 +1,16 @@
+==== Environment Variables
+
+|===
+|Variable name |Description |Example value
+
+|`*ADMIN_USERNAME*`
+|If both this and `*ADMIN_PASSWORD`* are defined,
+used for the EAP management port user name.
+|`eapadmin`
+
+|`*ADMIN_PASSWORD*`
+|If defined, an admin user is defined for accessing
+the management port, with this value as password.
+|`passw0rd`
+|===
+

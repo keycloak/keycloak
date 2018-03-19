@@ -1,0 +1,5 @@
+:productname: Red Hat JBoss Middleware for OpenShift
+:productversion: 3 
+:productdocsemail: xpaas-docs@redhat.com
+:imagesdir: images
+

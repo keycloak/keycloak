@@ -1,0 +1,631 @@
+[[sso-artifact-repository-mirrors-section]]
+=== Artifact Repository Mirrors
+
+// Define required 'bcname' attribute for maven_mirror_url.adoc page
+:bcname: sso
+
+// Include the Artifact Repository Mirros section
+// (MAVEN_MIRROR_URL variable usage information)
+include::../../common/maven_mirror_url.adoc[bcname]
+
+[[env_vars]]
+=== Environment Variables
+
+==== Information Environment Variables
+The following information environment variables are designed to convey
+information about the image and should not be modified by the user:
+
+.Information Environment Variables
+[cols="3",options="header"]
+|===
+|Variable Name |Description |Example Value
+|*_AB_JOLOKIA_AUTH_OPENSHIFT_*
+|-
+|*_true_*
+
+|*_AB_JOLOKIA_HTTPS_*
+|-
+|*_true_*
+
+|*_AB_JOLOKIA_PASSWORD_RANDOM_*
+|-
+|*_true_*
+
+|*_JBOSS_IMAGE_NAME_*
+|Image name, same as Name label.
+|*_redhat-sso-7/sso71-openshift_* or *_redhat-sso-7/sso72-openshift_*
+
+|*_JBOSS_IMAGE_RELEASE_*
+|Image release, same as Release label.
+|*_dev_*
+
+|*_JBOSS_IMAGE_VERSION_*
+|Image version, same as Version label.
+|*_1.0_*
+
+|*_JBOSS_MODULES_SYSTEM_PKGS_*
+|-
+|*_org.jboss.logmanager,jdk.nashorn.api_*
+
+|*_STI_BUILDER_*
+|Provides OpenShift S2I support for jee project types.
+|*_jee_*
+
+|===
+
+==== Configuration Environment Variables
+Configuration environment variables are designed to conveniently adjust the
+image without requiring a rebuild, and should be set by the user as desired.
+
+[[conf_env_vars]]
+.Configuration Environment Variables
+[cols="3",options="header"]
+|===
+|Variable Name |Description |Example Value
+|*_AB_JOLOKIA_AUTH_OPENSHIFT_*
+|Switch on client authentication for OpenShift TLS communication. The value of
+this parameter can be a relative distinguished name which must be contained in
+a presented client’s certificate. Enabling this parameter will automatically
+switch Jolokia into https communication mode. The default CA cert is set to
+`/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
+|*_true_*
+
+|*_AB_JOLOKIA_CONFIG_*
+|If set uses this file (including path) as Jolokia JVM agent properties (as
+described in Jolokia’s
+link:http://www.jolokia.org/reference/html/agents.html#agents-jvm[reference
+manual]). If not set, the `/opt/jolokia/etc/jolokia.properties` file will be
+created using the settings as defined in this document, otherwise the rest of
+the settings in this document are ignored.
+|*_/opt/jolokia/custom.properties_*
+
+|*_AB_JOLOKIA_DISCOVERY_ENABLED_*
+|Enable Jolokia discovery. Defaults to *_false_*.
+|*_true_*
+
+|*_AB_JOLOKIA_HOST_*
+|Host address to bind to. Defaults to *_0.0.0.0_*.
+|*_127.0.0.1_*
+
+|*_AB_JOLOKIA_HTTPS_*
+|Switch on secure communication with https. By default self-signed server
+certificates are generated if no serverCert configuration is given in
+*_AB_JOLOKIA_OPTS_*. _NOTE: If the values is set to an empty string, https is
+turned `off`. If the value is set to a non empty string, https is turned `on`._
+|*_true_*
+
+|*_AB_JOLOKIA_ID_*
+|Agent ID to use ($HOSTNAME by default, which is the container id).
+|*_openjdk-app-1-xqlsj_*
+
+|*_AB_JOLOKIA_OFF_*
+|If set disables activation of Jolokia (i.e. echos an empty value). By default,
+Jolokia is enabled. _NOTE: If the values is set to an empty string, https is
+turned `off`. If the value is set to a non empty string, https is turned `on`._
+|*_true_*
+
+|*_AB_JOLOKIA_OPTS_*
+|Additional options to be appended to the agent configuration. They should be
+given in the format `"key=value, key=value, …<200b> "`
+|*_backlog=20_*
+
+|*_AB_JOLOKIA_PASSWORD_*
+|Password for basic authentication. By default authentication is switched off.
+|*_mypassword_*
+
+|*_AB_JOLOKIA_PASSWORD_RANDOM_*
+|If set, a random value is generated for *_AB_JOLOKIA_PASSWORD_*, and it is
+saved in the *_/opt/jolokia/etc/jolokia.pw_* file.
+|*_true_*
+
+|*_AB_JOLOKIA_PORT_*
+|Port to use (Default: *_8778_*).
+|*_5432_*
+
+|*_AB_JOLOKIA_USER_*
+|User for basic authentication. Defaults to *_jolokia_*.
+|*_myusername_*
+
+|*_CONTAINER_CORE_LIMIT_*
+|A calculated core limit as described in
+link:https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt[CFS
+Bandwidth Control.]
+|*_2_*
+
+|*_GC_ADAPTIVE_SIZE_POLICY_WEIGHT_*
+|The weighting given to the current Garbage Collection (GC) time versus previous
+GC times.
+|*_90_*
+
+|*_GC_MAX_HEAP_FREE_RATIO_*
+|Maximum percentage of heap free after GC to avoid shrinking.
+|*_40_*
+
+|*_GC_MAX_METASPACE_SIZE_*
+|The maximum metaspace size.
+|*_100_*
+
+|*_GGC_TIME_RATIOC_MIN_HEAP_FREE_RATIO_*
+|Minimum percentage of heap free after GC to avoid expansion.
+|*_20_*
+
+|*_GC_TIME_RATIO_*
+|Specifies the ratio of the time spent outside the garbage collection (for
+example, the time spent for application execution) to the time spent in the
+garbage collection.
+|*_4_*
+
+|*_JAVA_DIAGNOSTICS_*
+|Set this to get some diagnostics information to standard out when things are
+happening.
+|*_true_*
+
+|*_JAVA_INITIAL_MEM_RATIO_*
+|This is used to calculate a default initial heap memory based the maximal
+heap memory. The default is 100 which means 100% of the maximal heap is used
+for the initial heap size. You can skip this mechanism by setting this value
+to 0 in which case no `-Xms` option is added.
+|*_100_*
+
+|*_JAVA_MAX_MEM_RATIO_*
+|It is used to calculate a default maximal heap memory based on a containers
+restriction. If used in a Docker container without any memory constraints for
+the container then this option has no effect. If there is a memory constraint
+then `-Xmx` is set to a ratio of the container available memory as set here.
+The default is 50 which means 50% of the available memory is used as an upper
+boundary. You can skip this mechanism by setting this value to 0 in which case
+no `-Xmx` option is added.
+|*_40_*
+
+|*_JAVA_OPTS_APPEND_*
+|Server startup options.
+|*_-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=dir -Dkeycloak.migration.dir=/tmp_*
+
+|*_MQ_SIMPLE_DEFAULT_PHYSICAL_DESTINATION_*
+|For backwards compatability, set to true to use `MyQueue` and `MyTopic` as
+physical destination name defaults instead of `queue/MyQueue` and `topic/MyTopic`.
+|*_false_*
+
+|*_OPENSHIFT_KUBE_PING_LABELS_*
+|Clustering labels selector.
+|*_app=sso-app_*
+
+|*_OPENSHIFT_KUBE_PING_NAMESPACE_*
+|Clustering project namespace.
+|*_myproject_*
+
+|*_SCRIPT_DEBUG_*
+|If set to `true`, ensurses that the bash scripts are executed with the `-x`
+option, printing the commands and their arguments as they are executed.
+|*_true_*
+
+|*_SSO_ADMIN_PASSWORD_*
+|Password of the administrator account for the `master` realm of the RH-SSO
+server. *Required.* If no value is specified, it is auto generated and
+displayed as an OpenShift Instructional message when the template is
+instantiated.
+|*_adm-password_*
+
+|*_SSO_ADMIN_USERNAME_*
+|Username of the administrator account for the `master` realm of the RH-SSO
+server. *Required.* If no value is specified, it is auto generated and
+displayed as an OpenShift Instructional message when the template is
+instantiated.
+|*_admin_*
+
+|*_SSO_REALM_*
+|Name of the realm to be created in the RH-SSO server if this environment variable
+is provided.
+|*_demo_*
+
+|*_SSO_SERVICE_PASSWORD_*
+|The password for the RH-SSO service user.
+|*_mgmt-password_*
+
+|*_SSO_SERVICE_USERNAME_*
+|The username used to access the RH-SSO service. This is used by clients to create
+the application client(s) within the specified RH-SSO realm. This user is created
+if this environment variable is provided.
+|*_sso-mgmtuser_*
+
+|*_SSO_TRUSTSTORE_*
+|The name of the truststore file within the secret.
+|*_truststore.jks_*
+
+|*_SSO_TRUSTSTORE_DIR_*
+|Truststore directory.
+|*_/etc/sso-secret-volume_*
+
+|*_SSO_TRUSTSTORE_PASSWORD_*
+|The password for the truststore and certificate.
+|*_mykeystorepass_*
+
+|*_SSO_TRUSTSTORE_SECRET_*
+|The name of the secret containing the truststore file. Used for
+_sso-truststore-volume_ volume.
+|*_truststore-secret_*
+
+|===
+
+Available link:https://docs.openshift.com/container-platform/latest/dev_guide/templates.html#overview[application templates]
+for {xpaasproduct-shortname} can combine the xref:conf_env_vars[aforementioned
+configuration variables] with common OpenShift variables (for example
+*_APPLICATION_NAME_* or *_SOURCE_REPOSITORY_URL_*), product specific variables
+(e.g. *_HORNETQ_CLUSTER_PASSWORD_*), or configuration variables typical to
+database images (e.g. *_MYSQL_FT_MAX_WORD_LEN_*) yet. All of these different
+types of configuration variables can be adjusted as desired to achieve the
+deployed RH-SSO-enabled application will align with the intended use case as much
+as possible. The list of configuration variables, available for each category
+of application templates for RH-SSO-enabled applications, is described below.
+
+==== Template variables for all RH-SSO images
+
+.Configuration Variables Available For All RH-SSO Images
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_APPLICATION_NAME_*
+|The name for the application.
+
+|*_DB_MAX_POOL_SIZE_*
+|Sets xa-pool/max-pool-size for the configured datasource.
+
+|*_DB_TX_ISOLATION_*
+|Sets transaction-isolation for the configured datasource.
+
+|*_DB_USERNAME_*
+|Database user name.
+
+|*_HOSTNAME_HTTP_*
+|Custom hostname for http service route. Leave blank for default hostname,
+e.g.: _<application-name>.<project>.<default-domain-suffix>_.
+
+|*_HOSTNAME_HTTPS_*
+|Custom hostname for https service route. Leave blank for default hostname,
+e.g.: _<application-name>.<project>.<default-domain-suffix>_.
+
+|*_HTTPS_KEYSTORE_*
+|The name of the keystore file within the secret. If defined along with
+*_HTTPS_PASSWORD_* and *_HTTPS_NAME_*, enable HTTPS and set the SSL certificate
+key file to a relative path under _$JBOSS_HOME/standalone/configuration_.
+
+|*_HTTPS_KEYSTORE_TYPE_*
+|The type of the keystore file (JKS or JCEKS).
+
+|*_HTTPS_NAME_*
+|The name associated with the server certificate (e.g. _jboss_). If defined
+along with *_HTTPS_PASSWORD_* and *_HTTPS_KEYSTORE_*, enable HTTPS and set the
+SSL name.
+
+|*_HTTPS_PASSWORD_*
+|The password for the keystore and certificate (e.g. _mykeystorepass_). If
+defined along with *_HTTPS_NAME_* and *_HTTPS_KEYSTORE_*, enable HTTPS and set
+the SSL key password.
+
+|*_HTTPS_SECRET_*
+|The name of the secret containing the keystore file.
+
+|*_IMAGE_STREAM_NAMESPACE_*
+|Namespace in which the ImageStreams for Red Hat Middleware images are
+installed. These ImageStreams are normally installed in the _openshift_
+namespace. You should only need to modify this if you've installed the
+ImageStreams in a different namespace/project.
+
+|*_JGROUPS_CLUSTER_PASSWORD_*
+|JGroups cluster password.
+
+|*_JGROUPS_ENCRYPT_KEYSTORE_*
+|The name of the keystore file within the secret.
+
+|*_JGROUPS_ENCRYPT_NAME_*
+|The name associated with the server certificate (e.g. _secret-key_).
+
+|*_JGROUPS_ENCRYPT_PASSWORD_*
+|The password for the keystore and certificate (e.g. _password_).
+
+|*_JGROUPS_ENCRYPT_SECRET_*
+|The name of the secret containing the keystore file.
+
+|*_SSO_ADMIN_USERNAME_*
+|Username of the administrator account for the `master` realm of the RH-SSO
+server. *Required.* If no value is specified, it is auto generated and
+displayed as an OpenShift instructional message when the template is
+instantiated.
+
+|*_SSO_ADMIN_PASSWORD_*
+|Password of the administrator account for the `master` realm of the RH-SSO
+server. *Required.* If no value is specified, it is auto generated and
+displayed as an OpenShift instructional message when the template is
+instantiated.
+
+|*_SSO_REALM_*
+|Name of the realm to be created in the RH-SSO server if this environment variable
+is provided.
+
+|*_SSO_SERVICE_USERNAME_*
+|The username used to access the RH-SSO service. This is used by clients to create
+the application client(s) within the specified RH-SSO realm. This user is created
+if this environment variable is provided.
+
+|*_SSO_SERVICE_PASSWORD_*
+|The password for the RH-SSO service user.
+
+|*_SSO_TRUSTSTORE_*
+|The name of the truststore file within the secret.
+
+|*_SSO_TRUSTSTORE_SECRET_*
+|The name of the secret containing the truststore file. Used for
+*_sso-truststore-volume_* volume.
+
+|*_SSO_TRUSTSTORE_PASSWORD_*
+|The password for the truststore and certificate.
+|===
+
+==== Template variables specific to *sso71-mysql*, *sso72-mysql*, *sso71-mysql-persistent*, and *sso72-mysql-persistent*
+
+.Configuration Variables Specific To RH-SSO-enabled MySQL Applications With Ephemeral Or Persistent Storage
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_DB_USERNAME_*
+|Database user name.
+
+|*_DB_PASSWORD_*
+|Database user password.
+
+|*_DB_JNDI_*
+|Database JNDI name used by application to resolve the datasource,
+e.g. _java:/jboss/datasources/mysql_.
+
+|*_MYSQL_AIO_*
+|Controls the _innodb_use_native_aio_ setting value if the native AIO is
+broken.
+
+|*_MYSQL_FT_MAX_WORD_LEN_*
+|The maximum length of the word to be included in a FULLTEXT index.
+
+|*_MYSQL_FT_MIN_WORD_LEN_*
+|The minimum length of the word to be included in a FULLTEXT index.
+
+|*_MYSQL_LOWER_CASE_TABLE_NAMES_*
+|Sets how the table names are stored and compared.
+
+|*_MYSQL_MAX_CONNECTIONS_*
+|The maximum permitted number of simultaneous client connections.
+|===
+
+==== Template variables specific to *sso71-postgresql*, *sso72-postgresql*, *sso71-postgresql-persistent*, and *sso72-postgresql-persistent*
+
+.Configuration Variables Specific To RH-SSO-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_DB_USERNAME_*
+|Database user name.
+
+|*_DB_PASSWORD_*
+|Database user password.
+
+|*_DB_JNDI_*
+|Database JNDI name used by application to resolve the datasource,
+e.g. _java:/jboss/datasources/postgresql_
+
+|*_POSTGRESQL_MAX_CONNECTIONS_*
+|The maximum number of client connections allowed. This also sets the maximum
+number of prepared transactions.
+
+|*_POSTGRESQL_SHARED_BUFFERS_*
+|Configures how much memory is dedicated to PostgreSQL for caching data.
+|===
+
+==== Template variables specific to *sso71-mysql-persistent*, *sso72-mysql-persistent*, *sso71-postgresql-persistent*, and *sso72-postgresql-persistent*
+
+.Configuration Variables Specific To RH-SSO-enabled MySQL / PostgreSQL Applications With Persistent Storage
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_VOLUME_CAPACITY_*
+|Size of persistent storage for database volume.
+|===
+
+==== Template variables for general *eap64*, *eap70*, and *eap71* S2I images
+
+.Configuration Variables For EAP 6.4 and EAP 7 Applications Built Via S2I
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_APPLICATION_NAME_*
+|The name for the application.
+
+|*_ARTIFACT_DIR_*
+|Artifacts directory.
+
+|*_AUTO_DEPLOY_EXPLODED_*
+|Controls whether exploded deployment content should be automatically deployed.
+
+|*_CONTEXT_DIR_*
+|Path within Git project to build; empty for root project directory.
+
+|*_GENERIC_WEBHOOK_SECRET_*
+|Generic build trigger secret.
+
+|*_GITHUB_WEBHOOK_SECRET_*
+|GitHub trigger secret.
+
+|*_HORNETQ_CLUSTER_PASSWORD_*
+|HornetQ cluster administrator password.
+
+|*_HORNETQ_QUEUES_*
+|Queue names.
+
+|*_HORNETQ_TOPICS_*
+|Topic names.
+
+|*_HOSTNAME_HTTP_*
+|Custom host name for http service route. Leave blank for default host name,
+e.g.: _<application-name>.<project>.<default-domain-suffix>_.
+
+|*_HOSTNAME_HTTPS_*
+|Custom host name for https service route. Leave blank for default host name,
+e.g.: _<application-name>.<project>.<default-domain-suffix>_.
+
+|*_HTTPS_KEYSTORE_TYPE_*
+|The type of the keystore file (JKS or JCEKS).
+
+|*_HTTPS_KEYSTORE_*
+|The name of the keystore file within the secret. If defined along with
+*_HTTPS_PASSWORD_* and *_HTTPS_NAME_*, enable HTTPS and set the SSL certificate
+key file to a relative path under _$JBOSS_HOME/standalone/configuration_.
+
+|*_HTTPS_NAME_*
+|The name associated with the server certificate (e.g. _jboss_). If defined
+along with *_HTTPS_PASSWORD_* and *_HTTPS_KEYSTORE_*, enable HTTPS and set the
+SSL name.
+
+|*_HTTPS_PASSWORD_*
+|The password for the keystore and certificate (e.g. _mykeystorepass_). If
+defined along with *_HTTPS_NAME_* and *_HTTPS_KEYSTORE_*, enable HTTPS and set
+the SSL key password.
+
+|*_HTTPS_SECRET_*
+|The name of the secret containing the keystore file.
+
+|*_IMAGE_STREAM_NAMESPACE_*
+|Namespace in which the ImageStreams for Red Hat Middleware images are
+installed. These ImageStreams are normally installed in the _openshift_
+namespace. You should only need to modify this if you've installed the
+ImageStreams in a different namespace/project.
+
+|*_JGROUPS_CLUSTER_PASSWORD_*
+|JGroups cluster password.
+
+|*_JGROUPS_ENCRYPT_KEYSTORE_*
+|The name of the keystore file within the secret.
+
+|*_JGROUPS_ENCRYPT_NAME_*
+|The name associated with the server certificate (e.g. _secret-key_).
+
+|*_JGROUPS_ENCRYPT_PASSWORD_*
+|The password for the keystore and certificate (e.g. _password_).
+
+|*_JGROUPS_ENCRYPT_SECRET_*
+|The name of the secret containing the keystore file.
+
+|*_SOURCE_REPOSITORY_REF_*
+|Git branch/tag reference.
+
+|*_SOURCE_REPOSITORY_URL_*
+|Git source URI for application.
+|===
+
+==== Template variables specific to *eap64-sso-s2i*, *eap70-sso-s2i*, and *eap71-sso-s2i* for automatic client registration
+
+.Configuration Variables For EAP 6.4 and EAP 7 RH-SSO-enabled Applications Built Via S2I
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_SSO_URL_*
+|RH-SSO server location.
+
+|*_SSO_REALM_*
+|Name of the realm to be created in the RH-SSO server if this environment variable
+is provided.
+
+|*_SSO_USERNAME_*
+|The username used to access the RH-SSO service. This is used to create the
+application client(s) within the specified RH-SSO realm. This should match the
+*_SSO_SERVICE_USERNAME_* specified through one of the *sso71-* or *sso72-* templates.
+
+|*_SSO_PASSWORD_*
+|The password for the RH-SSO service user.
+
+|*_SSO_PUBLIC_KEY_*
+|RH-SSO public key. Public key is recommended to be passed into the template to
+avoid man-in-the-middle security attacks.
+
+|*_SSO_SECRET_*
+|The RH-SSO client secret for confidential access.
+
+|*_SSO_SERVICE_URL_*
+|RH-SSO service location.
+
+|*_SSO_TRUSTSTORE_SECRET_*
+|The name of the secret containing the truststore file. Used for
+*_sso-truststore-volume_* volume.
+
+|*_SSO_TRUSTSTORE_*
+|The name of the truststore file within the secret.
+
+|*_SSO_TRUSTSTORE_PASSWORD_*
+|The password for the truststore and certificate.
+
+|*_SSO_BEARER_ONLY_*
+|RH-SSO client access type.
+
+|*_SSO_DISABLE_SSL_CERTIFICATE_VALIDATION_*
+|If true SSL communication between EAP and the RH-SSO Server is insecure
+(i.e. certificate validation is disabled with curl)
+
+|*_SSO_ENABLE_CORS_*
+|Enable CORS for RH-SSO applications.
+|===
+
+==== Template variables specific to *eap64-sso-s2i*, *eap70-sso-s2i*, and *eap71-sso-s2i* for automatic client registration with SAML clients
+
+.Configuration Variables For EAP 6.4 and EAP 7 RH-SSO-enabled Applications Built Via S2I Using SAML Protocol
+[cols="2*", options="header"]
+|===
+|Variable
+|Description
+|*_SSO_SAML_CERTIFICATE_NAME_*
+|The name associated with the server certificate.
+
+|*_SSO_SAML_KEYSTORE_PASSWORD_*
+|The password for the keystore and certificate.
+
+|*_SSO_SAML_KEYSTORE_*
+|The name of the keystore file within the secret.
+
+|*_SSO_SAML_KEYSTORE_SECRET_*
+|The name of the secret containing the keystore file.
+
+|*_SSO_SAML_LOGOUT_PAGE_*
+|RH-SSO logout page for SAML applications.
+|===
+
+=== Exposed Ports
+[cols="2",options="header"]
+|===
+|Port Number | Description
+|*_8443_* | HTTPS
+
+|*_8778_* | Jolokia monitoring
+
+|===
+
+////
+=== Labels
+
+=== Datasources
+
+=== Clustering
+
+=== Security Domains
+
+=== HTTPS
+
+=== Source-to-Image (S2I)
+
+=== Known Issues
+* There is a known issue with the EAP6 Adapter _HttpServletRequest.logout()_ in which the adapter does not log out from the application, which can create a login loop. The workaround is to call _HttpSession.invalidate();_ after _request.logout()_ to clear the Keycloak token from the session. For more information, see https://issues.jboss.org/browse/KEYCLOAK-2665[KEYCLOAK-2665].
+* The SSO logs throw a duplication error if the SSO pod is restarted while backed by a database pod. This error can be safely ignored.
+* Setting _adminUrl_ to a "https://..." address in an OpenID Connect client will cause *javax.net.ssl.SSLHandshakeException* exceptions on the SSO server if the default secrets (*sso-app-secret* and *eap-app-secret*) are used. The application server must use either CA-signed certificates or configure the SSO trust store to trust the self-signed certificates.
+* If the client route uses a different domain suffix to the SSO service, the client registration script will erroneously configure the client on the SSO side, causing bad redirection.
+* The SSO-enabled JBoss EAP image does not properly set the *adminUrl* property during automatic client registration. As a workaround, log in to the SSO console after the application has started and manually modify the client registration *adminUrl* property to *http://_<application-name>_-_<project-name>_._<hostname>_/_<app-context>_*.
+////

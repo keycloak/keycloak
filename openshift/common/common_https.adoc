@@ -1,0 +1,18 @@
+==== Environment variables
+
+|===
+|Variable name |Description |Example value
+
+|`HTTPS_NAME`
+|If defined along with `HTTPS_PASSWORD` and `HTTPS_KEYSTORE`, enable HTTPS and set the SSL name.
+|`example.com`
+
+|`HTTPS_PASSWORD`
+|If defined along with `HTTPS_NAME` and `HTTPS_KEYSTORE`, enable HTTPS and set the SSL key password.
+|`passw0rd`
+
+|`HTTPS_KEYSTORE`
+|If defined along with `HTTPS_PASSWORD` and `HTTPS_NAME`, enable HTTPS and set the SSL certificate key file to a
+relative path under `$JBOSS_HOME/standalone/configuration`
+|`ssl.key`
+|===

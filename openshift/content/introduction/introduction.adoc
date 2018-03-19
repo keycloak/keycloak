@@ -1,0 +1,32 @@
+=== What Is Red Hat Single Sign-On?
+Red Hat Single Sign-On (RH-SSO) is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {xpaasproduct} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
+
+[[sso-templates]]
+Red Hat offers multiple OpenShift application templates utilizing the {xpaasproduct-shortname} image.
+
+For RH-SSO 7.2:
+
+* *_sso72-https_*: RH-SSO 7.2 backed by internal H2 database on the same pod.
+* *_sso72-mysql_*: RH-SSO 7.2 backed by ephemeral MySQL database on a separate pod.
+* *_sso72-mysql-persistent_*: RH-SSO 7.2 backed by persistent MySQL database on a separate pod.
+* *_sso72-postgresql_*: RH-SSO 7.2 backed by ephemeral PostgreSQL database on a separate pod.
+* *_sso72-postgresql-persistent_*: RH-SSO 7.2 backed by persistent PostgreSQL database on a separate pod.
+
+For RH-SSO 7.1:
+
+* *_sso71-https_*: RH-SSO 7.1 backed by internal H2 database on the same pod.
+* *_sso71-mysql_*: RH-SSO 7.1 backed by ephemeral MySQL database on a separate pod.
+* *_sso71-mysql-persistent_*: RH-SSO 7.1 backed by persistent MySQL database on a separate pod.
+* *_sso71-postgresql_*: RH-SSO 7.1 backed by ephemeral PostgreSQL database on a separate pod.
+* *_sso71-postgresql-persistent_*: RH-SSO 7.1 backed by persistent PostgreSQL database on a separate pod.
+
+Other templates that integrate with RH-SSO are also available:
+
+* *_eap64-sso-s2i_*: RH-SSO-enabled Red Hat JBoss Enterprise Application Platform 6.4.
+* *_eap70-sso-s2i_*: RH-SSO-enabled Red Hat JBoss Enterprise Application Platform 7.0.
+* *_eap71-sso-s2i_*: RH-SSO enabled Red Hat JBoss Enterprise Application Platform 7.1.
+* *_datavirt63-secure-s2i_*: RH-SSO-enabled Red Hat JBoss Data Virtualization 6.3.
+
+These templates contain environment variables specific to RH-SSO that enable automatic RH-SSO client registration when deployed.
+
+See xref:Auto-Man-Client-Reg[Automatic and Manual RH-SSO Client Registration Methods] for more information.

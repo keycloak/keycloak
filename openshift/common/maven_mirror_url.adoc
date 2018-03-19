@@ -1,0 +1,54 @@
+// This page describes MAVEN_MIRROR_URL variable usage
+// It requires 'bcname' attribute to be set to the name of the product
+
+A repository in Maven holds build artifacts and dependencies of various types
+(all the project jars, library jar, plugins or any other project specific
+artifacts). It also specifies locations from where to download artifacts from,
+while performing the S2I build. Besides using central repositories, it is a
+common practice for organizations to deploy a local custom repository (mirror).
+
+Benefits of using a mirror are:
+
+* Availability of a synchronized mirror, which is geographically closer and
+  faster.
+* Ability to have greater control over the repository content.
+* Possibility to share artifacts across different teams (developers, CI),
+  without the need to rely on public servers and repositories.
+* Improved build times.
+
+Often, a repository manager can serve as local cache to a mirror. Assuming that
+the repository manager is already deployed and reachable externally at
+*_pass:[http://10.0.0.1:8080/repository/internal/]_*, the S2I build can then use this
+manager by supplying the `MAVEN_MIRROR_URL` environment variable to the
+build configuration of the application as follows:
+
+. Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
+  variable against:
++
+[subs="attributes"]
+----
+oc get bc -o name
+buildconfig/{bcname}
+----
+. Update build configuration of `{bcname}` with a `MAVEN_MIRROR_URL` environment variable
++
+[subs="attributes"]
+----
+oc env bc/{bcname} MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
+buildconfig "{bcname}" updated
+----
+. Verify the setting
++
+[subs="attributes"]
+----
+oc env bc/{bcname} --list
+# buildconfigs {bcname}
+MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
+----
+. Schedule new build of the application
+
+NOTE: During application build, you will notice that Maven dependencies are
+pulled from the repository manager, instead of the default public repositories.
+Also, after the build is finished, you will see that the mirror is filled with
+all the dependencies that were retrieved and used during the build.
+

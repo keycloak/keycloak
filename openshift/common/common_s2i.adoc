@@ -1,0 +1,86 @@
+The image includes S2I scripts and maven.
+
+Maven is currently only supported as a build tool for applications
+that are supposed to be deployed on JBoss EAP-based containers (or
+related/descendant images) on OpenShift.
+
+Only WAR deployments are supported at this time.
+
+==== Custom configuration
+
+It is possible to add custom configuration files for the image. All
+files put into configuration/ directory will be copied into
+`$JBOSS_HOME/standalone/configuration/`. For example to override the
+default configuration used in the image, just add a custom
+standalone-openshift.xml into the configuration/ directory.
+https://github.com/goldmann/openshift-eap-examples/tree/master/custom-configuration[See
+example] for such deployment.
+
+===== Custom modules
+
+It is possible to add custom modules. All files from the
+modules/Â directory will be copied into `$JBOSS_HOME/modules/`.
+https://github.com/goldmann/openshift-eap-examples/tree/master/custom-module[See
+example] for such deployment.
+
+==== Deployment Artifacts
+
+By default, artifacts from the source `target` directory will be deployed. To deploy from
+different directories set the ARTIFACT_DIR environment variable in the BuildConfig 
+definition. ARTIFACT_DIR is a comma-delimited list. For example: 
+ARTIFACT_DIR=app1/target,app2/target,app3/target
+
+==== Artifact Repository Mirrors
+
+// Define required 'bcname' attribute for maven_mirror_url.adoc page
+:bcname: eap
+
+// Include the Artifact Repository Mirros section
+// (MAVEN_MIRROR_URL variable usage information)
+include::maven_mirror_url.adoc[bcname]
+
+==== Scripts
+
+`run`:: runs the container without any changes to the default
+configuration, this means that the standalone-ha.xml configuration will
+be used.
+`assemble`:: uses Maven to build the source, create a package (war) and
+move it to the `$JBOSS_HOME/standalone/deployments` directory.
+
+==== Environment variables
+
+You can influence the way the build is executed by supplying environment
+variables to the `s2i build` command. See the
+link:https://github.com/openshift/source-to-image/blob/master/docs/cli.md[s2i
+docs] for more information. The environment variables that can be supplied are:
+
+|===
+|Variable name |Description |Example value
+
+include::common_s2i_env_vars.adoc[]
+
+|*_APP_DATADIR_*
+| If defined, directory in the source from where data files are copied.
+|*_mydata_*
+
+|*_DATA_DIR_*
+| Directory in the image where data from `$APP_DATADIR` will be copied.
+|*_$JBOSS_HOME/data_*
+
+|===
+
+==== Example
+
+This example for the JBoss EAP 6.4 image builds the Heroku Java example
+
+----
+s2i build -e "MAVEN_ARGS=clean package" --loglevel=5 --forcePull=false https://github.com/heroku/java-sample.git ce-registry.usersys.redhat.com/jboss-eap-6/eap-openshift:6.4 test-jee-app
+----
+
+Later you can run the application with:
+
+----
+docker run -it --rm test-jee-app
+----
+
+This will run a container and deploy the hello world application on start-up.

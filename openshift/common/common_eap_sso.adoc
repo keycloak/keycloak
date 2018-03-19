@@ -1,0 +1,99 @@
+This image contains support for Red Hat SSO/Keycloak-enabled applications.
+
+==== Environment variables
+
+|===
+|Variable name |Description |Example value
+
+|`SSO_URI`
+| URI of the SSO/Keycloak server
+| -
+
+|`SSO_REALM`
+| SSO/Keycloak realm for the deployed application(s)
+| -
+
+|`SSO_PUBLIC_KEY`
+| Public key of the SSO/Keycloak Realm. This field is optional but if omitted can leave the applications vulnerable to man-in-middle attacks
+| -
+
+|`SSO_USERNAME`
+| SSO/Keycloak User required to access the SSO/Keycloak REST API
+| `mySsoUser`
+
+|`SSO_PASSWORD`
+| Password for `SSO_USERNAME`
+| `6fedmL3P`
+
+|`SSO_SAML_KEYSTORE_SECRET`
+| Secret to use for access to SAML keystore
+| Default: `sso-app-secret`
+
+|`SSO_SAML_KEYSTORE`
+| Keystore location for SAML
+| Default: `/etc/sso-saml-secret-volume/keystore.jks`
+
+|`SSO_SAML_KEYSTORE_PASSWORD`
+| Keystore password for SAML
+| Default: `mykeystorepass`
+
+|`SSO_SAML_CERTIFICATE_NAME`
+| Alias for keys/certificate to use for SAML
+| Default: `jboss`
+
+|`SSO_BEARER_ONLY`
+| Optional. SSO Client Access Type
+| true
+
+|`SSO_CLIENT`
+| Path for SSO redirects back to the application
+| Defaults to match module-name
+
+|`SSO_ENABLE_CORS`
+| Optionally enable CORS for SSO applications
+| true
+
+|`SSO_SECRET`
+| The SSO Client Secret for Confidential Access
+| KZ1QyIq4
+
+|`SSO_SECURE_SSL_CONNECTIONS`
+| If true SSL communication between EAP and the SSO Server will be secure (i.e. certificate validation is enabled with curl)
+| false
+|===
+
+==== Example
+
+.Creating Secrets and SSO/Keycloak-enabled EAP in "myproject" project/namespace
+====
+Once the SSO/Keycloak server has been instantiated and configured with the
+appropriate Realm, Role(s), and User(s):
+
+. Create Realm (e.g demo)
+. Create Role that corresponds to JEE Role (e.g. user)
+. Create User with permanent password credential (e.g. mgmtuser/mgmtpass). Add
+  all "realm-management" Roles. This User is used to automatically configure
+  the SSO Clients in the SSO Server.
+. Create User with permanent password credential (e.g. demouser/demopass). Add
+  Roles to User: JEE Role from #2. This User is used to authenticate access to
+  user applications.
+
+Copy the Realm Public Key from the SSO/Keycloak console and use as the value of
+`SSO_PUBLIC_KEY` below. Set `SSO_URI` according to the location of the SSO
+server.
+
+....
+$ oc create -n myproject -f secrets/eap-app-secret.json
+$ oc create -n myproject -f secrets/sso-app-secret.json
+$ oc process -f eap/eap64-sso-s2i.json -v APPLICATION_NAME=helloworld,SOURCE_REPOSITORY_URL=https://github.com/keycloak/keycloak-examples,SOURCE_REPOSITORY_REF=0.4-openshift,CONTEXT_DIR=,SSO_URI=https://secure-sso-demo.hostname/auth,SSO_REALM=demo,SSO_USERNAME=mgmtuser,SSO_PASSWORD=mgmtpass,SSO_PUBLIC_KEY=XXX | oc create -n myproject -f -
+....
+After executing the above, you should be able to access the
+SSO/Keycloak-enabled applications at
+http://helloworld-myproject.hostname/app-context and
+https://secure-helloworld-myproject.hostname/app-context where app-context is
+`app-jee`, `app-profile-jee`, `app-profile-jee-saml`, or service depending on the
+example application.
+
+Note the `app-html5` and `app-profile-html5` example applications are not deployed
+or functional.
+====

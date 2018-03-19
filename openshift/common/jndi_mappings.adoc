@@ -1,0 +1,99 @@
+[[db_service_prefix_mapping]]
+==== JNDI mappings for datasources
+
+For each `<name>-<database_type>=PREFIX` triplet in the `DB_SERVICE_PREFIX_MAPPING`
+environment variable, a separate datasource will be created by the launch script, which is
+executed when running the image.
+
+The `<database_type>` will determine the driver for the datasource. Currently, only `postgresql` and
+`mysql` are supported.
+
+The `<name>` parameter can be chosen on you own. Do not use any special characters.
+
+NOTE: The first part (before the equal sign) of the `DB_SERVICE_PREFIX_MAPPING`
+      should be lowercase.
+
+===== Database drivers
+
+Every image contains Java drivers for MySQL, PostgreSQL and MongoDB databases deployed.
+Datasources are *generated only for MySQL and PostgreSQL databases*.
+
+NOTE: For MongoDB database there are no JNDI mappings created because this is not
+      a SQL database.
+
+===== Datasource configuration environment variables
+
+Other datasource properties will be configured from the following environment
+variables:
+
+|===
+|Variable name |Description |Example value
+
+|`<NAME>_<DATABASE_TYPE>_SERVICE_HOST` |Defines the database server's hostname or IP to be
+used in the datasource's `connection-url` property.
+|`192.168.1.3`
+
+|`<NAME>_<DATABASE_TYPE>_SERVICE_PORT` |Defines the database server's port for the datasource.
+|`5432`
+
+|`<PREFIX>_JNDI` |Defines the JNDI name for the datasource. Defaults to
+`java:jboss/datasources/<name>_<database_type>`, where `name` and `database_type` are taken from
+the triplet described above. This setting is useful if you want to override the default
+generated JNDI name. |`java:jboss/datasources/test-postgresql`
+
+|`<PREFIX>_USERNAME` |Defines the username for the datasource.
+|`admin`
+
+|`<PREFIX>_PASSWORD` |Defines the password for the datasource.
+|`password`
+
+|`<PREFIX>_DATABASE` |Defines the database name for the datasource.
+|`myDatabase`
+
+|`<PREFIX>_TX_ISOLATION` |Defines the java.sql.Connection transaction isolation
+level for the datasource.
+|`TRANSACTION_READ_UNCOMMITTED`
+
+|`<PREFIX>_MIN_POOL_SIZE` |Defines the minimum pool size option for the datasource.
+|`1`
+
+|`<PREFIX>_MAX_POOL_SIZE` |Defines the maximum pool size option for the datasource.
+|`20`
+
+|===
+
+When running this image in OpenShift, the `<NAME>_<DATABASE_TYPE>_SERVICE_HOST`
+and `<NAME>_<DATABASE_TYPE>_SERVICE_PORT` environment variables are set up
+automatically from the database service definition in the OpenShift application
+template, while the others are configured in the template directly (as `env`
+entries in container definitions under each pod template).
+
+===== Examples
+
+These examples show how value of the `DB_SERVICE_PREFIX_MAPPING` environment
+variable influences datasource creation.
+
+====== Single mapping
+
+Consider value `test-postgresql=TEST`.
+
+This will create a datasource with `java:jboss/datasources/test_postgresql` name.
+Additionally all the required settings like password and username will be expected
+to be provided as env variables with the `TEST_` prefix, for example `TEST_USERNAME`
+and `TEST_PASSWORD`.
+
+====== Multiple mappings
+
+You can also specify multiple database mappings. Consider following value for the
+`DB_SERVICE_PREFIX_MAPPING` environment variable: `cloud-postgresql=CLOUD,test-mysql=TEST_MYSQL`.
+
+NOTE: Multiple datasource mappings should be separated with comma.
+
+This will create two datasources:
+
+1. `java:jboss/datasources/test_mysql`, and
+2. `java:jboss/datasources/cloud_postgresql`.
+
+MySQL datasource configuration (username, etc) will be expected with the
+`TEST_MYSQL` prefix, for example `TEST_MYSQL_USERNAME`, whereas for the PostgreSQL
+datasource it'll expect beexpected with the `CLOUD_` prefix, for example `CLOUD_USERNAME`.
