@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.auth.page.login.Registration;
+import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
@@ -45,6 +46,9 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Page
     private Registration testRealmRegistrationPage;
+
+    @Page
+    private TermsAndConditions termsAndConditionsPage;
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -69,7 +73,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
         registerTestUser();
 
-        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
+        Assert.assertTrue(termsAndConditionsPage.isCurrent());
     }
 
     @Test
@@ -129,7 +133,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
         registerTestUser();
 
-        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Mobile Authenticator Setup')]]"));
+        Assert.assertTrue(driver.findElement(By.id("kc-page-title")).getText().equals("Mobile Authenticator Setup"));
     }
 
     private void allowTestRealmUserRegistration() {

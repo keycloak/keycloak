@@ -19,27 +19,23 @@ package org.keycloak.testsuite.auth.page.login;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class VerifyEmail extends Authenticate {
 
-    @FindBy(xpath = "//div[@id='kc-form-wrapper']/p")
+    @FindBy(xpath = "//div[@id='kc-content-wrapper']/p[contains(@class, 'instruction')][1]")
     private WebElement instruction;
 
     @FindBy(id = "kc-error-message")
     private WebElement error;
 
     public String getInstructionMessage() {
-        waitUntilElement(instruction).is().present();
         return instruction.getText();
     }
 
     public String getErrorMessage() {
-        waitUntilElement(error).is().present();
         return error.getText();
     }
 }
