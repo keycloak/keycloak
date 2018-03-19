@@ -1,13 +1,10 @@
-<productname>{productname}</productname>
-<productnumber>{productversion}</productnumber>
+<productname>Red Hat Single Sign-On</productname>
+<productnumber>7.3</productnumber>
 <subtitle>Using {xpaasproduct}</subtitle>
 <abstract>
  <para>Guide to using {xpaasproduct}</para>
 </abstract>
 <authorgroup>
-  <org>
-    <orgname>{productname} Documentation Team</orgname>
-    <email>{productdocsemail}</email>
-  </org>
+ <orgname>Red Hat Customer Content Services</orgname>
 </authorgroup>
 <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
