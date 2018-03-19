@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -2351,6 +2352,24 @@ public class RepresentationToModel {
             existing.updateScopes(resource.getScopes().stream()
                     .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
                     .collect(Collectors.toSet()));
+            Map<String, List<String>> attributes = resource.getAttributes();
+
+            if (attributes != null) {
+                Set<String> existingAttrNames = existing.getAttributes().keySet();
+
+                for (String name : existingAttrNames) {
+                    if (attributes.containsKey(name)) {
+                        existing.setAttribute(name, attributes.get(name));
+                        attributes.remove(name);
+                    } else {
+                        existing.removeAttribute(name);
+                    }
+                }
+
+                for (String name : attributes.keySet()) {
+                    existing.setAttribute(name, attributes.get(name));
+                }
+            }
 
             return existing;
         }
@@ -2367,6 +2386,14 @@ public class RepresentationToModel {
 
         if (scopes != null) {
             model.updateScopes(scopes.stream().map((Function<ScopeRepresentation, Scope>) scope -> toModel(scope, resourceServer, authorization)).collect(Collectors.toSet()));
+        }
+
+        Map<String, List<String>> attributes = resource.getAttributes();
+
+        if (attributes != null) {
+            for (Entry<String, List<String>> entry : attributes.entrySet()) {
+                model.setAttribute(entry.getKey(), entry.getValue());
+            }
         }
 
         resource.setId(model.getId());

@@ -841,6 +841,8 @@ public class ModelToRepresentation {
                 }
                 return scope;
             }).collect(Collectors.toSet()));
+
+            resource.setAttributes(new HashMap<>(model.getAttributes()));
         }
 
         return resource;

@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,6 +50,8 @@ public class UmaResourceRepresentation {
     private String iconUri;
     private String owner;
     private Boolean ownerManagedAccess;
+
+    private Map<String, List<String>> attributes;
 
 
     /**
@@ -160,5 +164,13 @@ public class UmaResourceRepresentation {
 
     public Boolean getOwnerManagedAccess() {
         return ownerManagedAccess;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 }

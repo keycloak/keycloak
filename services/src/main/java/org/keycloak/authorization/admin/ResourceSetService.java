@@ -294,6 +294,22 @@ public class ResourceSetService {
         return Response.ok(representation).build();
     }
 
+    @Path("{id}/attributes")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Response getAttributes(@PathParam("id") String id) {
+        requireView();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        return Response.ok(model.getAttributes()).build();
+    }
+
     @Path("/search")
     @GET
     @NoCache
