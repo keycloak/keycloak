@@ -326,9 +326,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             nonce = UUID.randomUUID().toString();
             request.getAuthenticationSession().setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
         }
-        if (nonce != null) {
-            uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        }
+        uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
 
         return uriBuilder;
     }
