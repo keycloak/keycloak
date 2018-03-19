@@ -150,6 +150,8 @@ public class ResourceService {
             return scopeRepresentation;
         }).collect(Collectors.toSet()));
 
+        resource.setAttributes(umaResource.getAttributes());
+
         return resource;
     }
 
@@ -177,6 +179,8 @@ public class ResourceService {
             umaScopeRep.setIconUri(scopeRepresentation.getIconUri());
             return umaScopeRep;
         }).collect(Collectors.toSet()));
+
+        resource.setAttributes(model.getAttributes());
 
         return resource;
     }

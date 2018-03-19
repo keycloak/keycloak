@@ -28,8 +28,12 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -53,6 +57,17 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         assertEquals("/test/*", newResource.getUri());
         assertEquals("test-resource", newResource.getType());
         assertEquals("icon-test-resource", newResource.getIconUri());
+
+        Map<String, List<String>> attributes = newResource.getAttributes();
+
+        assertEquals(2, attributes.size());
+
+        assertTrue(attributes.containsKey("a"));
+        assertTrue(attributes.containsKey("b"));
+        assertTrue(attributes.get("a").containsAll(Arrays.asList("a1", "a2", "a3")));
+        assertEquals(3, attributes.get("a").size());
+        assertTrue(attributes.get("b").containsAll(Arrays.asList("b1")));
+        assertEquals(1, attributes.get("b").size());
     }
 
     @Test
@@ -105,11 +120,28 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         resource.setIconUri("changed");
         resource.setUri("changed");
 
+        Map<String, List<String>> attributes = resource.getAttributes();
+
+        attributes.remove("a");
+        attributes.put("c", Arrays.asList("c1", "c2"));
+        attributes.put("b", Arrays.asList("changed"));
+
         resource = doUpdateResource(resource);
 
         assertEquals("changed", resource.getIconUri());
         assertEquals("changed", resource.getType());
         assertEquals("changed", resource.getUri());
+
+        attributes = resource.getAttributes();
+
+        assertEquals(2, attributes.size());
+
+        assertFalse(attributes.containsKey("a"));
+        assertTrue(attributes.containsKey("b"));
+        assertTrue(attributes.get("b").containsAll(Arrays.asList("changed")));
+        assertEquals(1, attributes.get("b").size());
+        assertTrue(attributes.get("c").containsAll(Arrays.asList("c1", "c2")));
+        assertEquals(2, attributes.get("c").size());
     }
 
     @Test(expected = NotFoundException.class)
@@ -204,6 +236,13 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         newResource.setType(type);
         newResource.setIconUri(iconUri);
         newResource.setOwner(owner != null ? new ResourceOwnerRepresentation(owner) : null);
+
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put("a", Arrays.asList("a1", "a2", "a3"));
+        attributes.put("b", Arrays.asList("b1"));
+
+        newResource.setAttributes(attributes);
 
         return doCreateResource(newResource);
     }

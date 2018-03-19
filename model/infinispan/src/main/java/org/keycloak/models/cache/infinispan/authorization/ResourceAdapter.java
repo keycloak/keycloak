@@ -27,6 +27,7 @@ import org.keycloak.models.cache.infinispan.authorization.entities.CachedResourc
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 public class ResourceAdapter implements Resource, CachedModel<Resource> {
+
     protected CachedResource cached;
     protected StoreFactoryCacheSession cacheSession;
     protected Resource updated;
@@ -208,6 +210,50 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), scopes.stream().map(scope1 -> scope1.getId()).collect(Collectors.toSet()), cached.getResourceServerId(), cached.getOwner());
         updated.updateScopes(scopes);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        if (updated != null) return updated.getAttributes();
+        return cached.getAttributes();
+    }
+
+    @Override
+    public String getSingleAttribute(String name) {
+        if (updated != null) return updated.getSingleAttribute(name);
+
+        List<String> values = cached.getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.get(0);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        if (updated != null) return updated.getAttribute(name);
+
+        List<String> values = cached.getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return Collections.unmodifiableList(values);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, values);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
     }
 
     @Override
