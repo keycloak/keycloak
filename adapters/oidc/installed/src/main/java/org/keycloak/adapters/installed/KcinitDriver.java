@@ -84,38 +84,19 @@ public class KcinitDriver {
 
     public void mainCmd(String[] args) throws Exception {
 
-        this.args = Arrays.copyOf(args, args.length);
-        for (String arg : args) {
-            if (!arg.startsWith("-")) break;
-            if (arg.equals("-f") || arg.equals("-force")) {
-                forceLogin = true;
-                this.args = Arrays.copyOfRange(this.args, 1, this.args.length);
-            } else if (arg.equals("-browser") || arg.equals("-b")) {
-                browserLogin = true;
-                this.args = Arrays.copyOfRange(this.args, 1, this.args.length);
-            } else {
-                System.err.println("Illegal argument: " + arg);
-                printHelp();
-                System.exit(1);
-            }
-        }
-
         this.args = args;
 
 
         if (args.length == 0) {
-            login();
-            return;
-        }
-
-        if (args[0].startsWith("-")) {
-            login();
+            printHelp();
             return;
         }
 
         if (args[0].equalsIgnoreCase("token")) {
             //System.err.println("executing token");
             token();
+        } else if (args[0].equalsIgnoreCase("login")) {
+            login();
         } else if (args[0].equalsIgnoreCase("logout")) {
             logout();
         } else if (args[0].equalsIgnoreCase("env")) {
@@ -402,8 +383,7 @@ public class KcinitDriver {
 
     public void printHelp() {
         KeycloakInstalled.console().writer().println("Commands:");
-        KeycloakInstalled.console().writer().println("  no arguments is a login");
-        KeycloakInstalled.console().writer().println("  no argument with -f forces login");
+        KeycloakInstalled.console().writer().println("  login [-f] -f forces login");
         KeycloakInstalled.console().writer().println("  logout");
         KeycloakInstalled.console().writer().println("  token [client] - print access token of desired client.  Defaults to default master client.  Will print either 'error', 'not-allowed',  or 'login-required' on error.");
         KeycloakInstalled.console().writer().println("  install - Install this utility.  Will store in $HOME/.keycloak/kcinit unless " + KC_LOGIN_CONFIG_PATH + " env var is set");
@@ -647,8 +627,23 @@ public class KcinitDriver {
 
     public void login() throws Exception {
         checkEnv();
+        this.args = Arrays.copyOfRange(this.args, 1, this.args.length);
+        for (String arg : args) {
+            if (arg.equals("-f") || arg.equals("-force")) {
+                forceLogin = true;
+                this.args = Arrays.copyOfRange(this.args, 1, this.args.length);
+            } else if (arg.equals("-browser") || arg.equals("-b")) {
+                browserLogin = true;
+                this.args = Arrays.copyOfRange(this.args, 1, this.args.length);
+            } else {
+                System.err.println("Illegal argument: " + arg);
+                printHelp();
+                System.exit(1);
+            }
+        }
+
         String masterClient = getMasterClient();
-        if (!forceLogin() && readToken(masterClient) != null) {
+        if (!forceLogin && readToken(masterClient) != null) {
             KeycloakInstalled.console().writer().println("Already logged in.  `kcinit -f` to force relogin");
             return;
         }
