@@ -8,6 +8,7 @@ This API consists of a few interfaces that provides you access to information su
 * The permission being requested
 * The identity that is requesting the permission, from which you can obtain claims/attributes
 * Runtime environment and any other attribute associated with the execution context
+* Information about users such as group membership and roles
 
 The main interface is *org.keycloak.authorization.policy.evaluation.Evaluation*, which defines the following contract:
 
@@ -27,6 +28,13 @@ public interface Evaluation {
      * @return the evaluation context
      */
     EvaluationContext getContext();
+
+    /**
+     * Returns a {@link Realm} that can be used by policies to query information.
+     *
+     * @return a {@link Realm} instance
+     */
+    Realm getRealm();
 
     /**
      * Grants the requested permission to the caller.
