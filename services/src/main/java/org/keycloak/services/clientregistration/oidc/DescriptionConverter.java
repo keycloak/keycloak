@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -114,17 +113,6 @@ public class DescriptionConverter {
         if (clientOIDC.getRequestObjectSigningAlg() != null) {
             Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
             configWrapper.setRequestObjectSignatureAlg(algorithm);
-        }
-
-        if (clientOIDC.getRequestObjectRequired() != null) {
-            String requestObjectRequired = clientOIDC.getRequestObjectRequired();
-            if (Arrays.asList(
-                    OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI,
-                    OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST,
-                    OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_URI)
-                    .contains(requestObjectRequired)) {
-                configWrapper.setRequestObjectRequired(requestObjectRequired);
-            }
         }
 
         return client;
@@ -196,9 +184,6 @@ public class DescriptionConverter {
         }
         if (config.getRequestObjectSignatureAlg() != null) {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
-        }
-        if (config.getRequestObjectRequired() != null) {
-            response.setRequestObjectRequired(config.getRequestObjectRequired());
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());

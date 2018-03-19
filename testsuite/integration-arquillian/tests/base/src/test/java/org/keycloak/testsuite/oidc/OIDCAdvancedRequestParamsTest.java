@@ -71,9 +71,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_URI;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST_URI;
 
 /**
  * Test for supporting advanced parameters of OIDC specs (max_age, prompt, ...)
