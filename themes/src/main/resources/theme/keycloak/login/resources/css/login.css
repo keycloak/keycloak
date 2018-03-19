@@ -1,6 +1,6 @@
 .login-pf body {
     background-image: url("../img/keycloak-bg.png");
-    background-size: cover;
+    background-size: auto;
 }
 
 .alert-error {
@@ -107,7 +107,8 @@ div.kc-logo-text span {
     text-transform: uppercase;
     letter-spacing: 3px;
     line-height: 1.2em;
-    padding: 82px 0 20px;
+    padding: 82px 10px 20px;
+    white-space: normal;
 }
 
 #kc-content {
@@ -224,6 +225,7 @@ a.zocial  {
     background: #f5f5f5;
     color: #72767b;
     border-radius: 0;
+    white-space: normal;
 }
 .zocial:before {
   border-right: 0;
@@ -291,7 +293,7 @@ a.zocial  {
     #kc-header-wrapper {
       font-size: 16px;
       font-weight: bold;
-      padding: 20px 0 0 0;
+      padding: 20px 60px 0 0;
       color: #72767b;
       letter-spacing: 0;
     }
@@ -375,24 +377,18 @@ a.zocial  {
   background: #fff;
   margin: 0 auto;
   padding: 0 20px;
-  width: 66.7%;
   max-width: 500px;
   border-top: 0;
   box-shadow: 0 0 0;
 }
-
-@media (max-width: 767px) {
-  .card-pf {
-    width: auto;
-    max-width: none;
-  }
-  .card-pf.login-pf-accounts {
-    margin: 0 20px;
-  }
-}
-
-.card-pf.login-pf-accounts {
-  max-width: 840px;
+@media (max-width: 768px) {
+    .login-pf-page .login-pf-accounts {
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+    .login-pf-page .card-pf{
+      max-width: none;
+    }
 }
 
 .login-pf-page .login-pf-signup {
