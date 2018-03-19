@@ -33,6 +33,9 @@ public class OIDCAdvancedConfigWrapper {
     private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
     
     private static final String REQUEST_OBJECT_REQUIRED = "request.object.required";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI = "request or request_uri";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
 
     private static final String JWKS_URL = "jwks.url";
 

@@ -32,9 +32,9 @@ import org.keycloak.services.messages.Messages;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_OBJECT_REQUIRED_REQUEST_URI;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI;
+import static org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper.REQUEST_OBJECT_REQUIRED_REQUEST_URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
