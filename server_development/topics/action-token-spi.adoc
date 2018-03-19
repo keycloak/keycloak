@@ -35,7 +35,7 @@ In addition, an action token can contain any number of custom fields serializabl
 
 When an action token is passed to a {project_name} endpoint
 `_KEYCLOAK_ROOT_/auth/realms/master/login-actions/action-token` via `key` parameter, it is validated and a proper action
-token handler is executed. The processing always takes place in a context of an authentication session, either a fresh
+token handler is executed. *The processing always takes place in a context of an authentication session*, either a fresh
 one or the action token service joins an existing authentication session (details are described below). The action token
 handler can perform actions prescribed by the token (often it alters the authentication session) and results into an HTTP
 response (e.g. it can continue in authentication or display an information/error page). These steps are detailed below.
@@ -68,6 +68,68 @@ As action token is just a signed JWT with few mandatory fields (see <<_action_to
 above), it can be serialized and signed as such using Keycloak's `JWSBuilder` class. This way has been already
 implemented in `serialize(session, realm, uriInfo)` method of `org.keycloak.authentication.actiontoken.DefaultActionToken`
 and can be leveraged by implementors by using that class for tokens instead of plain `JsonWebToken`.
+
+The following example shows the implementation of a simple action token. Note that the class must have a private constructor without any arguments.
+This is necessary to deserialize the token class from JWT.
+
+[source,java]
+----
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+public class DemoActionToken extends DefaultActionToken {
+
+    public static final String TOKEN_TYPE = "my-demo-token";
+
+    public DemoActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
+    }
+
+    private DemoActionToken() {
+        // Required to deserialize from JWT
+        super();
+    }
+}
+----
+
+If the action token you are implementing contains any custom fields that should be serializabled to JSON fields, you
+should consider implementing a descendant of `org.keycloak.representations.JsonWebToken` class that would implement
+`org.keycloak.models.ActionTokenKeyModel` interface. In that case, you can take advantage of the existing
+`org.keycloak.authentication.actiontoken.DefaultActionToken` class as it already satisfies both these conditions,
+and either use it directly or implement its child, the fields of which can be annotated with appropriate Jackson
+annotations, e.g. `com.fasterxml.jackson.annotation.JsonProperty` to serialize them to JSON.
+
+The following example extends the `DemoActionToken` from the previous example with the field `demo-id`:
+
+[source,java]
+----
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+public class DemoActionToken extends DefaultActionToken {
+
+    public static final String TOKEN_TYPE = "my-demo-token";
+
+    private static final String JSON_FIELD_DEMO_ID = "demo-id";
+
+    @JsonProperty(value = JSON_FIELD_DEMO_ID)
+    private String demoId;
+
+    public DemoActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String demoId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
+        this.demoId =  demoId;
+    }
+
+    private DemoActionToken() {
+        // you must have this private constructor for deserializer
+    }
+
+    public String getDemoId() {
+        return demoId;
+    }
+}
+
+----
+
 
 ==== Packaging Classes and Deployment
 
@@ -107,12 +169,5 @@ only method that needs to be implemented is `handleToken(token, context)` that p
 +
 Note that you have to register the custom `ActionTokenHandlerFactory` implementation as explained in the
 <<_providers,Service Provider Interfaces>> section of this guide.
-
- *  If the action token you are implementing contains any custom fields that should be serializabled to JSON fields, you
-    should consider implementing a descendant of `org.keycloak.representations.JsonWebToken` class that would implement
-    `org.keycloak.models.ActionTokenKeyModel` interface. In that case, you can take advantage of the existing
-    `org.keycloak.authentication.actiontoken.DefaultActionToken` class as it already satisfies both these conditions,
-    and either use it directly or implement its child, the fields of which can be annotated with appropriate Jackson
-    annotations, e.g. `com.fasterxml.jackson.annotation.JsonProperty` to serialize them to JSON.
 
 
