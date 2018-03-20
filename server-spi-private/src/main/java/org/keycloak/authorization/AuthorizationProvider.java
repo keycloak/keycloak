@@ -285,7 +285,7 @@ public final class AuthorizationProvider implements Provider {
                         }
 
                         if (resource == null) {
-                            throw new RuntimeException("Resource [" + id + "] does not exist");
+                            throw new RuntimeException("Resource [" + id + "] does not exist or is not owned by the resource server.");
                         }
 
                         return resource.getId();
@@ -457,6 +457,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public Resource findByName(String name, String resourceServerId) {
                 return delegate.findByName(name, resourceServerId);
+            }
+
+            @Override
+            public Resource findByName(String name, String ownerId, String resourceServerId) {
+                return delegate.findByName(name, ownerId, resourceServerId);
             }
 
             @Override

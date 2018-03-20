@@ -336,8 +336,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "scope.name." + name + "." + serverId;
     }
 
-    public static String getResourceByNameCacheKey(String name, String serverId) {
-        return "resource.name." + name + "." + serverId;
+    public static String getResourceByNameCacheKey(String name, String ownerId, String serverId) {
+        return "resource.name." + name + "." + ownerId + "." + serverId;
     }
 
     public static String getResourceByOwnerCacheKey(String owner, String serverId) {
@@ -580,17 +580,22 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
         @Override
         public Resource findByName(String name, String resourceServerId) {
+            return findByName(name, resourceServerId, resourceServerId);
+        }
+
+        @Override
+        public Resource findByName(String name, String ownerId, String resourceServerId) {
             if (name == null) return null;
-            String cacheKey = getResourceByNameCacheKey(name, resourceServerId);
+            String cacheKey = getResourceByNameCacheKey(name, ownerId, resourceServerId);
             List<Resource> result = cacheQuery(cacheKey, ResourceListQuery.class, () -> {
-                Resource resource = getResourceStoreDelegate().findByName(name, resourceServerId);
+                        Resource resource = getResourceStoreDelegate().findByName(name, ownerId, resourceServerId);
 
-                if (resource == null) {
-                    return Collections.emptyList();
-                }
+                        if (resource == null) {
+                            return Collections.emptyList();
+                        }
 
-                return Arrays.asList(resource);
-            },
+                        return Arrays.asList(resource);
+                    },
                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
 
             if (result.isEmpty()) {

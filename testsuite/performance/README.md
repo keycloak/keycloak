@@ -26,9 +26,8 @@ mvn clean install
 
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
-mvn verify -Pgenerate-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100u -DusersPerSec=4.5 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60 -DfilterResults=true
-
+mvn verify -Pgenerate-data -Ddataset=100u2c -DnumOfWorkers=10 -DhashIterations=100
+mvn verify -Ptest -Ddataset=100u2c -DusersPerSec=2 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60 -DfilterResults=true
 ```
 
 Now open the generated report in a browser - the link to .html file is displayed at the end of the test.
@@ -40,7 +39,7 @@ mvn verify -Pteardown
 
 You can perform all phases in a single run:
 ```
-mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100 -DusersPerSec=5 -DrampUpPeriod=10
+mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u2c -DnumOfWorkers=10 -DhashIterations=100 -DusersPerSec=4 -DrampUpPeriod=10
 ```
 Note: The order in which maven profiles are listed does not determine the order in which profile related plugins are executed. `teardown` profile always executes last.
 
@@ -49,21 +48,44 @@ Keep reading for more information.
 
 ## Provisioning
 
-### Available provisioners:
-
-- `docker-compose` **Default.** See [`README.docker-compose.md`](README.docker-compose.md) for more details.
-
 ### Provision
 
-Usage: `mvn verify -Pprovision [-Dprovisioner=<PROVISIONER>] [-D<PARAMETER>=<VALUE>] …`. 
+#### Provisioners
+
+Depending on the target environment different provisioners may be used.
+Provisioner can be selected via property `-Dprovisioner=PROVISIONER`. 
+
+Default value is `docker-compose` which is intended for testing on a local docker host.
+This is currently the only implemented option. See [`README.docker-compose.md`](README.docker-compose.md) for more details.
 
 #### Deployment Types
 
-- Single node: `mvn verify -Pprovision`
-- Cluster: `mvn verify -Pprovision,cluster [-Dkeycloak.scale=N] [-Dkeycloak.cpusets="cpuset1 cpuset2 … cpusetM"]`. `N ∈ {1 .. M}`.
-- Cross-DC: `mvn verify -Pprovision,crossdc [-Dkeycloak.dc1.scale=K] [-Dkeycloak.dc2.scale=L] [-Dkeycloak.dc1.cpusets=…] [-Dkeycloak.dc2.cpusets=…]`
+Different types of deployment can be provisioned.
+The default deployment is `singlenode` with only a single instance of Keycloak server and a database.
+Additional options are `cluster` and `crossdc` which can be enabled with a profile (see below).
 
-All available parameters are described in [`README.provisioning-parameters.md`](README.provisioning-parameters.md).
+#### Usage
+
+Usage: `mvn verify -P provision[,DEPLOYMENT_PROFILE] [-Dprovisioning.properties=NAMED_PROPERTY_SET]`.
+
+The properties are loaded from `tests/parameters/provisioning/${provisioning.properties}.properties` file.
+Individual parameters can be overriden from command line via `-D` params.
+
+Default property set is `docker-compose/4cpus/singlenode`.
+
+To load a custom properties file specify `-Dprovisioning.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Dprovisioning.properties`.
+This file needs to contain all properties required by the specific combination of provisioner and deployment type.
+See examples in folder `tests/parameters/provisioning/docker-compose/4cpus`.
+
+Available parameters are described in [`README.provisioning-parameters.md`](README.provisioning-parameters.md).
+
+#### Examples:
+- Provision a single-node deployment with docker-compose: `mvn verify -P provision`
+- Provision a cluster deployment with docker-compose: `mvn verify -P provision,cluster`
+- Provision a cluster deployment with docker-compose, overriding some properties: `mvn verify -P provision,cluster -Dkeycloak.scale=2 -Dlb.worker.task-max-threads=32`
+- Provision a cross-DC deployment with docker-compose: `mvn verify -P provision,crossdc`
+- Provision a cross-DC deployment with docker-compose using a custom properties file: `mvn verify -P provision,crossdc -Dprovisioning.properties.file=/tmp/custom-crossdc.properties`
+
 
 #### Provisioned System
 
@@ -71,14 +93,22 @@ The `provision` operation will produce a `provisioned-system.properties` inside 
 with information about the provisioned system such as the type of deployment and URLs of Keycloak servers and load balancers.
 This information is then used by operations `generate-data`, `import-dump`, `test`, `teardown`.
 
-Provisioning can be run multiple times with different parameters. The system will be updated/reprovisioned based on the new parameters.
-However when switching between different deployment types (e.g. from `singlenode` to `cluster`) it is always necessary 
+Provisioning operation is idempotent for a specific combination of provisioner+deployment. 
+When running multiple times the system will be simply updated based on the new parameters.
+However when switching between different provisioiners or deployment types it is **always necessary** 
 to tear down the currently running system.
 
 **Note:** When switching deployment type from `singlenode` or `cluster` to `crossdc` (or the other way around) 
 it is necessary to update the generated Keycloak server configuration (inside `keycloak/target` directory) by 
 adding a `clean` goal to the provisioning command like so: `mvn clean verify -Pprovision …`. It is *not* necessary to update this configuration 
 when switching between `singlenode` and `cluster` deployments.
+
+### Collect Artifacts
+
+Usage: `mvn verify -Pcollect`
+
+Collects artifacts such as logs from the provisioned system and stores them in `tests/target/collected-artifacts/${deployment}-TIMESTAMP/`.
+When used in combination with teardown (see below) the artifacts are collected just before the system is torn down.
 
 ### Teardown
 
@@ -92,18 +122,19 @@ because it contains the `provisioned-system.properties` with information about t
 
 ### Generate Test Data
 
-Usage: `mvn verify -Pgenerate-data [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
+Usage: `mvn verify -P generate-data [-Ddataset=NAMED_PROPERTY_SET] [-DnumOfWorkers=N]`. The default dataset is `2u2c`. Workers default to `1`.
 
-Dataset properties are loaded from `datasets/${dataset}.properties` file. Individual properties can be overriden by specifying `-D` params.
+The parameters are loaded from `tests/parameters/datasets/${dataset}.properties` file.
+Individual properties can be overriden from command line via `-D` params.
 
-Dataset data is first generated as a .json file, and then imported into Keycloak via Admin Client REST API.
+To use a custom properties file specify `-Ddataset.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Ddataset`.
 
-#### Dataset Properties
+#### Dataset Parameters
 
 | Property | Description | Value in the Default Dataset |
 | --- | --- | --- | 
 | `numOfRealms` | Number of realms to be created. | `1`  |
-| `usersPerRealm` | Number of users per realm. | `100`  |
+| `usersPerRealm` | Number of users per realm. | `2`  |
 | `clientsPerRealm` | Number of clients per realm. | `2`  |
 | `realmRoles` | Number of realm-roles per realm. | `2`  |
 | `realmRolesPerUser` | Number of realm-roles assigned to a created user. Has to be less than or equal to `realmRoles`. | `2`  |
@@ -113,53 +144,73 @@ Dataset data is first generated as a .json file, and then imported into Keycloak
 
 
 #### Examples:
-- `mvn verify -Pgenerate-data` - generate default dataset
-- `mvn verify -Pgenerate-data -DusersPerRealm=5` - generate default dataset, override the `usersPerRealm` property
-- `mvn verify -Pgenerate-data -Ddataset=100u` - generate `100u` dataset
-- `mvn verify -Pgenerate-data -Ddataset=100r/default` - generate dataset based on `datasets/100r/default.properties`
+- Generate the default dataset. `mvn verify -P generate-data`
+- Generate the `100u2c` dataset. `mvn verify -P generate-data -Ddataset=100u2c`
+- Generate the `100u2c` dataset but override some parameters. `mvn verify -P generate-data -Ddataset=100u2c -DclientRolesPerUser=5 -DclientRolesPerClient=5`
 
-#### Export / Import Database Dump
+#### Export Database
 
-To speed up dataset initialization part, it is possible to pass `-Dexport-dump` option to have the generated dataset
-exported right after it has been generated. Then, if there is a data dump file available then `-Pimport-dump` 
-can be used to import the data directly into the database, bypassing Keycloak server completely.
+To export the generated data to a data-dump file enable profile `-P export-dump`. This will create a `${DATASET}.sql.gz` file next to the dataset properties file.
 
-**Usage:** `mvn verify -Pimport-dump [-Ddataset=DATASET]`
+Example: `mvn verify -P generate-data,export-dump -Ddataset=100u2c`
 
-**For example:**
-- `mvn verify -Pgenerate-data -Ddataset=100u -Dexport-dump` will generate data based on `datasets/100u.properties` and export a database dump to a file: `datasets/100u.sql.gz`.
-- `mvn verify -Pimport-dump -Ddataset=100u` will import the database dump from a file: `datasets/100u.sql.gz`, and reboot the server(s)
+#### Import Database
+
+To import data from an existing data-dump file use profile `-P import-dump`.
+
+Example: `mvn verify -P import-dump -Ddataset=100u2c`
+
+If the dump file doesn't exist locally the script will attempt to download it from `${db.dump.download.site}` which defaults to `https://downloads.jboss.org/keycloak-qe/${server.version}` 
+with `server.version` defaulting to `${project.version}` from `pom.xml`.
+
+**Warning:** Don't override dataset parameters (with `-Dparam=value`) when running export/import because then the contents of dump file might not match the properties file.
 
 
 ### Run Tests
 
-Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
+Usage: `mvn verify -P test [-Dtest.properties=NAMED_PROPERTY_SET]`. Default property set is `basic-oidc`.
 
-#### Common Parameters
+The parameters are loaded from `tests/parameters/test/${test.properties}.properties` file.
+Individual properties can be overriden from command line via `-D` params.
+
+To use a custom properties file specify `-Dtest.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Dtest.properties`.
+
+When running the tests it is also necessary to define a dataset to use. Usage is described in the section above.
+
+#### Common Test Run Parameters
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
 | `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.BasicOIDCSimulation`  |
 | `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
-| `usersPerSec` | Arrival rate of new users per second. Can be a floating point number. | `1.0` |
-| `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
-| `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `0` |
+| `usersPerSec` | Arrival rate of new users per second. Can be a floating point number. | `1.0` for BasicOIDCSimulation, `0.2` for AdminConsoleSimulation |
+| `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `15` |
+| `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `15` |
 | `measurementPeriod` | A measurement period after the system is warmed up. (seconds) | `30` |
 | `filterResults` | Whether to filter out requests which are outside of the `measurementPeriod`. | `false` |
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
-#### Addtional Parameters of `keycloak.BasicOIDCSimulation`
+#### Test Run Parameters specific to `BasicOIDCSimulation`
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
 | `badLoginAttempts` | | `0`  |
 | `refreshTokenCount` | | `0` |
 
+#### Examples:
 
-Example:
+- Run test with default test and dataset parameters:
 
-`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminConsoleSimulation -Ddataset=100u -DusersPerSec=1 -DmeasurementPeriod=60 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
+`mvn verify -P test`
+
+- Run test specific test and dataset parameters:
+
+`mvn verify -P test -Dtest.properties=basic-oidc -Ddataset=100u2c`
+
+- Run test with specific test and dataset parameters, overriding some from command line:
+
+`mvn verify -P test -Dtest.properties=admin-console -Ddataset=100u2c -DrampUpPeriod=30 -DwarmUpPeriod=60 -DusersPerSec=0.3`
 
 
 ## Monitoring
@@ -201,32 +252,6 @@ To also enable creation of PNG charts use `-Psar,gnuplot`. For this to work Gnup
 To compress the binary output with bzip add `-Dbzip=true` to the commandline.
 
 Results will be stored in folder: `tests/target/sar`.
-
-## Examples
-
-### Single-node
-
-- Provision single node of KC + DB, generate data, run test, and tear down the provisioned system:
-
-    `mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DusersPerSec=5`
-
-- Provision single node of KC + DB, generate data, no test, no teardown:
-
-    `mvn verify -Pprovision,generate-data -Ddataset=100u`
-
-- Run test against provisioned system generating 5 new users per second, ramped up over 10 seconds, then tear it down:
-
-    `mvn verify -Ptest,teardown -Ddataset=100u -DusersPerSec=5 -DrampUpPeriod=10`
-
-### Cluster
-
-- Provision a 1-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
-
-    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Ddataset=100u -DusersPerSec=5`
-
-- Provision a 2-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
-
-    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Dkeycloak.scale=2 -DusersPerRealm=200 -DusersPerSec=5`
 
 
 ## Developing tests in IntelliJ IDEA

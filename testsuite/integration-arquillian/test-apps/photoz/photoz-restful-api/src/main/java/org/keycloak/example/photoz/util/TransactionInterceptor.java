@@ -35,7 +35,7 @@ public class TransactionInterceptor {
     private Instance<EntityManager> entityManager;
 
     @AroundInvoke
-    public Object aroundInvoke(InvocationContext context) {
+    public Object aroundInvoke(InvocationContext context) throws Exception {
         EntityManager entityManager = this.entityManager.get();
         EntityTransaction transaction = entityManager.getTransaction();
 

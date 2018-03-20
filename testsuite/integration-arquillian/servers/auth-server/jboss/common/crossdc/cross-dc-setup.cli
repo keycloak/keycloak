@@ -139,4 +139,8 @@ echo *** Enable debug logging ***
 echo *** Update undertow subsystem ***
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true)
 
+echo *** Update keycloak-server subsystem, infinispan remoteStoreSecurity ***
+/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:map-put(name=properties,key=remoteStoreSecurityEnabled,value=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled:true})
+
+
 echo **** End ****
