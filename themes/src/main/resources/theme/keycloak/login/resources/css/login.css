@@ -1,6 +1,6 @@
 .login-pf body {
     background-image: url("../img/keycloak-bg.png");
-    background-size: auto;
+    background-size: cover;
 }
 
 .alert-error {
