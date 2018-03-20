@@ -228,17 +228,45 @@
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>kcinit-dist</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${containers.home}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
+                             </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.1.6</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>1.9.2</goVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>a</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/inconshreveable/mousetrap</package>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>b</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <resultName>kcinit</resultName>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                        </configuration>
+                    </execution>
+                 </executions>
             </plugin>
 
         </plugins>
