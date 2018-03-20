@@ -34,7 +34,7 @@ public abstract class AbstractExec {
 
     private boolean logStreams = Boolean.valueOf(System.getProperty("cli.log.output", "true"));
 
-    protected boolean dumpStreams;
+    protected boolean dumpStreams = true;
 
     protected String workDir = WORK_DIR;
 

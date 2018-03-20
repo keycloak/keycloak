@@ -164,7 +164,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testBadCommand() throws Exception {
         KcinitExec exe = KcinitExec.execute("covfefe");
         Assert.assertEquals(1, exe.exitCode());
-        Assert.assertEquals("stderr first line", "Unknown command: covfefe", exe.stderrLines().get(0));
+        Assert.assertEquals("stderr first line", "Error: unknown command \"covfefe\" for \"kcinit\"", exe.stderrLines().get(0));
     }
 
     //@Test
@@ -175,16 +175,21 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         exe = KcinitExec.newBuilder()
                 .argsLine("install")
                 .executeAsync();
-        exe.waitForStderr("(y/n):");
-        exe.sendLine("n");
+        //System.out.println(exe.stderrString());
+        //exe.waitForStderr("(y/n):");
+        //exe.sendLine("n");
         exe.waitForStderr("Authentication server URL [http://localhost:8080/auth]:");
         exe.sendLine(OAuthClient.AUTH_SERVER_ROOT);
+        //System.out.println(exe.stderrString());
         exe.waitForStderr("Name of realm [master]:");
         exe.sendLine("test");
+        //System.out.println(exe.stderrString());
         exe.waitForStderr("client id [kcinit]:");
         exe.sendLine("");
-        exe.waitForStderr("client secret [none]:");
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Client secret [none]:");
         exe.sendLine("password");
+        //System.out.println(exe.stderrString());
         exe.waitCompletion();
         Assert.assertEquals(0, exe.exitCode());
     }
@@ -193,13 +198,17 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testBasic() throws Exception {
         testInstall();
         // login
+        //System.out.println("login....");
         KcinitExec exe = KcinitExec.newBuilder()
                 .argsLine("login")
                 .executeAsync();
+        //System.out.println(exe.stderrString());
         exe.waitForStderr("Username:");
         exe.sendLine("wburke");
+        //System.out.println(exe.stderrString());
         exe.waitForStderr("Password:");
         exe.sendLine("password");
+        //System.out.println(exe.stderrString());
         exe.waitForStderr("Login successful");
         exe.waitCompletion();
         Assert.assertEquals(0, exe.exitCode());
@@ -233,7 +242,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, exe.exitCode());
         Assert.assertEquals(0, exe.stdoutLines().size());
         Assert.assertEquals(1, exe.stderrLines().size());
-        Assert.assertTrue(exe.stderrLines().get(0).contains("Failed to exchange token: invalid_client. Audience not found"));
+        Assert.assertTrue(exe.stderrLines().get(0), exe.stderrLines().get(0).contains("failed to exchange token: invalid_client Audience not found"));
 
         exe = KcinitExec.execute("logout");
         Assert.assertEquals(0, exe.exitCode());

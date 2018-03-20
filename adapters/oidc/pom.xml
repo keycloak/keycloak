@@ -35,7 +35,6 @@
         <module>as7-eap6</module>
         <module>installed</module>
         <module>kcinit</module>
-        <module>kcinit-dist</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
         <module>js</module>

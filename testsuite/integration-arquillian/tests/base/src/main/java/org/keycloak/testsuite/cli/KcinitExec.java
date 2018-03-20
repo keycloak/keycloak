@@ -10,9 +10,9 @@ import java.io.InputStream;
  */
 public class KcinitExec extends AbstractExec {
 
-    public static final String WORK_DIR = System.getProperty("user.dir") + "/target/containers/kcinit";
+    public static final String WORK_DIR = System.getProperty("user.dir") + "/target";
 
-    public static final String CMD = OS_ARCH.isWindows() ? "kcinit.bat" : "kcinit";
+    public static final String CMD = OS_ARCH.isWindows() ? "kcinit" : "kcinit";
 
     private KcinitExec(String workDir, String argsLine, InputStream stdin) {
         this(workDir, argsLine, null, stdin);
