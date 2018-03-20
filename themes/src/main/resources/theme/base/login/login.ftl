@@ -8,18 +8,18 @@
         <#if realm.password>
             <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
                 <div class="${properties.kcFormGroupClass!}">
-                    <label for="username" class="${properties.kcSrOnlyClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
+                    <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
 
                     <#if usernameEditDisabled??>
-                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" disabled />
+                        <input tabindex="1" id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" disabled />
                     <#else>
-                        <input tabindex="1" id="username" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" autofocus autocomplete="off" />
+                        <input tabindex="1" id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')}" placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>" type="text" autofocus autocomplete="off" />
                     </#if>
                 </div>
 
                 <div class="${properties.kcFormGroupClass!}">
-                    <label for="password" class="${properties.kcSrOnlyClass!}">${msg("password")}</label>
-                    <input tabindex="2" id="password" class="${properties.kcInputClass!} ${properties.kcInputLargeClass!}" name="password" type="password" placeholder="Password" autocomplete="off" />
+                    <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                    <input tabindex="2" id="password" class="${properties.kcInputClass!}" name="password" type="password" placeholder="Password" autocomplete="off" />
                 </div>
 
                 <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">

@@ -218,7 +218,7 @@ ul#kc-totp-supported-apps {
 .zocial,
 a.zocial  {
     width: 100%;
-    font-weight: 100;
+    font-weight: normal;
     font-size: 14px;
     text-shadow: none;
     border: 0;
@@ -248,8 +248,6 @@ a.zocial  {
 .zocial.twitter {
     background-image: none;
     border: 0;
-    font-family: "Open Sans", sans-serif;
-    font-weight: normal;
 
     box-shadow: none;
     text-shadow: none;
@@ -382,12 +380,10 @@ a.zocial  {
   box-shadow: 0 0 0;
 }
 @media (max-width: 768px) {
-    .login-pf-page .login-pf-accounts {
-      margin-left: 20px;
-      margin-right: 20px;
-    }
     .login-pf-page .card-pf{
       max-width: none;
+      margin-left: 20px;
+      margin-right: 20px;
     }
 }
 
@@ -400,11 +396,12 @@ a.zocial  {
   .login-pf-page .login-pf-social-section:first-of-type {
     padding-left: 39px;
     padding-right: 39px;
+    border-right: 1px solid #d1d1d1;
+    margin-right: -1px;
   }
   .login-pf-page .login-pf-social-section:last-of-type {
     padding-left: 40px;
     padding-right: 40px;
-    min-height: 195px;
   }
   .login-pf-page .login-pf-social-section .login-pf-social-link:last-of-type {
     margin-bottom: 0;
