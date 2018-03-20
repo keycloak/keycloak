@@ -17,17 +17,35 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(RootAuthenticationSessionEntity.ExternalizerImpl.class)
 public class RootAuthenticationSessionEntity extends SessionEntity {
 
     private String id;
     private int timestamp;
     private Map<String, AuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
+
+    public RootAuthenticationSessionEntity() {
+    }
+
+    protected RootAuthenticationSessionEntity(String realmId, String id, int timestamp, Map<String, AuthenticationSessionEntity> authenticationSessions) {
+        super(realmId);
+        this.id = id;
+        this.timestamp = timestamp;
+        this.authenticationSessions = authenticationSessions;
+    }
 
     public String getId() {
         return id;
@@ -73,5 +91,43 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
     @Override
     public String toString() {
         return String.format("RootAuthenticationSessionEntity [ id=%s, realm=%s ]", getId(), getRealmId());
+    }
+
+    public static class ExternalizerImpl implements Externalizer<RootAuthenticationSessionEntity> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, RootAuthenticationSessionEntity value) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(value.getRealmId(), output);
+
+            MarshallUtil.marshallString(value.id, output);
+            output.writeInt(value.timestamp);
+
+            KeycloakMarshallUtil.writeMap(value.authenticationSessions, KeycloakMarshallUtil.STRING_EXT, AuthenticationSessionEntity.ExternalizerImpl.INSTANCE, output);
+        }
+
+        @Override
+        public RootAuthenticationSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public RootAuthenticationSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            return new RootAuthenticationSessionEntity(
+              MarshallUtil.unmarshallString(input),     // realmId
+
+              MarshallUtil.unmarshallString(input),     // id
+              input.readInt(),                          // timestamp
+
+              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, AuthenticationSessionEntity.ExternalizerImpl.INSTANCE, size -> new ConcurrentHashMap<>(size)) // authenticationSessions
+            );
+        }
     }
 }
