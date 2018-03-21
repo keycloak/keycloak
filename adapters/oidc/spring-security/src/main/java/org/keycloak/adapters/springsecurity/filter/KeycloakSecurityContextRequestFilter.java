@@ -16,6 +16,15 @@
  */
 package org.keycloak.adapters.springsecurity.filter;
 
+import java.io.IOException;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -28,14 +37,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.GenericFilterBean;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -60,19 +61,14 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
 
         if (keycloakSecurityContext instanceof RefreshableKeycloakSecurityContext) {
             RefreshableKeycloakSecurityContext refreshableSecurityContext = (RefreshableKeycloakSecurityContext) keycloakSecurityContext;
+            KeycloakDeployment deployment = resolveDeployment(request, response);
 
-            if (refreshableSecurityContext.isActive()) {
-                KeycloakDeployment deployment = resolveDeployment(request, response);
-
-                if (deployment.isAlwaysRefreshToken()) {
-                    if (refreshableSecurityContext.refreshExpiredToken(false)) {
-                        request.setAttribute(KeycloakSecurityContext.class.getName(), refreshableSecurityContext);
-                    } else {
-                        clearAuthenticationContext();
-                    }
+            if (deployment.isAlwaysRefreshToken()) {
+                if (refreshableSecurityContext.refreshExpiredToken(false)) {
+                    request.setAttribute(KeycloakSecurityContext.class.getName(), refreshableSecurityContext);
+                } else {
+                    clearAuthenticationContext();
                 }
-            } else {
-                clearAuthenticationContext();
             }
         }
 
@@ -80,7 +76,7 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
     }
 
     @Override
-    protected void initFilterBean() throws ServletException {
+    protected void initFilterBean() {
         deploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
     }
 
