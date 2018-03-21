@@ -107,7 +107,7 @@ div.kc-logo-text span {
     text-transform: uppercase;
     letter-spacing: 3px;
     line-height: 1.2em;
-    padding: 82px 10px 20px;
+    padding: 62px 10px 20px;
     white-space: normal;
 }
 
@@ -379,11 +379,25 @@ a.zocial  {
   border-top: 0;
   box-shadow: 0 0 0;
 }
-@media (max-width: 768px) {
+
+/*tablet*/
+@media (max-width: 840px) {
     .login-pf-page .card-pf{
       max-width: none;
       margin-left: 20px;
       margin-right: 20px;
+      padding: 20px 20px 30px 20px;
+    }
+}
+@media (max-width: 767px) {
+    .login-pf-page .card-pf{
+      max-width: none;
+      margin-left: 0;
+      margin-right: 0;
+      padding-top: 0;
+    }
+    .card-pf.login-pf-accounts{
+      max-width: none;
     }
 }
 
@@ -391,17 +405,19 @@ a.zocial  {
   font-size: 15px;
   color: #72767b;
 }
+#kc-content-wrapper .row {
+  margin-left: 0;
+  margin-right: 0;
+}
 
 @media (min-width: 768px) {
   .login-pf-page .login-pf-social-section:first-of-type {
-    padding-left: 39px;
     padding-right: 39px;
     border-right: 1px solid #d1d1d1;
     margin-right: -1px;
   }
   .login-pf-page .login-pf-social-section:last-of-type {
     padding-left: 40px;
-    padding-right: 40px;
   }
   .login-pf-page .login-pf-social-section .login-pf-social-link:last-of-type {
     margin-bottom: 0;
