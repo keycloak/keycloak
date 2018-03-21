@@ -41,7 +41,7 @@ public class ConsentPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equalsIgnoreCase("grant access");
+        return PageUtils.getPageTitle(driver).contains("Grant Access to ");
     }
 
     @Override

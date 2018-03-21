@@ -111,7 +111,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
           driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
@@ -119,7 +119,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         log.debug("Logging in");
         accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        waitForPage(driver, "update account information");
+        waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
         Assert.assertTrue("We must be on correct realm right now",
@@ -158,7 +158,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
@@ -193,7 +193,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             log.debug("Clicking social " + bc.getIDPAlias());
             accountLoginPage.clickSocial(bc.getIDPAlias());
 
-            waitForPage(driver, "log in to");
+            waitForPage(driver, "log in to", true);
 
             Assert.assertTrue("Driver should be on the provider realm page right now",
                     driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
@@ -201,7 +201,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             log.debug("Logging in");
             accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-            waitForPage(driver, "update account information");
+            waitForPage(driver, "update account information", false);
 
             Assert.assertTrue(updateAccountInformationPage.isCurrent());
             Assert.assertTrue("We must be on correct realm right now",
@@ -211,7 +211,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
 
             //link account by email
-            waitForPage(driver, "account already exists");
+            waitForPage(driver, "account already exists", false);
             idpConfirmLinkPage.clickLinkAccount();
             
             String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL, 
@@ -247,7 +247,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         try {
-            waitForPage(driver, "log in to");
+            waitForPage(driver, "log in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
@@ -269,7 +269,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
         try {
-            waitForPage(driver, "log in to");
+            waitForPage(driver, "log in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
@@ -304,7 +304,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
@@ -314,10 +314,10 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
         driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.MINUTES);
 
-        waitForPage(driver, "grant access");
+        waitForPage(driver, "grant access", false);
         consentPage.cancel();
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         // Revert consentRequired
         adminClient.realm(bc.providerRealmName())
@@ -422,7 +422,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "sorry");
+        waitForPage(driver, "sorry", false);
         errorPage.assertCurrent();
         String link = errorPage.getBackToApplicationLink();
         Assert.assertTrue(link.endsWith("/auth/realms/consumer/account"));

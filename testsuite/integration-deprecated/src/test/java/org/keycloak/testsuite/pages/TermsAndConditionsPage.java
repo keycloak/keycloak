@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -31,7 +32,7 @@ public class TermsAndConditionsPage extends AbstractPage {
     private WebElement cancelButton;
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Terms and Conditions");
+        return PageUtils.getPageTitle(driver).equals("Terms and Conditions");
     }
 
     public void acceptTerms() {

@@ -180,6 +180,9 @@
 .#{$icon-prefix}-network:before {
   content: $pficon-var-network;
 }
+.#{$icon-prefix}-network-range:before {
+  content: $pficon-var-network-range;
+}
 .#{$icon-prefix}-on:before {
   content: $pficon-var-on;
 }
@@ -266,6 +269,9 @@
 .#{$icon-prefix}-running:before {
   content: $pficon-var-running;
 }
+.#{$icon-prefix}-satellite:before {
+  content: $pficon-var-satellite;
+}
 .#{$icon-prefix}-save:before {
   content: $pficon-var-save;
 }
@@ -305,6 +311,9 @@
 .#{$icon-prefix}-storage-domain:before {
   content: $pficon-var-storage-domain;
 }
+.#{$icon-prefix}-template:before {
+  content: $pficon-var-template;
+}
 .#{$icon-prefix}-tenant:before {
   content: $pficon-var-tenant;
 }
@@ -334,6 +343,9 @@
 }
 .#{$icon-prefix}-unplugged:before {
   content: $pficon-var-unplugged;
+}
+.#{$icon-prefix}-vcenter:before {
+  content: $pficon-var-vcenter;
 }
 .#{$icon-prefix}-virtual-machine:before {
   content: $pficon-var-virtual-machine;

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.PageUtils;
 import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -44,7 +45,7 @@ public class ErrorPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle() != null && driver.getTitle().equals("We're sorry...");
+        return driver.getTitle() != null && PageUtils.getPageTitle(driver).equals("We're sorry...");
     }
 
     @Override

@@ -106,6 +106,9 @@
   // Initialize Popovers
   $(document).ready(function() {
     $('[data-toggle=popover]').popovers()
+      .on('hidden.bs.popover', function (e) {
+        $(e.target).data('bs.popover').inState.click = false;
+      });
   });
 </script>
 

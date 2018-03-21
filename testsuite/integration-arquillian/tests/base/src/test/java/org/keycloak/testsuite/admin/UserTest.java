@@ -59,6 +59,7 @@ import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -69,6 +70,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -702,11 +704,11 @@ public class UserTest extends AbstractAdminTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
     }
 
     @Test
@@ -742,7 +744,7 @@ public class UserTest extends AbstractAdminTest {
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
             i++;
 
-            assertEquals("Your account has been updated.", driver.getTitle());
+            assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
         }
 
         for (MimeMessage message : greenMail.getReceivedMessages()) {
@@ -787,7 +789,7 @@ public class UserTest extends AbstractAdminTest {
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
             i++;
 
-            assertEquals("Your account has been updated.", driver.getTitle());
+            assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
         }
 
         for (MimeMessage message : greenMail.getReceivedMessages()) {
@@ -837,7 +839,7 @@ public class UserTest extends AbstractAdminTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
     }
 
     @Test
@@ -939,11 +941,11 @@ public class UserTest extends AbstractAdminTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
     }
 
     @Test
@@ -1002,7 +1004,7 @@ public class UserTest extends AbstractAdminTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
 
         String pageSource = driver.getPageSource();
 
@@ -1011,7 +1013,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
     }
 
 
@@ -1209,7 +1211,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log in to admin-client-test", driver.getTitle());
+        assertEquals("Log In", PageUtils.getPageTitle(driver));
 
         loginPage.login("user1", "password");
 

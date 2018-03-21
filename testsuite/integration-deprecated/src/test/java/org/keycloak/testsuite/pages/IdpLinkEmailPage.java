@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,7 +37,7 @@ public class IdpLinkEmailPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().startsWith("Link ");
+        return PageUtils.getPageTitle(driver).startsWith("Link ");
     }
 
     public void clickResendEmail() {

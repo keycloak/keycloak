@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>List - Red Hat&reg; Common User Experience</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../dist/css/rcue.min.css" >
+    <link rel="stylesheet" href="../dist/css/rcue-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../components/patternfly/dist/js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>List</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+<!-- empty list with expansion -->
+<h3>Basic list with expansion</h3>
+<div class="list-pf">
+  <div class="list-pf-item">
+    <div class="list-pf-container" tabindex="0">
+      <div class="list-pf-chevron">
+        <span class="fa fa-angle-right"></span>
+      </div>
+      <div class="list-pf-content">
+        First line
+      </div>
+    </div> <!-- /list-pf-container -->
+
+    <div class="list-pf-expansion collapse">
+      <div class="list-pf-container" tabindex="0">
+        <div class="list-pf-chevron">
+          <span class="fa fa-angle-right"></span>
+        </div>
+        <div class="list-pf-content">
+          This is a first level section
+        </div>
+      </div> <!-- /list-pf-container -->
+
+      <div class="list-pf-expansion collapse">
+        <div class="list-pf-container" tabindex="0">
+          <div class="list-pf-content">
+            This is a second level section
+          </div>
+        </div> <!-- /list-pf-container -->
+      </div> <!-- /list-pf-expansion level 3 -->
+
+    </div> <!-- /list-pf-expansion level 2 -->
+  </div> <!-- /list-pf-expansion level 1 -->
+  <div class="list-pf-item active">
+    <div class="list-pf-container" tabindex="0">
+      <div class="list-pf-chevron">
+        <span class="fa fa-angle-right"></span>
+      </div>
+      <div class="list-pf-content">
+        This item is open by default
+      </div>
+    </div> <!-- /list-pf-container -->
+
+    <div class="list-pf-expansion collapse in">
+      <div class="list-pf-container" tabindex="0">
+        <div class="list-pf-chevron">
+          <span class="fa fa-angle-right"></span>
+        </div>
+        <div class="list-pf-content">
+          This is a first level section
+        </div>
+      </div> <!-- /list-pf-container -->
+
+      <div class="list-pf-expansion collapse in">
+        <div class="list-pf-container" tabindex="0">
+          <div class="list-pf-content">
+            This is a second level section
+          </div>
+        </div> <!-- /list-pf-container -->
+      </div> <!-- /list-pf-expansion level 3 -->
+
+    </div> <!-- /list-pf-expansion level 2 -->
+  </div> <!-- /list-pf-expansion level 1 -->
+</div>
+
+<!-- empty list with checkbox -->
+<h3>Basic list with row selection</h3>
+<div class="list-pf">
+  <div class="list-pf-item ">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content">
+        Selectable list row content
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- empty list with expansion and checkbox -->
+<h3>Basic list with row selection and expansion</h3>
+<div class="list-pf">
+
+  <div class="list-pf-item ">
+    <div class="list-pf-container">
+      <div class="list-pf-chevron">
+        <span class="fa fa-angle-right"></span>
+      </div>
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content">
+        Expandable and selectable list row content
+      </div>
+    </div>
+
+    <!-- expansion --->
+    <div class="list-pf-expansion collapse">
+      <div class="list-pf-container" tabindex="0">
+        <div class="list-pf-content">
+          This is a second level section
+        </div>
+      </div> <!-- /list-pf-container -->
+    </div> <!-- /list-pf-expansion level 3 -->
+
+  </div>
+
+</div>
+
+<!-- empty list with expansion and checkbox -->
+<h3>Basic list with expand element instead of standard collapse</h3>
+<div class="list-pf">
+
+  <div class="list-pf-item" data-list="expansion">
+    <div class="list-pf-container">
+      <div class="list-pf-chevron">
+        <span class="fa fa-angle-right"></span>
+      </div>
+      <div class="list-pf-content">
+        <div class="list-pf-main-content">
+          <button data-list="toggle">Collapse</button>
+          <span class="list-pf-title">First line</span>
+        </div>
+      </div>
+    </div> <!-- /list-pf-container -->
+
+    <div class="list-pf-expansion collapse">
+      <div class="list-pf-container" tabindex="0">
+        <div class="list-pf-chevron">
+          <span class="fa fa-angle-right"></span>
+        </div>
+        <div class="list-pf-content">
+          This is a first level section
+        </div>
+      </div> <!-- /list-pf-container -->
+
+      <div class="list-pf-expansion collapse">
+        <div class="list-pf-container" tabindex="0">
+          <div class="list-pf-content">
+            This is a second level section
+          </div>
+        </div> <!-- /list-pf-container -->
+      </div> <!-- /list-pf-expansion level 3 -->
+
+    </div> <!-- /list-pf-expansion level 2 -->
+  </div> <!-- /list-pf-expansion level 1 -->
+
+</div>
+
+<!-- row with content -->
+<h3>List with content items</h3>
+<div class="list-pf">
+
+  <div class="list-pf-item ">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content ">
+
+            <div class="list-pf-title">Event One</div>
+            <div class="list-pf-description text-overflow-pf">Description of event one with <a href="">link text.</a></div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight1">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="list-pf-item ">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content ">
+
+            <div class="list-pf-title">Event One with a longer title</div>
+            <div class="list-pf-description text-overflow-pf">Description of event one with <a href="">link text.</a></div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight2">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="list-pf-item">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title">Nonbreakinglongtitle012345678901234567890012345678901234567890012345678901234567890</div>
+            <div class="list-pf-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lacinia euismod quam. Aliquam nec varius arcu. In dolor nibh, mattis at odio non, imperdiet faucibus elit. Aliquam erat volutpat with <a href="">link text.</a> </div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight3">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- add .text-overflow-pf to change text to ellipse instead of wrap -->
+  <div class="list-pf-item ">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title text-overflow-pf">Ellipsed text variation Nonbreakinglongtitle012345678901234567890012345678901234567890012345678901234567890</div>
+            <div class="list-pf-description text-overflow-pf">Ellipsed text variation Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lacinia euismod quam. Aliquam nec varius arcu. In dolor nibh, mattis at odio non, imperdiet faucibus elit. Aliquam erat volutpat with <a href="">link text.</a> </div>
+          </div>
+          <div class="list-pf-additional-content text-overflow-pf">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight4">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- row with main content stacked -->
+<h3>List with content items, stacked main content option</h3>
+<div class="list-pf list-pf-stacked">
+  <div class="list-pf-item">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title text-overflow-pf">Event One</div>
+            <div class="list-pf-description">This event is shown with a stacked display</div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight5" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight5">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="list-pf-item">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title text-overflow-pf">Event One with a longer title</div>
+            <div class="list-pf-description">This event is shown with a stacked display</div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight6" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight6">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="list-pf-item">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title">Nonbreakinglongtitle012345678901234567890012345678901234567890012345678901234567890</div>
+            <div class="list-pf-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lacinia euismod quam. Aliquam nec varius arcu. In dolor nibh, mattis at odio non, imperdiet faucibus elit. Aliquam erat volutpat with <a href="">link text.</a> </div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight7" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight7">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- add .text-overflow-pf to change text to ellipse instead of wrap -->
+  <div class="list-pf-item">
+    <div class="list-pf-container">
+      <div class="list-pf-select">
+        <input type="checkbox">
+      </div>
+      <div class="list-pf-content list-pf-content-flex ">
+        <div class="list-pf-left">
+          <span class="fa fa-plane list-pf-icon list-pf-icon-bordered list-pf-icon-small"></span>
+        </div>
+        <div class="list-pf-content-wrapper">
+          <div class="list-pf-main-content">
+
+            <div class="list-pf-title text-overflow-pf">Ellipsed title variation Nonbreakinglongtitle012345678901234567890012345678901234567890012345678901234567890</div>
+            <div class="list-pf-description text-overflow-pf">Ellipsed description variation Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lacinia euismod quam. Aliquam nec varius arcu. In dolor nibh, mattis at odio non, imperdiet faucibus elit. Aliquam erat volutpat with <a href="">link text.</a> </div>
+          </div>
+          <div class="list-pf-additional-content">
+            additional content
+          </div>
+        </div>
+        <div class="list-pf-actions">
+          <button class="btn btn-default">Action</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+  <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight8" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    <span class="fa fa-ellipsis-v"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight8">
+    <li><a href="#">Action</a></li>
+    <li><a href="#">Another Action</a></li>
+    <li><a href="#">Something Else Here</a></li>
+    <li role="separator" class="divider"></li>
+    <li><a href="#">Separated Link</a></li>
+  </ul>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('.list-pf').pfList();
+  });
+</script>
+
+    </div><!-- /container -->
+  </body>
+</html>

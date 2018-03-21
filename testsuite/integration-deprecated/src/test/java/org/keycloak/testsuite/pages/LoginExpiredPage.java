@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -42,7 +43,7 @@ public class LoginExpiredPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Page has expired");
+        return PageUtils.getPageTitle(driver).equals("Page has expired");
     }
 
     public void open() {
