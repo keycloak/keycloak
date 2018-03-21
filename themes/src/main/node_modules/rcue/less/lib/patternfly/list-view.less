@@ -1,0 +1,234 @@
+//
+// List View
+// --------------------------------------------------
+
+
+.list-view-pf {
+  .list-group-item {
+    align-items: flex-start;
+    .clearfix(); //IE9 fallback
+    display: flex;
+    padding-bottom: 0;
+    padding-top: 0;
+    &.active {
+      color: @list-group-link-color;
+      background-color: @list-view-active-bg;
+      z-index:auto;
+    }
+    &:hover {
+      background-color: @list-view-hover-bg;
+    }
+    @media (min-width: @screen-md-min) {
+      align-items: center;
+    }
+  }
+  .list-group-item-heading {
+    font-size: @font-size-h3;
+    small {
+      display: block;
+      font-size: (@font-size-base * .8);
+      font-weight: 400;
+    }
+    @media (min-width: @screen-md-min) {
+      flex:     1 0 calc(~"25% - 20px");
+      float: left; // IE9 fallback
+      font-size: @font-size-base;
+      margin: 0 (@grid-gutter-width/2) 0 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: calc(~"25% - 20px"); // IE9 fallback
+    }
+  }
+  .list-group-item-text {
+    color: currentColor !important; // to overwrite color change when active.
+    margin-bottom: 10px;
+    @media (min-width: @screen-md-min) {
+      flex:     1 0 auto; // it covers whats left from the title
+      float: left; // IE9 fallback
+      margin: 0 @grid-gutter-width 0 0;
+      width: calc(~"75% - 40px"); // IE9 fallback
+    }
+  }
+}
+.list-view-pf-actions {
+  float: right; // IE9 fallback
+  margin-bottom: (@grid-gutter-width/2);
+  margin-left: (@grid-gutter-width/2);
+  margin-top: (@grid-gutter-width/2);
+  order: 2;
+  button,
+  > a {
+    margin-left: (@grid-gutter-width/4);
+  }
+  .list-view-pf-top-align & {
+    align-self: flex-start;
+  }
+}
+.list-view-pf-additional-info {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  @media (min-width: @screen-md-min) {
+    flex: 1 0 auto; // it covers whats left from summary
+    float: left; // IE9 fallback
+    width: 50%; // IE9 fallback
+  }
+}
+.list-view-pf-additional-info-item {
+  align-items: center;
+  display: inline-block;
+  @supports (display: flex) {
+    display: flex;
+  }
+  margin-right: (@grid-gutter-width/2);
+  max-width:100%;
+  text-align: center;
+  &.list-view-pf-additional-info-item-stacked {
+    text-align: center;
+    flex-direction: column;
+    strong {
+      font-size: @font-size-h5;
+      line-height: 1em;
+    }
+  }
+  .pficon, .fa {
+    font-size: @font-size-h3;
+    margin-right: (@grid-gutter-width/4);
+  }
+  strong {
+    font-size: @font-size-h3;
+    font-weight: 600;
+    margin-right: 5px;
+  }
+  &:last-child {
+    margin-right: 0;
+  }
+}
+.list-view-pf-additional-info-item-donut-chart { width: 60px; }
+.list-view-pf-body {
+  align-items: center;
+  display: table-cell; //IE9 fallback
+  flex:     1;
+  min-width: 0;
+  vertical-align: top; //IE9 fallback
+  width: 100%; // IE9 fallback, it extends the cell to size of the container
+  @media (min-width: @screen-md-min) {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+  }
+}
+.list-view-pf-checkbox {
+  border-right: 1px solid @list-view-divider;
+  float: left; //IE9 fallback
+  margin-bottom: (@grid-gutter-width/2);
+  margin-right: 15px;
+  margin-top: (@grid-gutter-width/2);
+  padding: 3px (@grid-gutter-width/4) 3px 0;
+  .list-view-pf-top-align & {
+    align-self: flex-start;
+  }
+}
+.list-view-pf-description {
+  flex:     1 0 50%;
+  .list-view-pf-stacked & {
+    display: block;
+  }
+  @media (min-width: @screen-md-min) {
+    align-items: center;
+    display: flex;
+    float: left; //IE9 fallback
+    width: 50%; //IE9 fallback
+  }
+}
+.list-view-pf-left {
+  display: table-cell; //IE9 fallback
+  padding-right: (@grid-gutter-width/2);
+  text-align: center;
+  vertical-align: top; //IE9 fallback
+  .list-view-pf-calendar {
+    font-size: @font-size-small;
+    line-height: 1em;
+    strong {
+      display: block;
+      font-size: (@font-size-h2 * 2);
+      font-weight: 300;
+      line-height: 1em;
+    }
+  }
+  .pficon, .fa {
+    border-radius: 50%;
+    font-size: 2em;
+    // -md is out of alpha order to get correct bg on -danger
+    &.list-view-pf-icon-md {
+      background-color: @alert-info-bg;
+      height: 50px;
+      line-height: 50px;
+      width: 50px;
+    }
+    &.list-view-pf-icon-danger {
+      background-color: @alert-danger-bg;
+      color: @alert-danger-border;
+    }
+    &.list-view-pf-icon-info {
+      color: @alert-info-border;
+    }
+    &.list-view-pf-icon-lg {
+      background-color: @alert-info-bg;
+      height: 60px;
+      line-height: 60px;
+      width: 60px;
+    }
+    &.list-view-pf-icon-sm {
+      border: 2px solid @list-view-accented-border;
+      font-size: 1.4em;
+      height: 30px;
+      line-height: 30px;
+      width: 30px;
+      &:before {
+        display: block;
+        line-height: 26px;
+      }
+    }
+    &.list-view-pf-icon-success {
+      background-color: @alert-success-bg;
+      color: @alert-success-border;
+    }
+    &.list-view-pf-icon-warning {
+      background-color: @alert-warning-bg;
+      color: @alert-warning-border;
+    }
+  }
+}
+.list-view-pf-main-info {
+  align-items: flex-start;
+  display: flex;
+  flex:     1;
+  min-width: 0;
+  padding-bottom: (@grid-gutter-width/2);
+  padding-top: (@grid-gutter-width/2);
+  @media (min-width: @screen-md-min) {
+    align-items: center;
+    .list-view-pf-top-align & {
+      align-items: flex-start;
+    }
+  }
+}
+.list-view-pf-stacked {
+  .list-group-item-heading {
+    float: none; // IE9 fallback
+    font-size: @font-size-h3;
+    line-height: 1.2em;
+    margin-bottom: 5px;
+    margin-right: @grid-gutter-width;
+    width: auto; // IE9 fallback
+  }
+  .list-group-item-text {
+    float: none;
+    width: auto;
+  }
+}
+.list-view-pf-view {
+  margin-top: 30px;
+}

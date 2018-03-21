@@ -160,7 +160,10 @@
     border-bottom: none;
   }
   &:hover { background-color: $color-pf-blue-50; }
-  &.unread .drawer-pf-notification-message { font-weight: bold; }
+  &.unread .drawer-pf-notification-message {
+    font-weight: bold;
+    cursor: pointer;
+  }
   &.expanded-notification {
     .date {
       border-right: none;
@@ -181,10 +184,6 @@
   .expanded-notification & {
     display: inline-block;
   }
-}
-
-.drawer-pf-notifications-non-clickable .drawer-pf-notification:hover {
-  background-color: $color-pf-white;
 }
 
 .drawer-pf-title {

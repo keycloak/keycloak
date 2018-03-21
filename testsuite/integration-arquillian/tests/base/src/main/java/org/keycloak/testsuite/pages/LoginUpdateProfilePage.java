@@ -73,7 +73,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Update Account Information");
+        return PageUtils.getPageTitle(driver).equals("Update Account Information");
     }
 
     @Override

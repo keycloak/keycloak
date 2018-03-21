@@ -170,7 +170,7 @@ public class RegisterPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Register with test");
+        return PageUtils.getPageTitle(driver).equals("Register");
     }
 
     @Override

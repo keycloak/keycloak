@@ -1,0 +1,97 @@
+//
+// Charts
+// --------------------------------------------------
+
+.c3 {
+  path {
+    stroke: @table-border-color;
+  }
+  svg {
+    font-family: @font-family-base;
+  }
+}
+
+.c3-axis-x .tick line {
+  stroke: @table-border-color;
+}
+
+.c3-axis-y .tick line {
+  display: none;
+}
+
+.c3-chart-arc path {
+  stroke: @color-pf-white;
+}
+
+.c3-grid line {
+  stroke: @table-border-color;
+}
+
+.c3-line {
+  stroke-width: 2px;
+}
+
+.c3-tooltip {
+  background: @tooltip-bg;
+  .box-shadow(none);
+  .opacity(@tooltip-opacity);
+
+  td {
+    background: transparent;
+    border: 0;
+    color: @tooltip-color;
+    font-size: @font-size-base;
+    padding: 5px 10px;
+  }
+
+  th {
+    background: transparent;
+    font-size: @font-size-base;
+    padding: 5px 10px 0;
+    border-bottom: solid 2px @color-pf-black;
+  }
+
+  tr {
+    border: 0;
+    + tr > td {
+      padding-top: 0;
+    }
+  }
+}
+
+.c3-tooltip-sparkline,
+.donut-tooltip-pf {
+  background: @tooltip-bg;
+  color: @tooltip-color;
+  .opacity(@tooltip-opacity);
+  padding: 2px 6px;
+}
+
+.c3-xgrid,
+.c3-ygrid {
+  stroke-dasharray: 0 0;
+}
+
+.chart-pf-sparkline {
+  margin-left: -5px;
+  margin-right: -5px;
+}
+
+.donut-title-big-pf {
+  font-size: @donut-font-size-big;
+  font-weight: 300;
+}
+
+.donut-title-small-pf {
+  font-size: @font-size-base;
+  font-weight: 400;
+}
+
+.line-chart-pf {
+  .c3-zoom-rect {
+    opacity: 1 !important;
+    fill: @color-pf-black-100;
+    stroke: @table-border-color;
+    stroke-width: 1px;
+  }
+}

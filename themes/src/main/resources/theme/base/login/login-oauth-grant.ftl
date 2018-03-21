@@ -1,9 +1,11 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout bodyClass="oauth"; section>
-    <#if section = "title">
-        ${msg("oauthGrantTitle")}
-    <#elseif section = "header">
-    ${msg("oauthGrantTitleHtml",(realm.displayNameHtml!''))?no_esc} <strong><#if client.name??>${advancedMsg(client.name)}<#else>${client.clientId}</#if></strong>.
+    <#if section = "header">
+        <#if client.name?has_content>
+            ${msg("oauthGrantTitle",advancedMsg(client.name))}
+        <#else>
+            ${msg("oauthGrantTitle",client.clientId)}
+        </#if>
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
             <h3>${msg("oauthGrantRequest")}</h3>
@@ -11,7 +13,7 @@
                 <#if oauth.claimsRequested??>
                     <li>
                         <span>
-                            ${msg("personalInfo")}&nbsp;
+                            <strong>${msg("personalInfo")}</strong>&nbsp;
                             <#list oauth.claimsRequested as claim>
                                 ${advancedMsg(claim)}<#if claim_has_next>,&nbsp;</#if>
                             </#list>
@@ -47,12 +49,12 @@
             <form class="form-actions" action="${url.oauthAction}" method="POST">
                 <input type="hidden" name="code" value="${oauth.code}">
                 <div class="${properties.kcFormGroupClass!}">
-                    <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div id="kc-form-options">
                         <div class="${properties.kcFormOptionsWrapperClass!}">
                         </div>
                     </div>
 
-                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <div id="kc-form-buttons">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
                             <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-login" type="submit" value="${msg("doYes")}"/>
                             <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-cancel" type="submit" value="${msg("doNo")}"/>
@@ -60,6 +62,7 @@
                     </div>
                 </div>
             </form>
+            <div class="clearfix"></div>
         </div>
     </#if>
 </@layout.registrationLayout>

@@ -1,0 +1,13 @@
+.login-pf body {
+    background-image: url(../node_modules/rcue/dist/img/bg-login.png);
+    background-size: auto;
+}
+
+@media (max-width: 767px) {
+    .login-pf body {
+      background-image: none;
+    }
+    .login-pf {
+      background-color: white;
+    }
+}

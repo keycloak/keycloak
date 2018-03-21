@@ -217,6 +217,7 @@
                                                 <exclude>**/src/**</exclude>
                                                 <exclude>**/test/**</exclude>
                                                 <exclude>**/tests/**</exclude>
+                                                <exclude>**/_config.yml</exclude>
                                                 <exclude>**/api.md</exclude>
                                                 <exclude>**/AUTHORS.txt</exclude>
                                                 <exclude>**/CHANGELOG.md</exclude>
@@ -224,6 +225,7 @@
                                                 <exclude>**/HELP-US-OUT.txt</exclude>
                                                 <exclude>**/README.md</exclude>
                                                 <exclude>**/Gruntfile.js</exclude>
+                                                <exclude>**/Gemfile*</exclude>
                                                 <exclude>**/index.js</exclude>
                                                 <exclude>**/.*</exclude>
                                             </excludes>

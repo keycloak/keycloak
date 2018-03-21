@@ -52,7 +52,7 @@ public class UpdateAccountInformationPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equalsIgnoreCase("update account information");
+        return PageUtils.getPageTitle(driver).equalsIgnoreCase("update account information");
     }
 
     @Override

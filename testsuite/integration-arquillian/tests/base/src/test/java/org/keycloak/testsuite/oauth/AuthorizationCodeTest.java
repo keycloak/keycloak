@@ -30,6 +30,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
@@ -83,7 +84,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String title = driver.getTitle();
+        String title = PageUtils.getPageTitle(driver);
         Assert.assertEquals("Success code", title);
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");

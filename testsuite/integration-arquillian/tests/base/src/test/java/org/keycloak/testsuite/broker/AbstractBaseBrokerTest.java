@@ -108,7 +108,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
@@ -122,7 +122,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected void logInAsUserInIDPForFirstTime() {
         logInAsUserInIDP();
 
-        waitForPage(driver, "update account information");
+        waitForPage(driver, "update account information", false);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
         Assert.assertTrue("We must be on correct realm right now",
@@ -152,7 +152,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         try {
             Retry.execute(() -> {
                 try {
-                    waitForPage(driver, "log in to " + realm);
+                    waitForPage(driver, "log in to " + realm, true);
                 } catch (TimeoutException ex) {
                     driver.navigate().refresh();
                     log.debug("[Retriable] Timed out waiting for login page");

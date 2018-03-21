@@ -80,9 +80,6 @@ public class LoginForm extends Form {
     }
 
     public void login() {
-        labelPassword.click(); // This is a nasty trick for IE; As IE was "moving the cursor" towards the login button
-                               // it opened the internationalization menu (when present) and then clicked
-                               // one of the languages instead of the Login button
         clickLink(loginButton);
     }
 

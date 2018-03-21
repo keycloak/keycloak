@@ -1,8 +1,6 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
-    <#if section = "title">
-        ${msg("emailLinkIdpTitle", idpAlias)}
-    <#elseif section = "header">
+    <#if section = "header">
         ${msg("emailLinkIdpTitle", idpAlias)}
     <#elseif section = "form">
         <p id="instruction1" class="instruction">
