@@ -33,11 +33,10 @@ One or more scopes to associate with the resource.
 
 == Resource Attributes
 
-Resources may have attributes associated with it. These attributes can be used to provide additional information
-about a resource and to provide additional information to policies when evaluating permissions associated with a resource.
+Resources may have attributes associated with them. These attributes can be used to provide additional information about
+a resource and to provide additional information to policies when evaluating permissions associated with a resource.
 
-Each attribute is a key and value pair where the value can be a set of one or main strings. Multiple values can be defined
-for an attribute by separating each value with a comma.
+Each attribute is a key and value pair where the value can be a set of one or many strings. Multiple values can be defined for an attribute by separating each value with a comma.
 
 
 == Typed Resources

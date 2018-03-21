@@ -3,10 +3,10 @@
 
 When writing rule-based policies using JavaScript or JBoss Drools, {project_name} provides an Evaluation API that provides useful information to help determine whether a permission should be granted.
 
-This API consists of a few interfaces that provides you access to information such as:
+This API consists of a few interfaces that provide you access to information, such as
 
 * The permission being evaluated, representing both the resource and scopes being requested.
-* Obtain attributes associated with the resource being requested
+* The attributes associated with the resource being requested
 * Runtime environment and any other attribute associated with the execution context
 * Information about users such as group membership and roles
 
