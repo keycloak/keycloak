@@ -168,35 +168,10 @@ public class PolicyEnforcer {
             }
 
             if (resource == null) {
-                if (enforcerConfig.isCreateResources()) {
-                    LOGGER.debugf("Creating resource on server for path [%s].", pathConfig);
-                    ResourceRepresentation representation = new ResourceRepresentation();
-
-                    representation.setName(resourceName);
-                    representation.setType(pathConfig.getType());
-                    representation.setUri(path);
-
-                    HashSet<ScopeRepresentation> scopes = new HashSet<>();
-
-                    for (String scopeName : pathConfig.getScopes()) {
-                        ScopeRepresentation scope = new ScopeRepresentation();
-
-                        scope.setName(scopeName);
-
-                        scopes.add(scope);
-                    }
-
-                    representation.setScopes(scopes);
-
-                    ResourceRepresentation registrationResponse = protectedResource.create(representation);
-
-                    pathConfig.setId(registrationResponse.getId());
-                } else {
-                    throw new RuntimeException("Could not find matching resource on server with uri [" + path + "] or name [" + resourceName + "]. Make sure you have created a resource on the server that matches with the path configuration.");
-                }
-            } else {
-                pathConfig.setId(resource.getId());
+                throw new RuntimeException("Could not find matching resource on server with uri [" + path + "] or name [" + resourceName + "]. Make sure you have created a resource on the server that matches with the path configuration.");
             }
+
+            pathConfig.setId(resource.getId());
 
             PathConfig existingPath = null;
 

@@ -29,10 +29,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class PolicyEnforcerConfig {
 
-    @JsonProperty("create-resources")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean createResources = Boolean.FALSE;
-
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
@@ -48,10 +44,6 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UserManagedAccessConfig userManagedAccess;
 
-    public Boolean isCreateResources() {
-        return this.createResources;
-    }
-
     public List<PathConfig> getPaths() {
         return this.paths;
     }
@@ -66,10 +58,6 @@ public class PolicyEnforcerConfig {
 
     public UserManagedAccessConfig getUserManagedAccess() {
         return this.userManagedAccess;
-    }
-
-    public void setCreateResources(Boolean createResources) {
-        this.createResources = createResources;
     }
 
     public void setPaths(List<PathConfig> paths) {
