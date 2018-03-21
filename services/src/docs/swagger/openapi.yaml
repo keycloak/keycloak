@@ -1,0 +1,909 @@
+openapi: '3.0.0'
+info:
+  title: Keycloak Admin REST API
+  version: '3.4'
+  description: This is a REST API reference for the Keycloak Admin
+  license:
+    name: 'Apache 2.0'
+    url: https://www.apache.org/licenses/LICENSE-2.0
+paths:
+  /{realm}/attack-detection/brute-force/users:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+    delete:
+      tags: 
+        - attackDetection
+      summary: Clear any user login failures for all users
+      operationId: clearAttackDetection
+      description: This can release temporary disabled users
+      responses:
+        204:
+          description: success
+  /{realm}/attack-detection/brute-force/users/{userId}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - attackDetection
+      operationId: getAttackDetectionStatusForUser
+      summary: Get status of a username in brute force detection
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disabled:
+                    type: boolean
+                  numFailures:
+                    type: integer
+                  lastFailure:
+                    type: integer
+                  lastIPFailure:
+                    type: string
+    delete:
+      tags:
+        - attackDetection
+      operationId: clearAttackDetectionStatusForUser
+      summary: Clear any user login failures for the user. 
+      description: This can release temporary disabled user
+      responses:
+        204:
+          description: success
+  /{realm}/users:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - users
+      operationId: createUser
+      summary: Create a new user
+      description: Username must be unique
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRepresentation'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    get:
+      tags:
+        - users
+      operationId: listUsers
+      summary: Get users. 
+      description: Returns a list of users, filtered according to query parameters
+      parameters:
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: first
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: firstName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lastName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: max
+          in: query
+          description: Maximum results size (defaults to 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: search
+          in: query
+          description: A String contained in username, first or last name, or email
+          required: false
+          schema:
+            type: string
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRepresentation'
+  /{realm}/users/count:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getUserCount
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+  /{realm}/users/{id}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getUser
+      description: Get representation of the user
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRepresentation'
+    put:
+      tags:
+        - users
+      operationId: updateUser
+      description: Update the user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRepresentation'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - users
+      operationId: deleteUser
+      description: Delete the user
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/consents:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getCensents
+      description: Get consents granted by the user
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  additionalProperties:
+                    type: object
+  /{realm}/users/{id}/consents/{client}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+      - name: client
+        in: path
+        description: Client id
+        required: true
+        schema:
+          type: string
+    delete:
+      tags:
+        - users
+      operationId: deleteCensents
+      description: Revoke consent and offline tokens for particular client from user
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/disable-credential-types:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: disableCredentials
+      description: Disable all credentials for a user of a specific type
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/execute-actions-email:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: sendUpdateMail
+      summary: Send a update account email to the user
+      description: An email contains a link the user can click to perform a set of required actions. The redirectUri and clientId parameters are optional. If no redirect is given, then there will be no link back to click after actions have completed. Redirect uri must be a valid uri for the particular clientId.
+      parameters:
+        - name: client_id
+          in: query
+          description: Client id
+          required: false
+          schema:
+            type: string
+        - name: lifespan
+          in: query
+          description: Number of seconds after which the generated token expires
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: redirect_uri
+          in: query
+          description: Redirect uri
+          required: false
+          schema:
+            type: string
+      requestBody:
+        description: required actions the user needs to complete
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /{realm}/users/{id}/federated-identity:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getFederatedIdentities
+      summary: Get social logins associated with the user
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FederatedIdentityRepresentation'
+  /{realm}/users/{id}/federated-identity/{provider}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+      - name: provider
+        in: path
+        description: Social login provider id
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - users
+      operationId: addFederatedIdentity
+      summary: Add a social login provider to the user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FederatedIdentityRepresentation'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - users
+      operationId: deleteFederatedIdentity
+      summary: Remove a social login provider from user
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/groups:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getUserGroups
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupRepresentation'
+  /{realm}/users/{id}/groups/{groupId}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: addUserGroup
+      responses:
+        204:
+          description: success
+    delete:
+      tags:
+        - users
+      operationId: deleteUserGroup
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/impersonation:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - users
+      operationId: impersonateUser
+      description: Impersonate the user
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+  /{realm}/users/{id}/logout:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - users
+      operationId: logoutUser
+      summary: Remove all user sessions associated with the user
+      description: Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/offline-sessions/{clientId}:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+      - name: clientId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - users
+      operationId: getOfflineSessions
+      description: Get offline sessions associated with the user and client
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSessionRepresentation'
+  /{realm}/users/{id}/remove-totp:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: removeTotp
+      summary: Remove TOTP from the user
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/reset-password:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: resetPassword
+      summary: Set up a temporary password for the user
+      description: User will have to reset the temporary password next time they log in
+      requestBody:
+          description: A Temporary password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialRepresentation'
+      responses:
+        204:
+          description: success
+  /{realm}/users/{id}/send-verify-email:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: sendVerifyMail
+      summary: Send an email-verification email to the user
+      description: An email contains a link the user can click to verify their email address. The redirectUri and clientId parameters are optional. The default for the redirect is the account client
+      parameters:
+        - name: client_id
+          in: query
+          description: Client id
+          required: false
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          description: Redirect uri
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /{realm}/users/{id}/sessions:
+    parameters:
+      - name: realm
+        in: path
+        description: realm name (not id!)
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - users
+      operationId: getUserSessions
+      summary: Get sessions associated with the user.
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSessionRepresentation'
+components:
+  schemas:
+    GroupRepresentation:
+      type: object
+      properties:
+        access:
+          type: object
+          additionalProperties:
+            type: boolean
+        attributes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        clientRoles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        id:
+          type: string
+        name:
+          type: string
+        path:
+          type: string
+        realmRoles:
+          type: array
+          items:
+            type: string
+        subGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRepresentation'
+    UserRepresentation:
+      type: object
+      properties:
+        access:
+          additionalProperties:
+            type: boolean
+        attributes:
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        clientCensents:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserConsentRepresentation'
+        clientRoles:
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        createdTimestamp:
+          type: integer
+          format: int64
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialRepresentation'
+        disableableCredentialTypes:
+          type: array
+          items:
+            type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        enabled:
+          type: boolean
+        federatedIdentities:
+          type: array
+          items:
+            $ref: '#/components/schemas/FederatedIdentityRepresentation'
+        federationLink:
+          type: string
+        firstName:
+          type: string
+        groups:
+          type: array
+          items:
+            type: string
+        id:
+          type: string
+        lastName:
+          type: string
+        notBefore:
+          type: integer
+          format: int32
+        origin:
+          type: string
+        realmRoles:
+          type: array
+          items:
+            type: string
+        requiredActions:
+          type: array
+          items:
+            type: string
+        self:
+          type: string
+        serviceAccountClientId:
+          type: string
+        username:
+          type: string
+    Response:
+      type: string
+    UserConsentRepresentation:
+      type: object
+      properties:
+        clientId:
+          type: string
+        createdDate:
+          type: integer
+          format: int64
+        grantedClientRoles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        grantedProtocolMappers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        grantedRealmRoles:
+          type: array
+          items:
+            type: string
+        lastUpdatedDate:
+          type: integer
+          format: int64
+    CredentialRepresentation:
+      type: object
+      properties:
+        algorithm:
+          type: string
+        config:
+          $ref: '#/components/schemas/MultivaluedHashMap'
+        counter:
+          type: integer
+          format: int32
+        createdDate:
+          type: integer
+          format: int64
+        device:
+          type: string
+        digits:
+          type: integer
+          format: int32
+        hashIterations:
+          type: integer
+          format: int32
+        hashedSaltedValue:
+          type: string
+        period:
+          type: integer
+          format: int32
+        salt:
+          type: string
+        temporary:
+          type: boolean
+        type:
+          type: string
+        value:
+          type: string
+    FederatedIdentityRepresentation:
+      type: object
+      properties:
+        identityProvider:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+    MultivaluedHashMap:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        loadFactor:
+          type: number
+          format: float
+        threshold:
+          type: integer
+          format: int32
+    UserSessionRepresentation:
+      type: object
+      properties:
+        clients:
+          type: object
+          additionalProperties:
+            type: string
+        id:
+          type: string
+        ipAddress:
+          type: string
+        lastAccess:
+          type: integer
+          format: int64
+        start:
+          type: integer
+          format: int64
+        userId:
+          type: string
+        username:
+          type: string
