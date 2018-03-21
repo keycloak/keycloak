@@ -243,19 +243,30 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>a</id>
+                        <id>get-mousetrap</id>
                         <goals>
                             <goal>get</goal>
                         </goals>
                         <configuration>
                             <packages>
                                 <package>github.com/inconshreveable/mousetrap</package>
-                                <package>github.com/keycloak/kcinit</package>
                             </packages>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>b</id>
+                        <id>get-kcinit</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <branch>0.1</branch>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-kcinit</id>
                         <goals>
                             <goal>build</goal>
                         </goals>
@@ -264,6 +275,7 @@
                             <packages>
                                 <package>github.com/keycloak/kcinit</package>
                             </packages>
+                            <branch>0.1</branch>
                         </configuration>
                     </execution>
                  </executions>
