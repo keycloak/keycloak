@@ -1,0 +1,78 @@
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xs="http://www.w3.org/2001/XMLSchema" Consent="urn:oasis:names:tc:SAML:2.0:consent:obtained" Destination="http://localhost:8080/auth/realms/ECAS/broker/saml/endpoint" ID="_11fb0d9a-26ea-4105-ba35-67d184456c55" InResponseTo="ID_abd144a0-9cd8-43cd-9c7c-861b6aa48755" IssueInstant="2018-01-29T14:45:47.774Z" Version="2.0">
+    <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://joe-docker:7002/cas/login</saml2:Issuer>
+    <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+            <ds:Reference URI="#_11fb0d9a-26ea-4105-ba35-67d184456c55">
+                <ds:Transforms>
+                    <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                    <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="xs" />
+                    </ds:Transform>
+                </ds:Transforms>
+                <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+                <ds:DigestValue>[omitted]</ds:DigestValue>
+            </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>[ommitted]</ds:SignatureValue>
+        <ds:KeyInfo>
+            <ds:X509Data>
+                <ds:X509SubjectName>[ommitted]</ds:X509SubjectName>
+                <ds:X509Certificate>[ommitted]</ds:X509Certificate>
+                <ds:X509Certificate>[ommitted]</ds:X509Certificate>
+            </ds:X509Data>
+        </ds:KeyInfo>
+    </ds:Signature>
+    <saml2p:Status>
+        <saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success" />
+        <saml2p:StatusMessage>Successful ECAS authentication</saml2p:StatusMessage>
+    </saml2p:Status>
+    <saml2:Assertion ID="_90dc4b3e-77a2-461d-90ce-9b1960f91eb5" IssueInstant="2018-01-29T14:45:47.774Z" Version="2.0">
+        <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://joe-docker:7002/cas/login</saml2:Issuer>
+        <saml2:Subject>
+            <saml2:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">chucknorris</saml2:NameID>
+            <saml2:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml2:SubjectConfirmationData InResponseTo="ID_abd144a0-9cd8-43cd-9c7c-861b6aa48755" NotOnOrAfter="2018-01-29T15:15:47.774Z" Recipient="http://localhost:8080/auth/realms/ECAS/broker/saml/endpoint" />
+            </saml2:SubjectConfirmation>
+        </saml2:Subject>
+        <saml2:Conditions NotBefore="2018-01-29T14:15:47.774Z" NotOnOrAfter="2018-01-29T15:15:47.774Z">
+            <saml2:AudienceRestriction>
+                <saml2:Audience>http://localhost:8080/auth/realms/ECAS</saml2:Audience>
+            </saml2:AudienceRestriction>
+            <saml2:OneTimeUse />
+            <saml2:ProxyRestriction Count="0" />
+        </saml2:Conditions>
+        <saml2:AuthnStatement AuthnInstant="2018-01-29T14:45:47.774Z" SessionIndex="_5d64dcef-5e81-496f-bfad-0109b0a5c2f0" SessionNotOnOrAfter="2018-01-29T15:15:47.774Z">
+            <saml2:AuthnContext>
+                <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef>
+            </saml2:AuthnContext>
+        </saml2:AuthnStatement>
+        <saml2:AttributeStatement>
+            <saml2:Attribute FriendlyName="Organisation" Name="domain" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">eu.europa.ec</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="Organisation Username" Name="domainUsername" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">chucknorris</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="Email" Name="email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">texasranger@chuck_norris.com.eu</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="First Name" Name="firstName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">Chuck</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="Groups" Name="groups" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">INTERNET</saml2:AttributeValue>
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">DG_DIGIT</saml2:AttributeValue>
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">LIVENEWS</saml2:AttributeValue>
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">TEXAS_RANGER</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="Last Name" Name="lastName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">NORRIS</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute FriendlyName="User Identifier" Name="user" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">chucknorris</saml2:AttributeValue>
+            </saml2:Attribute>
+        </saml2:AttributeStatement>
+    </saml2:Assertion>
+</saml2p:Response>
