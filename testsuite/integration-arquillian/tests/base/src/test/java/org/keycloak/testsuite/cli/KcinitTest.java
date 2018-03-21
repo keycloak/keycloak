@@ -135,6 +135,10 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             user = session.users().addUser(realm, "wburke");
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
             user.setEnabled(true);
+            user = session.users().addUser(realm, "tbrady");
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
+            user.setEnabled(true);
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         });
     }
 
@@ -157,7 +161,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
         });
 
-        Thread.sleep(10000000);
+        Thread.sleep(100000000);
     }
 
     @Test
