@@ -64,6 +64,7 @@ public enum SAMLAssertionQNames implements HasQName {
     // Attribute names
     ATTR_ADDRESS(null, "Address"),
     ATTR_AUTHN_INSTANT(null, "AuthnInstant"),
+    ATTR_COUNT(null, "Count"),
     ATTR_DNS_NAME(null, "DNSName"),
     ATTR_FORMAT(null, "Format"),
     ATTR_FRIENDLY_NAME(null, "FriendlyName"),
