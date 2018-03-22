@@ -1,6 +1,6 @@
 .login-pf body {
-    background-image: url(../node_modules/rcue/dist/img/bg-login.png);
-    background-size: auto;
+  background: url("../node_modules/rcue/dist/img/bg-login.png") no-repeat left top fixed;
+  background-size: auto;
 }
 
 @media (max-width: 767px) {
@@ -10,4 +10,9 @@
     .login-pf {
       background-color: white;
     }
+}
+@media (min-width: 767px) {
+  .login-pf {
+    background-attachment: fixed;
+  }
 }
