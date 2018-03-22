@@ -88,7 +88,7 @@
             </column>
         </createTable>
 
-        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RESOURCE_ATTRIBUTE_PK" tableName="RESOURCE_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="RES_ATTR_PK" tableName="RESOURCE_ATTRIBUTE"/>
         <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_ATTRIBUTE" constraintName="FK_5HRM2VLF9QL5FU022KQEPOVBR" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
     </changeSet>
 </databaseChangeLog>
