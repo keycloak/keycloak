@@ -1,10 +1,10 @@
 :project_name: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 3.4.0.CR1
-:project_versionMvn: 3.4.0.CR1
-:project_versionNpm: 3.4.0-cr.1
-:project_versionDoc: 3.4
+:project_version: 4.0.0.Beta1
+:project_versionMvn: 4.0.0.Beta1
+:project_versionNpm: 4.0.0-beta.1
+:project_versionDoc: 4.0
 :project_images: keycloak-images
 :project_doc_base_url: http://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
