@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.keycloak.bom</groupId>
         <artifactId>keycloak-bom-parent</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <groupId>org.keycloak.bom</groupId>
@@ -38,12 +38,12 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-core</artifactId>
-                <version>4.0.0.CR1-SNAPSHOT</version>
+                <version>4.0.0.Beta2-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi</artifactId>
-                <version>4.0.0.CR1-SNAPSHOT</version>
+                <version>4.0.0.Beta2-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

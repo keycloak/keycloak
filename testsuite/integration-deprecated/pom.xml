@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -283,7 +283,7 @@
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-test-apps-servlets</artifactId>
-            <version>4.0.0.CR1-SNAPSHOT</version>
+            <version>4.0.0.Beta2-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
