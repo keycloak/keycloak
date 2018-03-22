@@ -62,7 +62,7 @@ public class JsonWebTokenTest {
     }
 
     @Test
-    public void isActiveReturnFalseWhenBeforeTimeInFuture() throws IOException {
+    public void isActiveReturnFalseWhenBeforeTimeInFuture() {
         int currentTime = Time.currentTime();
         int futureTime = currentTime + 1;
         JsonWebToken jsonWebToken = new JsonWebToken();
@@ -71,7 +71,7 @@ public class JsonWebTokenTest {
     }
 
     @Test
-    public void isActiveReturnTrueWhenBeforeTimeInPast() throws IOException {
+    public void isActiveReturnTrueWhenBeforeTimeInPast() {
         int currentTime = Time.currentTime();
         int pastTime = currentTime - 1;
         JsonWebToken jsonWebToken = new JsonWebToken();
@@ -80,12 +80,21 @@ public class JsonWebTokenTest {
     }
 
     @Test
-    public void isActiveShouldAllowTimeSkewWhenBeforeTimeInPast() throws IOException {
-        int currentTime = Time.currentTime();
-        int pastTime = currentTime - 50;
+    public void isActiveShouldReturnTrueWhenWhenBeforeTimeInFutureWithinTimeSkew() {
+        int notBeforeTime = Time.currentTime() + 1;
+        int allowedClockSkew = 1;
         JsonWebToken jsonWebToken = new JsonWebToken();
-        jsonWebToken.notBefore(pastTime);
-        assertTrue(jsonWebToken.isActive(51));
+        jsonWebToken.notBefore(notBeforeTime);
+        assertTrue(jsonWebToken.isActive(allowedClockSkew));
+    }
+
+    @Test
+    public void isActiveShouldReturnFalseWhenWhenBeforeTimeInFutureOutsideTimeSkew() {
+        int notBeforTime = Time.currentTime() + 2;
+        int allowedClockSkew = 1;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.notBefore(notBeforTime);
+        assertFalse(jsonWebToken.isActive(allowedClockSkew));
     }
 
 }
