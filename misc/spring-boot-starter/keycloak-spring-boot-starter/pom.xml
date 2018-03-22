@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-spring-boot-starter-parent</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <artifactId>keycloak-spring-boot-starter</artifactId>
     <name>Keycloak :: Spring :: Boot :: Default ::  Starter</name>

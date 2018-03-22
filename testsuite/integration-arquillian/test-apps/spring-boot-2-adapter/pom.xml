@@ -23,7 +23,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 
-        <keycloak.version>4.0.0.CR1-SNAPSHOT</keycloak.version>
+        <keycloak.version>4.0.0.Beta2-SNAPSHOT</keycloak.version>
 
 	    <repo.url />
 
