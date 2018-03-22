@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-saml-eap-integration-pom</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

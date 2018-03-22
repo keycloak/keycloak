@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-saml-as7-eap6-adapter-dist-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
