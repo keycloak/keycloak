@@ -177,21 +177,21 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
         performTests(() -> {
             login("alice", "alice");
 
-            navigateTo("/resource/a/resource-d");
+            navigateTo("/a/a/resource-d");
             assertFalse(wasDenied());
             navigateTo("/resource/b/resource-d");
             assertFalse(wasDenied());
 
             updatePermissionPolicies("Pattern 5 Permission", "Deny Policy");
             login("alice", "alice");
-            navigateTo("/resource/a/resource-d");
+            navigateTo("/a/a/resource-d");
             assertTrue(wasDenied());
-            navigateTo("/resource/b/resource-d");
+            navigateTo("/a/b/resource-d");
             assertTrue(wasDenied());
 
             updatePermissionPolicies("Pattern 5 Permission", "Default Policy");
             login("alice", "alice");
-            navigateTo("/resource/b/resource-d");
+            navigateTo("/a/b/resource-d");
             assertFalse(wasDenied());
         });
     }

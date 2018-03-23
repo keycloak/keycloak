@@ -17,11 +17,11 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,13 +34,13 @@ import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.ResourceRepresentation;
-import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectedResource;
+import org.keycloak.common.util.PathMatcher;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -69,8 +69,9 @@ public class PolicyEnforcer {
                 }
             }
         });
-        this.pathMatcher = new PathMatcher(this.authzClient);
+
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
+        this.pathMatcher = createPathMatcher(authzClient);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Initialization complete. Path configurations:");
@@ -104,11 +105,11 @@ public class PolicyEnforcer {
         return context;
     }
 
-    PolicyEnforcerConfig getEnforcerConfig() {
+    public PolicyEnforcerConfig getEnforcerConfig() {
         return enforcerConfig;
     }
 
-    AuthzClient getClient() {
+    public AuthzClient getClient() {
         return authzClient;
     }
 
@@ -116,11 +117,11 @@ public class PolicyEnforcer {
         return paths;
     }
 
-    void addPath(PathConfig pathConfig) {
-        paths.put(pathConfig.getPath(), pathConfig);
+    public PathMatcher<PathConfig> getPathMatcher() {
+        return pathMatcher;
     }
 
-    KeycloakDeployment getDeployment() {
+    public KeycloakDeployment getDeployment() {
         return deployment;
     }
 
@@ -144,7 +145,7 @@ public class PolicyEnforcer {
     }
 
     private Map<String, PathConfig> configureDefinedPaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
+        Map<String, PathConfig> paths = Collections.synchronizedMap(new LinkedHashMap<String, PathConfig>());
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
             ResourceRepresentation resource;
@@ -197,45 +198,85 @@ public class PolicyEnforcer {
         LOGGER.info("Querying the server for all resources associated with this application.");
         Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
-        for (String id : protectedResource.findAll()) {
-            ResourceRepresentation resourceDescription = protectedResource.findById(id);
+        if (!enforcerConfig.getLazyLoadPaths()) {
+            for (String id : protectedResource.findAll()) {
+                ResourceRepresentation resourceDescription = protectedResource.findById(id);
 
-            if (resourceDescription.getUri() != null) {
-                PathConfig pathConfig = createPathConfig(resourceDescription);
-                paths.put(pathConfig.getPath(), pathConfig);
+                if (resourceDescription.getUri() != null) {
+                    PathConfig pathConfig = PathConfig.createPathConfig(resourceDescription);
+                    paths.put(pathConfig.getPath(), pathConfig);
+                }
             }
         }
 
         return paths;
     }
 
-    static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
-        PathConfig pathConfig = new PathConfig();
+    private PathMatcher<PathConfig> createPathMatcher(final AuthzClient authzClient) {
+        final PathCache pathCache = new PathCache(100, 30000);
 
-        pathConfig.setId(resourceDescription.getId());
-        pathConfig.setName(resourceDescription.getName());
+        return new PathMatcher<PathConfig>() {
+            @Override
+            public PathConfig matches(String targetUri) {
+                PathConfig pathConfig = pathCache.get(targetUri);
 
-        String uri = resourceDescription.getUri();
+                if (pathCache.containsKey(targetUri) || pathConfig != null) {
+                    return pathConfig;
+                }
 
-        if (uri == null || "".equals(uri.trim())) {
-            throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
-        }
+                pathConfig = super.matches(targetUri);
 
-        pathConfig.setPath(uri);
+                if (enforcerConfig.getLazyLoadPaths() && (pathConfig == null || pathConfig.getPath().contains("*"))) {
+                    try {
+                        List<ResourceRepresentation> matchingResources = authzClient.protection().resource().findByMatchingUri(targetUri);
 
-        List<String> scopeNames = new ArrayList<>();
+                        if (!matchingResources.isEmpty()) {
+                            pathConfig = PathConfig.createPathConfig(matchingResources.get(0));
+                            paths.put(pathConfig.getPath(), pathConfig);
+                        }
+                    } catch (Exception cause) {
+                        LOGGER.errorf(cause, "Could not lazy load paths from server");
+                        return null;
+                    }
+                }
 
-        for (ScopeRepresentation scope : resourceDescription.getScopes()) {
-            scopeNames.add(scope.getName());
-        }
+                pathCache.put(targetUri, pathConfig);
 
-        pathConfig.setScopes(scopeNames);
-        pathConfig.setType(resourceDescription.getType());
+                return pathConfig;
+            }
 
-        return pathConfig;
-    }
+            @Override
+            protected String getPath(PathConfig entry) {
+                return entry.getPath();
+            }
 
-    public PathMatcher getPathMatcher() {
-        return pathMatcher;
+            @Override
+            protected Collection<PathConfig> getPaths() {
+                return paths.values();
+            }
+
+            @Override
+            protected PathConfig resolvePathConfig(PathConfig originalConfig, String path) {
+                if (originalConfig.hasPattern()) {
+                    ProtectedResource resource = authzClient.protection().resource();
+                    List<ResourceRepresentation> search = resource.findByUri(path);
+
+                    if (!search.isEmpty()) {
+                        // resource does exist on the server, cache it
+                        ResourceRepresentation targetResource = search.get(0);
+                        PathConfig config = PathConfig.createPathConfig(targetResource);
+
+                        config.setScopes(originalConfig.getScopes());
+                        config.setMethods(originalConfig.getMethods());
+                        config.setParentConfig(originalConfig);
+                        config.setEnforcementMode(originalConfig.getEnforcementMode());
+
+                        return config;
+                    }
+                }
+
+                return null;
+            }
+        };
     }
 }

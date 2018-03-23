@@ -65,7 +65,7 @@ public class ProtectionService {
 
         ResteasyProviderFactory.getInstance().injectProperties(resourceManager);
 
-        ResourceService resource = new ResourceService(resourceServer, identity, resourceManager, this.authorization);
+        ResourceService resource = new ResourceService(resourceServer, identity, resourceManager);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

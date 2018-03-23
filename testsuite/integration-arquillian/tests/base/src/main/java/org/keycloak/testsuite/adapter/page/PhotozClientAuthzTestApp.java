@@ -203,10 +203,16 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
         this.loginPage.form().login(username, password);
         waitForPageToLoad();//guess
-        
-        // simple check if we are at the consent page, if so just click 'Yes'
-        if (this.consentPage.isCurrent()) {
-            consentPage.confirm();
+
+        try {
+            if (!isCurrent()) {
+                // simple check if we are at the consent page, if so just click 'Yes'
+                if (this.consentPage.isCurrent()) {
+                    consentPage.confirm();
+                }
+            }
+        } catch (Exception ignore) {
+            // ignore errors when checking consent page, if an error tests will also fail
         }
 
         pause(WAIT_AFTER_OPERATION);
