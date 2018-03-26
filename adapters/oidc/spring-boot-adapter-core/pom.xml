@@ -55,7 +55,7 @@
       <artifactId>keycloak-spring-security-adapter</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
-
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
