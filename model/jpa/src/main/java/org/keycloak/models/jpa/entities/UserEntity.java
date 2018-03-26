@@ -19,6 +19,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.Access;
@@ -69,12 +70,15 @@ public class UserEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
+    @Nationalized
     @Column(name = "USERNAME")
     protected String username;
+    @Nationalized
     @Column(name = "FIRST_NAME")
     protected String firstName;
     @Column(name = "CREATED_TIMESTAMP")
     protected Long createdTimestamp;
+    @Nationalized
     @Column(name = "LAST_NAME")
     protected String lastName;
     @Column(name = "EMAIL")

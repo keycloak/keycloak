@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -61,8 +63,10 @@ public class RoleEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
 
+    @Nationalized
     @Column(name = "NAME")
     private String name;
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
     @Column(name = "SCOPE_PARAM_REQUIRED")
