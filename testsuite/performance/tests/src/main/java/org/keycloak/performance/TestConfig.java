@@ -103,6 +103,10 @@ public class TestConfig {
         serverUrisList = Arrays.asList(serverUris.split(" "));
         serverUrisIterator = new LoopingIterator<>(serverUrisList);
     }
+    
+    // assertion properties
+    public static final int maxFailedRequests = Integer.getInteger("maxFailedRequests", 0);
+    public static final int maxMeanReponseTime = Integer.getInteger("maxMeanReponseTime", 300);
 
     // Users iterators by realm
     private static final ConcurrentMap<String, Iterator<UserInfo>> usersIteratorMap = new ConcurrentHashMap<>();
@@ -170,6 +174,13 @@ public class TestConfig {
                 clientRolesPerUser, 
                 clientRolesPerClient, 
                 hashIterations);
+    }
+    
+    public static String toStringAssertionProperties() {
+        return String.format("  maxFailedRequests: %s\n"
+                + "  maxMeanReponseTime: %s",
+                maxFailedRequests,
+                maxMeanReponseTime);
     }
     
     public static Iterator<UserInfo> sequentialUsersIterator(final String realm) {

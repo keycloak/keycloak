@@ -89,7 +89,9 @@ class LogLine {
     LogLine parse() {
         String[] cols = rawLine.split("\\t");
 
-        if ("RUN".equals(cols[2])) {
+        if ("ASSERTION".equals(cols[0])) {
+            type = Type.ASSERTION;
+        } else if ("RUN".equals(cols[2])) {
             type = Type.RUN;
             simulationClass = cols[0];
             simulationId = cols[1];
@@ -139,6 +141,9 @@ class LogLine {
      */
     public String compose() {
         switch (type()) {
+            case ASSERTION: {
+                return rawLine;
+            }
             case RUN: {
                 return simulationClass + "\t" + simulationId + "\t" + type.caption() + "\t" + start + "\t"+ description +"\t2.0\t";
             }
@@ -160,6 +165,7 @@ class LogLine {
 
 
     enum Type {
+        ASSERTION("ASSERTION"),
         RUN("RUN"),
         REQUEST("REQUEST\t"),
         USER_START("USER\tSTART"),

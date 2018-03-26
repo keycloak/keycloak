@@ -23,6 +23,8 @@ abstract class CommonSimulation extends Simulation {
   println()
   println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
   println()
+  println("Using assertion properties:\n" + TestConfig.toStringAssertionProperties)
+  println()
   println("Timestamps: \n" + TestConfig.toStringTimestamps)
   println()
   

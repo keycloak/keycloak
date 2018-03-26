@@ -192,6 +192,11 @@ public class LogProcessor {
             LogLine line;
             while ((line = reader.readLine()) != null) {
 
+                if (line.type() == LogLine.Type.ASSERTION) {
+                    output.println(line.rawLine());
+                    continue;
+                }
+
                 if (line.type() == LogLine.Type.RUN) {
                     // adjust start time of simulation
                     line.setStart(start);
