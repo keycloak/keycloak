@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -51,6 +53,7 @@ public class ClientTemplateEntity {
     private String id;
     @Column(name = "NAME")
     private String name;
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientTemplate")
