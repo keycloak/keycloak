@@ -41,6 +41,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -77,6 +78,7 @@ public class PolicyEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
 
