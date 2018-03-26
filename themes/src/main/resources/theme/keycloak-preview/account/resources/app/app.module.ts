@@ -26,6 +26,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { KeycloakService } from './keycloak-service/keycloak.service';
 import { KEYCLOAK_HTTP_PROVIDER } from './keycloak-service/keycloak.http';
+import {KeycloakGuard} from './keycloak-service/keycloak.guard';
 
 import {ResponsivenessService} from './responsiveness-service/responsiveness.service'
 
@@ -38,7 +39,6 @@ import { TopNavComponent } from './top-nav/top-nav.component';
 import { NotificationComponent } from './top-nav/notification.component';
 import { ToastNotifier } from './top-nav/toast.notifier';
 import { SideNavComponent } from './side-nav/side-nav.component';
-import { PageNotFoundComponent } from './content/page-not-found/page-not-found.component';
 
 /* Routing Module */
 import { AppRoutingModule } from './app-routing.module';
@@ -65,6 +65,7 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
   ],
   providers: [
     KeycloakService,
+    KeycloakGuard,
     KEYCLOAK_HTTP_PROVIDER,
     ResponsivenessService,
     AccountServiceClient,

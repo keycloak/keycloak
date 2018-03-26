@@ -1,5 +1,8 @@
-<app-top-nav></app-top-nav>
-<app-side-nav></app-side-nav>
+<div *ngIf="kcService.authenticated()">
+    <app-top-nav [showSideNav]="showSideNav"></app-top-nav>
+</div>
+
+<app-side-nav *ngIf="showSideNav"></app-side-nav>
 
 
 <div class="container-fluid container-pf-alt-nav-pf-vertical-alt {{this.contentWidthClass}}"> <!-- collapsed-nav hidden-nav -->

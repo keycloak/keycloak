@@ -17,6 +17,9 @@
             <#if msg??>
                 var locale = '${locale}';
                 var l18n_msg = JSON.parse('${msg?no_esc}');
+            <#else>
+                var locale = 'en';
+                var l18n_msg = {};
             </#if>
         </script>
 
@@ -51,24 +54,30 @@
         <!-- iPhone non-retina icon (iOS < 7) -->
         <link rel="apple-touch-icon-precomposed" sizes="57x57"
               href="${resourceUrl}/node_modules/patternfly/dist/img/apple-touch-icon-precomposed-57.png">
-        
-        <script src="${authUrl}/js/keycloak.js"></script>
-        
-        <!--
-          This somewhat complicated script is a performance enahancement. We
-          don't want to load the systemjs and angular stuff until Keycloak has
-          checked with the server to see if we are logged in.  So, the js below
-          is only loaded after the redirect.  This was made more complex by the
-          fact that to do it this way we needed to make sure that some scripts
-          are not loaded until others are finished.
+        <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly.min.css" rel="stylesheet"
+              media="screen, print">
+        <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
+              media="screen, print">
 
-          It's possible that this enhancement could cause slower performance in
-          some cases because of the aformentioned serial loading.  So I've left
-          the old code commented out.
-         -->
+        <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+        <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
+        <script src="${authUrl}/js/keycloak.js"></script>
+
+<!--
+  This somewhat complicated script is a performance enahancement. We
+  don't want to load the systemjs and angular stuff until Keycloak has
+  checked with the server to see if we are logged in.  So, the js below
+  is only loaded after the redirect.  This was made more complex by the
+  fact that to do it this way we needed to make sure that some scripts
+  are not loaded until others are finished.
+
+  It's possible that this enhancement could cause slower performance in
+  some cases because of the aformentioned serial loading.  So I've left
+  the old code commented out.
+        -->
         <script>
             var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
-            keycloak.init({onLoad: 'login-required'}).success(function(authenticated) {
+            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 var loadjs = function (url,loadListener) {
                     const script = document.createElement("script");
                     script.src = resourceUrl + url;
@@ -82,74 +91,129 @@
                         System.import('${resourceUrl}/main.js').catch(function (err) {
                             console.error(err);
                         });
+                        if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
                     });
                 });
             }).error(function() {
                 alert('failed to initialize keycloak');
             });
         </script>
-        
-    <!-- Old code to kick off angular ---------------------
-        // Polyfill(s) for older browsers
-        <script src="${resourceUrl}/node_modules/core-js/client/shim.min.js"></script>
-        
-        <script src="${resourceUrl}/node_modules/zone.js/dist/zone.min.js"></script>
-        <script src="${resourceUrl}/node_modules/systemjs/dist/system.src.js"></script>
 
-        <script src="${resourceUrl}/systemjs.config.js"></script>
-        <script src="${authUrl}/js/keycloak.js"></script>
-        <script>
-            var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
-            keycloak.init({onLoad: 'login-required'}).success(function(authenticated) {
-                System.import('${resourceUrl}/main.js').catch(function (err) {
-                    console.error(err);
-                });
-            }).error(function() {
-                alert('failed to initialize keycloak');
-            });
-        </script>-->
-     
-        <!-- We should save these css and js into variables and then load in
-             main.ts for better performance.  These might be loaded twice.
+
+   <!-- TODO: We should save these css and js into variables and then load in
+        main.ts for better performance.  These might be loaded twice.
         -->
         <#if properties.styles?has_content>
             <#list properties.styles?split(' ') as style>
-            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+        <link href="${resourceUrl}/${style}" rel="stylesheet"/>
             </#list>
+    <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
         </#if>
-            
+
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
-            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
             </#list>
         </#if>
-    </head>
+        </head>
+    <body>
 
-    <app-root>
-        <style>
-            .kc-background {
-                background: url('${resourceUrl}/app/assets/img/keycloak-bg-min.png') top left no-repeat;
-                background-size: cover;
-            }
+        
+        
+<!-- Top Navigation -->
+        <nav class="navbar navbar-pf-alt">
 
-            .logo-centered {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
+            <div class="navbar-header">
+                <a href="http://www.keycloak.org" class="navbar-brand">
+                    <img class="navbar-brand-icon" type="image/svg+xml" src="${resourceUrl}/app/assets/img/keycloak-logo-min.png" alt="" width="auto" height="30px"/>
+                </a>
+            </div>
+            <nav class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                </ul>
+                
+                <!-- This sign in button is only displayed in the rare case where we go directly to this page and we aren't logged in.
+                     Note javascript code above that changes its visibility for that case.  Also, because we are not logged in
+                     we are unable to localize the button's message.  Not sure what to do about that yet.
+                -->
+                <ul class="nav navbar-nav navbar-right navbar-iconic">
+                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg" type="button">Sign In</button></li>
+                </ul>
+            </nav>
+        </nav>
+        
+<!--Top Nav -->
+        
+<!-- Home Page --->
+    <div class="cards-pf" id="welcomeScreen">
+        <div><h1 class="text-center">Welcome to Keycloak Account Management</h1></div>
+        <div class="container-fluid container-cards-pf">
+            <div class="row row-cards-pf">
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
+                        <div class="card-pf-body">
+                            <div class="card-pf-top-element">
+                                <span class="fa pficon-user card-pf-icon-circle"></span>
+                            </div>
+                            <h2 class="card-pf-title text-center">
+                                Personal Info
+                            </h2>
+                            <h3 class="card-pf-info text-center">
+                                <a href="${baseUrl}/#/account">Account</a>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
+                        <div class="card-pf-body">
+                            <div class="card-pf-top-element">
+                                <span class="fa fa-shield card-pf-icon-circle"></span>
+                            </div>
+                            <h2 class="card-pf-title text-center">
+                                Account Security
+                            </h2>
+                            <h3 class="card-pf-info text-center">
+                                More stuff goes here
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
+                        <div class="card-pf-body">
+                            <div class="card-pf-top-element">
+                                <span class="fa fa-th card-pf-icon-circle"></span>
+                            </div>
+                            <h2 class="card-pf-title text-center">
+                                Applications
+                            </h2>
+                            <h3 class="card-pf-info text-center">
+                                More stuff goes here
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
+                        <div class="card-pf-body">
+                            <div class="card-pf-top-element">
+                                <span class="fa pficon-repository card-pf-icon-circle"></span>
+                            </div>
+                            <h2 class="card-pf-title text-center">
+                                My Resources
+                            </h2>
+                            <h3 class="card-pf-info text-center">
+                                More stuff goes here
+                            </h3>
+                        </div>
+                    </div>
+                </div>
 
-            .kc-logo-text {
-                background-image: url("${resourceUrl}/app/assets/img/keycloak-logo-text-min.png");
-                background-repeat: no-repeat;
-                width: 250px;
-                height: 38px;
-            }
-        </style>
+            </div>
+        </div>
+    </div>
 
-        <body class="cards-pf kc-background">
-            <div class='logo-centered kc-logo-text'/>
-        </body>
-    </app-root>
-
+        <app-root></app-root>
+    </body>
 </html>

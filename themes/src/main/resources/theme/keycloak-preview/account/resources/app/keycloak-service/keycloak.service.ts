@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 import {Injectable} from '@angular/core';
+import {KeycloakLoginOptions} from './keycloak.d';
 
 // If using a local keycloak.js, uncomment this import.  With keycloak.js fetched
 // from the server, you get a compile-time warning on use of the Keycloak()
 // method below.  I'm not sure how to fix this, but it's certainly cleaner
 // to get keycloak.js from the server.
 // 
-//import * as Keycloak from './keycloak';
-
-declare var Keycloak: any;
+import * as Keycloak from './keycloak';
 
 export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;
@@ -63,12 +62,12 @@ export class KeycloakService {
         return KeycloakService.keycloakAuth.authenticated;
     }
 
-    login() {
-        KeycloakService.keycloakAuth.login();
+    login(options?: KeycloakLoginOptions) {
+        KeycloakService.keycloakAuth.login(options);
     }
 
-    logout() {
-        KeycloakService.keycloakAuth.logout();
+    logout(redirectUri?: string) {
+        KeycloakService.keycloakAuth.logout({redirectUri: redirectUri});
     }
 
     account() {

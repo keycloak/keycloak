@@ -40,6 +40,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.theme.beans.MessageFormatterMethod;
 
 /**
  * Created by st on 29/03/17.
@@ -101,7 +102,9 @@ public class AccountConsole {
                 if (auth != null) {
                     Locale locale = session.getContext().resolveLocale(auth.getUser());
                     map.put("locale", locale.toLanguageTag());
-                    map.put("msg", messagesToJsonString(theme.getMessages(locale)));
+                    Properties messages = theme.getMessages(locale);
+                    map.put("javaMessages", new MessageFormatterMethod(locale, messages));
+                    map.put("msg", messagesToJsonString(messages));
                 }
             } catch (Exception e) {
                 logger.warn("Failed to load messages", e);

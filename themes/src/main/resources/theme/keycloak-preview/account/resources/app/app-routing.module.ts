@@ -17,19 +17,23 @@
 import { NgModule }             from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
+import {KeycloakGuard} from './keycloak-service/keycloak.guard';
+
 import { HomePageComponent } from './content/home-page/home-page.component';
 
 declare const resourceUrl: string;
 
 export const routes: Routes = [
-    { path: '', component: HomePageComponent },
-    { path: 'account', loadChildren: resourceUrl + '/app/content/account-page/account.module.js#AccountModule' },
-    { path: 'password', loadChildren: resourceUrl + '/app/content/password-page/password.module.js#PasswordModule' },
-    { path: 'authenticator', loadChildren: resourceUrl + '/app/content/authenticator-page/authenticator.module.js#AuthenticatorModule' },
-    { path: 'sessions', loadChildren: resourceUrl + '/app/content/sessions-page/sessions.module.js#SessionsModule' },
-    { path: 'applications', loadChildren: resourceUrl + '/app/content/applications-page/applications.module.js#ApplicationsModule' },
-    { path: ':**', loadChildren: resourceUrl + '/app/content/page-not-found/page-not-found.module.js#PageNotFoundModule' },
-];
+        {path: '', canActivateChild:[KeycloakGuard], children: [
+            { path: 'account', loadChildren: resourceUrl + '/app/content/account-page/account.module.js#AccountModule' },
+            { path: 'password', loadChildren: resourceUrl + '/app/content/password-page/password.module.js#PasswordModule' },
+            { path: 'authenticator', loadChildren: resourceUrl + '/app/content/authenticator-page/authenticator.module.js#AuthenticatorModule' },
+            { path: 'sessions', loadChildren: resourceUrl + '/app/content/sessions-page/sessions.module.js#SessionsModule' },
+            { path: 'applications', loadChildren: resourceUrl + '/app/content/applications-page/applications.module.js#ApplicationsModule' },
+            { path: ':**', loadChildren: resourceUrl + '/app/content/page-not-found/page-not-found.module.js#PageNotFoundModule' },
+            ]
+        }
+    ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],

@@ -22,7 +22,6 @@ import { AppModule } from './app/app.module';
 //import { environment } from './environments/environment';
 
 import { KeycloakService, KeycloakClient } from './app/keycloak-service/keycloak.service';
-//import * as Keycloak from './keycloak';
 
 
 //if (environment.production) {
@@ -36,39 +35,8 @@ declare const keycloak: KeycloakClient;
 
 KeycloakService.setKeycloakAuth(keycloak);
 
-const noLogin: boolean = false; // convenient for development
-
-loadScript('/node_modules/bootstrap/dist/js/bootstrap.min.js');
-loadScript('/node_modules/patternfly/dist/js/patternfly.min.js');
-loadCss('/node_modules/patternfly/dist/css/patternfly.min.css');
-loadCss('/node_modules/patternfly/dist/css/patternfly-additions.min.css');
 loadCss('/styles.css');
 platformBrowserDynamic().bootstrapModule(AppModule);
-
-/*
-if (noLogin) {
-    platformBrowserDynamic().bootstrapModule(AppModule);
-} else {
-    KeycloakService.init(authUrl + '/realms/' + realm + '/account/keycloak.json',
-                         {onLoad: 'login-required'})
-        .then(() => {
-            //alert('stop here');
-            loadScript('/node_modules/jquery/dist/jquery.min.js');
-            loadScript('/node_modules/bootstrap/dist/js/bootstrap.min.js');
-            loadScript('/node_modules/jquery-match-height/dist/jquery.matchHeight-min.js');
-            loadScript('/node_modules/patternfly/dist/js/patternfly.min.js');
-            platformBrowserDynamic().bootstrapModule(AppModule);
-        })
-        .catch((e: any) => {
-            console.log('Error in bootstrap: ' + JSON.stringify(e));
-        });
-}*/
-
-function loadScript(url:string) {
-    const script = document.createElement("script");
-    script.src = resourceUrl + url;
-    document.head.appendChild(script); 
-}
 
 function loadCss(url:string) {
     const link = document.createElement("link");
