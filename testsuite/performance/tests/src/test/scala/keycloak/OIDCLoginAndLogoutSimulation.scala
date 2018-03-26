@@ -17,5 +17,10 @@ class OIDCLoginAndLogoutSimulation extends CommonSimulation {
   val usersScenario = scenario("Logging-in Users").exec(loginAndLogoutScenario.chainBuilder)
 
   setUp(usersScenario.inject(defaultInjectionProfile).protocols(httpDefault))
-  
+
+  .assertions(
+    global.failedRequests.count.lessThan(TestConfig.maxFailedRequests + 1),
+    global.responseTime.mean.lessThan(TestConfig.maxMeanReponseTime)
+  )
+    
 }
