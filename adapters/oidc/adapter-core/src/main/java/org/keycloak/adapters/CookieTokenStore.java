@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -28,17 +27,19 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CookieTokenStore {
 
-    private static final Logger LOG = Logger.getLogger(CookieTokenStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CookieTokenStore.class);
     private static final String DELIM = "___";
 
     public static void setTokenCookie(KeycloakDeployment deployment, HttpFacade facade, RefreshableKeycloakSecurityContext session) {
-        LOG.debugf("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
+        LOG.debug("Set new {} cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
         String accessToken = session.getTokenString();
         String idToken = session.getIdTokenString();
         String refreshToken = session.getRefreshToken();
@@ -61,7 +62,7 @@ public class CookieTokenStore {
 
         String[] tokens = cookieVal.split(DELIM);
         if (tokens.length != 3) {
-            LOG.warnf("Invalid format of %s cookie. Count of tokens: %s, expected 3", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, tokens.length);
+            LOG.warn("Invalid format of {} cookie. Count of tokens: {}, expected 3", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, tokens.length);
             return null;
         }
 
