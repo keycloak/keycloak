@@ -116,7 +116,7 @@ public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
         session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
     }
 
-    //@Test
+    @Test
     public void testConsole() throws Exception {
         testingClient.server().run(IllegalAdminUpgradeTest::setupUsers);
         Thread.sleep(10000000);
