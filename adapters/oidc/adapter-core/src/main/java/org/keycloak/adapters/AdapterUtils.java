@@ -17,9 +17,10 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.representations.AccessToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Set;
@@ -30,7 +31,7 @@ import java.util.UUID;
  */
 public class AdapterUtils {
 
-    private static final Logger LOG = Logger.getLogger(AdapterUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AdapterUtils.class);
 
     public static String generateId() {
         return UUID.randomUUID().toString();
