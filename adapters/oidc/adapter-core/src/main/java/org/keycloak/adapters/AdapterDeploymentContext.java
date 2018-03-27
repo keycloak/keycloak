@@ -19,7 +19,6 @@ package org.keycloak.adapters;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
@@ -29,6 +28,8 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,7 +40,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class AdapterDeploymentContext {
-    private static final Logger LOG = Logger.getLogger(AdapterDeploymentContext.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AdapterDeploymentContext.class);
     protected KeycloakDeployment deployment;
     protected KeycloakConfigResolver configResolver;
 
