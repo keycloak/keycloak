@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -26,6 +25,8 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.cert.X509Certificate;
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class BearerTokenRequestAuthenticator {
-    private final static Logger LOG = Logger.getLogger(BearerTokenRequestAuthenticator.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BearerTokenRequestAuthenticator.class);
     protected String tokenString;
     protected AccessToken token;
     protected String surrogate;
@@ -90,9 +91,9 @@ public class BearerTokenRequestAuthenticator {
             try {
                 JWSInput jwsInput = new JWSInput(tokenString);
                 String wireString = jwsInput.getWireString();
-                LOG.tracef("\taccess_token: %s", wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+                LOG.trace("\taccess_token: {}", wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
             } catch (JWSInputException e) {
-                LOG.errorf(e, "Failed to parse access_token: %s", tokenString);
+                LOG.error("Failed to parse access_token: " + tokenString, e);
             }
         }
         try {
