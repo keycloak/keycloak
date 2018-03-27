@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.jboss.resteasy.util.Base64;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -69,26 +76,42 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
@@ -102,6 +125,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -109,6 +134,8 @@ import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
@@ -206,6 +233,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected SalesPostAutodetectServlet salesPostAutodetectServletPage;
+
+    @Page
+    protected EcpSP ecpSPPage;
 
     public static final String FORBIDDEN_TEXT = "HTTP status code: 403";
     public static final String WEBSPHERE_FORBIDDEN_TEXT = "Error reported: 403";
@@ -338,6 +368,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = SalesPostAutodetectServlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPostAutodetect() {
         return samlServletDeployment(SalesPostAutodetectServlet.DEPLOYMENT_NAME, "sales-post-autodetect/WEB-INF/web.xml", SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EcpSP.DEPLOYMENT_NAME)
+    protected static WebArchive ecpSp() {
+        return samlServletDeployment(EcpSP.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Override
@@ -978,22 +1013,30 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testErrorHandlingUnsigned() throws Exception {
-        Client client = ClientBuilder.newClient();
-        // make sure
-        Response response = client.target(employeeServletPage.toString()).request().get();
-        response.close();
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeServletPage.toString() + "/saml")
+                .destination(employeeSigServletPage.toString() + "/saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
-        BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
-                .relayState(null);
         Document document = builder.buildDocument();
-        URI uri = binding.redirectBinding(document).generateURI(employeeServletPage.toString() + "/saml", false);
-        response = client.target(uri).request().get();
-        String errorPage = response.readEntity(String.class);
-        response.close();
-        Assert.assertEquals(403, response.getStatus());
+
+        new SamlClientBuilder()
+                .addStep((client, currentURI, currentResponse, context) ->
+                        Binding.REDIRECT.createSamlUnsignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document))
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("INVALID_SIGNATURE"))));
+    }
+
+    @Test
+    public void testErrorHandlingSigned() throws Exception {
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
+                .destination(employeeSigServletPage.toString() + "/saml")
+                .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
+                .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        Document document = builder.buildDocument();
+
+        new SamlClientBuilder()
+                .addStep((client, currentURI, currentResponse, context) ->
+                        Binding.REDIRECT.createSamlSignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document, REALM_PRIVATE_KEY, REALM_PUBLIC_KEY))
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("ERROR_STATUS"))));
     }
 
     @Test
@@ -1287,6 +1330,166 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         Assert.assertEquals(200, response.getStatus());
         response.close();
         client.close();
+    }
+
+    @Test
+    public void testSuccessfulEcpFlow() throws Exception {
+        Response authnRequestResponse = ClientBuilder.newClient().target(ecpSPPage.toString()).request()
+                .header("Accept", "text/html; application/vnd.paos+xml")
+                .header("PAOS", "ver='urn:liberty:paos:2003-08' ;'urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp'")
+                .get();
+
+        SOAPMessage authnRequestMessage = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authnRequestResponse.readEntity(byte[].class)));
+
+        //printDocument(authnRequestMessage.getSOAPPart().getContent(), System.out);
+
+        Iterator<SOAPHeaderElement> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
+        SOAPHeaderElement ecpRequestHeader = it.next();
+        NodeList idpList = ecpRequestHeader.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
+
+        assertThat("No IDPList returned from Service Provider", idpList.getLength(), is(1));
+
+        NodeList idpEntries = idpList.item(0).getChildNodes();
+
+        assertThat("No IDPEntry returned from Service Provider", idpEntries.getLength(), is(1));
+
+        String singleSignOnService = null;
+
+        for (int i = 0; i < idpEntries.getLength(); i++) {
+            Node item = idpEntries.item(i);
+            NamedNodeMap attributes = item.getAttributes();
+            Node location = attributes.getNamedItem("Loc");
+
+            singleSignOnService = location.getNodeValue();
+        }
+
+        assertThat("Could not obtain SSO Service URL", singleSignOnService, notNullValue());
+
+        Document authenticationRequest = authnRequestMessage.getSOAPBody().getFirstChild().getOwnerDocument();
+        String username = "pedroigor";
+        String password = "password";
+        String pair = username + ":" + password;
+        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+
+        Response authenticationResponse = ClientBuilder.newClient().target(singleSignOnService).request()
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .post(Entity.entity(DocumentUtil.asString(authenticationRequest), "text/xml"));
+
+        assertThat(authenticationResponse.getStatus(), is(OK.getStatusCode()));
+
+        SOAPMessage responseMessage  = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authenticationResponse.readEntity(byte[].class)));
+
+        //printDocument(responseMessage.getSOAPPart().getContent(), System.out);
+
+        SOAPHeader responseMessageHeaders = responseMessage.getSOAPHeader();
+
+        NodeList ecpResponse = responseMessageHeaders.getElementsByTagNameNS(JBossSAMLURIConstants.ECP_PROFILE.get(), JBossSAMLConstants.RESPONSE__ECP.get());
+
+        assertThat("No ECP Response", ecpResponse.getLength(), is(1));
+
+        Node samlResponse = responseMessage.getSOAPBody().getFirstChild();
+
+        assertThat(samlResponse, notNullValue());
+
+        ResponseType responseType = (ResponseType) SAMLParser.getInstance().parse(samlResponse);
+        StatusCodeType statusCode = responseType.getStatus().getStatusCode();
+
+        assertThat(statusCode.getValue().toString(), is(JBossSAMLURIConstants.STATUS_SUCCESS.get()));
+        assertThat(responseType.getDestination(), is(ecpSPPage.toString() + "/"));
+        assertThat(responseType.getSignature(), notNullValue());
+        assertThat(responseType.getAssertions().size(), is(1));
+
+        SOAPMessage samlResponseRequest = MessageFactory.newInstance().createMessage();
+
+        samlResponseRequest.getSOAPBody().addDocument(responseMessage.getSOAPBody().extractContentAsDocument());
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        samlResponseRequest.writeTo(os);
+
+        Response serviceProviderFinalResponse = ClientBuilder.newClient().target(responseType.getDestination()).request()
+                .post(Entity.entity(os.toByteArray(), "application/vnd.paos+xml"));
+
+        Map<String, NewCookie> cookies = serviceProviderFinalResponse.getCookies();
+
+        Invocation.Builder resourceRequest = ClientBuilder.newClient().target(responseType.getDestination()).request();
+
+        for (NewCookie cookie : cookies.values()) {
+            resourceRequest.cookie(cookie);
+        }
+
+        Response resourceResponse = resourceRequest.get();
+        assertThat(resourceResponse.readEntity(String.class), containsString("pedroigor"));
+    }
+
+    @Test
+    public void testInvalidCredentialsEcpFlow() throws Exception {
+        Response authnRequestResponse = ClientBuilder.newClient().target(ecpSPPage.toString()).request()
+                .header("Accept", "text/html; application/vnd.paos+xml")
+                .header("PAOS", "ver='urn:liberty:paos:2003-08' ;'urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp'")
+                .get();
+
+        SOAPMessage authnRequestMessage = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authnRequestResponse.readEntity(byte[].class)));
+        Iterator<SOAPHeaderElement> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:liberty:paos:2003-08", "Request"));
+
+        it.next();
+
+        it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
+        SOAPHeaderElement ecpRequestHeader = it.next();
+        NodeList idpList = ecpRequestHeader.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
+
+        assertThat("No IDPList returned from Service Provider", idpList.getLength(), is(1));
+
+        NodeList idpEntries = idpList.item(0).getChildNodes();
+
+        assertThat("No IDPEntry returned from Service Provider", idpEntries.getLength(), is(1));
+
+        String singleSignOnService = null;
+
+        for (int i = 0; i < idpEntries.getLength(); i++) {
+            Node item = idpEntries.item(i);
+            NamedNodeMap attributes = item.getAttributes();
+            Node location = attributes.getNamedItem("Loc");
+
+            singleSignOnService = location.getNodeValue();
+        }
+
+        assertThat("Could not obtain SSO Service URL", singleSignOnService, notNullValue());
+
+        Document authenticationRequest = authnRequestMessage.getSOAPBody().getFirstChild().getOwnerDocument();
+        String username = "pedroigor";
+        String password = "baspassword";
+        String pair = username + ":" + password;
+        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+
+        Response authenticationResponse = ClientBuilder.newClient().target(singleSignOnService).request()
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .post(Entity.entity(DocumentUtil.asString(authenticationRequest), "application/soap+xml"));
+
+        assertThat(authenticationResponse.getStatus(), is(OK.getStatusCode()));
+
+        SOAPMessage responseMessage  = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authenticationResponse.readEntity(byte[].class)));
+        Node samlResponse = responseMessage.getSOAPBody().getFirstChild();
+
+        assertThat(samlResponse, notNullValue());
+
+        StatusResponseType responseType = (StatusResponseType) SAMLParser.getInstance().parse(samlResponse);
+        StatusCodeType statusCode = responseType.getStatus().getStatusCode();
+
+        assertThat(statusCode.getStatusCode().getValue().toString(), is(not(JBossSAMLURIConstants.STATUS_SUCCESS.get())));
+    }
+
+    public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        transformer.transform(doc,
+                new StreamResult(new OutputStreamWriter(out, "UTF-8")));
     }
 
     private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {

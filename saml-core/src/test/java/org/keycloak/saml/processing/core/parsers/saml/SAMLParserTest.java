@@ -280,6 +280,11 @@ public class SAMLParserTest {
     }
 
     @Test
+    public void testProxyRestrictionTagHandling() throws Exception {
+        assertParsed("KEYCLOAK-6412-response-with-proxy-restriction.xml", ResponseType.class);
+    }
+
+    @Test
     public void testSaml20MetadataEntityDescriptorIdP() throws Exception {
         EntityDescriptorType entityDescriptor = assertParsed("saml20-entity-descriptor-idp.xml", EntityDescriptorType.class);
 

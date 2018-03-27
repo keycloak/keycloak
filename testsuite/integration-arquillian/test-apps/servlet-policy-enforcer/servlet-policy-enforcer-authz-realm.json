@@ -107,6 +107,14 @@
                     {
                         "name": "Pattern 12",
                         "uri": "/realm_uri"
+                    },
+                    {
+                        "name": "Pattern 13",
+                        "uri": "/keycloak-6623/*"
+                    },
+                    {
+                        "name": "Pattern 14",
+                        "uri": "/keycloak-6623/sub-resource/*"
                     }
                 ],
                 "policies": [
@@ -256,6 +264,26 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "resources": "[\"Pattern 12\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 13 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 13\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 14 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 14\"]",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }

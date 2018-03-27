@@ -36,7 +36,7 @@ public class IdpConfirmLinkPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("Account already exists");
+        return PageUtils.getPageTitle(driver).equals("Account already exists");
     }
 
     public String getMessage() {

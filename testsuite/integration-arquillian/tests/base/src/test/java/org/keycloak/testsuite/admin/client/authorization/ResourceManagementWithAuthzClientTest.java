@@ -83,6 +83,8 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
             return scope;
         }).collect(Collectors.toSet()));
 
+        resourceRepresentation.setAttributes(created.getAttributes());
+
         return resourceRepresentation;
     }
 
@@ -107,6 +109,8 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
 
             return scope;
         }).collect(Collectors.toSet()));
+
+        resource.setAttributes(newResource.getAttributes());
 
         return resource;
     }

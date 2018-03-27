@@ -20,6 +20,8 @@ package org.keycloak.authorization.client.representation;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -49,6 +51,7 @@ public class ResourceRepresentation {
     private String iconUri;
     private String owner;
     private Boolean ownerManagedAccess;
+    private Map<String, List<String>> attributes;
 
     /**
      * Creates a new instance.
@@ -203,5 +206,13 @@ public class ResourceRepresentation {
                 ", owner='" + owner + '\'' +
                 ", scopes=" + scopes +
                 '}';
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
     }
 }

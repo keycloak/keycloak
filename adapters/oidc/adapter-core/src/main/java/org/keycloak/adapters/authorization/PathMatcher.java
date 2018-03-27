@@ -95,7 +95,9 @@ class PathMatcher {
                 }
 
                 if (WILDCARD == expectedUri.charAt(expectedUri.length() - 1)) {
-                    matchingAnyPath = entry;
+                    if (matchingAnyPath == null || matchingAnyPath.getPath().length() < matchingUri.length()) {
+                        matchingAnyPath = entry;
+                    }
                 } else {
                     int suffixIndex = expectedUri.indexOf(WILDCARD + ".");
 

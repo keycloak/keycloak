@@ -3,19 +3,14 @@ package org.keycloak.example.photoz.album;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthorizationContext;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
-import org.keycloak.example.photoz.ErrorResponse;
 import org.keycloak.example.photoz.entity.Album;
 import org.keycloak.example.photoz.util.Transaction;
-import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.JsonSerialization;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -28,16 +23,16 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import javax.ws.rs.core.HttpHeaders;
+import org.jboss.logging.Logger;
 
 @Path("/album")
 @Transaction
 public class AlbumService {
 
-    private static volatile long nextId = 0;
+    private final Logger log = Logger.getLogger(AlbumService.class);
 
     public static final String SCOPE_ALBUM_VIEW = "album:view";
     public static final String SCOPE_ALBUM_DELETE = "album:delete";
@@ -50,33 +45,35 @@ public class AlbumService {
 
     @POST
     @Consumes("application/json")
-    public Response create(Album newAlbum, @QueryParam("user") String username) {
-        newAlbum.setId(++nextId);
-
-        if (username == null) {
-            username = request.getUserPrincipal().getName();
+    public Response create(Album newAlbum, @QueryParam("user") String invalidUser, @Context HttpHeaders headers) {
+        printAuthHeaders(headers);
+        
+        String userId = request.getUserPrincipal().getName();
+        
+        if (invalidUser != null) {
+            userId = invalidUser;
         }
+        
+        newAlbum.setUserId(userId);
 
-        newAlbum.setUserId(username);
-        Query queryDuplicatedAlbum = this.entityManager.createQuery("from Album where name = :name and userId = :userId");
-
-        queryDuplicatedAlbum.setParameter("name", newAlbum.getName());
-        queryDuplicatedAlbum.setParameter("userId", username);
-
-        if (!queryDuplicatedAlbum.getResultList().isEmpty()) {
-            throw new ErrorResponse("Name [" + newAlbum.getName() + "] already taken. Choose another one.", Status.CONFLICT);
+        log.debug("PERSISTING " + newAlbum);
+        entityManager.persist(newAlbum);
+        try {
+            createProtectedResource(newAlbum);
+        } catch (RuntimeException e) {
+            log.debug("ERROR " + e);
+            entityManager.remove(newAlbum);
+            throw e;
         }
-
-        this.entityManager.persist(newAlbum);
-
-        createProtectedResource(newAlbum);
 
         return Response.ok(newAlbum).build();
     }
 
     @Path("{id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@PathParam("id") String id, @Context HttpHeaders headers) {
+        printAuthHeaders(headers);
+        
         Album album = this.entityManager.find(Album.class, Long.valueOf(id));
 
         try {
@@ -113,6 +110,7 @@ public class AlbumService {
     }
 
     private void createProtectedResource(Album album) {
+        log.debug("Creating ProtectedResource for " + album);
         try {
             HashSet<ScopeRepresentation> scopes = new HashSet<>();
 
@@ -145,7 +143,7 @@ public class AlbumService {
             }
 
             protection.resource().delete(search.get(0).getId());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Could not search protected resource.", e);
         }
     }
@@ -160,5 +158,12 @@ public class AlbumService {
 
     private KeycloakSecurityContext getKeycloakSecurityContext() {
         return KeycloakSecurityContext.class.cast(request.getAttribute(KeycloakSecurityContext.class.getName()));
+    }
+
+    private void printAuthHeaders(HttpHeaders headers) {
+        log.debug("-----------------Authorization headers--------------------------");
+        for (String authHeader : headers.getRequestHeader(HttpHeaders.AUTHORIZATION)) {
+            log.debug(authHeader);
+        }
     }
 }

@@ -20,6 +20,7 @@ import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.arquillian.annotation.*;
 
 import java.io.*;
+import java.util.concurrent.TimeoutException;
 
 import org.keycloak.testsuite.adapter.servlet.cluster.AbstractSAMLAdapterClusterTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
@@ -30,6 +31,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.wildfly.extras.creaper.core.*;
 import org.wildfly.extras.creaper.core.online.*;
 import org.wildfly.extras.creaper.core.online.operations.*;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 
 /**
@@ -52,13 +54,14 @@ public class EAPSAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
     }
 
     @Override
-    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, CliException, NumberFormatException {
+    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, NumberFormatException, TimeoutException, InterruptedException {
         log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
         OnlineManagementClient clientWorkerNodeClient = ManagementClient.online(OnlineOptions
           .standalone()
           .hostAndPort("localhost", managementPort)
           .build());
+        Administration administration = new Administration(clientWorkerNodeClient);
         Operations op = new Operations(clientWorkerNodeClient);
 
         Batch b = new Batch();
@@ -86,7 +89,8 @@ public class EAPSAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
         op.add(Address.extension("org.keycloak.keycloak-saml-adapter-subsystem"), Values.of("module", "org.keycloak.keycloak-saml-adapter-subsystem"));
         op.add(Address.subsystem("keycloak-saml"));
 
-        clientWorkerNodeClient.execute("reload");
+        //clientWorkerNodeClient.execute("reload");
+        administration.reload();
 
         log.infov("Worker node ({0}) Prepared", managementPort);
     }

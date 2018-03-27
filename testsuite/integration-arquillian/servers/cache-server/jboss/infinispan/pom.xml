@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,10 +34,11 @@
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         
+        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
         <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
         <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
         <cache.server.jboss.version>${infinispan.version}</cache.server.jboss.version>
-        <cache.server.jboss.unpacked.folder.name>${cache.server.jboss.artifactId}-${infinispan.version}</cache.server.jboss.unpacked.folder.name>
+        <cache.server.jboss.unpacked.folder.name>${cache.server.jboss.artifactId}-${cache.server.jboss.version}</cache.server.jboss.unpacked.folder.name>
         
         <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>
         <cache.server.worker.task-max-threads>${cache.default.worker.task-max-threads}</cache.server.worker.task-max-threads>

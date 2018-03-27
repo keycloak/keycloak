@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -2275,7 +2276,7 @@ public class RepresentationToModel {
                     if (resource == null) {
                         resource = storeFactory.getResourceStore().findByName(resourceId, policy.getResourceServer().getId());
                         if (resource == null) {
-                            throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist");
+                            throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
                         }
                     }
 
@@ -2303,28 +2304,6 @@ public class RepresentationToModel {
 
     public static Resource toModel(ResourceRepresentation resource, ResourceServer resourceServer, AuthorizationProvider authorization) {
         ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
-        Resource existing;
-
-        if (resource.getId() != null) {
-            existing = resourceStore.findById(resource.getId(), resourceServer.getId());
-        } else {
-            existing = resourceStore.findByName(resource.getName(), resourceServer.getId());
-        }
-
-        if (existing != null) {
-            existing.setName(resource.getName());
-            existing.setDisplayName(resource.getDisplayName());
-            existing.setType(resource.getType());
-            existing.setUri(resource.getUri());
-            existing.setIconUri(resource.getIconUri());
-            existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
-            existing.updateScopes(resource.getScopes().stream()
-                    .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
-                    .collect(Collectors.toSet()));
-
-            return existing;
-        }
-
         ResourceOwnerRepresentation owner = resource.getOwner();
 
         if (owner == null) {
@@ -2336,12 +2315,6 @@ public class RepresentationToModel {
 
         if (ownerId == null) {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
-        }
-
-        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
-
-        if (ownerId.equals(clientModel.getClientId())) {
-            ownerId = resourceServer.getId();
         }
 
         if (!resourceServer.getId().equals(ownerId)) {
@@ -2361,6 +2334,46 @@ public class RepresentationToModel {
             ownerId = ownerModel.getId();
         }
 
+        Resource existing;
+
+        if (resource.getId() != null) {
+            existing = resourceStore.findById(resource.getId(), resourceServer.getId());
+        } else {
+            existing = resourceStore.findByName(resource.getName(), ownerId, resourceServer.getId());
+        }
+
+        if (existing != null) {
+            existing.setName(resource.getName());
+            existing.setDisplayName(resource.getDisplayName());
+            existing.setType(resource.getType());
+            existing.setUri(resource.getUri());
+            existing.setIconUri(resource.getIconUri());
+            existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
+            existing.updateScopes(resource.getScopes().stream()
+                    .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
+                    .collect(Collectors.toSet()));
+            Map<String, List<String>> attributes = resource.getAttributes();
+
+            if (attributes != null) {
+                Set<String> existingAttrNames = existing.getAttributes().keySet();
+
+                for (String name : existingAttrNames) {
+                    if (attributes.containsKey(name)) {
+                        existing.setAttribute(name, attributes.get(name));
+                        attributes.remove(name);
+                    } else {
+                        existing.removeAttribute(name);
+                    }
+                }
+
+                for (String name : attributes.keySet()) {
+                    existing.setAttribute(name, attributes.get(name));
+                }
+            }
+
+            return existing;
+        }
+
         Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
 
         model.setDisplayName(resource.getDisplayName());
@@ -2373,6 +2386,14 @@ public class RepresentationToModel {
 
         if (scopes != null) {
             model.updateScopes(scopes.stream().map((Function<ScopeRepresentation, Scope>) scope -> toModel(scope, resourceServer, authorization)).collect(Collectors.toSet()));
+        }
+
+        Map<String, List<String>> attributes = resource.getAttributes();
+
+        if (attributes != null) {
+            for (Entry<String, List<String>> entry : attributes.entrySet()) {
+                model.setAttribute(entry.getKey(), entry.getValue());
+            }
         }
 
         resource.setId(model.getId());

@@ -27,10 +27,11 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 import java.net.URL;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -82,12 +83,26 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void createAlbum(String name, String buttonId) {
+        log.debugf("Creating album {0} with buttonId: {1}", name, buttonId);
         navigateTo();
-        this.driver.findElement(By.id("create-album")).click();
-        Form.setInputValue(this.driver.findElement(By.id("album.name")), name);
+        WebElement createAlbum = driver.findElement(By.id("create-album"));
+        waitUntilElement(createAlbum).is().clickable();
+        createAlbum.click();
+        WebElement albumNameInput = driver.findElement(By.id("album.name"));
+        waitUntilElement(albumNameInput).is().present();
+        Form.setInputValue(albumNameInput, name);
         pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        this.driver.findElement(By.id(buttonId)).click();
+        waitUntilElement(albumNameInput).attribute(Form.VALUE).contains(name);
+        WebElement button = driver.findElement(By.id(buttonId));
+        waitUntilElement(button).is().clickable();
+        button.click();
         pause(WAIT_AFTER_OPERATION);
+        if (buttonId.equals("save-album-invalid")) {
+            waitForPageToLoad();
+            assertThat(driver.getPageSource(), containsString("Could not register protected resource."));
+        } else {
+            waitUntilElement(albumNameInput).is().not().present();
+        }
     }
 
     public void createAlbumWithInvalidUser(String name) {
@@ -99,32 +114,51 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         return this.url;
     }
 
-    public void deleteAlbum(String name) {
-        driver.findElements(By.xpath("//a[text()='" + name + "']/following-sibling::a[text()='X']")).forEach(WebElement::click);
+    public void deleteAlbum(String name, boolean shouldBeDenied) {
+        log.debugf("Deleting album {0}", name);
+        WebElement delete = driver.findElement(By.id("delete-" + name));
+        waitUntilElement(delete).is().clickable();
+        delete.click();
         pause(WAIT_AFTER_OPERATION);
+        if (shouldBeDenied) {
+            waitForDenial();
+        } else {
+            waitUntilElement(delete).is().not().present();
+        }
     }
 
-    public void navigateToAdminAlbum() {
+    public void navigateToAdminAlbum(boolean shouldBeDenied) {
+        log.debug("Navigating to Admin Album");
         URLUtils.navigateToUri(toString() + "/#/admin/album", true);
+        
         driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
         waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
+        if (shouldBeDenied) {
+            waitForDenial();
+        } else {
+            waitUntilElement(output).text().equalTo("");
+        }
     }
 
     public void logOut() {
-        waitUntilElement(signOutButton); // Sometimes doesn't work in PhantomJS!
+        waitUntilElement(signOutButton).is().clickable(); // Sometimes doesn't work in PhantomJS!
         signOutButton.click();
         pause(WAIT_AFTER_OPERATION);
     }
     
     public void requestEntitlement() {
+        waitUntilElement(entitlement).is().clickable();
         entitlement.click();
+        waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
         pause(WAIT_AFTER_OPERATION);
     }
     
     public void requestEntitlements() {
+        waitUntilElement(entitlements).is().clickable();
         entitlements.click();
+        waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
         pause(WAIT_AFTER_OPERATION);
     }
@@ -168,7 +202,8 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         }
 
         this.loginPage.form().login(username, password);
-
+        waitForPageToLoad();//guess
+        
         // simple check if we are at the consent page, if so just click 'Yes'
         if (this.consentPage.isCurrent()) {
             consentPage.confirm();
@@ -177,12 +212,8 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public boolean wasDenied() {
-        return this.driver.findElement(By.id("output")).getText().contains("You can not access");
-    }
-
-    public void viewAlbum(String name) throws InterruptedException {
-        viewAlbum(name, true);
+    private void waitForDenial() {
+        waitUntilElement(output).text().contains("You can not access");
     }
 
     public void viewAllAlbums() {
@@ -190,83 +221,130 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void viewAlbum(String name, boolean refresh) throws InterruptedException {
-        this.driver.findElement(By.xpath("//a[text() = '" + name + "']")).click();
+    public void viewAlbum(String name, boolean shouldBeDenied) {
+        WebElement viewalbum = driver.findElement(By.xpath("//a[text() = '" + name + "']"));
+        waitUntilElement(viewalbum).is().clickable();
+        viewalbum.click();
         waitForPageToLoad();
-        if (refresh) {
-            driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
-        }
+        if (shouldBeDenied) waitForDenial();
+        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountPage() throws InterruptedException {
+    public void accountPage() {
         navigateTo();
-        this.driver.findElement(By.id("my-account")).click();
+        WebElement myAccount = driver.findElement(By.id("my-account"));
+        waitUntilElement(myAccount).is().clickable();
+        myAccount.click();
+        waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountMyResources() throws InterruptedException {
+    public void accountMyResources() {
         accountPage();
-        this.driver.findElement(By.xpath("//a[text() = 'My Resources']")).click();
+        WebElement myResources = driver.findElement(By.xpath("//a[text() = 'My Resources']"));
+        waitUntilElement(myResources).is().clickable();
+        myResources.click();
         waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountMyResource(String name) throws InterruptedException {
+    public void accountMyResource(String name) {
         accountMyResources();
-        this.driver.findElement(By.id("detail-" + name)).click();
+        WebElement myResource = driver.findElement(By.id("detail-" + name));
+        waitUntilElement(myResource).is().clickable();
+        myResource.click();
         waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountGrantResource(String name, String requester) throws InterruptedException {
+    public void accountGrantResource(String name, String requester) {
         accountMyResources();
-        this.driver.findElement(By.id("grant-" + name + "-" + requester)).click();
+        WebElement grantResource = driver.findElement(By.id("grant-" + name + "-" + requester));
+        waitUntilElement(grantResource).is().clickable();
+        grantResource.click();
         waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountGrantRemoveScope(String name, String requester, String scope) throws InterruptedException {
+    public void accountGrantRemoveScope(String name, String requester, String scope) {
         accountMyResources();
-        this.driver.findElement(By.id("grant-remove-scope-" + name + "-" + requester + "-" + scope)).click();
+        WebElement grantRemoveScope = driver.findElement(By.id("grant-remove-scope-" + name + "-" + requester + "-" + scope));
+        waitUntilElement(grantRemoveScope).is().clickable();
+        grantRemoveScope.click();
         waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountRevokeResource(String name, String requester) throws InterruptedException {
+    public void accountRevokeResource(String name, String requester) {
         accountMyResource(name);
-        this.driver.findElement(By.id("revoke-" + name + "-" + requester)).click();
+        WebElement revokeResource = driver.findElement(By.id("revoke-" + name + "-" + requester));
+        waitUntilElement(revokeResource).is().clickable();
+        revokeResource.click();
         waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountShareResource(String name, String user) throws InterruptedException {
+    public void accountShareResource(String name, String user) {
         accountMyResource(name);
-        this.driver.findElement(By.id("user_id")).sendKeys(user);
-        this.driver.findElement(By.id("share-button")).click();
+        WebElement userIdInput = driver.findElement(By.id("user_id"));
+        Form.setInputValue(userIdInput, user);
+        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
+        waitUntilElement(userIdInput).attribute(Form.VALUE).contains(user);
+        
+        WebElement shareButton = driver.findElement(By.id("share-button"));
+        waitUntilElement(shareButton).is().clickable();
+        shareButton.click();
         waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountShareRemoveScope(String name, String user, String scope) throws InterruptedException {
+    public void accountShareRemoveScope(String name, String user, String scope) {
         accountMyResource(name);
-        this.driver.findElement(By.id("user_id")).sendKeys(user);
-        this.driver.findElement(By.id("share-remove-scope-" + name + "-" + scope)).click();
-        this.driver.findElement(By.id("share-button")).click();
+        
+        WebElement userIdInput = driver.findElement(By.id("user_id"));
+        Form.setInputValue(userIdInput, user);
+        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
+        waitUntilElement(userIdInput).attribute(Form.VALUE).contains(user);
+        
+        WebElement shareRemoveScope = driver.findElement(By.id("share-remove-scope-" + name + "-" + scope));
+        waitUntilElement(shareRemoveScope).is().clickable();
+        shareRemoveScope.click();
         waitForPageToLoad();
+        
+        WebElement shareButton = driver.findElement(By.id("share-button"));
+        waitUntilElement(shareButton).is().clickable();
+        shareButton.click();
+        
+        waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountDenyResource(String name) throws InterruptedException {
+    public void accountDenyResource(String name) {
         accountMyResource(name);
-        this.driver.findElement(By.xpath("//a[text() = 'Deny']")).click();
+        WebElement denyLink = driver.findElement(By.linkText("Deny"));
+        waitUntilElement(denyLink).is().clickable();
+        denyLink.click();
         waitForPageToLoad();
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void requestResourceProtectedAnyScope() throws InterruptedException {
+    public void requestResourceProtectedAnyScope(boolean shouldBeDenied) {
         navigateTo();
-        this.driver.findElement(By.id("requestPathWithAnyProtectedScope")).click();
+        WebElement requestPathWithAnyProtectedScope = driver.findElement(By.id("requestPathWithAnyProtectedScope"));
+        waitUntilElement(requestPathWithAnyProtectedScope).is().clickable();
+        requestPathWithAnyProtectedScope.click();
+        if (shouldBeDenied) waitForDenial();
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void requestResourceProtectedAllScope() throws InterruptedException {
+    public void requestResourceProtectedAllScope(boolean shouldBeDenied) {
         navigateTo();
-        this.driver.findElement(By.id("requestPathWithAllProtectedScope")).click();
+        WebElement requestPathWithAllProtectedScope = driver.findElement(By.id("requestPathWithAllProtectedScope"));
+        waitUntilElement(requestPathWithAllProtectedScope).is().clickable();
+        requestPathWithAllProtectedScope.click();
+        if (shouldBeDenied) waitForDenial();
         pause(WAIT_AFTER_OPERATION);
     }
 

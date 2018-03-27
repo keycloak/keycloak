@@ -52,7 +52,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     public void testCreatePermissionTicketWithResourceName() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true);
         AuthzClient authzClient = getAuthzClient();
-        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getName()));
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId()));
         AuthorizationRequest request = new AuthorizationRequest();
         request.setTicket(response.getTicket());
         request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
@@ -125,7 +125,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     @Test
     public void testDeleteScopeAndPermissionTicket() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true, "ScopeA", "ScopeB", "ScopeC");
-        PermissionRequest permissionRequest = new PermissionRequest(resource.getName());
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
 
         permissionRequest.setScopes(new HashSet<>(Arrays.asList("ScopeA", "ScopeB", "ScopeC")));
 
@@ -164,7 +164,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     @Test
     public void testRemoveScopeFromResource() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true, "ScopeA", "ScopeB");
-        PermissionRequest permissionRequest = new PermissionRequest(resource.getName(), "ScopeA", "ScopeB");
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId(), "ScopeA", "ScopeB");
         AuthzClient authzClient = getAuthzClient();
         PermissionResponse response = authzClient.protection("marta", "password").permission().create(permissionRequest);
 
@@ -255,7 +255,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
 
         getClient(getRealm()).authorization().resources().resource(resourceA.getId()).update(resourceA);
 
-        PermissionRequest permissionRequest = new PermissionRequest("Resource A");
+        PermissionRequest permissionRequest = new PermissionRequest(resourceA.getId());
 
         permissionRequest.setScopes(new HashSet<>(Arrays.asList("ScopeA", "ScopeC")));
 

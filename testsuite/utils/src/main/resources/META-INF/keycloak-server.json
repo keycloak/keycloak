@@ -94,7 +94,13 @@
             "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+            "remoteStoreSecurityEnabled": "${keycloak.connectionsInfinispan.remoteStoreSecurityEnabled:false}",
+            "remoteStoreSecurityServerName": "${keycloak.connectionsInfinispan.remoteStoreSecurityServerName:keycloak-server}",
+            "remoteStoreSecurityRealm": "${keycloak.connectionsInfinispan.remoteStoreSecurityRealm:ApplicationRealm}",
+            "remoteStoreSecurityHotRodEndpoint": "${keycloak.connectionsInfinispan.remoteStoreSecurityHotRodEndpoint}",
+            "remoteStoreSecurityUsername": "${keycloak.connectionsInfinispan.remoteStoreSecurityUsername}",
+            "remoteStoreSecurityPassword": "${keycloak.connectionsInfinispan.remoteStoreSecurityPassword}"
         }
     },
 

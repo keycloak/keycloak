@@ -17,24 +17,30 @@
  */
 package org.keycloak.example.photoz.entity;
 
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import javax.persistence.GenerationType;
 import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @Entity
-public class Album {
+@Table(uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"name", "userId"})
+})
+public class Album implements Serializable {
 
     @Id
+    @GeneratedValue
     private Long id;
 
     @Column(nullable = false)
@@ -87,5 +93,10 @@ public class Album {
 
     public void setUserManaged(boolean userManaged) {
         this.userManaged = userManaged;
+    }
+
+    @Override
+    public String toString() {
+        return "Album{" + "id=" + id + ", name=" + name + ", userId=" + userId + '}';
     }
 }

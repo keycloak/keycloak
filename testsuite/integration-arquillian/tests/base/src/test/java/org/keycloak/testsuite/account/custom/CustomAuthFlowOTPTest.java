@@ -30,6 +30,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
+import org.keycloak.testsuite.pages.PageUtils;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -384,7 +385,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        assertEquals(driver.getTitle(), "Mobile Authenticator Setup");
+        assertEquals(PageUtils.getPageTitle(driver), "Mobile Authenticator Setup");
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);

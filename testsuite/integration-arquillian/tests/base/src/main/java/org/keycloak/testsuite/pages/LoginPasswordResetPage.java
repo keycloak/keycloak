@@ -46,7 +46,7 @@ public class LoginPasswordResetPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Forgot Your Password?");
+        return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
     }
 
     public void open() {

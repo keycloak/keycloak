@@ -59,6 +59,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -314,6 +315,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (prompt != null) {
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
+
+        String nonce = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.NONCE_PARAM);
+        if (nonce == null || nonce.isEmpty()) {
+            nonce = UUID.randomUUID().toString();
+            request.getAuthenticationSession().setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        }
+        uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
 
         String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
         if (acr != null) {

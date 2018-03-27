@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak OIDC Client Adapter Modules</name>
@@ -42,6 +42,8 @@
         <module>servlet-filter</module>
         <module>servlet-oauth-client</module>
         <module>spring-boot</module>
+        <module>spring-boot2</module>
+        <module>spring-boot-adapter-core</module>
         <module>spring-boot-container-bundle</module>
         <module>spring-security</module>
         <module>tomcat</module>

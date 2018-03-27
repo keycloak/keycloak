@@ -379,6 +379,32 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
         });
     }
 
+    @Test
+    public void testPathOrderWithAllPaths() {
+        performTests(() -> {
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 13 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 14 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource/resource");
+            assertTrue(wasDenied());
+        });
+    }
 
     private void navigateTo(String path) {
         this.driver.navigate().to(getResourceServerUrl() + path);

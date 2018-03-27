@@ -13,6 +13,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeAppUrl;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeClientId;
+import static org.keycloak.performance.RealmsConfigurationBuilder.computeEmail;
+import static org.keycloak.performance.RealmsConfigurationBuilder.computeFirstName;
+import static org.keycloak.performance.RealmsConfigurationBuilder.computeLastName;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computePassword;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeSecret;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeUsername;
@@ -51,6 +54,12 @@ public class TestConfig {
     public static final int clientRolesPerUser = Integer.getInteger("clientRolesPerUser", 2);
     public static final int clientRolesPerClient = Integer.getInteger("clientRolesPerClient", 2);
 
+    // sequential vs random dataset iteration
+    public static final int sequentialRealmsFrom = Integer.getInteger("sequentialRealmsFrom", -1); // -1 means random iteration
+    public static final int sequentialUsersFrom = Integer.getInteger("sequentialUsersFrom", -1); // -1 means random iteration
+    public static final boolean sequentialRealms = sequentialRealmsFrom >= 0;
+    public static final boolean sequentialUsers = sequentialUsersFrom >= 0;
+    
     //
     // Settings used by tests to control common test parameters
     //
@@ -58,9 +67,7 @@ public class TestConfig {
     public static final int rampUpPeriod = Integer.getInteger("rampUpPeriod", 0);
     public static final int warmUpPeriod = Integer.getInteger("warmUpPeriod", 0);
     public static final int measurementPeriod = Integer.getInteger("measurementPeriod", 30);
-    public static final boolean rampDownASAP = Boolean.getBoolean("rampDownASAP"); // check for rampdown condition after each scenario step
     public static final boolean filterResults = Boolean.getBoolean("filterResults"); // filter out results outside of measurementPeriod
-    public static final int pace = Integer.getInteger("pace", 0); // additional dynamic "pause buffer" between scenario loops
     public static final int userThinkTime = Integer.getInteger("userThinkTime", 0);
     public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 0);
 
@@ -71,7 +78,7 @@ public class TestConfig {
     public static final long measurementEndTime = measurementStartTime + measurementPeriod * 1000;
 
     //
-    // Settings used by BasicOIDCSimulation to control behavior specific to BasicOIDCSimulation
+    // Settings used by OIDCLoginAndLogoutSimulation to control behavior specific to OIDCLoginAndLogoutSimulation
     //
     public static final int badLoginAttempts = Integer.getInteger("badLoginAttempts", 0);
     public static final int refreshTokenCount = Integer.getInteger("refreshTokenCount", 0);
@@ -103,8 +110,12 @@ public class TestConfig {
     // Clients iterators by realm
     private static final ConcurrentMap<String, Iterator<ClientInfo>> clientsIteratorMap = new ConcurrentHashMap<>();
 
+    public static Iterator<String> getRealmsIterator() {
+        return sequentialRealms ? sequentialRealmsIterator() : randomRealmsIterator();
+    }
+
     public static Iterator<UserInfo> getUsersIterator(String realm) {
-        return usersIteratorMap.computeIfAbsent(realm, (k) -> randomUsersIterator(realm));
+        return usersIteratorMap.computeIfAbsent(realm, (k) -> sequentialUsers ? sequentialUsersIterator(realm) : randomUsersIterator(realm));
     }
 
     public static Iterator<ClientInfo> getClientsIterator(String realm) {
@@ -142,15 +153,30 @@ public class TestConfig {
     }
 
     public static String toStringDatasetProperties() {
-        return String.format("  numOfRealms: %s\n  usersPerRealm: %s\n  clientsPerRealm: %s\n  realmRoles: %s\n  realmRolesPerUser: %s\n  clientRolesPerUser: %s\n  clientRolesPerClient: %s\n  hashIterations: %s",
-                numOfRealms, usersPerRealm, clientsPerRealm, realmRoles, realmRolesPerUser, clientRolesPerUser, clientRolesPerClient, hashIterations);
+        return String.format(
+                  "  numOfRealms: %s%s\n"
+                + "  usersPerRealm: %s%s\n"
+                + "  clientsPerRealm: %s\n"
+                + "  realmRoles: %s\n"
+                + "  realmRolesPerUser: %s\n"
+                + "  clientRolesPerUser: %s\n"
+                + "  clientRolesPerClient: %s\n"
+                + "  hashIterations: %s",
+                numOfRealms, sequentialRealms ? ",   sequential iteration starting from " + sequentialRealmsFrom: "",
+                usersPerRealm, sequentialUsers ? ",   sequential iteration starting from " + sequentialUsersFrom: "",
+                clientsPerRealm, 
+                realmRoles, 
+                realmRolesPerUser, 
+                clientRolesPerUser, 
+                clientRolesPerClient, 
+                hashIterations);
     }
     
     public static Iterator<UserInfo> sequentialUsersIterator(final String realm) {
 
         return new Iterator<UserInfo>() {
 
-            int idx = 0;
+            int idx = sequentialUsers ? sequentialUsersFrom : 0;
 
             @Override
             public boolean hasNext() {
@@ -164,8 +190,14 @@ public class TestConfig {
                 }
 
                 String user = computeUsername(realm, idx);
+                String firstName= computeFirstName(idx);
                 idx += 1;
-                return new UserInfo(user, computePassword(user));
+                return new UserInfo(user, 
+                        computePassword(user),
+                        firstName,
+                        computeLastName(realm),
+                        computeEmail(user)
+                );
             }
         };
     }
@@ -181,8 +213,14 @@ public class TestConfig {
 
             @Override
             public UserInfo next() {
-                String user = computeUsername(realm, ThreadLocalRandom.current().nextInt(usersPerRealm));
-                return new UserInfo(user, computePassword(user));
+                int idx = ThreadLocalRandom.current().nextInt(usersPerRealm);
+                String user = computeUsername(realm, idx);
+                return new UserInfo(user, 
+                        computePassword(user),
+                        computeFirstName(idx),
+                        computeLastName(realm),
+                        computeEmail(user)
+                );
             }
         };
     }
@@ -206,6 +244,29 @@ public class TestConfig {
         };
     }
 
+    public static Iterator<String> sequentialRealmsIterator() {
+
+        return new Iterator<String>() {
+
+            int idx = sequentialRealms ? sequentialRealmsFrom : 0;
+            
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public String next() {
+                if (idx >= numOfRealms) {
+                    idx = 0;
+                }
+                String realm = "realm_" + idx;
+                idx += 1;
+                return realm;
+            }
+        };
+    }
+
     public static Iterator<String> randomRealmsIterator() {
 
         return new Iterator<String>() {
@@ -222,12 +283,18 @@ public class TestConfig {
         };
     }
 
-    static void validateConfiguration() {
+    public static void validateConfiguration() {
         if (realmRolesPerUser > realmRoles) {
             throw new RuntimeException("Can't have more realmRolesPerUser than there are realmRoles");
         }
         if (clientRolesPerUser > clientsPerRealm * clientRolesPerClient) {
             throw new RuntimeException("Can't have more clientRolesPerUser than there are all client roles (clientsPerRealm * clientRolesPerClient)");
+        }
+        if (sequentialRealmsFrom < -1 || sequentialRealmsFrom >= numOfRealms) {
+            throw new RuntimeException("The folowing condition must be met: (-1 <= sequentialRealmsFrom < numOfRealms).");
+        }
+        if (sequentialUsersFrom < -1 || sequentialUsersFrom >= usersPerRealm) {
+            throw new RuntimeException("The folowing condition must be met: (-1 <= sequentialUsersFrom < usersPerRealm).");
         }
     }
     

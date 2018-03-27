@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>performance</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -37,7 +37,7 @@
     <properties>
         <server.groupId>org.keycloak</server.groupId>
         <server.artifactId>keycloak-server-dist</server.artifactId>
-        <server.version>${product.version}</server.version>
+        <!-- `server.version` is defined one level up -->
         <server.unpacked.folder.name>keycloak-${server.version}</server.unpacked.folder.name>
         <server.unpacked.home>${project.build.directory}/${server.unpacked.folder.name}</server.unpacked.home>
         

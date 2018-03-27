@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
@@ -38,11 +39,13 @@ public class ProtectedResource {
 
     private final Http http;
     private ServerConfiguration serverConfiguration;
+    private final Configuration configuration;
     private final TokenCallable pat;
 
-    ProtectedResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
+    ProtectedResource(Http http, ServerConfiguration serverConfiguration, Configuration configuration, TokenCallable pat) {
         this.http = http;
         this.serverConfiguration = serverConfiguration;
+        this.configuration = configuration;
         this.pat = pat;
     }
 
@@ -119,13 +122,30 @@ public class ProtectedResource {
     }
 
     /**
-     * Query the server for a resource given its <code>name</code>.
+     * Query the server for a resource given its <code>name</code> where the owner is the resource server itself.
      *
      * @param id the resource name
      * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation findByName(String name) {
-        String[] representations = find(null, name, null, null, null, null, null, null);
+        String[] representations = find(null, name, null, configuration.getResource(), null, null, null, null);
+
+        if (representations.length == 0) {
+            return null;
+        }
+
+        return findById(representations[0]);
+    }
+
+    /**
+     * Query the server for a resource given its <code>name</code> and a given <code>ownerId</code>.
+     *
+     * @param name the resource name
+     * @param ownerId the owner id
+     * @return a {@link ResourceRepresentation}
+     */
+    public ResourceRepresentation findByName(String name, String ownerId) {
+        String[] representations = find(null, name, null, ownerId, null, null, null, null);
 
         if (representations.length == 0) {
             return null;

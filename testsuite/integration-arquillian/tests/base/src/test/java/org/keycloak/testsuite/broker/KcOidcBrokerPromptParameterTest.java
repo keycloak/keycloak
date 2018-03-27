@@ -55,7 +55,7 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to");
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
@@ -69,7 +69,7 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
         log.debug("Logging in");
         accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        waitForPage(driver, "update account information");
+        waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
         Assert.assertTrue("We must be on correct realm right now",

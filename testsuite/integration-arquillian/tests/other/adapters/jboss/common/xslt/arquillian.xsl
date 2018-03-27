@@ -65,6 +65,7 @@
                     <property name="javaVmArguments">
                         -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=7901
                         ${app.server.memory.settings}
+                        ${app.server.cluster.tests.memory.settings}
                         -Djava.net.preferIPv4Stack=true
                     </property>
                     <property name="managementProtocol">${app.server.management.protocol}</property>
@@ -89,6 +90,7 @@
                     <property name="javaVmArguments">
                         -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=7902
                         ${app.server.memory.settings}
+                        ${app.server.cluster.tests.memory.settings}
                         -Djava.net.preferIPv4Stack=true
                     </property>
                     <property name="managementProtocol">${app.server.management.protocol}</property>

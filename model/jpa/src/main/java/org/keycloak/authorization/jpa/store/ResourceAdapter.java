@@ -16,20 +16,27 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import org.keycloak.authorization.jpa.entities.ResourceAttributeEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +44,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
+
     private ResourceEntity entity;
     private EntityManager em;
     private StoreFactory storeFactory;
@@ -156,6 +164,72 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
         for (String addId : ids) {
             entity.getScopes().add(em.getReference(ScopeEntity.class, addId));
         }
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
+        for (ResourceAttributeEntity attr : entity.getAttributes()) {
+            result.add(attr.getName(), attr.getValue());
+        }
+        return result;
+    }
+
+    @Override
+    public String getSingleAttribute(String name) {
+        List<String> values = getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.get(0);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        List<String> values = getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return Collections.unmodifiableList(values);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        removeAttribute(name);
+
+        for (String value : values) {
+            ResourceAttributeEntity attr = new ResourceAttributeEntity();
+            attr.setId(KeycloakModelUtils.generateId());
+            attr.setName(name);
+            attr.setValue(value);
+            attr.setResource(entity);
+            em.persist(attr);
+            entity.getAttributes().add(attr);
+        }
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        Query query = em.createNamedQuery("deleteResourceAttributesByNameAndResource");
+
+        query.setParameter("name", name);
+        query.setParameter("resourceId", entity.getId());
+
+        query.executeUpdate();
+
+        List<ResourceAttributeEntity> toRemove = new ArrayList<>();
+
+        for (ResourceAttributeEntity attr : entity.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                toRemove.add(attr);
+            }
+        }
+
+        entity.getAttributes().removeAll(toRemove);
     }
 
 

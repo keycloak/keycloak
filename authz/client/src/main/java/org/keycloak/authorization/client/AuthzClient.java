@@ -97,7 +97,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection() {
-        return new ProtectionResource(this.http, this.serverConfiguration, createPatSupplier());
+        return new ProtectionResource(this.http, this.serverConfiguration, configuration, createPatSupplier());
     }
 
     /**
@@ -107,7 +107,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {
-        return new ProtectionResource(this.http, this.serverConfiguration, new TokenCallable(http, configuration, serverConfiguration) {
+        return new ProtectionResource(this.http, this.serverConfiguration, configuration, new TokenCallable(http, configuration, serverConfiguration) {
             @Override
             public String call() {
                 return accessToken;
@@ -128,7 +128,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(String userName, String password) {
-        return new ProtectionResource(this.http, this.serverConfiguration, createPatSupplier(userName, password));
+        return new ProtectionResource(this.http, this.serverConfiguration, configuration, createPatSupplier(userName, password));
     }
 
     /**

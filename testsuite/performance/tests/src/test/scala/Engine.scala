@@ -4,7 +4,7 @@ import io.gatling.core.config.GatlingPropertiesBuilder
 
 object Engine extends App {
 
-  val sim = classOf[keycloak.BasicOIDCSimulation]
+  val sim = classOf[keycloak.OIDCLoginAndLogoutSimulation]
   //val sim = classOf[keycloak.AdminConsoleSimulation]
 
   val props = new GatlingPropertiesBuilder

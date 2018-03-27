@@ -46,8 +46,6 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         String permissionName = "resource-based-permission";
         
         ClientResource clientResource = getClientResource();
-
-        enableAuthorizationServices();
         AuthorizationResource authorizationResource = clientResource.authorization();
 
         //get Default Resource
@@ -89,8 +87,6 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     @Test
     public void testRoleBasedPolicy() {
         ClientResource clientResource = getClientResource();
-
-        enableAuthorizationServices();
         AuthorizationResource authorizationResource = clientResource.authorization();
         
         ClientRepresentation account = testRealmResource().clients().findByClientId("account").get(0);
@@ -121,8 +117,6 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     @Test
     public void testRoleBasedPolicyWithMultipleRoles() {
         ClientResource clientResource = getClientResource();
-
-        enableAuthorizationServices();
         AuthorizationResource authorizationResource = clientResource.authorization();
         
         testRealmResource().clients().create(ClientBuilder.create().clientId("test-client-1").defaultRoles("client-role").build()).close();

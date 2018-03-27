@@ -21,6 +21,7 @@ package org.keycloak.testsuite.x509;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -57,6 +58,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -98,6 +100,27 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     protected boolean isImportAfterEachMethod() {
         return true;
+    }
+
+    @BeforeClass
+    public static void onBeforeTestClass() {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
+            String authServerHome = System.getProperty("auth.server.home");
+
+            if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+                authServerHome = authServerHome + "/standalone/configuration";
+                StringBuilder cliArgs = new StringBuilder();
+
+                cliArgs.append("--ignore-ssl-errors=true ");
+                cliArgs.append("--web-security=false ");
+                cliArgs.append("--ssl-certificates-path=" + authServerHome + "/ca.crt ");
+                cliArgs.append("--ssl-client-certificate-file=" + authServerHome + "/client.crt ");
+                cliArgs.append("--ssl-client-key-file=" + authServerHome + "/client.key ");
+                cliArgs.append("--ssl-client-key-passphrase=secret ");
+
+                System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
+            }
+        }
     }
 
     @Before
@@ -298,6 +321,13 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)
                 .setMappingSourceType(SUBJECTDN_EMAIL)
+                .setUserIdentityMapperType(USERNAME_EMAIL);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UsernameOrEmailConfig() {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setMappingSourceType(SUBJECTALTNAME_EMAIL)
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
