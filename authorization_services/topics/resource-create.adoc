@@ -31,11 +31,20 @@ is usually the relative path used to serve these resources.
 +
 One or more scopes to associate with the resource.
 
+== Resource Attributes
+
+Resources may have attributes associated with them. These attributes can be used to provide additional information about
+a resource and to provide additional information to policies when evaluating permissions associated with a resource.
+
+Each attribute is a key and value pair where the value can be a set of one or many strings. Multiple values can be defined for an attribute by separating each value with a comma.
+
+
 == Typed Resources
 
 The type field of a resource can be used to group different resources together, so they can be protected using a common set of permissions.
 
 == Resource Owners
+
 Resources also have an owner. By default, resources are owned by the resource server.
 
 However, resources can also be associated with users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
