@@ -103,7 +103,6 @@ public class AccountConsole {
                     Locale locale = session.getContext().resolveLocale(auth.getUser());
                     map.put("locale", locale.toLanguageTag());
                     Properties messages = theme.getMessages(locale);
-                    map.put("javaMessages", new MessageFormatterMethod(locale, messages));
                     map.put("msg", messagesToJsonString(messages));
                 }
             } catch (Exception e) {

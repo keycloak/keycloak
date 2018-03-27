@@ -63,18 +63,6 @@
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
 
-<!--
-  This somewhat complicated script is a performance enahancement. We
-  don't want to load the systemjs and angular stuff until Keycloak has
-  checked with the server to see if we are logged in.  So, the js below
-  is only loaded after the redirect.  This was made more complex by the
-  fact that to do it this way we needed to make sure that some scripts
-  are not loaded until others are finished.
-
-  It's possible that this enhancement could cause slower performance in
-  some cases because of the aformentioned serial loading.  So I've left
-  the old code commented out.
-        -->
         <script>
             var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
