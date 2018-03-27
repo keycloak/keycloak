@@ -237,8 +237,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             } else {
                 // now we need to check to see if this is a master admin role
                 if (role.getContainer() instanceof RealmModel) {
+                    // master admin role is a realm-level realm
                     RealmModel realm = (RealmModel)role.getContainer();
                     // If realm role is master admin role then abort
+                    // if realm name is master realm, than we know this is a admin role in master realm.
                     if (realm.getName().equals(Config.getAdminRealm())) {
                         return adminConflictMessage(role);
                     }
