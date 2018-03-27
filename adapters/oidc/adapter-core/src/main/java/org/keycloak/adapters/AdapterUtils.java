@@ -30,7 +30,7 @@ import java.util.UUID;
  */
 public class AdapterUtils {
 
-    private static Logger log = Logger.getLogger(AdapterUtils.class);
+    private static final Logger LOG = Logger.getLogger(AdapterUtils.class);
 
     public static String generateId() {
         return UUID.randomUUID().toString();
@@ -40,23 +40,23 @@ public class AdapterUtils {
         Set<String> roles = null;
         AccessToken accessToken = session.getToken();
         if (session.getDeployment().isUseResourceRoleMappings()) {
-            if (log.isTraceEnabled()) {
-                log.trace("useResourceRoleMappings");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("useResourceRoleMappings");
             }
             AccessToken.Access access = accessToken.getResourceAccess(session.getDeployment().getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
-            if (log.isTraceEnabled()) {
-                log.trace("use realm role mappings");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("use realm role mappings");
             }
             AccessToken.Access access = accessToken.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
         if (roles == null) roles = Collections.emptySet();
-        if (log.isTraceEnabled()) {
-            log.trace("Setting roles: ");
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Setting roles: ");
             for (String role : roles) {
-                log.trace("   role: " + role);
+                LOG.trace("   role: " + role);
             }
         }
         return roles;

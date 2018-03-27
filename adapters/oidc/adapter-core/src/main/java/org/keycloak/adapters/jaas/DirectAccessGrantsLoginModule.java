@@ -24,7 +24,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.common.VerificationException;
@@ -33,6 +32,8 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
@@ -54,7 +55,7 @@ import java.util.Map;
  */
 public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
-    private static final Logger log = Logger.getLogger(DirectAccessGrantsLoginModule.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DirectAccessGrantsLoginModule.class);
 
     private String refreshToken;
 
@@ -76,7 +77,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
     @Override
     protected Logger getLogger() {
-        return log;
+        return LOG;
     }
 
     protected Auth directGrantAuth(String username, String password) throws IOException, VerificationException {
@@ -107,7 +108,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                         .append(", Error description: " + errorRep.getErrorDescription());
             }
             String error = errorBuilder.toString();
-            log.warn(error);
+            LOG.warn(error);
             throw new IOException(error);
         }
 
@@ -171,10 +172,10 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                     }
 
                     // Should do something better than warn if logout failed? Perhaps update of refresh tokens on existing subject might be supported too...
-                    log.warn(errorBuilder.toString());
+                    LOG.warn(errorBuilder.toString());
                 }
             } catch (IOException ioe) {
-                log.warn(ioe);
+                LOG.warn("Warning", ioe);
             }
         }
 

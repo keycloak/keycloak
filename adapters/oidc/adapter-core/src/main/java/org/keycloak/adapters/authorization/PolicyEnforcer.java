@@ -17,16 +17,6 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -41,13 +31,24 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(PolicyEnforcer.class);
+    private static Logger LOG = LoggerFactory.getLogger(PolicyEnforcer.class);
 
     private final KeycloakDeployment deployment;
     private final AuthzClient authzClient;
@@ -72,17 +73,17 @@ public class PolicyEnforcer {
         this.pathMatcher = new PathMatcher(this.authzClient);
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Initialization complete. Path configurations:");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Initialization complete. Path configurations:");
             for (PathConfig pathConfig : this.paths.values()) {
-                LOGGER.debug(pathConfig);
+                LOG.debug(pathConfig.toString());
             }
         }
     }
 
     public AuthorizationContext enforce(OIDCHttpFacade facade) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Policy enforcement is enable. Enforcing policy decisions for path [{0}].", facade.getRequest().getURI());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Policy enforcement is enable. Enforcing policy decisions for path [{}].", facade.getRequest().getURI());
         }
 
         AuthorizationContext context;
@@ -93,11 +94,11 @@ public class PolicyEnforcer {
             context = new KeycloakAdapterPolicyEnforcer(this).authorize(facade);
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Policy enforcement result for path [{0}] is : {1}", facade.getRequest().getURI(), context.isGranted() ? "GRANTED" : "DENIED");
-            LOGGER.debugv("Returning authorization context with permissions:");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Policy enforcement result for path [{}] is : {}", facade.getRequest().getURI(), context.isGranted() ? "GRANTED" : "DENIED");
+            LOG.debug("Returning authorization context with permissions:");
             for (Permission permission : context.getPermissions()) {
-                LOGGER.debug(permission);
+                LOG.debug(permission.toString());
             }
         }
 
@@ -135,10 +136,10 @@ public class PolicyEnforcer {
         }
 
         if (loadPathsFromServer) {
-            LOGGER.info("No path provided in configuration.");
+            LOG.info("No path provided in configuration.");
             return configureAllPathsForResourceServer(protectedResource);
         } else {
-            LOGGER.info("Paths provided in configuration.");
+            LOG.info("Paths provided in configuration.");
             return configureDefinedPaths(protectedResource, enforcerConfig);
         }
     }
@@ -152,10 +153,10 @@ public class PolicyEnforcer {
             String path = pathConfig.getPath();
 
             if (resourceName != null) {
-                LOGGER.debugf("Trying to find resource with name [%s] for path [%s].", resourceName, path);
+                LOG.debug("Trying to find resource with name [{}] for path [{}].", resourceName, path);
                 resource = protectedResource.findByName(resourceName);
             } else {
-                LOGGER.debugf("Trying to find resource with uri [%s] for path [%s].", path, path);
+                LOG.debug("Trying to find resource with uri [{}] for path [{}].", path, path);
                 List<ResourceRepresentation> resources = protectedResource.findByUri(path);
 
                 if (resources.size() == 1) {
@@ -169,7 +170,7 @@ public class PolicyEnforcer {
 
             if (resource == null) {
                 if (enforcerConfig.isCreateResources()) {
-                    LOGGER.debugf("Creating resource on server for path [%s].", pathConfig);
+                    LOG.debug("Creating resource on server for path [{}].", pathConfig);
                     ResourceRepresentation representation = new ResourceRepresentation();
 
                     representation.setName(resourceName);
@@ -219,7 +220,7 @@ public class PolicyEnforcer {
     }
 
     private Map<String, PathConfig> configureAllPathsForResourceServer(ProtectedResource protectedResource) {
-        LOGGER.info("Querying the server for all resources associated with this application.");
+        LOG.info("Querying the server for all resources associated with this application.");
         Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
         for (String id : protectedResource.findAll()) {

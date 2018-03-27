@@ -17,23 +17,18 @@
 
 package org.keycloak.adapters.authentication;
 
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.util.Map;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.representations.JsonWebToken;
 
-import java.security.PrivateKey;
+import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.Map;
 
 /**

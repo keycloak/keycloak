@@ -20,8 +20,9 @@ package org.keycloak.adapters.authentication;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +36,7 @@ import java.util.ServiceLoader;
  */
 public class ClientCredentialsProviderUtils {
 
-    private static Logger logger = Logger.getLogger(ClientCredentialsProviderUtils.class);
+    private static Logger LOG = LoggerFactory.getLogger(ClientCredentialsProviderUtils.class);
 
     public static ClientCredentialsProvider bootstrapClientAuthenticator(KeycloakDeployment deployment) {
         String clientId = deployment.getResourceName();
@@ -56,7 +57,7 @@ public class ClientCredentialsProviderUtils {
             }
         }
 
-        logger.debugf("Using provider '%s' for authentication of client '%s'", authenticatorId, clientId);
+        LOG.debug("Using provider '{}' for authentication of client '{}'", authenticatorId, clientId);
 
         Map<String, ClientCredentialsProvider> authenticators = new HashMap<>();
         loadAuthenticators(authenticators, ClientCredentialsProviderUtils.class.getClassLoader());
@@ -78,11 +79,11 @@ public class ClientCredentialsProviderUtils {
         while (iterator.hasNext()) {
             try {
                 ClientCredentialsProvider authenticator = iterator.next();
-                logger.debugf("Loaded clientCredentialsProvider %s", authenticator.getId());
+                LOG.debug("Loaded clientCredentialsProvider {}", authenticator.getId());
                 authenticators.put(authenticator.getId(), authenticator);
             } catch (ServiceConfigurationError e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Failed to load clientCredentialsProvider with classloader: " + classLoader, e);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to load clientCredentialsProvider with classloader: " + classLoader, e);
                 }
             }
         }

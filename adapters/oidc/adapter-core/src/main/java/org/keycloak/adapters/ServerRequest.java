@@ -32,8 +32,8 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
-
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,7 +48,7 @@ import java.util.List;
  */
 public class ServerRequest {
 
-	private static Logger logger = Logger.getLogger(ServerRequest.class);
+	private final static Logger LOG = LoggerFactory.getLogger(ServerRequest.class);
 
     public static class HttpFailure extends Exception {
         private int status;
@@ -153,10 +153,10 @@ public class ServerRequest {
         }
         // https://tools.ietf.org/html/rfc7636#section-4
         if (codeVerifier != null) {
-            logger.debugf("add to POST parameters of Token Request, codeVerifier = %s", codeVerifier);
+            LOG.debug("add to POST parameters of Token Request, codeVerifier = {}", codeVerifier);
             formparams.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
         } else {
-            logger.debug("add to POST parameters of Token Request without codeVerifier");
+            LOG.debug("add to POST parameters of Token Request without codeVerifier");
         }
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());

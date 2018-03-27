@@ -39,7 +39,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class AdapterDeploymentContext {
-    private static final Logger log = Logger.getLogger(AdapterDeploymentContext.class);
+    private static final Logger LOG = Logger.getLogger(AdapterDeploymentContext.class);
     protected KeycloakDeployment deployment;
     protected KeycloakConfigResolver configResolver;
 
@@ -491,7 +491,7 @@ public class AdapterDeploymentContext {
         if (deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             scheme = "https";
             if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
-                log.error("request scheme: " + request.getScheme() + " ssl required");
+                LOG.error("request scheme: " + request.getScheme() + " ssl required");
                 throw new RuntimeException("Can't resolve relative url from adapter config.");
             }
         }

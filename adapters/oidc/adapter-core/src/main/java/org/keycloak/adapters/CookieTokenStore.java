@@ -34,11 +34,11 @@ import org.keycloak.representations.IDToken;
  */
 public class CookieTokenStore {
 
-    private static final Logger log = Logger.getLogger(CookieTokenStore.class);
+    private static final Logger LOG = Logger.getLogger(CookieTokenStore.class);
     private static final String DELIM = "___";
 
     public static void setTokenCookie(KeycloakDeployment deployment, HttpFacade facade, RefreshableKeycloakSecurityContext session) {
-        log.debugf("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
+        LOG.debugf("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
         String accessToken = session.getTokenString();
         String idToken = session.getIdTokenString();
         String refreshToken = session.getRefreshToken();
@@ -53,7 +53,7 @@ public class CookieTokenStore {
     public static KeycloakPrincipal<RefreshableKeycloakSecurityContext> getPrincipalFromCookie(KeycloakDeployment deployment, HttpFacade facade, AdapterTokenStore tokenStore) {
         OIDCHttpFacade.Cookie cookie = facade.getRequest().getCookie(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
         if (cookie == null) {
-            log.debug("Not found adapter state cookie in current request");
+            LOG.debug("Not found adapter state cookie in current request");
             return null;
         }
 
@@ -61,7 +61,7 @@ public class CookieTokenStore {
 
         String[] tokens = cookieVal.split(DELIM);
         if (tokens.length != 3) {
-            log.warnf("Invalid format of %s cookie. Count of tokens: %s, expected 3", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, tokens.length);
+            LOG.warnf("Invalid format of %s cookie. Count of tokens: %s, expected 3", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, tokens.length);
             return null;
         }
 
@@ -84,11 +84,11 @@ public class CookieTokenStore {
                 idToken = null;
             }
 
-            log.debug("Token Verification succeeded!");
+            LOG.debug("Token Verification succeeded!");
             RefreshableKeycloakSecurityContext secContext = new RefreshableKeycloakSecurityContext(deployment, tokenStore, accessTokenString, accessToken, idTokenString, idToken, refreshTokenString);
             return new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, accessToken), secContext);
         } catch (VerificationException ve) {
-            log.warn("Failed verify token", ve);
+            LOG.warn("Failed verify token", ve);
             return null;
         }
     }

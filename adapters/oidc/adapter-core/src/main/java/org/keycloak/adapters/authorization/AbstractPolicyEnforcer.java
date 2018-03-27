@@ -17,12 +17,6 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -35,13 +29,20 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.Enforce
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.MethodConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class AbstractPolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(AbstractPolicyEnforcer.class);
+    private static Logger LOG = LoggerFactory.getLogger(AbstractPolicyEnforcer.class);
     private final PolicyEnforcerConfig enforcerConfig;
     private final PolicyEnforcer policyEnforcer;
 
@@ -79,14 +80,14 @@ public abstract class AbstractPolicyEnforcer {
         AccessToken accessToken = securityContext.getToken();
 
         if (accessToken != null) {
-            LOGGER.debugf("Checking permissions for path [%s] with config [%s].", request.getURI(), pathConfig);
+            LOG.debug("Checking permissions for path [{}] with config [{}].", request.getURI(), pathConfig);
 
             if (pathConfig == null) {
                 if (EnforcementMode.PERMISSIVE.equals(enforcementMode)) {
                     return createAuthorizationContext(accessToken, null);
                 }
 
-                LOGGER.debugf("Could not find a configuration for path [%s]", path);
+                LOG.debug("Could not find a configuration for path [{}]", path);
 
                 if (isDefaultAccessDeniedUri(request, enforcerConfig)) {
                     return createAuthorizationContext(accessToken, null);
@@ -111,10 +112,10 @@ public abstract class AbstractPolicyEnforcer {
                 }
             }
 
-            LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
+            LOG.debug("Sending challenge to the client. Path [{}]", pathConfig);
 
             if (!challenge(pathConfig, methodConfig, httpFacade)) {
-                LOGGER.debugf("Challenge not sent, sending default forbidden response. Path [%s]", pathConfig);
+                LOG.debug("Challenge not sent, sending default forbidden response. Path [{}]", pathConfig);
                 handleAccessDenied(httpFacade);
             }
         }
@@ -151,7 +152,7 @@ public abstract class AbstractPolicyEnforcer {
                     }
 
                     if (hasResourceScopePermission(methodConfig, permission)) {
-                        LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, permissions);
+                        LOG.debug("Authorization GRANTED for path [{}]. Permissions [{}].", actualPathConfig, permissions);
                         if (request.getMethod().equalsIgnoreCase("DELETE") && actualPathConfig.isInstance()) {
                             this.paths.remove(actualPathConfig);
                         }
@@ -170,7 +171,7 @@ public abstract class AbstractPolicyEnforcer {
             return true;
         }
 
-        LOGGER.debugf("Authorization FAILED for path [%s]. Not enough permissions [%s].", actualPathConfig, permissions);
+        LOG.debug("Authorization FAILED for path [{}]. Not enough permissions [{}].", actualPathConfig, permissions);
 
         return false;
     }

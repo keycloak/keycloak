@@ -42,7 +42,7 @@ import java.util.List;
  * Basic auth request authenticator.
  */
 public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticator {
-    protected Logger log = Logger.getLogger(BasicAuthRequestAuthenticator.class);
+    private final static Logger LOG = Logger.getLogger(BasicAuthRequestAuthenticator.class);
     
     public BasicAuthRequestAuthenticator(KeycloakDeployment deployment) {
     	super(deployment);
@@ -77,7 +77,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
             atr = getToken(user, pw);
             tokenString = atr.getToken();
         } catch (Exception e) {
-            log.debug("Failed to obtain token", e);
+            LOG.debug("Failed to obtain token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "no_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
