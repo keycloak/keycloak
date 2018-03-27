@@ -538,7 +538,7 @@
                 }
                 return;
             } else if ((kc.flow != 'standard') && (oauth.access_token || oauth.id_token)) {
-                authSuccess(oauth.access_token, null, oauth.id_token, true);
+                authSuccess(oauth.access_token, oauth.refresh_token, oauth.id_token, true);
             }
 
             if ((kc.flow != 'implicit') && code) {
