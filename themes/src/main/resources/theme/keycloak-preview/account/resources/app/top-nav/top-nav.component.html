@@ -1,17 +1,17 @@
-
+<!-- Top Nav -->
 
 <nav class="navbar navbar-pf-alt">
     <notification></notification>
 
     <div class="navbar-header">
-        <button (click)="menuClicked()" type="button" class="navbar-toggle">
+        <button *ngIf="keycloakService.authenticated() && showSideNav" (click)="menuClicked()" type="button" class="navbar-toggle">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
         <a href="http://www.keycloak.org" class="navbar-brand">
-            <img class="navbar-brand-icon" type="image/svg+xml" src="{{resourceUrl}}/app/assets/img/keycloak-logo.png" alt="" width="auto" height="30px"/>
+            <img class="navbar-brand-icon" type="image/svg+xml" src="{{resourceUrl}}/app/assets/img/keycloak-logo-min.png" alt="" width="auto" height="30px"/>
         </a>
     </div>
     <nav class="collapse navbar-collapse">
@@ -21,17 +21,7 @@
             <li *ngIf="referrer.exists()">
                 <a class="nav-item-iconic" href="{{referrer.getUri()}}"><span class="pficon-arrow"></span> {{'backTo' | translate:referrer.getName()}}</a>
             </li>
-            <li class="dropdown">
-                <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                    <span title="Help" class="fa pficon-help"></span>
-                    <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                    <li><a href="#">Help</a></li>
-                    <li><a href="#">About</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
+            <li class="dropdown" (click)="logout()">
                 <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                     <span title="Username" class="fa pficon-user"></span>
                     <span class="caret"></span>
