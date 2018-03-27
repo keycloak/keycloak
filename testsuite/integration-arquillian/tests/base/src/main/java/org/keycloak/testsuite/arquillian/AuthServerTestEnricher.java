@@ -49,6 +49,7 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.container.spi.Container;
 
 /**
  *
@@ -137,8 +138,8 @@ public class AuthServerTestEnricher {
     }
     
     public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
-        log.info("*****************************************************************"
-                + "*****************************************************************************");
+        log.info("************************" + event.getContainer().getName()
+                + "*********************************************************************************");
     }
 
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {

@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.conn.params.ConnManagerParams;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -42,6 +43,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -80,8 +82,10 @@ import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -154,6 +158,12 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private ClientSecretJwtSecurePortal clientSecretJwtSecurePortal;
     @Page
     private CustomerCookiePortal customerCookiePortal;
+    @Page
+    @JavascriptBrowser
+    protected OIDCLogin jsTestRealmLoginPage;
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
     
     @Rule
     public AssertEvents assertEvents = new AssertEvents(this);
@@ -635,15 +645,15 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testVersion() {
-        driver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
-        testRealmLoginPage.form().login("admin", "admin");
+        jsTestRealmLoginPage.form().login("admin", "admin");
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
 
         Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
                 "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(driver.getPageSource());
+        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
         String serverVersion = null;
         if (matcher.find()) {
             serverVersion = matcher.group(1);

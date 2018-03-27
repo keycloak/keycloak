@@ -16,34 +16,24 @@
  */
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.adapter.servlet.AbstractBrokerLinkAndTokenExchangeTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_DEFAULT;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
+@AppServerContainer(APP_SERVER_DEFAULT)
 public class UndertowBrokerLinkAndTokenExchangeTest extends AbstractBrokerLinkAndTokenExchangeTest {
 
-    //@Test
+    @Test
+    @Ignore(value = "testing purpose")
     public void testUi() throws Exception {
         Thread.sleep(1000000000);
 
-    }
-
-    @Override
-    @Test
-    public void testAccountLink() throws Exception {
-        super.testAccountLink();
-    }
-
-    @Override
-    @Test
-    public void testAccountLinkNoTokenStore() throws Exception {
-        super.testAccountLinkNoTokenStore();
     }
 }

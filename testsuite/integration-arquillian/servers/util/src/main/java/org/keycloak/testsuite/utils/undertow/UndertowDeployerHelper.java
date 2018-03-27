@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.arquillian.undertow;
+package org.keycloak.testsuite.utils.undertow;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +36,7 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
+import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ArchivePath;
@@ -48,14 +49,14 @@ import org.xml.sax.SAXException;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class UndertowDeployerHelper {
+public class UndertowDeployerHelper {
 
     private static final Logger log = Logger.getLogger(UndertowDeployerHelper.class);
 
-    DeploymentInfo getDeploymentInfo(KeycloakOnUndertowConfiguration config, WebArchive archive) {
+    public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration configuration, WebArchive archive) {
         String archiveName = archive.getName();
         String contextPath = "/" + archive.getName().substring(0, archive.getName().lastIndexOf('.'));
-        String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
+        String appContextUrl = "http://" + configuration.getBindAddress() + ":" + configuration.getBindHttpPort() + contextPath;
 
         try {
             DeploymentInfo di = new DeploymentInfo();
@@ -77,9 +78,50 @@ class UndertowDeployerHelper {
             addAnnotatedServlets(di, archive);
 
             return di;
-        } catch (Exception ioe) {
+        } catch (IOException | IllegalArgumentException ioe) {
             throw new RuntimeException("Error deploying " + archive.getName(), ioe);
         }
+    }
+
+    private Document loadXML(InputStream is) {
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            return dBuilder.parse(is);
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addAnnotatedServlets(DeploymentInfo di, Archive<?> archive) {
+        Map<ArchivePath, Node> classNodes = archive.getContent((ArchivePath path) -> {
+
+            String stringPath = path.get();
+            return (stringPath.startsWith("/WEB-INF/classes") && stringPath.endsWith("class"));
+        });
+
+        for (Map.Entry<ArchivePath, Node> entry : classNodes.entrySet()) {
+            Node n = entry.getValue();
+            if (n.getAsset() instanceof ClassAsset) {
+                ClassAsset classAsset = (ClassAsset) n.getAsset();
+                Class<?> clazz = classAsset.getSource();
+
+                WebServlet annotation = clazz.getAnnotation(WebServlet.class);
+                if (annotation != null) {
+                    ServletInfo undertowServlet = new ServletInfo(clazz.getSimpleName(), (Class<? extends Servlet>) clazz);
+
+                    String[] mappings = annotation.value();
+                    if (mappings != null) {
+                        for (String urlPattern : mappings) {
+                            undertowServlet.addMapping(urlPattern);
+                        }
+                    }
+
+                    di.addServlet(undertowServlet);
+                }
+            }
+        }
+
     }
 
     private ResourceManager getResourceManager(final String appServerRoot, final WebArchive archive) throws IOException {
@@ -144,47 +186,4 @@ class UndertowDeployerHelper {
 
         };
     }
-
-    private Document loadXML(InputStream is) {
-        try {
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            return dBuilder.parse(is);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void addAnnotatedServlets(DeploymentInfo di, Archive<?> archive) {
-        Map<ArchivePath, Node> classNodes = archive.getContent((ArchivePath path) -> {
-
-            String stringPath = path.get();
-            return (stringPath.startsWith("/WEB-INF/classes") && stringPath.endsWith("class"));
-
-        });
-
-        for (Map.Entry<ArchivePath, Node> entry : classNodes.entrySet()) {
-            Node n = entry.getValue();
-            if (n.getAsset() instanceof ClassAsset) {
-                ClassAsset classAsset = (ClassAsset) n.getAsset();
-                Class<?> clazz = classAsset.getSource();
-
-                WebServlet annotation = clazz.getAnnotation(WebServlet.class);
-                if (annotation != null) {
-                    ServletInfo undertowServlet = new ServletInfo(clazz.getSimpleName(), (Class<? extends Servlet>) clazz);
-
-                    String[] mappings = annotation.value();
-                    if (mappings != null) {
-                        for (String urlPattern : mappings) {
-                            undertowServlet.addMapping(urlPattern);
-                        }
-                    }
-
-                    di.addServlet(undertowServlet);
-                }
-            }
-        }
-
-    }
-
 }

@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.arquillian;
 
+import java.util.List;
+import java.util.Objects;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
@@ -24,9 +26,6 @@ import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.StringPropertyReplacer;
 
-import java.util.List;
-
-import java.util.Objects;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifier;
 
 /**
@@ -58,7 +57,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
                 if (deployment.getTarget() == null || Objects.equals(deployment.getTarget().getName(), "_DEFAULT_")) {
                     log.debug("Setting target container for " + deployment.getName() + ": " + appServerQualifier);
                     deployment.setTarget(new TargetDescription(appServerQualifier));
-                } else if (! containerMatches) {
+                } else if (! containerMatches && !deployment.getArchive().getName().equals("run-on-server-classes.war")) {// run-on-server deployment can have different target
                     throw new RuntimeException("Inconsistency found: target container for " + deployment.getName()
                       + " is set to " + deployment.getTarget().getName()
                       + " but the test class targets " + appServerQualifier);

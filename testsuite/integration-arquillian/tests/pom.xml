@@ -78,6 +78,8 @@
         <auth.server.profile/>
         <auth.server.feature/>
 
+        <app.server.http.port>8280</app.server.http.port>
+
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
@@ -261,6 +263,8 @@
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
 
+                            <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                            
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
 

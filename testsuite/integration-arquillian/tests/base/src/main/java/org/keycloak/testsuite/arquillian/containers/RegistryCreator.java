@@ -19,6 +19,7 @@ package org.keycloak.testsuite.arquillian.containers;
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.GroupDef;
+import org.jboss.arquillian.config.descriptor.impl.ContainerDefImpl;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.core.api.Injector;
@@ -30,12 +31,15 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.logging.Logger;
-
+import org.jboss.shrinkwrap.descriptor.spi.node.Node;
+import org.jboss.shrinkwrap.descriptor.spi.node.NodeDescriptor;
+import org.keycloak.testsuite.arquillian.container.AppServerContainerService;
+import org.mvel2.MVEL;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.mvel2.MVEL;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.isClassPresent;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadClass;
 
@@ -50,6 +54,8 @@ import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadC
 public class RegistryCreator {
 
     protected final Logger log = Logger.getLogger(this.getClass());
+    public static final String ADAPTER_IMPL_CONFIG_STRING = "adapterImplClass";
+    private static final String ENABLED = "enabled";
 
     @Inject
     @ApplicationScoped
@@ -74,18 +80,21 @@ public class RegistryCreator {
             throw new IllegalStateException("There are not any container adapters on the classpath");
         }
 
-        createRegistry(event.getContainers(), containers, reg, serviceLoader);
-
+        List<ContainerDef> containersDefs = event.getContainers();//arquillian.xml
+        addAppServerContainerDef(containersDefs);//dynamically loaded containers
+        
+        createRegistry(containersDefs, reg, serviceLoader);
+        
         for (GroupDef group : event.getGroups()) {
-            createRegistry(group.getGroupContainers(), containers, reg, serviceLoader);
+            createRegistry(group.getGroupContainers(), reg, serviceLoader);
         }
 
         registry.set(reg);
     }
 
-    private void createRegistry(List<ContainerDef> containerDefs, Collection<DeployableContainer> containers, ContainerRegistry reg, ServiceLoader serviceLoader) {
+    private void createRegistry(List<ContainerDef> containerDefs, ContainerRegistry reg, ServiceLoader serviceLoader) {
         for (ContainerDef container : containerDefs) {
-            if (isCreatingContainer(container, containers)) {
+            if (isAdapterImplClassAvailable(container)) {
                 if (isEnabled(container)) {
                     log.info("Registering container: " + container.getContainerName());
                     reg.create(container, serviceLoader);
@@ -95,8 +104,17 @@ public class RegistryCreator {
             }
         }
     }
-
-    private static final String ENABLED = "enabled";
+    
+    private void addAppServerContainerDef(List<ContainerDef> containerDefs) {
+        Node parent = ((NodeDescriptor)containerDefs.get(0)).getRootNode();
+        
+        String appServerName = System.getProperty("app.server", "undertow");
+        
+        List<Node> containers = AppServerContainerService.getInstance().getContainers(appServerName);
+        for (Node container : containers) {
+            containerDefs.add(new ContainerDefImpl("arquillian.xml", parent, container));
+        }
+    }
 
     private static boolean isEnabled(ContainerDef containerDef) {
         Map<String, String> props = containerDef.getContainerProperties();
@@ -109,7 +127,7 @@ public class RegistryCreator {
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean isCreatingContainer(ContainerDef containerDef, Collection<DeployableContainer> containers) {
+    private boolean isAdapterImplClassAvailable(ContainerDef containerDef) {
 
         if (hasAdapterImplClassProperty(containerDef)) {
             if (isClassPresent(getAdapterImplClassValue(containerDef))) {
@@ -135,8 +153,7 @@ public class RegistryCreator {
     public static String getAdapterImplClassValue(ContainerDef containerDef) {
         return containerDef.getContainerProperties().get(ADAPTER_IMPL_CONFIG_STRING).trim();
     }
-    public static final String ADAPTER_IMPL_CONFIG_STRING = "adapterImplClass";
-
+    
     @SuppressWarnings("rawtypes")
     public static DeployableContainer<?> getContainerAdapter(String adapterImplClass, Collection<DeployableContainer> containers) {
         Validate.notNullOrEmpty(adapterImplClass, "The value of " + ADAPTER_IMPL_CONFIG_STRING + " can not be a null object "

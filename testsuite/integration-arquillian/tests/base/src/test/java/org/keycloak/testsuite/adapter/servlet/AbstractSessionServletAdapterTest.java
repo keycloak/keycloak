@@ -22,6 +22,7 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -120,6 +121,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     //KEYCLOAK-741
     @Test
     public void testSessionInvalidatedAfterFailedRefresh() {
+        assumeNotOnUndertow();
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         ClientResource sessionPortalRes = null;
         for (ClientRepresentation clientRep : testRealmResource().clients().findAll()) {
@@ -177,12 +179,20 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     //KEYCLOAK-1216
     @Test
     public void testAccountManagementSessionsLogout() {
+        assumeNotOnUndertow();
         // login as bburke
         loginAndCheckSession(driver, testRealmLoginPage);
         testRealmSessions.navigateTo();
         testRealmSessions.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
         loginAndCheckSession(driver, testRealmLoginPage);
+    }
+    
+    private void assumeNotOnUndertow() {
+        Assume.assumeFalse("Not stable on app-server-undertow when whole adapter package is tested. "
+                + "It throws: KC-SERVICES0057: Logout for client 'session-portal' failed\n" 
+                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond",
+                System.getProperty("app.server", "undertow").equals("undertow"));
     }
 
     private void loginAndCheckSession(WebDriver driver, Login login) {

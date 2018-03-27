@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian.undertow;
-
-
+package org.keycloak.testsuite.utils.undertow;
 
 import java.io.InputStream;
 
