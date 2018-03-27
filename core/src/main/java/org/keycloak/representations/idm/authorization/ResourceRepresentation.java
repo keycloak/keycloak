@@ -20,11 +20,14 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -53,6 +56,10 @@ public class ResourceRepresentation {
     private List<PolicyRepresentation> policies;
 
     private String displayName;
+
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    private Map<String, List<String>> attributes;
+
     /**
      * Creates a new instance.
      *
@@ -193,6 +200,14 @@ public class ResourceRepresentation {
         for (String scopeName : scopeNames) {
             scopes.add(new ScopeRepresentation(scopeName));
         }
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 
     public boolean equals(Object o) {

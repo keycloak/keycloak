@@ -294,6 +294,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
 
             var resource = {};
             resource.scopes = [];
+            resource.attributes = {};
 
             $scope.resource = angular.copy(resource);
 
@@ -328,6 +329,10 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                     data.scopes = [];
                 }
 
+                if (!data.attributes) {
+                    data.attributes = {};
+                }
+
                 $scope.resource = angular.copy(data);
                 $scope.changed = false;
 
@@ -342,6 +347,15 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 $scope.save = function() {
                     for (i = 0; i < $scope.resource.scopes.length; i++) {
                         delete $scope.resource.scopes[i].text;
+                    }
+                    for (var [key, value] of Object.entries($scope.resource.attributes)) {
+                        var values = value.toString().split(',');
+
+                        $scope.resource.attributes[key] = [];
+
+                        for (j = 0; j < values.length; j++) {
+                            $scope.resource.attributes[key].push(values[j]);
+                        }
                     }
                     $instance.checkNameAvailability(function () {
                         ResourceServerResource.update({realm : realm.realm, client : $scope.client.id, rsrid : $scope.resource._id}, $scope.resource, function() {
@@ -382,6 +396,15 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 onSuccess();
             }
         });
+    }
+
+    $scope.addAttribute = function() {
+        $scope.resource.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+        delete $scope.newAttribute;
+    }
+
+    $scope.removeAttribute = function(key) {
+        delete $scope.resource.attributes[key];
     }
 });
 
