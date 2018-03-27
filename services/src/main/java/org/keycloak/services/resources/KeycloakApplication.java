@@ -48,6 +48,8 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.services.scheduled.CheckForExpiringClientCertificates;
+import org.keycloak.services.scheduled.CheckForExpiringRealmCertificates;
 import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -309,14 +311,14 @@ public class KeycloakApplication extends Application {
             throw new RuntimeException("Failed to load config", e);
         }
     }
-    
+
     private static String loadDmrConfig(ServletContext context) {
         String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
         if (dmrConfig == null) return null;
 
         ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
         if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-        
+
         // note that we need to resolve expressions BEFORE we convert to JSON
         return dmrConfigNode.resolve().toJSONString(true);
     }
@@ -329,6 +331,7 @@ public class KeycloakApplication extends Application {
 
     public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
+        long certificateInterval = Config.scope("scheduled.certificate").getLong("interval", 10080L) * 1000;
 
         KeycloakSession session = sessionFactory.create();
         try {
@@ -336,6 +339,8 @@ public class KeycloakApplication extends Application {
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredClientInitialAccessTokens(), interval), interval, "ClearExpiredClientInitialAccessTokens");
             timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, ClearExpiredUserSessions.TASK_NAME);
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new CheckForExpiringRealmCertificates(), certificateInterval), certificateInterval, "CheckForExpiringRealmCertificates");
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new CheckForExpiringClientCertificates(), certificateInterval), certificateInterval, "CheckForExpiringClientCertificates");
             new UserStorageSyncManager().bootstrapPeriodic(sessionFactory, timer);
         } finally {
             session.close();

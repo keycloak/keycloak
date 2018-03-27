@@ -81,6 +81,12 @@
                 <input class="form-control" id="smtpPas" kc-password ng-model="realm.smtpServer.password" placeholder="{{:: 'login-password' | translate}}" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
             </div>
         </div>
+        <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="certificateNotification">{{:: 'certificate-notification-email-address' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="certificateNotification" name="certificateNotification" type="text" ng-model="realm.smtpServer.notification" placeholder="{{:: 'certificate-notification-email-address-display' | translate}}">
+            </div>
+        </div>
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">

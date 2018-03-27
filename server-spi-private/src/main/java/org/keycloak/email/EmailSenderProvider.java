@@ -27,5 +27,33 @@ import java.util.Map;
  */
 public interface EmailSenderProvider extends Provider {
 
-    void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException;
+    /**
+     * Send an email containing a subject and a HTML or plain text body.
+     *
+     * @param config   Configuration information.
+     * @param address  Where to send the email.
+     * @param subject  Subject of the email.
+     * @param textBody Plain text formatted email body.
+     * @param htmlBody HTML formatted email body.
+     * @throws EmailException If an issue occurs while attempting to send an email.
+     */
+    void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException;
+
+    /**
+     * Send an email containing a subject and a HTML or plain text body.
+     *
+     * @param config   Configuration information.
+     * @param user     Contains user information.
+     * @param subject  Subject of the email.
+     * @param textBody Plain text formatted email body.
+     * @param htmlBody HTML formatted email body.
+     * @throws EmailException If an issue occurs while attempting to send an email.
+     * @deprecated As of keycloak-server-spi-private 4.0.0.CR1,
+     * because of data model changes to this method,
+     * use {@link #send(Map, String, String, String, String)} instead.
+     */
+    @Deprecated
+    default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        send(config, user.getEmail(), subject, textBody, htmlBody);
+    }
 }
