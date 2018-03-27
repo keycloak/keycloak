@@ -17,13 +17,14 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Set;
@@ -40,7 +41,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AuthenticatedActionsHandler {
-    private static final Logger LOG = Logger.getLogger(AuthenticatedActionsHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthenticatedActionsHandler.class);
     protected KeycloakDeployment deployment;
     protected OIDCHttpFacade facade;
 
@@ -50,7 +51,7 @@ public class AuthenticatedActionsHandler {
     }
 
     public boolean handledRequest() {
-        LOG.debugv("AuthenticatedActionsValve.invoke {0}", facade.getRequest().getURI());
+        LOG.debug("AuthenticatedActionsValve.invoke {}", facade.getRequest().getURI());
         if (corsRequest()) return true;
         String requestUri = facade.getRequest().getURI();
         if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
@@ -64,7 +65,7 @@ public class AuthenticatedActionsHandler {
     }
 
     protected void queryBearerToken()  {
-        LOG.debugv("queryBearerToken {0}",facade.getRequest().getURI());
+        LOG.debug("queryBearerToken {}",facade.getRequest().getURI());
         if (abortTokenResponse()) return;
         facade.getResponse().setStatus(200);
         facade.getResponse().setHeader("Content-Type", "text/plain");
@@ -78,7 +79,7 @@ public class AuthenticatedActionsHandler {
 
     protected boolean abortTokenResponse() {
         if (facade.getSecurityContext() == null) {
-            LOG.debugv("Not logged in, sending back 401: {0}",facade.getRequest().getURI());
+            LOG.debug("Not logged in, sending back 401: {}",facade.getRequest().getURI());
             facade.getResponse().sendError(401);
             facade.getResponse().end();
             return true;
@@ -103,7 +104,7 @@ public class AuthenticatedActionsHandler {
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
         String exposeHeaders = deployment.getCorsExposedHeaders();
         String requestOrigin = UriUtils.getOrigin(facade.getRequest().getURI());
-        LOG.debugv("Origin: {0} uri: {1}", origin, facade.getRequest().getURI());
+        LOG.debug("Origin: {} uri: {}", origin, facade.getRequest().getURI());
         if (securityContext != null && origin != null && !origin.equals(requestOrigin)) {
             AccessToken token = securityContext.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
@@ -112,16 +113,16 @@ public class AuthenticatedActionsHandler {
             }
             if (allowedOrigins == null || (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin))) {
                 if (allowedOrigins == null) {
-                    LOG.debugv("allowedOrigins was null in token");
+                    LOG.debug("allowedOrigins was null in token");
                 } else {
-                    LOG.debugv("allowedOrigins did not contain origin");
+                    LOG.debug("allowedOrigins did not contain origin");
 
                 }
                 facade.getResponse().sendError(403);
                 facade.getResponse().end();
                 return true;
             }
-            LOG.debugv("returning origin: {0}", origin);
+            LOG.debug("returning origin: {}", origin);
             facade.getResponse().setStatus(200);
             facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
@@ -129,7 +130,7 @@ public class AuthenticatedActionsHandler {
                 facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
             }
         } else {
-            LOG.debugv("cors validation not needed as we're not a secure session or origin header was null: {0}", facade.getRequest().getURI());
+            LOG.debug("cors validation not needed as we're not a secure session or origin header was null: {}", facade.getRequest().getURI());
         }
         return false;
     }
@@ -138,7 +139,7 @@ public class AuthenticatedActionsHandler {
         PolicyEnforcer policyEnforcer = this.deployment.getPolicyEnforcer();
 
         if (policyEnforcer == null) {
-            LOG.debugv("Policy enforcement is disabled.");
+            LOG.debug("Policy enforcement is disabled.");
             return true;
         }
         try {
