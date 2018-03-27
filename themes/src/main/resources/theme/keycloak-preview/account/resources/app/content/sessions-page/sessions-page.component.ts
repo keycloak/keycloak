@@ -18,7 +18,7 @@ import {Component, OnInit} from '@angular/core';
 import {Response} from '@angular/http';
 
 import {AccountServiceClient} from '../../account-service/account.service';
- import {TranslateUtil} from '../../ngx-translate/translate.util';
+import {TranslateUtil} from '../../ngx-translate/translate.util';
 
 import {View} from '../widgets/toolbar.component';
 import {PropertyLabel} from '../widgets/property.label';
