@@ -19,6 +19,7 @@
 package org.keycloak.authorization.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -126,8 +127,56 @@ public interface Resource {
      */
     String getOwner();
 
+    /**
+     * Indicates if this resource can be managed by the resource owner.
+     *
+     * @return {@code true} if this resource can be managed by the resource owner. Otherwise, {@code false}.
+     */
     boolean isOwnerManagedAccess();
+
+    /**
+     * Sets if this resource can be managed by the resource owner.
+     *
+     * @param ownerManagedAccess {@code true} indicates that this resource can be managed by the resource owner.
+     */
     void setOwnerManagedAccess(boolean ownerManagedAccess);
 
+    /**
+     * Update the set of scopes associated with this resource.
+     *
+     * @param scopes the list of scopes to update
+     */
     void updateScopes(Set<Scope> scopes);
+
+    /**
+     * Returns the attributes associated with this resource.
+     *
+     * @return a map holding the attributes associated with this resource
+     */
+    Map<String, List<String>> getAttributes();
+
+    /**
+     * Returns the first value of an attribute with the given <code>name</code>
+     *
+     * @return the first value of an attribute
+     */
+    String getSingleAttribute(String name);
+
+    /**
+     * Returns the values of an attribute with the given <code>name</code>
+     *
+     * @return the values of an attribute
+     */
+    List<String> getAttribute(String name);
+
+    /**
+     * Sets an attribute with the given <code>name</code> and <code>values</code>.
+     *
+     * @param name the attribute name
+     * @param value the attribute values
+     * @return a map holding the attributes associated with this resource
+     */
+    void setAttribute(String name, List<String> values);
+
+    void removeAttribute(String name);
 }

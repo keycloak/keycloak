@@ -74,5 +74,21 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+
+        <createTable tableName="RESOURCE_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)" defaultValue="sybase-needs-something-here">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="RESOURCE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="RES_ATTR_PK" tableName="RESOURCE_ATTRIBUTE"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_ATTRIBUTE" constraintName="FK_5HRM2VLF9QL5FU022KQEPOVBR" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
     </changeSet>
 </databaseChangeLog>

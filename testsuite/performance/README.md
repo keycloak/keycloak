@@ -168,22 +168,29 @@ with `server.version` defaulting to `${project.version}` from `pom.xml`.
 
 ### Run Tests
 
-Usage: `mvn verify -P test [-Dtest.properties=NAMED_PROPERTY_SET]`. Default property set is `basic-oidc`.
+Usage: `mvn verify -P test [-Dtest.properties=NAMED_PROPERTY_SET]`. Default property set is `oidc-login-logout`.
 
 The parameters are loaded from `tests/parameters/test/${test.properties}.properties` file.
 Individual properties can be overriden from command line via `-D` params.
 
 To use a custom properties file specify `-Dtest.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Dtest.properties`.
 
-When running the tests it is also necessary to define a dataset to use. Usage is described in the section above.
+#### Dataset
+
+When running the tests it is necessary to define the dataset to be used.
+
+| Parameter | Description | Default Value |
+| --- | --- | --- | 
+| `dataset` | Name of the dataset to use. Individual parameters can be overriden from CLI. For details see the section above. | `default` |
+| `sequentialRealmsFrom` | Use sequential realm iteration starting from specific index. Must be lower than `numOfRealms` parameter from dataset properties. Useful for user registration scenario. | `-1` random iteration |
+| `sequentialUsersFrom` | Use sequential user iteration starting from specific index. Must be lower than `usersPerRealm` parameter from dataset properties. Useful for user registration scenario. | `-1` random iteration |
 
 #### Common Test Run Parameters
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
-| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.BasicOIDCSimulation`  |
-| `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
-| `usersPerSec` | Arrival rate of new users per second. Can be a floating point number. | `1.0` for BasicOIDCSimulation, `0.2` for AdminConsoleSimulation |
+| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.OIDCLoginAndLogoutSimulation`  |
+| `usersPerSec` | Arrival rate of new users per second. Can be a floating point number. | `1.0` for OIDCLoginAndLogoutSimulation, `0.2` for AdminConsoleSimulation |
 | `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `15` |
 | `warmUpPeriod` | Period with steady number of users intended for the system under test to warm up. (seconds) | `15` |
 | `measurementPeriod` | A measurement period after the system is warmed up. (seconds) | `30` |
@@ -191,7 +198,7 @@ When running the tests it is also necessary to define a dataset to use. Usage is
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
-#### Test Run Parameters specific to `BasicOIDCSimulation`
+#### Test Run Parameters specific to `OIDCLoginAndLogoutSimulation`
 
 | Parameter | Description | Default Value |
 | --- | --- | --- | 
@@ -206,11 +213,29 @@ When running the tests it is also necessary to define a dataset to use. Usage is
 
 - Run test specific test and dataset parameters:
 
-`mvn verify -P test -Dtest.properties=basic-oidc -Ddataset=100u2c`
+`mvn verify -P test -Dtest.properties=oidc-login-logout -Ddataset=100u2c`
 
 - Run test with specific test and dataset parameters, overriding some from command line:
 
 `mvn verify -P test -Dtest.properties=admin-console -Ddataset=100u2c -DrampUpPeriod=30 -DwarmUpPeriod=60 -DusersPerSec=0.3`
+
+#### Running `OIDCRegisterAndLogoutSimulation`
+
+Running the user registration simulation requires a different approach to dataset and how it's iterated.
+- It requires sequential iteration instead of the default random one.
+- In case some users are already registered it requires starting the iteration from a specific index .
+
+##### Example A: 
+1. Generate dataset with 0 users: `mvn verify -P generate-data -DusersPerRealm=0`
+2. Run the registration test:
+
+`mvn verify -P test -D test.properties=oidc-register-logout -DsequentialUsersFrom=0 -DusersPerRealm=<MAX_EXPECTED_REGISTRATIONS>`
+
+##### Example B:
+1. Generate or import dataset with 100 users: `mvn verify -P generate-data -Ddataset=100u2c`. This will create 1 realm and users 0-99.
+2. Run the registration test starting from user 100:
+
+`mvn verify -P test -D test.properties=oidc-register-logout -DsequentialUsersFrom=100 -DusersPerRealm=<MAX_EXPECTED_REGISTRATIONS>`
 
 
 ## Monitoring
@@ -271,7 +296,7 @@ Thus, it's best to download and install [this SDK version](http://scala-lang.org
 Open Preferences in IntelliJ. Type 'plugins' in the search box. In the right pane click on 'Install JetBrains plugin'.
 Type 'scala' in the search box, and click Install button of the Scala plugin.
 
-#### Run BasicOIDCSimulation from IntelliJ
+#### Run OIDCLoginAndLogoutSimulation from IntelliJ
 
 Make sure that `performance` maven profile is enabled for IDEA to treat `performance` directory as a project module. 
 

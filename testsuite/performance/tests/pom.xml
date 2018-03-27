@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>performance</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -35,7 +35,7 @@
 
         <provisioning.properties>${provisioner}/4cpus/${deployment}</provisioning.properties>
         <dataset>2u2c</dataset>
-        <test.properties>basic-oidc</test.properties>
+        <test.properties>oidc-login-logout</test.properties>
         
         <provisioning.properties.file>${project.basedir}/parameters/provisioning/${provisioning.properties}.properties</provisioning.properties.file>
         <dataset.properties.file>${project.basedir}/parameters/datasets/${dataset}.properties</dataset.properties.file>
@@ -57,7 +57,7 @@
         <scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
         <jboss-logging.version>3.3.0.Final</jboss-logging.version>
 
-        <gatling.simulationClass>keycloak.BasicOIDCSimulation</gatling.simulationClass>
+        <gatling.simulationClass>keycloak.OIDCLoginAndLogoutSimulation</gatling.simulationClass>
         <gatling.skip.run>true</gatling.skip.run>
     </properties>
 

@@ -35,6 +35,7 @@ import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
@@ -556,9 +557,49 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
-    @NotNull
+    @Test
+    public void testCheckResourceAttributes() {
+        testingClient.server().run(PolicyEvaluationTest::testCheckResourceAttributes);
+    }
+
+    public static void testCheckResourceAttributes(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
+
+        policyRepresentation.setName("testCheckResourceAttributes");
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("var permission = $evaluation.getPermission();");
+        builder.append("var resource = permission.getResource();");
+        builder.append("var attributes = resource.getAttributes();");
+        builder.append("if (attributes.size() == 2 && attributes.containsKey('a1') && attributes.containsKey('a2') && attributes.get('a1').size() == 2 && attributes.get('a2').get(0).equals('3') && resource.getAttribute('a1').size() == 2 && resource.getSingleAttribute('a2').equals('3')) { $evaluation.grant(); }");
+
+        policyRepresentation.setCode(builder.toString());
+
+        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        Resource resource = storeFactory.getResourceStore().create("testCheckResourceAttributesResource", resourceServer, resourceServer.getId());
+
+        resource.setAttribute("a1", Arrays.asList("1", "2"));
+        resource.setAttribute("a2", Arrays.asList("3"));
+
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resource, resourceServer, policy);
+
+        provider.evaluate(evaluation);
+
+        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+    }
+
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy) {
-        return new DefaultEvaluation(new ResourcePermission(null, null, resourceServer), new DefaultEvaluationContext(new Identity() {
+        return createEvaluation(session, authorization, null, resourceServer, policy);
+    }
+
+    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, Resource resource, ResourceServer resourceServer, Policy policy) {
+        return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), new DefaultEvaluationContext(new Identity() {
             @Override
             public String getId() {
                 return null;
@@ -568,11 +609,8 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
             public Attributes getAttributes() {
                 return null;
             }
-        }, session), policy, policy, new Decision() {
-            @Override
-            public void onDecision(Evaluation evaluation) {
+        }, session), policy, policy, evaluation -> {
 
-            }
         }, authorization);
     }
 }

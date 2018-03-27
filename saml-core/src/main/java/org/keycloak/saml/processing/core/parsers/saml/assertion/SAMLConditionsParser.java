@@ -19,6 +19,7 @@ package org.keycloak.saml.processing.core.parsers.saml.assertion;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
+import org.keycloak.dom.saml.v2.assertion.ProxyRestrictionType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import javax.xml.stream.XMLEventReader;
@@ -62,6 +63,11 @@ public class SAMLConditionsParser extends AbstractStaxSamlAssertionParser<Condit
             case ONE_TIME_USE:
                 OneTimeUseType oneTimeUseCondition = new OneTimeUseType();
                 target.addCondition(oneTimeUseCondition);
+                break;
+
+            case PROXY_RESTRICTION:
+                ProxyRestrictionType proxyRestriction = SAMLProxyRestrictionParser.getInstance().parse(xmlEventReader);
+                target.addCondition(proxyRestriction);
                 break;
 
             default:

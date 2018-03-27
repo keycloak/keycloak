@@ -43,7 +43,7 @@
     > a:hover,
     > a:focus {
       @include box-shadow(none);
-      cursor: default;
+      cursor: not-allowed;
       @include gradient-vertical($btn-default-bg-img-start, $btn-default-bg-img-stop);
     }
   }
@@ -88,7 +88,7 @@
         float: none;
       }
     }
-    .pagination-pf-pagesize.bootstrap-select.btn-group, 
+    .pagination-pf-pagesize.bootstrap-select.btn-group,
     .pagination-pf-pagesize.btn-group {
       display: flex;
       float: none;

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -51,6 +53,7 @@ public class GroupAttributeEntity {
 
     @Column(name = "NAME")
     protected String name;
+    @Nationalized
     @Column(name = "VALUE")
     protected String value;
 

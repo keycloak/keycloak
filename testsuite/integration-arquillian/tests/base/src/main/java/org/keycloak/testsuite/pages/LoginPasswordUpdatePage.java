@@ -47,7 +47,7 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Update password");
+        return PageUtils.getPageTitle(driver).equals("Update password");
     }
 
     public void open() {
