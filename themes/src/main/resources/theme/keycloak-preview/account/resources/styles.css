@@ -1,0 +1,17 @@
+/* Welcome Page */
+
+body {
+  background: #f5f5f5;
+}
+
+p.description {
+  font-size: 14px;
+  margin: 10px auto 20px;
+  max-width: 60%;
+  padding: 0 10px;
+  text-align: center;
+}
+
+.btn-sign {
+  margin-top: 10px;
+}

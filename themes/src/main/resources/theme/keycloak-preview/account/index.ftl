@@ -8,12 +8,12 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm}';
             var resourceUrl = '${resourceUrl}';
-                
+
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrer_uri = '${referrer_uri}';
             </#if>
-        
+
             <#if msg??>
                 var locale = '${locale}';
                 var l18n_msg = JSON.parse('${msg?no_esc}');
@@ -70,7 +70,7 @@
                     const script = document.createElement("script");
                     script.src = resourceUrl + url;
                     if (loadListener) script.addEventListener("load", loadListener);
-                    document.head.appendChild(script); 
+                    document.head.appendChild(script);
                 };
                 loadjs("/node_modules/core-js/client/shim.min.js", function(){
                     loadjs("/node_modules/zone.js/dist/zone.min.js");
@@ -106,8 +106,8 @@
         </head>
     <body>
 
-        
-        
+
+
 <!-- Top Navigation -->
         <nav class="navbar navbar-pf-alt">
 
@@ -119,81 +119,90 @@
             <nav class="collapse navbar-collapse">
                 <ul class="nav navbar-nav">
                 </ul>
-                
+
                 <!-- This sign in button is only displayed in the rare case where we go directly to this page and we aren't logged in.
                      Note javascript code above that changes its visibility for that case.  Also, because we are not logged in
                      we are unable to localize the button's message.  Not sure what to do about that yet.
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
-                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg" type="button">Sign In</button></li>
+                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">Log In</button></li>
                 </ul>
             </nav>
         </nav>
-        
+
 <!--Top Nav -->
-        
+
 <!-- Home Page --->
     <div class="cards-pf" id="welcomeScreen">
-        <div><h1 class="text-center">Welcome to Keycloak Account Management</h1></div>
+        <div class="text-center">
+          <h1>Welcome to Keycloak Account Management</h1>
+          <p class="description">Through the account management console users can manage their own accounts. They can update the profile, change passwords, and setup two-factor authentication.</p>
+        </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
                 <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body">
+                        <div class="card-pf-body text-center">
                             <div class="card-pf-top-element">
                                 <span class="fa pficon-user card-pf-icon-circle"></span>
                             </div>
-                            <h2 class="card-pf-title text-center">
+                            <h2>
                                 Personal Info
                             </h2>
-                            <h3 class="card-pf-info text-center">
-                                <a href="${baseUrl}/#/account">Account</a>
-                            </h3>
+                            <p>Manage your basic information: <br>your name, email</p>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Personal Info</a></h3>
                         </div>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body">
+                        <div class="card-pf-body text-center">
                             <div class="card-pf-top-element">
                                 <span class="fa fa-shield card-pf-icon-circle"></span>
                             </div>
-                            <h2 class="card-pf-title text-center">
+                            <h2>
                                 Account Security
                             </h2>
-                            <h3 class="card-pf-info text-center">
-                                More stuff goes here
-                            </h3>
+                            <p>Control your password and account access</p>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Change password</a></h3>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Authenticator</a></h3>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Device activity</a></h3>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Federated identities</a></h3>
                         </div>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body">
+                        <div class="card-pf-body text-center">
                             <div class="card-pf-top-element">
                                 <span class="fa fa-th card-pf-icon-circle"></span>
                             </div>
-                            <h2 class="card-pf-title text-center">
+                            <h2>
                                 Applications
                             </h2>
-                            <h3 class="card-pf-info text-center">
-                                More stuff goes here
-                            </h3>
+                            <p>Track and manage your app permission to access your account</p>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Applications</a></h3>
                         </div>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body">
+                        <div class="card-pf-body text-center">
                             <div class="card-pf-top-element">
                                 <span class="fa pficon-repository card-pf-icon-circle"></span>
                             </div>
-                            <h2 class="card-pf-title text-center">
+                            <h2>
                                 My Resources
                             </h2>
-                            <h3 class="card-pf-info text-center">
-                                More stuff goes here
-                            </h3>
+                            <p>Share your resources among team members</p>
+                            <hr/>
+                            <h3><a href="${baseUrl}/#/account">Resources</a></h3>
                         </div>
                     </div>
                 </div>
