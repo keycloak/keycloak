@@ -196,6 +196,10 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return admin;
     }
 
+    public RealmModel adminsRealm() {
+        return adminsRealm;
+    }
+
 
     @Override
     public RolePermissions roles() {
