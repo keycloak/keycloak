@@ -21,13 +21,12 @@
             <li *ngIf="referrer.exists()">
                 <a class="nav-item-iconic" href="{{referrer.getUri()}}"><span class="pficon-arrow"></span> {{'backTo' | translate:referrer.getName()}}</a>
             </li>
-            <li class="dropdown" (click)="logout()">
+            <li class="dropdown" >
                 <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                     <span title="Username" class="fa pficon-user"></span>
                     <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                    <li><a href="#">Preferences</a></li>
                     <li><a href="#" (click)="logout()">{{'doSignOut' | translate}}</a></li>
                 </ul>
             </li>

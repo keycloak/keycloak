@@ -59,6 +59,7 @@
         <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
               media="screen, print">
 
+        <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js"></script>
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
@@ -133,6 +134,7 @@
 <!--Top Nav -->
         
 <!-- Home Page --->
+    
     <div class="cards-pf" id="welcomeScreen">
         <div><h1 class="text-center">Welcome to Keycloak Account Management</h1></div>
         <div class="container-fluid container-cards-pf">
@@ -201,6 +203,13 @@
             </div>
         </div>
     </div>
+        
+        <script>
+            var winHash = window.location.hash;
+            if (winHash.startsWith('#/') && !winHash.startsWith('#/&state')) {
+                document.getElementById("welcomeScreen").style.visibility='hidden';
+            }
+        </script>
 
         <app-root></app-root>
     </body>
