@@ -230,7 +230,20 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     } else {
                         return true;
                     }
-                } else {
+                } else if (role.getName().equals(AdminRoles.REALM_ADMIN)) {
+                    // check to see if we have masterRealm.admin role.  Otherwise abort
+                    if (root.adminsRealm() == null || !root.adminsRealm().getName().equals(Config.getAdminRealm())) {
+                        return adminConflictMessage(role);
+                    }
+
+                    RealmModel masterRealm = root.adminsRealm();
+                    RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+                    if (root.admin().hasRole(adminRole)) {
+                        return true;
+                    } else {
+                        return adminConflictMessage(role);
+                    }
+                 } else {
                     return adminConflictMessage(role);
                 }
 
@@ -239,6 +252,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                 if (role.getContainer() instanceof RealmModel) {
                     RealmModel realm = (RealmModel)role.getContainer();
                     // If realm role is master admin role then abort
+                    // if realm name is master realm, than we know this is a admin role in master realm.
                     if (realm.getName().equals(Config.getAdminRealm())) {
                         return adminConflictMessage(role);
                     }
