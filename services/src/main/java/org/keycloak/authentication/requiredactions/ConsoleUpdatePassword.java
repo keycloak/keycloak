@@ -38,7 +38,7 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleUpdatePassword extends UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleUpdatePassword extends UpdatePassword implements RequiredActionProvider {
     public static final ConsoleUpdatePassword SINGLETON = new ConsoleUpdatePassword();
 
     private static final Logger logger = Logger.getLogger(ConsoleUpdatePassword.class);

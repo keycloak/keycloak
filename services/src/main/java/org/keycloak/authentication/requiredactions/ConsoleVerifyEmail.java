@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleVerifyEmail implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleVerifyEmail implements RequiredActionProvider {
     public static final ConsoleVerifyEmail SINGLETON = new ConsoleVerifyEmail();
     private static final Logger logger = Logger.getLogger(ConsoleVerifyEmail.class);
     @Override
@@ -113,33 +113,7 @@ public class ConsoleVerifyEmail implements RequiredActionProvider, RequiredActio
 
     }
 
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Verify Email";
-    }
-
-
     public static String EMAIL_CODE="email_code";
-    @Override
-    public String getId() {
-        return UserModel.RequiredAction.VERIFY_EMAIL.name();
-    }
-
     protected TextChallenge challenge(RequiredActionContext context) {
         return TextChallenge.challenge(context)
                 .header()

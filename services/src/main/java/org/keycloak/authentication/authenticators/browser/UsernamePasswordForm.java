@@ -20,8 +20,6 @@ package org.keycloak.authentication.authenticators.browser;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.DisplayUtils;
-import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -42,10 +40,6 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        if (DisplayUtils.isConsole(context)) {
-            ConsoleUsernamePasswordAuthenticator.SINGLETON.action(context);
-            return;
-        }
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {
             context.cancelLogin();
@@ -63,10 +57,6 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        if (DisplayUtils.isConsole(context)) {
-            ConsoleUsernamePasswordAuthenticator.SINGLETON.authenticate(context);
-            return;
-        }
         MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 

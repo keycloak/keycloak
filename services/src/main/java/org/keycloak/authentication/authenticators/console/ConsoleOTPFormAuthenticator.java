@@ -19,13 +19,10 @@ package org.keycloak.authentication.authenticators.console;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.DisplayUtils;
 import org.keycloak.authentication.TextChallenge;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 

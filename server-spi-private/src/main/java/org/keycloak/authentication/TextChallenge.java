@@ -1,6 +1,7 @@
 package org.keycloak.authentication;
 
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -35,6 +36,20 @@ import javax.ws.rs.core.Response;
  *
  */
 public class TextChallenge {
+
+    /**
+     * Browser is required to login.  This will abort client from doing a console login.
+     *
+     * @param session
+     * @return
+     */
+    public static Response browserRequired(KeycloakSession session) {
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .header("WWW-Authenticate", "X-Text-Form-Challenge browserRequired")
+                .type(MediaType.TEXT_PLAIN)
+                .entity("\n" + session.getProvider(LoginFormsProvider.class).getMessage("browserRequired") + "\n").build();
+    }
+
 
     /**
      * Build challenge response for required actions

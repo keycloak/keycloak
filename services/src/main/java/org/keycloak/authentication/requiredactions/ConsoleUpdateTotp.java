@@ -44,7 +44,7 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleUpdateTotp implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleUpdateTotp implements RequiredActionProvider {
     public static final ConsoleUpdateTotp SINGLETON = new ConsoleUpdateTotp();
 
     @Override
@@ -109,36 +109,5 @@ public class ConsoleUpdateTotp implements RequiredActionProvider, RequiredAction
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Configure OTP";
-    }
-
-
-    @Override
-    public String getId() {
-        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
-    }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
     }
 }

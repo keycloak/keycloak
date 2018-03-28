@@ -39,6 +39,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -139,6 +140,23 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
             user.setEnabled(true);
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+
+            // Parent flow
+            AuthenticationFlowModel browser = new AuthenticationFlowModel();
+            browser.setAlias("no-console-flow");
+            browser.setDescription("browser based authentication");
+            browser.setProviderId("basic-flow");
+            browser.setTopLevel(true);
+            browser.setBuiltIn(true);
+            browser = realm.addAuthenticationFlow(browser);
+
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(browser.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setPriority(20);
+            execution.setAuthenticator(PassThroughAuthenticator.PROVIDER_ID);
+            realm.addAuthenticatorExecution(execution);
+
         });
     }
 
@@ -163,6 +181,40 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
         Thread.sleep(100000000);
     }
+
+    @Test
+    public void testBrowserRequired() throws Exception {
+        // that that a browser require challenge is sent back if authentication flow doesn't support console display mode
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+            AuthenticationFlowModel flow = realm.getFlowByAlias("no-console-flow");
+            kcinit.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, flow.getId());
+
+
+        });
+
+        testInstall();
+        // login
+        //System.out.println("login....");
+        KcinitExec exe = KcinitExec.newBuilder()
+                .argsLine("login")
+                .executeAsync();
+        exe.waitCompletion();
+        Assert.assertEquals(1, exe.exitCode());
+        Assert.assertTrue(exe.stderrString().contains("Browser required to login"));
+        //Assert.assertEquals("stderr first line", "Browser required to login", exe.stderrLines().get(1));
+
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+            kcinit.removeAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
+
+
+        });
+    }
+
 
     @Test
     public void testBadCommand() throws Exception {

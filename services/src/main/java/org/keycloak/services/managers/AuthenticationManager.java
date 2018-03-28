@@ -21,11 +21,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionContextResult;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
@@ -970,6 +966,25 @@ public class AuthenticationManager {
         authSession.setProtocolMappers(requestedProtocolMappers);
     }
 
+    public static RequiredActionProvider createRequiredAction(KeycloakSession session, RequiredActionFactory factory, AuthenticationSessionModel authSession) {
+        String display = authSession.getClientNote(OAuth2Constants.DISPLAY);
+        if (display == null) return factory.create(session);
+
+
+        if (factory instanceof DisplayTypeRequiredActionFactory) {
+            RequiredActionProvider provider = ((DisplayTypeRequiredActionFactory)factory).createDisplay(session, display);
+            if (provider != null) return provider;
+        }
+        // todo create a provider for handling lack of display support
+        if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
+            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, TextChallenge.browserRequired(session));
+
+        } else {
+            return factory.create(session);
+        }
+    }
+
+
     protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
                                                HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
                                                Set<String> requiredActions) {
@@ -987,7 +1002,15 @@ public class AuthenticationManager {
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
             }
-            RequiredActionProvider actionProvider = factory.create(session);
+            RequiredActionProvider actionProvider = null;
+            try {
+                actionProvider = createRequiredAction(session, factory, authSession);
+            } catch (AuthenticationFlowException e) {
+                if (e.getResponse() != null) {
+                    return e.getResponse();
+                }
+                throw e;
+            }
             RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
             actionProvider.requiredActionChallenge(context);
 

@@ -33,31 +33,9 @@ import java.util.Arrays;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleTermsAndConditions implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleTermsAndConditions implements RequiredActionProvider {
     public static final ConsoleTermsAndConditions SINGLETON = new ConsoleTermsAndConditions();
-    public static final String PROVIDER_ID = "terms_and_conditions";
-    public static final String USER_ATTRIBUTE = PROVIDER_ID;
-
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
-    }
-
+    public static final String USER_ATTRIBUTE = TermsAndConditions.PROVIDER_ID;
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -90,11 +68,6 @@ public class ConsoleTermsAndConditions implements RequiredActionProvider, Requir
         context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(Integer.toString(Time.currentTime())));
 
         context.success();
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Terms and Conditions";
     }
 
     @Override
