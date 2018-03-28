@@ -1,0 +1,35 @@
+==== Bitbucket
+There are a number of steps you have to complete to be able to login to Bitbucket.
+
+First, open the `Identity Providers` left menu item and select `Bitbucket` from the `Add provider` drop down list. This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:{project_images}/bitbucket-add-identity-provider.png[]
+
+Before you can click `Save`, you must obtain a `Client ID` and `Client Secret` from Bitbucket.
+
+NOTE: You will the `Redirect URI` from this page in a later step, which you will provide to Bitbucket when you register {project_name} as a client there.
+
+.Add a New App
+To enable login with Bitbucket you must first register an application project in
+https://confluence.atlassian.com/bitbucket/oauth-on-bitbucket-cloud-238027431.html[OAuth on Bitbucket Cloud].
+
+NOTE: Bitbucket often changes the look and feel of application registration, so what you see on the Bitbucket site may differ. If in doubt, see the Bitbucket documentation.
+
+image:images/bitbucket-developer-applications.png[]
+
+Click the `Add consumer` button.
+
+.Register App
+image:images/bitbucket-register-app.png[]
+
+Copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the `Authorization callback URL` field on the Bitbucket `Register a new OAuth application` page.
+
+On the same page, mark the `Email` and `Read` boxes under `Account` to allow your application to read user email.
+
+.Bitbucket App Page
+image:images/bitbucket-app-page.png[]
+
+When you are done registering, click `Save`. This will open the application management page in Bitbucket. Find the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
++
++To finish, return to {project_name} and enter them. Click `Save`.
