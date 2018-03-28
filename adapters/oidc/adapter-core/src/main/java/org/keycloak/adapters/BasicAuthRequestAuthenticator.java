@@ -25,7 +25,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -35,6 +34,8 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -42,7 +43,7 @@ import java.util.List;
  * Basic auth request authenticator.
  */
 public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticator {
-    protected Logger log = Logger.getLogger(BasicAuthRequestAuthenticator.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BasicAuthRequestAuthenticator.class);
     
     public BasicAuthRequestAuthenticator(KeycloakDeployment deployment) {
     	super(deployment);
@@ -77,7 +78,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
             atr = getToken(user, pw);
             tokenString = atr.getToken();
         } catch (Exception e) {
-            log.debug("Failed to obtain token", e);
+            LOG.debug("Failed to obtain token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "no_token", e.getMessage());
             return AuthOutcome.FAILED;
         }

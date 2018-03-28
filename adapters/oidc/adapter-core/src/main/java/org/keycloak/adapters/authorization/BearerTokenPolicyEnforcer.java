@@ -17,9 +17,6 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.HashSet;
-
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthzClient;
@@ -28,13 +25,17 @@ import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(BearerTokenPolicyEnforcer.class);
+    private static Logger LOG = LoggerFactory.getLogger(BearerTokenPolicyEnforcer.class);
 
     public BearerTokenPolicyEnforcer(PolicyEnforcer enforcer) {
         super(enforcer);
@@ -61,8 +62,8 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         }
 
         response.setHeader("WWW-Authenticate", wwwAuthenticate.toString());
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Sending UMA challenge");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Sending UMA challenge");
         }
         return true;
     }

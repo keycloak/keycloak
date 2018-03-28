@@ -18,7 +18,6 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
@@ -28,6 +27,8 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -41,7 +42,7 @@ import java.util.Map;
  */
 public class KeycloakDeployment {
 
-    private static final Logger log = Logger.getLogger(KeycloakDeployment.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KeycloakDeployment.class);
 
     protected RelativeUrlsUsed relativeUrls;
     protected String realm;
@@ -150,8 +151,8 @@ public class KeycloakDeployment {
      * @param authUrlBuilder absolute URI
      */
     protected void resolveUrls(KeycloakUriBuilder authUrlBuilder) {
-        if (log.isDebugEnabled()) {
-            log.debug("resolveUrls");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("resolveUrls");
         }
 
         authServerBaseUrl = authUrlBuilder.build().toString();

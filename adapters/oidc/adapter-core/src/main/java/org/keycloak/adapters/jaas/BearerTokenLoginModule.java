@@ -17,8 +17,9 @@
 
 package org.keycloak.adapters.jaas;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Login module, which allows to authenticate Keycloak access token in environments, which rely on JAAS
@@ -29,7 +30,7 @@ import org.keycloak.common.VerificationException;
  */
 public class BearerTokenLoginModule extends AbstractKeycloakLoginModule {
 
-    private static final Logger log = Logger.getLogger(BearerTokenLoginModule.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BearerTokenLoginModule.class);
 
     @Override
     protected Auth doAuth(String username, String password) throws VerificationException {
@@ -39,7 +40,7 @@ public class BearerTokenLoginModule extends AbstractKeycloakLoginModule {
 
     @Override
     protected Logger getLogger() {
-        return log;
+        return LOG;
     }
 
 }

@@ -17,9 +17,10 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.HostUtils;
 import org.keycloak.common.util.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,7 +34,7 @@ import java.util.concurrent.Executors;
  */
 public class NodesRegistrationManagement {
 
-    private static final Logger log = Logger.getLogger(NodesRegistrationManagement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NodesRegistrationManagement.class);
 
     private final Map<String, NodeRegistrationContext> nodeRegistrations = new ConcurrentHashMap<String, NodeRegistrationContext>();
     private final Executor executor = Executors.newSingleThreadExecutor();
@@ -79,42 +80,42 @@ public class NodesRegistrationManagement {
     }
 
     protected void sendRegistrationEvent(KeycloakDeployment deployment) {
-        log.debug("Sending registration event right now");
+        LOG.debug("Sending registration event right now");
 
         String host = HostUtils.getHostName();
         try {
             ServerRequest.invokeRegisterNode(deployment, host);
             NodeRegistrationContext regContext = new NodeRegistrationContext(Time.currentTime(), deployment);
             nodeRegistrations.put(deployment.getRegisterNodeUrl(), regContext);
-            log.debugf("Node '%s' successfully registered in Keycloak", host);
+            LOG.debug("Node '{}' successfully registered in Keycloak", host);
         } catch (ServerRequest.HttpFailure failure) {
-            log.error("failed to register node to keycloak");
-            log.error("status from server: " + failure.getStatus());
+            LOG.error("failed to register node to keycloak");
+            LOG.error("status from server: " + failure.getStatus());
             if (failure.getError() != null) {
-                log.error("   " + failure.getError());
+                LOG.error("   " + failure.getError());
             }
         } catch (IOException e) {
-            log.error("failed to register node to keycloak", e);
+            LOG.error("failed to register node to keycloak", e);
         }
     }
 
     protected boolean sendUnregistrationEvent(KeycloakDeployment deployment) {
-        log.debug("Sending Unregistration event right now");
+        LOG.debug("Sending Unregistration event right now");
 
         String host = HostUtils.getHostName();
         try {
             ServerRequest.invokeUnregisterNode(deployment, host);
-            log.debugf("Node '%s' successfully unregistered from Keycloak", host);
+            LOG.debug("Node '{}' successfully unregistered from Keycloak", host);
             return true;
         } catch (ServerRequest.HttpFailure failure) {
-            log.error("failed to unregister node from keycloak");
-            log.error("status from server: " + failure.getStatus());
+            LOG.error("failed to unregister node from keycloak");
+            LOG.error("status from server: " + failure.getStatus());
             if (failure.getError() != null) {
-                log.error("   " + failure.getError());
+                LOG.error("   " + failure.getError());
             }
             return false;
         } catch (IOException e) {
-            log.error("failed to unregister node from keycloak", e);
+            LOG.error("failed to unregister node from keycloak", e);
             return false;
         }
     }

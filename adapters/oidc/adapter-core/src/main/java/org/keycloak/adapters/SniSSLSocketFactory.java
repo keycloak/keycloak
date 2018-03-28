@@ -23,6 +23,8 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.protocol.HttpContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -38,15 +40,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class SniSSLSocketFactory extends SSLSocketFactory {
 
-    private static Logger log = Logger.getLogger(SniSSLSocketFactory.class.getName());
+    private final static Logger LOG = LoggerFactory.getLogger(SniSSLSocketFactory.class);
 
     public SniSSLSocketFactory(String algorithm, KeyStore keystore, String keyPassword, KeyStore truststore, SecureRandom random, HostNameResolver nameResolver) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
         super(algorithm, keystore, keyPassword, truststore, random, nameResolver);
@@ -124,9 +124,9 @@ public class SniSSLSocketFactory extends SSLSocketFactory {
                 });
 
                 setHostMethod.invoke(socket, hostname);
-                log.finest("Applied SNI to socket for: " + hostname);
+                LOG.trace("Applied SNI to socket for: " + hostname);
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed to apply SNI to SSLSocket", e);
+                LOG.warn("Failed to apply SNI to SSLSocket", e);
             }
         }
         return socket;

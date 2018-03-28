@@ -17,10 +17,6 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -36,13 +32,18 @@ import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(KeycloakAdapterPolicyEnforcer.class);
+    private static Logger LOG = LoggerFactory.getLogger(KeycloakAdapterPolicyEnforcer.class);
 
     public KeycloakAdapterPolicyEnforcer(PolicyEnforcer policyEnforcer) {
         super(policyEnforcer);
@@ -134,7 +135,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 authzRequest.setRpt(accessTokenString);
             }
 
-            LOGGER.debug("Obtaining authorization for authenticated user.");
+            LOG.debug("Obtaining authorization for authenticated user.");
             AuthorizationResponse authzResponse = authzClient.authorization(accessTokenString).authorize(authzRequest);
 
             if (authzResponse != null) {
@@ -143,7 +144,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
             return null;
         } catch (AuthorizationDeniedException e) {
-            LOGGER.debug("Authorization denied", e);
+            LOG.debug("Authorization denied", e);
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error during authorization request.", e);

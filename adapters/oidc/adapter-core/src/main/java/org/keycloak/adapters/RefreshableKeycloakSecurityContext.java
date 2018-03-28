@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
@@ -26,6 +25,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -35,7 +36,7 @@ import java.io.IOException;
  */
 public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext {
 
-    protected static Logger log = Logger.getLogger(RefreshableKeycloakSecurityContext.class);
+    private final static Logger LOG = LoggerFactory.getLogger(RefreshableKeycloakSecurityContext.class);
 
     protected transient KeycloakDeployment deployment;
     protected transient AdapterTokenStore tokenStore;
@@ -71,7 +72,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         try {
             ServerRequest.invokeLogout(deployment, refreshToken);
         } catch (Exception e) {
-            log.error("failed to invoke remote logout", e);
+            LOG.error("failed to invoke remote logout", e);
         }
     }
 
@@ -98,8 +99,8 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
      */
     public boolean refreshExpiredToken(boolean checkActive) {
         if (checkActive) {
-            if (log.isTraceEnabled()) {
-                log.trace("checking whether to refresh.");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("checking whether to refresh.");
             }
             if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
         }
@@ -111,35 +112,35 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             return false;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Doing refresh");
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Doing refresh");
         }
         AccessTokenResponse response = null;
         try {
             response = ServerRequest.invokeRefresh(deployment, refreshToken);
         } catch (IOException e) {
-            log.error("Refresh token failure", e);
+            LOG.error("Refresh token failure", e);
             return false;
         } catch (ServerRequest.HttpFailure httpFailure) {
-            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+            LOG.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
             return false;
         }
-        if (log.isTraceEnabled()) {
-            log.trace("received refresh response");
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("received refresh response");
         }
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
-            log.debug("Token Verification succeeded!");
+            LOG.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
-            log.error("failed verification of token");
+            LOG.error("failed verification of token");
             return false;
         }
 
         // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
         if (!isTokenTimeToLiveSufficient(token)) {
-            log.error("failed to refresh the token with a longer time-to-live than the minimum");
+            LOG.error("failed to refresh the token with a longer time-to-live than the minimum");
             return false;
         }
 
@@ -149,8 +150,8 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
         this.token = token;
         if (response.getRefreshToken() != null) {
-            if (log.isTraceEnabled()) {
-                log.trace("Setup new refresh token to the security context");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Setup new refresh token to the security context");
             }
             this.refreshToken = response.getRefreshToken();
         }

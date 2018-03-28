@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.jaas;
 
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -28,6 +27,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.representations.AccessToken;
+import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -37,7 +37,6 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
