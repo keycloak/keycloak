@@ -16,17 +16,12 @@
  */
 package org.keycloak.services.resources;
 
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionContextResult;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.TokenVerifier;
-import org.keycloak.authentication.ExplainedVerificationException;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -934,7 +929,15 @@ public class LoginActionsService {
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE));
         }
-        RequiredActionProvider provider = factory.create(session);
+        RequiredActionProvider provider = null;
+        try {
+            provider = AuthenticationManager.createRequiredAction(session, factory, authSession);
+        }  catch (AuthenticationFlowException e) {
+            if (e.getResponse() != null) {
+                return e.getResponse();
+            }
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.DISPLAY_UNSUPPORTED));
+        }
 
         RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, authSession.getAuthenticatedUser(), factory) {
             @Override

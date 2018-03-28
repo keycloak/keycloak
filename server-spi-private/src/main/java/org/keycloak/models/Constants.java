@@ -52,6 +52,7 @@ public interface Constants {
     int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
 
     String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
+    String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     String EXECUTION = "execution";
     String CLIENT_ID = "client_id";
     String TAB_ID = "tab_id";

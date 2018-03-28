@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-cli-sso</artifactId>
+    <artifactId>kcinit</artifactId>
     <name>Keycloak CLI SSO Framework</name>
     <description/>
 
@@ -54,7 +54,7 @@
                 <configuration>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>org.keycloak.adapters.KeycloakCliSsoMain</mainClass>
+                            <mainClass>org.keycloak.adapters.KcinitMain</mainClass>
                         </transformer>
                     </transformers>
 

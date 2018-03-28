@@ -1414,6 +1414,17 @@
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>kcinit</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>kcinit-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

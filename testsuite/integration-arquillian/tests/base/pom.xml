@@ -228,10 +228,46 @@
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
                                 </artifactItem>
-                            </artifactItems>
+                             </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.1.6</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>1.9.2</goVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>get-mousetrap</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/inconshreveable/mousetrap</package>
+                            </packages>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>get-kcinit</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <tag>0.3</tag>
+                        </configuration>
+                    </execution>
+                  </executions>
             </plugin>
 
         </plugins>
