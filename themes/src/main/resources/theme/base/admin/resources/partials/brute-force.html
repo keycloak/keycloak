@@ -23,6 +23,15 @@
             </div>
 
             <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="displayLockoutOnLogin">{{:: 'display-lockout-on-login' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.displayLockoutOnLogin" name="displayLockoutOnLogin" id="displayLockoutOnLogin" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'display-lockout-on-login.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
                 <label class="col-md-2 control-label" for="failureFactor">{{:: 'max-login-failures' | translate}}</label>
 
                 <div class="col-md-6">

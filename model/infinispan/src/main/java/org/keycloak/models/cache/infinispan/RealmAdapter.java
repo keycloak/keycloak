@@ -226,6 +226,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isDisplayLockoutOnLogin() {
+        if(isUpdated()) return updated.isDisplayLockoutOnLogin();
+        return cached.isDisplayLockoutOnLogin();
+    }
+
+    @Override
+    public void setDisplayLockoutOnLogin(final boolean val) {
+        getDelegateForUpdate();
+        updated.setDisplayLockoutOnLogin(val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         if (isUpdated()) return updated.getMaxFailureWaitSeconds();
         return cached.getMaxFailureWaitSeconds();

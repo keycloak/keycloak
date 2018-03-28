@@ -264,6 +264,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isDisplayLockoutOnLogin() {
+        return getAttribute("displayLockoutOnLogin", false);
+    }
+
+    @Override
+    public void setDisplayLockoutOnLogin(final boolean val) {
+        setAttribute("displayLockoutOnLogin", val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         return getAttribute("maxFailureWaitSeconds", 0);
     }

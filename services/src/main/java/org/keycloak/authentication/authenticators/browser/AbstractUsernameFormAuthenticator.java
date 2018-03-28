@@ -68,8 +68,12 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
+        String message = Messages.INVALID_USER;
+        if(context.getRealm().isDisplayLockoutOnLogin()) {
+            message = Messages.ACCOUNT_TEMPORARILY_DISABLED;
+        }
         return context.form()
-                .setError(Messages.INVALID_USER).createLogin();
+                .setError(message).createLogin();
     }
 
     protected Response invalidCredentials(AuthenticationFlowContext context) {
