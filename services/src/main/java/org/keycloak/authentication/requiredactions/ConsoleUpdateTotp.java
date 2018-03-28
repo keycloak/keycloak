@@ -17,34 +17,25 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.TextChallenge;
+import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleUpdateTotp implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleUpdateTotp implements RequiredActionProvider {
     public static final ConsoleUpdateTotp SINGLETON = new ConsoleUpdateTotp();
 
     @Override
@@ -61,8 +52,8 @@ public class ConsoleUpdateTotp implements RequiredActionProvider, RequiredAction
         context.challenge(challenge);
     }
 
-    protected TextChallenge challenge(RequiredActionContext context) {
-        return TextChallenge.challenge(context)
+    protected ConsoleDisplayMode challenge(RequiredActionContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param("totp")
                 .label("console-otp")
@@ -109,36 +100,5 @@ public class ConsoleUpdateTotp implements RequiredActionProvider, RequiredAction
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Configure OTP";
-    }
-
-
-    @Override
-    public String getId() {
-        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
-    }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
     }
 }

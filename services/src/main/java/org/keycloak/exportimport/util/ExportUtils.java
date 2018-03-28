@@ -68,6 +68,7 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -315,7 +316,7 @@ public class ExportUtils {
                     ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
                     if (rep.getOwner().getId().equals(settingsModel.getId())) {
-                        rep.setOwner(null);
+                        rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
                         rep.getOwner().setId(null);
                     }

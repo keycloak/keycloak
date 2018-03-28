@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication;
 
+import javax.ws.rs.core.Response;
+
 /**
  * Throw this exception from an Authenticator, FormAuthenticator, or FormAction if you want to completely abort the flow.
  *
@@ -25,9 +27,15 @@ package org.keycloak.authentication;
  */
 public class AuthenticationFlowException extends RuntimeException {
     private AuthenticationFlowError error;
+    private Response response;
 
     public AuthenticationFlowException(AuthenticationFlowError error) {
         this.error = error;
+    }
+
+    public AuthenticationFlowException(AuthenticationFlowError error, Response response) {
+        this.error = error;
+        this.response = response;
     }
 
     public AuthenticationFlowException(String message, AuthenticationFlowError error) {
@@ -52,5 +60,9 @@ public class AuthenticationFlowException extends RuntimeException {
 
     public AuthenticationFlowError getError() {
         return error;
+    }
+
+    public Response getResponse() {
+        return response;
     }
 }

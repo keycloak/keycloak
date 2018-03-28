@@ -18,10 +18,8 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.DisplayUtils;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.*;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -33,7 +31,7 @@ import java.util.Arrays;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TermsAndConditions implements RequiredActionProvider, RequiredActionFactory {
+public class TermsAndConditions implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     public static final String PROVIDER_ID = "terms_and_conditions";
     public static final String USER_ATTRIBUTE = PROVIDER_ID;
 
@@ -41,6 +39,15 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
+
+    @Override
+    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
+        if (displayType == null) return this;
+        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
+        return ConsoleTermsAndConditions.SINGLETON;
+    }
+
+
 
     @Override
     public void init(Config.Scope config) {
@@ -66,20 +73,12 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        if (DisplayUtils.isConsole(context)) {
-            ConsoleTermsAndConditions.SINGLETON.requiredActionChallenge(context);
-            return;
-        }
         Response challenge = context.form().createForm("terms.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
-        if (DisplayUtils.isConsole(context)) {
-            ConsoleTermsAndConditions.SINGLETON.processAction(context);
-            return;
-        }
         if (context.getHttpRequest().getDecodedFormParameters().containsKey("cancel")) {
             context.getUser().removeAttribute(USER_ATTRIBUTE);
             context.failure();

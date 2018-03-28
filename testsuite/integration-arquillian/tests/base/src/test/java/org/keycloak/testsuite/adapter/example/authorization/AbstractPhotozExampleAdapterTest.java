@@ -75,7 +75,7 @@ import org.keycloak.util.JsonSerialization;
 public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAdapterTest {
 
     private static final String REALM_NAME = "photoz";
-    private static final String RESOURCE_SERVER_ID = "photoz-restful-api";
+    protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
     private static final int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
 
     @ArquillianResource
@@ -116,16 +116,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         realm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds
 
         testRealms.add(realm);
-    }
-
-    @Deployment(name = PhotozClientAuthzTestApp.DEPLOYMENT_NAME)
-    public static WebArchive deploymentClient() throws IOException {
-        return exampleDeployment(PhotozClientAuthzTestApp.DEPLOYMENT_NAME);
-    }
-
-    @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
-    public static WebArchive deploymentResourceServer() throws IOException {
-        return exampleDeployment(RESOURCE_SERVER_ID);
     }
 
     @Override

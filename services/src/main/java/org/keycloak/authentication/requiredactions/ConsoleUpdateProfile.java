@@ -41,7 +41,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleUpdateProfile implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleUpdateProfile implements RequiredActionProvider {
     public static final ConsoleUpdateProfile SINGLETON = new ConsoleUpdateProfile();
 
     @Override
@@ -64,31 +64,5 @@ public class ConsoleUpdateProfile implements RequiredActionProvider, RequiredAct
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Update Profile";
-    }
-
-
-    @Override
-    public String getId() {
-        return UserModel.RequiredAction.UPDATE_PROFILE.name();
     }
 }

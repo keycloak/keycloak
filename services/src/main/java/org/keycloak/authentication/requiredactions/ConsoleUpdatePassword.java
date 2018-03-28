@@ -18,7 +18,6 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.authentication.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -28,25 +27,21 @@ import org.keycloak.models.*;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConsoleUpdatePassword extends UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
+public class ConsoleUpdatePassword extends UpdatePassword implements RequiredActionProvider {
     public static final ConsoleUpdatePassword SINGLETON = new ConsoleUpdatePassword();
 
     private static final Logger logger = Logger.getLogger(ConsoleUpdatePassword.class);
     public static final String PASSWORD_NEW = "password-new";
     public static final String PASSWORD_CONFIRM = "password-confirm";
 
-     protected TextChallenge challenge(RequiredActionContext context) {
-        return TextChallenge.challenge(context)
+     protected ConsoleDisplayMode challenge(RequiredActionContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param(PASSWORD_NEW)
                 .label("console-new-password")

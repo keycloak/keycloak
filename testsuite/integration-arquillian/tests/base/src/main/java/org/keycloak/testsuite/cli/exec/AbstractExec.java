@@ -239,7 +239,7 @@ public abstract class AbstractExec {
             }
         }
 
-        throw new RuntimeException("Timed while waiting for content to appear in stdout");
+        throw new RuntimeException("Timed while waiting for content to appear in stderr");
     }
 
     public void sendToStdin(String s) {

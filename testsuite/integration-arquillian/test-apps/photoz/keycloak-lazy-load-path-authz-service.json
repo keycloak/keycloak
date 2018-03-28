@@ -18,6 +18,7 @@
   "policy-enforcer": {
     "enforcement-mode": "PERMISSIVE",
     "user-managed-access": {},
+    "lazy-load-paths": true,
     "paths": [
       {
         "name" : "Album Resource",

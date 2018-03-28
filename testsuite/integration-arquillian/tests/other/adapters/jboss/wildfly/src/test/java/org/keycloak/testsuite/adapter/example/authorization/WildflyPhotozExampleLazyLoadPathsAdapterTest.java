@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +20,10 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
  *
- * @author tkyjovsk
+ * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer("app-server-wildfly")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class WildflyPhotozExampleAdapterTest extends AbstractPhotozExampleNoLazyLoadPathsAdapterTest {
+public class WildflyPhotozExampleLazyLoadPathsAdapterTest extends AbstractPhotozExampleLazyLoadPathsAdapterTest {
 
 }

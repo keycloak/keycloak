@@ -26,6 +26,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 @RunAsClient
 @AppServerContainer("app-server-wildfly")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class WildflyServletAuthzAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
+public class WildflyServletAuthzAdapterTest extends AbstractServletAuthzAdapterTest {
 
 }
