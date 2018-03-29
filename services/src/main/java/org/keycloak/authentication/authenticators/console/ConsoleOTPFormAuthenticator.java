@@ -19,7 +19,7 @@ package org.keycloak.authentication.authenticators.console;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.TextChallenge;
+import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
@@ -37,8 +37,8 @@ public class ConsoleOTPFormAuthenticator extends OTPFormAuthenticator implements
         return context.getActionUrl(context.generateAccessCode(), true);
     }
 
-    protected TextChallenge challenge(AuthenticationFlowContext context) {
-        return TextChallenge.challenge(context)
+    protected ConsoleDisplayMode challenge(AuthenticationFlowContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param(CredentialRepresentation.TOTP)
                 .label("console-otp")

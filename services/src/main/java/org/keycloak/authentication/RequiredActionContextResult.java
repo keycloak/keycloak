@@ -65,6 +65,10 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.factory = factory;
     }
 
+    public RequiredActionFactory getFactory() {
+        return factory;
+    }
+
     @Override
     public EventBuilder getEvent() {
         return eventBuilder;
@@ -170,7 +174,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
             uri = UriBuilder.fromUri(uri).queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId()).build();
         }
         return uri;
-
     }
 
     @Override

@@ -35,7 +35,7 @@ import javax.ws.rs.core.Response;
  * should abort with an error message.
  *
  */
-public class TextChallenge {
+public class ConsoleDisplayMode {
 
     /**
      * Browser is required to login.  This will abort client from doing a console login.
@@ -50,6 +50,27 @@ public class TextChallenge {
                 .entity("\n" + session.getProvider(LoginFormsProvider.class).getMessage("browserRequired") + "\n").build();
     }
 
+    /**
+     * Browser is required to continue login.  This will prompt client on whether to continue with a browser or abort.
+     *
+     * @param session
+     * @param callback
+     * @return
+     */
+    public static Response browserContinue(KeycloakSession session, String callback) {
+        String browserContinueMsg = session.getProvider(LoginFormsProvider.class).getMessage("browserContinue");
+        String browserPrompt = session.getProvider(LoginFormsProvider.class).getMessage("browserContinuePrompt");
+        String answer = session.getProvider(LoginFormsProvider.class).getMessage("browserContinueAnswer");
+
+        String header = "X-Text-Form-Challenge callback=\"" + callback + "\"";
+        header += " browserContinue=\"" + browserPrompt + "\" answer=\"" + answer + "\"";
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .header("WWW-Authenticate", header)
+                .type(MediaType.TEXT_PLAIN)
+                .entity("\n" + browserContinueMsg + "\n").build();
+    }
+
+
 
     /**
      * Build challenge response for required actions
@@ -57,8 +78,8 @@ public class TextChallenge {
      * @param context
      * @return
      */
-    public static TextChallenge challenge(RequiredActionContext context) {
-        return new TextChallenge(context);
+    public static ConsoleDisplayMode challenge(RequiredActionContext context) {
+        return new ConsoleDisplayMode(context);
 
     }
 
@@ -68,8 +89,8 @@ public class TextChallenge {
      * @param context
      * @return
      */
-    public static TextChallenge challenge(AuthenticationFlowContext context) {
-        return new TextChallenge(context);
+    public static ConsoleDisplayMode challenge(AuthenticationFlowContext context) {
+        return new ConsoleDisplayMode(context);
 
     }
     /**
@@ -79,7 +100,7 @@ public class TextChallenge {
      * @return
      */
     public static HeaderBuilder header(RequiredActionContext context) {
-        return new TextChallenge(context).header();
+        return new ConsoleDisplayMode(context).header();
 
     }
 
@@ -90,14 +111,14 @@ public class TextChallenge {
      * @return
      */
     public static HeaderBuilder header(AuthenticationFlowContext context) {
-        return new TextChallenge(context).header();
+        return new ConsoleDisplayMode(context).header();
 
     }
-    TextChallenge(RequiredActionContext requiredActionContext) {
+    ConsoleDisplayMode(RequiredActionContext requiredActionContext) {
         this.requiredActionContext = requiredActionContext;
     }
 
-    TextChallenge(AuthenticationFlowContext flowContext) {
+    ConsoleDisplayMode(AuthenticationFlowContext flowContext) {
         this.flowContext = flowContext;
     }
 
@@ -278,20 +299,20 @@ public class TextChallenge {
                 return HeaderBuilder.this.build();
             }
 
-            public TextChallenge challenge() {
-                return TextChallenge.this;
+            public ConsoleDisplayMode challenge() {
+                return ConsoleDisplayMode.this;
             }
 
             public LoginFormsProvider form() {
-                return TextChallenge.this.form();
+                return ConsoleDisplayMode.this.form();
             }
 
             public Response message(String msg, String... params) {
-                return TextChallenge.this.message(msg, params);
+                return ConsoleDisplayMode.this.message(msg, params);
             }
 
             public Response text(String text) {
-                return TextChallenge.this.text(text);
+                return ConsoleDisplayMode.this.text(text);
 
             }
 

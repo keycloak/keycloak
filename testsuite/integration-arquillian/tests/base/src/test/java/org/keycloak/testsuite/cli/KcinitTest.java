@@ -31,14 +31,18 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.services.resources.admin.AuthenticationManagementResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.authentication.PushButtonAuthenticator;
+import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -98,6 +102,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             kcinit.setSecret("password");
             kcinit.setEnabled(true);
             kcinit.addRedirectUri("urn:ietf:wg:oauth:2.0:oob");
+            kcinit.addRedirectUri("http://localhost:*");
             kcinit.setPublicClient(false);
 
             ClientModel app = realm.addClient(APP);
@@ -154,13 +159,25 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             execution.setParentFlow(browser.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
             execution.setPriority(20);
-            execution.setAuthenticator(PassThroughAuthenticator.PROVIDER_ID);
+            execution.setAuthenticator(PushButtonAuthenticatorFactory.PROVIDER_ID);
+            realm.addAuthenticatorExecution(execution);
+
+            AuthenticationFlowModel browserBuiltin = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            AuthenticationFlowModel copy = AuthenticationManagementResource.copyFlow(realm, browserBuiltin, "copy-browser");
+            copy.setTopLevel(false);
+            realm.updateAuthenticationFlow(copy);
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(browser.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setFlowId(copy.getId());
+            execution.setPriority(30);
+            execution.setAuthenticatorFlow(true);
             realm.addAuthenticatorExecution(execution);
 
         });
     }
 
-    //@Test
+    @Test
     public void testDemo() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -193,7 +210,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
 
         });
+        Thread.sleep(100000000);
 
+        /*
         testInstall();
         // login
         //System.out.println("login....");
@@ -204,6 +223,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, exe.exitCode());
         Assert.assertTrue(exe.stderrString().contains("Browser required to login"));
         //Assert.assertEquals("stderr first line", "Browser required to login", exe.stderrLines().get(1));
+        */
 
 
         testingClient.server().run(session -> {

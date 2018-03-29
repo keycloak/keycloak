@@ -17,28 +17,19 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.TextChallenge;
+import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,8 +52,8 @@ public class ConsoleUpdateTotp implements RequiredActionProvider {
         context.challenge(challenge);
     }
 
-    protected TextChallenge challenge(RequiredActionContext context) {
-        return TextChallenge.challenge(context)
+    protected ConsoleDisplayMode challenge(RequiredActionContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param("totp")
                 .label("console-otp")

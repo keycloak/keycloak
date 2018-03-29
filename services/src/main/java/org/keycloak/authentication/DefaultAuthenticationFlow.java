@@ -70,7 +70,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
         // todo create a provider for handling lack of display support
         if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, TextChallenge.browserRequired(processor.getSession()));
+            processor.getAuthenticationSession().removeClientNote(OAuth2Constants.DISPLAY);
+            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED,
+                    ConsoleDisplayMode.browserContinue(processor.getSession(), processor.getRefreshUrl(true).toString()));
 
         } else {
             return factory.create(processor.getSession());
