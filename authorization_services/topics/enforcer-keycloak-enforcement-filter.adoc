@@ -96,7 +96,7 @@ Defines a URL where a client request is redirected when an "access denied" messa
 +
 ** *paths*
 +
-Specifies the paths to protect.
+Specifies the paths to protect. This configuration is optional. If not defined, the policy enforcer will discover all paths by fetching the resources you defined to your application in {project_name}, where these resources are defined with a `URI` representing some path in your application.
 +
 *** *name*
 +
@@ -142,3 +142,9 @@ Specifies how policies are enforced.
 **** *DISABLED*
 +
 Disables the evaluation of policies for a path
+** *lazy-load-paths*
++
+Specifies how the adapter should fetch the server for resources associated with paths in your application. If true, the policy
+enforcer is going to fetch resources on-demand accordingly with the path being requested. This configuration is specially useful
+when you don't want to fetch all resources from the server during deployment (in case you have provided no `paths`) or in case
+you have defined only a sub set of `paths` and want to fetch others on-demand.
