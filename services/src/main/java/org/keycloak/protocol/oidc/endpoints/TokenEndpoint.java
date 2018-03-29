@@ -776,7 +776,14 @@ public class TokenEndpoint {
         String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
         if (audience != null) {
             targetClient = realm.getClientByClientId(audience);
+            if (targetClient == null) {
+                event.detail(Details.REASON, "audience not found");
+                event.error(Errors.CLIENT_NOT_FOUND);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Audience not found", Response.Status.BAD_REQUEST);
+
+            }
         }
+
 
         if (targetClient.isConsentRequired()) {
             event.detail(Details.REASON, "audience requires consent");

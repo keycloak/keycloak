@@ -192,8 +192,9 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         }
     }
 
-    protected void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
-        send(subjectKey, Collections.emptyList(), template, attributes);
+    @Override
+    public void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
+        send(subjectFormatKey, Collections.emptyList(), bodyTemplate, bodyAttributes);
     }
 
     protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
@@ -229,9 +230,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         return session.theme().getTheme(Theme.Type.EMAIL);
     }
 
-    protected void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+    @Override
+    public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
         try {
-            EmailTemplate email = processTemplate(subjectKey, subjectAttributes, template, attributes);
+            EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
             send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
         } catch (EmailException e) {
             throw e;

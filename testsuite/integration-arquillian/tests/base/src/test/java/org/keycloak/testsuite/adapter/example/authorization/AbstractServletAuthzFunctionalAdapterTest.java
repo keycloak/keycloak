@@ -19,14 +19,11 @@ package org.keycloak.testsuite.adapter.example.authorization;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -46,12 +43,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractServletAuthzFunctionalAdapterTest extends AbstractServletAuthzAdapterTest {
-
-    @Deployment(name = RESOURCE_SERVER_ID, managed = false)
-    public static WebArchive deployment() throws IOException {
-        return exampleDeployment(RESOURCE_SERVER_ID);
-    }
+public abstract class AbstractServletAuthzFunctionalAdapterTest extends AbstractBaseServletAuthzAdapterTest {
 
     @Test
     public void testCanNotAccessWhenEnforcing() throws Exception {

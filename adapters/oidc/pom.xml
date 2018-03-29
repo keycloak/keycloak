@@ -34,7 +34,7 @@
         <module>adapter-core</module>
         <module>as7-eap6</module>
         <module>installed</module>
-        <module>cli-sso</module>
+        <module>kcinit</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
         <module>js</module>

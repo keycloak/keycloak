@@ -59,21 +59,21 @@ public class AuthorizationContext {
             return false;
         }
 
-        if (current != null) {
-            if (current.getName().equals(resourceName)) {
-                return true;
+        for (Permission permission : authorization.getPermissions()) {
+            if (resourceName.equalsIgnoreCase(permission.getResourceName()) || resourceName.equalsIgnoreCase(permission.getResourceId())) {
+                if (scopeName == null) {
+                    return true;
+                }
+
+                if (permission.getScopes().contains(scopeName)) {
+                    return true;
+                }
             }
         }
 
-        if (hasResourcePermission(resourceName)) {
-            for (Permission permission : authorization.getPermissions()) {
-                for (PathConfig pathHolder : paths.values()) {
-                    if (pathHolder.getId().equals(permission.getResourceId())) {
-                        if (permission.getScopes().contains(scopeName)) {
-                            return true;
-                        }
-                    }
-                }
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
             }
         }
 
@@ -81,29 +81,7 @@ public class AuthorizationContext {
     }
 
     public boolean hasResourcePermission(String resourceName) {
-        if (this.authzToken == null) {
-            return false;
-        }
-
-        Authorization authorization = this.authzToken.getAuthorization();
-
-        if (authorization == null) {
-            return false;
-        }
-
-        if (current != null) {
-            if (current.getName().equals(resourceName)) {
-                return true;
-            }
-        }
-
-        for (Permission permission : authorization.getPermissions()) {
-            if (permission.getResourceName().equals(resourceName) || permission.getResourceId().equals(resourceName)) {
-                return true;
-            }
-        }
-
-        return false;
+        return hasPermission(resourceName, null);
     }
 
     public boolean hasScopePermission(String scopeName) {

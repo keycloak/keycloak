@@ -8,6 +8,7 @@
     },
     "policy-enforcer": {
         "on-deny-redirect-to": "/servlet-policy-enforcer/denied.jsp",
+        "lazy-load-paths": false,
         "paths": [
             {
                 "name": "Welcome Resource",
@@ -31,7 +32,7 @@
             },
             {
                 "name": "Pattern 5",
-                "path": "/resource/{pattern}/resource-d"
+                "path": "/a/{pattern}/resource-d"
             },
             {
                 "name": "Pattern 6",

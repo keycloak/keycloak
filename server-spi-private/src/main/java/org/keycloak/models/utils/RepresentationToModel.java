@@ -2314,7 +2314,7 @@ public class RepresentationToModel {
         String ownerId = owner.getId();
 
         if (ownerId == null) {
-            throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
+            ownerId = resourceServer.getId();
         }
 
         if (!resourceServer.getId().equals(ownerId)) {

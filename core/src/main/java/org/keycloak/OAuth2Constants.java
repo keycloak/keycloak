@@ -34,6 +34,8 @@ public interface OAuth2Constants {
 
     String REDIRECT_URI = "redirect_uri";
 
+    String DISPLAY = "display";
+
     String SCOPE = "scope";
 
     String STATE = "state";
@@ -114,6 +116,7 @@ public interface OAuth2Constants {
     String UMA_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:uma-ticket";
 
 
+    String DISPLAY_CONSOLE = "console";
 }
 
 

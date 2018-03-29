@@ -21,6 +21,16 @@
     "paths": [
       {
         "name" : "Album Resource",
+        "path" : "/album",
+        "methods" : [
+          {
+            "method": "GET",
+            "scopes-enforcement-mode" : "DISABLED"
+          }
+        ]
+      },
+      {
+        "name" : "Album Resource",
         "path" : "/album/{id}",
         "methods" : [
           {

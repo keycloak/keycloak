@@ -23,15 +23,13 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PolicyEnforcerConfig {
-
-    @JsonProperty("create-resources")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean createResources = Boolean.FALSE;
 
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
@@ -39,6 +37,9 @@ public class PolicyEnforcerConfig {
     @JsonProperty("paths")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
+
+    @JsonProperty("lazy-load-paths")
+    private Boolean lazyLoadPaths = Boolean.FALSE;
 
     @JsonProperty("on-deny-redirect-to")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -48,12 +49,16 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UserManagedAccessConfig userManagedAccess;
 
-    public Boolean isCreateResources() {
-        return this.createResources;
-    }
-
     public List<PathConfig> getPaths() {
         return this.paths;
+    }
+
+    public Boolean getLazyLoadPaths() {
+        return lazyLoadPaths;
+    }
+
+    public void setLazyLoadPaths(Boolean lazyLoadPaths) {
+        this.lazyLoadPaths = lazyLoadPaths;
     }
 
     public EnforcementMode getEnforcementMode() {
@@ -66,10 +71,6 @@ public class PolicyEnforcerConfig {
 
     public UserManagedAccessConfig getUserManagedAccess() {
         return this.userManagedAccess;
-    }
-
-    public void setCreateResources(Boolean createResources) {
-        this.createResources = createResources;
     }
 
     public void setPaths(List<PathConfig> paths) {
@@ -89,6 +90,32 @@ public class PolicyEnforcerConfig {
     }
 
     public static class PathConfig {
+
+        public static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
+            PathConfig pathConfig = new PathConfig();
+
+            pathConfig.setId(resourceDescription.getId());
+            pathConfig.setName(resourceDescription.getName());
+
+            String uri = resourceDescription.getUri();
+
+            if (uri == null || "".equals(uri.trim())) {
+                throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+            }
+
+            pathConfig.setPath(uri);
+
+            List<String> scopeNames = new ArrayList<>();
+
+            for (ScopeRepresentation scope : resourceDescription.getScopes()) {
+                scopeNames.add(scope.getName());
+            }
+
+            pathConfig.setScopes(scopeNames);
+            pathConfig.setType(resourceDescription.getType());
+
+            return pathConfig;
+        }
 
         private String name;
         private String type;
@@ -231,7 +258,8 @@ public class PolicyEnforcerConfig {
 
     public enum ScopeEnforcementMode {
         ALL,
-        ANY
+        ANY,
+        DISABLED
     }
 
     public static class UserManagedAccessConfig {
