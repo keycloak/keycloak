@@ -21,6 +21,8 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +48,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -54,6 +57,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.util.PathMatcher;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -64,7 +68,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -90,32 +94,18 @@ public class ResourceSetService {
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
-        return create(uriInfo, resource, (Function<Resource, ResourceRepresentation>) resource1 -> {
-            ResourceRepresentation representation = new ResourceRepresentation();
+        if (resource == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
 
-            representation.setId(resource1.getId());
+        ResourceRepresentation newResource = create(resource);
 
-            return representation;
-        });
-    }
-
-    public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource, Function<Resource, ?> toRepresentation) {
-        Response response = create(resource, toRepresentation);
         audit(uriInfo, resource, resource.getId(), OperationType.CREATE);
-        return response;
+
+        return Response.status(Status.CREATED).entity(newResource).build();
     }
 
-    public Response create(ResourceRepresentation resource) {
-        return create(resource, (Function<Resource, ResourceRepresentation>) resource1 -> {
-            ResourceRepresentation representation = new ResourceRepresentation();
-
-            representation.setId(resource1.getId());
-
-            return representation;
-        });
-    }
-
-    public Response create(ResourceRepresentation resource, Function<Resource, ?> toRepresentation) {
+    public ResourceRepresentation create(ResourceRepresentation resource) {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
@@ -123,21 +113,22 @@ public class ResourceSetService {
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
             owner.setId(resourceServer.getId());
+            resource.setOwner(owner);
         }
 
         String ownerId = owner.getId();
 
         if (ownerId == null) {
-            return ErrorResponse.error("You must specify the resource owner.", Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "You must specify the resource owner.", Status.BAD_REQUEST);
         }
 
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), ownerId, this.resourceServer.getId());
 
         if (existingResource != null) {
-            return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return Response.status(Status.CREATED).entity(toRepresentation.apply(toModel(resource, this.resourceServer, authorization))).build();
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
     @Path("{id}")
@@ -198,10 +189,10 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, (Function<Resource, ResourceRepresentation>) resource -> toRepresentation(resource, resourceServer, authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
-    public Response findById(@PathParam("id") String id, Function<Resource, ?> toRepresentation) {
+    public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
@@ -340,10 +331,11 @@ public class ResourceSetService {
                          @QueryParam("owner") String owner,
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
+                         @QueryParam("matchingUri") Boolean matchingUri,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -352,6 +344,7 @@ public class ResourceSetService {
                          @QueryParam("owner") String owner,
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
+                         @QueryParam("matchingUri") Boolean matchingUri,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult,
@@ -413,9 +406,38 @@ public class ResourceSetService {
             search.put("scope", scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
+        List<Resource> resources = storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+
+        if (matchingUri != null && matchingUri && resources.isEmpty()) {
+            HashMap<String, String[]> attributes = new HashMap<>();
+
+            attributes.put("uri_not_null", new String[] {"true"});
+            attributes.put("owner", new String[] {resourceServer.getId()});
+
+            List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+            PathMatcher<Resource> pathMatcher = new PathMatcher<Resource>() {
+                @Override
+                protected String getPath(Resource entry) {
+                    return entry.getUri();
+                }
+
+                @Override
+                protected Collection<Resource> getPaths() {
+                    return serverResources;
+                }
+            };
+
+            Resource matches = pathMatcher.matches(uri);
+
+            if (matches != null) {
+                resources = Arrays.asList(matches);
+            }
+        }
+
         Boolean finalDeep = deep;
+
         return Response.ok(
-                storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
+                resources.stream()
                         .map(resource -> toRepresentation.apply(resource, finalDeep))
                         .collect(Collectors.toList()))
                 .build();
@@ -437,7 +459,7 @@ public class ResourceSetService {
         audit(uriInfo, resource, null, operation);
     }
 
-    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, String id, OperationType operation) {
+    public void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, String id, OperationType operation) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
             if (id != null) {
                 adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();

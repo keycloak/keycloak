@@ -155,7 +155,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
 
             enforcerConfig.setEnforcementMode(null);
-            enforcerConfig.setCreateResources(null);
+            enforcerConfig.setLazyLoadPaths(null);
 
             rep.setEnforcerConfig(enforcerConfig);
 

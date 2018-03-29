@@ -1,57 +1,44 @@
 /*
- *  Copyright 2016 Red Hat, Inc. and/or its affiliates
- *  and other contributors as indicated by the @author tags.
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-package org.keycloak.adapters.authorization;
+package org.keycloak.common.util;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.ResourceRepresentation;
-import org.keycloak.authorization.client.resource.ProtectedResource;
-import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-class PathMatcher {
+public abstract class PathMatcher<P> {
 
     private static final char WILDCARD = '*';
-    private final AuthzClient authzClient;
-    // TODO: make this configurable
-    private PathCache cache = new PathCache(100, 30000);
 
-    public PathMatcher(AuthzClient authzClient) {
-        this.authzClient = authzClient;
-    }
+    public P matches(final String targetUri) {
+        int patternCount = 0;
+        P matchingPath = null;
+        P matchingAnyPath = null;
+        P matchingAnySuffixPath = null;
 
-    public PathConfig matches(final String targetUri, Map<String, PathConfig> paths) {
-        PathConfig pathConfig = paths.get(targetUri) == null ? cache.get(targetUri) : paths.get(targetUri);
+        for (P entry : getPaths()) {
+            String expectedUri = getPath(entry);
 
-        if (pathConfig != null) {
-            return pathConfig;
-        }
+            if (expectedUri == null) {
+                continue;
+            }
 
-        PathConfig matchingAnyPath = null;
-        PathConfig matchingAnySuffixPath = null;
-
-        for (PathConfig entry : paths.values()) {
-            String expectedUri = entry.getPath();
             String matchingUri = null;
 
             if (exactMatch(expectedUri, targetUri, expectedUri)) {
@@ -62,9 +49,17 @@ class PathMatcher {
                 String templateUri = buildUriFromTemplate(expectedUri, targetUri);
 
                 if (templateUri != null) {
-                    if (exactMatch(expectedUri, targetUri, templateUri)) {
+                    int length = expectedUri.split("\\/").length;
+
+                    if (exactMatch(expectedUri, targetUri, templateUri) && (patternCount == 0 || length > patternCount)) {
                         matchingUri = templateUri;
-                        entry = resolvePathConfig(entry, targetUri);
+                        P resolved = resolvePathConfig(entry, targetUri);
+
+                        if (resolved != null) {
+                            entry = resolved;
+                        }
+
+                        patternCount = length;
                     }
                 }
             }
@@ -90,12 +85,15 @@ class PathMatcher {
                 }
 
                 if (matchingUri.equals(targetUri) || pathString.equals(targetUri)) {
-                    cache.put(targetUri, entry);
-                    return entry;
+                    if (patternCount == 0) {
+                        return entry;
+                    } else {
+                        matchingPath = entry;
+                    }
                 }
 
                 if (WILDCARD == expectedUri.charAt(expectedUri.length() - 1)) {
-                    if (matchingAnyPath == null || matchingAnyPath.getPath().length() < matchingUri.length()) {
+                    if (matchingAnyPath == null || getPath(matchingAnyPath).length() < matchingUri.length()) {
                         matchingAnyPath = entry;
                     }
                 } else {
@@ -112,17 +110,20 @@ class PathMatcher {
             }
         }
 
-        if (matchingAnySuffixPath != null) {
-            cache.put(targetUri, matchingAnySuffixPath);
-            return matchingAnySuffixPath;
+        if (matchingPath != null) {
+            return matchingPath;
         }
 
-        if (matchingAnyPath != null) {
-            cache.put(targetUri, matchingAnyPath);
+        if (matchingAnySuffixPath != null) {
+            return matchingAnySuffixPath;
         }
 
         return matchingAnyPath;
     }
+
+    protected abstract String getPath(P entry);
+
+    protected abstract Collection<P> getPaths();
 
     private boolean exactMatch(String expectedUri, String targetUri, String value) {
         if (targetUri.equals(value)) {
@@ -213,32 +214,16 @@ class PathMatcher {
     }
 
     public boolean endsWithWildcard(String expectedUri) {
-        return WILDCARD == expectedUri.charAt(expectedUri.length() - 1);
+        int length = expectedUri.length();
+        return length > 0 && WILDCARD == expectedUri.charAt(length - 1);
     }
 
     private boolean isTemplate(String uri) {
         return uri.indexOf("{") != -1;
     }
 
-    private PathConfig resolvePathConfig(PathConfig originalConfig, String path) {
-        if (originalConfig.hasPattern()) {
-            ProtectedResource resource = this.authzClient.protection().resource();
-            List<ResourceRepresentation> search = resource.findByUri(path);
-
-            if (!search.isEmpty()) {
-                // resource does exist on the server, cache it
-                ResourceRepresentation targetResource = search.get(0);
-                PathConfig config = PolicyEnforcer.createPathConfig(targetResource);
-
-                config.setScopes(originalConfig.getScopes());
-                config.setMethods(originalConfig.getMethods());
-                config.setParentConfig(originalConfig);
-                config.setEnforcementMode(originalConfig.getEnforcementMode());
-
-                return config;
-            }
-        }
-
-        return originalConfig;
+    protected P resolvePathConfig(P entry, String path) {
+        return entry;
     }
 }
+

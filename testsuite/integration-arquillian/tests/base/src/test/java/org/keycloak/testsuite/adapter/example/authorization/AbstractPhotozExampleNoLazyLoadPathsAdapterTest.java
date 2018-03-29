@@ -20,14 +20,20 @@ import java.io.IOException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractServletAuthzAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
+public abstract class AbstractPhotozExampleNoLazyLoadPathsAdapterTest extends AbstractPhotozExampleAdapterTest {
 
-    @Deployment(name = RESOURCE_SERVER_ID, managed = false)
-    public static WebArchive deployment() throws IOException {
+    @Deployment(name = PhotozClientAuthzTestApp.DEPLOYMENT_NAME)
+    public static WebArchive deploymentClient() throws IOException {
+        return exampleDeployment(PhotozClientAuthzTestApp.DEPLOYMENT_NAME);
+    }
+
+    @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
+    public static WebArchive deploymentResourceServer() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID);
     }
 

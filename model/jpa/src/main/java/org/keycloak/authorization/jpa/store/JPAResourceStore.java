@@ -181,6 +181,10 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(root.join("scopes").get("id").in(value));
             } else if ("ownerManagedAccess".equals(name)) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
+            } else if ("uri".equals(name)) {
+                predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+            } else if ("uri_not_null".equals(name)) {
+                predicates.add(builder.isNotNull(root.get("uri")));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }

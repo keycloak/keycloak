@@ -28,7 +28,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractPermissiveModeAdapterTest extends AbstractServletAuthzAdapterTest {
+public abstract class AbstractPermissiveModeAdapterTest extends AbstractBaseServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
