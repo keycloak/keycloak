@@ -464,9 +464,15 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                         .add("refreshToken", refreshToken)
                         .add("timeSkew", -600)
                 , this::assertSuccessfullyLoggedIn)
-                .checkTimeSkew((driver1, output, events) -> assertThat(output, equalTo(-600L)))
+                .checkTimeSkew((driver1, output, events) -> assertThat((Long) output, is(
+                                both(greaterThan(-600L - TIME_SKEW_TOLERANCE))
+                                .and(lessThan(-600L + TIME_SKEW_TOLERANCE))
+                        )))
                 .refreshToken(9999, assertEventsContains("Auth Refresh Success"))
-                .checkTimeSkew((driver1, output, events) -> assertThat(output, equalTo(-600L)));
+                .checkTimeSkew((driver1, output, events) -> assertThat((Long) output, is(
+                                both(greaterThan(-600L - TIME_SKEW_TOLERANCE))
+                                .and(lessThan(-600L + TIME_SKEW_TOLERANCE))
+                )));
 
         setTimeOffset(0);
 
