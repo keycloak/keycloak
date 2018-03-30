@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
@@ -41,6 +42,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticator;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
@@ -53,8 +55,11 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.TotpUtils;
+import org.openqa.selenium.By;
 
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -72,6 +77,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public static final String UNAUTHORIZED_APP = "unauthorized_app";
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected LoginPage loginPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -174,10 +182,18 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             execution.setAuthenticatorFlow(true);
             realm.addAuthenticatorExecution(execution);
 
+            RequiredActionProviderModel action = new RequiredActionProviderModel();
+            action.setAlias("dummy");
+            action.setEnabled(true);
+            action.setProviderId(DummyRequiredActionFactory.PROVIDER_ID);
+            action.setName("dummy");
+            action = realm.addRequiredActionProvider(action);
+
+
         });
     }
 
-    @Test
+    //@Test
     public void testDemo() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -200,8 +216,8 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testBrowserRequired() throws Exception {
-        // that that a browser require challenge is sent back if authentication flow doesn't support console display mode
+    public void testBrowserContinueAuthenticator() throws Exception {
+        // test that we can continue in the middle of a console login that doesn't support console display mode
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
@@ -210,30 +226,107 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
 
         });
-        Thread.sleep(100000000);
+        //Thread.sleep(100000000);
 
-        /*
+        try {
+
+            testInstall();
+
+            KcinitExec exe = KcinitExec.newBuilder()
+                    .argsLine("login -f --fake-browser") // --fake-browser is a hidden command so that this test can execute
+                    .executeAsync();
+            exe.waitForStderr("Open browser and continue login? [y/n]");
+            exe.sendLine("y");
+            exe.waitForStdout("http://");
+
+            // the --fake-browser skips launching a browser and outputs url to stdout
+            String redirect = exe.stdoutString().trim();
+
+            //System.out.println("********************************");
+            //System.out.println("Redirect: " + redirect);
+
+            //redirect.replace("Browser required to complete login", "");
+
+            driver.navigate().to(redirect.trim());
+
+            Assert.assertEquals("PushTheButton", driver.getTitle());
+
+            // Push the button. I am redirected to username+password form
+            driver.findElement(By.name("submit1")).click();
+            //System.out.println("-----");
+            //System.out.println(driver.getPageSource());
+
+            //System.out.println(driver.getTitle());
+
+
+
+            loginPage.assertCurrent();
+
+            // Fill username+password. I am successfully authenticated
+            try {
+                oauth.fillLoginForm("wburke", "password");
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+
+            String current = driver.getCurrentUrl();
+
+
+            Pattern codePattern = Pattern.compile("code=([^&]+)");
+            Matcher m = codePattern.matcher(current);
+            Assert.assertTrue(m.find());
+            exe.waitForStderr("Login successful");
+            exe.waitCompletion();
+            Assert.assertEquals(0, exe.exitCode());
+        } finally {
+
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+                kcinit.removeAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
+
+
+            });
+        }
+    }
+
+    @Test
+    public void testBrowserContinueRequiredAction() throws Exception {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("wburke", realm);
+            user.addRequiredAction("dummy");
+        });
         testInstall();
         // login
         //System.out.println("login....");
         KcinitExec exe = KcinitExec.newBuilder()
-                .argsLine("login")
+                .argsLine("login -f --fake-browser")
                 .executeAsync();
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Username:");
+        exe.sendLine("wburke");
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Password:");
+        exe.sendLine("password");
+
+        exe.waitForStderr("Open browser and continue login? [y/n]");
+        exe.sendLine("y");
+        exe.waitForStdout("http://");
+
+        // the --fake-browser skips launching a browser and outputs url to stdout
+        String redirect = exe.stdoutString().trim();
+
+        driver.navigate().to(redirect.trim());
+
+
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Login successful");
         exe.waitCompletion();
-        Assert.assertEquals(1, exe.exitCode());
-        Assert.assertTrue(exe.stderrString().contains("Browser required to login"));
-        //Assert.assertEquals("stderr first line", "Browser required to login", exe.stderrLines().get(1));
-        */
-
-
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
-            kcinit.removeAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
-
-
-        });
+        Assert.assertEquals(0, exe.exitCode());
     }
+
 
 
     @Test
@@ -269,6 +362,8 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         exe.waitCompletion();
         Assert.assertEquals(0, exe.exitCode());
     }
+
+
 
     @Test
     public void testBasic() throws Exception {
