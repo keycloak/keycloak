@@ -107,11 +107,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             }
 
             ClientModel kcinit = realm.addClient(KCINIT_CLIENT);
-            kcinit.setSecret("password");
             kcinit.setEnabled(true);
-            kcinit.addRedirectUri("urn:ietf:wg:oauth:2.0:oob");
             kcinit.addRedirectUri("http://localhost:*");
-            kcinit.setPublicClient(false);
+            kcinit.setPublicClient(true);
 
             ClientModel app = realm.addClient(APP);
             app.setSecret("password");
@@ -272,13 +270,10 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
             String current = driver.getCurrentUrl();
 
-
-            Pattern codePattern = Pattern.compile("code=([^&]+)");
-            Matcher m = codePattern.matcher(current);
-            Assert.assertTrue(m.find());
             exe.waitForStderr("Login successful");
             exe.waitCompletion();
             Assert.assertEquals(0, exe.exitCode());
+            Assert.assertTrue(driver.getPageSource().contains("Login Successful"));
         } finally {
 
             testingClient.server().run(session -> {
@@ -325,6 +320,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         exe.waitForStderr("Login successful");
         exe.waitCompletion();
         Assert.assertEquals(0, exe.exitCode());
+        Assert.assertTrue(driver.getPageSource().contains("Login Successful"));
     }
 
 
@@ -356,16 +352,36 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         exe.waitForStderr("client id [kcinit]:");
         exe.sendLine("");
         //System.out.println(exe.stderrString());
-        exe.waitForStderr("Client secret [none]:");
-        exe.sendLine("password");
+        exe.waitForStderr("secret [none]:");
+        exe.sendLine("");
         //System.out.println(exe.stderrString());
         exe.waitCompletion();
         Assert.assertEquals(0, exe.exitCode());
     }
 
-
-
     @Test
+    public void testOffline() throws Exception {
+        testInstall();
+        // login
+        //System.out.println("login....");
+        KcinitExec exe = KcinitExec.newBuilder()
+                .argsLine("login --offline")
+                .executeAsync();
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Username:");
+        exe.sendLine("wburke");
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Password:");
+        exe.sendLine("password");
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Offline tokens not allowed for the user or client");
+        exe.waitCompletion();
+        Assert.assertEquals(1, exe.exitCode());
+    }
+
+
+
+        @Test
     public void testBasic() throws Exception {
         testInstall();
         // login
@@ -390,12 +406,6 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, exe.stdoutLines().size());
         String token = exe.stdoutLines().get(0).trim();
         //System.out.println("token: " + token);
-        String introspect = oauth.introspectAccessTokenWithClientCredential("kcinit", "password", token);
-        Map json = JsonSerialization.readValue(introspect, Map.class);
-        Assert.assertTrue(json.containsKey("active"));
-        Assert.assertTrue((Boolean)json.get("active"));
-        //System.out.println("introspect");
-        //System.out.println(introspect);
 
         exe = KcinitExec.execute("token app");
         Assert.assertEquals(0, exe.exitCode());
@@ -403,10 +413,6 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         String appToken = exe.stdoutLines().get(0).trim();
         Assert.assertFalse(appToken.equals(token));
         //System.out.println("token: " + token);
-        introspect = oauth.introspectAccessTokenWithClientCredential("kcinit", "password", appToken);
-        json = JsonSerialization.readValue(introspect, Map.class);
-        Assert.assertTrue(json.containsKey("active"));
-        Assert.assertTrue((Boolean)json.get("active"));
 
 
         exe = KcinitExec.execute("token badapp");
@@ -418,10 +424,6 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         exe = KcinitExec.execute("logout");
         Assert.assertEquals(0, exe.exitCode());
 
-        introspect = oauth.introspectAccessTokenWithClientCredential("kcinit", "password", token);
-        json = JsonSerialization.readValue(introspect, Map.class);
-        Assert.assertTrue(json.containsKey("active"));
-        Assert.assertFalse((Boolean)json.get("active"));
 
 
 

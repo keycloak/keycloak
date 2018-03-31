@@ -967,7 +967,7 @@ public class AuthenticationManager {
     }
 
     public static RequiredActionProvider createRequiredAction(RequiredActionContextResult context) {
-        String display = context.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY);
+        String display = context.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
         if (display == null) return context.getFactory().create(context.getSession());
 
 
@@ -977,7 +977,7 @@ public class AuthenticationManager {
         }
         // todo create a provider for handling lack of display support
         if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            context.getAuthenticationSession().removeClientNote(OAuth2Constants.DISPLAY);
+            context.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
             throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, ConsoleDisplayMode.browserContinue(context.getSession(), context.getUriInfo().getRequestUri().toString()));
 
         } else {

@@ -225,4 +225,9 @@ public class Messages {
 
     public static final String INTERNAL_SERVER_ERROR = "internalServerError";
 
+    public static final String DELEGATION_COMPLETE = "delegationCompleteMessage";
+    public static final String DELEGATION_COMPLETE_HEADER = "delegationCompleteHeader";
+    public static final String DELEGATION_FAILED = "delegationFailedMessage";
+    public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
+
 }

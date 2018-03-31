@@ -60,7 +60,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     protected Authenticator createAuthenticator(AuthenticatorFactory factory) {
-        String display = processor.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY);
+        String display = processor.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
         if (display == null) return factory.create(processor.getSession());
 
 
@@ -70,7 +70,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
         // todo create a provider for handling lack of display support
         if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            processor.getAuthenticationSession().removeClientNote(OAuth2Constants.DISPLAY);
+            processor.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
             throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED,
                     ConsoleDisplayMode.browserContinue(processor.getSession(), processor.getRefreshUrl(true).toString()));
 
