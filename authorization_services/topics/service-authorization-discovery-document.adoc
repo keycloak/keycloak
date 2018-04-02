@@ -46,7 +46,7 @@ and to determine any other information associated with the token, such as the pe
 A UMA-compliant Resource Registration Endpoint which resource servers can use to manage their protected resources and scopes. This endpoint provides
 operations create, read, update and delete resources and scopes in {project_name}.
 +
-* **resource_registration_endpoint**
+* **permission_endpoint**
 +
 A UMA-compliant Permission Endpoint which resource servers can use to manage permission tickets. This endpoint provides
 operations create, read, update, and delete permission tickets in {project_name}.
