@@ -136,7 +136,6 @@
     <div class="cards-pf" id="welcomeScreen">
         <div class="text-center">
           <h1>Welcome to Keycloak Account Management</h1>
-          <p class="description">Through the account management console users can manage their own accounts. They can update the profile, change passwords, and setup two-factor authentication.</p>
         </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
@@ -149,7 +148,7 @@
                             <h2>
                                 Personal Info
                             </h2>
-                            <p>Manage your basic information: <br>your name, email</p>
+                            <p>Manage your basic information <br>such as name and email</p>
                             <hr/>
                             <h3><a href="${baseUrl}/#/account">Personal Info</a></h3>
                         </div>
@@ -166,11 +165,11 @@
                             </h2>
                             <p>Control your password and account access</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Change password</a></h3>
+                            <h3><a href="${baseUrl}/#/password">Change password</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Authenticator</a></h3>
+                            <h3><a href="${baseUrl}/#/authenticator">Authenticator</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Device activity</a></h3>
+                            <h3><a href="${baseUrl}/#/sessions">Device activity</a></h3>
                             <hr/>
                             <h3><a href="${baseUrl}/#/account">Federated identities</a></h3>
                         </div>
@@ -187,7 +186,7 @@
                             </h2>
                             <p>Track and manage your app permission to access your account</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Applications</a></h3>
+                            <h3><a href="${baseUrl}/#/applications">Applications</a></h3>
                         </div>
                     </div>
                 </div>
