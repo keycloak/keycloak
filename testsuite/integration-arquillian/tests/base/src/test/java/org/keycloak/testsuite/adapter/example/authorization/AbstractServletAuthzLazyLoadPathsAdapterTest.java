@@ -17,32 +17,13 @@
 package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientPoliciesResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.ResourcesResource;
-import org.keycloak.admin.client.resource.RolePoliciesResource;
-import org.keycloak.admin.client.resource.RoleScopeResource;
-import org.keycloak.admin.client.resource.RolesResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -55,4 +36,16 @@ public abstract class AbstractServletAuthzLazyLoadPathsAdapterTest extends Abstr
                 .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/keycloak-lazy-load-authz-service.json"), "keycloak.json");
     }
 
+    @Test
+    public void testPathPEPDisabled() {
+        performTests(() -> {
+            login("alice", "alice");
+            assertFalse(wasDenied());
+
+            navigateTo();
+            getLink("PEP Disabled").click();
+
+            hasText("Policy enforcement is disabled. Access granted: true");
+        });
+    }
 }

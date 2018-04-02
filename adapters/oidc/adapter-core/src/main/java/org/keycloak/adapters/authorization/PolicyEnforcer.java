@@ -137,7 +137,11 @@ public class PolicyEnforcer {
 
         if (loadPathsFromServer) {
             LOGGER.info("No path provided in configuration.");
-            return configureAllPathsForResourceServer(protectedResource);
+            Map<String, PathConfig> paths = configureAllPathsForResourceServer(protectedResource);
+
+            paths.putAll(configureDefinedPaths(protectedResource, enforcerConfig));
+
+            return paths;
         } else {
             LOGGER.info("Paths provided in configuration.");
             return configureDefinedPaths(protectedResource, enforcerConfig);

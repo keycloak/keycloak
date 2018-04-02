@@ -93,7 +93,7 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
         return this.driver.getPageSource().contains(text);
     }
 
-    private WebElement getLink(String text) {
+    protected WebElement getLink(String text) {
         return this.driver.findElement(By.xpath("//a[text() = '" + text + "']"));
     }
 
@@ -137,7 +137,7 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
         }
     }
 
-    private void navigateTo() {
+    protected void navigateTo() {
         this.driver.navigate().to(getResourceServerUrl());
         WaitUtils.waitUntilElement(By.xpath("//a[text() = 'Dynamic Menu']"));
     }
