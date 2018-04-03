@@ -38,6 +38,10 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
+    @JsonProperty("path-cache")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private PathCacheConfig pathCacheConfig;
+
     @JsonProperty("lazy-load-paths")
     private Boolean lazyLoadPaths = Boolean.FALSE;
 
@@ -51,6 +55,10 @@ public class PolicyEnforcerConfig {
 
     public List<PathConfig> getPaths() {
         return this.paths;
+    }
+
+    public PathCacheConfig getPathCacheConfig() {
+        return pathCacheConfig;
     }
 
     public Boolean getLazyLoadPaths() {
@@ -75,6 +83,10 @@ public class PolicyEnforcerConfig {
 
     public void setPaths(List<PathConfig> paths) {
         this.paths = paths;
+    }
+
+    public void setPathCacheConfig(PathCacheConfig pathCacheConfig) {
+        this.pathCacheConfig = pathCacheConfig;
     }
 
     public String getOnDenyRedirectTo() {
@@ -247,6 +259,29 @@ public class PolicyEnforcerConfig {
 
         public ScopeEnforcementMode getScopesEnforcementMode() {
             return scopesEnforcementMode;
+        }
+    }
+
+    public static class PathCacheConfig {
+
+        @JsonProperty("max-entries")
+        int maxEntries = 1000;
+        long lifespan = 30000;
+
+        public int getMaxEntries() {
+            return maxEntries;
+        }
+
+        public void setMaxEntries(int maxEntries) {
+            this.maxEntries = maxEntries;
+        }
+
+        public long getLifespan() {
+            return lifespan;
+        }
+
+        public void setLifespan(long lifespan) {
+            this.lifespan = lifespan;
         }
     }
 

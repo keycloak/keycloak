@@ -159,7 +159,7 @@ public abstract class AbstractPolicyEnforcer {
                             LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, grantedPermissions);
                         }
                         if (HTTP_METHOD_DELETE.equalsIgnoreCase(request.getMethod()) && actualPathConfig.isInstance()) {
-                            policyEnforcer.getPaths().remove(actualPathConfig);
+                            policyEnforcer.getPathMatcher().removeFromCache(getPath(request));
                         }
                         return true;
                     }
@@ -281,7 +281,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private AuthorizationContext createAuthorizationContext(AccessToken accessToken, PathConfig pathConfig) {
-        return new ClientAuthorizationContext(accessToken, pathConfig, policyEnforcer.getPaths(), getAuthzClient());
+        return new ClientAuthorizationContext(accessToken, pathConfig, getAuthzClient());
     }
 
     private boolean isResourcePermission(PathConfig actualPathConfig, Permission permission) {

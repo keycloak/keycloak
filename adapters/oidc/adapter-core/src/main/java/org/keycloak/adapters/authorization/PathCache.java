@@ -40,6 +40,7 @@ public class PathCache {
     private final AtomicBoolean writing = new AtomicBoolean(false);
 
     private final long maxAge;
+    private final boolean enabled;
 
     /**
      * Creates a new instance.
@@ -55,9 +56,14 @@ public class PathCache {
             }
         };
         this.maxAge = maxAge;
+        this.enabled = maxAge > 0;
     }
 
     public void put(String uri, PathConfig newValue) {
+        if (!enabled) {
+            return;
+        }
+
         try {
             if (parkForWriteAndCheckInterrupt()) {
                 return;
