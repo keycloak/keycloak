@@ -32,6 +32,7 @@ Here's an example configuration file.
 
 {
     "target-url": "http://localhost:8082",
+    "target-request-timeout": "60000",
     "send-access-token": true,
     "bind-address": "localhost",
     "http-port": "8080",
@@ -88,6 +89,10 @@ The basic configuration options for the server are as follows:
 
 target-url::
   The URL this server is proxying. _REQUIRED_. 
+
+target-request-timeout::
+  The timeout (in ms) for the proxied request. _OPTIONAL_.
+  Default is 30000.
 
 send-access-token::
   Boolean flag.
