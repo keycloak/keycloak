@@ -98,70 +98,12 @@ public class KeycloakInstalled {
         this.deployment = deployment;
     }
 
-    private static HttpResponseWriter defaultLoginWriter = new HttpResponseWriter() {
-        @Override
-        public void success(PrintWriter pw, KeycloakInstalled ki) {
-            pw.println("HTTP/1.1 200 OK");
-            pw.println("Content-Type: text/html");
-            pw.println();
-            pw.println("<html><h1>Login completed.</h1><div>");
-            pw.println("This browser will remain logged in until you close it, logout, or the session expires.");
-            pw.println("</div></html>");
-            pw.flush();
-
-        }
-
-        @Override
-        public void failure(PrintWriter pw, KeycloakInstalled ki) {
-            pw.println("HTTP/1.1 200 OK");
-            pw.println("Content-Type: text/html");
-            pw.println();
-            pw.println("<html><h1>Login attempt failed.</h1><div>");
-            pw.println("</div></html>");
-            pw.flush();
-
-        }
-    };
-    private static HttpResponseWriter defaultLogoutWriter = new HttpResponseWriter() {
-        @Override
-        public void success(PrintWriter pw, KeycloakInstalled ki) {
-            pw.println("HTTP/1.1 200 OK");
-            pw.println("Content-Type: text/html");
-            pw.println();
-            pw.println("<html><h1>Logout completed.</h1><div>");
-            pw.println("You may close this browser tab.");
-            pw.println("</div></html>");
-            pw.flush();
-
-        }
-
-        @Override
-        public void failure(PrintWriter pw, KeycloakInstalled ki) {
-            pw.println("HTTP/1.1 200 OK");
-            pw.println("Content-Type: text/html");
-            pw.println();
-            pw.println("<html><h1>Logout failed.</h1><div>");
-            pw.println("You may close this browser tab.");
-            pw.println("</div></html>");
-            pw.flush();
-
-        }
-    };
-
     public HttpResponseWriter getLoginResponseWriter() {
-        if (loginResponseWriter == null) {
-            return defaultLoginWriter;
-        } else {
-            return loginResponseWriter;
-        }
+        return null;
     }
 
     public HttpResponseWriter getLogoutResponseWriter() {
-        if (logoutResponseWriter == null) {
-            return defaultLogoutWriter;
-        } else {
-            return logoutResponseWriter;
-        }
+        return null;
     }
 
     public void setLoginResponseWriter(HttpResponseWriter loginResponseWriter) {
@@ -709,11 +651,26 @@ public class KeycloakInstalled {
 
                 OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
                 PrintWriter pw = new PrintWriter(out);
+                if (writer != null) {
+                    System.err.println("Using a writer is deprecated.  Please remove its usage.  This is now handled by endpoint on server");
+                }
 
                 if (error == null) {
-                    writer.success(pw, KeycloakInstalled.this);
+                     if (writer != null) {
+                         writer.success(pw, KeycloakInstalled.this);
+                     } else {
+                         pw.println("HTTP/1.1 302 Found");
+                         pw.println("Location: " + deployment.getTokenUrl().replace("/token", "/delegated"));
+
+                     }
                 } else {
-                    writer.failure(pw, KeycloakInstalled.this);
+                    if (writer != null) {
+                        writer.failure(pw, KeycloakInstalled.this);
+                    } else {
+                        pw.println("HTTP/1.1 302 Found");
+                        pw.println("Location: " + deployment.getTokenUrl().replace("/token", "/delegated?error=true"));
+
+                    }
                 }
                 pw.flush();
                 socket.close();

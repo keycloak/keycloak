@@ -71,7 +71,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String MAX_AGE_PARAM = OAuth2Constants.MAX_AGE;
     public static final String PROMPT_PARAM = OAuth2Constants.PROMPT;
     public static final String LOGIN_HINT_PARAM = "login_hint";
-    public static final String DISPLAY_PARAM = "display";
     public static final String REQUEST_PARAM = "request";
     public static final String REQUEST_URI_PARAM = "request_uri";
     public static final String UI_LOCALES_PARAM = OAuth2Constants.UI_LOCALES_PARAM;

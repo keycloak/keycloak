@@ -17,14 +17,10 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.TextChallenge;
+import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
@@ -45,7 +41,7 @@ public class ConsoleTermsAndConditions implements RequiredActionProvider {
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = TextChallenge.challenge(context)
+        Response challenge = ConsoleDisplayMode.challenge(context)
                 .header()
                 .param("accept")
                 .label("console-accept-terms")

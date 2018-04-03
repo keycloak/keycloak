@@ -306,14 +306,7 @@ public class AuthenticationManagementResource {
             logger.debug("flow not found: " + flowAlias);
             return Response.status(NOT_FOUND).build();
         }
-        AuthenticationFlowModel copy = new AuthenticationFlowModel();
-        copy.setAlias(newName);
-        copy.setDescription(flow.getDescription());
-        copy.setProviderId(flow.getProviderId());
-        copy.setBuiltIn(false);
-        copy.setTopLevel(flow.isTopLevel());
-        copy = realm.addAuthenticationFlow(copy);
-        copy(newName, flow, copy);
+        AuthenticationFlowModel copy = copyFlow(realm, flow, newName);
 
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
@@ -322,7 +315,19 @@ public class AuthenticationManagementResource {
 
     }
 
-    protected void copy(String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
+    public static AuthenticationFlowModel copyFlow(RealmModel realm, AuthenticationFlowModel flow, String newName) {
+        AuthenticationFlowModel copy = new AuthenticationFlowModel();
+        copy.setAlias(newName);
+        copy.setDescription(flow.getDescription());
+        copy.setProviderId(flow.getProviderId());
+        copy.setBuiltIn(false);
+        copy.setTopLevel(flow.isTopLevel());
+        copy = realm.addAuthenticationFlow(copy);
+        copy(realm, newName, flow, copy);
+        return copy;
+    }
+
+    public static void copy(RealmModel realm, String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
         for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(from.getId())) {
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
@@ -334,7 +339,7 @@ public class AuthenticationManagementResource {
                 copy.setTopLevel(false);
                 copy = realm.addAuthenticationFlow(copy);
                 execution.setFlowId(copy.getId());
-                copy(newName, subFlow, copy);
+                copy(realm, newName, subFlow, copy);
             }
             execution.setId(null);
             execution.setParentFlow(to.getId());

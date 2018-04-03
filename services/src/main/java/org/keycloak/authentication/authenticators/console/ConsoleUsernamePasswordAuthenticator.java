@@ -24,11 +24,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,8 +40,8 @@ public class ConsoleUsernamePasswordAuthenticator extends AbstractUsernameFormAu
         return false;
     }
 
-    protected TextChallenge challenge(AuthenticationFlowContext context) {
-        return TextChallenge.challenge(context)
+    protected ConsoleDisplayMode challenge(AuthenticationFlowContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param("username")
                 .label("console-username")

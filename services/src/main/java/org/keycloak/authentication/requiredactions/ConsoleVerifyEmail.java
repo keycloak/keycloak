@@ -18,35 +18,24 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.TextChallenge;
-import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
+import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.common.util.RandomString;
-import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
-import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.*;
-import java.net.URI;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -114,8 +103,8 @@ public class ConsoleVerifyEmail implements RequiredActionProvider {
     }
 
     public static String EMAIL_CODE="email_code";
-    protected TextChallenge challenge(RequiredActionContext context) {
-        return TextChallenge.challenge(context)
+    protected ConsoleDisplayMode challenge(RequiredActionContext context) {
+        return ConsoleDisplayMode.challenge(context)
                 .header()
                 .param(EMAIL_CODE)
                 .label("console-email-code")

@@ -254,6 +254,19 @@ public class AuthenticationProcessor {
         getAuthenticationSession().setAuthenticatedUser(null);
     }
 
+    public URI getRefreshUrl(boolean authSessionIdParam) {
+        UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                .path(AuthenticationProcessor.this.flowPath)
+                .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+        if (authSessionIdParam) {
+            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+        }
+        return uriBuilder
+                .build(getRealm().getName());
+    }
+
+
     public class Result implements AuthenticationFlowContext, ClientAuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
         AuthenticationExecutionModel execution;
@@ -546,15 +559,7 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getRefreshUrl(boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
+            return AuthenticationProcessor.this.getRefreshUrl(authSessionIdParam);
         }
 
         @Override

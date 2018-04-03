@@ -929,9 +929,15 @@ public class LoginActionsService {
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE));
         }
+        RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, authSession.getAuthenticatedUser(), factory) {
+            @Override
+            public void ignore() {
+                throw new RuntimeException("Cannot call ignore within processAction()");
+            }
+        };
         RequiredActionProvider provider = null;
         try {
-            provider = AuthenticationManager.createRequiredAction(session, factory, authSession);
+            provider = AuthenticationManager.createRequiredAction(context);
         }  catch (AuthenticationFlowException e) {
             if (e.getResponse() != null) {
                 return e.getResponse();
@@ -939,12 +945,6 @@ public class LoginActionsService {
             throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.DISPLAY_UNSUPPORTED));
         }
 
-        RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, authSession.getAuthenticatedUser(), factory) {
-            @Override
-            public void ignore() {
-                throw new RuntimeException("Cannot call ignore within processAction()");
-            }
-        };
 
         Response response;
         provider.processAction(context);

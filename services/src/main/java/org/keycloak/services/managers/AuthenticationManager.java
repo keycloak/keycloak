@@ -966,21 +966,22 @@ public class AuthenticationManager {
         authSession.setProtocolMappers(requestedProtocolMappers);
     }
 
-    public static RequiredActionProvider createRequiredAction(KeycloakSession session, RequiredActionFactory factory, AuthenticationSessionModel authSession) {
-        String display = authSession.getClientNote(OAuth2Constants.DISPLAY);
-        if (display == null) return factory.create(session);
+    public static RequiredActionProvider createRequiredAction(RequiredActionContextResult context) {
+        String display = context.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
+        if (display == null) return context.getFactory().create(context.getSession());
 
 
-        if (factory instanceof DisplayTypeRequiredActionFactory) {
-            RequiredActionProvider provider = ((DisplayTypeRequiredActionFactory)factory).createDisplay(session, display);
+        if (context.getFactory() instanceof DisplayTypeRequiredActionFactory) {
+            RequiredActionProvider provider = ((DisplayTypeRequiredActionFactory)context.getFactory()).createDisplay(context.getSession(), display);
             if (provider != null) return provider;
         }
         // todo create a provider for handling lack of display support
         if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, TextChallenge.browserRequired(session));
+            context.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
+            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, ConsoleDisplayMode.browserContinue(context.getSession(), context.getUriInfo().getRequestUri().toString()));
 
         } else {
-            return factory.create(session);
+            return context.getFactory().create(context.getSession());
         }
     }
 
@@ -1002,16 +1003,16 @@ public class AuthenticationManager {
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
             }
+            RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
             RequiredActionProvider actionProvider = null;
             try {
-                actionProvider = createRequiredAction(session, factory, authSession);
+                actionProvider = createRequiredAction(context);
             } catch (AuthenticationFlowException e) {
                 if (e.getResponse() != null) {
                     return e.getResponse();
                 }
                 throw e;
             }
-            RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
             actionProvider.requiredActionChallenge(context);
 
             if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
