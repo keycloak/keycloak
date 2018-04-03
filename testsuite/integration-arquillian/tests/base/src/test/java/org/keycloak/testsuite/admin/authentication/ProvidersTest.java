@@ -134,6 +134,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
     private List<Map<String, Object>> expectedAuthProviders() {
         ArrayList<Map<String, Object>> result = new ArrayList<>();
+        addProviderInfo(result, "always-fail", "Deny All", "Authenticator returns failure every time.  Only use this if you want to disable auth entirely for the given flow.");
         addProviderInfo(result, "auth-conditional-otp-form", "Conditional OTP Form",
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
