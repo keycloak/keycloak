@@ -240,6 +240,19 @@ Running the user registration simulation requires a different approach to datase
 `mvn verify -P test -D test.properties=oidc-register-logout -DsequentialUsersFrom=100 -DusersPerRealm=<MAX_EXPECTED_REGISTRATIONS>`
 
 
+### Testing with HTTPS
+
+If the provisioned server is secured with HTTPS it is possible to set the truststore which contains the server certificate.
+The truststore is used in phases `generate-data` and `test`.
+
+Usage: `mvn verify -P generate-data,test -DtrustStore=<PATH_TO_TRUSTSTORE> -DtrustStorePassword=<TRUSTSTORE_PASSWORD>`
+
+To automatically generate the truststore file run a utility script `tests/create-truststore.sh HOST:PORT [TRUSTSTORE_PASSWORD]`.
+The script requires `openssl` and `keytool` (included in JDK).
+
+Example: `tests/create-truststore.sh localhost:8443 truststorepass`
+
+
 ## Monitoring
 
 ### JMX
