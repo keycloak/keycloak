@@ -59,6 +59,13 @@
 
         <gatling.simulationClass>keycloak.OIDCLoginAndLogoutSimulation</gatling.simulationClass>
         <gatling.skip.run>true</gatling.skip.run>
+
+        <authRealm>master</authRealm>
+        <authUser>admin</authUser>
+        <authPassword>admin</authPassword>
+        
+        <trustStoreArg/>
+        <trustStorePasswordArg/>
     </properties>
 
     <dependencies>
@@ -275,6 +282,9 @@
                         <param>-DrefreshTokenPeriod=${refreshTokenPeriod}</param>
                         <param>-DrefreshTokenCount=${refreshTokenCount}</param>
                         <param>-DbadLoginAttempts=${badLoginAttempts}</param>
+                        
+                        <param>${trustStoreArg}</param>
+                        <param>${trustStorePasswordArg}</param>
                     </jvmArgs>
                 </configuration>
 
@@ -310,6 +320,19 @@
             <id>crossdc</id>
             <properties>
                 <deployment>crossdc</deployment>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>ssl</id>
+            <activation>
+                <property>
+                    <name>trustStore</name>
+                </property>
+            </activation>
+            <properties>
+                <trustStoreArg>-Djavax.net.ssl.trustStore=${trustStore}</trustStoreArg>
+                <trustStorePasswordArg>-Djavax.net.ssl.trustStorePassword=${trustStorePassword}</trustStorePasswordArg>
             </properties>
         </profile>
         
@@ -469,7 +492,12 @@
                                     <arguments>
                                         <argument>-classpath</argument>
                                         <classpath/>
+                                        <argument>${trustStoreArg}</argument>
+                                        <argument>${trustStorePasswordArg}</argument>
                                         <argument>-Dkeycloak.server.uris=${keycloak.frontend.servers}</argument>
+                                        <argument>-DauthRealm=${authRealm}</argument>
+                                        <argument>-DauthUser=${authUser}</argument>
+                                        <argument>-DauthPassword=${authPassword}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
                                         <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
                                         <argument>benchmark-realms.json</argument>
