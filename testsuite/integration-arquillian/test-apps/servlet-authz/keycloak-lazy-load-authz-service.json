@@ -10,6 +10,14 @@
   },
   "policy-enforcer": {
     "on-deny-redirect-to" : "/servlet-authz-app/accessDenied.jsp",
-    "lazy-load-paths": true
+    "lazy-load-paths": true,
+    "paths": [
+      {
+        "name": "Premium Resource",
+        "path": "/protected/premium/pep-disabled.jsp",
+        "enforcement-mode": "DISABLED"
+      }
+    ]
+
   }
 }

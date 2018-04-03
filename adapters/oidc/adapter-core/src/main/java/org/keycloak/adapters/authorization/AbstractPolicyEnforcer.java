@@ -95,7 +95,7 @@ public abstract class AbstractPolicyEnforcer {
             }
 
             if (EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
-                return createEmptyAuthorizationContext(true);
+                return createAuthorizationContext(accessToken, pathConfig);
             }
 
             MethodConfig methodConfig = getRequiredScopes(pathConfig, request);
