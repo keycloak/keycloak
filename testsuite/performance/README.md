@@ -129,6 +129,8 @@ Individual properties can be overriden from command line via `-D` params.
 
 To use a custom properties file specify `-Ddataset.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Ddataset`.
 
+To generate data using a different version of Keycloak Admin Client set property `-Dserver.version=SERVER_VERSION` to match the version of the provisioned server.
+
 #### Dataset Parameters
 
 | Property | Description | Value in the Default Dataset |
