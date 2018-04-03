@@ -37,7 +37,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.2.0.GA</product.rhsso.version>
+        <product.rhsso.version>7.2.2.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
@@ -46,7 +46,7 @@
 
         <wildfly.version>11.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
-        <eap.version>7.1.1.GA-redhat-2</eap.version>
+        <eap.version>7.1.2.GA-redhat-1</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
         <wildfly.core.version>3.0.10.Final</wildfly.core.version>
         <wildfly10.core.version>2.0.10.Final</wildfly10.core.version>
@@ -63,9 +63,9 @@
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <h2.version>1.4.193</h2.version>
-        <hibernate.entitymanager.version>5.1.12.Final</hibernate.entitymanager.version>
+        <hibernate.entitymanager.version>5.1.13.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.2.8.Final</infinispan.version>
+        <infinispan.version>8.2.10.Final</infinispan.version>
         <jackson.version>2.8.11</jackson.version>
         <jackson.databind.version>2.8.11</jackson.databind.version>
         <javax.mail.version>1.5.5</javax.mail.version>
@@ -82,7 +82,7 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.4.18.Final</undertow.version>
-        <elytron.version>1.1.6.Final</elytron.version>
+        <elytron.version>1.1.9.Final</elytron.version>
         <elytron.undertow-server.version>1.0.1.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.9</xmlsec.version>
