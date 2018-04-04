@@ -37,12 +37,12 @@ import java.net.URLDecoder;
  * 
  * @author Vlastimil Elias (velias at redhat dot com)
  */
-public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
+public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> implements SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
 	private static final Logger log = Logger.getLogger(LinkedInIdentityProvider.class);
 
-	public static final String AUTH_URL = "https://www.linkedin.com/uas/oauth2/authorization";
-	public static final String TOKEN_URL = "https://www.linkedin.com/uas/oauth2/accessToken";
+	public static final String AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
+	public static final String TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 	public static final String PROFILE_URL = "https://api.linkedin.com/v1/people/~:(id,formatted-name,email-address,public-profile-url)?format=json";
 	public static final String DEFAULT_SCOPE = "r_basicprofile r_emailaddress";
 
