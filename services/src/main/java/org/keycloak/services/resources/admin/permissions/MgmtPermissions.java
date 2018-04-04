@@ -86,21 +86,19 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
                 && !auth.getRealm().equals(new RealmManager(session).getKeycloakAdminstrationRealm())) {
             throw new ForbiddenException();
         }
-        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
-                || auth.getClient().getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
-            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
-
-        } else {
-            this.identity = new KeycloakIdentity(auth.getToken(), session);
-        }
+        initIdentity(session, auth);
     }
     MgmtPermissions(KeycloakSession session, AdminAuth auth) {
         this.session = session;
         this.auth = auth;
         this.admin = auth.getUser();
         this.adminsRealm = auth.getRealm();
-        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
-                || auth.getClient().getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+        initIdentity(session, auth);
+    }
+
+    private void initIdentity(KeycloakSession session, AdminAuth auth) {
+        if (auth.getToken().hasAudience(Constants.ADMIN_CLI_CLIENT_ID)
+                || auth.getToken().hasAudience(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
             this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
 
         } else {

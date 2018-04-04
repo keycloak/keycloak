@@ -20,4 +20,14 @@ if [ "x$RESOLVED_NAME" = "x" ]; then
 fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
+
+
+# Uncomment out these lines if you are integrating with `kcinit`
+#if [ "$1" = "config" ]; then
+#    java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
+#else
+#    java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@" --noconfig --token $(kcinit token admin-cli) --server $(kcinit show server)
+#fi
+# Remove the next line if you have enabled kcinit
 java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
+
