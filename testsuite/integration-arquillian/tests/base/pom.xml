@@ -264,7 +264,7 @@
                                 <package>github.com/keycloak/kcinit</package>
                             </packages>
                             <goPath>${project.build.directory}/gopath</goPath>
-                            <tag>0.4</tag>
+                            <tag>0.5</tag>
                         </configuration>
                     </execution>
                   </executions>

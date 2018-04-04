@@ -46,6 +46,9 @@ import static org.keycloak.client.admin.cli.util.HttpUtil.urlencode;
 public class AuthUtil {
 
     public static String ensureToken(ConfigData config) {
+        if (config.getExternalToken() != null) {
+            return config.getExternalToken();
+        }
 
         checkAuthInfo(config);
 

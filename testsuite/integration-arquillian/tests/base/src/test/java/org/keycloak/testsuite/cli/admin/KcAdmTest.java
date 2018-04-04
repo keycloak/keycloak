@@ -570,4 +570,20 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 "--client admin-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias admin-cli", "",
                 "Logging into " + serverUrl + " as service-account-admin-cli-jwt of realm test");
     }
+
+    @Test
+    public void testCRUDWithToken() throws Exception {
+        /*
+         *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
+         *  Login is performed by each operation again, and again using username, password, and client secret.
+         */
+        oauth.realm("master");
+        oauth.clientId("admin-cli");
+        String token = oauth.doGrantAccessTokenRequest("", "admin", "admin").getAccessToken();
+        testCRUDWithOnTheFlyAuth(serverUrl, " --token " + token, "",
+                "");
+
+    }
+
+
 }
