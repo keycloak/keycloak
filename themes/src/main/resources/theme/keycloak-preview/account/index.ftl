@@ -8,6 +8,8 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm}';
             var resourceUrl = '${resourceUrl}';
+            var isRegistrationEmailAsUsername = ${isRegistrationEmailAsUsername?c};
+            var isEditUserNameAllowed = ${isEditUserNameAllowed?c};
 
             <#if referrer??>
                 var referrer = '${referrer}';

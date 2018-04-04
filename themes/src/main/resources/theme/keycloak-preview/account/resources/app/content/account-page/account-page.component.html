@@ -15,13 +15,14 @@
 
     <form #formGroup="ngForm" (ngSubmit)="saveAccount()" class="form-horizontal">
 
-        <div class="form-group ">
+        <div *ngIf="!isRegistrationEmailAsUsername" class="form-group ">
             <div class="col-sm-2 col-md-2">
-                <label for="username" class="control-label">{{'username' | translate}}</label>
+                <label for="username" class="control-label">{{'username' | translate}}</label><span *ngIf="isEditUserNameAllowed" class="required">*</span>
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="username" name="username" disabled value="{{username}}" >
+                <input *ngIf="isEditUserNameAllowed" type="text" class="form-control" required ngModel id="username" name="username" value="{{username}}" >
+                <span *ngIf="!isEditUserNameAllowed">{{ username }}</span>
             </div>
         </div>
 

@@ -89,6 +89,8 @@ public class AccountConsole {
             map.put("authUrl", session.getContext().getContextPath());
             map.put("baseUrl", session.getContext().getContextPath() + "/realms/" + realm.getName() + "/account");
             map.put("realm", realm.getName());
+            map.put("isRegistrationEmailAsUsername", realm.isRegistrationEmailAsUsername());
+            map.put("isEditUserNameAllowed", realm.isEditUsernameAllowed());
             map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/account/" + theme.getName());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             
