@@ -464,6 +464,10 @@
                                 } else {
                                     console.warn('[KEYCLOAK] Failed to refresh token');
 
+                                    if (req.status == 400) {
+                                        kc.clearToken();
+                                    }
+
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setError(true);
