@@ -16,7 +16,10 @@
  */
 package org.keycloak.testsuite.authz;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +57,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
@@ -121,6 +125,39 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(AbstractAuthzTest.class);
+    }
+
+    @Test
+    public void testCheckDateAndTime() {testingClient.server().run(PolicyEvaluationTest::testCheckDateAndTime);}
+
+    public static void testCheckDateAndTime(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        TimePolicyRepresentation policyRepresentation = new TimePolicyRepresentation();
+        policyRepresentation.setName("testCheckDateAndTime");
+
+        // set the notOnOrAfter for 1 hour from now
+        long notOnOrAfter = System.currentTimeMillis() + 3600000;
+        Date notOnOrAfterDate = new Date(notOnOrAfter);
+        policyRepresentation.setNotOnOrAfter(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(notOnOrAfterDate));
+
+        // evaluation should succeed with the default context as it uses the current time as the date to be compared.
+        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        provider.evaluate(evaluation);
+        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+
+        // lets now override the context to use a time that exceeds the time that was set in the policy.
+        long contextTime = System.currentTimeMillis() + 5400000;
+        Map<String,Collection<String>> attributes = new HashMap<>();
+        attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(contextTime))));
+        evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
+        provider.evaluate(evaluation);
+        Assert.assertEquals(Effect.DENY, evaluation.getEffect());
     }
 
     @Test
@@ -599,6 +636,12 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     }
 
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, Resource resource, ResourceServer resourceServer, Policy policy) {
+        return createEvaluation(session, authorization, resource, resourceServer, policy, null);
+    }
+
+    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization,
+                                                      Resource resource, ResourceServer resourceServer, Policy policy,
+                                                      Map<String, Collection<String>> contextAttributes) {
         return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), new DefaultEvaluationContext(new Identity() {
             @Override
             public String getId() {
@@ -609,8 +652,19 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
             public Attributes getAttributes() {
                 return null;
             }
-        }, session), policy, policy, evaluation -> {
+        }, session) {
 
-        }, authorization);
+            /*
+             * Allow specific tests to override/add attributes to the context.
+             */
+            @Override
+            public Map<String, Collection<String>> getBaseAttributes() {
+                Map<String, Collection<String>> baseAttributes = super.getBaseAttributes();
+                if (contextAttributes != null) {
+                    baseAttributes.putAll(contextAttributes);
+                }
+                return baseAttributes;
+            }
+        }, policy, policy, evaluation -> {}, authorization);
     }
 }

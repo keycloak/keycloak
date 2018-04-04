@@ -53,7 +53,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
     public Map<String, Collection<String>> getBaseAttributes() {
         HashMap<String, Collection<String>> attributes = new HashMap<>();
 
-        attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(new Date())));
+        attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
         attributes.put("kc.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
         attributes.put("kc.client.network.host", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteHost()));
 
