@@ -198,7 +198,6 @@ public class ResourceAdminManager {
     // Methods for logout all
 
     public GlobalRequestResult logoutAll(URI requestUri, RealmModel realm) {
-        realm.setNotBefore(Time.currentTime());
         List<ClientModel> resources = realm.getClients();
         logger.debugv("logging out {0} resources ", resources.size());
 
