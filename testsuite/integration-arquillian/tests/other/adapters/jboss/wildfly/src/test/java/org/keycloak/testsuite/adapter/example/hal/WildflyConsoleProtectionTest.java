@@ -93,8 +93,7 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
         }
     }
 
-    @Test
-    public void testLogin() throws InterruptedException {
+    private void testLogin() throws InterruptedException {
         appServerWelcomePage.navigateToConsole();
         appServerWelcomePage.login("admin", "admin");
         WaitUtils.pause(2000);
@@ -103,9 +102,7 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
 
     @Test
     public void testUserCanAccessAccountService() throws InterruptedException {
-        appServerWelcomePage.navigateToConsole();
-        appServerWelcomePage.login("admin", "admin");
-        WaitUtils.pause(2000);
+        testLogin();
         appServerWelcomePage.navigateToAccessControl();
         appServerWelcomePage.navigateManageProfile();
         assertTrue(accountUpdateProfilePage.isCurrent());
