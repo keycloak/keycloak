@@ -21,6 +21,7 @@ import {ResponsivenessService} from "../responsiveness-service/responsiveness.se
 import {Referrer} from "../page/referrer";
 
 declare const resourceUrl: string;
+declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
 
@@ -48,7 +49,7 @@ export class TopNavComponent implements OnInit {
     }
 
     private logout() {
-        this.keycloakService.logout();
+        this.keycloakService.logout(baseUrl);
     }
 
 }
