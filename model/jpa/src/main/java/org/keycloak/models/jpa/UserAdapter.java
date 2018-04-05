@@ -107,7 +107,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         List<UserAttributeEntity> toRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
-                if (firstExistingAttrId == null) {
+                if (firstExistingAttrId == null && value != null) {
                     attr.setValue(value);
                     firstExistingAttrId = attr.getId();
                 } else {
@@ -127,8 +127,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             // Remove attribute from local entity
             user.getAttributes().removeAll(toRemove);
         } else {
-
-            persistAttributeValue(name, value);
+            if(value != null) {
+                persistAttributeValue(name, value);
+            }
         }
     }
 
@@ -137,8 +138,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         // Remove all existing
         removeAttribute(name);
 
-        // Put all new
-        for (String value : values) {
+        List<String> nonNullValues = values.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        // Put all new nonNull values
+        for (String value : nonNullValues) {
             persistAttributeValue(name, value);
         }
     }
