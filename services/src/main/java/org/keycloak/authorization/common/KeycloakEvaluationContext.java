@@ -34,7 +34,11 @@ public class KeycloakEvaluationContext extends DefaultEvaluationContext {
     private final KeycloakIdentity identity;
 
     public KeycloakEvaluationContext(KeycloakIdentity identity, KeycloakSession keycloakSession) {
-        super(identity, keycloakSession);
+        this(identity, null, keycloakSession);
+    }
+
+    public KeycloakEvaluationContext(KeycloakIdentity identity, Map<String, Object> claims, KeycloakSession keycloakSession) {
+        super(identity, claims, keycloakSession);
         this.identity = identity;
     }
 

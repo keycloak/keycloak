@@ -22,15 +22,16 @@ import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessToken;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -39,10 +40,16 @@ public class DefaultEvaluationContext implements EvaluationContext {
 
     protected final KeycloakSession keycloakSession;
     protected final Identity identity;
+    private final Map<String, Object> claims;
 
     public DefaultEvaluationContext(Identity identity, KeycloakSession keycloakSession) {
-        this.keycloakSession = keycloakSession;
+        this(identity, null, keycloakSession);
+    }
+
+    public DefaultEvaluationContext(Identity identity, Map<String, Object> claims, KeycloakSession keycloakSession) {
         this.identity = identity;
+        this.claims = claims;
+        this.keycloakSession = keycloakSession;
     }
 
     @Override
@@ -51,7 +58,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
     }
 
     public Map<String, Collection<String>> getBaseAttributes() {
-        HashMap<String, Collection<String>> attributes = new HashMap<>();
+        Map<String, Collection<String>> attributes = new HashMap<>();
 
         attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
         attributes.put("kc.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
@@ -64,6 +71,20 @@ public class DefaultEvaluationContext implements EvaluationContext {
         }
 
         attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
+
+        if (claims != null) {
+            for (Entry<String, Object> entry : claims.entrySet()) {
+                Object value = entry.getValue();
+
+                if (value.getClass().isArray()) {
+                    attributes.put(entry.getKey(), Arrays.asList(String[].class.cast(value)));
+                } else if (value instanceof Collection) {
+                    attributes.put(entry.getKey(), Collection.class.cast(value));
+                } else {
+                    attributes.put(entry.getKey(), Arrays.asList(String.valueOf(value)));
+                }
+            }
+        }
 
         return attributes;
     }

@@ -95,13 +95,13 @@ public class AuthorizationTokenService {
                 claimToken = authorizationRequest.getAccessToken();
             }
 
-            return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(claimToken, authorization.getKeycloakSession())), authorization.getKeycloakSession());
+            return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(claimToken, authorization.getKeycloakSession())), authorizationRequest.getClaims(), authorization.getKeycloakSession());
         });
         SUPPORTED_CLAIM_TOKEN_FORMATS.put("http://openid.net/specs/openid-connect-core-1_0.html#IDToken", (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
                 IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, authorization.getRealm(), authorizationRequest.getClaimToken());
-                return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), keycloakSession);
+                return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
             } catch (OAuthErrorException cause) {
                 throw new RuntimeException("Failed to verify ID token", cause);
             }
@@ -129,6 +129,9 @@ public class AuthorizationTokenService {
 
         try {
             PermissionTicketToken ticket = getPermissionTicket(request);
+
+            request.setClaims(ticket.getOtherClaims());
+
             ResourceServer resourceServer = getResourceServer(ticket);
             KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());

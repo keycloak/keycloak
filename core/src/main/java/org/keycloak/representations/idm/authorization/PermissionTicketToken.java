@@ -18,10 +18,13 @@ package org.keycloak.representations.idm.authorization;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.json.StringListMapDeserializer;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 
@@ -31,6 +34,9 @@ import org.keycloak.representations.JsonWebToken;
 public class PermissionTicketToken extends JsonWebToken {
 
     private final List<ResourcePermission> resources;
+
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    private Map<String, List<String>> claims;
 
     public PermissionTicketToken() {
         this(new ArrayList<ResourcePermission>());
@@ -57,6 +63,10 @@ public class PermissionTicketToken extends JsonWebToken {
 
     public List<ResourcePermission> getResources() {
         return this.resources;
+    }
+
+    public Map<String, List<String>> getClaims() {
+        return claims;
     }
 
     public static class ResourcePermission {
