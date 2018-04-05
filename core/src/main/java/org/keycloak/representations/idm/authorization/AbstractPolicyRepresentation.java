@@ -99,6 +99,12 @@ public class AbstractPolicyRepresentation {
         this.policies.addAll(Arrays.asList(id));
     }
 
+    public void removePolicy(String policy) {
+        if (policies != null) {
+            policies.remove(policy);
+        }
+    }
+
     public Set<String> getResources() {
         return resources;
     }

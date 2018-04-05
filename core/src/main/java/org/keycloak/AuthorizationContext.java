@@ -33,18 +33,16 @@ public class AuthorizationContext {
 
     private final AccessToken authzToken;
     private final PathConfig current;
-    private final Map<String, PathConfig> paths;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, PathConfig current, Map<String, PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, PathConfig current) {
         this.authzToken = authzToken;
         this.current = current;
-        this.paths = paths;
         this.granted = true;
     }
 
     public AuthorizationContext() {
-        this(null, null, null);
+        this(null, null);
         this.granted = false;
     }
 
