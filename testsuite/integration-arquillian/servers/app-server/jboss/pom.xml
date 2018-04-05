@@ -16,7 +16,8 @@
 ~ limitations under the License.
 -->
 
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
@@ -40,7 +41,7 @@
     </properties>
 
     <profiles>
-        
+
         <profile>
             <id>app-server-jboss-submodules</id>
             <activation>
@@ -50,7 +51,7 @@
             </activation>
             <build>
                 <plugins>
-                    
+
                     <plugin>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
@@ -73,7 +74,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
@@ -104,30 +105,11 @@
                             </execution>
                         </executions>
                     </plugin>
-            
+
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
-                            <execution>
-                                <id>configure-adapter-debug-log</id>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${app.server.jboss.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/add-adapter-log-level.xsl</stylesheet>
-                                            <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <id>io-worker-threads</id>
                                 <phase>process-resources</phase>
@@ -160,7 +142,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>

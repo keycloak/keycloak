@@ -64,6 +64,8 @@ if "%SAML_SUPPORTED%" == "true" (
     )
 )
 
+call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%CLI_PATH%\add-adapter-log-level.cli"
+
 :shutdown_jboss
 echo Shutting down with error code: "%ERROR%"
 call %JBOSS_HOME%\bin\jboss-cli.bat -c --command=":shutdown"
