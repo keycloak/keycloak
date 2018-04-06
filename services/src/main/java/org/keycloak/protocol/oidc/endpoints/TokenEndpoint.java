@@ -997,6 +997,8 @@ public class TokenEndpoint {
             accessTokenString = new AppAuthManager().extractAuthorizationHeaderToken(headers);
         }
 
+        // we allow public clients to authenticate using a bearer token, where the token should be a valid access token.
+        // public clients don't have secret and should be able to obtain a RPT by providing an access token previously issued by the server
         if (accessTokenString != null) {
             AccessToken accessToken = Tokens.getAccessToken(session);
 
@@ -1004,7 +1006,11 @@ public class TokenEndpoint {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Status.UNAUTHORIZED);
             }
 
-            cors.allowedOrigins(uriInfo, realm.getClientByClientId(accessToken.getIssuedFor()));
+            ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
+
+            session.getContext().setClient(client);
+
+            cors.allowedOrigins(uriInfo, client);
         }
 
         String claimToken = null;
@@ -1014,18 +1020,30 @@ public class TokenEndpoint {
             claimToken = formParams.get("claim_token").get(0);
         }
 
+        String claimTokenFormat = formParams.getFirst("claim_token_format");
+
+        if (claimToken != null && claimTokenFormat == null) {
+            claimTokenFormat = AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN;
+        }
+
         if (accessTokenString == null) {
             // in case no bearer token is provided, we force client authentication
             checkClient();
-            // Clients need to authenticate in order to obtain a RPT from the server.
-            // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
-            accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken();
+
+            // if a claim token is provided, we check if the format is a OpenID Connect IDToken and assume the token represents the identity asking for permissions
+            if (AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN.equalsIgnoreCase(claimTokenFormat)) {
+                accessTokenString = claimToken;
+            } else {
+                // Clients need to authenticate in order to obtain a RPT from the server.
+                // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
+                accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken();
+            }
         }
 
         AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));
 
         authorizationRequest.setClaimToken(claimToken);
-        authorizationRequest.setClaimTokenFormat(formParams.getFirst("claim_token_format"));
+        authorizationRequest.setClaimTokenFormat(claimTokenFormat);
         authorizationRequest.setPct(formParams.getFirst("pct"));
         authorizationRequest.setRpt(formParams.getFirst("rpt"));
         authorizationRequest.setScope(formParams.getFirst("scope"));

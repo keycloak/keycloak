@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.authorization;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -77,11 +79,14 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationTokenService {
+
+    public static final String CLAIM_TOKEN_FORMAT_ID_TOKEN = "http://openid.net/specs/openid-connect-core-1_0.html#IDToken";
 
     private static final Logger logger = Logger.getLogger(AuthorizationTokenService.class);
     private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
@@ -91,16 +96,29 @@ public class AuthorizationTokenService {
         SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> {
             String claimToken = authorizationRequest.getClaimToken();
 
-            if (claimToken == null) {
-                claimToken = authorizationRequest.getAccessToken();
+            if (claimToken != null) {
+                try {
+                    Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
+                    authorizationRequest.setClaims(claims);
+                    return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getAccessToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
+                } catch (IOException cause) {
+                    throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
+                }
             }
 
-            return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(claimToken, authorization.getKeycloakSession())), authorizationRequest.getClaims(), authorization.getKeycloakSession());
+            throw new RuntimeException("Claim token can not be null");
         });
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put("http://openid.net/specs/openid-connect-core-1_0.html#IDToken", (authorizationRequest, authorization) -> {
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, authorization.getRealm(), authorizationRequest.getClaimToken());
+                RealmModel realm = authorization.getRealm();
+                String accessToken = authorizationRequest.getAccessToken();
+
+                if (accessToken == null) {
+                    throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
+                }
+
+                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, realm, accessToken);
                 return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
             } catch (OAuthErrorException cause) {
                 throw new RuntimeException("Failed to verify ID token", cause);
@@ -127,10 +145,15 @@ public class AuthorizationTokenService {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid authorization request.", Status.BAD_REQUEST);
         }
 
+        // it is not secure to allow public clients to push arbitrary claims because message can be tampered
+        if (isPublicClientRequestingEntitlemesWithClaims(request)) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Public clients are not allowed to send claims", Status.FORBIDDEN);
+        }
+
         try {
             PermissionTicketToken ticket = getPermissionTicket(request);
 
-            request.setClaims(ticket.getOtherClaims());
+            request.setClaims(ticket.getClaims());
 
             ResourceServer resourceServer = getResourceServer(ticket);
             KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
@@ -156,7 +179,7 @@ public class AuthorizationTokenService {
             }
 
             ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
-            AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(identity, permissions, targetClient), request.getRpt() != null);
+            AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(identity, permissions, request, targetClient), request.getRpt() != null);
 
             return Cors.add(httpRequest, Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
                     .allowedOrigins(getKeycloakSession().getContext().getUri(), targetClient)
@@ -171,6 +194,10 @@ public class AuthorizationTokenService {
             logger.error("Unexpected error while evaluating permissions", cause);
             throw new CorsErrorResponseException(cors, OAuthErrorException.SERVER_ERROR, "Unexpected error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private boolean isPublicClientRequestingEntitlemesWithClaims(AuthorizationRequest request) {
+        return request.getClaimToken() != null && getKeycloakSession().getContext().getClient().isPublicClient() && request.getTicket() == null;
     }
 
     private List<Result> evaluatePermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
@@ -191,7 +218,7 @@ public class AuthorizationTokenService {
                 .evaluate();
     }
 
-    private AccessTokenResponse createRequestingPartyToken(KeycloakIdentity identity, List<Permission> entitlements, ClientModel targetClient) {
+    private AccessTokenResponse createRequestingPartyToken(KeycloakIdentity identity, List<Permission> entitlements, AuthorizationRequest request, ClientModel targetClient) {
         KeycloakSession keycloakSession = getKeycloakSession();
         AccessToken accessToken = identity.getAccessToken();
         UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(getRealm(), accessToken.getSessionState());
@@ -208,6 +235,7 @@ public class AuthorizationTokenService {
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
+        authorization.setClaims(request.getClaims());
 
         rpt.setAuthorization(authorization);
 
@@ -267,7 +295,7 @@ public class AuthorizationTokenService {
         String claimTokenFormat = authorizationRequest.getClaimTokenFormat();
 
         if (claimTokenFormat == null) {
-            claimTokenFormat = "urn:ietf:params:oauth:token-type:jwt";
+            claimTokenFormat = CLAIM_TOKEN_FORMAT_ID_TOKEN;
         }
 
         BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);

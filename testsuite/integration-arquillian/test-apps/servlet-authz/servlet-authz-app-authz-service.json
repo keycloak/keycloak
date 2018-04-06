@@ -56,6 +56,10 @@
           "name": "write"
         }
       ]
+    },
+    {
+      "name": "Resource Protected With Claim",
+      "uri": "/protected/context/context.jsp"
     }
   ],
   "policies": [
@@ -182,6 +186,26 @@
         "resources": "[\"Resource A\"]",
         "scopes": "[\"write\"]",
         "applyPolicies": "[\"Deny Policy\"]"
+      }
+    },
+    {
+      "name": "Resource Protected With Claim Permission",
+      "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Resource Protected With Claim\"]",
+        "applyPolicies": "[\"Request Claim Policy\"]"
+      }
+    },
+    {
+      "name": "Request Claim Policy",
+      "description": "A policy that grants access based on claims from an http request",
+      "type": "js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "code": "var context = $evaluation.getContext();\nvar attributes = context.getAttributes();\nvar claim = attributes.getValue('request-claim');\n\nif (claim && claim.asString(0) == 'expected-value') {\n   $evaluation.grant();\n}"
       }
     }
   ]

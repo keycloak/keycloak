@@ -69,6 +69,10 @@ public class PermissionTicketToken extends JsonWebToken {
         return claims;
     }
 
+    public void setClaims(Map<String, List<String>> claims) {
+        this.claims = claims;
+    }
+
     public static class ResourcePermission {
 
         @JsonProperty("id")

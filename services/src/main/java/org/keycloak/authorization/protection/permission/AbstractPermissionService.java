@@ -18,9 +18,9 @@ package org.keycloak.authorization.protection.permission;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -152,15 +152,18 @@ public class AbstractPermissionService {
         KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
         ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
         PermissionTicketToken token = new PermissionTicketToken(permissions, targetClient.getClientId(), this.identity.getAccessToken());
+        Map<String, List<String>> claims = new HashMap<>();
 
         for (PermissionRequest permissionRequest : request) {
-            Map<String, List<String>> claims = permissionRequest.getClaims();
+            Map<String, List<String>> requestClaims = permissionRequest.getClaims();
 
-            if (claims != null) {
-                for (Entry<String, List<String>> claim : claims.entrySet()) {
-                    token.setOtherClaims(claim.getKey(), claim.getValue());
-                }
+            if (requestClaims != null) {
+                claims.putAll(requestClaims);
             }
+        }
+
+        if (!claims.isEmpty()) {
+            token.setClaims(claims);
         }
 
         return new JWSBuilder().kid(keys.getKid()).jsonContent(token)

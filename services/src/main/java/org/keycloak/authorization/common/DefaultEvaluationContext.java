@@ -24,7 +24,6 @@ import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -40,13 +39,13 @@ public class DefaultEvaluationContext implements EvaluationContext {
 
     protected final KeycloakSession keycloakSession;
     protected final Identity identity;
-    private final Map<String, Object> claims;
+    private final Map<String, List<String>> claims;
 
     public DefaultEvaluationContext(Identity identity, KeycloakSession keycloakSession) {
         this(identity, null, keycloakSession);
     }
 
-    public DefaultEvaluationContext(Identity identity, Map<String, Object> claims, KeycloakSession keycloakSession) {
+    public DefaultEvaluationContext(Identity identity, Map<String, List<String>> claims, KeycloakSession keycloakSession) {
         this.identity = identity;
         this.claims = claims;
         this.keycloakSession = keycloakSession;
@@ -73,16 +72,8 @@ public class DefaultEvaluationContext implements EvaluationContext {
         attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
 
         if (claims != null) {
-            for (Entry<String, Object> entry : claims.entrySet()) {
-                Object value = entry.getValue();
-
-                if (value.getClass().isArray()) {
-                    attributes.put(entry.getKey(), Arrays.asList(String[].class.cast(value)));
-                } else if (value instanceof Collection) {
-                    attributes.put(entry.getKey(), Collection.class.cast(value));
-                } else {
-                    attributes.put(entry.getKey(), Arrays.asList(String.valueOf(value)));
-                }
+            for (Entry<String, List<String>> entry : claims.entrySet()) {
+                attributes.put(entry.getKey(), entry.getValue());
             }
         }
 

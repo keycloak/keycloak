@@ -21,10 +21,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
@@ -55,6 +57,7 @@ public class PolicyEnforcer {
     private final PolicyEnforcerConfig enforcerConfig;
     private final PathConfigMatcher pathMatcher;
     private final Map<String, PathConfig> paths;
+    private final Map<String, ClaimInformationPointProviderFactory> claimInformationPointProviderFactories = new HashMap<>();
 
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
@@ -80,20 +83,17 @@ public class PolicyEnforcer {
                 LOGGER.debug(pathConfig);
             }
         }
+
+        loadClaimInformationPointProviders(ServiceLoader.load(ClaimInformationPointProviderFactory.class, ClaimInformationPointProviderFactory.class.getClassLoader()));
+        loadClaimInformationPointProviders(ServiceLoader.load(ClaimInformationPointProviderFactory.class, Thread.currentThread().getContextClassLoader()));
     }
 
     public AuthorizationContext enforce(OIDCHttpFacade facade) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Policy enforcement is enable. Enforcing policy decisions for path [{0}].", facade.getRequest().getURI());
+            LOGGER.debugv("Policy enforcement is enabled. Enforcing policy decisions for path [{0}].", facade.getRequest().getURI());
         }
 
-        AuthorizationContext context;
-
-        if (deployment.isBearerOnly()) {
-            context = new BearerTokenPolicyEnforcer(this).authorize(facade);
-        } else {
-            context = new KeycloakAdapterPolicyEnforcer(this).authorize(facade);
-        }
+        AuthorizationContext context = new KeycloakAdapterPolicyEnforcer(this).authorize(facade);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debugv("Policy enforcement result for path [{0}] is : {1}", facade.getRequest().getURI(), context.isGranted() ? "GRANTED" : "DENIED");
@@ -124,6 +124,22 @@ public class PolicyEnforcer {
 
     public KeycloakDeployment getDeployment() {
         return deployment;
+    }
+
+    public Map<String, ClaimInformationPointProviderFactory> getClaimInformationPointProviderFactories() {
+        return claimInformationPointProviderFactories;
+    }
+
+    private void loadClaimInformationPointProviders(ServiceLoader<ClaimInformationPointProviderFactory> loader) {
+        Iterator<ClaimInformationPointProviderFactory> iterator = loader.iterator();
+
+        while (iterator.hasNext()) {
+            ClaimInformationPointProviderFactory factory = iterator.next();
+
+            factory.init(this);
+
+            claimInformationPointProviderFactories.put(factory.getName(), factory);
+        }
     }
 
     private Map<String, PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
@@ -164,6 +180,10 @@ public class PolicyEnforcer {
                 LOGGER.debugf("Trying to find resource with uri [%s] for path [%s].", path, path);
                 List<ResourceRepresentation> resources = protectedResource.findByUri(path);
 
+                if (resources.isEmpty()) {
+                    resources = protectedResource.findByMatchingUri(path);
+                }
+
                 if (resources.size() == 1) {
                     resource = resources.get(0);
                 } else if (resources.size() > 1) {
@@ -173,16 +193,14 @@ public class PolicyEnforcer {
                 }
             }
 
-            if (resource == null) {
-                throw new RuntimeException("Could not find matching resource on server with uri [" + path + "] or name [" + resourceName + "]. Make sure you have created a resource on the server that matches with the path configuration.");
+            if (resource != null) {
+                pathConfig.setId(resource.getId());
             }
-
-            pathConfig.setId(resource.getId());
 
             PathConfig existingPath = null;
 
             for (PathConfig current : paths.values()) {
-                if (current.getId().equals(pathConfig.getId()) && current.getPath().equals(pathConfig.getPath())) {
+                if (current.getPath().equals(pathConfig.getPath())) {
                     existingPath = current;
                     break;
                 }

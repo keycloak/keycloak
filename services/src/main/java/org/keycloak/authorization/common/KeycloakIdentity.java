@@ -112,7 +112,6 @@ public class KeycloakIdentity implements Identity {
             if (token instanceof AccessToken) {
                 this.accessToken = AccessToken.class.cast(token);
             } else {
-                UserModel userById = keycloakSession.users().getUserById(token.getSubject(), realm);
                 UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, token.getSessionState());
                 ClientModel client = realm.getClientByClientId(token.getIssuedFor());
                 AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessions().get(client.getId());
@@ -123,7 +122,7 @@ public class KeycloakIdentity implements Identity {
                         requestedRoles.add(role);
                     }
                 }
-                this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, client, userById, userSession, clientSessionModel);
+                this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, client, userSession.getUser(), userSession, clientSessionModel);
             }
 
             AccessToken.Access realmAccess = this.accessToken.getRealmAccess();

@@ -20,6 +20,7 @@ package org.keycloak.authorization.common;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authorization.identity.Identity;
@@ -37,7 +38,7 @@ public class KeycloakEvaluationContext extends DefaultEvaluationContext {
         this(identity, null, keycloakSession);
     }
 
-    public KeycloakEvaluationContext(KeycloakIdentity identity, Map<String, Object> claims, KeycloakSession keycloakSession) {
+    public KeycloakEvaluationContext(KeycloakIdentity identity, Map<String, List<String>> claims, KeycloakSession keycloakSession) {
         super(identity, claims, keycloakSession);
         this.identity = identity;
     }

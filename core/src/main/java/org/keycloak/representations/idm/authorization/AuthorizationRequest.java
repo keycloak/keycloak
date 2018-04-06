@@ -41,7 +41,7 @@ public class AuthorizationRequest {
     private String audience;
     private String accessToken;
     private boolean submitRequest;
-    private Map<String, Object> claims;
+    private Map<String, List<String>> claims;
 
     public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
@@ -131,11 +131,11 @@ public class AuthorizationRequest {
         return accessToken;
     }
 
-    public Map<String, Object> getClaims() {
+    public Map<String, List<String>> getClaims() {
         return claims;
     }
 
-    public void setClaims(Map<String, Object> claims) {
+    public void setClaims(Map<String, List<String>> claims) {
         this.claims = claims;
     }
 

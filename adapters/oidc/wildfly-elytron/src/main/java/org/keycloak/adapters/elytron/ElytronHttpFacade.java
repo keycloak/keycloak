@@ -184,7 +184,7 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public String getFirstParam(String param) {
-                throw new RuntimeException("Not implemented.");
+                return request.getFirstParameterValue(param);
             }
 
             @Override
