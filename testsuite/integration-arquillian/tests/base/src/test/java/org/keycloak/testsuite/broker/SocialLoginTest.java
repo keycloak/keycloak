@@ -37,6 +37,7 @@ import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.GitHubLoginPage;
 import org.keycloak.testsuite.pages.social.GitLabLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
+import org.keycloak.testsuite.pages.social.LinkedInConsentPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
@@ -296,6 +297,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void linkedinLogin() {
         setTestProvider(LINKEDIN);
         performLogin();
+        LinkedInConsentPage consentPage = Graphene.createPageFragment(LinkedInConsentPage.class, driver.findElement(By.tagName("html")));
+        consentPage.allow();
         assertAccount();
     }
 

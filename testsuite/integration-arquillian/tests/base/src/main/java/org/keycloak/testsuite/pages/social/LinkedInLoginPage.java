@@ -24,13 +24,13 @@ import org.openqa.selenium.support.FindBy;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LinkedInLoginPage extends AbstractSocialLoginPage {
-    @FindBy(id = "session_key-oauth2SAuthorizeForm")
+    @FindBy(id = "session_key-login")
     private WebElement usernameInput;
 
-    @FindBy(id = "session_password-oauth2SAuthorizeForm")
+    @FindBy(id = "session_password-login")
     private WebElement passwordInput;
 
-    @FindBy(name = "authorize")
+    @FindBy(name = "signin")
     private WebElement loginButton;
 
     @Override
