@@ -57,7 +57,7 @@ package org.acme.provider;
 
 import ...
 
-public class MyThemeSelectorProvider implements EventListenerProvider {
+public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 
     public MyThemeSelectorProvider(KeycloakSession session) {
     }
@@ -67,6 +67,10 @@ public class MyThemeSelectorProvider implements EventListenerProvider {
     public String getThemeName(Theme.Type type) {
         return "my-theme";
     }
+	
+	@Override
+	public void close() {
+	}
 }
 ----
 
