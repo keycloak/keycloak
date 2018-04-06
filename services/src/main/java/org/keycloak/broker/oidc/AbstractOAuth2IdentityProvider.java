@@ -429,7 +429,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
+            String auth = "Basic " + org.keycloak.common.util.Base64.encodeBytes(
+                    (getConfig().getClientId() + ":" + getConfig().getClientSecret()).getBytes());
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                    .header("Authorization",auth)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
