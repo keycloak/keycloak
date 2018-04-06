@@ -31,6 +31,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -45,7 +46,11 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
         if (logoutUrl == null) logoutUrl = client.getManagementUrl();
         String nameIdFormat = samlClient.getNameIDFormat();
         if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
-        return SPMetadataDescriptor.getSPDescriptor(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get(), assertionUrl, logoutUrl, samlClient.requiresClientSignature(), client.getClientId(), nameIdFormat, samlClient.getClientSigningCertificate());
+        String spCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientSigningCertificate(), KeyTypes.SIGNING.value(), true);
+        String encCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientEncryptingCertificate(), KeyTypes.ENCRYPTION.value(), true);
+        return SPMetadataDescriptor.getSPDescriptor(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get(), assertionUrl, logoutUrl,
+                samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
+                client.getClientId(), nameIdFormat, spCertificate, encCertificate);
     }
 
     @Override

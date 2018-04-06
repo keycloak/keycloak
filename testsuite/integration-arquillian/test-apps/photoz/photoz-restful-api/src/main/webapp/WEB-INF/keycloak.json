@@ -6,21 +6,26 @@
   "resource": "photoz-restful-api",
   "bearer-only" : true,
   "credentials": {
-    "secret": "secret"
+    "jwt": {
+      "client-key-password": "password",
+      "client-keystore-file": "classpath:keystore.jks",
+      "client-keystore-password": "password",
+      "client-key-alias": "secure-portal",
+      "token-timeout": 10,
+      "client-keystore-type": "jks"
+    }
   },
   "policy-enforcer": {
-    "user-managed-access" : {},
+    "enforcement-mode": "PERMISSIVE",
+    "user-managed-access": {},
     "paths": [
       {
-        "path" : "/album/*",
+        "name" : "Album Resource",
+        "path" : "/album",
         "methods" : [
           {
-            "method": "POST",
-            "scopes" : ["urn:photoz.com:scopes:album:create"]
-          },
-          {
             "method": "GET",
-            "scopes" : ["urn:photoz.com:scopes:album:view"]
+            "scopes-enforcement-mode" : "DISABLED"
           }
         ]
       },
@@ -30,11 +35,11 @@
         "methods" : [
           {
             "method": "DELETE",
-            "scopes" : ["urn:photoz.com:scopes:album:delete"]
+            "scopes" : ["album:delete"]
           },
           {
             "method": "GET",
-            "scopes" : ["urn:photoz.com:scopes:album:view"]
+            "scopes" : ["album:view"]
           }
         ]
       },
@@ -44,6 +49,28 @@
       {
         "name" : "Admin Resources",
         "path" : "/admin/*"
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-any",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ANY"
+          }
+        ]
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-all",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ALL"
+          }
+        ]
       }
     ]
   }

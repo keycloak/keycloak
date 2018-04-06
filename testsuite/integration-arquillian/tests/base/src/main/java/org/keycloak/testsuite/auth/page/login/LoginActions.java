@@ -16,17 +16,22 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import javax.ws.rs.core.UriBuilder;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  *
  * @author tkyjovsk
  */
 public class LoginActions extends AuthRealm {
+
+    @FindBy(id = "kc-page-title")
+    protected WebElement heading;
 
     @Override
     public UriBuilder createUriBuilder() {

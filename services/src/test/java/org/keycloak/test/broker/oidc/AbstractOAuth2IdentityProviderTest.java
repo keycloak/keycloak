@@ -120,16 +120,24 @@ public class AbstractOAuth2IdentityProviderTest {
 		Assert.assertEquals("458rtf", fi.getId());
 	}
 
-	private TestProvider getTested() {
+	private TestProvider getTested() {		
+		return new TestProvider(getConfig(null, null, null, Boolean.FALSE));
+	}
+
+	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint) {
 		IdentityProviderModel model = new IdentityProviderModel();
 		OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig(model);
-		return new TestProvider(config);
+		config.setAuthorizationUrl(autorizationUrl);
+		config.setDefaultScope(defaultScope);
+		config.setClientId(clientId);
+		config.setLoginHint(isLoginHint);
+		return config;
 	}
 
 	private static class TestProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> {
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
-			super(config);
+			super(null, config);
 		}
 
 		@Override

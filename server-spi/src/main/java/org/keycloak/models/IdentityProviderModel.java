@@ -48,6 +48,9 @@ public class IdentityProviderModel implements Serializable {
     private boolean storeToken;
 
     protected boolean addReadTokenRoleOnCreate;
+
+    protected boolean linkOnly;
+
     /**
      * Specifies if particular provider should be used by default for authentication even before displaying login screen
      */
@@ -69,18 +72,21 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public IdentityProviderModel(IdentityProviderModel model) {
-        this.internalId = model.getInternalId();
-        this.providerId = model.getProviderId();
-        this.alias = model.getAlias();
-        this.displayName = model.getDisplayName();
-        this.config = new HashMap<String, String>(model.getConfig());
-        this.enabled = model.isEnabled();
-        this.trustEmail = model.isTrustEmail();
-        this.storeToken = model.isStoreToken();
-        this.authenticateByDefault = model.isAuthenticateByDefault();
-        this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
-        this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
-        this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        if (model != null) {
+            this.internalId = model.getInternalId();
+            this.providerId = model.getProviderId();
+            this.alias = model.getAlias();
+            this.displayName = model.getDisplayName();
+            this.config = new HashMap<String, String>(model.getConfig());
+            this.enabled = model.isEnabled();
+            this.trustEmail = model.isTrustEmail();
+            this.storeToken = model.isStoreToken();
+            this.linkOnly = model.isLinkOnly();
+            this.authenticateByDefault = model.isAuthenticateByDefault();
+            this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
+            this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
+            this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        }
     }
 
     public String getInternalId() {
@@ -121,6 +127,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setStoreToken(boolean storeToken) {
         this.storeToken = storeToken;
+    }
+
+    public boolean isLinkOnly() {
+        return linkOnly;
+    }
+
+    public void setLinkOnly(boolean linkOnly) {
+        this.linkOnly = linkOnly;
     }
 
     @Deprecated

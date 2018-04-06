@@ -17,8 +17,8 @@
 
 package org.keycloak.adapters.springsecurity.token;
 
-import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.OidcKeycloakAccount;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -38,24 +38,27 @@ import java.util.Collection;
 public class KeycloakAuthenticationToken extends AbstractAuthenticationToken implements Authentication {
 
     private Principal principal;
+    private boolean interactive;
 
     /**
      * Creates a new, unauthenticated Keycloak security token for the given account.
      */
-    public KeycloakAuthenticationToken(KeycloakAccount account) {
+    public KeycloakAuthenticationToken(KeycloakAccount account, boolean interactive) {
         super(null);
         Assert.notNull(account, "KeycloakAccount cannot be null");
         Assert.notNull(account.getPrincipal(), "KeycloakAccount.getPrincipal() cannot be null");
         this.principal = account.getPrincipal();
         this.setDetails(account);
+        this.interactive = interactive;
     }
 
-    public KeycloakAuthenticationToken(KeycloakAccount account, Collection<? extends GrantedAuthority> authorities) {
+    public KeycloakAuthenticationToken(KeycloakAccount account, boolean interactive, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         Assert.notNull(account, "KeycloakAccount cannot be null");
         Assert.notNull(account.getPrincipal(), "KeycloakAccount.getPrincipal() cannot be null");
         this.principal = account.getPrincipal();
         this.setDetails(account);
+        this.interactive = interactive;
         setAuthenticated(true);
     }
 
@@ -71,5 +74,9 @@ public class KeycloakAuthenticationToken extends AbstractAuthenticationToken imp
 
     public OidcKeycloakAccount getAccount() {
         return (OidcKeycloakAccount) this.getDetails();
+    }
+
+    public boolean isInteractive() {
+        return interactive;
     }
 }

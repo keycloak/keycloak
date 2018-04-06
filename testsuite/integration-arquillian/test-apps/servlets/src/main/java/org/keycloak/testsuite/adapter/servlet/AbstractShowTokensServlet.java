@@ -49,6 +49,7 @@ public abstract class AbstractShowTokensServlet extends HttpServlet {
 
         return new StringBuilder("<span id=\"accessToken\">" + accessTokenPretty + "</span>")
                 .append("<span id=\"refreshToken\">" + refreshTokenPretty + "</span>")
+                .append("<span id=\"accessTokenString\">" + ctx.getTokenString() + "</span>")
                 .toString();
     }
 

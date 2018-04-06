@@ -1,0 +1,103 @@
+<!doctype html>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Angular Product Portal</title>
+
+    <script src="lib/angular/angular.js"></script>
+    <script src="lib/angular/angular-resource.js"></script>
+    <script src="lib/angular/angular-route.js"></script>
+    <script src="lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
+
+    <script src="js/keycloak.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+</head>
+
+<body data-ng-controller="GlobalCtrl">
+
+<div id="content-area" class="col-md-9" role="main">
+    <div id="content">
+        <a href="" ng-click="logout()">Sign Out</a>
+        <button type="submit" data-ng-click="reloadData()">Reload</button>
+        <button type="submit" data-ng-click="loadRoles()">load Roles</button>
+        <button type="submit" data-ng-click="addRole()">Add Role</button>
+        <button type="submit" data-ng-click="deleteRole()">Delete Role</button>
+        <button type="submit" data-ng-click="loadServerInfo()">load available social providers</button>
+        <button type="submit" data-ng-click="loadPublicRealmInfo()">Load public realm info</button>
+        <button type="submit" data-ng-click="loadVersion()">Load version</button>
+
+    </div>
+
+    <div id="output">
+        <table class="table" data-ng-show="products.length > 0">
+            <thead>
+            <tr>
+                <th>Product Listing</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="p in products">
+                <td>{{p}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <table class="table" data-ng-show="roles.length > 0">
+            <thead>
+            <tr>
+                <th>Role Listing</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="r in roles">
+                <td>{{r.name}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <table class="table" data-ng-show="serverInfo.socialProviders.length > 0">
+            <thead>
+            <tr>
+                <th>Available social providers</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="sp in serverInfo.socialProviders">
+                <td>{{sp}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div data-ng-show="realm">
+            Realm name: {{realm.realm}} <br/>
+            Public key: {{realm.public_key}} <br/>
+        </div>
+
+        <div data-ng-show="version">
+            Keycloak version: {{version.version}} <br/>
+            Keycloak build time: {{version['build-time'] | date:'yyyy-MM-dd HH:mm:ss'}} <br/>
+        </div>
+
+    </div>
+    <div id="headers">{{headers}}</div>
+</div>
+</body>
+</html>

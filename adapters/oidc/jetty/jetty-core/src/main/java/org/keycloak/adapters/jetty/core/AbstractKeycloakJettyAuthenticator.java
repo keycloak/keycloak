@@ -27,28 +27,26 @@ import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.util.URIUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
-import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
+import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -61,7 +59,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -108,6 +105,8 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     }
 
     public abstract AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment);
+
+    public abstract JettyUserSessionManagement createSessionManagement(Request request);
 
     public void logoutCurrent(Request request) {
         AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) request.getAttribute(AdapterDeploymentContext.class.getName());
@@ -290,7 +289,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
             log.debug("*** deployment isn't configured return false");
             return Authentication.UNAUTHENTICATED;
         }
-        PreAuthActionsHandler handler = new PreAuthActionsHandler(new JettyUserSessionManagement(request.getSessionManager()), deploymentContext, facade);
+        PreAuthActionsHandler handler = new PreAuthActionsHandler(createSessionManagement(request), deploymentContext, facade);
         if (handler.handleRequest()) {
             return Authentication.SEND_SUCCESS;
         }

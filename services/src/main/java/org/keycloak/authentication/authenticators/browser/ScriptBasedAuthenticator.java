@@ -47,9 +47,14 @@ import java.util.Map;
  * <li>{@code realm} the {@link RealmModel}</li>
  * <li>{@code user} the current {@link UserModel}</li>
  * <li>{@code session} the active {@link KeycloakSession}</li>
+ * <li>{@code authenticationSession} the current {@link org.keycloak.sessions.AuthenticationSessionModel}</li>
  * <li>{@code httpRequest} the current {@link org.jboss.resteasy.spi.HttpRequest}</li>
  * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}/li>
  * </ol>
+ * </p>
+ * <p>
+ * Note that the {@code user} variable is only defined when the user was identified by a preceeding
+ * authentication step, e.g. by the {@link UsernamePasswordForm} authenticator.
  * </p>
  * <p>
  * Additional context information can be extracted from the {@code context} argument passed to the {@code authenticate(context)}
@@ -63,9 +68,10 @@ import java.util.Map;
  *
  *   function authenticate(context) {
  *
- *     LOG.info(script.name + " --> trace auth for: " + user.username);
+ *     var username = user ? user.username : "anonymous";
+ *     LOG.info(script.name + " --> trace auth for: " + username);
  *
- *     if (   user.username === "tester"
+ *     if (   username === "tester"
  *         && user.getAttribute("someAttribute")
  *         && user.getAttribute("someAttribute").contains("someValue")) {
  *
@@ -142,7 +148,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
 
         RealmModel realm = context.getRealm();
 
-        ScriptingProvider scripting = context.getSession().scripting();
+        ScriptingProvider scripting = context.getSession().getProvider(ScriptingProvider.class);
 
         //TODO lookup script by scriptId instead of creating it every time
         ScriptModel script = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
@@ -154,13 +160,14 @@ public class ScriptBasedAuthenticator implements Authenticator {
             bindings.put("user", context.getUser());
             bindings.put("session", context.getSession());
             bindings.put("httpRequest", context.getHttpRequest());
+            bindings.put("authenticationSession", context.getAuthenticationSession());
             bindings.put("LOG", LOGGER);
         });
     }
 
     @Override
     public boolean requiresUser() {
-        return true;
+        return false;
     }
 
     @Override

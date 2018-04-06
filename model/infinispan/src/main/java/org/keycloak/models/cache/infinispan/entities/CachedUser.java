@@ -17,19 +17,13 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,10 +45,11 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<>();
     private Set<String> groups = new HashSet<>();
+    private int notBefore;
 
 
 
-    public CachedUser(Long revision, RealmModel realm, UserModel user) {
+    public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
         this.realm = realm.getId();
         this.username = user.getUsername();
@@ -77,6 +72,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
                 groups.add(group.getId());
             }
         }
+        this.notBefore = notBefore;
     }
 
     public String getRealm() {
@@ -135,4 +131,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return groups;
     }
 
+    public int getNotBefore() {
+        return notBefore;
+    }
 }

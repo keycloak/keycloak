@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.keycloaksaml.SamlAdapterTestStrategy;
+import org.keycloak.testsuite.helper.adapter.SamlAdapterTestStrategy;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.openqa.selenium.WebDriver;
 
@@ -99,8 +99,12 @@ public class TomcatSamlTest {
 
 
     @Test
-    public void testErrorHandling() throws Exception {
-        testStrategy.testErrorHandling();
+    public void testErrorHandlingSigned() throws Exception {
+        testStrategy.testErrorHandlingSigned();
+    }
+    @Test
+    public void testErrorHandlingUnsigned() throws Exception {
+        testStrategy.testErrorHandlingUnsigned();
     }
 
     @Test

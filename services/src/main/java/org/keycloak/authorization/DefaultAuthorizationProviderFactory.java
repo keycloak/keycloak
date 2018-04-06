@@ -18,21 +18,26 @@
 
 package org.keycloak.authorization;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
-
-import java.util.concurrent.Executor;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class DefaultAuthorizationProviderFactory implements AuthorizationProviderFactory {
 
-    private Executor scheduler;
+    private Map<String, PolicyProviderFactory> policyProviderFactories;
 
     @Override
     public AuthorizationProvider create(KeycloakSession session) {
@@ -41,19 +46,11 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public void init(Config.Scope config) {
-        //TODO: user-defined configuration
-//        Executor executor = Executors.newWorkStealingPool();
-//        this.scheduler = command -> {
-//            Map<Class<?>, Object> contextDataMap = ResteasyProviderFactory.getContextDataMap();
-//            executor.execute(() -> {
-//                ResteasyProviderFactory.pushContextDataMap(contextDataMap);
-//                command.run();
-//            });
-//        };
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        policyProviderFactories = configurePolicyProviderFactories(factory);
     }
 
     @Override
@@ -68,12 +65,21 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
-        StoreFactory storeFactory = session.getProvider(CachedStoreFactoryProvider.class);
+        return new AuthorizationProvider(session, realm, policyProviderFactories);
+    }
 
-        if (storeFactory == null) {
-            storeFactory = session.getProvider(StoreFactory.class);
+    private Map<String, PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSessionFactory keycloakSessionFactory) {
+        List<ProviderFactory> providerFactories = keycloakSessionFactory.getProviderFactories(PolicyProvider.class);
+
+        if (providerFactories.isEmpty()) {
+            throw new RuntimeException("Could not find any policy provider.");
         }
 
-        return new AuthorizationProvider(session, realm, storeFactory);
+        HashMap<String, PolicyProviderFactory> providers = new HashMap<>();
+
+        providerFactories.forEach(providerFactory -> providers.put(providerFactory.getId(), (PolicyProviderFactory) providerFactory));
+
+        return providers;
     }
+
 }

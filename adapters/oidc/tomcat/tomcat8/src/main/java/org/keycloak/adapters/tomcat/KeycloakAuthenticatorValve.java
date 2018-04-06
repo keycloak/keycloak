@@ -17,22 +17,20 @@
 
 package org.keycloak.adapters.tomcat;
 
+import org.apache.catalina.Container;
+import org.apache.catalina.Valve;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.realm.GenericPrincipal;
-import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.spi.HttpFacade;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.List;
@@ -44,8 +42,19 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorValve {
+    
+    /**
+     * Method called by Tomcat < 8.5.5
+     */
     public boolean authenticate(Request request, HttpServletResponse response) throws IOException {
        return authenticateInternal(request, response, request.getContext().getLoginConfig());
+    }
+    
+    /**
+     * Method called by Tomcat >= 8.5.5
+     */
+    protected boolean doAuthenticate(Request request, HttpServletResponse response) throws IOException {
+       return this.authenticate(request, response);
     }
 
     @Override
@@ -95,5 +104,10 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
     @Override
     protected AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
         return super.getTokenStore(request, facade, resolvedDeployment);
+    }
+
+    @Override
+    protected AbstractAuthenticatedActionsValve createAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
+        return new AuthenticatedActionsValve(deploymentContext, next, container);
     }
 }

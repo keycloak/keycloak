@@ -1,0 +1,218 @@
+package org.keycloak.authentication.authenticators.client;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+
+/**
+ * Client authentication based on JWT signed by client secret instead of private key .
+ * See <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">specs</a> for more details.
+ *
+ * This is server side, which verifies JWT from client_assertion parameter, where the assertion was created on adapter side by
+ * org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
+	private static final Logger logger = Logger.getLogger(JWTClientSecretAuthenticator.class);
+	
+    public static final String PROVIDER_ID = "client-secret-jwt";
+    
+    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
+            AuthenticationExecutionModel.Requirement.DISABLED
+    };
+
+    @Override
+    public void authenticateClient(ClientAuthenticationFlowContext context) {
+        MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
+
+        String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        String clientAssertion = params.getFirst(OAuth2Constants.CLIENT_ASSERTION);
+        
+        if (clientAssertionType == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
+            context.challenge(challengeResponse);
+            return;
+        }
+
+        if (!clientAssertionType.equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type has value '"
+                    + clientAssertionType + "' but expected is '" + OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT + "'");
+            context.challenge(challengeResponse);
+            return;
+        }
+
+        if (clientAssertion == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "client_assertion parameter missing");
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+            return;
+        }
+        
+        try {
+            JWSInput jws = new JWSInput(clientAssertion);
+            JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
+
+            RealmModel realm = context.getRealm();
+            String clientId = token.getSubject();
+            if (clientId == null) {
+                throw new RuntimeException("Can't identify client. Issuer missing on JWT token");
+            }
+
+            context.getEvent().client(clientId);
+            ClientModel client = realm.getClientByClientId(clientId);
+            if (client == null) {
+                context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
+                return;
+            } else {
+                context.setClient(client);
+            }
+
+            if (!client.isEnabled()) {
+                context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+                return;
+            }
+            
+            String clientSecretString = client.getSecret();
+            if (clientSecretString == null) {
+                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+                return;
+            }
+
+            // Get client secret and validate signature
+            // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
+            // The HMAC (Hash-based Message Authentication Code) is calculated using the octets of the UTF-8 representation of the client_secret as the shared key. 
+            // Use "HmacSHA256" consulting <a href="https://docs.oracle.com/javase/jp/8/docs/api/javax/crypto/Mac.html">java8 api</a>.
+            SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes("UTF-8"), "HmacSHA256");
+
+            boolean signatureValid;
+            try {
+                signatureValid = HMACProvider.verify(jws, clientSecret);
+            } catch (RuntimeException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
+            }
+            if (!signatureValid) {
+                throw new RuntimeException("Signature on JWT token by client secret  failed validation");
+            }
+            // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
+            // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
+            
+            // Allow both "issuer" or "token-endpoint" as audience
+            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            }
+
+            if (!token.isActive()) {
+                throw new RuntimeException("Token is not active");
+            }
+
+            // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
+            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
+                throw new RuntimeException("Token is not active");
+            }
+
+            context.success();
+        } catch (Exception e) {
+            ServicesLogger.LOGGER.errorValidatingAssertion(e);
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with client secret signed JWT failed: " + e.getMessage());
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+        }
+    }
+    
+    @Override
+    public boolean isConfigurable() {
+        return false;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
+        // This impl doesn't use generic screen in admin console, but has its own screen. So no need to return anything here
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    	// e.g.
+    	// "credentials": {
+        //   "secret-jwt": {
+        //     "secret": "234234-234234-234234"
+    	//   }
+        // }
+        Map<String, Object> props = new HashMap<>();
+        props.put("secret", client.getSecret());
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("secret-jwt", props);
+        return config;
+    }
+
+    @Override
+    public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
+        if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            Set<String> results = new HashSet<>();
+            results.add(OIDCLoginProtocol.CLIENT_SECRET_JWT);
+            return results;
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getDisplayType() {
+        return "Signed Jwt with Client Secret";
+    }
+
+    @Override
+    public Requirement[] getRequirementChoices() {
+        return REQUIREMENT_CHOICES;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Validates client based on signed JWT issued by client and signed with the Client Secret";
+
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return new LinkedList<>();
+    }
+    
+
+}

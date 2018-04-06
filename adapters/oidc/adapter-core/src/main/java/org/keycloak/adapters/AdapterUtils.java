@@ -19,9 +19,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.UriUtils;
 
 import java.util.Collections;
 import java.util.Set;

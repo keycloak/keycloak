@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.group;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
@@ -30,6 +29,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
@@ -56,7 +56,7 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
-        PublicKey publicKey = PemUtils.decodePublicKey(adminClient.realm("test").toRepresentation().getPublicKey());
+        PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveKey(adminClient.realm("test")).getPublicKey());
 
         AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test");
 

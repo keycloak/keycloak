@@ -17,18 +17,27 @@
 
 package org.keycloak.adapters.springsecurity.filter;
 
+import java.io.IOException;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
-import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
 import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticator;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
+import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.adapters.springsecurity.token.SpringSecurityAdapterTokenStoreFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,18 +50,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.Assert;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Provides a Keycloak authentication processing filter.
@@ -69,7 +71,11 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      * and any request with a <code>Authorization</code> header.
      */
     public static final RequestMatcher DEFAULT_REQUEST_MATCHER =
-            new OrRequestMatcher(new AntPathRequestMatcher(DEFAULT_LOGIN_URL), new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER));
+            new OrRequestMatcher(
+                    new AntPathRequestMatcher(DEFAULT_LOGIN_URL),
+                    new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER),
+                    new QueryParamPresenceRequestMatcher(OAuth2Constants.ACCESS_TOKEN)
+            );
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
@@ -87,7 +93,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager) {
         this(authenticationManager, DEFAULT_REQUEST_MATCHER);
-        setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler(DEFAULT_LOGIN_URL));
+        setAuthenticationFailureHandler(new KeycloakAuthenticationFailureHandler());
     }
 
     /**
@@ -107,7 +113,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      *
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, RequestMatcher
-                requiresAuthenticationRequestMatcher) {
+            requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
         Assert.notNull(authenticationManager, "authenticationManager cannot be null");
         this.authenticationManager = authenticationManager;
@@ -130,6 +136,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         HttpFacade facade = new SimpleHttpFacade(request, response);
         KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
+
+        // using Spring authenticationFailureHandler
+        deployment.setDelegateBearerErrorResponseSending(true);
+
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
                 = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
@@ -138,8 +148,27 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         log.debug("Auth outcome: {}", result);
 
         if (AuthOutcome.FAILED.equals(result)) {
-            throw new KeycloakAuthenticationException("Auth outcome: " + result);
+            AuthChallenge challenge = authenticator.getChallenge();
+            if (challenge != null) {
+                challenge.challenge(facade);
+            }
+            throw new KeycloakAuthenticationException("Invalid authorization header, see WWW-Authenticate header for details");
         }
+
+        if (AuthOutcome.NOT_ATTEMPTED.equals(result)) {
+            AuthChallenge challenge = authenticator.getChallenge();
+            if (challenge != null) {
+                challenge.challenge(facade);
+            }
+            if (deployment.isBearerOnly()) {
+                // no redirection in this mode, throwing exception for the spring handler
+                throw new KeycloakAuthenticationException("Authorization header not found,  see WWW-Authenticate header");
+            } else {
+                // let continue if challenged, it may redirect
+                return null;
+            }
+        }
+
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
@@ -154,36 +183,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         }
     }
 
-    /**
-     * Returns true if the request was made with a bearer token authorization header.
-     *
-     * @param request the current <code>HttpServletRequest</code>
-     *
-     * @return <code>true</code> if the <code>request</code> was made with a bearer token authorization header;
-     * <code>false</code> otherwise.
-     */
-    protected boolean isBearerTokenRequest(HttpServletRequest request) {
-        String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Bearer");
-    }
-
-    /**
-     * Returns true if the request was made with a Basic authentication authorization header.
-     *
-     * @param request the current <code>HttpServletRequest</code>
-     * @return <code>true</code> if the <code>request</code> was made with a Basic authentication authorization header;
-     * <code>false</code> otherwise.
-     */
-    protected boolean isBasicAuthRequest(HttpServletRequest request) {
-        String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Basic");
-    }
-
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-            Authentication authResult) throws IOException, ServletException {
-
-        if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
+                                            Authentication authResult) throws IOException, ServletException {
+        if (authResult instanceof KeycloakAuthenticationToken && ((KeycloakAuthenticationToken) authResult).isInteractive()) {
             super.successfulAuthentication(request, response, chain, authResult);
             return;
         }
@@ -204,24 +207,11 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         } finally {
             SecurityContextHolder.clearContext();
         }
-
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException failed) throws IOException, ServletException {
-
-        if (this.isBearerTokenRequest(request)) {
-            SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate bearer token");
-            return;
-        }
-        else if (this.isBasicAuthRequest(request)) {
-            SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate with basic authentication");
-            return;
-        }
-
+                                              AuthenticationException failed) throws IOException, ServletException {
         super.unsuccessfulAuthentication(request, response, failed);
     }
 

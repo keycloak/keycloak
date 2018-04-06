@@ -16,12 +16,13 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -33,8 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -48,15 +47,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientsManagementService {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientsManagementService.class);
 
     private RealmModel realm;
 

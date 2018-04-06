@@ -3,7 +3,6 @@ package org.keycloak.testsuite.console.page.clients.mappers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -117,7 +116,7 @@ public class CreateClientMappersForm extends Form {
             }
             WaitUtils.pause(1000);
             selectRealmRoleButton.click();
-            WaitUtils.waitForModalFadeOut(driver);
+            WaitUtils.waitForModalFadeOut();
         }
         
         public void selectClientRole(String clientName, String roleName) {
@@ -127,7 +126,7 @@ public class CreateClientMappersForm extends Form {
             }
             WaitUtils.pause(1000);
             selectClientRoleButton.click();
-            WaitUtils.waitForModalFadeOut(driver);
+            WaitUtils.waitForModalFadeOut();
         }
     }
     

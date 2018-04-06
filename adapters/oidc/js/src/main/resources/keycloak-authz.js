@@ -17,15 +17,15 @@
  */
 
 (function( window, undefined ) {
-    
-    var KeycloakAuthorization = function (keycloak) {
+
+    var KeycloakAuthorization = function (keycloak, options) {
         var _instance = this;
         this.rpt = null;
 
         this.init = function () {
             var request = new XMLHttpRequest();
 
-            request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/.well-known/uma-configuration');
+            request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/.well-known/uma2-configuration');
             request.onreadystatechange = function () {
                 if (request.readyState == 4) {
                     if (request.status == 200) {
@@ -47,87 +47,21 @@
          * necessary information to ask a Keycloak server for authorization data using both UMA and Entitlement protocol,
          * depending on how the policy enforcer at the resource server was configured.
          */
-        this.authorize = function (wwwAuthenticateHeader) {
+        this.authorize = function (authorizationRequest) {
             this.then = function (onGrant, onDeny, onError) {
-                if (wwwAuthenticateHeader.indexOf('UMA') != -1) {
-                    var params = wwwAuthenticateHeader.split(',');
-
-                    for (i = 0; i < params.length; i++) {
-                        var param = params[i].split('=');
-
-                        if (param[0] == 'ticket') {
-                            var request = new XMLHttpRequest();
-
-                            request.open('POST', _instance.config.rpt_endpoint, true);
-                            request.setRequestHeader('Content-Type', 'application/json')
-                            request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
-
-                            request.onreadystatechange = function () {
-                                if (request.readyState == 4) {
-                                    var status = request.status;
-
-                                    if (status >= 200 && status < 300) {
-                                        var rpt = JSON.parse(request.responseText).rpt;
-                                        _instance.rpt = rpt;
-                                        onGrant(rpt);
-                                    } else if (status == 403) {
-                                        if (onDeny) {
-                                            onDeny();
-                                        } else {
-                                            console.error('Authorization request was denied by the server.');
-                                        }
-                                    } else {
-                                        if (onError) {
-                                            onError();
-                                        } else {
-                                            console.error('Could not obtain authorization data from server.');
-                                        }
-                                    }
-                                }
-                            };
-
-                            var ticket = param[1].substring(1, param[1].length - 1).trim();
-
-                            request.send(JSON.stringify(
-                                {
-                                    ticket: ticket,
-                                    rpt: _instance.rpt
-                                }
-                            ));
-                        }
-                    }
-                } else if (wwwAuthenticateHeader.indexOf('KC_ETT') != -1) {
-                    var params = wwwAuthenticateHeader.substring('KC_ETT'.length).trim().split(',');
-                    var clientId = null;
-
-                    for (i = 0; i < params.length; i++) {
-                        var param = params[i].split('=');
-
-                        if (param[0] == 'realm') {
-                            clientId = param[1].substring(1, param[1].length - 1).trim();
-                        }
-                    }
-
-                    _instance.entitlement(clientId).then(onGrant, onDeny, onError);
-                }
-            };
-
-            /**
-             * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
-             */
-            this.entitlement = function (resourceSeververId) {
-                this.then = function (onGrant, onDeny, onError) {
+                if (authorizationRequest && authorizationRequest.ticket) {
                     var request = new XMLHttpRequest();
 
-                    request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
-                    request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+                    request.open('POST', _instance.config.token_endpoint, true);
+                    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
 
                     request.onreadystatechange = function () {
                         if (request.readyState == 4) {
                             var status = request.status;
 
                             if (status >= 200 && status < 300) {
-                                var rpt = JSON.parse(request.responseText).rpt;
+                                var rpt = JSON.parse(request.responseText).access_token;
                                 _instance.rpt = rpt;
                                 onGrant(rpt);
                             } else if (status == 403) {
@@ -146,10 +80,125 @@
                         }
                     };
 
-                    request.send(null);
+                    var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&client_id=" + keycloak.clientId + "&ticket=" + authorizationRequest.ticket;
+
+                    if (authorizationRequest.submitRequest != undefined) {
+                        params += "&submit_request=" + authorizationRequest.submitRequest;
+                    }
+
+                    var metadata = authorizationRequest.metadata;
+
+                    if (metadata) {
+                        if (metadata.responseIncludeResourceName) {
+                            params += "&response_include_resource_name=" + metadata.responseIncludeResourceName;
+                        }
+                        if (metadata.responsePermissionsLimit) {
+                            params += "&response_permissions_limit=" + metadata.responsePermissionsLimit;
+                        }
+                    }
+
+                    if (_instance.rpt && (authorizationRequest.incrementalAuthorization == undefined || authorizationRequest.incrementalAuthorization)) {
+                        params += "&rpt=" + _instance.rpt;
+                    }
+
+                    request.send(params);
+                }
+            };
+
+            return this;
+        };
+
+        /**
+         * Obtains all entitlements from a Keycloak Server based on a given resourceServerId.
+         */
+        this.entitlement = function (resourceServerId, authorizationRequest) {
+            this.then = function (onGrant, onDeny, onError) {
+                var request = new XMLHttpRequest();
+
+                request.open('POST', _instance.config.token_endpoint, true);
+                request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+                request.onreadystatechange = function () {
+                    if (request.readyState == 4) {
+                        var status = request.status;
+
+                        if (status >= 200 && status < 300) {
+                            var rpt = JSON.parse(request.responseText).access_token;
+                            _instance.rpt = rpt;
+                            onGrant(rpt);
+                        } else if (status == 403) {
+                            if (onDeny) {
+                                onDeny();
+                            } else {
+                                console.error('Authorization request was denied by the server.');
+                            }
+                        } else {
+                            if (onError) {
+                                onError();
+                            } else {
+                                console.error('Could not obtain authorization data from server.');
+                            }
+                        }
+                    }
                 };
 
-                return this;
+                if (!authorizationRequest) {
+                    authorizationRequest = {};
+                }
+
+                var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&client_id=" + keycloak.clientId;
+
+                if (authorizationRequest.claimToken) {
+                    params += "&claim_token=" + authorizationRequest.claimToken;
+
+                    if (authorizationRequest.claimTokenFormat) {
+                        params += "&claim_token_format=" + authorizationRequest.claimTokenFormat;
+                    }
+                }
+
+                params += "&audience=" + resourceServerId;
+
+                var permissions = authorizationRequest.permissions;
+
+                if (!permissions) {
+                    permissions = [];
+                }
+
+                for (i = 0; i < permissions.length; i++) {
+                    var resource = permissions[i];
+                    var permission = resource.id;
+
+                    if (resource.scopes && resource.scopes.length > 0) {
+                        permission += "#";
+                        for (j = 0; j < resource.scopes.length; j++) {
+                            var scope = resource.scopes[j];
+                            if (permission.indexOf('#') != permission.length - 1) {
+                                permission += ",";
+                            }
+                            permission += scope;
+                        }
+                    }
+
+                    params += "&permission=" + permission;
+                }
+
+                var metadata = authorizationRequest.metadata;
+
+                if (metadata) {
+                    if (metadata.responseIncludeResourceName) {
+                        params += "&response_include_resource_name=" + metadata.responseIncludeResourceName;
+                    }
+                    if (metadata.responsePermissionsLimit) {
+                        params += "&response_permissions_limit=" + metadata.responsePermissionsLimit;
+                    }
+                }
+
+                if (_instance.rpt) {
+                    params += "&rpt=" + _instance.rpt;
+                }
+
+                request.send(params);
             };
 
             return this;

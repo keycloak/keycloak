@@ -16,13 +16,14 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -39,7 +40,7 @@ import java.io.InputStream;
 @Path("/resources")
 public class ThemeResource {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(ThemeResource.class);
 
     @Context
     private KeycloakSession session;
@@ -60,8 +61,7 @@ public class ThemeResource {
         }
 
         try {
-            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-            Theme theme = themeProvider.getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
+            Theme theme = session.theme().getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 return Response.ok(resource).type(MimeTypeUtil.getContentType(path)).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
@@ -69,7 +69,7 @@ public class ThemeResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
-            logger.failedToGetThemeRequest(e);
+            ServicesLogger.LOGGER.failedToGetThemeRequest(e);
             return Response.serverError().build();
         }
     }

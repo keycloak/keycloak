@@ -16,32 +16,32 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NoLogWebApplicationException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -61,7 +61,7 @@ import java.util.Properties;
  */
 @Path("/admin")
 public class AdminRoot {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
     @Context
     protected UriInfo uriInfo;
@@ -125,6 +125,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new NotFoundException("Realm not found.  Did you type in a bad URL?");
         }
+        session.getContext().setRealm(realm);
         return realm;
     }
 
@@ -170,6 +171,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new UnauthorizedException("Unknown realm in token");
         }
+        session.getContext().setRealm(realm);
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult == null) {
             logger.debug("Token not valid");
@@ -193,7 +195,6 @@ public class AdminRoot {
         return adminBaseUrl(base).path(AdminRoot.class, "getRealmsAdmin");
     }
 
-
     /**
      * Base Path to realm admin REST interface
      *
@@ -201,15 +202,17 @@ public class AdminRoot {
      * @return
      */
     @Path("realms")
-    public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-        handlePreflightRequest();
+    public Object getRealmsAdmin(@Context final HttpHeaders headers) {
+        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
+            return new AdminCorsPreflightService(request);
+        }
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().build(response);
 
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
@@ -223,11 +226,13 @@ public class AdminRoot {
      * @return
      */
     @Path("serverinfo")
-    public ServerInfoAdminResource getServerInfo(@Context final HttpHeaders headers) {
-        handlePreflightRequest();
+    public Object getServerInfo(@Context final HttpHeaders headers) {
+        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
+            return new AdminCorsPreflightService(request);
+        }
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
-        if (!isAdmin(auth)) {
+        if (!AdminPermissions.realms(session, auth).isAdmin()) {
             throw new ForbiddenException();
         }
 
@@ -242,37 +247,8 @@ public class AdminRoot {
         return adminResource;
     }
 
-    protected boolean isAdmin(AdminAuth auth) {
-
-        RealmManager realmManager = new RealmManager(session);
-        if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            if (auth.hasOneOfRealmRole(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {
-                return true;
-            }
-            for (RealmModel realm : session.realms().getRealms()) {
-                ClientModel client = realm.getMasterAdminClient();
-                if (auth.hasOneOfAppRole(client, AdminRoles.ALL_REALM_ROLES)) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            ClientModel client = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
-            return auth.hasOneOfAppRole(client, AdminRoles.ALL_REALM_ROLES);
-        }
-    }
-
-    protected void handlePreflightRequest() {
-        if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
-            logger.debug("Cors admin pre-flight");
-            Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
-            throw new NoLogWebApplicationException(response);
-        }
-    }
-
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+        return session.theme().getTheme(Theme.Type.ADMIN);
     }
 
     public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang) {
@@ -286,7 +262,16 @@ public class AdminRoot {
         }
     }
 
-    public static Properties getMessages(KeycloakSession session, RealmModel realm, String bundle, String lang) {
+    public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String... bundles) {
+        Properties compound = new Properties();
+        for (String bundle : bundles) {
+            Properties current = getMessages(session, realm, lang, bundle);
+            compound.putAll(current);
+        }
+        return compound;
+    }
+
+    private static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String bundle) {
         try {
             Theme theme = getTheme(session, realm);
             Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;

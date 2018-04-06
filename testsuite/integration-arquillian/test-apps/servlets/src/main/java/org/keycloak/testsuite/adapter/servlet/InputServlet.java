@@ -37,12 +37,7 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String appBase;
-        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-            appBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-        } else {
-            appBase = System.getProperty("app.server.base.url", "http://localhost:8280");
-        }
+        String appBase = ServletTestUtils.getUrlBase(req);
         String actionUrl = appBase + "/input-portal/secured/post";
 
         if (req.getRequestURI().endsWith("insecure")) {
@@ -80,9 +75,11 @@ public class InputServlet extends HttpServlet {
             return;
         }
 
-        resp.setContentType("text/plain");
+        resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
-        pw.printf("parameter="+req.getParameter("parameter"));
+        pw.printf("<html><head><title>%s</title></head><body>", "Input Page");
+        pw.printf("parameter=hello");
+        pw.print("</body></html>");
         pw.flush();
     }
 

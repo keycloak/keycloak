@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +28,9 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

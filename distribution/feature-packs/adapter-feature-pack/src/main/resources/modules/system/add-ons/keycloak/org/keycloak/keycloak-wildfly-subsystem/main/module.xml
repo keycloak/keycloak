@@ -21,8 +21,8 @@
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
-
     <resources>
+        <resource-root path="."/>
         <artifact name="${org.keycloak:keycloak-wildfly-subsystem}"/>
     </resources>
 
@@ -38,5 +38,9 @@
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.as.web-common"/>
         <module name="org.jboss.metadata"/>
+        <module name="org.keycloak.keycloak-adapter-core"/>
+        <module name="org.keycloak.keycloak-wildfly-elytron-oidc-adapter"/>
+        <module name="org.wildfly.security.elytron" optional="true"/>
+        <module name="io.undertow.core"/>
     </dependencies>
 </module>

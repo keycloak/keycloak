@@ -18,7 +18,6 @@
 package org.keycloak.storage;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -26,7 +25,12 @@ import org.keycloak.component.PrioritizedComponentModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class UserStorageProviderModel extends PrioritizedComponentModel {
+public class UserStorageProviderModel extends CacheableStorageProviderModel {
+
+    public static final String IMPORT_ENABLED = "importEnabled";
+    public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
+    public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
+    public static final String LAST_SYNC = "lastSync";
 
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
@@ -36,4 +40,78 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
         super(copy);
     }
 
+    private transient Integer fullSyncPeriod;
+    private transient Integer changedSyncPeriod;
+    private transient Integer lastSync;
+    private transient Boolean importEnabled;
+
+    public boolean isImportEnabled() {
+        if (importEnabled == null) {
+            String val = getConfig().getFirst(IMPORT_ENABLED);
+            if (val == null) {
+                importEnabled = true;
+            } else {
+                importEnabled = Boolean.valueOf(val);
+            }
+        }
+        return importEnabled;
+
+    }
+
+    public void setImportEnabled(boolean flag) {
+        importEnabled = flag;
+        getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
+    }
+
+
+    public int getFullSyncPeriod() {
+        if (fullSyncPeriod == null) {
+            String val = getConfig().getFirst(FULL_SYNC_PERIOD);
+            if (val == null) {
+                fullSyncPeriod = -1;
+            } else {
+                fullSyncPeriod = Integer.valueOf(val);
+            }
+        }
+        return fullSyncPeriod;
+    }
+
+    public void setFullSyncPeriod(int fullSyncPeriod) {
+        this.fullSyncPeriod = fullSyncPeriod;
+        getConfig().putSingle(FULL_SYNC_PERIOD, Integer.toString(fullSyncPeriod));
+    }
+
+    public int getChangedSyncPeriod() {
+        if (changedSyncPeriod == null) {
+            String val = getConfig().getFirst(CHANGED_SYNC_PERIOD);
+            if (val == null) {
+                changedSyncPeriod = -1;
+            } else {
+                changedSyncPeriod = Integer.valueOf(val);
+            }
+        }
+        return changedSyncPeriod;
+    }
+
+    public void setChangedSyncPeriod(int changedSyncPeriod) {
+        this.changedSyncPeriod = changedSyncPeriod;
+        getConfig().putSingle(CHANGED_SYNC_PERIOD, Integer.toString(changedSyncPeriod));
+    }
+
+    public int getLastSync() {
+        if (lastSync == null) {
+            String val = getConfig().getFirst(LAST_SYNC);
+            if (val == null) {
+                lastSync = 0;
+            } else {
+                lastSync = Integer.valueOf(val);
+            }
+        }
+        return lastSync;
+    }
+
+    public void setLastSync(int lastSync) {
+        this.lastSync = lastSync;
+        getConfig().putSingle(LAST_SYNC, Integer.toString(lastSync));
+    }
 }

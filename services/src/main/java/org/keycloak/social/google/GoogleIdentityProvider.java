@@ -16,9 +16,33 @@
  */
 package org.keycloak.social.google;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
+import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ErrorResponseException;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,8 +54,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
-    public GoogleIdentityProvider(OIDCIdentityProviderConfig config) {
-        super(config);
+    public GoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
+        super(session, config);
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
@@ -41,4 +65,39 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     protected String getDefaultScopes() {
         return DEFAULT_SCOPE;
     }
+
+    @Override
+    protected String getUserInfoUrl() {
+        String uri = super.getUserInfoUrl();
+        if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
+            ClientConnection connection = ResteasyProviderFactory.getContextData(ClientConnection.class);
+            if (connection != null) {
+                uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
+            }
+
+        }
+        logger.debugv("GOOGLE userInfoUrl: {0}", uri);
+        return uri;
+    }
+
+    @Override
+    protected boolean supportsExternalExchange() {
+        return true;
+    }
+
+
+    @Override
+    public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
+        String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        if (requestedIssuer == null) requestedIssuer = issuer;
+        return requestedIssuer.equals(getConfig().getAlias());
+    }
+
+
+    @Override
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        return exchangeExternalUserInfoValidationOnly(event, params);
+    }
+
+
 }

@@ -27,14 +27,14 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
-import org.keycloak.policy.HashAlgorithmPasswordPolicyProviderFactory;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,11 +57,13 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
 
     public CredentialModel getPassword(RealmModel realm, UserModel user) {
         List<CredentialModel> passwords = null;
-        if (user instanceof CachedUserModel) {
+        if (user instanceof CachedUserModel && !((CachedUserModel)user).isMarkedForEviction()) {
             CachedUserModel cached = (CachedUserModel)user;
             passwords = (List<CredentialModel>)cached.getCachedWith().get(PASSWORD_CACHE_KEY);
 
-        } else {
+        }
+        // if the model was marked for eviction while passwords were initialized, override it from credentialStore
+        if (! (user instanceof CachedUserModel) || ((CachedUserModel) user).isMarkedForEviction()) {
             passwords = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD);
         }
         if (passwords == null || passwords.isEmpty()) return null;
@@ -95,9 +97,12 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         newPassword.setType(CredentialModel.PASSWORD);
         long createdDate = Time.currentTimeMillis();
         newPassword.setCreatedDate(createdDate);
-        hash.encode(cred.getValue(), policy, newPassword);
+        hash.encode(cred.getValue(), policy.getHashIterations(), newPassword);
         getCredentialStore().createCredential(realm, user, newPassword);
-        session.getUserCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
         return true;
     }
 
@@ -106,25 +111,20 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         CredentialModel oldPassword = getPassword(realm, user);
         if (oldPassword == null) return;
         int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
-        if (expiredPasswordsPolicyValue > -1) {
+        if (expiredPasswordsPolicyValue > 1) {
             List<CredentialModel> list = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD_HISTORY);
-            List<CredentialModel> history = new LinkedList<>();
-            history.addAll(list);
-            if (history.size() + 1 >= expiredPasswordsPolicyValue) {
-                Collections.sort(history, new Comparator<CredentialModel>() {
-                    @Override
-                    public int compare(CredentialModel o1, CredentialModel o2) {
-                        long o1Date = o1.getCreatedDate() == null ? 0 : o1.getCreatedDate().longValue();
-                        long o2Date = o2.getCreatedDate() == null ? 0 : o2.getCreatedDate().longValue();
-                        if (o1Date > o2Date) return 1;
-                        else if (o1Date < o2Date) return -1;
-                        else return 0;
-                    }
-                });
-                for (int i = 0; i < history.size() + 2 - expiredPasswordsPolicyValue; i++) {
-                    getCredentialStore().removeStoredCredential(realm, user, history.get(i).getId());
-                }
-
+            // oldPassword will expire few lines below, and there is one active password,
+            // hence (expiredPasswordsPolicyValue - 2) passwords should be left in history
+            final int passwordsToLeave = expiredPasswordsPolicyValue - 2;
+            if (list.size() > passwordsToLeave) {
+                list.stream()
+                  .sorted((o1, o2) -> { // sort by date descending
+                      Long o1Date = o1.getCreatedDate() == null ? Long.MIN_VALUE : o1.getCreatedDate();
+                      Long o2Date = o2.getCreatedDate() == null ? Long.MIN_VALUE : o2.getCreatedDate();
+                      return (- o1Date.compareTo(o2Date));
+                  })
+                  .skip(passwordsToLeave)
+                  .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
             }
             oldPassword.setType(CredentialModel.PASSWORD_HISTORY);
             getCredentialStore().updateCredential(realm, user, oldPassword);
@@ -138,7 +138,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
         if (hash == null) {
             logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
-            return session.getProvider(PasswordHashProvider.class, HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
+            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
         }
         return hash;
     }
@@ -148,6 +148,17 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         if (!supportsCredentialType(credentialType)) return;
         PasswordPolicy policy = realm.getPasswordPolicy();
         expirePassword(realm, user, policy);
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.PASSWORD);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
     }
 
     @Override
@@ -198,9 +209,14 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
             return true;
         }
 
-        hash.encode(cred.getValue(), policy, password);
-        getCredentialStore().updateCredential(realm, user, password);
-        session.getUserCache().evict(realm, user);
+        CredentialModel newPassword = password.shallowClone();
+        hash.encode(cred.getValue(), policy.getHashIterations(), newPassword);
+        getCredentialStore().updateCredential(realm, user, newPassword);
+
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
 
         return true;
     }

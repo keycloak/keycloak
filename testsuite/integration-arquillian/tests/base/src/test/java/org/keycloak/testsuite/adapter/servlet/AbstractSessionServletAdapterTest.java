@@ -17,17 +17,11 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -35,20 +29,19 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
-
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.*;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *
@@ -83,6 +76,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @SecondBrowser
     protected WebDriver driver2;
 
+    //KEYCLOAK-732
     @Test
     public void testSingleSessionInvalidated() {
 
@@ -90,13 +84,13 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
         driver2.navigate().to(sessionPortalPage.toString());
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealmPage);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage, driver2);
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
         driver2.findElement(By.id("password")).submit();
-        assertCurrentUrlEquals(driver2, sessionPortalPage);
+        assertCurrentUrlEquals(sessionPortalPage, driver2);
         String pageSource = driver2.getPageSource();
-        assertTrue(pageSource.contains("Counter=1"));
+        assertThat(pageSource, containsString("Counter=1"));
         // Counter increased now
         driver2.navigate().to(sessionPortalPage.toString());
         pageSource = driver2.getPageSource();
@@ -114,15 +108,16 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
         // Assert that I am still logged in browser2 and same session is still preserved
         driver2.navigate().to(sessionPortalPage.toString());
-        assertCurrentUrlEquals(driver2, sessionPortalPage);
+        assertCurrentUrlEquals(sessionPortalPage, driver2);
         pageSource = driver2.getPageSource();
-        assertTrue(pageSource.contains("Counter=3"));
+        assertThat(pageSource, containsString("Counter=3"));
 
         driver2.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealmPage);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage, driver2);
 
     }
 
+    //KEYCLOAK-741
     @Test
     public void testSessionInvalidatedAfterFailedRefresh() {
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
@@ -150,7 +145,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
@@ -159,6 +154,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         testRealmResource().update(testRealmRep);
     }
 
+    //KEYCLOAK-942
     @Test
     public void testAdminApplicationLogout() {
         // login as bburke
@@ -170,7 +166,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         
         // bburke should be still logged with original httpSession in our browser window
         sessionPortalPage.navigateTo();
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
@@ -178,6 +174,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         driver.navigate().to(logoutUri);
     }
 
+    //KEYCLOAK-1216
     @Test
     public void testAccountManagementSessionsLogout() {
         // login as bburke
@@ -192,7 +189,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         login.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 

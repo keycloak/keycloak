@@ -46,6 +46,20 @@
                 <kc-tooltip>{{:: 'verifyEmail.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label for="loginWithEmailAllowed" class="col-md-2 control-label">{{:: 'loginWithEmailAllowed' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.loginWithEmailAllowed" name="loginWithEmailAllowed" id="loginWithEmailAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'loginWithEmailAllowed.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" ng-show="!realm.loginWithEmailAllowed && !realm.registrationEmailAsUsername">
+                <label for="duplicateEmailsAllowed" class="col-md-2 control-label">{{:: 'duplicateEmailsAllowed' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.duplicateEmailsAllowed" name="duplicateEmailsAllowed" id="duplicateEmailsAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'duplicateEmailsAllowed.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label for="sslRequired" class="col-md-2 control-label">{{:: 'sslRequired' | translate}}</label>
                 <div class="col-md-2">
                     <div>

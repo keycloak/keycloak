@@ -22,16 +22,10 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.storage.client.ClientStorageProviderModel;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -67,9 +61,16 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
-    interface UserFederationProviderCreationEvent extends ProviderEvent {
-        UserFederationProviderModel getCreatedFederationProvider();
+    interface IdentityProviderUpdatedEvent extends ProviderEvent {
         RealmModel getRealm();
+        IdentityProviderModel getUpdatedIdentityProvider();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface IdentityProviderRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        IdentityProviderModel getRemovedIdentityProvider();
+        KeycloakSession getKeycloakSession();
     }
 
     String getId();
@@ -110,6 +111,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEditUsernameAllowed(boolean editUsernameAllowed);
 
+    boolean isUserManagedAccessAllowed();
+
+    void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
+
     void setAttribute(String name, String value);
     void setAttribute(String name, Boolean value);
     void setAttribute(String name, Integer value);
@@ -124,6 +129,8 @@ public interface RealmModel extends RoleContainerModel {
     //--- brute force settings
     boolean isBruteForceProtected();
     void setBruteForceProtected(boolean value);
+    boolean isPermanentLockout();
+    void setPermanentLockout(boolean val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
@@ -143,12 +150,23 @@ public interface RealmModel extends RoleContainerModel {
 
     void setVerifyEmail(boolean verifyEmail);
 
+    boolean isLoginWithEmailAllowed();
+
+    void setLoginWithEmailAllowed(boolean loginWithEmailAllowed);
+
+    boolean isDuplicateEmailsAllowed();
+
+    void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed);
+
     boolean isResetPasswordAllowed();
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
     boolean isRevokeRefreshToken();
     void setRevokeRefreshToken(boolean revokeRefreshToken);
+
+    int getRefreshTokenMaxReuse();
+    void setRefreshTokenMaxReuse(int revokeRefreshTokenCount);
 
     int getSsoSessionIdleTimeout();
     void setSsoSessionIdleTimeout(int seconds);
@@ -174,38 +192,25 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessCodeLifespanUserAction(int seconds);
 
+    /**
+     * This method will return a map with all the lifespans available
+     * or an empty map, but never null.
+     * @return map with user action token lifespans
+     */
+    Map<String, Integer> getUserActionTokenLifespans();
+
     int getAccessCodeLifespanLogin();
 
     void setAccessCodeLifespanLogin(int seconds);
 
-    String getKeyId();
+    int getActionTokenGeneratedByAdminLifespan();
+    void setActionTokenGeneratedByAdminLifespan(int seconds);
 
-    String getPublicKeyPem();
+    int getActionTokenGeneratedByUserLifespan();
+    void setActionTokenGeneratedByUserLifespan(int seconds);
 
-    void setPublicKeyPem(String publicKeyPem);
-
-    String getPrivateKeyPem();
-
-    void setPrivateKeyPem(String privateKeyPem);
-
-    PublicKey getPublicKey();
-
-    void setPublicKey(PublicKey publicKey);
-
-    String getCodeSecret();
-
-    Key getCodeSecretKey();
-
-    void setCodeSecret(String codeSecret);
-
-    X509Certificate getCertificate();
-    void setCertificate(X509Certificate certificate);
-    String getCertificatePem();
-    void setCertificatePem(String certificate);
-
-    PrivateKey getPrivateKey();
-
-    void setPrivateKey(PrivateKey privateKey);
+    int getActionTokenGeneratedByUserLifespan(String actionTokenType);
+    void setActionTokenGeneratedByUserLifespan(String actionTokenType, Integer seconds);
 
     List<RequiredCredentialModel> getRequiredCredentials();
 
@@ -261,6 +266,9 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getClientAuthenticationFlow();
     void setClientAuthenticationFlow(AuthenticationFlowModel flow);
 
+    AuthenticationFlowModel getDockerAuthenticationFlow();
+    void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
+
     List<AuthenticationFlowModel> getAuthenticationFlows();
     AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);
@@ -303,7 +311,22 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
+    /**
+     * Adds component model.  Will call onCreate() method of ComponentFactory
+     *
+     * @param model
+     * @return
+     */
     ComponentModel addComponentModel(ComponentModel model);
+
+    /**
+     * Adds component model.  Will NOT call onCreate() method of ComponentFactory
+     *
+     * @param model
+     * @return
+     */
+    ComponentModel importComponentModel(ComponentModel model);
+
     void updateComponent(ComponentModel component);
     void removeComponent(ComponentModel component);
     void removeComponents(String parentId);
@@ -324,20 +347,15 @@ public interface RealmModel extends RoleContainerModel {
         return list;
     }
 
-    // Should return list sorted by UserFederationProviderModel.priority
-    List<UserFederationProviderModel> getUserFederationProviders();
-    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
-    void updateUserFederationProvider(UserFederationProviderModel provider);
-    void removeUserFederationProvider(UserFederationProviderModel provider);
-    void setUserFederationProviders(List<UserFederationProviderModel> providers);
-
-    Set<UserFederationMapperModel> getUserFederationMappers();
-    Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId);
-    UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper);
-    void removeUserFederationMapper(UserFederationMapperModel mapper);
-    void updateUserFederationMapper(UserFederationMapperModel mapper);
-    UserFederationMapperModel getUserFederationMapperById(String id);
-    UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name);
+    default
+    List<ClientStorageProviderModel> getClientStorageProviders() {
+        List<ClientStorageProviderModel> list = new LinkedList<>();
+        for (ComponentModel component : getComponents(getId(), ClientStorageProvider.class.getName())) {
+            list.add(new ClientStorageProviderModel(component));
+        }
+        Collections.sort(list, ClientStorageProviderModel.comparator);
+        return list;
+    }
 
     String getLoginTheme();
 
@@ -364,8 +382,6 @@ public interface RealmModel extends RoleContainerModel {
     int getNotBefore();
 
     void setNotBefore(int notBefore);
-
-    boolean removeRoleById(String id);
 
     boolean isEventsEnabled();
 
@@ -411,16 +427,13 @@ public interface RealmModel extends RoleContainerModel {
     GroupModel createGroup(String name);
     GroupModel createGroup(String id, String name);
 
-    /**
-     * Move Group to top realm level.  Basically just sets group parent to null.  You need to call this though
-     * to make sure caches are set properly
-     *
-     * @param subGroup
-     */
-    void addTopLevelGroup(GroupModel subGroup);
     GroupModel getGroupById(String id);
     List<GroupModel> getGroups();
+    Long getGroupsCount(Boolean onlyTopGroups);
+    Long getGroupsCountByNameContaining(String search);
     List<GroupModel> getTopLevelGroups();
+    List<GroupModel> getTopLevelGroups(Integer first, Integer max);
+    List<GroupModel> searchForGroupByName(String search, Integer first, Integer max);
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
 

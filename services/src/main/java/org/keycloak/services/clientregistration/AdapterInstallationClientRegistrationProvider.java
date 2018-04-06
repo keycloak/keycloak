@@ -66,8 +66,18 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
     }
 
     @Override
+    public ClientRegistrationAuth getAuth() {
+        return auth;
+    }
+
+    @Override
     public void setEvent(EventBuilder event) {
         this.event = event;
+    }
+
+    @Override
+    public EventBuilder getEvent() {
+        return event;
     }
 
     @Override

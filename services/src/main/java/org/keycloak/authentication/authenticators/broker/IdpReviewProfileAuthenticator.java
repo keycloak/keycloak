@@ -17,11 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.List;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -37,16 +33,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(IdpReviewProfileAuthenticator.class);
 
     @Override
     public boolean requiresUser() {
@@ -74,7 +73,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     }
 
     protected boolean requiresUpdateProfilePage(AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx, BrokeredIdentityContext brokerContext) {
-        String enforceUpdateProfile = context.getClientSession().getNote(ENFORCE_UPDATE_PROFILE);
+        String enforceUpdateProfile = context.getAuthenticationSession().getAuthNote(ENFORCE_UPDATE_PROFILE);
         if (Boolean.parseBoolean(enforceUpdateProfile)) {
             return true;
         }
@@ -100,7 +99,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
         RealmModel realm = context.getRealm();
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(!realm.isRegistrationEmailAsUsername(), formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)
@@ -123,12 +122,12 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             }
 
             userCtx.setEmail(email);
-            context.getClientSession().setNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
+            context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
         }
 
         AttributeFormDataProcessor.process(formData, realm, userCtx);
 
-        userCtx.saveToClientSession(context.getClientSession(), BROKERED_CONTEXT_NOTE);
+        userCtx.saveToAuthenticationSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 

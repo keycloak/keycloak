@@ -17,8 +17,6 @@
 package org.keycloak.testsuite.adapter.example.authorization;
 
 import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
-import org.keycloak.testsuite.adapter.example.authorization.AbstractServletAuthzAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**

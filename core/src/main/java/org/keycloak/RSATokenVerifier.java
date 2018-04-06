@@ -18,11 +18,8 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.util.TokenUtil;
 
 import java.security.PublicKey;
 
@@ -31,84 +28,66 @@ import java.security.PublicKey;
  * @version $Revision: 1 $
  */
 public class RSATokenVerifier {
-    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl) throws VerificationException {
-        return verifyToken(tokenString, realmKey, realmUrl, true, true);
+
+    private final TokenVerifier<AccessToken> tokenVerifier;
+
+    private RSATokenVerifier(String tokenString) {
+        this.tokenVerifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks();
     }
 
-    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        AccessToken token = toAccessToken(tokenString, realmKey);
-
-        tokenVerifications(token, realmUrl, checkActive, checkTokenType);
-
-        return token;
+    public static RSATokenVerifier create(String tokenString) {
+        return new RSATokenVerifier(tokenString);
     }
 
-    private static void tokenVerifications(AccessToken token, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        String user = token.getSubject();
-        if (user == null) {
-            throw new VerificationException("Token user was null.");
-        }
-        if (realmUrl == null) {
-            throw new VerificationException("Realm URL is null. Make sure to add auth-server-url to the configuration of your adapter!");
-        }
-        if (!realmUrl.equals(token.getIssuer())) {
-            throw new VerificationException("Token audience doesn't match domain. Token issuer is " + token.getIssuer() + ", but URL from configuration is " + realmUrl);
-
-        }
-
-        if (checkTokenType) {
-            String type = token.getType();
-            if (type == null || !type.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_BEARER)) {
-                throw new VerificationException("Token type is incorrect. Expected '" + TokenUtil.TOKEN_TYPE_BEARER + "' but was '" + type + "'");
-            }
-        }
-        if (checkActive && !token.isActive()) {
-            throw new VerificationException("Token is not active.");
-        }
-
+    public static AccessToken verifyToken(String tokenString, PublicKey publicKey, String realmUrl) throws VerificationException {
+        return RSATokenVerifier.create(tokenString).publicKey(publicKey).realmUrl(realmUrl).verify().getToken();
     }
 
-
-    public static AccessToken toAccessToken(String tokenString, PublicKey realmKey) throws VerificationException {
-        JWSInput input;
-        try {
-            input = new JWSInput(tokenString);
-        } catch (JWSInputException e) {
-            throw new VerificationException("Couldn't parse token", e);
-        }
-        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
-
-        AccessToken token;
-        try {
-            token = input.readJsonContent(AccessToken.class);
-        } catch (JWSInputException e) {
-            throw new VerificationException("Couldn't parse token signature", e);
-        }
-        return token;
+    public static AccessToken verifyToken(String tokenString, PublicKey publicKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
+        return RSATokenVerifier.create(tokenString).publicKey(publicKey).realmUrl(realmUrl).checkActive(checkActive).checkTokenType(checkTokenType).verify().getToken();
     }
 
-
-    public static AccessToken verifyToken(JWSInput input, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
-
-        AccessToken token;
-        try {
-            token = input.readJsonContent(AccessToken.class);
-        } catch (JWSInputException e) {
-            throw new VerificationException("Couldn't parse token signature", e);
-        }
-
-        tokenVerifications(token, realmUrl, checkActive, checkTokenType);
-
-        return token;
+    public RSATokenVerifier publicKey(PublicKey publicKey) {
+        tokenVerifier.publicKey(publicKey);
+        return this;
     }
 
-
-    private static boolean isPublicKeyValid(JWSInput input, PublicKey realmKey) throws VerificationException {
-        try {
-            return RSAProvider.verify(input, realmKey);
-        } catch (Exception e) {
-            throw new VerificationException("Token signature not validated.", e);
-        }
+    public RSATokenVerifier realmUrl(String realmUrl) {
+        tokenVerifier.realmUrl(realmUrl);
+        return this;
     }
+
+    public RSATokenVerifier checkTokenType(boolean checkTokenType) {
+        tokenVerifier.checkTokenType(checkTokenType);
+        return this;
+    }
+
+    public RSATokenVerifier checkActive(boolean checkActive) {
+        tokenVerifier.checkActive(checkActive);
+        return this;
+    }
+
+    public RSATokenVerifier checkRealmUrl(boolean checkRealmUrl) {
+        tokenVerifier.checkRealmUrl(checkRealmUrl);
+        return this;
+    }
+
+    public RSATokenVerifier parse() throws VerificationException {
+        tokenVerifier.parse();
+        return this;
+    }
+
+    public AccessToken getToken() throws VerificationException {
+        return tokenVerifier.getToken();
+    }
+
+    public JWSHeader getHeader() throws VerificationException {
+        return tokenVerifier.getHeader();
+    }
+
+    public RSATokenVerifier verify() throws VerificationException {
+        tokenVerifier.verify();
+        return this;
+    }
+
 }

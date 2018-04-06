@@ -1,7 +1,0 @@
-{
-  "realm": "photoz",
-  "auth-server-url" : "http://localhost:8080/auth",
-  "ssl-required" : "external",
-  "resource" : "photoz-html5-client",
-  "public-client" : true
-}

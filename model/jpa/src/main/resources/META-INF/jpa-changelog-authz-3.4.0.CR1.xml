@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part1">
+        <!-- Data migration to change the PK of RESOURCE_SERVER to use the CLIENT_ID. -->
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+        <addColumn tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+        <addColumn tableName="RESOURCE_SERVER_SCOPE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="authz-3.4.0.CR1-resource-server-pk-change-part2-KEYCLOAK-6095">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
+            </not>
+        </preConditions>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdateAuthz_3_4_0_CR1" />
+    </changeSet>
+
+    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="mssql" />
+            <not>
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
+            </not>
+        </preConditions>
+        
+        <dropIndex tableName="RESOURCE_SERVER_POLICY" indexName="IDX_RES_SERV_POL_RES_SERV"/>
+        <dropIndex tableName="RESOURCE_SERVER_RESOURCE" indexName="IDX_RES_SRV_RES_RES_SRV"/>
+        <dropIndex tableName="RESOURCE_SERVER_SCOPE" indexName="IDX_RES_SRV_SCOPE_RES_SRV"/>
+    </changeSet>
+        
+    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed-nodropindex">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
+            </not>
+        </preConditions>
+
+        <addNotNullConstraint tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addNotNullConstraint tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addNotNullConstraint tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_POLICY" constraintName="UK_FRSRPT700S9V50BU18WS5HA6"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" constraintName="UK_FRSR6T700S9V50BU18WS5HA6"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_SCOPE" constraintName="UK_FRSRST700S9V50BU18WS5HA6"/>
+
+        <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_POLICY" constraintName="FK_FRSRPO213XCX4WNKOG82SSRFY"/>
+        <dropColumn tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_ID"/>
+
+        <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_RESOURCE" constraintName="FK_FRSRHO213XCX4WNKOG82SSRFY"/>
+        <dropColumn tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_ID"/>
+
+        <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_SCOPE" constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY"/>
+        <dropColumn tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_ID"/>
+
+        <dropPrimaryKey tableName="RESOURCE_SERVER" constraintName="CONSTRAINT_FARS"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER" constraintName="UK_AU8TT6T700S9V50BU18WS5HA6"/>
+
+        <dropColumn tableName="RESOURCE_SERVER" columnName="ID"/>
+
+        <renameColumn tableName="RESOURCE_SERVER" oldColumnName="CLIENT_ID" newColumnName="ID" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="RESOURCE_SERVER_POLICY" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="RESOURCE_SERVER_RESOURCE" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="RESOURCE_SERVER_SCOPE" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID" columnDataType="VARCHAR(36)"/>
+
+        <addUniqueConstraint tableName="RESOURCE_SERVER_POLICY" constraintName="UK_FRSRPT700S9V50BU18WS5HA6"
+                             columnNames="NAME, RESOURCE_SERVER_ID"/>
+        <addUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" constraintName="UK_FRSR6T700S9V50BU18WS5HA6"
+                             columnNames="NAME, OWNER, RESOURCE_SERVER_ID"/>
+        <addUniqueConstraint tableName="RESOURCE_SERVER_SCOPE" constraintName="UK_FRSRST700S9V50BU18WS5HA6"
+                             columnNames="NAME, RESOURCE_SERVER_ID"/>
+
+        <createIndex indexName="IDX_RES_SERV_POL_RES_SERV" tableName="RESOURCE_SERVER_POLICY">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_RES_RES_SRV" tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_SCOPE_RES_SRV" tableName="RESOURCE_SERVER_SCOPE">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <addPrimaryKey tableName="RESOURCE_SERVER" constraintName="PK_RESOURCE_SERVER" columnNames="ID"/>
+        <addForeignKeyConstraint constraintName="FK_FRSRPO213XCX4WNKOG82SSRFY"
+                                 baseTableName="RESOURCE_SERVER_POLICY" baseColumnNames="RESOURCE_SERVER_ID"
+                                 referencedTableName="RESOURCE_SERVER" referencedColumnNames="ID"/>
+        <addForeignKeyConstraint constraintName="FK_FRSRHO213XCX4WNKOG82SSRFY"
+                                 baseTableName="RESOURCE_SERVER_RESOURCE" baseColumnNames="RESOURCE_SERVER_ID"
+                                 referencedTableName="RESOURCE_SERVER" referencedColumnNames="ID"/>
+        <addForeignKeyConstraint constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY"
+                                 baseTableName="RESOURCE_SERVER_SCOPE" baseColumnNames="RESOURCE_SERVER_ID"
+                                 referencedTableName="RESOURCE_SERVER" referencedColumnNames="ID"/>
+    </changeSet>
+
+    <changeSet author="glavoie@gmail.com" id="authn-3.4.0.CR1-refresh-token-max-reuse">
+        <addColumn tableName="REALM">
+            <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

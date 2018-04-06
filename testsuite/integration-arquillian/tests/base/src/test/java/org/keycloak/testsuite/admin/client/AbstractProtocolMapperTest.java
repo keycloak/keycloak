@@ -17,13 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
@@ -32,6 +25,13 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

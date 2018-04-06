@@ -17,18 +17,14 @@
 
 package org.keycloak.models.jpa.session;
 
-import java.io.Serializable;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,9 +32,11 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId)"),
         @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId = :clientId"),
+        @NamedQuery(name="deleteClientSessionsByExternalClient", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider and sess.externalClientId = :externalClientId"),
+        @NamedQuery(name="deleteClientSessionsByClientStorageProvider", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider"),
         @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
         @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
-        @NamedQuery(name="deleteDetachedClientSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId NOT IN (select u.userSessionId from PersistentUserSessionEntity u)"),
+        @NamedQuery(name="deleteDetachedClientSessions", query="delete from PersistentClientSessionEntity sess where NOT EXISTS (select u.userSessionId from PersistentUserSessionEntity u where u.userSessionId = sess.userSessionId )"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
         @NamedQuery(name="findClientSessionsByUserSessions", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds) order by sess.userSessionId"),
         @NamedQuery(name="updateClientSessionsTimestamps", query="update PersistentClientSessionEntity c set timestamp = :timestamp"),
@@ -48,15 +46,23 @@ import javax.persistence.Table;
 @IdClass(PersistentClientSessionEntity.Key.class)
 public class PersistentClientSessionEntity {
 
+    public static final String LOCAL = "local";
+    public static final String EXTERNAL = "external";
     @Id
-    @Column(name="CLIENT_SESSION_ID", length = 36)
-    protected String clientSessionId;
-
     @Column(name = "USER_SESSION_ID", length = 36)
     protected String userSessionId;
 
+    @Id
     @Column(name="CLIENT_ID", length = 36)
     protected String clientId;
+
+    @Id
+    @Column(name="CLIENT_STORAGE_PROVIDER", length = 36)
+    protected String clientStorageProvider;
+
+    @Id
+    @Column(name="EXTERNAL_CLIENT_ID", length = 255)
+    protected String externalClientId;
 
     @Column(name="TIMESTAMP")
     protected int timestamp;
@@ -67,14 +73,6 @@ public class PersistentClientSessionEntity {
 
     @Column(name="DATA")
     protected String data;
-
-    public String getClientSessionId() {
-        return clientSessionId;
-    }
-
-    public void setClientSessionId(String clientSessionId) {
-        this.clientSessionId = clientSessionId;
-    }
 
     public String getUserSessionId() {
         return userSessionId;
@@ -90,6 +88,22 @@ public class PersistentClientSessionEntity {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public String getClientStorageProvider() {
+        return clientStorageProvider;
+    }
+
+    public void setClientStorageProvider(String clientStorageProvider) {
+        this.clientStorageProvider = clientStorageProvider;
+    }
+
+    public String getExternalClientId() {
+        return externalClientId;
+    }
+
+    public void setExternalClientId(String externalClientId) {
+        this.externalClientId = externalClientId;
     }
 
     public int getTimestamp() {
@@ -118,24 +132,43 @@ public class PersistentClientSessionEntity {
 
     public static class Key implements Serializable {
 
-        protected String clientSessionId;
+        protected String userSessionId;
+
+        protected String clientId;
+        protected String clientStorageProvider;
+        protected String externalClientId;
 
         protected String offline;
 
         public Key() {
         }
 
-        public Key(String clientSessionId, String offline) {
-            this.clientSessionId = clientSessionId;
+        public Key(String userSessionId, String clientId, String clientStorageProvider, String externalClientId, String offline) {
+            this.userSessionId = userSessionId;
+            this.clientId = clientId;
+            this.externalClientId = externalClientId;
+            this.clientStorageProvider = clientStorageProvider;
             this.offline = offline;
         }
 
-        public String getClientSessionId() {
-            return clientSessionId;
+        public String getUserSessionId() {
+            return userSessionId;
+        }
+
+        public String getClientId() {
+            return clientId;
         }
 
         public String getOffline() {
             return offline;
+        }
+
+        public String getClientStorageProvider() {
+            return clientStorageProvider;
+        }
+
+        public String getExternalClientId() {
+            return externalClientId;
         }
 
         @Override
@@ -145,7 +178,10 @@ public class PersistentClientSessionEntity {
 
             Key key = (Key) o;
 
-            if (this.clientSessionId != null ? !this.clientSessionId.equals(key.clientSessionId) : key.clientSessionId != null) return false;
+            if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
+            if (this.clientId != null ? !this.clientId.equals(key.clientId) : key.clientId != null) return false;
+            if (this.externalClientId != null ? !this.externalClientId.equals(key.clientId) : key.externalClientId != null) return false;
+            if (this.clientStorageProvider != null ? !this.clientStorageProvider.equals(key.clientId) : key.clientStorageProvider != null) return false;
             if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
 
             return true;
@@ -153,7 +189,10 @@ public class PersistentClientSessionEntity {
 
         @Override
         public int hashCode() {
-            int result = this.clientSessionId != null ? this.clientSessionId.hashCode() : 0;
+            int result = this.userSessionId != null ? this.userSessionId.hashCode() : 0;
+            result = 37 * result + (this.clientId != null ? this.clientId.hashCode() : 0);
+            result = 37 * result + (this.externalClientId != null ? this.externalClientId.hashCode() : 0);
+            result = 37 * result + (this.clientStorageProvider != null ? this.clientStorageProvider.hashCode() : 0);
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
         }

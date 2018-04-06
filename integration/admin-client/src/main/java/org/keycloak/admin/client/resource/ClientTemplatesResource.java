@@ -17,7 +17,6 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 
 import javax.ws.rs.Consumes;

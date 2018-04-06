@@ -27,6 +27,7 @@ import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -228,7 +229,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return RoleUtils.hasRole(roles, role);
     }
 
     protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {

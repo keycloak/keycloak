@@ -21,17 +21,18 @@ import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.util.StringUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,11 +42,14 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String USER_ATTRIBUTE = "user.attribute";
+    private static final String EMAIL = "email";
+    private static final String FIRST_NAME = "firstName";
+    private static final String LAST_NAME = "lastName";
 
     static {
         ProviderConfigProperty property;
@@ -99,61 +103,88 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
-        String value = getAttribute(mapperModel, context);
-        if (value != null) {
-            if (attribute.equalsIgnoreCase("email")) {
-                context.setEmail(value);
-            } else if (attribute.equalsIgnoreCase("firstName")) {
-                context.setFirstName(value);
-            } else if (attribute.equalsIgnoreCase("lastName")) {
-                context.setLastName(value);
+        if (StringUtil.isNullOrEmpty(attribute)) {
+            return;
+        }
+        String attributeName = getAttributeNameFromMapperModel(mapperModel);
+
+        List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context);
+        if (!attributeValuesInContext.isEmpty()) {
+            if (attribute.equalsIgnoreCase(EMAIL)) {
+                setIfNotEmpty(context::setEmail, attributeValuesInContext);
+            } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
+                setIfNotEmpty(context::setFirstName, attributeValuesInContext);
+            } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
+                setIfNotEmpty(context::setLastName, attributeValuesInContext);
             } else {
-                context.setUserAttribute(attribute, value);
+                context.setUserAttribute(attribute, attributeValuesInContext);
             }
         }
     }
 
-    protected String getAttribute(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String name = mapperModel.getConfig().get(ATTRIBUTE_NAME);
-        if (name != null && name.trim().equals("")) name = null;
-        String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
-        if (friendly != null && friendly.trim().equals("")) friendly = null;
-        AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
-        for (AttributeStatementType statement : assertion.getAttributeStatements()) {
-            for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
-                AttributeType attr = choice.getAttribute();
-                if (name != null && !name.equals(attr.getName())) continue;
-                if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
-
-                List<Object> attributeValue = attr.getAttributeValue();
-                if (attributeValue == null || attributeValue.isEmpty()) return null;
-                return attributeValue.get(0).toString();
-            }
+    private String getAttributeNameFromMapperModel(IdentityProviderMapperModel mapperModel) {
+        String attributeName = mapperModel.getConfig().get(ATTRIBUTE_NAME);
+        if (attributeName == null) {
+            attributeName = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
         }
-        return null;
+        return attributeName;
+    }
+
+    private void setIfNotEmpty(Consumer<String> consumer, List<String> values) {
+        if (values != null && !values.isEmpty()) {
+            consumer.accept(values.get(0));
+        }
+    }
+
+    private Predicate<AttributeStatementType.ASTChoiceType> elementWith(String attributeName) {
+        return attributeType -> {
+            AttributeType attribute = attributeType.getAttribute();
+            return Objects.equals(attribute.getName(), attributeName)
+                    || Objects.equals(attribute.getFriendlyName(), attributeName);
+        };
+    }
+
+
+    private List<String> findAttributeValuesInContext(String attributeName, BrokeredIdentityContext context) {
+        AssertionType assertion = (AssertionType) context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
+
+        return assertion.getAttributeStatements().stream()
+                .flatMap(statement -> statement.getAttributes().stream())
+                .filter(elementWith(attributeName))
+                .flatMap(attributeType -> attributeType.getAttribute().getAttributeValue().stream())
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
-        String value = getAttribute(mapperModel, context);
-        if (attribute.equalsIgnoreCase("email")) {
-            user.setEmail(value);
-        } else if (attribute.equalsIgnoreCase("firstName")) {
-            user.setFirstName(value);
-        } else if (attribute.equalsIgnoreCase("lastName")) {
-            user.setLastName(value);
-        } else {
-            String current = user.getFirstAttribute(attribute);
-            if (value != null && !value.equals(current)) {
-                user.setSingleAttribute(attribute, value.toString());
-            } else if (value == null) {
-                user.removeAttribute(attribute);
-            }
+        if (StringUtil.isNullOrEmpty(attribute)) {
+            return;
         }
-
-
-
+        String attributeName = getAttributeNameFromMapperModel(mapperModel);
+        List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context);
+        if (attribute.equalsIgnoreCase(EMAIL)) {
+            setIfNotEmpty(user::setEmail, attributeValuesInContext);
+        } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
+            setIfNotEmpty(user::setFirstName, attributeValuesInContext);
+        } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
+            setIfNotEmpty(user::setLastName, attributeValuesInContext);
+        } else {
+            List<String> currentAttributeValues = user.getAttributes().get(attribute);
+            if (attributeValuesInContext == null) {
+                // attribute no longer sent by brokered idp, remove it
+                user.removeAttribute(attribute);
+            } else if (currentAttributeValues == null) {
+                // new attribute sent by brokered idp, add it
+                user.setAttribute(attribute, attributeValuesInContext);
+            } else if (!CollectionUtil.collectionEquals(attributeValuesInContext, currentAttributeValues)) {
+                // attribute sent by brokered idp has different values as before, update it
+                user.setAttribute(attribute, attributeValuesInContext);
+            }
+            // attribute allready set
+        }
     }
 
     @Override

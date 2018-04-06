@@ -21,12 +21,17 @@ import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 
 /**
+ * Configuration of a SAML-enabled client.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class SamlClient extends ClientConfigResolver {
+
+    public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.KEY_ID;
 
     public SamlClient(ClientModel client) {
         super(client);
@@ -106,6 +111,7 @@ public class SamlClient extends ClientConfigResolver {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
 
     }
+
     public void setForceNameIDFormat(boolean val) {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
@@ -116,7 +122,14 @@ public class SamlClient extends ClientConfigResolver {
 
     public void setRequiresRealmSignature(boolean val) {
         client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, Boolean.toString(val));
+    }
 
+    public boolean addExtensionsElementWithKeyInfo() {
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT));
+    }
+
+    public void setAddExtensionsElementWithKeyInfo(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, Boolean.toString(val));
     }
 
     public boolean forcePostBinding() {
@@ -127,16 +140,18 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.toString(val));
 
     }
+
     public boolean requiresAssertionSignature() {
-       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
     }
 
     public void setRequiresAssertionSignature(boolean val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE   , Boolean.toString(val));
+        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(val));
 
     }
+
     public boolean requiresEncryption() {
-       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ENCRYPT));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ENCRYPT));
     }
 
 
@@ -150,7 +165,7 @@ public class SamlClient extends ClientConfigResolver {
     }
 
     public void setRequiresClientSignature(boolean val) {
-        client.setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE   , Boolean.toString(val));
+        client.setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, Boolean.toString(val));
 
     }
 
@@ -180,6 +195,7 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, val);
 
     }
+
     public String getClientEncryptingPrivateKey() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
     }
@@ -188,5 +204,32 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE, val);
 
     }
+
+    /**
+     * Always returns non-{@code null} result.
+     *
+     * @return Configured ransformer of {@link #DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER} if not set.
+     */
+    public XmlKeyInfoKeyNameTransformer getXmlSigKeyInfoKeyNameTransformer() {
+        return XmlKeyInfoKeyNameTransformer.from(
+                client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER),
+                DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
+    }
+
+    public void setXmlSigKeyInfoKeyNameTransformer(XmlKeyInfoKeyNameTransformer xmlSigKeyInfoKeyNameTransformer) {
+        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER,
+                xmlSigKeyInfoKeyNameTransformer == null
+                        ? null
+                        : xmlSigKeyInfoKeyNameTransformer.name());
+    }
+
+    public boolean includeOneTimeUseCondition() {
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION));
+    }
+
+    public void setIncludeOneTimeUseCondition(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, Boolean.toString(val));
+    }
+
 
 }

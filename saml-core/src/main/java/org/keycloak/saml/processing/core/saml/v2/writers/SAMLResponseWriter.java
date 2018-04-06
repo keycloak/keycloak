@@ -16,10 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -30,13 +26,19 @@ import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusDetailType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.util.StringUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;
 import java.util.List;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * Write a SAML Response to stream
@@ -62,8 +64,17 @@ public class SAMLResponseWriter extends BaseWriter {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     public void write(ResponseType response) throws ProcessingException {
-        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+        write(response, false);
+    }
 
+    public void write(ResponseType response, boolean forceWriteDsigNamespace) throws ProcessingException {
+        Element sig = response.getSignature();
+
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE__PROTOCOL.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+
+        if (forceWriteDsigNamespace && sig != null && sig.getPrefix() != null && ! sig.hasAttribute("xmlns:" + sig.getPrefix())) {
+            StaxUtil.writeNameSpace(writer, sig.getPrefix(), XMLSignature.XMLNS);
+        }
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
@@ -74,9 +85,12 @@ public class SAMLResponseWriter extends BaseWriter {
             write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
         }
 
-        Element sig = response.getSignature();
         if (sig != null) {
             StaxUtil.writeDOMElement(writer, sig);
+        }
+        ExtensionsType extensions = response.getExtensions();
+        if (extensions != null && extensions.getAny() != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
         }
 
         StatusType status = response.getStatus();
@@ -87,7 +101,7 @@ public class SAMLResponseWriter extends BaseWriter {
             for (ResponseType.RTChoiceType choiceType : choiceTypes) {
                 AssertionType assertion = choiceType.getAssertion();
                 if (assertion != null) {
-                    assertionWriter.write(assertion);
+                    assertionWriter.write(assertion, forceWriteDsigNamespace);
                 }
 
                 EncryptedAssertionType encryptedAssertion = choiceType.getEncryptedAssertion();
@@ -118,6 +132,10 @@ public class SAMLResponseWriter extends BaseWriter {
         Element sig = response.getSignature();
         if (sig != null) {
             StaxUtil.writeDOMElement(writer, sig);
+        }
+        ExtensionsType extensions = response.getExtensions();
+        if (extensions != null && extensions.getAny() != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
         }
 
         StatusType status = response.getStatus();
@@ -162,6 +180,15 @@ public class SAMLResponseWriter extends BaseWriter {
 
         NameIDType issuer = response.getIssuer();
         write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
+
+        Element sig = response.getSignature();
+        if (sig != null) {
+            StaxUtil.writeDOMElement(writer, sig);
+        }
+        ExtensionsType extensions = response.getExtensions();
+        if (extensions != null && extensions.getAny() != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
+        }
 
         StatusType status = response.getStatus();
         write(status);

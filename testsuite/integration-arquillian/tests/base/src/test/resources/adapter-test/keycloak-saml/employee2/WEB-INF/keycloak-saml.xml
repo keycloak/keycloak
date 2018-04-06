@@ -15,13 +15,15 @@
   ~ limitations under the License.
   -->
 
-<keycloak-saml-adapter>
+<keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_7.xsd">
     <SP entityID="http://localhost:8081/employee2/"
         sslPolicy="EXTERNAL"
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         logoutPage="/logout.jsp"
         forceAuthentication="false">
-        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <PrincipalNameMapping policy="FROM_ATTRIBUTE" attribute="email"/>
         <RoleIdentifiers>
             <Attribute name="memberOf"/>
             <Attribute name="Role"/>

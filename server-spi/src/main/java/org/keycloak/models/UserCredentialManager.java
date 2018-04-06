@@ -68,7 +68,16 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @param user
      * @param credentialType
      */
-    void disableCredential(RealmModel realm, UserModel user, String credentialType);
+    void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
+
+    /**
+     * Returns a set of credential types that can be disabled by disableCredentialType() method
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
+    Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
 
     /**
      * Checks to see if user has credential type configured.  Looks in UserStorageProvider or UserFederationProvider first,
@@ -83,7 +92,8 @@ public interface UserCredentialManager extends UserCredentialStore {
 
     /**
      * Only loops through each CredentialProvider to see if credential type is configured for the user.
-     * This allows UserStorageProvider and UserFederationProvider to look to abort isValid
+     * This allows UserStorageProvider and UserFederationProvider isValid() implementations to punt to local storage
+     * when validating a credential that has been overriden in Keycloak storage.
      *
      * @param realm
      * @param user
@@ -91,4 +101,17 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @return
      */
     boolean isConfiguredLocally(RealmModel realm, UserModel user, String type);
+
+    /**
+     * Given a CredentialInput, authenticate the user.  This is used in the case where the credential must be processed
+     * to determine and find the user.  An example is Kerberos where the kerberos token might be validated and processed
+     * by a variety of different storage providers.
+     *
+     *
+     * @param session
+     * @param realm
+     * @param input
+     * @return
+     */
+    CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input);
 }

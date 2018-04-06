@@ -33,6 +33,9 @@ public class InfoPage extends AbstractPage {
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
+    @FindBy(linkText = "« Back to Application")
+    private WebElement backToApplicationLink;
+
     public String getInfo() {
         return infoMessage.getText();
     }
@@ -44,6 +47,10 @@ public class InfoPage extends AbstractPage {
     @Override
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public void clickBackToApplicationLink() {
+        backToApplicationLink.click();
     }
 
 }

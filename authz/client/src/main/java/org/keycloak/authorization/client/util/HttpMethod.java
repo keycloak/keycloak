@@ -17,6 +17,12 @@
  */
 package org.keycloak.authorization.client.util;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -27,13 +33,8 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -41,19 +42,21 @@ import java.util.Map;
 public class HttpMethod<R> {
 
     private final HttpClient httpClient;
-    private final RequestBuilder builder;
+    private final ClientAuthenticator authenticator;
+    protected final RequestBuilder builder;
     protected final Configuration configuration;
-    protected final HashMap<String, String> headers;
-    protected final HashMap<String, String> params;
+    protected final Map<String, String> headers;
+    protected final Map<String, List<String>> params;
     private HttpMethodResponse<R> response;
 
-    public HttpMethod(Configuration configuration, RequestBuilder builder) {
-        this(configuration, builder, new HashMap<>(), new HashMap<>());
+    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder) {
+        this(configuration, authenticator, builder, new HashMap<String, List<String>>(), new HashMap<String, String>());
     }
 
-    public HttpMethod(Configuration configuration, RequestBuilder builder, HashMap<String, String> params, HashMap<String, String> headers) {
+    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder, Map<String, List<String>> params, Map<String, String> headers) {
         this.configuration = configuration;
         this.httpClient = configuration.getHttpClient();
+        this.authenticator = authenticator;
         this.builder = builder;
         this.params = params;
         this.headers = headers;
@@ -100,13 +103,15 @@ public class HttpMethod<R> {
         } catch (HttpResponseException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error executing http method [" + builder + "]. Response : " + new String(bytes), e);
+            throw new RuntimeException("Error executing http method [" + builder + "]. Response : " + String.valueOf(bytes), e);
         }
     }
 
     protected void preExecute(RequestBuilder builder) {
-        for (Map.Entry<String, String> param : params.entrySet()) {
-            builder.addParameter(param.getKey(), param.getValue());
+        for (Map.Entry<String, List<String>> param : params.entrySet()) {
+            for (String value : param.getValue()) {
+                builder.addParameter(param.getKey(), value);
+            }
         }
     }
 
@@ -121,11 +126,34 @@ public class HttpMethod<R> {
     }
 
     public HttpMethodAuthenticator<R> authentication() {
-        return new HttpMethodAuthenticator<R>(this);
+        return new HttpMethodAuthenticator<R>(this, authenticator);
     }
 
     public HttpMethod<R> param(String name, String value) {
-        this.params.put(name, value);
+        if (value != null) {
+            List<String> values = params.get(name);
+
+            if (values == null || !values.isEmpty()) {
+                values = new ArrayList<>();
+                params.put(name, values);
+            }
+
+            values.add(value);
+        }
+        return this;
+    }
+
+    public HttpMethod<R> params(String name, String value) {
+        if (value != null) {
+            List<String> values = params.get(name);
+
+            if (values == null) {
+                values = new ArrayList<>();
+                params.put(name, values);
+            }
+
+            values.add(value);
+        }
         return this;
     }
 
@@ -136,14 +164,16 @@ public class HttpMethod<R> {
     }
 
     public HttpMethod<R> form() {
-        return new HttpMethod<R>(this.configuration, this.builder, this.params, this.headers) {
+        return new HttpMethod<R>(this.configuration, authenticator, this.builder, this.params, this.headers) {
             @Override
             protected void preExecute(RequestBuilder builder) {
                 if (params != null) {
                     List<NameValuePair> formparams = new ArrayList<>();
 
-                    for (Map.Entry<String, String> param : params.entrySet()) {
-                        formparams.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+                    for (Map.Entry<String, List<String>> param : params.entrySet()) {
+                        for (String value : param.getValue()) {
+                            formparams.add(new BasicNameValuePair(param.getKey(), value));
+                        }
                     }
 
                     try {

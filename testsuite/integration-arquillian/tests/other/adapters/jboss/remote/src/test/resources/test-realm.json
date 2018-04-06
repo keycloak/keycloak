@@ -1,0 +1,52 @@
+{
+    "id": "Test",
+    "realm": "Test",
+    "enabled": true,
+    "accessTokenLifespan": 600,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "requiredCredentials": ["password"],
+    "users": [{
+            "username": "admin-user",
+            "enabled": true,
+            "firstName": "Admin",
+            "lastName": "User",
+            "email": "admin@user.com",
+            "credentials": [{
+                    "type": "password",
+                    "value": "password"
+                }],
+            "realmRoles": ["offline_access", "user", "admin"],
+            "clientRoles": {
+                "account": ["view-profile", "manage-account"]
+            }
+        }, {
+            "username": "secure-user",
+            "enabled": true,
+            "firstName": "Secure",
+            "lastName": "User",
+            "email": "secure@user.com",
+            "credentials": [{
+                    "type": "password",
+                    "value": "password"
+                }],
+            "realmRoles": ["offline_access", "user"],
+            "clientRoles": {
+                "account": ["view-profile", "manage-account"]
+            }
+        }],
+    "clients": [
+        {
+            "clientId": "app-profile-jee",
+            "enabled": true,
+            "adminUrl": "/app-profile-jee/",
+            "baseUrl": "/app-profile-jee/",
+            "redirectUris": ["/app-profile-jee/*"],
+            "secret": "4f36f31a-be9d-4f92-b982-425301bac5df"
+        }
+    ]
+}

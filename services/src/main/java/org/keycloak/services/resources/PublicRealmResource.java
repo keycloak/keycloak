@@ -16,13 +16,16 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.GET;
@@ -41,7 +44,7 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public class PublicRealmResource {
-    protected static final  ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(PublicRealmResource.class);
 
     @Context
     protected UriInfo uriInfo;
@@ -51,6 +54,9 @@ public class PublicRealmResource {
 
     @Context
     protected HttpResponse response;
+
+    @Context
+    protected KeycloakSession session;
 
     protected RealmModel realm;
 
@@ -79,16 +85,15 @@ public class PublicRealmResource {
     @Produces(MediaType.APPLICATION_JSON)
     public PublishedRealmRepresentation getRealm() {
         Cors.add(request).allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().build(response);
-        return realmRep(realm, uriInfo);
+        return realmRep(session, realm, uriInfo);
     }
 
-    public static PublishedRealmRepresentation realmRep(RealmModel realm, UriInfo uriInfo) {
+    public static PublishedRealmRepresentation realmRep(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
         rep.setTokenServiceUrl(OIDCLoginProtocolService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
-        rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
-        rep.setAdminApiUrl(uriInfo.getBaseUriBuilder().path(AdminRoot.class).build().toString());
-        rep.setPublicKeyPem(realm.getPublicKeyPem());
+        rep.setAccountServiceUrl(AccountFormService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setPublicKeyPem(PemUtils.encodeKey(session.keys().getActiveRsaKey(realm).getPublicKey()));
         rep.setNotBefore(realm.getNotBefore());
         return rep;
     }

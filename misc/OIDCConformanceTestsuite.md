@@ -1,19 +1,52 @@
 Executing OIDC Conformance Testsuite
 ====================================
 
-Run Keycloak on Openshift
--------------------------
+Run and configure Keycloak on Openshift
+---------------------------------------
 First step is to run Keycloak server in the environment, where it is available online, so the OIDC conformance testsuite can connect to it.
 
 1) Take a look at https://github.com/keycloak/openshift-keycloak-cartridge for how to run Keycloak on Openshift. Follow the instructions until you have 
-openshift instance with Keycloak 2.0.0.CR1 available on some URL like https://keycloak-mposolda.rhcloud.com/auth .
+openshift instance with Keycloak 2.3.0.CR1 or later available on some URL like https://keycloak-mposolda.rhcloud.com/auth .
+ 
  
 2) Admin user needs to be manually created on command line on Openshift cartridge. Then cartridge needs to be restarted. See Keycloak docs for details.
 
-3) Login to Keycloak admin console. Create confidential client `openidd` with redirect_uri `https://op.certification.openid.net:60720/authz_cb` . 
-This points to the testing client deployed by OIDC conformance testsuite. You will need to change the port later based on where your OIDC conformance testing app will be running.  
+
+3) To successfully run OP-Rotation-RP-Sig test, it is good if you re-configure default minTimeBetweenRequests for publicKeyStorage. In $KEYCLOAK_HOME/standalone/configuration/standalone.xml do those changes:
+```
+<spi name="publicKeyStorage">
+    <provider name="infinispan" enabled="true">
+        <properties>
+            <property name="minTimeBetweenRequests" value="-1"/>
+        </properties>
+    </provider>
+</spi>
+```            
+and then restart server.
+            
+Reason: Keycloak supports rotation and dynamically downloading client's keys from configured jwks_url. However by default there is 10 seconds timeout 
+between 2 requests for download public keys to avoid DoS attacks. 
+The OIDC test OP-Rotation-RP-Sig registers client, then login user for the 1st time (which downloads new client keys) and 
+then immediatelly rotates client keys and expects refreshToken request to succeed with new key. This is just the testing scenario. 
+In real production environment, clients will very unlikely do something like this. Hence just for testing purposes is DoS protection disabled by set -1 here.
+ 
                                                                                                                
-4) Create some user with basic claims filled (email, first name, last name).
+4) Login to admin console and create some user with basic claims filled (email, first name, last name). 
+It's suggested that his username or email will have your domain attached to it (eg. "john@keycloak-mposolda.rhcloud.com" ), so that in OP-Req-login_hint test, you will be able to login as the "hinted" user.
+
+
+5) Allow anonymous dynamic client registration from the OIDC host. In admin console go to "Client registration" -> "Client registration policies" -> "Trusted hosts" and add new trusted host:
+ ```
+ op.certification.openid.net
+ ```
+
+click "+" , then "Save".
+
+This is needed because by default the anonymous dynamic client registration is not allowed from any host, so is effectively disabled. 
+
+Note that OIDC conformance testsuite registers new client for each test. So you can maybe also remove "Consent required" policy if you don't want to see consent screen during almost every test.
+You can maybe also increase limit by Max Clients policy (it is 200 by default, so likely should be sufficient).
+
 
 Run conformance testsuite
 -------------------------
@@ -34,17 +67,7 @@ Q: Does the OP have a .well-known/openid-configuration endpoint?
 A: Yes
 
 Q: Do the provider support dynamic client registration?
-A: No (See below for how to run with dynamic client registration)
-
-Q: redirect_uris
-Non-editable value: https://op.certification.openid.net:60720/authz_cb
-Copy/paste that and use it as valid redirect_uri in Keycloak admin console for your Openshift client (See above paragraph `Run Keycloak on Openshift` )
-
-Q: client_id:
-A: openidd
-
-Q: client_secret:
-A: 98d90dd1-9d2e-43ad-a46b-1daeec3f5133 (copy/paste from your client in KC admin console)
+A: Yes
 
 Q: Which subject type do you want to use by default?
 A: Public
@@ -56,26 +79,14 @@ Q: Select supported features:
 A: JWT signed with algorithm other than "none"
 
 Q: Test specific request parameters:
-Nothing filled
+Login Hint: john (this means that OP-Req-login_hint test will use user like "john@keycloak-mposolda.rhcloud.com" as it automatically attaches domain name to it for some reason).
+
+Nothing else filled
  
 
 4) After setup, you will be redirected to the testing application. Something like `https://op.certification.openid.net:60720/` and can run individual tests.
 Some tests require some manual actions (eg. delete cookies). The conformance testsuite should guide you.
 
-Run conformance testsuite with Dynamic client registration
-----------------------------------------------------------
-1) The steps are similar to above, however for question:
-
-Q: Do the provider support dynamic client registration?
-The answer will be: Yes
-
-Then you don't need to configure redirect_uris, client_id and client_secret.
-
-2) With the setup from previous point, OIDC Conformance testsuite will dynamically register new client in Keycloak. But you also need to allow the anonymous
- client registration requests from the OIDC conformance to register clients.
- 
- So you need to login to Keycloak admin console and in tab "Initial Access Tokens" for realm master, you need to fill new trusted host. Fill the hostname "op.certification.openid.net" and enable big 
- count of registrations for it (1000 or so) as running each test will register new client. 
 
 
 Update the openshift cartridge with latest Keycloak
@@ -91,7 +102,7 @@ On your laptop
 cd $KEYCLOAK_SOURCES
 cd services
 mvn clean install
-scp target/keycloak-services-2.1.0-SNAPSHOT.jar 51122e382d5271c5ca0000bc@keycloak-mposolda.rhcloud.com:/tmp/
+scp target/keycloak-server-spi-2.1.0-SNAPSHOT.jar 51122e382d5271c5ca0000bc@keycloak-mposolda.rhcloud.com:/tmp/
 ssh 51122e382d5271c5ca0000bc@keycloak-mposolda.rhcloud.com
 ````
 

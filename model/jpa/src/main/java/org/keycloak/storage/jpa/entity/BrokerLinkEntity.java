@@ -17,11 +17,12 @@
 
 package org.keycloak.storage.jpa.entity;
 
+import org.keycloak.storage.jpa.KeyUtils;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
@@ -72,6 +73,7 @@ public class BrokerLinkEntity {
     }
 
     public void setUserId(String userId) {
+        KeyUtils.assertValidKey(userId);
         this.userId = userId;
     }
 

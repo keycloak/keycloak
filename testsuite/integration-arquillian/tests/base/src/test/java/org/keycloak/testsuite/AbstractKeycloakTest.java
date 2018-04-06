@@ -18,23 +18,27 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.junit.BeforeClass;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.TestContext;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
@@ -46,40 +50,51 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-
+import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.testsuite.util.TestEventsLogger;
+import org.openqa.selenium.WebDriver;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
+import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
+import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-
-import org.keycloak.testsuite.util.TestEventsLogger;
+import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *
  * @author tkyjovsk
  */
-@RunWith(Arquillian.class)
+@RunWith(KcArquillian.class)
 @RunAsClient
 public abstract class AbstractKeycloakTest {
+
+    protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "false"));
 
     protected Logger log = Logger.getLogger(this.getClass());
 
@@ -125,10 +140,21 @@ public abstract class AbstractKeycloakTest {
 
     private boolean resetTimeOffset;
 
+    @BeforeClass
+    public static void setUpAuthServer() throws Exception {
+        if (AUTH_SERVER_SSL_REQUIRED) {
+            enableHTTPSForAuthServer();
+        }
+    }
+
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
-        adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        adminClient = testContext.getAdminClient();
+        if (adminClient == null) {
+            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
+            testContext.setAdminClient(adminClient);
+        }
 
         getTestingClient();
 
@@ -136,19 +162,28 @@ public abstract class AbstractKeycloakTest {
 
         setDefaultPageUriParameters();
 
-        driverSettings();
-        
         TestEventsLogger.setDriver(driver);
 
-        if (!suiteContext.isAdminPasswordUpdated()) {
-            log.debug("updating admin password");
+        // The backend cluster nodes may not be yet started. Password will be updated later for cluster setup.
+        if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
             updateMasterAdminPassword();
-            suiteContext.setAdminPasswordUpdated(true);
         }
 
-        importTestRealms();
+        beforeAbstractKeycloakTestRealmImport();
+
+        if (testContext.getTestRealmReps() == null) {
+            importTestRealms();
+
+            if (!isImportAfterEachMethod()) {
+                testContext.setTestRealmReps(testRealmReps);
+            }
+        }
 
         oauth.init(adminClient, driver);
+
+    }
+
+    protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
 
     @After
@@ -157,14 +192,57 @@ public abstract class AbstractKeycloakTest {
             resetTimeOffset();
         }
 
-        removeTestRealms(); // Remove realms after tests. Tests should cleanup after themselves!
-        adminClient.close(); // don't keep admin connection open
+        if (isImportAfterEachMethod()) {
+            log.info("removing test realms after test method");
+            for (RealmRepresentation testRealm : testRealmReps) {
+                removeRealm(testRealm.getRealm());
+            }
+        } else {
+            log.info("calling all TestCleanup");
+            // Logout all users after the test
+            List<RealmRepresentation> realms = testContext.getTestRealmReps();
+            for (RealmRepresentation realm : realms) {
+                adminClient.realm(realm.getRealm()).logoutAll();
+            }
+
+            // Cleanup objects
+            for (TestCleanup cleanup : testContext.getCleanups().values()) {
+                try {
+                    if (cleanup != null) cleanup.executeCleanup();
+                } catch (Exception e) {
+                    log.error("failed cleanup!", e);
+                    throw new RuntimeException(e);
+                }
+            }
+            testContext.getCleanups().clear();
+        }
+
+        // Remove all browsers from queue
+        DroneUtils.resetQueue();
     }
 
-    private void updateMasterAdminPassword() {
-        welcomePage.navigateTo();
-        if (!welcomePage.isPasswordSet()) {
-            welcomePage.setPassword("admin", "admin");
+    protected TestCleanup getCleanup(String realmName) {
+        return testContext.getOrCreateCleanup(realmName);
+    }
+
+    protected TestCleanup getCleanup() {
+        return getCleanup("test");
+    }
+
+    protected boolean isImportAfterEachMethod() {
+        return false;
+    }
+
+    protected void updateMasterAdminPassword() {
+        if (!suiteContext.isAdminPasswordUpdated()) {
+            log.debug("updating admin password");
+
+            welcomePage.navigateTo();
+            if (!welcomePage.isPasswordSet()) {
+                welcomePage.setPassword("admin", "admin");
+            }
+
+            suiteContext.setAdminPasswordUpdated(true);
         }
     }
 
@@ -179,10 +257,11 @@ public abstract class AbstractKeycloakTest {
         driver.manage().deleteAllCookies();
     }
 
-    protected void driverSettings() {
-        driver.manage().timeouts().implicitlyWait(WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        driver.manage().window().maximize();
+    protected void deleteAllCookiesForRealm(String realmName) {
+        // masterRealmPage.navigateTo();
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        log.info("deleting cookies in '" + realmName + "' realm");
+        driver.manage().deleteAllCookies();
     }
 
     public void setDefaultPageUriParameters() {
@@ -192,9 +271,18 @@ public abstract class AbstractKeycloakTest {
 
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
-            testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+            testingClient = testContext.getTestingClient();
+            if (testingClient == null) {
+                String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+                testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
+                testContext.setTestingClient(testingClient);
+            }
         }
         return testingClient;
+    }
+
+    public TestContext getTestContext() {
+        return testContext;
     }
 
     public Keycloak getAdminClient() {
@@ -221,13 +309,6 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
-    public void removeTestRealms() {
-        log.info("removing test realms");
-        for (RealmRepresentation testRealm : testRealmReps) {
-            removeRealm(testRealm);
-        }
-    }
-
     private UserRepresentation createAdminUserRepresentation() {
         UserRepresentation adminUserRep = new UserRepresentation();
         adminUserRep.setUsername(ADMIN);
@@ -248,40 +329,28 @@ public abstract class AbstractKeycloakTest {
         adminClient.realms().create(realm);
     }
 
-    public void removeRealm(RealmRepresentation realm) {
+    public void removeRealm(String realmName) {
+        log.info("removing realm: " + realmName);
         try {
-            adminClient.realms().realm(realm.getRealm()).remove();
+            adminClient.realms().realm(realmName).remove();
         } catch (NotFoundException e) {
         }
     }
-    
+
     public RealmsResource realmsResouce() {
         return adminClient.realms();
     }
 
-    public void createRealm(String realm) {
-        try {
-            RealmResource realmResource = adminClient.realms().realm(realm);
-            // Throws NotFoundException in case the realm does not exist! Ugly but there
-            // does not seem to be a way to this just by asking.
-            RealmRepresentation realmRepresentation = realmResource.toRepresentation();
-        } catch (NotFoundException ex) {
-            RealmRepresentation realmRepresentation = new RealmRepresentation();
-            realmRepresentation.setRealm(realm);
-            realmRepresentation.setEnabled(true);
-            realmRepresentation.setRegistrationAllowed(true);
-            adminClient.realms().create(realmRepresentation);
-
-//            List<RequiredActionProviderRepresentation> requiredActions = adminClient.realm(realm).flows().getRequiredActions();
-//            for (RequiredActionProviderRepresentation a : requiredActions) {
-//                a.setEnabled(false);
-//                a.setDefaultAction(false);
-//                adminClient.realm(realm).flows().updateRequiredAction(a.getAlias(), a);
-//            }
-        }
-    }
-
-    public String createUser(String realm, String username, String password, String ... requiredActions) {
+    /**
+     * Creates a user in the given realm and returns its ID.
+     *
+     * @param realm           Realm name
+     * @param username        Username
+     * @param password        Password
+     * @param requiredActions
+     * @return ID of the newly created user
+     */
+    public String createUser(String realm, String username, String password, String... requiredActions) {
         List<String> requiredUserActions = Arrays.asList(requiredActions);
 
         UserRepresentation homer = new UserRepresentation();
@@ -318,6 +387,40 @@ public abstract class AbstractKeycloakTest {
         userResource.update(userRepresentation);
     }
 
+    /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     */
+    public void setTimeOfDay(int hour, int minute, int second) {
+        setTimeOfDay(hour, minute, second, 0);
+    }
+
+    /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     * @param addSeconds additional seconds to add to offset time
+     */
+    public void setTimeOfDay(int hour, int minute, int second, int addSeconds) {
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.HOUR_OF_DAY, hour);
+        now.set(Calendar.MINUTE, minute);
+        now.set(Calendar.SECOND, second);
+        int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
+
+        setTimeOffset(offset + addSeconds);
+    }
+
+    /**
+     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     *
+     * @param offset
+     */
     public void setTimeOffset(int offset) {
         String response = invokeTimeOffset(offset);
         resetTimeOffset = offset != 0;
@@ -361,4 +464,32 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    public Logger getLogger() {
+        return log;
+    }
+
+    private static void enableHTTPSForAuthServer() throws IOException, CommandFailedException, TimeoutException, InterruptedException, CliException, OperationException {
+        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
+        Administration administration = new Administration(client);
+        Operations operations = new Operations(client);
+
+        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
+            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
+        }
+
+        client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                .forDefaultServer());
+
+        administration.reloadIfRequired();
+
+        client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                .securityRealm("UndertowRealm")
+                .verifyClient(SslVerifyClient.REQUESTED)
+                .build());
+
+        administration.reloadIfRequired();
+        client.close();
+    }
 }

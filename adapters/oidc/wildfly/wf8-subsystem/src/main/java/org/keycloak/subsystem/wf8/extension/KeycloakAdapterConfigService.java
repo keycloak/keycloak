@@ -17,16 +17,16 @@
 
 package org.keycloak.subsystem.wf8.extension;
 
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.common.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.web.common.WarMetaData;
-import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide
@@ -157,15 +157,22 @@ public final class KeycloakAdapterConfigService {
     }
 
     public String getRealmName(DeploymentUnit deploymentUnit) {
-        String deploymentName = preferredDeploymentName(deploymentUnit);
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         return deployment.get(RealmDefinition.TAG_NAME).asString();
 
     }
 
+    protected boolean isDeploymentConfigured(DeploymentUnit deploymentUnit) {
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
+        if (! deployment.isDefined()) {
+            return false;
+        }
+        ModelNode resource = deployment.get(SecureDeploymentDefinition.RESOURCE.getName());
+        return resource.isDefined();
+    }
+
     public String getJSON(DeploymentUnit deploymentUnit) {
-        String deploymentName = preferredDeploymentName(deploymentUnit);
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
@@ -193,6 +200,13 @@ public final class KeycloakAdapterConfigService {
 
         String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
+        String deploymentName = preferredDeploymentName(deploymentUnit);
+        return this.secureDeployments.containsKey(deploymentName)
+          ? this.secureDeployments.get(deploymentName)
+          : new ModelNode();
     }
     
     // KEYCLOAK-3273: prefer module name if available

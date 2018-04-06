@@ -18,21 +18,22 @@
 package org.keycloak.testsuite.console;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.fragment.AdminConsoleAlert;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.support.FindBy;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *
@@ -70,9 +71,13 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
         if (!testContext.isAdminLoggedIn()) {
             loginToMasterRealmAdminConsoleAs(adminUser);
             testContext.setAdminLoggedIn(true);
-        } else {
-//            adminConsoleRealmPage.navigateTo();
         }
+    }
+
+    // TODO: Fix the tests so this workaround is not necessary
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
     }
 
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
@@ -106,12 +111,12 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     }
 
     public void assertAlertSuccess() {
-        assertTrue(alert.isSuccess());
+        assertTrue("Alert is not success", alert.isSuccess());
         alert.close();
     }
 
     public void assertAlertDanger() {
-        assertTrue(alert.isDanger());
+        assertTrue("Alert is not danger", alert.isDanger());
         alert.close();
     }
 

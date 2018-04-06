@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -42,6 +42,11 @@
         <auth.server>undertow</auth.server>
         <auth.server.undertow>true</auth.server.undertow>
 
+        <auth.server.crossdc>false</auth.server.crossdc>
+        <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
+        <auth.server.jboss.crossdc>false</auth.server.jboss.crossdc>
+        <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
+
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
@@ -57,18 +62,57 @@
         <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
-        
+        <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
+        <auth.server.truststore.password>secret</auth.server.truststore.password>
+
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
 
+        <!--debug properties-->
+        <auth.server.debug.port>5005</auth.server.debug.port>
+        <auth.server.debug.suspend>n</auth.server.debug.suspend>
+        <auth.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.debug.port}</auth.server.jboss.jvm.debug.args>
+
         <auth.server.remote>false</auth.server.remote>
-    
-        <adapter.test.props/>
+        <auth.server.profile/>
+        <auth.server.feature/>
+
+        <cache.server>undefined</cache.server>
+        <cache.server.container>cache-server-${cache.server}</cache.server.container>
+        <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
+        <cache.server.port.offset>1010</cache.server.port.offset>
+        <cache.server.management.port>11000</cache.server.management.port>
+        <cache.server.2.port.offset>2010</cache.server.2.port.offset>
+        <cache.server.2.management.port>12000</cache.server.2.management.port>
+        <cache.server.console.output>true</cache.server.console.output>
+        <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
+        <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
+        <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
+        <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
+        <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
+
+        <adapter.test.props>
+            -Dkeycloak.x509cert.lookup.provider=${keycloak.x509cert.lookup.provider}
+        </adapter.test.props>
+        <migration.import.properties/>
+        <kie.maven.settings/>
+
         <examples.home>${project.build.directory}/examples</examples.home>
 
-        <browser>phantomjs</browser>
+        <browser>htmlUnit</browser>
+        <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
+        <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
+        <github.username/>
+        <github.secretToken/>
+        <ieDriverArch/>
+        <js.browser>phantomjs</js.browser>
+        <js.chromeArguments>--headless</js.chromeArguments>
+        <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
+        <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <chromeBinary/>
+        <chromeArguments/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -76,6 +120,19 @@
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
 
         <skip.add.user.json>false</skip.add.user.json>
+        <skip.clean.second.cache>true</skip.clean.second.cache>
+        <skip.copy.auth.crossdc.nodes>true</skip.copy.auth.crossdc.nodes>
+        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
+        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
+        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
+        <client.truststore.passphrase>secret</client.truststore.passphrase>
+        <client.certificate.ca.path>${auth.server.config.dir}/ca.crt</client.certificate.ca.path>
+        <client.certificate.file>${auth.server.config.dir}/client.crt</client.certificate.file>
+        <client.key.file>${auth.server.config.dir}/client.key</client.key.file>
+        <client.key.passphrase>secret</client.key.passphrase>
+
+        <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
+        <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
     </properties>
 
     <build>
@@ -129,6 +186,42 @@
                                 </resources>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>copy-truststore</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/test/resources</directory>
+                                        <includes>
+                                            <include>keystore/keycloak.truststore</include>
+                                        </includes>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>clean-second-cache-server-arquillian-bug-workaround</id>
+                            <phase>process-test-resources</phase>
+                            <goals><goal>run</goal></goals>
+                            <configuration>
+                                <skip>${skip.clean.second.cache}</skip>
+                                <target>
+                                    <echo>${cache.server.home}/standalone-dc-2</echo>
+                                    <delete failonerror="false" dir="${cache.server.home}/standalone-dc-2" />
+                                    <mkdir dir="${cache.server.home}/standalone-dc-2/deployments" />
+                                </target>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -161,25 +254,87 @@
                             <auth.server.config.property.name>${auth.server.config.property.name}</auth.server.config.property.name>
                             <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
-                            
+                            <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
+                            <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
+                            <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+
+                            <auth.server.profile>${auth.server.profile}</auth.server.profile>
+                            <auth.server.feature>${auth.server.feature}</auth.server.feature>
+
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
 
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                            <migration.import.properties>${migration.import.properties}</migration.import.properties>
+                            <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
+                            <cli.log.output>${cli.log.output}</cli.log.output>
+                            <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
+                            <js.browser>${js.browser}</js.browser>
+                            <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
+                            <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
+                            <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+                            <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
+
+                            <github.username>${github.username}</github.username>
+                            <github.secretToken>${github.secretToken}</github.secretToken>
+                            <ieDriverArch>${ieDriverArch}</ieDriverArch>
+
                             <firefox_binary>${firefox_binary}</firefox_binary>
+                            <chromeBinary>${chromeBinary}</chromeBinary>
+                            <chromeArguments>${chromeArguments}</chromeArguments>
+
+                            <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
 
                             <project.version>${project.version}</project.version>
+                            <migration.project.version>${migration.project.version}</migration.project.version>
+                            <migration.product.version>${migration.product.version}</migration.product.version>
+
+                            <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
+                            <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
+                            <client.certificate.keystore.passphrase>${client.certificate.keystore.passphrase}</client.certificate.keystore.passphrase>
+                            <client.truststore>${client.truststore}</client.truststore>
+                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
+                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
+                            <client.key.file>${client.key.file}</client.key.file>
+                            <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+
+                            <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
+
+                            <!--cache server properties-->
+                            <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
+                            <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                            <auth.server.jboss.crossdc>${auth.server.jboss.crossdc}</auth.server.jboss.crossdc>
+                            <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
+
+                            <cache.server>${cache.server}</cache.server>
+                            <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>
+                            <cache.server.container>${cache.server.container}</cache.server.container>
+                            <cache.server.home>${cache.server.home}</cache.server.home>
+                            <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
+                            <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
+                            <cache.server.2.port.offset>${cache.server.2.port.offset}</cache.server.2.port.offset>
+                            <cache.server.2.management.port>${cache.server.2.management.port}</cache.server.2.management.port>
+
+                            <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
+                            <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
+                            <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                            <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
+
+                            <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
+
+                            <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
+                            <keycloak.password.blacklists.path>${project.build.directory}/dependency/password-blacklists</keycloak.password.blacklists.path>
                         </systemPropertyVariables>
                         <properties>
                             <property>
                                 <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.junit.AggregateResultsReporter</value>
+                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
                             </property>
                         </properties>
                     </configuration>
@@ -187,6 +342,35 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-karaf-managed</artifactId>
+            <version>2.1.0.CR18</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-osgi</artifactId>
+            <version>2.1.0.CR18</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.enterprise</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <profiles>
 
@@ -200,12 +384,18 @@
             </properties>
             <dependencies>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-remote</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
                 </dependency>
             </dependencies>
         </profile>
-            
+
         <profile>
             <id>auth-server-wildfly</id>
             <properties>
@@ -220,6 +410,12 @@
                 <dependency>
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -239,7 +435,414 @@
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>auth-servers-crossdc-undertow</id>
+            <properties>
+                <auth.servers.crossdc>true</auth.servers.crossdc>
+                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
+                <node.name>undertow</node.name>
+
+                <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
+                <cache.server.crossdc2.jvm.debug.port>6002</cache.server.crossdc2.jvm.debug.port>
+
+
+                <!-- default is "n", possible to override by e.g. -Dcache.server.crossdc1.debug.suspend=y -->
+                <cache.server.crossdc1.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc1.debug.suspend>
+                <cache.server.crossdc2.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc2.debug.suspend>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>cache.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-undertow" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <node.name>${node.name}</node.name>
+                                <pageload.timeout>20000</pageload.timeout>
+
+                                <!-- TODO Same props config is duplicated for undertow. Use separate profile? -->
+                                <cache.server.crossdc1.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc1.debug.suspend},address=localhost:${cache.server.crossdc1.jvm.debug.port}
+                                </cache.server.crossdc1.jvm.debug.args>
+                                <cache.server.crossdc2.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
+                                </cache.server.crossdc2.jvm.debug.args>
+
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <auth.servers.crossdc>true</auth.servers.crossdc>
+                <auth.server.jboss.crossdc>true</auth.server.jboss.crossdc>
+                <node.name>jboss</node.name>
+
+                <auth.server.crossdc01.home>${containers.home}/auth-server-${auth.server}-crossdc01</auth.server.crossdc01.home>
+                <auth.server.crossdc02.home>${containers.home}/auth-server-${auth.server}-crossdc02</auth.server.crossdc02.home>
+                <auth.server.crossdc11.home>${containers.home}/auth-server-${auth.server}-crossdc11</auth.server.crossdc11.home>
+                <auth.server.crossdc12.home>${containers.home}/auth-server-${auth.server}-crossdc12</auth.server.crossdc12.home>
+
+                <!-- property specifies keycloak-add-user.json file destination -->
+                <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
+
+                <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
+                <cache.server.crossdc2.jvm.debug.port>6002</cache.server.crossdc2.jvm.debug.port>
+                <auth.server.crossdc01.jvm.debug.port>5001</auth.server.crossdc01.jvm.debug.port>
+                <auth.server.crossdc02.jvm.debug.port>5002</auth.server.crossdc02.jvm.debug.port>
+                <auth.server.crossdc11.jvm.debug.port>5011</auth.server.crossdc11.jvm.debug.port>
+                <auth.server.crossdc12.jvm.debug.port>5012</auth.server.crossdc12.jvm.debug.port>
+
+                <!-- default is "n", possible to override by e.g. -Dauth.server.crossdc01.debug.suspend=y -->
+                <cache.server.crossdc1.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc1.debug.suspend>
+                <cache.server.crossdc2.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc2.debug.suspend>
+                <auth.server.crossdc01.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc01.debug.suspend>
+                <auth.server.crossdc02.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc02.debug.suspend>
+                <auth.server.crossdc11.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc11.debug.suspend>
+                <auth.server.crossdc12.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc12.debug.suspend>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-auth-server-crossdc-nodes</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.copy.auth.crossdc.nodes}</skip>
+                                        <target>
+                                            <move todir="${auth.server.crossdc01.home}">
+                                                <fileset dir="${auth.server.home}"/>
+                                            </move>
+                                            <copy todir="${auth.server.crossdc02.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                            <copy todir="${auth.server.crossdc11.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                            <copy todir="${auth.server.crossdc12.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profiles-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>cache.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>auth.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "auth-server-wildfly" or "auth-server-eap".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+
+                                <pageload.timeout>20000</pageload.timeout>
+
+                                <run.h2>true</run.h2>
+                                <node.name>${node.name}</node.name>
+
+                                <auth.server.crossdc01.home>${auth.server.crossdc01.home}</auth.server.crossdc01.home>
+                                <auth.server.crossdc02.home>${auth.server.crossdc02.home}</auth.server.crossdc02.home>
+                                <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
+                                <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
+
+                                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+
+                                <!--8101-->
+                                <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
+                                <!--8102-->
+                                <auth.server.crossdc02.port.offset>22</auth.server.crossdc02.port.offset>
+                                <!--8111-->
+                                <auth.server.crossdc11.port.offset>31</auth.server.crossdc11.port.offset>
+                                <!--8112-->
+                                <auth.server.crossdc12.port.offset>32</auth.server.crossdc12.port.offset>
+
+                                <auth.server.crossdc01.management.port>10011</auth.server.crossdc01.management.port>
+                                <auth.server.crossdc02.management.port>10012</auth.server.crossdc02.management.port>
+                                <auth.server.crossdc11.management.port>10021</auth.server.crossdc11.management.port>
+                                <auth.server.crossdc12.management.port>10022</auth.server.crossdc12.management.port>
+
+                                <!-- TODO Same props config is duplicated for undertow. Use separate profile? -->
+                                <cache.server.crossdc1.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc1.debug.suspend},address=localhost:${cache.server.crossdc1.jvm.debug.port}
+                                </cache.server.crossdc1.jvm.debug.args>
+                                <cache.server.crossdc2.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
+                                </cache.server.crossdc2.jvm.debug.args>
+
+                                <auth.server.crossdc01.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc01.debug.suspend},address=localhost:${auth.server.crossdc01.jvm.debug.port}
+                                </auth.server.crossdc01.jvm.debug.args>
+                                <auth.server.crossdc02.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc02.debug.suspend},address=localhost:${auth.server.crossdc02.jvm.debug.port}
+                                </auth.server.crossdc02.jvm.debug.args>
+                                <auth.server.crossdc11.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc11.debug.suspend},address=localhost:${auth.server.crossdc11.jvm.debug.port}
+                                </auth.server.crossdc11.jvm.debug.args>
+                                <auth.server.crossdc12.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc12.debug.suspend},address=localhost:${auth.server.crossdc12.jvm.debug.port}
+                                </auth.server.crossdc12.jvm.debug.args>
+
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>cache-server-infinispan</id>
+            <properties>
+                <cache.server>infinispan</cache.server>
+                <auth.server.crossdc>true</auth.server.crossdc>
+                <cache.server.jboss>true</cache.server.jboss>
+                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-infinispan" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-infinispan</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>cache-server-jdg</id>
+            <properties>
+                <cache.server>jdg</cache.server>
+                <auth.server.crossdc>true</auth.server.crossdc>
+                <cache.server.jboss>true</cache.server.jboss>
+                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>true</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-jdg" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-jdg</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-jdg</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>auth-server-profile</id>
+            <activation>
+                <property>
+                    <name>keycloak.profile</name>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.profile>-Dkeycloak.profile=${keycloak.profile}</auth.server.profile>
+            </properties>
+        </profile>
+
+        <!--
+            profile that enables/disables specified feature, for more details see
+            https://keycloak.gitbooks.io/documentation/content/server_installation/topics/profiles.html
+        -->
+        <profile>
+            <id>auth-server-enable-disable-feature</id>
+            <properties>
+                <auth.server.feature>-Dkeycloak.profile.feature.${feature.name}=${feature.value}</auth.server.feature>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>feature.name</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>feature.value</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
@@ -253,6 +856,8 @@
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
 
                 <auth.server.config.dir>${auth.server.backend1.home}/standalone/configuration</auth.server.config.dir>
+
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <build>
                 <plugins>
@@ -403,37 +1008,158 @@
             </build>
         </profile>
 
-        <!-- Profile for migration tests-->
-        
         <profile>
-            <id>migration</id>
+            <id>jdbc-driver-dependency</id>
             <activation>
                 <property>
-                    <name>migrated.auth.server.version</name>
+                    <name>jdbc.mvn.artifactId</name>
                 </property>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-migrated-auth-server-jboss</id>
-                                <phase>generate-resources</phase>
                                 <goals>
-                                    <goal>unpack</goal>
+                                    <goal>enforce</goal>
                                 </goals>
                                 <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-migration-server</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>zip</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <outputDirectory>${containers.home}</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.groupId</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profiles for migration tests-->
+
+        <profile>
+            <id>auth-server-migration</id>
+            <properties>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.props.previous>
+                    -Dkeycloak.migration.action=import
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=${migration.import.file}
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.props.previous>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>migration.mode</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-migrated-auth-server-jboss</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-migration-server</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                    <auth.server.jboss.migration>true</auth.server.jboss.migration>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
+                                    <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>migration-import</id>
+            <activation>
+                <property>
+                    <name>migration.mode</name>
+                    <value>import</value>
+                </property>
+            </activation>
+            <properties>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.properties>
+                    -Dkeycloak.migration.action=import
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=${migration.import.file}
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.properties>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                    </rules>
                                 </configuration>
                             </execution>
                         </executions>
@@ -443,16 +1169,26 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
-                                <auth.server.jboss.migration>true</auth.server.jboss.migration>
-                                <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
-                                <keycloak.migration.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</keycloak.migration.file>
+                                <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>        
-      
+        </profile>    
+
+        <profile>
+            <id>migration-productized</id>
+            <activation>
+                <property>
+                    <name>migrated.version.import.file.suffix</name>
+                </property>
+            </activation>
+            <properties>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
+            </properties>
+        </profile>
+
         <profile>
             <id>no-account</id>
             <properties>
@@ -482,18 +1218,26 @@
                 </file>
             </activation>
             <dependencies>
-
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-utils</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-
                 <!-- TEST DEPENDENCIES -->
                 <dependency>
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </dependency>
+
+                <!--Dependencies for creaper:-->
+
+                <dependency>
+                    <groupId>org.wildfly.extras.creaper</groupId>
+                    <artifactId>creaper-commands</artifactId>
+                    <version>${version.org.wildfly.extras.creaper}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
                 <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
@@ -523,9 +1267,18 @@
                             <groupId>org.apache.commons</groupId>
                             <artifactId>commons-io</artifactId>
                         </exclusion>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
                     </exclusions>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                    <version>4.5.3</version>
+                </dependency>
                 <dependency>
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>
@@ -570,6 +1323,12 @@
                     <scope>compile</scope>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.apache.sshd</groupId>
+                    <artifactId>sshd-core</artifactId>
+                    <version>1.2.0</version>
+                </dependency>
+
                 <!-- Email Test Server -->
                 <dependency>
                     <groupId>com.icegreen</groupId>
@@ -598,6 +1357,12 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-dependencies-server-all</artifactId>
                     <type>pom</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
 
                 <dependency>
@@ -631,10 +1396,6 @@
                     <version>${undertow-embedded.version}</version>
                 </dependency>
 
-                <dependency>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>async-http-servlet-3.0</artifactId>
-                </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
@@ -706,7 +1467,31 @@
                     <version>${mariadb.version}</version>
                 </dependency>
 
+                <!-- CLI -->
+                <!--
+                  - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
+                  - and MAC signature check on classes would fail otherwise with:
+                  - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
+                -->
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-client-cli-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+
             </dependencies>
+
+            <dependencyManagement>
+                <dependencies>
+                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
+                    <dependency>
+                        <groupId>org.seleniumhq.selenium</groupId>
+                        <artifactId>htmlunit-driver</artifactId>
+                        <version>2.27</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+
             <build>
                 <plugins>
                     <plugin>
@@ -737,7 +1522,7 @@
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
             </properties>
         </profile>
-        
+
     </profiles>
-    
+
 </project>

@@ -17,17 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -44,12 +33,18 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -68,7 +63,7 @@ public class AssertAdminEvents implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 // TODO: Ideally clear the queue just before testClass rather then before each method
-                context.getTestingClient().testing().clearAdminEventQueue();
+                clear();
                 base.evaluate();
                 // TODO Test should fail if there are leftover events
             }
@@ -89,12 +84,7 @@ public class AssertAdminEvents implements TestRule {
 
     // Clears both "classic" and admin events for now
     public void clear() {
-        Response res = context.getTestingClient().testing().clearAdminEventQueue();
-        try {
-            Assert.assertEquals("clear-admin-event-queue success", res.getStatus(), 200);
-        } finally {
-            res.close();
-        }
+        context.getTestingClient().testing().clearAdminEventQueue();
     }
 
     private AdminEventRepresentation fetchNextEvent() {
@@ -260,7 +250,7 @@ public class AssertAdminEvents implements TestRule {
 
                             // Reflection-based comparing for other types - compare the non-null fields of "expected" representation with the "actual" representation from the event
                             for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
-                                if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
+                                if (method.getParameterCount() == 0 && (method.getName().startsWith("get") || method.getName().startsWith("is"))) {
                                     Object expectedValue = Reflections.invokeMethod(method, expectedRep);
                                     if (expectedValue != null) {
                                         Object actualValue = Reflections.invokeMethod(method, actualRep);

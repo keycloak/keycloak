@@ -18,6 +18,7 @@
 package org.keycloak.theme;
 
 import freemarker.cache.URLTemplateLoader;
+import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.keycloak.Config;
@@ -44,6 +45,7 @@ public class FreeMarkerUtil {
     public String processTemplate(Object data, String templateName, Theme theme) throws FreeMarkerException {
         try {
             Template template;
+            cache = null;
             if (cache != null) {
                 String key = theme.getName() + "/" + templateName;
                 template = cache.get(key);
@@ -67,6 +69,13 @@ public class FreeMarkerUtil {
 
     private Template getTemplate(String templateName, Theme theme) throws IOException {
         Configuration cfg = new Configuration();
+        
+        // Assume *.ftl files are html.  This lets freemarker know how to
+        // sanitize and prevent XSS attacks.
+        if (templateName.toLowerCase().endsWith(".ftl")) {
+            cfg.setOutputFormat(HTMLOutputFormat.INSTANCE);
+        }
+        
         cfg.setTemplateLoader(new ThemeTemplateLoader(theme));
         return cfg.getTemplate(templateName, "UTF-8");
     }

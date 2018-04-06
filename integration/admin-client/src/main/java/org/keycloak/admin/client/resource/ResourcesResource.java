@@ -57,5 +57,15 @@ public interface ResourcesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    List<ResourceRepresentation> findByName(@QueryParam("name") String name);
+
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ResourceRepresentation> findByName(@QueryParam("name") String name, @QueryParam("owner") String owner);
+
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     List<ResourceRepresentation> resources();
 }

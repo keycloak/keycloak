@@ -1,0 +1,30 @@
+---
+categories: [Widgets]
+layout: page
+title: Tooltip
+resource: true
+---
+      <div class="tooltip-demo">
+        <a href="#" class="btn btn-default" data-toggle="tooltip" title="Caribbean Monk Seal, Barbary Lion, Seaside Sparrow">Caribbean Monk Seal, Barbary L...</a>
+      </div>
+      <br>
+      <h2>Tooltip Directions</h2>
+      <div class="tooltip-demo">
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis pretium mi at ante luctus dapibus. Fusce in tempus felis. Suspendisse tristique diam vel.</p>
+        <div class="bs-example-tooltips">
+          <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="left" title="Tooltip on left">Tooltip on left</button>
+          <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Tooltip on top">Tooltip on top</button>
+          <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="bottom" title="Tooltip on bottom">Tooltip on bottom</button>
+          <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="right" title="Tooltip on right">Tooltip on right</button>
+        </div>
+        <p style="margin-top: 10px;">Suspendisse tristique diam vel hendrerit aliquet. Vestibulum laoreet nisi ac egestas porttitor. Donec tempus elit convallis.</p>
+      </div>
+      <script>
+        // Initialize Tooltip
+        $(document).ready(function() {
+          $('.tooltip-demo').tooltip({
+            selector: "[data-toggle=tooltip]",
+            container: "body"
+          });
+        });
+      </script>

@@ -16,14 +16,15 @@
  */
 package org.keycloak.partialimport;
 
-import java.util.List;
-import java.util.Set;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.RoleResource;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * PartialImport handler for Realm Roles.
@@ -72,7 +73,7 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
     }
 
     @Override
-    public String existsMessage(RoleRepresentation roleRep) {
+    public String existsMessage(RealmModel realm, RoleRepresentation roleRep) {
         return "Realm role '" + getName(roleRep) + "' already exists.";
     }
 

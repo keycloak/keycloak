@@ -15,6 +15,7 @@ AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationF
  * session - current KeycloakSession {@see org.keycloak.models.KeycloakSession}
  * httpRequest - current HttpRequest {@see org.jboss.resteasy.spi.HttpRequest}
  * script - current script {@see org.keycloak.models.ScriptModel}
+ * authenticationSession - current authentication session {@see org.keycloak.sessions.AuthenticationSessionModel}
  * LOG - current logger {@see org.jboss.logging.Logger}
  *
  * You one can extract current http request headers via:
@@ -24,7 +25,8 @@ AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationF
  */
 function authenticate(context) {
 
-    LOG.info(script.name + " trace auth for: " + user.username);
+    var username = user ? user.username : "anonymous";
+    LOG.info(script.name + " trace auth for: " + username);
 
     var authShouldFail = false;
     if (authShouldFail) {

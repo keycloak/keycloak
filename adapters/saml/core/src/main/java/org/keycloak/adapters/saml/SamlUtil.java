@@ -40,7 +40,7 @@ public class SamlUtil {
             httpFacade.getResponse().setHeader("Content-Type", "text/html");
             httpFacade.getResponse().setHeader("Pragma", "no-cache");
             httpFacade.getResponse().setHeader("Cache-Control", "no-cache, no-store");
-            httpFacade.getResponse().getOutputStream().write(html.getBytes());
+            httpFacade.getResponse().getOutputStream().write(html.getBytes(GeneralConstants.SAML_CHARSET));
             httpFacade.getResponse().end();
         } else {
             String uri = asRequest ? binding.redirectBinding(document).requestURI(actionUrl).toString() : binding.redirectBinding(document).responseURI(actionUrl).toString();

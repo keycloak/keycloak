@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -43,26 +44,36 @@ public class CustomerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         PrintWriter pw = resp.getWriter();
+        KeycloakSecurityContext context = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
         if (req.getRequestURI().endsWith("logout")) {
             resp.setStatus(200);
             pw.println("servlet logout ok");
+            
+            //Clear principal form database-service by calling logout
+            StringBuilder result = new StringBuilder();
+            String urlBase = ServletTestUtils.getUrlBase(req);
 
+            URL url = new URL(urlBase + "/customer-db/");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("DELETE");
+            conn.setRequestProperty(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString());
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String line;
+            while ((line = rd.readLine()) != null) {
+              result.append(line);
+            }
+            rd.close();
+            pw.println(result.toString());
             // Call logout before pw.flush
             req.logout();
             pw.flush();
             return;
         }
-        KeycloakSecurityContext context = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
+       
 
         //try {
         StringBuilder result = new StringBuilder();
-        String urlBase;
-
-        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-            urlBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-        } else {
-            urlBase = System.getProperty("app.server.base.url", "http://localhost:8280");
-        }
+        String urlBase = ServletTestUtils.getUrlBase(req);
 
         URL url = new URL(urlBase + "/customer-db/");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -92,4 +103,5 @@ public class CustomerServlet extends HttpServlet {
 //            client.close();
 //        }
     }
+
 }

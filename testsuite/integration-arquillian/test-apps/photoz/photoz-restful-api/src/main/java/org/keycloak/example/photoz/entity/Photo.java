@@ -17,6 +17,7 @@
  */
 package org.keycloak.example.photoz.entity;
 
+import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,7 +31,7 @@ import javax.persistence.ManyToOne;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @Entity
-public class Photo {
+public class Photo implements Serializable {
 
     @Id
     @GeneratedValue

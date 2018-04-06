@@ -21,7 +21,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.auth.page.login.Registration;
+import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
@@ -44,6 +46,9 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Page
     private Registration testRealmRegistrationPage;
+
+    @Page
+    private TermsAndConditions termsAndConditionsPage;
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -68,7 +73,53 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
         registerTestUser();
 
-        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
+        Assert.assertTrue(termsAndConditionsPage.isCurrent());
+    }
+
+    @Test
+    public void defaultCheckboxUncheckableWhenEnabledIsFalse() {
+        requiredActionsPage.setTermsAndConditionEnabled(false);
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionEnabled());
+        requiredActionsPage.setTermsAndConditionDefaultAction(true);
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+    }
+
+    @Test
+    public void defaultCheckboxUncheckedWhenEnabledBecomesFalse() {
+        requiredActionsPage.setTermsAndConditionEnabled(true);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionEnabled());
+        requiredActionsPage.setTermsAndConditionDefaultAction(true);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionDefaultAction());
+        requiredActionsPage.setTermsAndConditionEnabled(false);
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+        assertAlertSuccess();
+    }
+
+    @Test
+    public void defaultCheckboxKeepsValueWhenEnabledIsToggled() {
+        requiredActionsPage.setTermsAndConditionEnabled(true);
+        requiredActionsPage.setTermsAndConditionDefaultAction(false);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+        requiredActionsPage.setTermsAndConditionEnabled(false);
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+        requiredActionsPage.setTermsAndConditionEnabled(true);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+
+        requiredActionsPage.setTermsAndConditionDefaultAction(true);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionDefaultAction());
+        requiredActionsPage.setTermsAndConditionEnabled(false);
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertFalse(requiredActionsPage.getTermsAndConditionDefaultAction());
+        requiredActionsPage.setTermsAndConditionEnabled(true);
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionEnabled());
+        Assert.assertTrue(requiredActionsPage.getTermsAndConditionDefaultAction());
+
+        assertAlertSuccess();
     }
 
     @Test
@@ -82,7 +133,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
         registerTestUser();
 
-        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Mobile Authenticator Setup')]]"));
+        Assert.assertTrue(driver.findElement(By.id("kc-page-title")).getText().equals("Mobile Authenticator Setup"));
     }
 
     private void allowTestRealmUserRegistration() {

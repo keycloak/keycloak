@@ -17,19 +17,26 @@
 
 package org.keycloak.testsuite;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,6 +79,10 @@ public class Assert extends org.junit.Assert {
             return ((UserRepresentation) o1).getUsername();
         } else if (o1 instanceof UserFederationProviderFactoryRepresentation) {
             return ((UserFederationProviderFactoryRepresentation) o1).getId();
+        } else if (o1 instanceof GroupRepresentation) {
+            return ((GroupRepresentation) o1).getName();
+        }else if (o1 instanceof ComponentRepresentation) {
+            return ((ComponentRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();
@@ -99,6 +110,26 @@ public class Assert extends org.junit.Assert {
         }
     }
 
+    /**
+     * Assert all the fields from map available. Array "expected" contains pairs when first value from pair is expected key
+     * and second is the expected value from the map for target key.
+     *
+     * Example config = {"key1" -> "value1" , "key2" -> "value2" }
+     * then assertMap(config, "key1", "value1", "key2", "value2" will return true
+     *
+     */
+    public static void assertMultivaluedMap(MultivaluedHashMap<String, String> config, String... expected) {
+        if (expected == null) {
+            expected = new String[] {};
+        }
+
+        for (int i=0 ; i<expected.length ; i+=2) {
+            String key = expected[i];
+            String value = expected[i+1];
+            Assert.assertEquals(value, config.getFirst(key));
+        }
+    }
+
     public static void assertProviderConfigProperty(ConfigPropertyRepresentation property, String name, String label, String defaultValue, String helpText, String type) {
         Assert.assertEquals(name, property.getName());
         Assert.assertEquals(label, property.getLabel());
@@ -106,4 +137,9 @@ public class Assert extends org.junit.Assert {
         Assert.assertEquals(helpText, property.getHelpText());
         Assert.assertEquals(type, property.getType());
     }
+
+    public static void assertExpiration(int actual, int expected) {
+        org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+    }
+
 }

@@ -17,16 +17,16 @@
 
 package org.keycloak.examples.providers.events;
 
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>

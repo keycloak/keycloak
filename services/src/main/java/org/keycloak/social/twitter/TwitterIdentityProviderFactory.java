@@ -20,6 +20,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Pedro Igor
@@ -34,8 +35,8 @@ public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFact
     }
 
     @Override
-    public TwitterIdentityProvider create(IdentityProviderModel model) {
-        return new TwitterIdentityProvider(new OAuth2IdentityProviderConfig(model));
+    public TwitterIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new TwitterIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
     }
 
     @Override

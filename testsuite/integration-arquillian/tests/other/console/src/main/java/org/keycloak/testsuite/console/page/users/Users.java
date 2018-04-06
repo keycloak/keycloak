@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
+import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -26,14 +28,9 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.keycloak.representations.idm.UserRepresentation;
 
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.DataTable;
-
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.openqa.selenium.By.*;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
 
 /**
  *
@@ -55,7 +52,7 @@ public class Users extends AdminConsoleRealm {
     public static final String IMPERSONATE = "Impersonate";
     public static final String DELETE = "Delete";
 
-    @FindBy(xpath = "//div[./h1[text()='Users']]/table")
+    @FindBy(id = "user-table")
     private UsersTable table;
 
     public UsersTable table() {
@@ -81,18 +78,15 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void clickUser(String username) {
-            URLUtils.navigateToUri(driver, getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")).getAttribute("href"), true);
-            waitForPageToLoad(driver);
+            clickLink(getRowByUsername(username).findElement(By.xpath("./td[position()=1]")));
         }
 
         public void editUser(String username) {
             clickRowActionButton(getRowByUsername(username), EDIT);
-            waitForPageToLoad(driver);
         }
 
         public void impersonateUser(String username) {
             clickRowActionButton(getRowByUsername(username), IMPERSONATE);
-            waitForPageToLoad(driver);
         }
 
         public void deleteUser(String username) {

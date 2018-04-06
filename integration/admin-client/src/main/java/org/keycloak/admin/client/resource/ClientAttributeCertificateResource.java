@@ -17,16 +17,17 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.keycloak.representations.KeyStoreConfig;
+import org.keycloak.representations.idm.CertificateRepresentation;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
-import org.keycloak.representations.KeyStoreConfig;
-import org.keycloak.representations.idm.CertificateRepresentation;
 
 /**
  *

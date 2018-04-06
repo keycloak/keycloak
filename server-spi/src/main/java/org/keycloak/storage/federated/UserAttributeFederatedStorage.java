@@ -21,17 +21,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserAttributeFederatedStorage {
-    void setSingleAttribute(RealmModel realm, UserModel user, String name, String value);
-    void setAttribute(RealmModel realm, UserModel user, String name, List<String> values);
-    void removeAttribute(RealmModel realm, UserModel user, String name);
-    MultivaluedHashMap<String, String> getAttributes(RealmModel realm, UserModel user);
+    void setSingleAttribute(RealmModel realm, String userId, String name, String value);
+    void setAttribute(RealmModel realm, String userId, String name, List<String> values);
+    void removeAttribute(RealmModel realm, String userId, String name);
+    MultivaluedHashMap<String, String> getAttributes(RealmModel realm, String userId);
     List<String> getUsersByUserAttribute(RealmModel realm, String name, String value);
 }

@@ -5,7 +5,7 @@
             <span class="fa fa-exchange"></span>
         </div>
     <h1>
-        Identity Providers
+        {{:: 'identity-providers' | translate}}
     </h1>
     <p class="">
         Through Identity Brokering it's easy to allow users to authenticate to Keycloak using external Identity Providers or Social Networks.<br> We have built-in support for OpenID Connect and SAML 2.0 as well as a number of social networks such as Google, GitHub, Facebook and Twitter.
@@ -15,7 +15,7 @@
         <div class="row" data-ng-show="access.manageIdentityProviders">
           <div class="col-sm-4 col-sm-offset-4">
             <div class="form-group">
-            <select class="selectpicker form-control" ng-model="provider"
+            <select class="form-control" ng-model="provider"
               ng-options="p.name group by p.groupName for p in allProviders track by p.id"
               data-ng-change="addProvider(provider); provider = null">
               <option value="" disabled selected>{{:: 'add-provider.placeholder' | translate}}</option>
@@ -33,7 +33,7 @@
                     <caption class="hidden">{{:: 'table-of-identity-providers' | translate}}</caption>
                     <thead>
                     <tr>
-                        <th colspan="6" class="kc-table-actions">
+                        <th colspan="8" class="kc-table-actions">
                             <div class="dropdown pull-right" data-ng-show="access.manageIdentityProviders">
                                 <select class="form-control" ng-model="provider"
                                         ng-options="p.name group by p.groupName for p in allProviders track by p.id"
@@ -47,6 +47,8 @@
                         <th>{{:: 'name' | translate}}</th>
                         <th>{{:: 'provider' | translate}}</th>
                         <th>{{:: 'enabled' | translate}}</th>
+                        <th>{{:: 'hidden' | translate}}</th>
+                        <th>{{:: 'link-only-column' | translate}}</th>
                         <th width="15%">{{:: 'gui-order' | translate}}</th>
                         <th colspan="2">{{:: 'actions' | translate}}</th>
                     </tr>
@@ -62,6 +64,8 @@
                         </td>
                         <td>{{identityProvider.providerId}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>
+                        <td translate="{{identityProvider.config.hideOnLoginPage == 'true'}}"></td>
+                        <td translate="{{identityProvider.linkOnly}}"></td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                         <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</td>
                         <td class="kc-action-cell" data-ng-show="access.manageIdentityProviders" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>

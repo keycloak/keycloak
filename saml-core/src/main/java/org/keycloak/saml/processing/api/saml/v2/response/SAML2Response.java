@@ -16,27 +16,6 @@
  */
 package org.keycloak.saml.processing.api.saml.v2.response;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
-import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.saml.processing.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
-import org.keycloak.saml.processing.core.saml.v2.factories.SAMLAssertionFactory;
-import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
-import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.ActionType;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -57,7 +36,28 @@ import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
+import org.keycloak.saml.processing.core.saml.v2.factories.SAMLAssertionFactory;
+import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
+import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -85,9 +85,9 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class SAML2Response {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
-    private long ASSERTION_VALIDITY = 5000; // 5secs in milis
+    private final long ASSERTION_VALIDITY = 5000; // 5secs in milis
 
-    private long CLOCK_SKEW = 2000; // 2secs
+    private final long CLOCK_SKEW = 2000; // 2secs
 
     private SAMLDocumentHolder samlDocumentHolder = null;
 
@@ -118,7 +118,7 @@ public class SAML2Response {
         act.addAuthenticatingAuthority(URI.create(authContextDeclRef));
 
         AuthnContextType.AuthnContextTypeSequence sequence = act.new AuthnContextTypeSequence();
-        sequence.setClassRef(new AuthnContextClassRefType(URI.create(JBossSAMLURIConstants.AC_PASSWORD.get())));
+        sequence.setClassRef(new AuthnContextClassRefType(JBossSAMLURIConstants.AC_PASSWORD.getUri()));
         act.setSequence(sequence);
 
         authnStatement.setAuthnContext(act);
@@ -264,7 +264,7 @@ public class SAML2Response {
 
         subjectType.addConfirmation(subjectConfirmation);
 
-        AssertionType assertionType = null;
+        AssertionType assertionType;
         NameIDType issuerID = issuerInfo.getIssuer();
         try {
             issueInstant = XMLTimeUtil.getIssueInstant();
@@ -373,10 +373,10 @@ public class SAML2Response {
             throw logger.nullArgumentError("InputStream");
 
         Document samlDocument = DocumentUtil.getDocument(is);
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
-        return (EncryptedAssertionType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        return (EncryptedAssertionType) samlParser.parse(samlDocument);
 
     }
 
@@ -396,9 +396,9 @@ public class SAML2Response {
             throw logger.nullArgumentError("InputStream");
         Document samlDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        return (AssertionType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        return (AssertionType) samlParser.parse(samlDocument);
     }
 
     /**
@@ -426,10 +426,10 @@ public class SAML2Response {
 
         Document samlResponseDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
-        ResponseType responseType = (ResponseType) samlParser.parse(DocumentUtil.getNodeAsStream(samlResponseDocument));
+        ResponseType responseType = (ResponseType) samlParser.parse(samlResponseDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(responseType, samlResponseDocument);
         return responseType;
@@ -457,11 +457,10 @@ public class SAML2Response {
             logger.trace("SAML Response Document: " + DocumentUtil.asString(samlResponseDocument));
         }
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
-        InputStream responseStream = DocumentUtil.getNodeAsStream(samlResponseDocument);
-        SAML2Object responseType = (SAML2Object) samlParser.parse(responseStream);
+        SAML2Object responseType = (SAML2Object) samlParser.parse(samlResponseDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(responseType, samlResponseDocument);
         return responseType;

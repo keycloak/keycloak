@@ -1,0 +1,73 @@
+#
+# Copyright 2016 Red Hat, Inc. and/or its affiliates
+# and other contributors as indicated by the @author tags.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+org.keycloak.provider.ExceptionConverterSpi
+org.keycloak.storage.UserStorageProviderSpi
+org.keycloak.storage.federated.UserFederatedStorageProviderSpi
+org.keycloak.models.RealmSpi
+org.keycloak.models.ActionTokenStoreSpi
+org.keycloak.models.CodeToTokenStoreSpi
+org.keycloak.models.UserSessionSpi
+org.keycloak.models.UserSpi
+org.keycloak.models.session.UserSessionPersisterSpi
+org.keycloak.models.dblock.DBLockSpi
+org.keycloak.migration.MigrationSpi
+org.keycloak.events.EventListenerSpi
+org.keycloak.events.EventStoreSpi
+org.keycloak.exportimport.ExportSpi
+org.keycloak.exportimport.ImportSpi
+org.keycloak.timer.TimerSpi
+org.keycloak.scripting.ScriptingSpi
+org.keycloak.services.managers.BruteForceProtectorSpi
+org.keycloak.services.resource.RealmResourceSPI
+org.keycloak.sessions.AuthenticationSessionSpi
+org.keycloak.sessions.StickySessionEncoderSpi
+org.keycloak.protocol.ClientInstallationSpi
+org.keycloak.protocol.LoginProtocolSpi
+org.keycloak.protocol.ProtocolMapperSpi
+org.keycloak.broker.provider.IdentityProviderSpi
+org.keycloak.broker.provider.IdentityProviderMapperSpi
+org.keycloak.broker.social.SocialProviderSpi
+org.keycloak.forms.account.AccountSpi
+org.keycloak.forms.login.LoginFormsSpi
+org.keycloak.email.EmailSenderSpi
+org.keycloak.email.EmailTemplateSpi
+org.keycloak.executors.ExecutorsSpi
+org.keycloak.theme.ThemeSpi
+org.keycloak.truststore.TruststoreSpi
+org.keycloak.connections.httpclient.HttpClientSpi
+org.keycloak.models.cache.CacheRealmProviderSpi
+org.keycloak.models.cache.CacheUserProviderSpi
+org.keycloak.authentication.AuthenticatorSpi
+org.keycloak.authentication.ClientAuthenticatorSpi
+org.keycloak.authentication.RequiredActionSpi
+org.keycloak.authentication.FormAuthenticatorSpi
+org.keycloak.authentication.FormActionSpi
+org.keycloak.cluster.ClusterSpi
+org.keycloak.authorization.policy.provider.PolicySpi
+org.keycloak.authorization.store.StoreFactorySpi
+org.keycloak.authorization.AuthorizationSpi
+org.keycloak.models.cache.authorization.CachedStoreFactorySpi
+org.keycloak.protocol.oidc.TokenIntrospectionSpi
+org.keycloak.policy.PasswordPolicySpi
+org.keycloak.policy.PasswordPolicyManagerSpi
+org.keycloak.transaction.TransactionManagerLookupSpi
+org.keycloak.credential.hash.PasswordHashSpi
+org.keycloak.credential.CredentialSpi
+org.keycloak.keys.PublicKeyStorageSpi
+org.keycloak.keys.KeySpi
+org.keycloak.storage.client.ClientStorageProviderSpi

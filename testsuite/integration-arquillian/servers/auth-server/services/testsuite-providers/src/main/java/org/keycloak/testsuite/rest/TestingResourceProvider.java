@@ -17,35 +17,61 @@
 
 package org.keycloak.testsuite.rest;
 
-import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import org.infinispan.Cache;
-import org.keycloak.OAuth2Constants;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.components.TestProvider;
+import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.resource.TestCacheResource;
+import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
+import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
+import org.keycloak.testsuite.runonserver.ModuleUtil;
+import org.keycloak.testsuite.runonserver.FetchOnServer;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -55,50 +81,37 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
-
-import static org.keycloak.exportimport.ExportImportConfig.*;
+import java.util.TimerTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TestingResourceProvider implements RealmResourceProvider {
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
+
+    @Context
+    private HttpRequest request;
 
     @Override
     public Object getResource() {
         return this;
     }
 
-    public TestingResourceProvider(KeycloakSession session) {
+    public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
+        this.suspendedTimerTasks = suspendedTimerTasks;
     }
 
     @POST
@@ -135,9 +148,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/get-user-session")
+    @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
@@ -145,7 +158,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
 
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
             throw new NotFoundException("Session not found");
         }
@@ -164,7 +177,30 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         session.sessions().removeExpired(realm);
+        session.authenticationSessions().removeExpired(realm);
+        session.realms().removeExpiredClientInitialAccess();
+
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/get-client-sessions-count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(name);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+
+        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        if (sessionModel == null) {
+            throw new NotFoundException("Session not found");
+        }
+
+        // TODO: Might need optimization to prevent loading client sessions from cache
+        return sessionModel.getAuthenticatedClientSessions().size();
     }
 
     @GET
@@ -522,35 +558,22 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/cache/{cache}/{id}")
+    @Path("/get-sso-cookie")
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id) {
-        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<Object, Object> cache = provider.getCache(cacheName);
-        return cache.containsKey(id);
+    public String getSSOCookieValue() {
+        Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
+        return cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE).getValue();
     }
+
+
+    @Path("/cache/{cache}")
+    public TestCacheResource getCacheResource(@PathParam("cache") String cacheName) {
+        return new TestCacheResource(session, cacheName);
+    }
+
 
     @Override
     public void close() {
-    }
-
-    /*
-     * Migration from KeycloakRule#verifyCode
-     */
-    @GET
-    @Path("/verify-code")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code) {
-        RealmModel realm = session.realms().getRealm(realmName);
-        try {
-            ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-            if (accessCode == null) {
-                throw new AssertionError("Invalid code");
-            }
-            return accessCode.getClientSession().getId();
-        } catch (Throwable t) {
-            throw new AssertionError("Failed to parse code", t);
-        }
     }
 
     @POST
@@ -600,8 +623,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
-        UserModel user = factory.getInstance(session, null).getUserByUsername(realm, userName);
+        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+        UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
@@ -640,6 +663,106 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/export-import")
     public TestingExportImportResource getExportImportResource() {
         return new TestingExportImportResource(session);
+    }
+
+    @GET
+    @Path("/test-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails() {
+        Map<String, TestProvider.DetailsRepresentation> reps = new HashMap<>();
+
+        RealmModel realm = session.getContext().getRealm();
+        for (ComponentModel c : realm.getComponents(realm.getId(), TestProvider.class.getName())) {
+            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory().getProviderFactory(TestProvider.class, c.getProviderId());
+            TestProviderFactory factory = (TestProviderFactory) f;
+            TestProvider p = (TestProvider) factory.create(session, c);
+            reps.put(c.getName(), p.getDetails());
+        }
+
+        return reps;
+    }
+
+    @GET
+    @Path("/identity-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
+        return session.getContext().getRealm().getIdentityProviderByAlias(alias).getConfig();
+    }
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
+        System.setProperty("java.security.krb5.conf", krb5ConfFile);
+    }
+
+    @POST
+    @Path("/suspend-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response suspendPeriodicTasks() {
+        suspendTask(ClearExpiredUserSessions.TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_OFFLINE_PERIODIC_TASK_NAME);
+
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/uncaught-error")
+    public Response uncaughtError() {
+        throw new RuntimeException("Uncaught error");
+    }
+
+    private void suspendTask(String taskName) {
+        TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
+
+        if (taskContext != null) {
+            suspendedTimerTasks.put(taskName, taskContext);
+        }
+    }
+
+    @POST
+    @Path("/restore-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response restorePeriodicTasks() {
+        TimerProvider timer = session.getProvider(TimerProvider.class);
+
+        for (Map.Entry<String, TimerProvider.TimerTaskContext> task : suspendedTimerTasks.entrySet()) {
+            timer.schedule(task.getValue().getRunnable(), task.getValue().getIntervalMillis(), task.getKey());
+        }
+
+        suspendedTimerTasks.clear();
+
+        return Response.noContent().build();
+    }
+
+
+    @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public String runOnServer(String runOnServer) throws Exception {
+        try {
+            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
+            Object r = SerializationUtil.decode(runOnServer, cl);
+
+            if (r instanceof FetchOnServer) {
+                Object result = ((FetchOnServer) r).run(session);
+                return result != null ? JsonSerialization.writeValueAsString(result) : null;
+            } else if (r instanceof RunOnServer) {
+                ((RunOnServer) r).run(session);
+                return null;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } catch (Throwable t) {
+            return SerializationUtil.encodeException(t);
+        }
+    }
+
+    @Path("/javascript")
+    public TestJavascriptResource getJavascriptResource() {
+        return new TestJavascriptResource();
     }
 
     private RealmModel getRealmByName(String realmName) {

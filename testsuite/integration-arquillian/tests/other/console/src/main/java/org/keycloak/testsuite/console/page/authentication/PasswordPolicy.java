@@ -1,14 +1,12 @@
 package org.keycloak.testsuite.console.page.authentication;
 
-import org.jboss.arquillian.graphene.findby.ByJQuery;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import java.util.List;
-
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -36,8 +34,9 @@ public class PasswordPolicy extends Authentication {
     public void addPolicy(Type policy, String value) {
         waitUntilElement(addPolicySelectElement).is().present();
         addPolicySelect.selectByVisibleText(policy.getName());
-        setPolicyValue(policy, value);
+        if (value != null) {setPolicyValue(policy, value);}
         primaryButton.click();
+        waitForPageToLoad();
     }
 
 
@@ -46,15 +45,15 @@ public class PasswordPolicy extends Authentication {
     }
 
     public void addPolicy(Type policy) {
-        addPolicySelect.selectByVisibleText(policy.getName());
-        primaryButton.click();
+        addPolicy(policy, null);
     }
 
     public void removePolicy(Type policy) {
         getPolicyRow(policy).findElement(By.cssSelector("td.kc-action-cell")).click();
-        if (!primaryButton.isDisplayed()) {
+        if (primaryButton.isEnabled()) {
             primaryButton.click();
         }
+        waitForPageToLoad();
     }
 
     public void editPolicy(Type policy, int value) {
@@ -63,7 +62,10 @@ public class PasswordPolicy extends Authentication {
 
     public void editPolicy(Type policy, String value) {
         setPolicyValue(policy, value);
-        primaryButton.click();
+        if (primaryButton.isEnabled()) {
+            primaryButton.click();
+        }
+        waitForPageToLoad();
     }
 
     private void setPolicyValue(Type policy, String value) {

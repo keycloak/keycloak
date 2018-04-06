@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,18 +29,19 @@ import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -209,7 +209,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public boolean validateSecret(String secret) {
-        return secret.equals(entity.getSecret());
+        return MessageDigest.isEqual(secret.getBytes(), entity.getSecret().getBytes());
     }
 
     @Override
@@ -223,7 +223,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-         public Set<RoleModel> getRealmScopeMappings() {
+    public Set<RoleModel> getRealmScopeMappings() {
         Set<RoleModel> roleMappings = getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<>();
@@ -241,47 +241,22 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Set<RoleModel> getScopeMappings() {
-        TypedQuery<String> query = em.createNamedQuery("clientScopeMappingIds", String.class);
-        query.setParameter("client", getEntity());
-        List<String> ids = query.getResultList();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String roleId : ids) {
-            RoleModel role = realm.getRoleById(roleId);
-            if (role == null) continue;
-            roles.add(role);
-        }
-        return roles;
+        return getEntity().getScopeMapping().stream()
+                .map(RoleEntity::getId)
+                .map(realm::getRoleById)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return;
-        ScopeMappingEntity entity = new ScopeMappingEntity();
-        entity.setClient(getEntity());
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        entity.setRole(roleEntity);
-        em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        getEntity().getScopeMapping().add(roleEntity);
     }
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        TypedQuery<ScopeMappingEntity> query = getRealmScopeMappingQuery(role);
-        List<ScopeMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return;
-        for (ScopeMappingEntity entity : results) {
-            em.remove(entity);
-        }
-    }
-
-    protected TypedQuery<ScopeMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
-        TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("hasScope", ScopeMappingEntity.class);
-        query.setParameter("client", getEntity());
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        query.setParameter("role", roleEntity);
-        return query;
+        getEntity().getScopeMapping().remove(RoleAdapter.toRoleEntity(role, em));
     }
 
     @Override
@@ -293,6 +268,29 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public void setProtocol(String protocol) {
         entity.setProtocol(protocol);
 
+    }
+
+    @Override
+    public void setAuthenticationFlowBindingOverride(String name, String value) {
+        entity.getAuthFlowBindings().put(name, value);
+
+    }
+
+    @Override
+    public void removeAuthenticationFlowBindingOverride(String name) {
+        entity.getAuthFlowBindings().remove(name);
+    }
+
+    @Override
+    public String getAuthenticationFlowBindingOverride(String name) {
+        return entity.getAuthFlowBindings().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getAuthFlowBindings());
+        return copy;
     }
 
     @Override
@@ -690,7 +688,6 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         }
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         entities.add(roleEntity);
-        em.flush();
     }
 
     @Override

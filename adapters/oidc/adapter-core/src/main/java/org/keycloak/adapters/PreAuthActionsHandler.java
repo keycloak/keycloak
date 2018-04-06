@@ -20,20 +20,29 @@ package org.keycloak.adapters;
 import java.security.PublicKey;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.authentication.ClientCredentialsProvider;
+import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.StreamUtil;
+
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -84,6 +93,10 @@ public class PreAuthActionsHandler {
         } else if (requestUri.endsWith(AdapterConstants.K_TEST_AVAILABLE)) {
             if (!resolveDeployment()) return true;
             handleTestAvailable();
+            return true;
+        } else if (requestUri.endsWith(AdapterConstants.K_JWKS)) {
+            if (!resolveDeployment()) return true;
+            handleJwksRequest();
             return true;
         }
         return false;
@@ -142,7 +155,7 @@ public class PreAuthActionsHandler {
             } else {
                 log.debugf("logout of all sessions for application '%s'", action.getResource());
                 if (action.getNotBefore() > deployment.getNotBefore()) {
-                    deployment.setNotBefore(action.getNotBefore());
+                    deployment.updateNotBefore(action.getNotBefore());
                 }
                 userSessionManagement.logoutAll();
             }
@@ -164,7 +177,7 @@ public class PreAuthActionsHandler {
             }
             PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
             if (!validateAction(action)) return;
-            deployment.setNotBefore(action.getNotBefore());
+            deployment.updateNotBefore(action.getNotBefore());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -201,7 +214,7 @@ public class PreAuthActionsHandler {
 
         try {
             JWSInput input = new JWSInput(token);
-            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input, deployment);
+            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input.getHeader().getKeyId(), deployment);
             if (RSAProvider.verify(input, publicKey)) {
                 return input;
             }
@@ -239,6 +252,28 @@ public class PreAuthActionsHandler {
             facade.getResponse().setStatus(200);
             facade.getResponse().setHeader("Content-Type", "application/json");
             JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), VersionRepresentation.SINGLETON);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void handleJwksRequest() {
+        try {
+            JSONWebKeySet jwks = new JSONWebKeySet();
+            ClientCredentialsProvider clientCredentialsProvider = deployment.getClientAuthenticator();
+
+            // For now, just get signature key from JWT provider. We can add more if we support encryption etc.
+            if (clientCredentialsProvider instanceof JWTClientCredentialsProvider) {
+                PublicKey publicKey = ((JWTClientCredentialsProvider) clientCredentialsProvider).getPublicKey();
+                JWK jwk = JWKBuilder.create().rs256(publicKey);
+                jwks.setKeys(new JWK[] { jwk });
+            } else {
+                jwks.setKeys(new JWK[] {});
+            }
+
+            facade.getResponse().setStatus(200);
+            facade.getResponse().setHeader("Content-Type", "application/json");
+            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), jwks);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

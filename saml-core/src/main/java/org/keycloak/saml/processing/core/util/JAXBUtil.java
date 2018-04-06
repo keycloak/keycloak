@@ -18,6 +18,9 @@ package org.keycloak.saml.processing.core.util;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+
+import org.keycloak.saml.common.util.SecurityActions;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -46,7 +49,7 @@ public class JAXBUtil {
 
     public static final String W3C_XML_SCHEMA_NS_URI = "http://www.w3.org/2001/XMLSchema";
 
-    private static HashMap<String, JAXBContext> jaxbContextHash = new HashMap<String, JAXBContext>();
+    private static final HashMap<String, JAXBContext> jaxbContextHash = new HashMap<String, JAXBContext>();
 
     static {
         // Useful on Sun VMs. Harmless on other VMs.
@@ -89,7 +92,7 @@ public class JAXBUtil {
 
         JAXBContext jc = getJAXBContext(pkgName);
         Marshaller marshaller = jc.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, GeneralConstants.SAML_CHARSET_NAME);
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.FALSE); // Breaks signatures
         return marshaller;
     }

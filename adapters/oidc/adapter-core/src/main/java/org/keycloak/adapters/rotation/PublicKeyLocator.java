@@ -17,10 +17,10 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.jose.jws.JWSInput;
+
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,10 +28,17 @@ import org.keycloak.jose.jws.JWSInput;
 public interface PublicKeyLocator {
 
     /**
-     * @param input
+     * @param kid
      * @param deployment
      * @return publicKey, which should be used for verify signature on given "input"
      */
-    PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment);
+    PublicKey getPublicKey(String kid, KeycloakDeployment deployment);
+
+    /**
+     * Reset the state of locator (eg. clear the cached keys)
+     *
+     * @param deployment
+     */
+    void reset(KeycloakDeployment deployment);
 
 }

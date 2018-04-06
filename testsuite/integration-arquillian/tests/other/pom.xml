@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -39,7 +39,12 @@
     <modules>
         <module>adapters</module>
         <module>sssd</module>
+        <module>springboot-tests</module>
     </modules>
+
+    <properties>
+        <skip.unpack.test.resources>false</skip.unpack.test.resources>
+    </properties>
 
     <build>
         <pluginManagement>
@@ -54,13 +59,14 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -77,6 +83,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.add.user.json}</skip>
                                 <outputDirectory>${auth.server.config.dir}</outputDirectory>
                                 <resources>
                                     <resource>
@@ -119,15 +126,15 @@
             </dependencies>
         </profile>
         <profile>
-            <id>console-ui-tests</id>
+            <id>clean-start</id>
             <modules>
-                <module>console</module>
+                <module>clean-start</module>
             </modules>
         </profile>
         <profile>
-            <id>console-ui-no-users-tests</id>
+            <id>console-ui-tests</id>
             <modules>
-                <module>console_no_users</module>
+                <module>console</module>
             </modules>
         </profile>
         <profile>
@@ -140,6 +147,24 @@
             <id>jpa-performance</id>
             <modules>
                 <module>jpa-performance</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>nodejs-adapter-tests</id>
+            <modules>
+                <module>nodejs_adapter</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>server-config-migration</id>
+            <modules>
+                <module>server-config-migration</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>welcome-page</id>
+            <modules>
+                <module>welcome-page</module>
             </modules>
         </profile>
     </profiles>

@@ -85,7 +85,7 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;MVCC=TRUE}",
             "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
@@ -98,16 +98,6 @@
         }
     },
 
-    "connectionsMongo": {
-        "default": {
-            "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
-            "port": "${keycloak.connectionsMongo.port:27017}",
-            "db": "${keycloak.connectionsMongo.db:keycloak}",
-            "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}",
-            "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
-        }
-    },
-
     "realmCache": {
         "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
@@ -117,16 +107,22 @@
 
     "connectionsInfinispan": {
         "default": {
+            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
+            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
+            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:true}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
+            "async": "${keycloak.connectionsInfinispan.async:false}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
+            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
+            "remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
         }
     },
 
-
     "truststore": {
         "file": {
-            "file": "${keycloak.truststore.file:src/test/resources/keystore/keycloak.truststore}",
+            "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
             "disabled": "${keycloak.truststore.disabled:false}"
@@ -139,5 +135,33 @@
             "enabled": true
         }
 
+    },
+
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+	}
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:default}",
+        "default": {
+          "enabled": true
+        },
+        "haproxy": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
     }
 }

@@ -20,7 +20,12 @@ package org.keycloak.proxy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,6 +56,9 @@ public class ProxyConfig {
     protected Boolean directBuffers;
     @JsonProperty("target-url")
     protected String targetUrl;
+    /** Defaults to 30 seconds */
+    @JsonProperty("target-request-timeout")
+    protected Integer targetRequestTimeout = 30000;
     @JsonProperty("send-access-token")
     protected boolean sendAccessToken;
     @JsonProperty("applications")
@@ -152,6 +160,14 @@ public class ProxyConfig {
 
     public void setTargetUrl(String targetUrl) {
         this.targetUrl = targetUrl;
+    }
+
+    public Integer getTargetRequestTimeout() {
+        return targetRequestTimeout;
+    }
+
+    public void setTargetRequestTimeout(Integer targetRequestTimeout) {
+        this.targetRequestTimeout = targetRequestTimeout;
     }
 
     public List<Application> getApplications() {

@@ -46,7 +46,7 @@ public class StaxUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private static ThreadLocal<Stack<String>> registeredNSStack = new ThreadLocal<Stack<String>>();
+    private static final ThreadLocal<Stack<String>> registeredNSStack = new ThreadLocal<Stack<String>>();
 
     /**
      * Flush the stream writer
@@ -75,7 +75,7 @@ public class StaxUtil {
     public static XMLEventWriter getXMLEventWriter(final OutputStream outStream) throws ProcessingException {
         XMLOutputFactory xmlOutputFactory = getXMLOutputFactory();
         try {
-            return xmlOutputFactory.createXMLEventWriter(outStream, "UTF-8");
+            return xmlOutputFactory.createXMLEventWriter(outStream, GeneralConstants.SAML_CHARSET_NAME);
         } catch (XMLStreamException e) {
             throw logger.processingError(e);
         }
@@ -93,7 +93,7 @@ public class StaxUtil {
     public static XMLStreamWriter getXMLStreamWriter(final OutputStream outStream) throws ProcessingException {
         XMLOutputFactory xmlOutputFactory = getXMLOutputFactory();
         try {
-            return xmlOutputFactory.createXMLStreamWriter(outStream, "UTF-8");
+            return xmlOutputFactory.createXMLStreamWriter(outStream, GeneralConstants.SAML_CHARSET_NAME);
         } catch (XMLStreamException e) {
             throw logger.processingError(e);
         }
@@ -341,10 +341,10 @@ public class StaxUtil {
         writeStartElement(writer, domElementPrefix, domElement.getLocalName(), domElementNS);
 
         // Should we register namespace
-        if (domElementPrefix != "" && !registeredNSStack.get().contains(domElementNS)) {
+        if (! domElementPrefix.isEmpty() && !registeredNSStack.get().contains(domElementNS)) {
             // writeNameSpace(writer, domElementPrefix, domElementNS );
             registeredNSStack.get().push(domElementNS);
-        } else if (domElementPrefix == "" && domElementNS != null) {
+        } else if (domElementPrefix.isEmpty() && ! domElementNS.isEmpty()) {
             writeNameSpace(writer, "xmlns", domElementNS);
         }
 

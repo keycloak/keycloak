@@ -25,11 +25,14 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,8 +44,9 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
     protected KeycloakSession session;
 
     protected List<CredentialModel> getCachedCredentials(UserModel user, String type) {
-        if (!(user instanceof CachedUserModel)) return Collections.EMPTY_LIST;
+        if (!(user instanceof CachedUserModel)) return null;
         CachedUserModel cached = (CachedUserModel)user;
+        if (cached.isMarkedForEviction()) return null;
         List<CredentialModel> rtn = (List<CredentialModel>)cached.getCachedWith().get(OTPCredentialProvider.class.getName() + "." + type);
         if (rtn == null) return Collections.EMPTY_LIST;
         return rtn;
@@ -99,7 +103,10 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         } else {
             getCredentialStore().updateCredential(realm, user, model);
         }
-        session.getUserCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
         return true;
 
 
@@ -135,9 +142,25 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
 
         }
         if (disableTOTP || disableHOTP) {
-            session.getUserCache().evict(realm, user);
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, user);
+            }
         }
     }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.HOTP).isEmpty()
+        || !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.OTP);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
+    }
+
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
@@ -171,8 +194,9 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
     }
 
     protected boolean configuredForTOTP(RealmModel realm, UserModel user) {
-        return !getCachedCredentials(user, CredentialModel.TOTP).isEmpty()
-                || !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty();
+        List<CredentialModel> cachedCredentials = getCachedCredentials(user, CredentialModel.TOTP);
+        if (cachedCredentials == null) return !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty();
+        return !cachedCredentials.isEmpty();
     }
 
     public static boolean validOTP(RealmModel realm, String token, String secret) {
@@ -213,7 +237,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         } else {
             TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
             List<CredentialModel> creds = getCachedCredentials(user, CredentialModel.TOTP);
-            if (creds.isEmpty()) {
+            if (creds == null) {
                 creds = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP);
             } else {
                 logger.debugv("Cache hit for TOTP for user {0}", user.getUsername());

@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.util;
 
 import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 /**

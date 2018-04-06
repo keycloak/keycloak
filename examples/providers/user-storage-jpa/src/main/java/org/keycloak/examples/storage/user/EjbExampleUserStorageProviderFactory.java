@@ -17,16 +17,11 @@
 package org.keycloak.examples.storage.user;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import javax.naming.InitialContext;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

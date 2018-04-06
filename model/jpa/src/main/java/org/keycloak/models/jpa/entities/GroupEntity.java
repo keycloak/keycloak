@@ -17,19 +17,9 @@
 
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import org.hibernate.annotations.Nationalized;
+
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -38,13 +28,11 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllGroupsByRealm", query="select u from GroupEntity u where u.realm = :realm order by u.name"),
-        @NamedQuery(name="getAllGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm.id = :realm order by u.name"),
-        @NamedQuery(name="getGroupById", query="select u from GroupEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parent = :parent"),
+        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm.id = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
         @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
-        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
-        @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity u where u.realm = :realm")
+        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm"),
+        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm and u.parent is null")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP")
@@ -54,6 +42,7 @@ public class GroupEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
+    @Nationalized
     @Column(name = "NAME")
     protected String name;
 

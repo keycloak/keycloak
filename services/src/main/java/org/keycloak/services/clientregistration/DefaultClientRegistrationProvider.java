@@ -17,13 +17,17 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -41,7 +45,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createDefault(ClientRepresentation client) {
-        ClientRegistrationContext context = new ClientRegistrationContext(client);
+        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = create(context);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
@@ -58,8 +62,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @PUT
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
-        ClientRegistrationContext context = new ClientRegistrationContext(client);
+        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = update(clientId, context);
         return Response.ok(client).build();
     }
@@ -68,25 +73,5 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Path("{clientId}")
     public void deleteDefault(@PathParam("clientId") String clientId) {
         delete(clientId);
-    }
-
-    @Override
-    public void setAuth(ClientRegistrationAuth auth) {
-        this.auth = auth;
-    }
-
-    @Override
-    public void setEvent(EventBuilder event) {
-        this.event = event;
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    protected boolean validateClient(ClientRegistrationContext context, ValidationMessages validationMessages) {
-        ClientRepresentation client = context.getClient();
-        return super.validateClient(context, validationMessages) && PairwiseClientValidator.validate(session, client, validationMessages);
     }
 }

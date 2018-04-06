@@ -26,24 +26,16 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked</directory>
+            <directory>${project.build.directory}/unpacked/modules</directory>
             <includes>
-                <include>org/keycloak/keycloak-common/**</include>
-                <include>org/keycloak/keycloak-saml-core/**</include>
-                <include>org/keycloak/keycloak-saml-adapter-core/**</include>
-                <include>org/keycloak/keycloak-saml-core-public/**</include>
-                <include>org/keycloak/keycloak-adapter-spi/**</include>
-                <include>org/keycloak/keycloak-saml-adapter-api-public/**</include>
-                <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/bouncycastle/**</include>
-                <include>org/keycloak/keycloak-saml-as7-adapter/**</include>
-                <include>org/keycloak/keycloak-saml-as7-subsystem/**</include>
-                <include>org/keycloak/keycloak-saml-adapter-subsystem/**</include>
+                <include>org/keycloak/keycloak-*/**</include>
             </includes>
-            <excludes>
-                <exclude>**/*.war</exclude>
-            </excludes>
             <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/licenses</directory>
+            <outputDirectory>docs/licenses-${product.slot}</outputDirectory>
         </fileSet>
     </fileSets>
     <files>

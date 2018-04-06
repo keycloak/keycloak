@@ -24,11 +24,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultRoles;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 
 import java.util.Collections;
@@ -51,11 +50,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public abstract class AbstractUserAdapter implements UserModel {
-    public static class ReadOnlyException extends RuntimeException {
-        public ReadOnlyException(String message) {
-            super(message);
-        }
-    }
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ComponentModel storageProviderModel;
@@ -137,7 +131,7 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         Set<GroupModel> roles = getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
+        return RoleUtils.isMember(roles, group);
     }
 
     @Override
@@ -174,7 +168,8 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override

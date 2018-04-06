@@ -57,6 +57,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setEnabled(true);
+        rep.setId(REALM_NAME);
         rep.setRealm(REALM_NAME);
         rep.setUsers(new LinkedList<UserRepresentation>());
 
@@ -107,9 +108,9 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         return response;
     }
 
-    public ClientRepresentation getClient(String clientId) {
+    public ClientRepresentation getClient(String clientUuid) {
         try {
-            return adminClient.realm(REALM_NAME).clients().get(clientId).toRepresentation();
+            return adminClient.realm(REALM_NAME).clients().get(clientUuid).toRepresentation();
         } catch (NotFoundException e) {
             return null;
         }

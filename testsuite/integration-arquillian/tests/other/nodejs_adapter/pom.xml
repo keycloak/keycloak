@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-other</artifactId>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>integration-arquillian-tests-nodejs-adapter</artifactId>
+
+    <name>Node.js adapter tests</name>
+
+    <properties>
+        <testsuite.adapter.nodejs.example.url>http://localhost:3000/</testsuite.adapter.nodejs.example.url>
+        <auth.server.port.offset>0</auth.server.port.offset>
+        <auth.server.http.port>8080</auth.server.http.port>
+        <auth.server.https.port>8443</auth.server.https.port>
+        <auth.server.management.port>9990</auth.server.management.port>
+        <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemProperties>
+                            <testsuite.adapter.nodejs.example.url>${testsuite.adapter.nodejs.example.url}</testsuite.adapter.nodejs.example.url>
+                        </systemProperties>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

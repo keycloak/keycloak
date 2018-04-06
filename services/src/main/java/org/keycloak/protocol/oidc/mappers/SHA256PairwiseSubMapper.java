@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -9,20 +10,23 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.ServicesLogger;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     public static final String PROVIDER_ID = "sha256";
     private static final String HASH_ALGORITHM = "SHA-256";
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(SHA256PairwiseSubMapper.class);
     private final Charset charset;
 
-    public SHA256PairwiseSubMapper() throws NoSuchAlgorithmException {
+    public SHA256PairwiseSubMapper() {
         charset = Charset.forName("UTF-8");
     }
 
@@ -30,7 +34,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
         Map<String, String> config;
         ProtocolMapperRepresentation pairwise = new ProtocolMapperRepresentation();
         pairwise.setName("pairwise subject identifier");
-        pairwise.setProtocolMapper(AbstractPairwiseSubMapper.getId(PROVIDER_ID));
+        pairwise.setProtocolMapper(new SHA256PairwiseSubMapper().getId());
         pairwise.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         pairwise.setConsentRequired(false);
         config = new HashMap<>();
@@ -75,7 +79,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
         Charset charset = Charset.forName("UTF-8");
         byte[] salt = saltStr.getBytes(charset);
         String pairwiseSub = generateSub(sectorIdentifier, localSub, salt);
-        logger.infof("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);
+        logger.tracef("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);
         return pairwiseSub;
     }
 

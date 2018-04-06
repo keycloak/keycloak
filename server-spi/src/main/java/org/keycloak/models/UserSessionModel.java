@@ -17,7 +17,7 @@
 
 package org.keycloak.models;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -53,7 +53,26 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
-    List<ClientSessionModel> getClientSessions();
+    boolean isOffline();
+
+    /**
+     * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
+     * @return 
+     */
+    Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
+    /**
+     * Returns a client session for the given client UUID.
+     * @return
+     */
+    default AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
+        return getAuthenticatedClientSessions().get(clientUUID);
+    };
+    /**
+     * Removes authenticated client sessions for all clients whose UUID is present in {@code removedClientUUIDS} parameter.
+     * @param removedClientUUIDS
+     */
+    void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS);
+
 
     public String getNote(String name);
     public void setNote(String name, String value);
@@ -63,8 +82,10 @@ public interface UserSessionModel {
     State getState();
     void setState(State state);
 
+    // Will completely restart whole state of user session. It will just keep same ID.
+    void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+
     public static enum State {
-        LOGGING_IN,
         LOGGED_IN,
         LOGGING_OUT,
         LOGGED_OUT

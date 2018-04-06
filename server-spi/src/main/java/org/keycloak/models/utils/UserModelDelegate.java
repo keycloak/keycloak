@@ -19,10 +19,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
@@ -30,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Delegation pattern.  Used to proxy UserModel implementations.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -244,5 +243,20 @@ public class UserModelDelegate implements UserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         return delegate.isMemberOf(group);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserModel)) return false;
+
+        UserModel that = (UserModel) o;
+
+        return getDelegate() != null ? getDelegate().getId().equals(that.getId()) : false;
+    }
+
+    @Override
+    public int hashCode() {
+        return getDelegate().getId().hashCode();
     }
 }

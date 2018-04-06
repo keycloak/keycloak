@@ -23,9 +23,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.common.util.Time;
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
-import org.keycloak.common.util.Time;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -141,6 +141,7 @@ public class JsonWebToken implements Serializable {
     }
 
     public boolean hasAudience(String audience) {
+        if (this.audience == null) return false;
         for (String a : this.audience) {
             if (a.equals(audience)) {
                 return true;

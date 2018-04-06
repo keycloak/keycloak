@@ -18,7 +18,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.UserModel;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Cached users will implement this interface
@@ -35,23 +35,25 @@ public interface CachedUserModel extends UserModel {
      */
     UserModel getDelegateForUpdate();
 
+    boolean isMarkedForEviction();
+
     /**
-     * Invalidate the cache for this user
+     * Invalidate the cache for this model
      *
      */
     void invalidate();
 
     /**
-     * When was the user loaded from database.
+     * When was the model was loaded from database.
      *
      * @return
      */
     long getCacheTimestamp();
 
     /**
-     * Returns a map that contains custom things that are cached along with the user.  You can write to this map.
+     * Returns a map that contains custom things that are cached along with this model.  You can write to this map.
      *
      * @return
      */
-    ConcurrentHashMap getCachedWith();
+    ConcurrentMap getCachedWith();
 }

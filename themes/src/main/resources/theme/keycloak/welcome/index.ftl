@@ -73,7 +73,7 @@
             <#else>
                 <p>
                     You need local access to create the initial admin user. Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
-                    or use the add-user script.
+                    or use the add-user-keycloak script.
                 </p>
             </#if>
         </#if>

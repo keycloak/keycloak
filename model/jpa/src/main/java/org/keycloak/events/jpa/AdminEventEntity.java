@@ -17,12 +17,8 @@
 
 package org.keycloak.events.jpa;
 
-import org.keycloak.events.admin.ResourceType;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 

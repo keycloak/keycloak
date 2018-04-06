@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,6 +34,9 @@
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
         <security.xslt>security.xsl</security.xslt>
+        <oidc-adapter.version>${project.version}</oidc-adapter.version>
+        <saml-adapter.version>${project.version}</saml-adapter.version>
+        <app.server.elytron.adapter.supported>false</app.server.elytron.adapter.supported>
     </properties>
 
     <profiles>
@@ -92,7 +95,7 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
-                                            <version>${project.version}</version>
+                                            <version>${oidc-adapter.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${app.server.jboss.home}</outputDirectory>
                                         </artifactItem>
@@ -108,7 +111,7 @@
                         <executions>
                             <execution>
                                 <id>configure-adapter-debug-log</id>
-                                <phase>process-resources</phase>
+                                <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
                                 </goals>
@@ -180,6 +183,29 @@
                                     <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>adapter.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <nonFilteredFileExtensions>
+                                        <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+                                        <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
+                                    </nonFilteredFileExtensions>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -189,7 +215,7 @@
                         <executions>
                             <execution>
                                 <id>install-adapters</id>
-                                <phase>process-test-resources</phase>
+                                <phase>process-resources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -200,6 +226,8 @@
                                         <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                         <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                         <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                        <ELYTRON_SUPPORTED>${app.server.elytron.adapter.supported}</ELYTRON_SUPPORTED>
+                                        <CLI_PATH>${common.resources}/cli</CLI_PATH>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -272,7 +300,7 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>${app.server.saml.adapter.artifactId}</artifactId>
-                                            <version>${project.version}</version>
+                                            <version>${saml-adapter.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${app.server.jboss.home}</outputDirectory>
                                         </artifactItem>
@@ -306,7 +334,7 @@
                                     </goals>
                                     <configuration>
                                         <executable>${common.resources}/install-patch.${script.suffix}</executable>
-                                        <workingDirectory>${app.server.home}/bin</workingDirectory>
+                                        <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                         <environmentVariables>
                                             <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                             <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
@@ -320,79 +348,6 @@
                 </pluginManagement>
             </build>
         </profile>
-        <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>app.server.ssl.required</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                    </plugin>
-                </plugins>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>configure-adapter-subsystem-security</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${app.server.jboss.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/${security.xslt}</stylesheet>
-                                                <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-keystore</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${common.resources}/keystore</directory>
-                                                <includes>
-                                                    <include>adapter.jks</include>
-                                                    <include>keycloak.truststore</include>
-                                                </includes>
-                                            </resource>
-                                        </resources>
-                                        <nonFilteredFileExtensions>
-                                            <nonFilteredFileExtension>jks</nonFilteredFileExtension>
-                                            <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
-                                        </nonFilteredFileExtensions>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
         <profile>
             <id>app-server-as7</id>
             <modules>
@@ -433,11 +388,34 @@
             </modules>
         </profile>
         <profile>
+            <id>app-server-wildfly10</id>
+            <modules>
+                <module>wildfly10</module>
+            </modules>
+        </profile>
+        <profile>
             <id>app-server-relative</id>
             <modules>
                 <module>relative</module>
             </modules>
-        </profile>        
-    </profiles>    
+        </profile>
+        <profile>
+            <id>app-server-eap6-fuse</id>
+            <modules>
+                <module>eap6-fuse</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>app-server-wildfly-elytron</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <wildfly.version>${elytron.wildfly.version}</wildfly.version>
+                <app.server.elytron.adapter.supported>true</app.server.elytron.adapter.supported>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

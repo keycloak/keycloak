@@ -31,6 +31,17 @@ public class OIDCAdvancedConfigWrapper {
     private static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
 
     private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
+    
+    private static final String REQUEST_OBJECT_REQUIRED = "request.object.required";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI = "request or request_uri";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
+    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
+
+    private static final String JWKS_URL = "jwks.url";
+
+    private static final String USE_JWKS_URL = "use.jwks.url";
+
+    private static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
 
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
@@ -73,7 +84,42 @@ public class OIDCAdvancedConfigWrapper {
         String algStr = alg==null ? null : alg.toString();
         setAttribute(REQUEST_OBJECT_SIGNATURE_ALG, algStr);
     }
+    
+    public String getRequestObjectRequired() {
+        return getAttribute(REQUEST_OBJECT_REQUIRED);
+    }
+    
+    public void setRequestObjectRequired(String requestObjectRequired) {
+        setAttribute(REQUEST_OBJECT_REQUIRED, requestObjectRequired);
+    }
 
+    public boolean isUseJwksUrl() {
+        String useJwksUrl = getAttribute(USE_JWKS_URL);
+        return Boolean.parseBoolean(useJwksUrl);
+    }
+
+    public void setUseJwksUrl(boolean useJwksUrl) {
+        String val = String.valueOf(useJwksUrl);
+        setAttribute(USE_JWKS_URL, val);
+    }
+
+    public String getJwksUrl() {
+        return getAttribute(JWKS_URL);
+    }
+
+    public void setJwksUrl(String jwksUrl) {
+        setAttribute(JWKS_URL, jwksUrl);
+    }
+
+    public boolean isExcludeSessionStateFromAuthResponse() {
+        String excludeSessionStateFromAuthResponse = getAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
+        return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);
+    }
+
+    public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
+        String val = String.valueOf(excludeSessionStateFromAuthResponse);
+        setAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
+    }
 
     private String getAttribute(String attrKey) {
         if (clientModel != null) {

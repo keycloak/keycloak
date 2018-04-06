@@ -25,16 +25,29 @@
     <supplement name="default">
         <replacement placeholder="CACHE-CONTAINERS">
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-                <local-cache name="realms"/>
+                <local-cache name="realms">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="users">
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <local-cache name="sessions"/>
+                <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
+                <local-cache name="clientSessions"/>
+                <local-cache name="offlineClientSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="work"/>
                 <local-cache name="authorization">
-                    <eviction max-entries="100" strategy="LRU"/>
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
+                <local-cache name="actionTokens">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
                 </local-cache>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
@@ -48,11 +61,6 @@
                     <transaction mode="BATCH"/>
                     <file-store passivation="true" purge="false"/>
                 </local-cache>
-                <local-cache name="persistent">
-                    <locking isolation="REPEATABLE_READ"/>
-                    <transaction mode="BATCH"/>
-                    <file-store passivation="false" purge="false"/>
-                </local-cache>
             </cache-container>
             <cache-container name="ejb" aliases="sfsb" default-cache="passivation" module="org.wildfly.clustering.ejb.infinispan">
                 <local-cache name="passivation">
@@ -60,18 +68,9 @@
                     <transaction mode="BATCH"/>
                     <file-store passivation="true" purge="false"/>
                 </local-cache>
-                <local-cache name="persistent">
-                    <transaction mode="BATCH"/>
-                    <file-store passivation="false" purge="false"/>
-                </local-cache>
             </cache-container>
-            <cache-container name="hibernate" default-cache="local-query" module="org.hibernate.infinispan">
+            <cache-container name="hibernate" module="org.hibernate.infinispan">
                 <local-cache name="entity">
-                    <transaction mode="NON_XA"/>
-                    <eviction strategy="LRU" max-entries="10000"/>
-                    <expiration max-idle="100000"/>
-                </local-cache>
-                <local-cache name="immutable-entity">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="10000"/>
                     <expiration max-idle="100000"/>
@@ -88,25 +87,40 @@
         <replacement placeholder="CACHE-CONTAINERS">
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
                 <transport lock-timeout="60000"/>
-                <invalidation-cache name="realms" mode="SYNC"/>
-                <invalidation-cache name="users" mode="SYNC">
+                <local-cache name="realms">
                     <eviction max-entries="10000" strategy="LRU"/>
-                </invalidation-cache>
+                </local-cache>
+                <local-cache name="users">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="authenticationSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="clientSessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="offlineClientSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
-                <distributed-cache name="authorization" mode="SYNC" owners="1"/>
+                <local-cache name="authorization">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <replicated-cache name="work" mode="SYNC" />
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
+                <distributed-cache name="actionTokens" mode="SYNC" owners="2">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
+                </distributed-cache>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="default" mode="SYNC">
+                <replicated-cache name="default">
                     <transaction mode="BATCH"/>
                 </replicated-cache>
             </cache-container>
             <cache-container name="web" default-cache="dist" module="org.wildfly.clustering.web.infinispan">
                 <transport lock-timeout="60000"/>
-                <distributed-cache name="dist" mode="ASYNC" l1-lifespan="0" owners="2">
+                <distributed-cache name="dist">
                     <locking isolation="REPEATABLE_READ"/>
                     <transaction mode="BATCH"/>
                     <file-store/>
@@ -114,7 +128,7 @@
             </cache-container>
             <cache-container name="ejb" aliases="sfsb" default-cache="dist" module="org.wildfly.clustering.ejb.infinispan">
                 <transport lock-timeout="60000"/>
-                <distributed-cache name="dist" mode="ASYNC" l1-lifespan="0" owners="2">
+                <distributed-cache name="dist">
                     <locking isolation="REPEATABLE_READ"/>
                     <transaction mode="BATCH"/>
                     <file-store/>
@@ -122,15 +136,15 @@
             </cache-container>
             <cache-container name="hibernate" default-cache="local-query" module="org.hibernate.infinispan">
                 <transport lock-timeout="60000"/>
-                <invalidation-cache name="entity" mode="SYNC">
-                    <transaction mode="NON_XA"/>
-                    <eviction strategy="LRU" max-entries="10000"/>
-                    <expiration max-idle="100000"/>
-                </invalidation-cache>
                 <local-cache name="local-query">
                     <eviction strategy="LRU" max-entries="10000"/>
                     <expiration max-idle="100000"/>
                 </local-cache>
+                <invalidation-cache name="entity">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="10000"/>
+                    <expiration max-idle="100000"/>
+                </invalidation-cache>
                 <replicated-cache name="timestamps" mode="ASYNC"/>
             </cache-container>
         </replacement>

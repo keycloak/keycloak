@@ -18,21 +18,30 @@
 
 package org.keycloak.testsuite.admin.client.authorization;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -40,54 +49,113 @@ import static org.junit.Assert.assertTrue;
  */
 public class ResourceManagementTest extends AbstractAuthorizationTest {
 
-    @Before
-    @Override
-    public void onBeforeAuthzTests() {
-        super.onBeforeAuthzTests();
-        enableAuthorizationServices();
-    }
-
     @Test
     public void testCreate() {
-        ResourceRepresentation newResource = createResource().toRepresentation();
+        ResourceRepresentation newResource = createResource();
 
         assertEquals("Test Resource", newResource.getName());
         assertEquals("/test/*", newResource.getUri());
         assertEquals("test-resource", newResource.getType());
         assertEquals("icon-test-resource", newResource.getIconUri());
+
+        Map<String, List<String>> attributes = newResource.getAttributes();
+
+        assertEquals(2, attributes.size());
+
+        assertTrue(attributes.containsKey("a"));
+        assertTrue(attributes.containsKey("b"));
+        assertTrue(attributes.get("a").containsAll(Arrays.asList("a1", "a2", "a3")));
+        assertEquals(3, attributes.get("a").size());
+        assertTrue(attributes.get("b").containsAll(Arrays.asList("b1")));
+        assertEquals(1, attributes.get("b").size());
+    }
+
+    @Test
+    public void failCreateWithSameName() {
+        ResourceRepresentation newResource = createResource();
+
+        try {
+            doCreateResource(newResource);
+            fail("Can not create resources with the same name and owner");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(409, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+
+        newResource.setName(newResource.getName() + " Another");
+
+        newResource = doCreateResource(newResource);
+
+        assertNotNull(newResource.getId());
+        assertEquals("Test Resource Another", newResource.getName());
+    }
+
+    @Test
+    public void failCreateWithSameNameDifferentOwner() {
+        ResourceRepresentation martaResource = createResource("Resource A", "marta", null, null, null);
+        ResourceRepresentation koloResource = createResource("Resource A", "kolo", null, null, null);
+
+        assertNotNull(martaResource.getId());
+        assertNotNull(koloResource.getId());
+        assertNotEquals(martaResource.getId(), koloResource.getId());
+
+        assertEquals(2, getClientResource().authorization().resources().findByName(martaResource.getName()).size());
+
+        List<ResourceRepresentation> martaResources = getClientResource().authorization().resources().findByName(martaResource.getName(), "marta");
+
+        assertEquals(1, martaResources.size());
+        assertEquals(martaResource.getId(), martaResources.get(0).getId());
+
+        List<ResourceRepresentation> koloResources = getClientResource().authorization().resources().findByName(martaResource.getName(), "kolo");
+
+        assertEquals(1, koloResources.size());
+        assertEquals(koloResource.getId(), koloResources.get(0).getId());
     }
 
     @Test
     public void testUpdate() {
-        ResourceResource resourceResource = createResource();
-        ResourceRepresentation resource = resourceResource.toRepresentation();
+        ResourceRepresentation resource = createResource();
 
         resource.setType("changed");
         resource.setIconUri("changed");
         resource.setUri("changed");
 
-        resourceResource.update(resource);
+        Map<String, List<String>> attributes = resource.getAttributes();
 
-        resource = resourceResource.toRepresentation();
+        attributes.remove("a");
+        attributes.put("c", Arrays.asList("c1", "c2"));
+        attributes.put("b", Arrays.asList("changed"));
+
+        resource = doUpdateResource(resource);
 
         assertEquals("changed", resource.getIconUri());
         assertEquals("changed", resource.getType());
         assertEquals("changed", resource.getUri());
+
+        attributes = resource.getAttributes();
+
+        assertEquals(2, attributes.size());
+
+        assertFalse(attributes.containsKey("a"));
+        assertTrue(attributes.containsKey("b"));
+        assertTrue(attributes.get("b").containsAll(Arrays.asList("changed")));
+        assertEquals(1, attributes.get("b").size());
+        assertTrue(attributes.get("c").containsAll(Arrays.asList("c1", "c2")));
+        assertEquals(2, attributes.get("c").size());
     }
 
     @Test(expected = NotFoundException.class)
     public void testDelete() {
-        ResourceResource resourceResource = createResource();
+        ResourceRepresentation resource = createResource();
 
-        resourceResource.remove();
+        doRemoveResource(resource);
 
-        resourceResource.toRepresentation();
+        getClientResource().authorization().resources().resource(resource.getId()).toRepresentation();
     }
 
     @Test
     public void testAssociateScopes() {
-        ResourceResource resourceResource = createResourceWithDefaultScopes();
-        ResourceRepresentation updated = resourceResource.toRepresentation();
+        ResourceRepresentation updated = createResourceWithDefaultScopes();
 
         assertEquals(3, updated.getScopes().size());
 
@@ -98,8 +166,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
 
     @Test
     public void testUpdateScopes() {
-        ResourceResource resourceResource = createResourceWithDefaultScopes();
-        ResourceRepresentation resource = resourceResource.toRepresentation();
+        ResourceRepresentation resource = createResourceWithDefaultScopes();
         Set<ScopeRepresentation> scopes = new HashSet<>(resource.getScopes());
 
         assertEquals(3, scopes.size());
@@ -107,9 +174,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
 
         resource.setScopes(scopes);
 
-        resourceResource.update(resource);
-
-        ResourceRepresentation updated = resourceResource.toRepresentation();
+        ResourceRepresentation updated = doUpdateResource(resource);
 
         assertEquals(2, resource.getScopes().size());
 
@@ -124,16 +189,13 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
 
         updated.setScopes(scopes);
 
-        resourceResource.update(updated);
-
-        updated = resourceResource.toRepresentation();
+        updated = doUpdateResource(updated);
 
         assertEquals(0, updated.getScopes().size());
     }
 
-    private ResourceResource createResourceWithDefaultScopes() {
-        ResourceResource resourceResource = createResource();
-        ResourceRepresentation resource = resourceResource.toRepresentation();
+    private ResourceRepresentation createResourceWithDefaultScopes() {
+        ResourceRepresentation resource = createResource();
 
         assertEquals(0, resource.getScopes().size());
 
@@ -145,9 +207,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
 
         resource.setScopes(scopes);
 
-        resourceResource.update(resource);
-
-        return resourceResource;
+        return doUpdateResource(resource);
     }
 
     private boolean containsScope(String scopeName, ResourceRepresentation resource) {
@@ -164,22 +224,56 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         return false;
     }
 
-    private ResourceResource createResource() {
+    private ResourceRepresentation createResource() {
+        return createResource("Test Resource", null, "/test/*", "test-resource", "icon-test-resource");
+    }
+
+    private ResourceRepresentation createResource(String name, String owner, String uri, String type, String iconUri) {
         ResourceRepresentation newResource = new ResourceRepresentation();
 
-        newResource.setName("Test Resource");
-        newResource.setUri("/test/*");
-        newResource.setType("test-resource");
-        newResource.setIconUri("icon-test-resource");
+        newResource.setName(name);
+        newResource.setUri(uri);
+        newResource.setType(type);
+        newResource.setIconUri(iconUri);
+        newResource.setOwner(owner != null ? new ResourceOwnerRepresentation(owner) : null);
 
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put("a", Arrays.asList("a1", "a2", "a3"));
+        attributes.put("b", Arrays.asList("b1"));
+
+        newResource.setAttributes(attributes);
+
+        return doCreateResource(newResource);
+    }
+
+    protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
         ResourcesResource resources = getClientResource().authorization().resources();
 
         Response response = resources.create(newResource);
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        int status = response.getStatus();
+
+        if (status != Response.Status.CREATED.getStatusCode()) {
+            throw new RuntimeException(new HttpResponseException("Error", status, "", null));
+        }
 
         ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
 
-        return resources.resource(stored.getId());
+        return resources.resource(stored.getId()).toRepresentation();
+    }
+
+    protected ResourceRepresentation doUpdateResource(ResourceRepresentation resource) {
+        ResourcesResource resources = getClientResource().authorization().resources();
+        ResourceResource existing = resources.resource(resource.getId());
+
+        existing.update(resource);
+
+        return resources.resource(resource.getId()).toRepresentation();
+    }
+
+    protected void doRemoveResource(ResourceRepresentation resource) {
+        ResourcesResource resources = getClientResource().authorization().resources();
+        resources.resource(resource.getId()).remove();
     }
 }

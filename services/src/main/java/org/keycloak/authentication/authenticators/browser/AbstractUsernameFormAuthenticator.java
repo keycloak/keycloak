@@ -17,13 +17,16 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -43,7 +46,7 @@ import java.util.List;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
@@ -82,8 +85,32 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return challengeResponse;
     }
 
+    protected void runDefaultDummyHash(AuthenticationFlowContext context) {
+        PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
+        hash.encode("dummypassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
+    }
+
+    protected void dummyHash(AuthenticationFlowContext context) {
+        PasswordPolicy policy = context.getRealm().getPasswordPolicy();
+        if (policy == null) {
+            runDefaultDummyHash(context);
+            return;
+        } else {
+            PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
+            if (hash == null) {
+                runDefaultDummyHash(context);
+                return;
+
+            } else {
+                hash.encode("dummypassword", policy.getHashIterations());
+            }
+        }
+
+    }
+
     public boolean invalidUser(AuthenticationFlowContext context, UserModel user) {
         if (user == null) {
+            dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -97,18 +124,12 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
-            context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
+            // this is not a failure so don't call failureChallenge.
+            //context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
+            context.forceChallenge(challengeResponse);
             return false;
         }
-        if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = temporarilyDisabledUser(context);
-                context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
-                return false;
-            }
-        }
+        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
         return true;
     }
 
@@ -125,13 +146,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         username = username.trim();
 
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.modelDuplicateException(mde);
+            ServicesLogger.LOGGER.modelDuplicateException(mde);
 
             // Could happen during federation import
             if (mde.getDuplicateFieldName() != null && mde.getDuplicateFieldName().equals(UserModel.EMAIL)) {
@@ -143,25 +164,25 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return false;
         }
 
-        if (invalidUser(context, user)){
+        if (invalidUser(context, user)) {
             return false;
         }
 
-        if (!validatePassword(context, user, inputData)){
+        if (!validatePassword(context, user, inputData)) {
             return false;
         }
 
-        if(!enabledUser(context, user)){
+        if (!enabledUser(context, user)) {
             return false;
         }
 
         String rememberMe = inputData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
         if (remember) {
-            context.getClientSession().setNote(Details.REMEMBER_ME, "true");
+            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
             context.getEvent().detail(Details.REMEMBER_ME, "true");
         } else {
-            context.getClientSession().removeNote(Details.REMEMBER_ME);
+            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
         }
         context.setUser(user);
         return true;
@@ -171,8 +192,12 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         List<CredentialInput> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         credentials.add(UserCredentialModel.password(password));
-        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials);
-        if (!valid) {
+
+        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
+
+        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
+            return true;
+        } else {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
@@ -180,7 +205,21 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.clearUser();
             return false;
         }
-        return true;
+    }
+
+    private boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+        if (context.getRealm().isBruteForceProtected()) {
+            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
+                context.getEvent().user(user);
+                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
+                Response challengeResponse = temporarilyDisabledUser(context);
+                // this is not a failure so don't call failureChallenge.
+                //context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
+                context.forceChallenge(challengeResponse);
+                return true;
+            }
+        }
+        return false;
     }
 
 }

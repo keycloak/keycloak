@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -31,6 +31,10 @@
     <description/>
 
     <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-js-adapter</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -42,17 +46,14 @@
                         <id>unpack</id>
                         <phase>prepare-package</phase>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter</artifactId>
-                                    <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
-                                    <includes>*.js</includes>                                    
-                                </artifactItem>
-                            </artifactItems>
+                            <excludeTransitive>true</excludeTransitive>
+                            <includeGroupIds>org.keycloak</includeGroupIds>
+                            <includeArtifactIds>keycloak-js-adapter</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
+                            <includes>*.js,*.map,*.d.ts</includes>
                             <excludes>**/welcome-content/*</excludes>
                         </configuration>
                     </execution>
@@ -82,7 +83,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <finalName>${product.name}-${product.filename.version}-js-adapter</finalName>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

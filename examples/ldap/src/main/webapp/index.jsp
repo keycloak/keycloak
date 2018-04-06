@@ -1,11 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
-<%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
-<%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
 <%@ page import="org.keycloak.KeycloakSecurityContext" %>
-<%@ page import="org.keycloak.representations.IDToken" %>
+<%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
+<%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.representations.AccessToken" %>
 <%@ page import="org.keycloak.representations.AccessToken.Access" %>
+<%@ page import="org.keycloak.representations.IDToken" %>
 <%@ page import="java.util.Map" %>
 <%@ page session="false" %>
 
@@ -37,6 +37,9 @@
         <p><b>Full Name: </b><%=idToken.getName()%></p>
         <p><b>First: </b><%=idToken.getGivenName()%></p>
         <p><b>Last: </b><%=idToken.getFamilyName()%></p>
+        <% if (idToken.getPicture() != null) { %>
+            <p><b>Profile picture: </b><img src='/ldap-portal/picture' /></p>
+        <% } %>
         <hr />
 
 

@@ -18,14 +18,16 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
-import static org.keycloak.testsuite.util.WaitUtils.*;
-
+import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
 
 /**
  *
@@ -74,28 +76,21 @@ public class LoginForm extends Form {
     }
 
     public void register() {
-        registerLink.click();
-        waitForPageToLoad(driver);
+        clickLink(registerLink);
     }
 
     public void login() {
-        labelPassword.click(); // This is a nasty trick for IE; As IE was "moving the cursor" towards the login button
-                               // it opened the internationalization menu (when present) and then clicked
-                               // one of the languages instead of the Login button
-        loginButton.click();
-        waitForPageToLoad(driver);
+        clickLink(loginButton);
     }
 
     public void forgotPassword() {
-        forgottenPassword.click();
-        waitForPageToLoad(driver);
+        clickLink(forgottenPassword);
     }
 
     public void rememberMe(boolean value) {
         boolean selected = rememberMe.isSelected();
         if ((value && !selected) || !value && selected) {
             rememberMe.click();
-            waitForPageToLoad(driver);
         }
     }
 
@@ -109,7 +104,7 @@ public class LoginForm extends Form {
     }
 
     public void waitForRegisterLinkNotPresent() {
-        waitUntilElementIsNotPresent(driver, registerLink);
+        waitUntilElementIsNotPresent(registerLink);
     }
 
     public void waitForResetPasswordLinkNotPresent() {
@@ -121,7 +116,7 @@ public class LoginForm extends Form {
     }
 
     public void waitForRememberMeNotPresent() {
-        waitUntilElementIsNotPresent(driver, rememberMe);
+        waitUntilElementIsNotPresent(rememberMe);
     }
 
     public void waitForLoginButtonPresent() {
@@ -155,8 +150,7 @@ public class LoginForm extends Form {
         }
         
         public void submit() {
-            submit.click();
-            waitForPageToLoad(driver);
+            clickLink(submit);
         }
     }
 }

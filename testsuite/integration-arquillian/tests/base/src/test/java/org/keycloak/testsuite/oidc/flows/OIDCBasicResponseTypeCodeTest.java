@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -27,8 +24,10 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Test for response_type=code
@@ -46,10 +45,15 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     }
 
 
-    protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
+    @Override
+    protected boolean isFragment() {
+        return false;
+    }
+
+    @Override
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
         Assert.assertEquals(OIDCResponseType.CODE, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, false);
         Assert.assertNull(authzResponse.getAccessToken());
         Assert.assertNull(authzResponse.getIdToken());
 
@@ -63,7 +67,8 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     public void nonceNotUsed() {
         EventRepresentation loginEvent = loginUser(null);
 
-        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, false);
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
         for (IDToken idToken : idTokens) {
             Assert.assertNull(idToken.getNonce());
         }

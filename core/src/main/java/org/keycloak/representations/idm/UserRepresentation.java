@@ -17,12 +17,15 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.StringListMapDeserializer;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,6 +35,7 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String id;
+    protected String origin;
     protected Long createdTimestamp;
     protected String username;
     protected Boolean enabled;
@@ -43,14 +47,16 @@ public class UserRepresentation {
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
 
-    // Currently there is Map<String, List<String>> but for backwards compatibility, we also need to support Map<String, String>
-    protected Map<String, Object> attributes;
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    protected Map<String, List<String>> attributes;
     protected List<CredentialRepresentation> credentials;
+    protected Set<String> disableableCredentialTypes;
     protected List<String> requiredActions;
     protected List<FederatedIdentityRepresentation> federatedIdentities;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
+    protected Integer notBefore;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -58,6 +64,7 @@ public class UserRepresentation {
     protected List<SocialLinkRepresentation> socialLinks;
 
     protected List<String> groups;
+    private Map<String, Boolean> access;
 
     public String getSelf() {
         return self;
@@ -141,23 +148,17 @@ public class UserRepresentation {
         this.emailVerified = emailVerified;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    // This method can be removed once we can remove backwards compatibility with Keycloak 1.3 (then getAttributes() can be changed to return Map<String, List<String>> )
-    @JsonIgnore
-    public Map<String, List<String>> getAttributesAsListValues() {
-        return (Map) attributes;
-    }
-
-    public void setAttributes(Map<String, Object> attributes) {
+    public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
     }
 
     public UserRepresentation singleAttribute(String name, String value) {
         if (this.attributes == null) attributes = new HashMap<>();
-        attributes.put(name, Arrays.asList(value));
+        attributes.put(name, (value == null ? new ArrayList<String>() : Arrays.asList(value)));
         return this;
     }
 
@@ -217,6 +218,14 @@ public class UserRepresentation {
         this.clientConsents = clientConsents;
     }
 
+    public Integer getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Integer notBefore) {
+        this.notBefore = notBefore;
+    }
+
     @Deprecated
     public Map<String, List<String>> getApplicationRoles() {
         return applicationRoles;
@@ -244,5 +253,34 @@ public class UserRepresentation {
 
     public void setGroups(List<String> groups) {
         this.groups = groups;
+    }
+
+    /**
+     * Returns id of UserStorageProvider that loaded this user
+     *
+     * @return NULL if user stored locally
+     */
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public Set<String> getDisableableCredentialTypes() {
+        return disableableCredentialTypes;
+    }
+
+    public void setDisableableCredentialTypes(Set<String> disableableCredentialTypes) {
+        this.disableableCredentialTypes = disableableCredentialTypes;
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 }

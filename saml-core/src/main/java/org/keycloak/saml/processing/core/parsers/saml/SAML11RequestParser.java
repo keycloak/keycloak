@@ -16,26 +16,26 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.protocol.SAML11AttributeQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11AuthenticationQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11AuthorizationDecisionQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11RequestType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v1.protocol.SAML11AttributeQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11AuthenticationQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11AuthorizationDecisionQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11RequestType;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the SAML2 AuthnRequest
@@ -43,7 +43,7 @@ import javax.xml.stream.events.StartElement;
  * @author Anil.Saldhana@redhat.com
  * @since June 24, 2011
  */
-public class SAML11RequestParser implements ParserNamespaceSupport {
+public class SAML11RequestParser implements StaxParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
@@ -77,7 +77,7 @@ public class SAML11RequestParser implements ParserNamespaceSupport {
             if (startElement == null)
                 break;
 
-            String elementName = StaxParserUtil.getStartElementName(startElement);
+            String elementName = StaxParserUtil.getElementName(startElement);
 
             if (SAML11Constants.ATTRIBUTE_QUERY.equals(elementName)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
@@ -106,10 +106,4 @@ public class SAML11RequestParser implements ParserNamespaceSupport {
         return request;
     }
 
-    /**
-     * @see {@link ParserNamespaceSupport#supports(QName)}
-     */
-    public boolean supports(QName qname) {
-        return JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(qname.getNamespaceURI());
-    }
 }

@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -24,10 +25,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
-import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
-import org.keycloak.theme.Theme;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -36,18 +33,22 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.Urls;
+import org.keycloak.theme.BrowserSecurityHeaderSetup;
+import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.FreeMarkerUtil;
+import org.keycloak.theme.Theme;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -56,15 +57,20 @@ import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
-import javax.ws.rs.QueryParam;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class AdminConsole {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AdminConsole.class);
 
     @Context
     protected UriInfo uriInfo;
@@ -286,11 +292,9 @@ public class AdminConsole {
 
             URI baseUri = uriInfo.getBaseUri();
 
-            String authUrl = baseUri.toString();
-            authUrl = authUrl.substring(0, authUrl.length() - 1);
-
-            map.put("authUrl", authUrl);
-            map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + theme.getName());
+            map.put("authUrl", session.getContext().getContextPath());
+            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getName()).getPath());
+            map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/admin/" + theme.getName());
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
@@ -313,7 +317,7 @@ public class AdminConsole {
     @Path("messages.json")
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getMessages(@QueryParam("lang") String lang) {
-        return AdminRoot.getMessages(session, realm, "admin-messages", lang);
+        return AdminRoot.getMessages(session, realm, lang, "admin-messages");
     }
 
 }

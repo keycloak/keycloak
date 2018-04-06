@@ -4,17 +4,18 @@
         <li><a href="#/realms/{{realm.realm}}/authentication/flows">{{:: 'authentication-flows' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/authentication/flows/{{flow.alias}}">{{flow.alias | capitalize}}</a></li>
         <li class="active" data-ng-show="create">{{:: 'create-authenticator-config' | translate}}</li>
-        <li class="active" data-ng-hide="create">{{config.alias}}</li>
+        <li class="active" data-ng-show="!create && config.alias">{{config.alias}}</li>
+        <li class="active" data-ng-show="!create && !config.alias">{{config.id}}</li>
     </ol>
 
     <h1 data-ng-show="create">{{:: 'create-authenticator-config' | translate}}</h1>
-    <h1 data-ng-hide="create">{{config.alias|capitalize}}<a><i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm"
-    	data-ng-hide="changed" data-ng-click="remove()"></i></a></h1>
+    <h1 data-ng-hide="create">
+        <span data-ng-show="config.alias">{{config.alias|capitalize}}</span>
+        <span data-ng-show="!config.alias">{{config.id}}</span>
+        <a><i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" data-ng-hide="changed" data-ng-click="remove()"></i></a>
+    </h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <fieldset>
             <div class="form-group clearfix" data-ng-show="!create">
                 <label class="col-md-2 control-label" for="configId">{{:: 'id' | translate}} </label>

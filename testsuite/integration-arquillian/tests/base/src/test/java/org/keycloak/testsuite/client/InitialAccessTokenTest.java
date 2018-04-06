@@ -57,6 +57,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
+            Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -78,6 +79,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
+            Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -95,6 +97,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
+            Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -112,6 +115,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
+            Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }

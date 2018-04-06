@@ -18,10 +18,13 @@
 package org.keycloak;
 
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -29,12 +32,12 @@ import java.util.List;
 public class AuthorizationContext {
 
     private final AccessToken authzToken;
-    private final List<PathConfig> paths;
+    private final PathConfig current;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, List<PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, PathConfig current) {
         this.authzToken = authzToken;
-        this.paths = paths;
+        this.current = current;
         this.granted = true;
     }
 
@@ -44,15 +47,31 @@ public class AuthorizationContext {
     }
 
     public boolean hasPermission(String resourceName, String scopeName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
-                if (pathHolder.getName().equals(resourceName)) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
-                        if (permission.getScopes().contains(scopeName)) {
-                            return true;
-                        }
-                    }
+        if (this.authzToken == null) {
+            return false;
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return false;
+        }
+
+        for (Permission permission : authorization.getPermissions()) {
+            if (resourceName.equalsIgnoreCase(permission.getResourceName()) || resourceName.equalsIgnoreCase(permission.getResourceId())) {
+                if (scopeName == null) {
+                    return true;
                 }
+
+                if (permission.getScopes().contains(scopeName)) {
+                    return true;
+                }
+            }
+        }
+
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
             }
         }
 
@@ -60,21 +79,21 @@ public class AuthorizationContext {
     }
 
     public boolean hasResourcePermission(String resourceName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
-                if (pathHolder.getName().equals(resourceName)) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
+        return hasPermission(resourceName, null);
     }
 
     public boolean hasScopePermission(String scopeName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
+        if (this.authzToken == null) {
+            return false;
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return false;
+        }
+
+        for (Permission permission : authorization.getPermissions()) {
             if (permission.getScopes().contains(scopeName)) {
                 return true;
             }
@@ -84,7 +103,17 @@ public class AuthorizationContext {
     }
 
     public List<Permission> getPermissions() {
-        return this.authzToken.getAuthorization().getPermissions();
+        if (this.authzToken == null) {
+            return Collections.emptyList();
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return Collections.emptyList();
+        }
+
+        return Collections.unmodifiableList(authorization.getPermissions());
     }
 
     public boolean isGranted() {

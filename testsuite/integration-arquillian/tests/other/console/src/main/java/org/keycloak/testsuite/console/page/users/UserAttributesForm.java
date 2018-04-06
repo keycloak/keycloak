@@ -1,13 +1,15 @@
 package org.keycloak.testsuite.console.page.users;
 
-import java.util.List;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import java.util.List;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  *

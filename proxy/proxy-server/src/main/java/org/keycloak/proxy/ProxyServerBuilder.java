@@ -18,6 +18,7 @@
 package org.keycloak.proxy;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -30,18 +31,16 @@ import io.undertow.security.impl.CachedAuthenticatedSessionMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.ProxyPeerAddressHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.ProxyHandler;
-import io.undertow.server.handlers.ProxyPeerAddressHandler;
 import io.undertow.server.handlers.proxy.SimpleProxyClientProvider;
 import io.undertow.server.session.InMemorySessionManager;
 import io.undertow.server.session.SessionAttachmentHandler;
 import io.undertow.server.session.SessionCookieConfig;
 import io.undertow.server.session.SessionManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.common.util.FindFile;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
@@ -50,8 +49,9 @@ import org.keycloak.adapters.undertow.UndertowAuthenticationMechanism;
 import org.keycloak.adapters.undertow.UndertowPreAuthActionsHandler;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.FindFile;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 import org.xnio.Option;
 
@@ -69,7 +69,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -93,14 +97,14 @@ public class ProxyServerBuilder {
 
     protected Map<String, String> headerNameConfig;
 
-    public ProxyServerBuilder target(String uri) {
+    public ProxyServerBuilder target(ProxyConfig config) {
         SimpleProxyClientProvider provider = null;
         try {
-            provider = new SimpleProxyClientProvider(new URI(uri));
+            provider = new SimpleProxyClientProvider(new URI(config.getTargetUrl()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        final HttpHandler handler = new ProxyHandler(provider, 30000, ResponseCodeHandler.HANDLE_404);
+        final HttpHandler handler = new ProxyHandler(provider, config.getTargetRequestTimeout(), ResponseCodeHandler.HANDLE_404);
         proxyHandler = new HttpHandler() {
             @Override
             public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -381,7 +385,7 @@ public class ProxyServerBuilder {
             log.error("Must set Target URL");
             return null;
         }
-        builder.target(config.getTargetUrl());
+        builder.target(config);
         if (config.getApplications() == null || config.getApplications().size() == 0) {
             log.error("No applications defined");
             return null;

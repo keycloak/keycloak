@@ -20,7 +20,6 @@ package org.keycloak.testsuite.page;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.logging.Logger;
-
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -52,7 +51,7 @@ public abstract class AbstractAlert {
     }
 
     protected boolean checkAlertType(String type) {
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
         try {
             (new WebDriverWait(driver, 1)).until(ExpectedConditions.attributeContains(root, "class", "alert-" + type));
         }

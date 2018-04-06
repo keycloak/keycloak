@@ -37,6 +37,8 @@ import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 public class KeycloakDeploymentBuilder {
@@ -76,6 +78,11 @@ public class KeycloakDeploymentBuilder {
         } else {
             deployment.setSslRequired(SslRequired.EXTERNAL);
         }
+
+        if (adapterConfig.getConfidentialPort() != -1) {
+            deployment.setConfidentialPort(adapterConfig.getConfidentialPort());
+        }
+
         if (adapterConfig.getTokenStore() != null) {
             deployment.setTokenStore(TokenStore.valueOf(adapterConfig.getTokenStore().toUpperCase()));
         } else {
@@ -96,15 +103,25 @@ public class KeycloakDeploymentBuilder {
             deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());
             deployment.setCorsAllowedHeaders(adapterConfig.getCorsAllowedHeaders());
             deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
+            deployment.setCorsExposedHeaders(adapterConfig.getCorsExposedHeaders());
+        }
+
+        // https://tools.ietf.org/html/rfc7636
+        if (adapterConfig.isPkce()) {
+            deployment.setPkce(true);
         }
 
         deployment.setBearerOnly(adapterConfig.isBearerOnly());
+        deployment.setAutodetectBearerOnly(adapterConfig.isAutodetectBearerOnly());
         deployment.setEnableBasicAuth(adapterConfig.isEnableBasicAuth());
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
         deployment.setTokenMinimumTimeToLive(adapterConfig.getTokenMinimumTimeToLive());
         deployment.setMinTimeBetweenJwksRequests(adapterConfig.getMinTimeBetweenJwksRequests());
+        deployment.setPublicKeyCacheTtl(adapterConfig.getPublicKeyCacheTtl());
+        deployment.setIgnoreOAuthQueryParameter(adapterConfig.isIgnoreOAuthQueryParameter());
+        deployment.setRewriteRedirectRules(adapterConfig.getRedirectRewriteRules());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
@@ -113,7 +130,7 @@ public class KeycloakDeploymentBuilder {
             deployment.setClient(new HttpClientBuilder().build(adapterConfig));
         }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
-            throw new RuntimeException("You must specify auth-url");
+            throw new RuntimeException("You must specify auth-server-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig);
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {

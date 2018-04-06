@@ -17,8 +17,8 @@
 
 package org.keycloak.example;
 
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.constants.ServiceUrlConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

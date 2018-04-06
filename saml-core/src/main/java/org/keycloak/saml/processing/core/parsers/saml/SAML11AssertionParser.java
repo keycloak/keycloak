@@ -16,20 +16,6 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
-import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AuthenticationStatementType;
@@ -37,6 +23,19 @@ import org.keycloak.dom.saml.v1.assertion.SAML11AuthorizationDecisionStatementTy
 import org.keycloak.dom.saml.v1.assertion.SAML11ConditionsType;
 import org.keycloak.dom.saml.v1.assertion.SAML11SubjectStatementType;
 import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
+import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -46,6 +45,7 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the saml assertion
@@ -53,7 +53,7 @@ import javax.xml.stream.events.XMLEvent;
  * @author Anil.Saldhana@redhat.com
  * @since Oct 12, 2010
  */
-public class SAML11AssertionParser implements ParserNamespaceSupport {
+public class SAML11AssertionParser implements StaxParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
@@ -90,11 +90,11 @@ public class SAML11AssertionParser implements ParserNamespaceSupport {
             if (xmlEvent instanceof EndElement) {
                 xmlEvent = StaxParserUtil.getNextEvent(xmlEventReader);
                 EndElement endElement = (EndElement) xmlEvent;
-                String endElementTag = StaxParserUtil.getEndElementName(endElement);
+                String endElementTag = StaxParserUtil.getElementName(endElement);
                 if (endElementTag.equals(JBossSAMLConstants.ASSERTION.get()))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(endElementTag);
+                    throw logger.parserUnknownEndElement(endElementTag, xmlEvent.getLocation());
             }
 
             StartElement peekedElement = null;
@@ -107,7 +107,7 @@ public class SAML11AssertionParser implements ParserNamespaceSupport {
             if (peekedElement == null)
                 break;
 
-            String tag = StaxParserUtil.getStartElementName(peekedElement);
+            String tag = StaxParserUtil.getElementName(peekedElement);
 
             if (tag.equals(JBossSAMLConstants.SIGNATURE.get())) {
                 assertion.setSignature(StaxParserUtil.getDOMElement(xmlEventReader));
@@ -144,16 +144,6 @@ public class SAML11AssertionParser implements ParserNamespaceSupport {
         return assertion;
     }
 
-    /**
-     * @see {@link ParserNamespaceSupport#supports(QName)}
-     */
-    public boolean supports(QName qname) {
-        String nsURI = qname.getNamespaceURI();
-        String localPart = qname.getLocalPart();
-
-        return nsURI.equals(JBossSAMLURIConstants.ASSERTION_NSURI.get())
-                && localPart.equals(JBossSAMLConstants.ASSERTION.get());
-    }
 
     private SAML11AssertionType parseBaseAttributes(StartElement nextElement) throws ParsingException {
         Attribute idAttribute = nextElement.getAttributeByName(new QName(SAML11Constants.ASSERTIONID));

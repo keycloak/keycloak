@@ -25,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.keycloak.exportimport.Strategy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,12 +35,12 @@ public interface TestingExportImportResource {
     @GET
     @Path("/run-import")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response runImport();
+    void runImport();
 
     @GET
     @Path("/run-export")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response runExport();
+    void runExport();
 
     @GET
     @Path("/get-users-per-file")
@@ -63,6 +64,11 @@ public interface TestingExportImportResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String setDir(@QueryParam("dir") String dir);
+
+    @PUT
+    @Path("/set-import-strategy")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setStrategy(@QueryParam("importStrategy") Strategy strategy);
 
     @PUT
     @Path("/export-import-provider")

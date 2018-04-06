@@ -17,13 +17,19 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
+import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.ModelException;
+import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.util.List;
 
 /**
@@ -32,44 +38,90 @@ import java.util.List;
 public class JPAResourceServerStore implements ResourceServerStore {
 
     private final EntityManager entityManager;
+    private final AuthorizationProvider provider;
 
-    public JPAResourceServerStore(EntityManager entityManager) {
+    public JPAResourceServerStore(EntityManager entityManager, AuthorizationProvider provider) {
         this.entityManager = entityManager;
+        this.provider = provider;
     }
 
     @Override
     public ResourceServer create(String clientId) {
+        if (!StorageId.isLocalStorage(clientId)) {
+            throw new ModelException("Creating resource server from federated ClientModel not supported");
+        }
         ResourceServerEntity entity = new ResourceServerEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setClientId(clientId);
+        entity.setId(clientId);
 
         this.entityManager.persist(entity);
 
-        return entity;
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public void delete(String id) {
-        this.entityManager.remove(findById(id));
+        ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
+        if (entity == null) return;
+        //This didn't work, had to loop through and remove each policy individually
+        //entityManager.createNamedQuery("deletePolicyByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
+            query.setParameter("serverId", id);
+            List<String> result = query.getResultList();
+            for (String policyId : result) {
+                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+            }
+        }
+
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String permissionId : result) {
+                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
+            }
+        }
+
+        //entityManager.createNamedQuery("deleteResourceByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByServerId", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String resourceId : result) {
+                entityManager.remove(entityManager.getReference(ResourceEntity.class, resourceId));
+            }
+        }
+
+        //entityManager.createNamedQuery("deleteScopeByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String scopeId : result) {
+                entityManager.remove(entityManager.getReference(ScopeEntity.class, scopeId));
+            }
+        }
+
+        this.entityManager.remove(entity);
+        entityManager.flush();
+        entityManager.detach(entity);
     }
 
     @Override
     public ResourceServer findById(String id) {
-        return entityManager.find(ResourceServerEntity.class, id);
-    }
-
-    @Override
-    public ResourceServer findByClient(final String clientId) {
-        Query query = entityManager.createQuery("from ResourceServerEntity where clientId = :clientId");
-
-        query.setParameter("clientId", clientId);
-        List result = query.getResultList();
-
-        if (result.isEmpty()) {
-            return null;
-        }
-
-        return (ResourceServer) result.get(0);
+        ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
+        if (entity == null) return null;
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 }

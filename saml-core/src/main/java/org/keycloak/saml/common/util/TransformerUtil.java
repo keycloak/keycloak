@@ -227,12 +227,18 @@ public class TransformerUtil {
                     throw new TransformerException(ErrorCodes.WRITER_SHOULD_START_ELEMENT);
 
                 StartElement rootElement = (StartElement) xmlEvent;
-                rootTag = StaxParserUtil.getStartElementName(rootElement);
-                Element docRoot = handleStartElement(xmlEventReader, rootElement, new CustomHolder(doc, false));
+                rootTag = StaxParserUtil.getElementName(rootElement);
+                CustomHolder holder = new CustomHolder(doc, false);
+                Element docRoot = handleStartElement(xmlEventReader, rootElement, holder);
                 Node parent = doc.importNode(docRoot, true);
                 doc.appendChild(parent);
 
                 stack.push(parent);
+
+                if (holder.encounteredTextNode) {
+                    // Handling text node skips over the corresponding end element, see {@link XMLEventReader#getElementText()}
+                    return;
+                }
 
                 while (xmlEventReader.hasNext()) {
                     xmlEvent = StaxParserUtil.getNextEvent(xmlEventReader);
@@ -240,7 +246,7 @@ public class TransformerUtil {
                     switch (type) {
                         case XMLEvent.START_ELEMENT:
                             StartElement startElement = (StartElement) xmlEvent;
-                            CustomHolder holder = new CustomHolder(doc, false);
+                            holder = new CustomHolder(doc, false);
                             Element docStartElement = handleStartElement(xmlEventReader, startElement, holder);
                             Node el = doc.importNode(docStartElement, true);
 
@@ -261,7 +267,7 @@ public class TransformerUtil {
                             break;
                         case XMLEvent.END_ELEMENT:
                             EndElement endElement = (EndElement) xmlEvent;
-                            String endTag = StaxParserUtil.getEndElementName(endElement);
+                            String endTag = StaxParserUtil.getElementName(endElement);
                             if (rootTag.equals(endTag))
                                 return; // We are done with the dom parsing
                             else {
@@ -334,7 +340,7 @@ public class TransformerUtil {
             String prefix = elementName.getPrefix();
             String localPart = elementName.getLocalPart();
 
-            String qual = prefix != null && prefix != "" ? prefix + ":" + localPart : localPart;
+            String qual = (prefix != null && ! prefix.isEmpty()) ? prefix + ":" + localPart : localPart;
 
             Element el = doc.createElementNS(ns, qual);
 
@@ -356,7 +362,7 @@ public class TransformerUtil {
                 ns = attrName.getNamespaceURI();
                 prefix = attrName.getPrefix();
                 localPart = attrName.getLocalPart();
-                qual = prefix != null && prefix != "" ? prefix + ":" + localPart : localPart;
+                qual = (prefix != null && ! prefix.isEmpty()) ? prefix + ":" + localPart : localPart;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace("Creating an Attribute Namespace=" + ns + ":" + qual);
@@ -373,8 +379,8 @@ public class TransformerUtil {
                 QName name = namespace.getName();
                 localPart = name.getLocalPart();
                 prefix = name.getPrefix();
-                if (prefix != null && prefix != "")
-                    qual = (localPart != null && localPart != "") ? prefix + ":" + localPart : prefix;
+                if (prefix != null && ! prefix.isEmpty())
+                    qual = (localPart != null && ! localPart.isEmpty()) ? prefix + ":" + localPart : prefix;
 
                 if (qual.equals("xmlns"))
                     continue;
@@ -423,8 +429,8 @@ public class TransformerUtil {
                 QName name = namespace.getName();
                 localPart = name.getLocalPart();
                 prefix = name.getPrefix();
-                if (prefix != null && prefix != "")
-                    qual = (localPart != null && localPart != "") ? prefix + ":" + localPart : prefix;
+                if (prefix != null && ! prefix.isEmpty())
+                    qual = (localPart != null && ! localPart.isEmpty()) ? prefix + ":" + localPart : prefix;
 
                 if (qual != null && qual.equals("xmlns"))
                     return namespace.getNamespaceURI();

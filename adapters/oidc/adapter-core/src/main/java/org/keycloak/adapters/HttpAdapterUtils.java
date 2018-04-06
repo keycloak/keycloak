@@ -17,14 +17,14 @@
 
 package org.keycloak.adapters;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,14 +46,7 @@ public class HttpAdapterUtils {
             }
             InputStream is = entity.getContent();
             try {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                int c;
-                while ((c = is.read()) != -1) {
-                    os.write(c);
-                }
-                byte[] bytes = os.toByteArray();
-                String json = new String(bytes);
-                return JsonSerialization.readValue(json, clazz);
+                return JsonSerialization.readValue(is, clazz);
             } finally {
                 try {
                     is.close();

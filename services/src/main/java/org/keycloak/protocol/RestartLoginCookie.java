@@ -18,17 +18,20 @@
 package org.keycloak.protocol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -37,17 +40,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is an an encoded token that is stored as a cookie so that if there is a client timeout, then the client session
+ * This is an an encoded token that is stored as a cookie so that if there is a client timeout, then the authentication session
  * can be restarted.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class RestartLoginCookie {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(RestartLoginCookie.class);
     public static final String KC_RESTART = "KC_RESTART";
-    @JsonProperty("cs")
-    protected String clientSession;
 
     @JsonProperty("cid")
     protected String clientId;
@@ -64,13 +65,9 @@ public class RestartLoginCookie {
     @JsonProperty("notes")
     protected Map<String, String> notes = new HashMap<>();
 
-    public String getClientSession() {
-        return clientSession;
-    }
-
-    public void setClientSession(String clientSession) {
-        this.clientSession = clientSession;
-    }
+    @Deprecated // Backwards compatibility
+    @JsonProperty("cs")
+    protected String cs;
 
     public Map<String, String> getNotes() {
         return notes;
@@ -112,32 +109,29 @@ public class RestartLoginCookie {
         this.action = action;
     }
 
-    public String encode(RealmModel realm) {
-        JWSBuilder builder = new JWSBuilder();
-        return builder.jsonContent(this)
-                .hmac256((SecretKey)realm.getCodeSecretKey());
-               //.rsa256(realm.getPrivateKey());
+    public String encode(KeycloakSession session, RealmModel realm) {
+        KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
 
+        JWSBuilder builder = new JWSBuilder();
+        return builder.kid(activeKey.getKid()).jsonContent(this)
+               .hmac256(activeKey.getSecretKey());
     }
 
     public RestartLoginCookie() {
     }
-    public RestartLoginCookie(ClientSessionModel clientSession) {
-        this.action = clientSession.getAction();
-        this.clientId = clientSession.getClient().getClientId();
-        this.authMethod = clientSession.getAuthMethod();
-        this.redirectUri = clientSession.getRedirectUri();
-        this.clientSession = clientSession.getId();
-        for (Map.Entry<String, String> entry : clientSession.getNotes().entrySet()) {
+    public RestartLoginCookie(AuthenticationSessionModel authSession) {
+        this.action = authSession.getAction();
+        this.clientId = authSession.getClient().getClientId();
+        this.authMethod = authSession.getProtocol();
+        this.redirectUri = authSession.getRedirectUri();
+        for (Map.Entry<String, String> entry : authSession.getClientNotes().entrySet()) {
             notes.put(entry.getKey(), entry.getValue());
         }
     }
 
-    public static void setRestartCookie(RealmModel realm, ClientConnection connection, UriInfo uriInfo, ClientSessionModel clientSession) {
-        RestartLoginCookie restart = new RestartLoginCookie(clientSession);
-        String encoded = restart.encode(realm);
-        int keySize = realm.getCodeSecret().length();
-        int size = encoded.length();
+    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, AuthenticationSessionModel authSession) {
+        RestartLoginCookie restart = new RestartLoginCookie(authSession);
+        String encoded = restart.encode(session, realm);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true);
@@ -149,7 +143,9 @@ public class RestartLoginCookie {
         CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true);
     }
 
-    public static ClientSessionModel restartSession(KeycloakSession session, RealmModel realm, String code) throws Exception {
+
+    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
+                                                            RootAuthenticationSessionModel rootSession, String expectedClientId) throws Exception {
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
@@ -157,35 +153,39 @@ public class RestartLoginCookie {
         }
         String encodedCookie = cook.getValue();
         JWSInput input = new JWSInput(encodedCookie);
-        /*
-        if (!RSAProvider.verify(input, realm.getPublicKey())) {
-            logger.debug("Failed to verify encoded RestartLoginCookie");
+        SecretKey secretKey = session.keys().getHmacSecretKey(realm, input.getHeader().getKeyId());
+        if (secretKey == null) {
+            logger.debug("Failed to retrieve HMAC secret key for session restart");
             return null;
         }
-        */
-        if (!HMACProvider.verify(input, (SecretKey)realm.getCodeSecretKey())) {
+        if (!HMACProvider.verify(input, secretKey)) {
             logger.debug("Failed to verify encoded RestartLoginCookie");
             return null;
         }
         RestartLoginCookie cookie = input.readJsonContent(RestartLoginCookie.class);
-        String[] parts = code.split("\\.");
-        String clientSessionId = parts[1];
-        if (!clientSessionId.equals(cookie.getClientSession())) {
-            logger.debug("RestartLoginCookie clientSession does not match code's clientSession");
-            return null;
-        }
 
         ClientModel client = realm.getClientByClientId(cookie.getClientId());
         if (client == null) return null;
 
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(cookie.getAuthMethod());
-        clientSession.setRedirectUri(cookie.getRedirectUri());
-        clientSession.setAction(cookie.getAction());
-        for (Map.Entry<String, String> entry : cookie.getNotes().entrySet()) {
-            clientSession.setNote(entry.getKey(), entry.getValue());
+        // Restart just if client from cookie matches client from the URL.
+        if (!client.getClientId().equals(expectedClientId)) {
+            logger.debugf("Skip restarting from the KC_RESTART. Clients doesn't match: Cookie client: %s, Requested client: %s", client.getClientId(), expectedClientId);
+            return null;
         }
 
-        return clientSession;
+        // Need to create brand new session and setup cookie
+        if (rootSession == null) {
+            rootSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
+        }
+
+        AuthenticationSessionModel authSession = rootSession.createAuthenticationSession(client);
+        authSession.setProtocol(cookie.getAuthMethod());
+        authSession.setRedirectUri(cookie.getRedirectUri());
+        authSession.setAction(cookie.getAction());
+        for (Map.Entry<String, String> entry : cookie.getNotes().entrySet()) {
+            authSession.setClientNote(entry.getKey(), entry.getValue());
+        }
+
+        return authSession;
     }
 }

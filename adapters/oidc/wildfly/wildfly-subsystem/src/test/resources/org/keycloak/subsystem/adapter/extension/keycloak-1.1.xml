@@ -22,6 +22,7 @@
         <truststore>truststore.jks</truststore>
         <truststore-password>secret</truststore-password>
         <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
         <allow-any-hostname>false</allow-any-hostname>
         <disable-trust-manager>true</disable-trust-manager>
         <connection-pool-size>20</connection-pool-size>
@@ -40,17 +41,25 @@
         <token-store>session</token-store>
         <principal-attribute>sub</principal-attribute>
     </realm>
+    <realm name="jboss-infra">
+        <realm-public-key>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKoq+a9MgXepmsPJDmo45qswuChW9pWjanX68oIBuI4hGvhQxFHryCow230A+sr7tFdMQMt8f1l/ysmV/fYAuW29WaoY4kI4Ou1yYPuwywKSsxT6PooTs83hKyZ1h4LZMj5DkLGDDDyVRHob2WmPaYg9RGVRw3iGGsD/p+Yb+L/gnBYQnZZ7lYqmN7h36p5CkzzlgXQA1Ha8sQxL+rJNH8+sZm0vBrKsoII3Of7TqHGsm1RwFV3XCuGJ7S61AbjJMXL5DQgJl9Z5scvxGAyoRLKC294UgMnQdzyBTMPw2GybxkRKmiK2KjQKmcopmrJp/Bt6fBR6ZkGSs9qUlxGHgwIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8180/auth</auth-server-url>
+    </realm>
     <secure-deployment name="web-console">
         <realm>master</realm>
         <resource>web-console</resource>
         <use-resource-role-mappings>true</use-resource-role-mappings>
         <turn-off-change-session-id-on-login>false</turn-off-change-session-id-on-login>
+        <token-minimum-time-to-live>10</token-minimum-time-to-live>
+        <min-time-between-jwks-requests>20</min-time-between-jwks-requests>
         <realm-public-key>
             MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB
         </realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
         <credential name="secret">0aa31d98-e0aa-404c-b6e0-e771dba1e798</credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">api/$1/</redirect-rewrite-rule>
     </secure-deployment>
     <secure-deployment name="http-endpoint">
         <realm>master</realm>
@@ -64,5 +73,20 @@
         <credential name="jwt">
             <client-keystore-file>/tmp/keystore.jks</client-keystore-file>
         </credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">/api/$1/</redirect-rewrite-rule>
     </secure-deployment>
+    <secure-deployment name="wildfly-management">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-management</resource>
+        <bearer-only>true</bearer-only>
+        <ssl-required>EXTERNAL</ssl-required>
+        <principal-attribute>preferred_username</principal-attribute>
+    </secure-deployment>
+    <secure-server name="wildfly-console">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-console</resource>
+        <public-client>true</public-client>
+        <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
+    </secure-server>
 </subsystem>

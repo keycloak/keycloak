@@ -17,10 +17,10 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.jose.jws.JWSInput;
+
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,7 +34,12 @@ public class HardcodedPublicKeyLocator implements PublicKeyLocator {
     }
 
     @Override
-    public PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment) {
+    public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         return publicKey;
+    }
+
+    @Override
+    public void reset(KeycloakDeployment deployment) {
+
     }
 }

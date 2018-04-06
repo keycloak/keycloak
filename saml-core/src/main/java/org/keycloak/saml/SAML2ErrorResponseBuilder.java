@@ -17,8 +17,12 @@
 
 package org.keycloak.saml;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -32,11 +36,12 @@ import org.w3c.dom.Document;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2ErrorResponseBuilder {
+public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2ErrorResponseBuilder> {
 
     protected String status;
     protected String destination;
     protected String issuer;
+    protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2ErrorResponseBuilder status(String status) {
         this.status = status;
@@ -53,11 +58,16 @@ public class SAML2ErrorResponseBuilder {
         return this;
     }
 
+    @Override
+    public SAML2ErrorResponseBuilder addExtension(NodeGenerator extension) {
+        this.extensions.add(extension);
+        return this;
+    }
 
     public Document buildDocument() throws ProcessingException {
 
         try {
-            StatusResponseType statusResponse = new StatusResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
+            StatusResponseType statusResponse = new ResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
             statusResponse.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
             NameIDType issuer = new NameIDType();
@@ -65,6 +75,14 @@ public class SAML2ErrorResponseBuilder {
 
             statusResponse.setIssuer(issuer);
             statusResponse.setDestination(destination);
+
+            if (! this.extensions.isEmpty()) {
+                ExtensionsType extensionsType = new ExtensionsType();
+                for (NodeGenerator extension : this.extensions) {
+                    extensionsType.addExtension(extension);
+                }
+                statusResponse.setExtensions(extensionsType);
+            }
 
             SAML2Response saml2Response = new SAML2Response();
             return saml2Response.convert(statusResponse);

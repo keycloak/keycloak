@@ -18,7 +18,6 @@ package org.keycloak.forms.login.freemarker.model;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 
@@ -38,7 +37,7 @@ public class OAuthGrantBean {
     private ClientModel client;
     private List<String> claimsRequested;
 
-    public OAuthGrantBean(String code, ClientSessionModel clientSession, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
+    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
                           List<ProtocolMapperModel> protocolMappersRequested, String accessRequestMessage) {
         this.code = code;
         this.client = client;

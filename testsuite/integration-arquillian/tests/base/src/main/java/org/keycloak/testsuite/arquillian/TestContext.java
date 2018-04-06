@@ -20,6 +20,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ws.rs.NotFoundException;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.TestCleanup;
 
 /**
  *
@@ -37,6 +45,17 @@ public final class TestContext {
     private boolean adminLoggedIn;
     
     private final Map customContext = new HashMap<>();
+
+    private Keycloak adminClient;
+    private KeycloakTestingClient testingClient;
+    private List<RealmRepresentation> testRealmReps;
+
+    // Track if particular test was initialized. What exactly means "initialized" is test dependent (Eg. some user in @Before method was created, so we can set initialized to true
+    // to avoid creating user when @Before method is executed for 2nd time)
+    private boolean initialized;
+
+    // Key is realmName, value are objects to clean after the test method
+    private Map<String, TestCleanup> cleanups = new ConcurrentHashMap<>();
 
     public TestContext(SuiteContext suiteContext, Class testClass) {
         this.suiteContext = suiteContext;
@@ -91,6 +110,56 @@ public final class TestContext {
         return "TEST CONTEXT: " + getTestClass().getCanonicalName() + "\n"
                 + (isAdapterTest() ? "App server container: " + getAppServerInfo() + "\n" : "");
     }
+
+    public Keycloak getAdminClient() {
+        return adminClient;
+    }
+
+    public void setAdminClient(Keycloak adminClient) {
+        this.adminClient = adminClient;
+    }
+
+    public KeycloakTestingClient getTestingClient() {
+        return testingClient;
+    }
+
+    public void setTestingClient(KeycloakTestingClient testingClient) {
+        this.testingClient = testingClient;
+    }
+
+    public List<RealmRepresentation> getTestRealmReps() {
+        return testRealmReps;
+    }
+
+    public void setTestRealmReps(List<RealmRepresentation> testRealmReps) {
+        this.testRealmReps = testRealmReps;
+    }
+
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
+    public TestCleanup getOrCreateCleanup(String realmName) {
+        TestCleanup cleanup = cleanups.get(realmName);
+        if (cleanup == null) {
+            cleanup = new TestCleanup(adminClient, realmName);
+            TestCleanup existing = cleanups.putIfAbsent(realmName, cleanup);
+
+            if (existing != null) {
+                cleanup = existing;
+            }
+        }
+        return cleanup;
+    }
+
+    public Map<String, TestCleanup> getCleanups() {
+        return cleanups;
+    }
+
 
     public Object getCustomValue(Object key) {
         return customContext.get(key);

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -27,7 +29,6 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
@@ -36,9 +37,7 @@ import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,6 +53,7 @@ public class ClientTemplateEntity {
     private String id;
     @Column(name = "NAME")
     private String name;
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientTemplate")

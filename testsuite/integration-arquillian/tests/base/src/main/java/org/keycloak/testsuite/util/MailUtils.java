@@ -42,25 +42,49 @@ public class MailUtils {
     }
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
-        Multipart multipart = (Multipart) message.getContent();
+        return getPasswordResetEmailLink(new EmailBody(message));
+    }
 
-        final String textContentType = multipart.getBodyPart(0).getContentType();
-
-        assertEquals("text/plain; charset=UTF-8", textContentType);
-
-        final String textBody = (String) multipart.getBodyPart(0).getContent();
-        final String textChangePwdUrl = getLink(textBody);
-
-        final String htmlContentType = multipart.getBodyPart(1).getContentType();
-
-        assertEquals("text/html; charset=UTF-8", htmlContentType);
-
-        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = getLink(htmlBody);
-
+    public static String getPasswordResetEmailLink(EmailBody body) throws IOException, MessagingException {
+        final String textChangePwdUrl = getLink(body.getText());
+        final String htmlChangePwdUrl = getLink(body.getHtml());
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;
+    }
+
+    public static EmailBody getBody(MimeMessage message) throws IOException, MessagingException {
+        return new EmailBody(message);
+    }
+
+    public static class EmailBody {
+
+        private String text;
+        private String html;
+
+        private EmailBody(MimeMessage message) throws IOException, MessagingException {
+            Multipart multipart = (Multipart) message.getContent();
+
+            String textContentType = multipart.getBodyPart(0).getContentType();
+
+            assertEquals("text/plain; charset=UTF-8", textContentType);
+
+            text = (String) multipart.getBodyPart(0).getContent();
+
+            String htmlContentType = multipart.getBodyPart(1).getContentType();
+
+            assertEquals("text/html; charset=UTF-8", htmlContentType);
+
+            html = (String) multipart.getBodyPart(1).getContent();
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public String getHtml() {
+            return html;
+        }
     }
 
 }

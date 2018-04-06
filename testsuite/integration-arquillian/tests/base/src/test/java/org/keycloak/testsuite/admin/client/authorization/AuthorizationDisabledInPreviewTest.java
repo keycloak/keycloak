@@ -26,6 +26,7 @@ import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,7 +45,9 @@ public class AuthorizationDisabledInPreviewTest extends AbstractClientTest {
             testRealmResource().clients().get(id).authorization().getSettings();
         } catch (ServerErrorException e) {
             assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());
+            return;
         }
+        fail("Feature Authorization should be disabled.");
     }
 
 }

@@ -16,7 +16,7 @@
  */
 package org.keycloak.provider;
 
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(FileSystemProviderLoaderFactory.class);
 
     @Override
     public boolean supports(String type) {
@@ -38,8 +38,8 @@ public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
     }
 
     @Override
-    public ProviderLoader create(ClassLoader baseClassLoader, String resource) {
-        return new DefaultProviderLoader(createClassLoader(baseClassLoader, resource.split(";")));
+    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
+        return new DefaultProviderLoader(info, createClassLoader(baseClassLoader, resource.split(";")));
     }
 
     private static URLClassLoader createClassLoader(ClassLoader parent, String... files) {

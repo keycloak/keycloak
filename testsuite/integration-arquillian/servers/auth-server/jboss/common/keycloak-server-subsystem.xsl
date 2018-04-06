@@ -28,13 +28,22 @@
         <spi name="truststore">
             <provider name="file" enabled="true">
                 <properties>
-                    <property name="file" value="${{jboss.home.dir}}/standalone/configuration/keycloak.truststore"/>
-                    <property name="password" value="secret"/>
+                    <property name="file" value="${{auth.server.truststore}}"/>
+                    <property name="password" value="${{auth.server.truststore.password}}"/>
                     <property name="hostname-verification-policy" value="WILDCARD"/>
                     <property name="disabled" value="false"/>
                 </properties>
             </provider>
         </spi>
+    </xsl:variable>
+    <xsl:variable name="samlPortsDefinition">
+            <spi name="login-protocol">
+                <provider name="saml" enabled="true">
+                    <properties>
+                        <property name="knownProtocols" value="[&quot;http=${{auth.server.http.port}}&quot;,&quot;https=${{auth.server.https.port}}&quot;]"/>
+                    </properties>
+                </provider>
+            </spi>
     </xsl:variable>
     <xsl:variable name="themeModuleDefinition">
         <modules>
@@ -60,11 +69,12 @@
         </xsl:copy>
     </xsl:template>
     
-    <!--inject truststore-->
+    <!--inject truststore and SAML port-protocol mappings-->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsKS)]">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />
             <xsl:copy-of select="$truststoreDefinition"/>
+            <xsl:copy-of select="$samlPortsDefinition"/>
         </xsl:copy>
     </xsl:template>
 

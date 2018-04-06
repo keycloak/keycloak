@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.URLAssert;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 
 import java.util.List;
 
@@ -42,24 +43,29 @@ public class ModAuthMellonTest extends AbstractAuthTest {
 
     @Test
     public void singleLoginAndLogoutTest() {
-        modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("Protected resource"));
+        try {
+            modAuthMellonProtectedResourcePage.navigateTo();
+            URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+            testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
+            assertTrue(driver.getPageSource().contains("Protected resource"));
 
-        modAuthMellonProtectedResourcePage2.navigateTo();
-        assertTrue(driver.getPageSource().contains("Protected resource 2"));
+            modAuthMellonProtectedResourcePage2.navigateTo();
+            assertTrue(driver.getPageSource().contains("Protected resource 2"));
 
-        modAuthMellonProtectedResourcePage2.logout();
-        assertTrue(driver.getPageSource().contains("Unprotected resource 2"));
+            modAuthMellonProtectedResourcePage2.logout();
+            assertTrue(driver.getPageSource().contains("Unprotected resource 2"));
 
-        modAuthMellonProtectedResourcePage2.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+            modAuthMellonProtectedResourcePage2.navigateTo();
+            URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
-        pause(5000); //session length
+            setTimeOffset(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS * 1000);
+            pause(5000); //session length
 
-        modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+            modAuthMellonProtectedResourcePage.navigateTo();
+            URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+        } finally {
+            resetTimeOffset();
+        }
     }
 
     @Test
@@ -76,13 +82,17 @@ public class ModAuthMellonTest extends AbstractAuthTest {
 
     @Test
     public void sessionExpiration() {
-        modAuthMellonProtectedResourcePage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("Protected resource"));
+        try {
+            modAuthMellonProtectedResourcePage.navigateTo();
+            testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
+            assertTrue(driver.getPageSource().contains("Protected resource"));
+            setTimeOffset(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS * 1000);
+            pause(5000); //session length
 
-        pause(5000); //session length
-
-        modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+            modAuthMellonProtectedResourcePage.navigateTo();
+            URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+        } finally {
+            resetTimeOffset();
+        }
     }
 }

@@ -6,13 +6,10 @@
         <li data-ng-show="create">{{:: 'add-role' | translate}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{role.name|capitalize}} <i id="removeRole" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" 
-    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
-    <h1 data-ng-show="create">{{:: 'add-role' | translate}}</h1>
+    <kc-tabs-role></kc-tabs-role>
 
     <form class="form-horizontal clearfix" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
-            <legend><span class="text">{{:: 'role' | translate}}</span></legend>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name"><span class="required" data-ng-show="create">*</span> {{:: 'role-name' | translate}}</label>
 
@@ -96,7 +93,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">
                     <span>{{:: 'client-roles' | translate}}</span>
-                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="compositeClient" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="compositeClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
                 </label>
 
                 <div class="col-md-10">

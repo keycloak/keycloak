@@ -41,3 +41,5 @@ org.keycloak.authorization.policy.provider.role.RolePolicyProviderFactory
 org.keycloak.authorization.policy.provider.scope.ScopePolicyProviderFactory
 org.keycloak.authorization.policy.provider.time.TimePolicyProviderFactory
 org.keycloak.authorization.policy.provider.user.UserPolicyProviderFactory
+org.keycloak.authorization.policy.provider.client.ClientPolicyProviderFactory
+org.keycloak.authorization.policy.provider.group.GroupPolicyProviderFactory

@@ -22,7 +22,6 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -30,7 +29,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -76,15 +78,27 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
             creds.get(0).setValue(credInput.getValue());
             session.userCredentialManager().updateCredential(realm, user, creds.get(0));
         }
-        session.getUserCache().evict(realm, user);
+        session.userCache().evict(realm, user);
         return true;
     }
 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!SECRET_QUESTION.equals(credentialType)) return;
-        session.userCredentialManager().disableCredential(realm, user, credentialType);
-        session.getUserCache().evict(realm, user);
+        session.userCredentialManager().disableCredentialType(realm, user, credentialType);
+        session.userCache().evict(realm, user);
+
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!session.userCredentialManager().getStoredCredentialsByType(realm, user, SECRET_QUESTION).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(SECRET_QUESTION);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
 
     }
 

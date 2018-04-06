@@ -17,37 +17,36 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        ClientSessionModel clientSession = context.getClientSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        String existingUserInfo = clientSession.getNote(EXISTING_USER_INFO);
+        String existingUserInfo = authSession.getAuthNote(EXISTING_USER_INFO);
         if (existingUserInfo == null) {
-            logger.noDuplicationDetected();
+            ServicesLogger.LOGGER.noDuplicationDetected();
             context.attempted();
             return;
         }
@@ -67,9 +66,12 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("updateProfile")) {
-            context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
-            context.getClientSession().removeNote(EXISTING_USER_INFO);
-            context.resetFlow();
+            context.resetFlow(() -> {
+                AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+                serializedCtx.saveToAuthenticationSession(authSession, BROKERED_CONTEXT_NOTE);
+                authSession.setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+            });
         } else if (action != null && action.equals("linkAccount")) {
             context.success();
         } else {

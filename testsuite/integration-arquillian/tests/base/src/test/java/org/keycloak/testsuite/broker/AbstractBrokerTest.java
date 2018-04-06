@@ -1,163 +1,134 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.List;
-
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.openqa.selenium.By;
+import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.*;
+
 import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-    protected abstract RealmRepresentation createProviderRealm();
-    protected abstract RealmRepresentation createConsumerRealm();
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 
-    protected abstract List<ClientRepresentation> createProviderClients();
-    protected abstract List<ClientRepresentation> createConsumerClients();
+import org.jboss.arquillian.graphene.page.Page;
 
-    protected abstract IdentityProviderRepresentation setUpIdentityProvider();
+import javax.ws.rs.core.Response;
 
-    protected abstract String providerRealmName();
-    protected abstract String consumerRealmName();
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
-    protected abstract String getUserLogin();
-    protected abstract String getUserPassword();
-    protected abstract String getUserEmail();
+public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
-    protected abstract String getIDPAlias();
+    public static final String ROLE_USER = "user";
+    public static final String ROLE_MANAGER = "manager";
+    public static final String ROLE_FRIENDLY_MANAGER = "friendly-manager";
 
-    @Page
-    protected LoginPage accountLoginPage;
-
-    @Page
-    protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AccountPasswordPage accountPasswordPage;
-
-    @Page
-    protected ErrorPage errorPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation providerRealm = createProviderRealm();
-        RealmRepresentation consumerRealm = createConsumerRealm();
-
-        testRealms.add(providerRealm);
-        testRealms.add(consumerRealm);
-    }
+    protected IdentityProviderResource identityProviderResource;
 
     @Before
-    public void createUser() {
-        log.debug("creating user for realm " + providerRealmName());
+    public void beforeBrokerTest() {
+        log.debug("creating user for realm " + bc.providerRealmName());
 
         UserRepresentation user = new UserRepresentation();
-        user.setUsername(getUserLogin());
-        user.setEmail(getUserEmail());
+        user.setUsername(bc.getUserLogin());
+        user.setEmail(bc.getUserEmail());
         user.setEmailVerified(true);
         user.setEnabled(true);
 
-        RealmResource realmResource = adminClient.realm(providerRealmName());
-        String userId = createUserWithAdminClient(realmResource, user);
+        RealmResource realmResource = adminClient.realm(bc.providerRealmName());
+        userId = createUserWithAdminClient(realmResource, user);
 
-        resetUserPassword(realmResource.users().get(userId), getUserPassword(), false);
-    }
+        resetUserPassword(realmResource.users().get(userId), bc.getUserPassword(), false);
 
-    @Before
-    public void addIdentityProviderToProviderRealm() {
-        log.debug("adding identity provider to realm " + consumerRealmName());
+        if (testContext.isInitialized()) {
+            return;
+        }
 
-        RealmResource realm = adminClient.realm(consumerRealmName());
-        realm.identityProviders().create(setUpIdentityProvider());
-    }
+        log.debug("adding identity provider to realm " + bc.consumerRealmName());
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
+        identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
 
-    @Before
-    public void addClients() {
-        List<ClientRepresentation> clients = createProviderClients();
+        // addClients
+        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
         if (clients != null) {
-            RealmResource providerRealm = adminClient.realm(providerRealmName());
+            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + providerRealmName());
+                log.debug("adding client " + client.getClientId()+ " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                providerRealm.clients().create(client).close();
             }
         }
 
-        clients = createConsumerClients();
+        clients = bc.createConsumerClients(suiteContext);
         if (clients != null) {
-            RealmResource consumerRealm = adminClient.realm(consumerRealmName());
+            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + consumerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                consumerRealm.clients().create(client).close();
             }
         }
+
+        testContext.setInitialized(true);
     }
 
-    protected String getAuthRoot() {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString();
-    }
-
-    protected IdentityProviderRepresentation createIdentityProvider(String alias, String providerId) {
-        IdentityProviderRepresentation identityProviderRepresentation = new IdentityProviderRepresentation();
-
-        identityProviderRepresentation.setAlias(alias);
-        identityProviderRepresentation.setDisplayName(providerId);
-        identityProviderRepresentation.setProviderId(providerId);
-        identityProviderRepresentation.setEnabled(true);
-
-        return identityProviderRepresentation;
-    }
 
     @Test
-    public void logInAsUserInIDP() {
-        driver.navigate().to(getAccountUrl(consumerRealmName()));
+    public void testLogInAsUserInIDP() {
+        loginUser();
 
-        log.debug("Clicking social " + getIDPAlias());
-        accountLoginPage.clickSocial(getIDPAlias());
+        testSingleLogout();
+    }
 
-        waitForPage("log in to");
+    protected void loginUser() {
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "log in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+          driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
         log.debug("Logging in");
-        accountLoginPage.login(getUserLogin(), getUserPassword());
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        waitForPage("update account information");
+        waitForPage(driver, "update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/"));
+          driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
-        UsersResource consumerUsers = adminClient.realm(consumerRealmName()).users();
+        UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
         int userCount = consumerUsers.count();
         Assert.assertTrue("There must be at least one user", userCount > 0);
@@ -166,60 +137,117 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
         boolean isUserFound = false;
         for (UserRepresentation user : users) {
-            if (user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail())) {
+            if (user.getUsername().equals(bc.getUserLogin()) && user.getEmail().equals(bc.getUserEmail())) {
                 isUserFound = true;
                 break;
             }
         }
 
-        Assert.assertTrue("There must be user " + getUserLogin() + " in realm " + consumerRealmName(),
-                isUserFound);
-
-        testSingleLogout();
+        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
+          isUserFound);
     }
 
     @Test
     public void loginWithExistingUser() {
-        logInAsUserInIDP();
+        testLogInAsUserInIDP();
 
-        Integer userCount = adminClient.realm(consumerRealmName()).users().count();
+        Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        driver.navigate().to(getAccountUrl(consumerRealmName()));
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
-        log.debug("Clicking social " + getIDPAlias());
-        accountLoginPage.clickSocial(getIDPAlias());
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage("log in to");
+        waitForPage(driver, "log in to", true);
 
-        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        accountLoginPage.login(getUserLogin(), getUserPassword());
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
 
-        assertEquals(userCount, adminClient.realm(consumerRealmName()).users().count());
+        assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
+    }
+    
+    // KEYCLOAK-2957
+    @Test
+    public void testLinkAccountWithEmailVerified() {
+        //start mail server
+        MailServer.start();
+        MailServer.createEmailAccount(USER_EMAIL, "password");
+        
+        try {
+            //configure smpt server in the realm
+            RealmRepresentation master = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+            master.setSmtpServer(suiteContext.getSmtpServer());
+            adminClient.realm(bc.consumerRealmName()).update(master);
+        
+            //create user on consumer's site who should be linked later
+            UserRepresentation newUser = UserBuilder.create().username("consumer").email(USER_EMAIL).enabled(true).build();
+            String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
+            resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
+        
+            //test
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            log.debug("Clicking social " + bc.getIDPAlias());
+            accountLoginPage.clickSocial(bc.getIDPAlias());
+
+            waitForPage(driver, "log in to", true);
+
+            Assert.assertTrue("Driver should be on the provider realm page right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+            log.debug("Logging in");
+            accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+            waitForPage(driver, "update account information", false);
+
+            Assert.assertTrue(updateAccountInformationPage.isCurrent());
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+
+            //link account by email
+            waitForPage(driver, "account already exists", false);
+            idpConfirmLinkPage.clickLinkAccount();
+            
+            String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL, 
+                    "Someone wants to link your ", false);
+
+            log.info("navigating to url from email: " + url);
+            driver.navigate().to(url);
+
+            //test if user is logged in
+            assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
+            
+            //test if the user has verified email
+            assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(userId).toRepresentation().isEmailVerified());
+        } finally {
+            // stop mail server
+            MailServer.stop();
+        }
     }
 
     // KEYCLOAK-3267
     @Test
     public void loginWithExistingUserWithBruteForceEnabled() {
-        adminClient.realm(consumerRealmName()).update(RealmBuilder.create().bruteForceProtected(true).failureFactor(2).build());
+        adminClient.realm(bc.consumerRealmName()).update(RealmBuilder.create().bruteForceProtected(true).failureFactor(2).build());
 
         loginWithExistingUser();
 
-        driver.navigate().to(getAccountPasswordUrl(consumerRealmName()));
+        driver.navigate().to(getAccountPasswordUrl(bc.consumerRealmName()));
 
         accountPasswordPage.changePassword("password", "password");
 
-        driver.navigate().to(getAuthRoot()
-                + "/auth/realms/" + providerRealmName()
-                + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(providerRealmName())));
+        logoutFromRealm(bc.providerRealmName());
 
-        driver.navigate().to(getAccountUrl(consumerRealmName()));
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         try {
-            waitForPage("log in to");
+            waitForPage(driver, "log in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
@@ -228,101 +256,175 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
         for (int i = 0; i < 3; i++) {
             try {
-                waitForElementEnabled("login");
+                waitForElementEnabled(driver, "login");
             } catch (TimeoutException e) {
                 Assert.fail("Timeout while waiting for login element enabled");
             }
 
-            accountLoginPage.login(getUserLogin(), "invalid");
+            accountLoginPage.login(bc.getUserLogin(), "invalid");
         }
 
         assertEquals("Invalid username or password.", accountLoginPage.getError());
 
-        accountLoginPage.clickSocial(getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
 
         try {
-            waitForPage("log in to");
+            waitForPage(driver, "log in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
             Assert.fail("Timeout while waiting for login page");
         }
 
-        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        accountLoginPage.login(getUserLogin(), getUserPassword());
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         assertEquals("Account is disabled, contact admin.", errorPage.getError());
     }
 
-    private void testSingleLogout() {
+    @Page
+    ConsentPage consentPage;
+
+    // KEYCLOAK-4181
+    @Test
+    public void loginWithExistingUserWithErrorFromProviderIdP() {
+        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
+          .clients()
+          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
+          .get(0);
+
+        adminClient.realm(bc.providerRealmName())
+          .clients()
+          .get(client.getId())
+          .update(ClientBuilder.edit(client).consentRequired(true).build());
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "log in to", true);
+
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.MINUTES);
+
+        waitForPage(driver, "grant access", false);
+        consentPage.cancel();
+
+        waitForPage(driver, "log in to", true);
+
+        // Revert consentRequired
+        adminClient.realm(bc.providerRealmName())
+                .clients()
+                .get(client.getId())
+                .update(ClientBuilder.edit(client).consentRequired(false).build());
+
+    }
+
+
+
+    protected void testSingleLogout() {
         log.debug("Testing single log out");
 
-        driver.navigate().to(getAccountUrl(providerRealmName()));
+        driver.navigate().to(getAccountUrl(bc.providerRealmName()));
 
         Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
 
-        driver.navigate().to(getAuthRoot()
-                + "/auth/realms/" + providerRealmName()
-                + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(providerRealmName())));
+        logoutFromRealm(bc.providerRealmName());
 
-        waitForPage("log in to " + providerRealmName());
+        Assert.assertTrue("Should be on " + bc.providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName()));
 
-        Assert.assertTrue("Should be on " + providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName()));
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
-        driver.navigate().to(getAccountUrl(consumerRealmName()));
-
-        Assert.assertTrue("Should be on " + consumerRealmName() + " realm on login page",
-                driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/protocol/openid-connect/"));
+        Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
     }
 
-    private String getAccountUrl(String realmName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/account";
+    protected void createRolesForRealm(String realm) {
+        RoleRepresentation managerRole = new RoleRepresentation(ROLE_MANAGER,null, false);
+        RoleRepresentation friendlyManagerRole = new RoleRepresentation(ROLE_FRIENDLY_MANAGER,null, false);
+        RoleRepresentation userRole = new RoleRepresentation(ROLE_USER,null, false);
+
+        adminClient.realm(realm).roles().create(managerRole);
+        adminClient.realm(realm).roles().create(friendlyManagerRole);
+        adminClient.realm(realm).roles().create(userRole);
     }
 
-    private String getAccountPasswordUrl(String realmName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/account/password";
-    }
+    protected void createRoleMappersForConsumerRealm() {
+        log.debug("adding mappers to identity provider in realm " + bc.consumerRealmName());
 
-    private void waitForPage(final String title) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
-        ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
-            @Override
-            public Boolean apply(WebDriver input) {
-                return input.getTitle().toLowerCase().contains(title);
-            }
-        };
-
-        wait.until(condition);
-    }
-
-    private void waitForElementEnabled(final String elementName) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
-
-        ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
-            @Override
-            public Boolean apply(WebDriver input) {
-                List<WebElement> elements = input.findElements(By.name(elementName));
-                if (elements.size() == 0)
-                    return false;
-
-                return elements.get(0).isEnabled();
-            }
-        };
-
-        wait.until(condition);
-    }
-
-    private String encodeUrl(String url) {
-        String result;
-        try {
-            result = URLEncoder.encode(url, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            result = url;
+        IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
+            mapper.setIdentityProviderAlias(bc.getIDPAlias());
+            Response resp = idpResource.addMapper(mapper);
+            resp.close();
         }
+    }
 
-        return result;
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
+
+    // KEYCLOAK-3987
+    @Test
+    public void grantNewRoleFromToken() {
+        createRolesForRealm(bc.providerRealmName());
+        createRolesForRealm(bc.consumerRealmName());
+
+        createRoleMappersForConsumerRealm();
+
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
+
+        UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
+        userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
+
+        logInAsUserInIDPForFirstTime();
+
+        Set<String> currentRoles = userResource.roles().realmLevel().listAll().stream()
+          .map(RoleRepresentation::getName)
+          .collect(Collectors.toSet());
+
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+
+
+        userResource.roles().realmLevel().add(Collections.singletonList(userRole));
+
+        logInAsUserInIDP();
+
+        currentRoles = userResource.roles().realmLevel().listAll().stream()
+          .map(RoleRepresentation::getName)
+          .collect(Collectors.toSet());
+        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
+
+        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(bc.consumerRealmName());
+    }
+
+
+    // KEYCLOAK-4016
+    @Test
+    public void testExpiredCode() {
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Expire all browser cookies");
+        driver.manage().deleteAllCookies();
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "sorry", false);
+        errorPage.assertCurrent();
+        String link = errorPage.getBackToApplicationLink();
+        Assert.assertTrue(link.endsWith("/auth/realms/consumer/account"));
     }
 }

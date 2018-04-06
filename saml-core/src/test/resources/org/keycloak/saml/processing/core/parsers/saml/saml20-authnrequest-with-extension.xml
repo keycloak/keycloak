@@ -1,0 +1,11 @@
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                    ID="aaf23196-1773-2113-474a-fe114412ab72" Version="2.0" IssueInstant="2004-12-05T09:21:59">
+    <saml:Issuer>https://sp/</saml:Issuer>
+    <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+    <samlp:Extensions>
+        <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
+        <saml:Invalid xmlns:a="urn:invalid">
+            <a:a>text</a:a>
+        </saml:Invalid>
+    </samlp:Extensions>
+</samlp:AuthnRequest>

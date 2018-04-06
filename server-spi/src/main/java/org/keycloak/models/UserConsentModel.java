@@ -28,6 +28,8 @@ public class UserConsentModel {
     private final ClientModel client;
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
     private Set<RoleModel> roles = new HashSet<RoleModel>();
+    private Long createdDate;
+    private Long lastUpdatedDate;
 
     public UserConsentModel(ClientModel client) {
         this.client = client;
@@ -67,4 +69,19 @@ public class UserConsentModel {
         return false;
     }
 
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Long getLastUpdatedDate() {
+        return lastUpdatedDate;
+    }
+
+    public void setLastUpdatedDate(Long lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
+    }
 }

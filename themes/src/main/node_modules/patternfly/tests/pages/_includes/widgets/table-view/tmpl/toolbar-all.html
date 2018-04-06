@@ -1,0 +1,96 @@
+<div class="container-fluid">
+  <div class="row toolbar-pf table-view-pf-toolbar-external" id="{{include.toolbarId}}">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group toolbar-pf-filter">
+          <label class="sr-only" for="filter">Rendering Engine</label>
+          <div class="input-group">
+            <div class="input-group-btn">
+              <button type="button" class="btn btn-default dropdown-toggle" id="filter" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Rendering Engine <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li><a href="#" id="{{include.filterId1}}">Rendering Engine</a></li>
+                <li><a href="#" id="{{include.filterId2}}">Browser</a></li>
+                <li><a href="#" id="{{include.filterId3}}">Platform(s)</a></li>
+                <li><a href="#" id="{{include.filterId4}}">Engine Version</a></li>
+                <li><a href="#" id="{{include.filterId5}}">CSS Grade</a></li>
+              </ul>
+            </div>
+            <input type="text" class="form-control" placeholder="Filter By Rendering Engine..." autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="dropdown btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Rendering Engine <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+              <li><a href="#">Rendering Engine</a></li>
+              <li><a href="#">Browser</a></li>
+              <li><a href="#">Platform(s)</a></li>
+              <li><a href="#">Engine Version</a></li>
+              <li><a href="#">CSS Grade</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-link" type="button">
+            <span class="fa fa-sort-alpha-asc"></span>
+          </button>
+          <div class="dropdown btn-group">
+            <button class="btn btn-link dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="fa fa-columns"></span>
+            </button>
+            <ul class="dropdown-menu table-view-pf-colvis-menu">
+              <li><input type="checkbox" value="1" checked><label>Rendering Engine</label></li>
+              <li><input type="checkbox" value="2" checked><label>Browser</label></li>
+              <li><input type="checkbox" value="3" checked><label>Platform(s)</label></li>
+              <li><input type="checkbox" value="4" checked><label>Engine Version</label></li>
+              <li><input type="checkbox" value="5" checked><label>CSS Grade</label></li>
+            </ul>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="button" id="{{include.actionId1}}">Delete Rows</button>
+          <button class="btn btn-default" type="button" id="{{include.actionId2}}" disabled>Restore Rows</button>
+          {% include widgets/kebab.html dropmenuType="dropdown btn-group" dropmenuId="dropdownKebab" dropmenuVariation="dropdown-kebab-pf" %}
+        </div>
+        <div class="toolbar-pf-action-right">
+          <div class="form-group toolbar-pf-find">
+            <button class="btn btn-link btn-find" type="button">
+              <span class="fa fa-search"></span>
+            </button>
+            <div class="find-pf-dropdown-container">
+              <input type="text" class="form-control" id="find" placeholder="Find By Keyword...">
+              <div class="find-pf-buttons">
+                <span class="find-pf-nums">1 of 3</span>
+                <button class="btn btn-link" type="button">
+                  <span class="fa fa-angle-up"></span>
+                </button>
+                <button class="btn btn-link" type="button">
+                  <span class="fa fa-angle-down"></span>
+                </button>
+                <button class="btn btn-link btn-find-close" type="button">
+                  <span class="pficon pficon-close"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-view-selector">
+            <button class="btn btn-link active"><i class="fa fa-th"></i></button>
+            <button class="btn btn-link"><i class="fa fa-th-large"></i></button>
+            <button class="btn btn-link"><i class="fa fa-th-list"></i></button>
+          </div>
+        </div>
+      </form>
+      <div class="row toolbar-pf-results">
+        <div class="col-sm-9">
+          <div class="hidden">
+            <h5>0 Results</h5>
+            <p>Active filters:</p>
+            <ul class="list-inline"></ul>
+            <p><a href="#">Clear All Filters</a></p>
+          </div>
+        </div>
+        <div class="col-sm-3 table-view-pf-select-results">
+          <strong>0</strong> of <strong>0</strong> selected
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

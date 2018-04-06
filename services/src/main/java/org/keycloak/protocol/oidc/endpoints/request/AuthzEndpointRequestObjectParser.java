@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.security.PublicKey;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
-import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -39,9 +39,9 @@ import org.keycloak.util.JsonSerialization;
  */
 class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
 
-    private final Map<String, Object> requestParams;
+    private final JsonNode requestParams;
 
-    public AuthzEndpointRequestObjectParser(String requestObject, ClientModel client) throws Exception {
+    public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) throws Exception {
         JWSInput input = new JWSInput(requestObject);
         JWSHeader header = input.getHeader();
 
@@ -52,15 +52,19 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         }
 
         if (header.getAlgorithm() == Algorithm.none) {
-            this.requestParams = JsonSerialization.readValue(input.getContent(), TypedHashMap.class);
+            this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
         } else if (header.getAlgorithm() == Algorithm.RS256) {
-            PublicKey clientPublicKey = CertificateInfoHelper.getSignatureValidationKey(client, JWTClientAuthenticator.ATTR_PREFIX);
+            PublicKey clientPublicKey = PublicKeyStorageManager.getClientPublicKey(session, client, input);
+            if (clientPublicKey == null) {
+                throw new RuntimeException("Client public key not found");
+            }
+
             boolean verified = RSAProvider.verify(input, clientPublicKey);
             if (!verified) {
                 throw new RuntimeException("Failed to verify signature on 'request' object");
             }
 
-            this.requestParams = JsonSerialization.readValue(input.getContent(), TypedHashMap.class);
+            this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
         } else {
             throw new RuntimeException("Unsupported JWA algorithm used for signed request");
         }
@@ -68,8 +72,14 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
 
     @Override
     protected String getParameter(String paramName) {
-        Object val = this.requestParams.get(paramName);
-        return val==null ? null : val.toString();
+        JsonNode val = this.requestParams.get(paramName);
+        if (val == null) {
+            return null;
+        } else if (val.isValueNode()) {
+            return val.asText();
+        } else {
+            return val.toString();
+        }
     }
 
     @Override
@@ -80,7 +90,9 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
 
     @Override
     protected Set<String> keySet() {
-        return requestParams.keySet();
+        HashSet<String> keys = new HashSet<>();
+        requestParams.fieldNames().forEachRemaining(keys::add);
+        return keys;
     }
 
     static class TypedHashMap extends HashMap<String, Object> {

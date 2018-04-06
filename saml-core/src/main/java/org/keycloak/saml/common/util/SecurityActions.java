@@ -19,6 +19,7 @@ package org.keycloak.saml.common.util;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.PropertyPermission;
 
 /**
  * Privileged Blocks
@@ -26,7 +27,15 @@ import java.security.PrivilegedAction;
  * @author Anil.Saldhana@redhat.com
  * @since Dec 9, 2008
  */
-class SecurityActions {
+public class SecurityActions {
+
+    private static String extractPackageNameFromClassName(final String fullyQualifiedName) {
+        final int lastDot = fullyQualifiedName.lastIndexOf('.');
+        if (lastDot == -1) {
+            return "";
+        }
+        return fullyQualifiedName.substring(0, lastDot);
+    }
 
     /**
      * <p> Loads a {@link Class} using the <code>fullQualifiedName</code> supplied. This method tries first to load from
@@ -37,11 +46,17 @@ class SecurityActions {
      *
      * @return
      */
-    static Class<?> loadClass(final Class<?> theClass, final String fullQualifiedName) {
+    public static Class<?> loadClass(final Class<?> theClass, final String fullQualifiedName) {
         SecurityManager sm = System.getSecurityManager();
 
+        if (fullQualifiedName == null) {
+            return null;
+        }
+
         if (sm != null) {
+            sm.checkPackageDefinition(extractPackageNameFromClassName(fullQualifiedName));
             return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+                @Override
                 public Class<?> run() {
                     ClassLoader classLoader = theClass.getClassLoader();
 
@@ -73,11 +88,17 @@ class SecurityActions {
      *
      * @return
      */
-    static Class<?> loadClass(final ClassLoader classLoader, final String fullQualifiedName) {
+    public static Class<?> loadClass(final ClassLoader classLoader, final String fullQualifiedName) {
         SecurityManager sm = System.getSecurityManager();
 
+        if (fullQualifiedName == null) {
+            return null;
+        }
+
         if (sm != null) {
+            sm.checkPackageDefinition(extractPackageNameFromClassName(fullQualifiedName));
             return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+                @Override
                 public Class<?> run() {
                     try {
                         return classLoader.loadClass(fullQualifiedName);
@@ -103,13 +124,14 @@ class SecurityActions {
      *
      * @return
      */
-    static URL loadResource(final Class<?> clazz, final String resourceName) {
+    public static URL loadResource(final Class<?> clazz, final String resourceName) {
         SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                @Override
                 public URL run() {
-                    URL url = null;
+                    URL url;
                     ClassLoader clazzLoader = clazz.getClassLoader();
                     url = clazzLoader.getResource(resourceName);
 
@@ -122,7 +144,7 @@ class SecurityActions {
                 }
             });
         } else {
-            URL url = null;
+            URL url;
             ClassLoader clazzLoader = clazz.getClassLoader();
             url = clazzLoader.getResource(resourceName);
 
@@ -143,11 +165,13 @@ class SecurityActions {
      *
      * @return
      */
-    static void setSystemProperty(final String key, final String value) {
+    public static void setSystemProperty(final String key, final String value) {
         SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
+            sm.checkPermission(new PropertyPermission(key, "write"));
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
                 public Object run() {
                     System.setProperty(key, value);
                     return null;
@@ -167,11 +191,13 @@ class SecurityActions {
      *
      * @return
      */
-    static String getSystemProperty(final String key, final String defaultValue) {
+    public static String getSystemProperty(final String key, final String defaultValue) {
         SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
+            sm.checkPermission(new PropertyPermission(key, "read"));
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
+                @Override
                 public String run() {
                     return System.getProperty(key, defaultValue);
                 }
@@ -186,9 +212,11 @@ class SecurityActions {
      *
      * @return
      */
-    static ClassLoader getTCCL() {
+    public static ClassLoader getTCCL() {
         if (System.getSecurityManager() != null) {
+            System.getSecurityManager().checkPermission(new RuntimePermission("getClassLoader"));
             return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
                 public ClassLoader run() {
                     return Thread.currentThread().getContextClassLoader();
                 }
@@ -203,9 +231,11 @@ class SecurityActions {
      *
      * @param paramCl
      */
-    static void setTCCL(final ClassLoader paramCl) {
+    public static void setTCCL(final ClassLoader paramCl) {
         if (System.getSecurityManager() != null) {
+            System.getSecurityManager().checkPermission(new RuntimePermission("setContextClassLoader"));
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
                 public Void run() {
                     Thread.currentThread().setContextClassLoader(paramCl);
                     return null;

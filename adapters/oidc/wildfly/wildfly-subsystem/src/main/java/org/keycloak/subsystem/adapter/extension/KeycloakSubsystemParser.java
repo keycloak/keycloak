@@ -62,6 +62,9 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             else if (reader.getLocalName().equals(SecureDeploymentDefinition.TAG_NAME)) {
                 readDeployment(reader, list);
             }
+            else if (reader.getLocalName().equals(SecureServerDefinition.TAG_NAME)) {
+                readSecureServer(reader, list);
+            }
         }
     }
 
@@ -85,46 +88,46 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             def.parseAndSetParameter(reader.getElementText(), addRealm, reader);
         }
 
-        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addRealm)) {
-            //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none and disable-trust-maanger is false.");
-        }
-
         list.add(addRealm);
     }
 
     private void readDeployment(XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
+        readSecureResource(KeycloakExtension.SECURE_DEPLOYMENT_DEFINITION.TAG_NAME, KeycloakExtension.SECURE_DEPLOYMENT_DEFINITION, reader, resourcesToAdd);
+    }
+
+    private void readSecureServer(XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
+        readSecureResource(KeycloakExtension.SECURE_SERVER_DEFINITION.TAG_NAME, KeycloakExtension.SECURE_SERVER_DEFINITION, reader, resourcesToAdd);
+    }
+
+    private void readSecureResource(String tagName, AbstractAdapterConfigurationDefinition resource, XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
         String name = readNameAttribute(reader);
         ModelNode addSecureDeployment = new ModelNode();
         addSecureDeployment.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
-                PathElement.pathElement(SecureDeploymentDefinition.TAG_NAME, name));
+                PathElement.pathElement(tagName, name));
         addSecureDeployment.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
         List<ModelNode> credentialsToAdd = new ArrayList<ModelNode>();
+        List<ModelNode> redirectRulesToAdd = new ArrayList<ModelNode>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
-            String tagName = reader.getLocalName();
-            if (tagName.equals(CredentialDefinition.TAG_NAME)) {
+            String localName = reader.getLocalName();
+            if (localName.equals(CredentialDefinition.TAG_NAME)) {
                 readCredential(reader, addr, credentialsToAdd);
                 continue;
             }
+            if (localName.equals(RedirecRewritetRuleDefinition.TAG_NAME)) {
+                readRewriteRule(reader, addr, redirectRulesToAdd);
+                continue;
+            }
 
-            SimpleAttributeDefinition def = SecureDeploymentDefinition.lookup(tagName);
-            if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + tagName);
+            SimpleAttributeDefinition def = resource.lookup(localName);
+            if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + localName);
             def.parseAndSetParameter(reader.getElementText(), addSecureDeployment, reader);
         }
-
-
-        /**
-         * TODO need to check realm-ref first.
-        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addSecureDeployment)) {
-            //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none  and disable-trust-maanger is false.");
-        }
-         */
 
         // Must add credentials after the deployment is added.
         resourcesToAdd.add(addSecureDeployment);
         resourcesToAdd.addAll(credentialsToAdd);
+        resourcesToAdd.addAll(redirectRulesToAdd);
     }
 
     public void readCredential(XMLExtendedStreamReader reader, PathAddress parent, List<ModelNode> credentialsToAdd) throws XMLStreamException {
@@ -163,6 +166,43 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             }
         }
     }
+    
+       public void readRewriteRule(XMLExtendedStreamReader reader, PathAddress parent, List<ModelNode> rewriteRuleToToAdd) throws XMLStreamException {
+        String name = readNameAttribute(reader);
+
+        Map<String, String> values = new HashMap<>();
+        String textValue = null;
+        while (reader.hasNext()) {
+            int next = reader.next();
+            if (next == CHARACTERS) {
+                // text value of redirect rule element
+                String text = reader.getText();
+                if (text == null || text.trim().isEmpty()) {
+                    continue;
+                }
+                textValue = text;
+            } else if (next == START_ELEMENT) {
+                String key = reader.getLocalName();
+                reader.next();
+                String value = reader.getText();
+                reader.next();
+
+                values.put(key, value);
+            } else if (next == END_ELEMENT) {
+                break;
+            }
+        }
+
+        if (textValue != null) {
+            ModelNode addRedirectRule = getRedirectRuleToAdd(parent, name, textValue);
+            rewriteRuleToToAdd.add(addRedirectRule);
+        } else {
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                ModelNode addRedirectRule = getRedirectRuleToAdd(parent, name + "." + entry.getKey(), entry.getValue());
+                rewriteRuleToToAdd.add(addRedirectRule);
+            }
+        }
+    }
 
     private ModelNode getCredentialToAdd(PathAddress parent, String name, String value) {
         ModelNode addCredential = new ModelNode();
@@ -171,6 +211,15 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         addCredential.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
         addCredential.get(CredentialDefinition.VALUE.getName()).set(value);
         return addCredential;
+    }
+    
+    private ModelNode getRedirectRuleToAdd(PathAddress parent, String name, String value) {
+        ModelNode addRedirectRule = new ModelNode();
+        addRedirectRule.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
+        PathAddress addr = PathAddress.pathAddress(parent, PathElement.pathElement(RedirecRewritetRuleDefinition.TAG_NAME, name));
+        addRedirectRule.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
+        addRedirectRule.get(RedirecRewritetRuleDefinition.VALUE.getName()).set(value);
+        return addRedirectRule;
     }
 
     // expects that the current tag will have one single attribute called "name"
@@ -198,6 +247,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         context.startSubsystemElement(KeycloakExtension.NAMESPACE, false);
         writeRealms(writer, context);
         writeSecureDeployments(writer, context);
+        writeSecureServers(writer, context);
         writer.writeEndElement();
     }
 
@@ -218,20 +268,33 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     }
 
     private void writeSecureDeployments(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        if (!context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).isDefined()) {
+        writeSecureResource(SecureDeploymentDefinition.TAG_NAME, SecureDeploymentDefinition.ALL_ATTRIBUTES, writer, context);
+    }
+
+    private void writeSecureServers(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        writeSecureResource(SecureServerDefinition.TAG_NAME, SecureServerDefinition.ALL_ATTRIBUTES, writer, context);
+    }
+
+    private void writeSecureResource(String tagName, List<SimpleAttributeDefinition> attributes, XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        if (!context.getModelNode().get(tagName).isDefined()) {
             return;
         }
-        for (Property deployment : context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).asPropertyList()) {
-            writer.writeStartElement(SecureDeploymentDefinition.TAG_NAME);
+        for (Property deployment : context.getModelNode().get(tagName).asPropertyList()) {
+            writer.writeStartElement(tagName);
             writer.writeAttribute("name", deployment.getName());
             ModelNode deploymentElements = deployment.getValue();
-            for (AttributeDefinition element : SecureDeploymentDefinition.ALL_ATTRIBUTES) {
+            for (AttributeDefinition element : attributes) {
                 element.marshallAsElement(deploymentElements, writer);
             }
 
             ModelNode credentials = deploymentElements.get(CredentialDefinition.TAG_NAME);
             if (credentials.isDefined()) {
                 writeCredentials(writer, credentials);
+            }
+
+            ModelNode redirectRewriteRule = deploymentElements.get(RedirecRewritetRuleDefinition.TAG_NAME);
+            if (redirectRewriteRule.isDefined()) {
+                writeRedirectRules(writer, redirectRewriteRule);
             }
 
             writer.writeEndElement();
@@ -270,6 +333,34 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             } else {
                 Map<String, String> credentialProps = (Map<String, String>) value;
                 for (Map.Entry<String, String> prop : credentialProps.entrySet()) {
+                    writer.writeStartElement(prop.getKey());
+                    writeCharacters(writer, prop.getValue());
+                    writer.writeEndElement();
+                }
+            }
+
+            writer.writeEndElement();
+        }
+    }
+    
+      private void writeRedirectRules(XMLExtendedStreamWriter writer, ModelNode redirectRules) throws XMLStreamException {
+        Map<String, Object> parsed = new LinkedHashMap<>();
+        for (Property redirectRule : redirectRules.asPropertyList()) {
+            String ruleName = redirectRule.getName();
+            String ruleValue = redirectRule.getValue().get(RedirecRewritetRuleDefinition.VALUE.getName()).asString();
+            parsed.put(ruleName, ruleValue);
+        }
+
+        for (Map.Entry<String, Object> entry : parsed.entrySet()) {
+            writer.writeStartElement(RedirecRewritetRuleDefinition.TAG_NAME);
+            writer.writeAttribute("name", entry.getKey());
+
+            Object value = entry.getValue();
+            if (value instanceof String) {
+                writeCharacters(writer, (String) value);
+            } else {
+                Map<String, String> redirectRulesProps = (Map<String, String>) value;
+                for (Map.Entry<String, String> prop : redirectRulesProps.entrySet()) {
                     writer.writeStartElement(prop.getKey());
                     writeCharacters(writer, prop.getValue());
                     writer.writeEndElement();

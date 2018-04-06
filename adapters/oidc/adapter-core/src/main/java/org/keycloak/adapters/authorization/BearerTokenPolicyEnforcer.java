@@ -17,17 +17,17 @@
  */
 package org.keycloak.adapters.authorization;
 
+import java.util.HashSet;
+
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
-
-import java.util.List;
-import java.util.Set;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -41,40 +41,41 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
-        if (getEnforcerConfig().getUmaProtocolConfig() != null) {
-            challengeUmaAuthentication(pathConfig, requiredScopes, facade);
-        } else {
-            challengeEntitlementAuthentication(facade);
+    protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
+        HttpFacade.Response response = facade.getResponse();
+        AuthzClient authzClient = getAuthzClient();
+        String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient);
+
+        if (ticket == null) {
+            response.setStatus(403);
+            return true;
+        }
+
+        String realm = authzClient.getConfiguration().getRealm();
+        String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString();
+        response.setStatus(401);
+        StringBuilder wwwAuthenticate = new StringBuilder("UMA realm=\"").append(realm).append("\"").append(",as_uri=\"").append(authorizationServerUri).append("\"");
+
+        if (ticket != null) {
+            wwwAuthenticate.append(",ticket=\"").append(ticket).append("\"");
+        }
+
+        response.setHeader("WWW-Authenticate", wwwAuthenticate.toString());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Sending UMA challenge");
         }
         return true;
     }
 
-    private void challengeEntitlementAuthentication(OIDCHttpFacade facade) {
-        HttpFacade.Response response = facade.getResponse();
-        AuthzClient authzClient = getAuthzClient();
-        String clientId = authzClient.getConfiguration().getClientId();
-        String  authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/entitlement";
-        response.setStatus(401);
-        response.setHeader("WWW-Authenticate", "KC_ETT realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\"");
-    }
-
-    private void challengeUmaAuthentication(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
-        HttpFacade.Response response = facade.getResponse();
-        AuthzClient authzClient = getAuthzClient();
-        String ticket = getPermissionTicket(pathConfig, requiredScopes, authzClient);
-        String clientId = authzClient.getConfiguration().getClientId();
-        String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/authorize";
-        response.setStatus(401);
-        response.setHeader("WWW-Authenticate", "UMA realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\",ticket=\"" + ticket + "\"");
-    }
-
-    private String getPermissionTicket(PathConfig pathConfig, Set<String> requiredScopes, AuthzClient authzClient) {
-        ProtectionResource protection = authzClient.protection();
-        PermissionResource permission = protection.permission();
-        PermissionRequest permissionRequest = new PermissionRequest();
-        permissionRequest.setResourceSetId(pathConfig.getId());
-        permissionRequest.setScopes(requiredScopes);
-        return permission.forResource(permissionRequest).getTicket();
+    private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient) {
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
+            ProtectionResource protection = authzClient.protection();
+            PermissionResource permission = protection.permission();
+            PermissionRequest permissionRequest = new PermissionRequest();
+            permissionRequest.setResourceId(pathConfig.getId());
+            permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
+            return permission.create(permissionRequest).getTicket();
+        }
+        return null;
     }
 }

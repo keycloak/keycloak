@@ -20,6 +20,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
@@ -34,8 +35,8 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
     }
 
     @Override
-    public MicrosoftIdentityProvider create(IdentityProviderModel model) {
-        return new MicrosoftIdentityProvider(new OAuth2IdentityProviderConfig(model));
+    public MicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new MicrosoftIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
     }
 
     @Override

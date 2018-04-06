@@ -17,37 +17,36 @@
 
 package org.keycloak.example;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.security.cert.X509Certificate;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.spi.AuthenticationError;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
+
+import javax.security.cert.X509Certificate;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -180,6 +179,11 @@ public class OfflineAccessPortalServlet extends HttpServlet {
                     @Override
                     public String getURI() {
                         return servletRequest.getRequestURL().toString();
+                    }
+
+                    @Override
+                    public String getRelativePath() {
+                        return servletRequest.getServletPath();
                     }
 
                     @Override

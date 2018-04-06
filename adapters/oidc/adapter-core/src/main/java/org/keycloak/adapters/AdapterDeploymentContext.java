@@ -26,9 +26,9 @@ import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.io.IOException;
 import java.net.URI;
@@ -206,6 +206,16 @@ public class AdapterDeploymentContext {
         public void setBearerOnly(boolean bearerOnly) {
             delegate.setBearerOnly(bearerOnly);
         }
+        
+        @Override
+        public boolean isAutodetectBearerOnly() {
+            return delegate.isAutodetectBearerOnly();
+        }
+        
+        @Override
+        public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
+            delegate.setAutodetectBearerOnly(autodetectBearerOnly);
+        }
 
         @Override
         public boolean isEnableBasicAuth() {
@@ -278,6 +288,16 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public int getConfidentialPort() {
+            return delegate.getConfidentialPort();
+        }
+
+        @Override
+        public void setConfidentialPort(int confidentialPort) {
+            delegate.setConfidentialPort(confidentialPort);
+        }
+
+        @Override
         public TokenStore getTokenStore() {
             return delegate.getTokenStore();
         }
@@ -340,6 +360,12 @@ public class AdapterDeploymentContext {
         @Override
         public int getNotBefore() {
             return delegate.getNotBefore();
+        }
+
+        @Override
+        public void updateNotBefore(int notBefore) {
+            delegate.setNotBefore(notBefore);
+            getPublicKeyLocator().reset(this);
         }
 
         @Override
@@ -445,6 +471,16 @@ public class AdapterDeploymentContext {
         @Override
         public int getMinTimeBetweenJwksRequests() {
             return delegate.getMinTimeBetweenJwksRequests();
+        }
+
+        @Override
+        public int getPublicKeyCacheTtl() {
+            return delegate.getPublicKeyCacheTtl();
+        }
+
+        @Override
+        public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+            delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
         }
     }
 

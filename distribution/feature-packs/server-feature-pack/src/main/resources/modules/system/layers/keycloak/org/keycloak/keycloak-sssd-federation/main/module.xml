@@ -22,11 +22,13 @@
 
     <resources>
         <artifact name="${org.keycloak:keycloak-sssd-federation}"/>
+        <resource-root path="/usr/share/java/jna.jar"/>
     </resources>
 
     <dependencies>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-core" />
         <module name="org.keycloak.keycloak-server-spi" />
+        <module name="org.keycloak.keycloak-server-spi-private"/>
     </dependencies>
 </module>

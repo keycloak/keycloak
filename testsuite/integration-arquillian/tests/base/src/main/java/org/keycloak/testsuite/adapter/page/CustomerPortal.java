@@ -17,13 +17,11 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.WebElement;
+
+import java.net.URL;
 
 /**
  *
@@ -40,6 +38,10 @@ public class CustomerPortal extends AbstractPageWithInjectedUrl {
     @Override
     public URL getInjectedUrl() {
         return url;
+    }
+    
+    public String logout() {
+        return url + "/logout";
     }
 
 }

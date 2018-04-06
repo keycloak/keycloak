@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -42,6 +39,9 @@ import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;

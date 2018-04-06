@@ -17,43 +17,26 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.hash.PasswordHashManager;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.UserConsentEntity;
-import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
-import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.Time;
+import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -135,9 +118,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
         if (firstExistingAttrId != null) {
             // Remove attributes through HQL to avoid StaleUpdateException
-            Query query = em.createNamedQuery("deleteUserAttributesOtherThan");
-            query.setParameter("attrId", firstExistingAttrId);
+            Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
+            query.setParameter("name", name);
             query.setParameter("userId", user.getId());
+            query.setParameter("attrId", firstExistingAttrId);
             int numUpdated = query.executeUpdate();
 
             // Remove attribute from local entity
@@ -292,7 +276,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void setEmail(String email) {
         email = KeycloakModelUtils.toLowerCaseSafe(email);
-        user.setEmail(email);
+        user.setEmail(email, realm.isDuplicateEmailsAllowed());
     }
 
     @Override
@@ -355,7 +339,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public boolean isMemberOf(GroupModel group) {
         Set<GroupModel> roles = getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
+        return RoleUtils.isMember(roles, group);
     }
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
@@ -369,7 +353,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {

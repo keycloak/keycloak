@@ -1,0 +1,4 @@
+embed-server --server-config=standalone-ha.xml
+
+#/subsystem=*/:read-resource(recursive=true)
+:read-resource(recursive=true)

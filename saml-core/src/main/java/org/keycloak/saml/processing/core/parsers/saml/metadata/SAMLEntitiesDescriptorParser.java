@@ -16,24 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.ExtensionsType;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.w3c.dom.Element;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 
 /**
  * Parse the SAML Entities Descriptor
@@ -41,82 +30,53 @@ import javax.xml.stream.events.XMLEvent;
  * @author Anil.Saldhana@redhat.com
  * @since Jan 31, 2011
  */
-public class SAMLEntitiesDescriptorParser extends AbstractDescriptorParser implements ParserNamespaceSupport {
+public class SAMLEntitiesDescriptorParser extends AbstractStaxSamlMetadataParser<EntitiesDescriptorType> {
 
-    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
+    private static final SAMLEntitiesDescriptorParser INSTANCE = new SAMLEntitiesDescriptorParser();
 
-    private final String EDT = JBossSAMLConstants.ENTITIES_DESCRIPTOR.get();
+    public SAMLEntitiesDescriptorParser() {
+        super(SAMLMetadataQNames.ENTITIES_DESCRIPTOR);
+    }
 
-    public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
+    public static SAMLEntitiesDescriptorParser getInstance() {
+        return INSTANCE;
+    }
 
-        xmlEventReader = filterWhiteSpaceCharacters(xmlEventReader);
-
-        StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-        StaxParserUtil.validate(startElement, EDT);
-
-        EntitiesDescriptorType entitiesDescriptorType = new EntitiesDescriptorType();
+    @Override
+    protected EntitiesDescriptorType instantiateElement(XMLEventReader xmlEventReader, StartElement element) throws ParsingException {
+        EntitiesDescriptorType descriptor = new EntitiesDescriptorType();
 
         // Parse the attributes
-        Attribute validUntil = startElement.getAttributeByName(new QName(JBossSAMLConstants.VALID_UNTIL.get()));
-        if (validUntil != null) {
-            String validUntilValue = StaxParserUtil.getAttributeValue(validUntil);
-            entitiesDescriptorType.setValidUntil(XMLTimeUtil.parse(validUntilValue));
-        }
+        descriptor.setID(StaxParserUtil.getAttributeValue(element, SAMLMetadataQNames.ATTR_ID));
+        descriptor.setValidUntil(StaxParserUtil.getXmlTimeAttributeValue(element, SAMLMetadataQNames.ATTR_VALID_UNTIL));
+        descriptor.setCacheDuration(StaxParserUtil.getXmlDurationAttributeValue(element, SAMLMetadataQNames.ATTR_CACHE_DURATION));
+        descriptor.setName(StaxParserUtil.getAttributeValue(element, SAMLMetadataQNames.ATTR_NAME));
 
-        Attribute id = startElement.getAttributeByName(new QName(JBossSAMLConstants.ID.get()));
-        if (id != null) {
-            entitiesDescriptorType.setID(StaxParserUtil.getAttributeValue(id));
-        }
+        return descriptor;
+    }
 
-        Attribute name = startElement.getAttributeByName(new QName(JBossSAMLConstants.NAME.get()));
-        if (name != null) {
-            entitiesDescriptorType.setName(StaxParserUtil.getAttributeValue(name));
-        }
-
-        Attribute cacheDuration = startElement.getAttributeByName(new QName(JBossSAMLConstants.CACHE_DURATION.get()));
-        if (cacheDuration != null) {
-            entitiesDescriptorType
-                    .setCacheDuration(XMLTimeUtil.parseAsDuration(StaxParserUtil.getAttributeValue(cacheDuration)));
-        }
-
-        // Get the Child Elements
-        while (xmlEventReader.hasNext()) {
-            XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
-            if (xmlEvent instanceof EndElement) {
-                StaxParserUtil.validate((EndElement) xmlEvent, EDT);
-                StaxParserUtil.getNextEndElement(xmlEventReader);
+    @Override
+    protected void processSubElement(XMLEventReader xmlEventReader, EntitiesDescriptorType target, SAMLMetadataQNames element, StartElement elementDetail) throws ParsingException {
+        switch (element) {
+            case SIGNATURE:
+                Element sig = StaxParserUtil.getDOMElement(xmlEventReader);
+                target.setSignature(sig);
                 break;
-            }
-            startElement = (StartElement) xmlEvent;
-            String localPart = startElement.getName().getLocalPart();
 
-            if (JBossSAMLConstants.ENTITY_DESCRIPTOR.get().equals(localPart)) {
-                SAMLEntityDescriptorParser entityParser = new SAMLEntityDescriptorParser();
-                entitiesDescriptorType.addEntityDescriptor(entityParser.parse(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
-                entitiesDescriptorType.setExtensions(parseExtensions(xmlEventReader));
-            } else if (JBossSAMLConstants.ENTITIES_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
-                SAMLEntitiesDescriptorParser parser = new SAMLEntitiesDescriptorParser();
-                entitiesDescriptorType.addEntityDescriptor(parser.parse(xmlEventReader));
-            } else if (localPart.equals(JBossSAMLConstants.SIGNATURE.get())) {
-                entitiesDescriptorType.setSignature(StaxParserUtil.getDOMElement(xmlEventReader));
-            } else
-                throw logger.parserUnknownTag(localPart, startElement.getLocation());
+            case EXTENSIONS:
+                target.setExtensions(SAMLExtensionsParser.getInstance().parse(xmlEventReader));
+                break;
+
+            case ENTITY_DESCRIPTOR:
+                target.addEntityDescriptor(SAMLEntityDescriptorParser.getInstance().parse(xmlEventReader));
+                break;
+
+            case ENTITIES_DESCRIPTOR:
+                target.addEntityDescriptor(parse(xmlEventReader));
+                break;
+
+            default:
+                throw LOGGER.parserUnknownTag(StaxParserUtil.getElementName(elementDetail), elementDetail.getLocation());
         }
-        return entitiesDescriptorType;
-    }
-
-    public boolean supports(QName qname) {
-        String nsURI = qname.getNamespaceURI();
-        String localPart = qname.getLocalPart();
-
-        return nsURI.equals(JBossSAMLURIConstants.ASSERTION_NSURI.get()) && localPart.equals(EDT);
-    }
-
-    private ExtensionsType parseExtensions(XMLEventReader xmlEventReader) throws ParsingException {
-        ExtensionsType extensions = new ExtensionsType();
-        Element extElement = StaxParserUtil.getDOMElement(xmlEventReader);
-        extensions.setElement(extElement);
-        return extensions;
     }
 }

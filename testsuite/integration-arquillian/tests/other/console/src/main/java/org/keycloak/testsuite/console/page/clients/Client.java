@@ -1,11 +1,14 @@
 package org.keycloak.testsuite.console.page.clients;
 
 import org.jboss.arquillian.graphene.fragment.Root;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
-import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
+import org.openqa.selenium.NoSuchElementException;
 
 /**
  *
@@ -43,7 +46,7 @@ public class Client extends Clients {
     private WebElement deleteIcon;
     
     public void delete() {
-        deleteIcon.click();
+        clickLink(deleteIcon);
         modalDialog.confirmDeletion();
     }
 
@@ -73,33 +76,49 @@ public class Client extends Clients {
         private WebElement sessionsLink;
         @FindBy(linkText = "Installation")
         private WebElement installationLink;
+        @FindBy(linkText = "Service Account Roles")
+        private WebElement serviceAccountRoles;
+        @FindBy(linkText = "Authorization")
+        private WebElement authorizationLink;
 
         public void settings() {
-            settingsLink.click();
+            clickLink(settingsLink);
         }
 
         public void roles() {
-            rolesLink.click();
+            clickLink(rolesLink);
         }
 
         public void mappers() {
-            mappersLink.click();
+            clickLink(mappersLink);
         }
 
         public void scope() {
-            scopeLink.click();
+            clickLink(scopeLink);
         }
 
         public void revocation() {
-            revocationLink.click();
+            clickLink(revocationLink);
         }
 
         public void sessions() {
-            sessionsLink.click();
+            clickLink(sessionsLink);
         }
 
         public void installation() {
-            installationLink.click();
+            clickLink(installationLink);
+        }
+
+        public void authorization() {
+            clickLink(authorizationLink);
+        }
+        
+        public boolean isServiceAccountRolesDisplayed() {
+            try {
+                return serviceAccountRoles.isDisplayed();
+            } catch (NoSuchElementException ex) {
+            }
+            return false;
         }
         
         public WebElement getTabs() {

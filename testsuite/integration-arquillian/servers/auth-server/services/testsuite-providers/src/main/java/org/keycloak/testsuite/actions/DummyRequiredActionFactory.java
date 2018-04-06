@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -38,7 +39,27 @@ public class DummyRequiredActionFactory implements RequiredActionFactory {
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
-        return null;
+        return new RequiredActionProvider() {
+            @Override
+            public void evaluateTriggers(RequiredActionContext context) {
+
+            }
+
+            @Override
+            public void requiredActionChallenge(RequiredActionContext context) {
+                context.success();
+            }
+
+            @Override
+            public void processAction(RequiredActionContext context) {
+
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
     }
 
     @Override

@@ -17,16 +17,23 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -50,9 +57,11 @@ public class AdminEventTest extends AbstractEventTest {
         return testRealmResource().getAdminEvents();
     }
 
-    private void createUser(String username) {
+    private String createUser(String username) {
         UserRepresentation user = createUserRepresentation(username, username + "@foo.com", "foo", "bar", true);
-        ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+        String userId = ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+        getCleanup().addUserId(userId);
+        return userId;
     }
 
     private void updateRealm() {
@@ -83,7 +92,7 @@ public class AdminEventTest extends AbstractEventTest {
         assertNull(event.getError());
 
         AuthDetailsRepresentation details = event.getAuthDetails();
-        assertEquals(realmName(), details.getRealmId());
+        assertEquals("master", details.getRealmId());
         assertNotNull(details.getClientId());
         assertNotNull(details.getUserId());
         assertNotNull(details.getIpAddress());
@@ -99,7 +108,7 @@ public class AdminEventTest extends AbstractEventTest {
         assertEquals("CREATE", event.getOperationType());
 
         assertEquals(realmName(), event.getRealmId());
-        assertEquals(realmName(), event.getAuthDetails().getRealmId());
+        assertEquals("master", event.getAuthDetails().getRealmId());
         assertNull(event.getRepresentation());
     }
 
@@ -123,7 +132,25 @@ public class AdminEventTest extends AbstractEventTest {
         updateRealm();
         assertEquals(3, events().size());
 
-        List<AdminEventRepresentation> events = testRealmResource().getAdminEvents(Arrays.asList("CREATE"), realmName(), null, null, null, null, null, null, null, null);
+        List<AdminEventRepresentation> events = testRealmResource().getAdminEvents(Arrays.asList("CREATE"), null, null, null, null, null, null, null, null, null);
         assertEquals(2, events.size());
     }
+
+    @Test
+    public void defaultMaxResults() {
+        RealmResource realm = adminClient.realms().realm("test");
+        AdminEventRepresentation event = new AdminEventRepresentation();
+        event.setOperationType(OperationType.CREATE.toString());
+        event.setAuthDetails(new AuthDetailsRepresentation());
+        event.setRealmId(realm.toRepresentation().getId());
+
+        for (int i = 0; i < 110; i++) {
+            testingClient.testing("test").onAdminEvent(event, false);
+        }
+
+        assertEquals(100, realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null).size());
+        assertEquals(105, realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 105).size());
+        assertTrue(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size() >= 110);
+    }
+
 }

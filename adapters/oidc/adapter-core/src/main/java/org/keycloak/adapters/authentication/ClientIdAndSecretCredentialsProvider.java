@@ -17,13 +17,13 @@
 
 package org.keycloak.adapters.authentication;
 
-import java.util.Map;
-
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
+
+import java.util.Map;
 
 /**
  * Traditional OAuth2 authentication of clients based on client_id and client_secret
@@ -32,7 +32,7 @@ import org.keycloak.util.BasicAuthHelper;
  */
 public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsProvider {
 
-    private static Logger logger = Logger.getLogger(ClientCredentialsProviderUtils.class);
+    private static Logger logger = Logger.getLogger(ClientIdAndSecretCredentialsProvider.class);
 
     public static final String PROVIDER_ID = CredentialRepresentation.SECRET;
 

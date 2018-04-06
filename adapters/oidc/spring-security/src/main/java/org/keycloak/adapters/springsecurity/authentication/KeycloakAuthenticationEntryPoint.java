@@ -17,7 +17,16 @@
 
 package org.keycloak.adapters.springsecurity.authentication;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.http.HttpHeaders;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -25,11 +34,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.Assert;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Provides a Keycloak {@link AuthenticationEntryPoint authentication entry point}. Uses a
@@ -57,11 +61,13 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
     private String loginUri = DEFAULT_LOGIN_URI;
     private String realm = DEFAULT_REALM;
 
+    private AdapterDeploymentContext adapterDeploymentContext;
+
     /**
      * Creates a new Keycloak authentication entry point.
      */
-    public KeycloakAuthenticationEntryPoint() {
-        this(DEFAULT_API_REQUEST_MATCHER);
+    public KeycloakAuthenticationEntryPoint(AdapterDeploymentContext adapterDeploymentContext) {
+        this(adapterDeploymentContext, DEFAULT_API_REQUEST_MATCHER);
     }
 
     /**
@@ -71,15 +77,17 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
      * @param apiRequestMatcher the <code>RequestMatcher</code> to use to determine
      * if the current request is an API request or a browser request (required)
      */
-    public KeycloakAuthenticationEntryPoint(RequestMatcher apiRequestMatcher) {
+    public KeycloakAuthenticationEntryPoint(AdapterDeploymentContext adapterDeploymentContext, RequestMatcher apiRequestMatcher) {
         Assert.notNull(apiRequestMatcher, "apiRequestMatcher required");
+        Assert.notNull(adapterDeploymentContext, "adapterDeploymentContext required");
+        this.adapterDeploymentContext = adapterDeploymentContext;
         this.apiRequestMatcher = apiRequestMatcher;
     }
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException
-    {
-        if (apiRequestMatcher.matches(request)) {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+        HttpFacade facade = new SimpleHttpFacade(request, response);
+        if (apiRequestMatcher.matches(request) || adapterDeploymentContext.resolveDeployment(facade).isBearerOnly()) {
             commenceUnauthorizedResponse(request, response);
         } else {
             commenceLoginRedirect(request, response);

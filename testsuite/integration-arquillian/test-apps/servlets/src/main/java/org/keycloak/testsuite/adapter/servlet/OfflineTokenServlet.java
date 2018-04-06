@@ -13,9 +13,6 @@ import java.io.IOException;
  */
 public class OfflineTokenServlet extends AbstractShowTokensServlet {
 
-    private static final String OFFLINE_CLIENT_APP_URI = (System.getProperty("app.server.ssl.required", "false").equals("true")) ?
-            System.getProperty("app.server.ssl.base.url", "https://localhost:8643") + "/offline-client" :
-            System.getProperty("app.server.base.url", "http://localhost:8280") + "/offline-client";
     private static final String ADAPTER_ROOT_URL = (System.getProperty("auth.server.ssl.required", "false").equals("true")) ?
             System.getProperty("auth.server.ssl.base.url", "https://localhost:8543") :
             System.getProperty("auth.server.base.url", "http://localhost:8180");
@@ -25,7 +22,7 @@ public class OfflineTokenServlet extends AbstractShowTokensServlet {
 
         if (req.getRequestURI().endsWith("logout")) {
 
-            UriBuilder redirectUriBuilder = UriBuilder.fromUri(OFFLINE_CLIENT_APP_URI);
+            UriBuilder redirectUriBuilder = UriBuilder.fromUri(ServletTestUtils.getUrlBase(req) + "/offline-client");
             if (req.getParameter(OAuth2Constants.SCOPE) != null) {
                 redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, req.getParameter(OAuth2Constants.SCOPE));
             }

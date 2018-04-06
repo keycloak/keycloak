@@ -17,25 +17,23 @@
 
 package org.keycloak.federation.kerberos.impl;
 
-import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosTicket;
-
-import org.ietf.jgss.Oid;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.Base64;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.Oid;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.KerberosJdkProvider;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KerberosSerializationUtils;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
+
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosTicket;
+import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -117,9 +115,6 @@ public class SPNEGOAuthenticator {
     public String getAuthenticatedUsername() {
         String[] tokens = authenticatedKerberosPrincipal.split("@");
         String username = tokens[0];
-        if (!tokens[1].equalsIgnoreCase(kerberosConfig.getKerberosRealm())) {
-            throw new IllegalStateException("Invalid kerberos realm. Realm from the ticket: " + tokens[1] + ", configured realm: " + kerberosConfig.getKerberosRealm());
-        }
         return username;
     }
 

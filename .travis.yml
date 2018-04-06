@@ -1,27 +1,38 @@
 language: java
+dist: precise
 
 cache:
-  directories:
-    - $HOME/.m2
-
-before_cache:
-  - rm -rf $HOME/.m2/repository/org/keycloak
+  cache: false
 
 env:
   global:
     - MAVEN_SKIP_RC=true
-    - MAVEN_OPTS="-Xms512m -Xmx2048m"
+    - MAVEN_OPTS="-Xms512m -Xmx1536m"
+  matrix:
+    - TESTS=unit
+    - TESTS=server-group1
+    - TESTS=server-group2
+    - TESTS=server-group3
+    - TESTS=server-group4
+    - TESTS=old
+    - TESTS=crossdc
 
 jdk:
   - oraclejdk8
 
-before_script:
-  - export MAVEN_SKIP_RC=true
+install: true
 
-install: 
-  - travis_wait 30 mvn install -Pdistribution -DskipTests=true -B -V -q
+before_install:
+  - "export PHANTOMJS_VERSION=2.1.1"
+  - "phantomjs --version"
+  - "export PATH=$PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64/bin:$PATH"
+  - "phantomjs --version"
+  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then rm -rf $PWD/travis_phantomjs; mkdir -p $PWD/travis_phantomjs; fi"
+  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then wget https://github.com/Medium/phantomjs/releases/download/v$PHANTOMJS_VERSION/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -O $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2; fi"
+  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then tar -xvf $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -C $PWD/travis_phantomjs; fi"
+  - "phantomjs --version"
 
-script:
-  - mvn test -B
+script: 
+  - ./travis-run-tests.sh $TESTS
 
 sudo: false

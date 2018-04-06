@@ -17,13 +17,10 @@
 
 package org.keycloak.representations.idm;
 
-import org.bouncycastle.openssl.PEMWriter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.security.PublicKey;
 
 /**
@@ -41,9 +38,6 @@ public class PublishedRealmRepresentation {
 
     @JsonProperty("account-service")
     protected String accountServiceUrl;
-
-    @JsonProperty("admin-api")
-    protected String adminApiUrl;
 
     @JsonProperty("tokens-not-before")
     protected int notBefore;
@@ -85,17 +79,7 @@ public class PublishedRealmRepresentation {
     @JsonIgnore
     public void setPublicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(publicKey);
-            pemWriter.flush();
-            pemWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        this.publicKeyPem = PemUtils.removeBeginEnd(s);
+        this.publicKeyPem = PemUtils.encodeKey(publicKey);
     }
 
     public String getTokenServiceUrl() {
@@ -112,14 +96,6 @@ public class PublishedRealmRepresentation {
 
     public void setAccountServiceUrl(String accountServiceUrl) {
         this.accountServiceUrl = accountServiceUrl;
-    }
-
-    public String getAdminApiUrl() {
-        return adminApiUrl;
-    }
-
-    public void setAdminApiUrl(String adminApiUrl) {
-        this.adminApiUrl = adminApiUrl;
     }
 
     public int getNotBefore() {

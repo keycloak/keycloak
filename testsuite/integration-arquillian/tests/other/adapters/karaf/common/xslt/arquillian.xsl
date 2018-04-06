@@ -31,21 +31,19 @@
             <container qualifier="app-server-${{app.server}}" mode="manual" >
                 <configuration>
                     <property name="enabled">true</property>
-                    <property name="adapterImplClass">org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedDeployableContainer</property>
-                    <!--<property name="adapterImplClass">org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer</property>-->
+<!--                     <property name="adapterImplClass">org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedDeployableContainer</property> -->
+                    <property name="adapterImplClass">org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer</property>
                     <property name="autostartBundle">false</property>
                     <property name="karafHome">${app.server.home}</property>
                     <property name="javaHome">${app.server.java.home}</property>
                     <property name="javaVmArguments">
-                        -agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n 
                         ${adapter.test.props}
                     </property>
                     <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>
                     <property name="jmxUsername">${app.server.management.user}</property>
-                    <property name="jmxPassword">${app.server.management.password}</property>          
+                    <property name="jmxPassword">${app.server.management.password}</property>
                 </configuration>
             </container>
-    
         </xsl:copy>
     </xsl:template>
     

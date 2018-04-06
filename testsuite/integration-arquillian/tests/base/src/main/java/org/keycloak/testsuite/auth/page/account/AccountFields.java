@@ -19,11 +19,11 @@ package org.keycloak.testsuite.auth.page.account;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
-
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
 
 /**
  *
@@ -59,6 +59,18 @@ public class AccountFields extends Form {
         return this;
     }
 
+    public String getEmail() {
+        return Form.getInputValue(emailInput);
+    }
+
+    public String getFirstName() {
+        return Form.getInputValue(firstNameInput);
+    }
+
+    public String getLastName() {
+        return Form.getInputValue(lastNameInput);
+    }
+
     public void setValues(UserRepresentation user) {
         setUsername(user.getUsername());
         setEmail(user.getEmail());
@@ -71,7 +83,7 @@ public class AccountFields extends Form {
     }
 
     public void waitForUsernameInputNotPresent() {
-        waitUntilElementIsNotPresent(driver, usernameInput);
+        waitUntilElementIsNotPresent(usernameInput);
     }
 
 }

@@ -17,20 +17,21 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.constants.AdapterConstants;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 abstract class AuthzEndpointRequestParser {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
 
     /**
      * Max number of additional req params copied into client session note to prevent DoS attacks
@@ -61,6 +62,13 @@ abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLAIMS_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.ACR_PARAM);
+
+        // https://tools.ietf.org/html/rfc7636#section-6.1
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+
     }
 
 
@@ -82,6 +90,13 @@ abstract class AuthzEndpointRequestParser {
         request.idpHint = replaceIfNotNull(request.idpHint, getParameter(AdapterConstants.KC_IDP_HINT));
         request.nonce = replaceIfNotNull(request.nonce, getParameter(OIDCLoginProtocol.NONCE_PARAM));
         request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM));
+        request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
+        request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
+        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
+
+        // https://tools.ietf.org/html/rfc7636#section-6.1
+        request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
+        request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
         extractAdditionalReqParams(request.additionalReqParams);
     }

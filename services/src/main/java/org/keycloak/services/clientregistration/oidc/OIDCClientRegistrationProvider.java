@@ -16,31 +16,25 @@
  */
 package org.keycloak.services.clientregistration.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
-import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
-import org.keycloak.services.clientregistration.ClientRegistrationAuth;
-import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -53,10 +47,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -64,7 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(OIDCClientRegistrationProvider.class);
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -80,7 +72,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
-            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(client, clientOIDC);
+            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = create(oidcContext);
 
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
@@ -92,7 +84,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }
@@ -109,10 +101,11 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @PUT
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
-            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(client, clientOIDC);
+            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = update(clientId, oidcContext);
 
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
@@ -123,7 +116,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }
@@ -133,21 +126,6 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     public void deleteOIDC(@PathParam("clientId") String clientId) {
         delete(clientId);
     }
-
-    @Override
-    public void setAuth(ClientRegistrationAuth auth) {
-        this.auth = auth;
-    }
-
-    @Override
-    public void setEvent(EventBuilder event) {
-        this.event = event;
-    }
-
-    @Override
-    public void close() {
-    }
-
 
     private void updatePairwiseSubMappers(ClientModel clientModel, SubjectType subjectType, String sectorIdentifierUri) {
         if (subjectType == SubjectType.PAIRWISE) {
@@ -181,29 +159,6 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
                 clientModel.getProtocolMappers().remove(mapping);
             });
         }
-    }
-
-    @Override
-    protected boolean validateClient(ClientRegistrationContext context, ValidationMessages validationMessages) {
-        OIDCClientRegistrationContext oidcContext = (OIDCClientRegistrationContext) context;
-        OIDCClientRepresentation oidcRep = oidcContext.getOidcRep();
-
-        boolean valid = super.validateClient(context, validationMessages);
-
-        ClientRepresentation client = oidcContext.getClient();
-
-        String rootUrl = client.getRootUrl();
-        Set<String> redirectUris = new HashSet<>();
-        if (client.getRedirectUris() != null) redirectUris.addAll(client.getRedirectUris());
-
-        SubjectType subjectType = SubjectType.parse(oidcRep.getSubjectType());
-        String sectorIdentifierUri = oidcRep.getSectorIdentifierUri();
-
-        // If sector_identifier_uri is in oidc config, then always validate it
-        if (SubjectType.PAIRWISE == subjectType || (sectorIdentifierUri != null && !sectorIdentifierUri.isEmpty())) {
-            valid = valid && PairwiseClientValidator.validate(session, rootUrl, redirectUris, oidcRep.getSectorIdentifierUri(), validationMessages);
-        }
-        return valid;
     }
 
     private void updateClientRepWithProtocolMappers(ClientModel clientModel, ClientRepresentation rep) {

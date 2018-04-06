@@ -17,23 +17,21 @@
 
 package org.keycloak.broker.saml;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-
-import javax.xml.stream.XMLEventReader;
-
 import org.keycloak.broker.provider.DefaultDataMarshaller;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
-import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,11 +49,11 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
                 if (obj instanceof ResponseType) {
                     ResponseType responseType = (ResponseType) obj;
                     SAMLResponseWriter samlWriter = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
-                    samlWriter.write(responseType);
+                    samlWriter.write(responseType, true);
                 } else if (obj instanceof AssertionType) {
                     AssertionType assertion = (AssertionType) obj;
                     SAMLAssertionWriter samlWriter = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(bos));
-                    samlWriter.write(assertion);
+                    samlWriter.write(assertion, true);
                 } else if (obj instanceof AuthnStatementType) {
                     AuthnStatementType authnStatement = (AuthnStatementType) obj;
                     SAMLAssertionWriter samlWriter = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(bos));
@@ -67,7 +65,7 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
                 throw new RuntimeException(pe);
             }
 
-            return new String(bos.toByteArray());
+            return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         } else {
             return super.serialize(obj);
         }
@@ -79,17 +77,11 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
             String xmlString = serialized;
 
             try {
-                if (clazz.equals(ResponseType.class) || clazz.equals(AssertionType.class)) {
-                    byte[] bytes = xmlString.getBytes();
+                if (clazz.equals(ResponseType.class) || clazz.equals(AssertionType.class) || clazz.equals(AuthnStatementType.class)) {
+                    byte[] bytes = xmlString.getBytes(GeneralConstants.SAML_CHARSET);
                     InputStream is = new ByteArrayInputStream(bytes);
-                    Object respType = new SAMLParser().parse(is);
+                    Object respType = SAMLParser.getInstance().parse(is);
                     return clazz.cast(respType);
-                } else if (clazz.equals(AuthnStatementType.class)) {
-                    byte[] bytes = xmlString.getBytes();
-                    InputStream is = new ByteArrayInputStream(bytes);
-                    XMLEventReader xmlEventReader = new SAMLParser().createEventReader(is);
-                    AuthnStatementType authnStatement = SAMLParserUtil.parseAuthnStatement(xmlEventReader);
-                    return clazz.cast(authnStatement);
                 } else {
                     throw new IllegalArgumentException("Don't know how to deserialize object of type " + clazz.getName());
                 }

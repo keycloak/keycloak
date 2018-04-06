@@ -25,9 +25,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.Time;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import javax.security.auth.x500.X500Principal;
@@ -126,28 +127,28 @@ public class RSAVerifierTest {
         return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm");
     }
 
-   /*
-   @Test
+
+   // @Test
    public void testSpeed() throws Exception
    {
-
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
-
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
+       // Took 44 seconds with 50000 iterations
+      byte[] tokenBytes = JsonSerialization.writeValueAsBytes(token);
 
       long start = System.currentTimeMillis();
-      int count = 10000;
+      int count = 50000;
       for (int i = 0; i < count; i++)
       {
-         SkeletonKeyTokenVerification v = RSATokenVerifier.verify(null, encoded, metadata);
+          String encoded = new JWSBuilder()
+                  .content(tokenBytes)
+                  .rsa256(idpPair.getPrivate());
+
+          verifySkeletonKeyToken(encoded);
 
       }
       long end = System.currentTimeMillis() - start;
-      System.out.println("rate: " + ((double)end/(double)count));
+      System.out.println("took: " + end);
    }
-   */
+
 
 
     @Test
@@ -234,12 +235,15 @@ public class RSAVerifierTest {
     public void testTokenAuth() throws Exception {
         token = new AccessToken();
         token.subject("CN=Client")
-                .issuer("domain")
+                .issuer("http://localhost:8080/auth/realms/demo")
                 .addAccess("service").addRole("admin").verifyCaller(true);
+        token.setEmail("bill@jboss.org");
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
+
+        System.out.println("token size: " + encoded.length());
 
         AccessToken v = null;
         try {

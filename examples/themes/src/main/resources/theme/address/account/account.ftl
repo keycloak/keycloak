@@ -3,7 +3,7 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>${msg("editAccountHtmlTtile")}</h2>
+            <h2>${msg("editAccountHtmlTitle")}</h2>
         </div>
         <div class="col-md-2 subtitle">
             <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
@@ -20,7 +20,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="username" name="username" <#if !realm.editUsernameAllowed>disabled="disabled"</#if> value="${(account.username!'')?html}"/>
+                <input type="text" class="form-control" id="username" name="username" <#if !realm.editUsernameAllowed>disabled="disabled"</#if> value="${(account.username!'')}"/>
             </div>
         </div>
 
@@ -30,7 +30,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="email" name="email" autofocus value="${(account.email!'')?html}"/>
+                <input type="text" class="form-control" id="email" name="email" autofocus value="${(account.email!'')}"/>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="firstName" name="firstName" value="${(account.firstName!'')?html}"/>
+                <input type="text" class="form-control" id="firstName" name="firstName" value="${(account.firstName!'')}"/>
             </div>
         </div>
 
@@ -50,7 +50,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="lastName" name="lastName" value="${(account.lastName!'')?html}"/>
+                <input type="text" class="form-control" id="lastName" name="lastName" value="${(account.lastName!'')}"/>
             </div>
         </div>
 
@@ -60,7 +60,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.street" name="user.attributes.street" value="${(account.attributes.street!'')?html}"/>
+                <input type="text" class="form-control" id="user.attributes.street" name="user.attributes.street" value="${(account.attributes.street!'')}"/>
             </div>
         </div>
         <div class="form-group">
@@ -69,7 +69,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.locality" name="user.attributes.locality" value="${(account.attributes.locality!'')?html}"/>
+                <input type="text" class="form-control" id="user.attributes.locality" name="user.attributes.locality" value="${(account.attributes.locality!'')}"/>
             </div>
         </div>
         <div class="form-group">
@@ -78,7 +78,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.region" name="user.attributes.region" value="${(account.attributes.region!'')?html}"/>
+                <input type="text" class="form-control" id="user.attributes.region" name="user.attributes.region" value="${(account.attributes.region!'')}"/>
             </div>
         </div>
         <div class="form-group">
@@ -87,7 +87,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.postal_code" name="user.attributes.postal_code" value="${(account.attributes.postal_code!'')?html}"/>
+                <input type="text" class="form-control" id="user.attributes.postal_code" name="user.attributes.postal_code" value="${(account.attributes.postal_code!'')}"/>
             </div>
         </div>
         <div class="form-group">
@@ -96,14 +96,14 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.country" name="user.attributes.country" value="${(account.attributes.country!'')?html}"/>
+                <input type="text" class="form-control" id="user.attributes.country" name="user.attributes.country" value="${(account.attributes.country!'')}"/>
             </div>
         </div>
 
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
-                    <#if url.referrerURI??><a href="${url.referrerURI}">${msg("backToApplication")}/a></#if>
+                    <#if url.referrerURI??><a href="${url.referrerURI}">${msg("backToApplication")?no_esc}/a></#if>
                     <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Save">${msg("doSave")}</button>
                     <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                 </div>

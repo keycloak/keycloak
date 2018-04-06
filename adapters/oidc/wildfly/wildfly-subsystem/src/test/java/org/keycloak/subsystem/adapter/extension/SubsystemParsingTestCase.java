@@ -51,6 +51,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         node.get("auth-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/login");
         node.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/access/codes");
         node.get("ssl-required").set("external");
+        node.get("confidential-port").set(443);
         node.get("expose-token").set(true);
 
         ModelNode jwtCredential = new ModelNode();
@@ -73,7 +74,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         ModelNode deployment = new ModelNode();
         deployment.get("realm").set("demo");
         deployment.get("resource").set("customer-portal");
-        service.addSecureDeployment(deploymentOp, deployment);
+        service.addSecureDeployment(deploymentOp, deployment, false);
 
         addCredential(addr, service, "secret", "secret1");
         addCredential(addr, service, "jwt.client-keystore-file", "/tmp/foo.jks");

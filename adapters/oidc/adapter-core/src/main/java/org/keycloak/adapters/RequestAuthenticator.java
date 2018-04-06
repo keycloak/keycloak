@@ -17,11 +17,14 @@
 
 package org.keycloak.adapters;
 
+import java.util.Collections;
+import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.enums.SslRequired;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -116,6 +119,12 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
+        if (isAutodetectedBearerOnly(facade.getRequest())) {
+            challenge = bearer.getChallenge();
+            log.debug("NOT_ATTEMPTED: Treating as bearer only");
+            return AuthOutcome.NOT_ATTEMPTED;
+        }
+
         if (log.isTraceEnabled()) {
             log.trace("try oauth");
         }
@@ -152,10 +161,41 @@ public abstract class RequestAuthenticator {
 
     protected boolean verifySSL() {
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
-            log.warn("SSL is required to authenticate");
+            log.warnf("SSL is required to authenticate. Remote address %s is secure: %s, SSL required for: %s .",
+                    facade.getRequest().getRemoteAddr(), facade.getRequest().isSecure(), deployment.getSslRequired().name());
             return true;
         }
         return false;
+    }
+
+    protected boolean isAutodetectedBearerOnly(HttpFacade.Request request) {
+        if (!deployment.isAutodetectBearerOnly()) return false;
+
+        String headerValue = facade.getRequest().getHeader("X-Requested-With");
+        if (headerValue != null && headerValue.equalsIgnoreCase("XMLHttpRequest")) {
+            return true;
+        }
+
+        headerValue = facade.getRequest().getHeader("Faces-Request");
+        if (headerValue != null && headerValue.startsWith("partial/")) {
+            return true;
+        }
+
+        headerValue = facade.getRequest().getHeader("SOAPAction");
+        if (headerValue != null) {
+            return true;
+        }
+
+        List<String> accepts = facade.getRequest().getHeaders("Accept");
+        if (accepts == null) accepts = Collections.emptyList();
+
+        for (String accept : accepts) {
+            if (accept.contains("text/html") || accept.contains("text/*") || accept.contains("*/*")) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected abstract OAuthRequestAuthenticator createOAuthAuthenticator();

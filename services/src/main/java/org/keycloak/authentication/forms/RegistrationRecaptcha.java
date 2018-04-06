@@ -23,6 +23,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -62,7 +63,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     public static final String RECAPTCHA_REFERENCE_CATEGORY = "recaptcha";
     public static final String SITE_KEY = "site.key";
     public static final String SITE_SECRET = "secret";
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(RegistrationRecaptcha.class);
 
     public static final String PROVIDER_ID = "registration-recaptcha-action";
 
@@ -92,6 +93,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
         AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+        String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser()).toLanguageTag();
         if (captchaConfig == null || captchaConfig.getConfig() == null
                 || captchaConfig.getConfig().get(SITE_KEY) == null
                 || captchaConfig.getConfig().get(SITE_SECRET) == null
@@ -102,7 +104,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
-        form.addScript("https://www.google.com/recaptcha/api.js");
+        form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag);
     }
 
     @Override
@@ -126,6 +128,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             formData.remove(G_RECAPTCHA_RESPONSE);
             context.error(Errors.INVALID_REGISTRATION);
             context.validationError(formData, errors);
+            context.excludeOtherErrors();
             return;
 
 
@@ -152,7 +155,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
                 content.close();
             }
         } catch (Exception e) {
-            logger.recaptchaFailed(e);
+            ServicesLogger.LOGGER.recaptchaFailed(e);
         }
         return success;
     }
@@ -213,7 +216,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         return "Adds Google Recaptcha button.  Recaptchas verify that the entity that is registering is a human.  This can only be used on the internet and must be configured after you add it.";
     }
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<ProviderConfigProperty>();
 
     static {
         ProviderConfigProperty property;
@@ -222,19 +225,19 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         property.setLabel("Recaptcha Site Key");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Google Recaptcha Site Key");
-        configProperties.add(property);
+        CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_SECRET);
         property.setLabel("Recaptcha Secret");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Google Recaptcha Secret");
-        configProperties.add(property);
+        CONFIG_PROPERTIES.add(property);
 
     }
 
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        return CONFIG_PROPERTIES;
     }
 }

@@ -25,6 +25,17 @@
                 <kc-tooltip>{{:: 'client-template.description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="loginTheme">{{:: 'login-theme' | translate}}</label>
+                <div class="col-sm-6">
+                    <select class="form-control" id="loginTheme"
+                            ng-model="template.attributes['login_theme']"
+                            ng-options="o.name as o.name for o in serverInfo.themes.login">
+                        <option value="" selected></option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'login-theme.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="protocol">{{:: 'protocol' | translate}}</label>
                 <div class="col-sm-6">
                     <div>

@@ -1,5 +1,23 @@
 package org.keycloak.testsuite.user;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.Timer;
+import org.keycloak.util.JsonSerialization;
+
+import javax.ws.rs.core.Response;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,28 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.core.Response;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.authentication.requiredactions.UpdatePassword;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.Timer;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.admin.client.resource.RealmResource;
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *
@@ -100,7 +98,7 @@ public class ManyUsersTest extends AbstractUserTest {
         if (CREATE_OBJECTS) {
 
             // Assuming default groups and required action already created
-            if (realmResource().getDefaultGroups().size() == 0) {
+            if (realmResource().getDefaultGroups().isEmpty()) {
                 log.infof("Creating default groups 'group1' and 'group2'.");
                 setDefaultGroup("group1");
                 setDefaultGroup("group2");
@@ -123,20 +121,17 @@ public class ManyUsersTest extends AbstractUserTest {
         realmResource().addDefaultGroup(groupId);
     }
 
-
-
     @After
     public void after() {
         realmTimer.clearStats(true, true, false);
         usersTimer.clearStats();
     }
 
-
     @Override
     public UserRepresentation createUser(UsersResource users, UserRepresentation user) {
         // Add some additional attributes to user
         if (CREATE_OBJECTS) {
-            Map<String, Object> attrs = new HashMap<>();
+            Map<String, List<String>> attrs = new HashMap<>();
             attrs.put("attr1", Collections.singletonList("val1"));
             attrs.put("attr2", Collections.singletonList("val2"));
             user.setAttributes(attrs);
@@ -247,6 +242,12 @@ public class ManyUsersTest extends AbstractUserTest {
             log.info("Deleted users: " + i + " / " + users.size());
         }
         realmTimer.reset();
+    }
+
+    private void createRealm(String REALM) {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(REALM);
+        adminClient.realms().create(rep);
     }
 
 }

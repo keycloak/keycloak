@@ -20,7 +20,6 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -145,7 +144,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         }
 
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.setNotBefore(response.getNotBeforePolicy());
+            deployment.updateNotBefore(response.getNotBeforePolicy());
         }
 
         this.token = token;
@@ -156,7 +155,9 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             this.refreshToken = response.getRefreshToken();
         }
         this.tokenString = tokenString;
-        tokenStore.refreshCallback(this);
+        if (tokenStore != null) {
+            tokenStore.refreshCallback(this);
+        }
         return true;
     }
 

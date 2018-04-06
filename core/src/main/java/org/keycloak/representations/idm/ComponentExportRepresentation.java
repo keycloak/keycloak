@@ -27,6 +27,7 @@ public class ComponentExportRepresentation {
     private String id;
     private String name;
     private String providerId;
+    private String subType;
     private MultivaluedHashMap<String, ComponentExportRepresentation> subComponents = new MultivaluedHashMap<>();
     private MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
 
@@ -52,6 +53,14 @@ public class ComponentExportRepresentation {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 
     public MultivaluedHashMap<String, String> getConfig() {

@@ -1,0 +1,261 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models.sessions.infinispan.entities;
+
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.infinispan.util.concurrent.ConcurrentHashSet;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+@SerializeWith(AuthenticationSessionEntity.ExternalizerImpl.class)
+public class AuthenticationSessionEntity implements Serializable {
+
+    private String clientUUID;
+
+    private String authUserId;
+
+    private String redirectUri;
+    private String action;
+    private Set<String> roles;
+    private Set<String> protocolMappers;
+
+    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus = new ConcurrentHashMap<>();
+    private String protocol;
+
+    private Map<String, String> clientNotes;
+    private Map<String, String> authNotes;
+    private Set<String> requiredActions  = new ConcurrentHashSet<>();
+    private Map<String, String> userSessionNotes;
+
+    public AuthenticationSessionEntity() {
+    }
+
+    public AuthenticationSessionEntity(
+      String clientUUID,
+      String authUserId,
+      String redirectUri, String action, Set<String> roles, Set<String> protocolMappers,
+      Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
+      Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
+        this.clientUUID = clientUUID;
+
+        this.authUserId = authUserId;
+
+        this.redirectUri = redirectUri;
+        this.action = action;
+        this.roles = roles;
+        this.protocolMappers = protocolMappers;
+
+        this.executionStatus = executionStatus;
+        this.protocol = protocol;
+
+        this.clientNotes = clientNotes;
+        this.authNotes = authNotes;
+        this.requiredActions = requiredActions;
+        this.userSessionNotes = userSessionNotes;
+    }
+
+    public String getClientUUID() {
+        return clientUUID;
+    }
+
+    public void setClientUUID(String clientUUID) {
+        this.clientUUID = clientUUID;
+    }
+
+    public String getAuthUserId() {
+        return authUserId;
+    }
+
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
+    }
+
+    public Set<String> getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        this.protocolMappers = protocolMappers;
+    }
+
+    public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
+        return executionStatus;
+    }
+
+    public void setExecutionStatus(Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus) {
+        this.executionStatus = executionStatus;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Map<String, String> getClientNotes() {
+        return clientNotes;
+    }
+
+    public void setClientNotes(Map<String, String> clientNotes) {
+        this.clientNotes = clientNotes;
+    }
+
+    public Set<String> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(Set<String> requiredActions) {
+        this.requiredActions = requiredActions;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
+    }
+
+    public Map<String, String> getAuthNotes() {
+        return authNotes;
+    }
+
+    public void setAuthNotes(Map<String, String> authNotes) {
+        this.authNotes = authNotes;
+    }
+
+    public static class ExternalizerImpl implements Externalizer<AuthenticationSessionEntity> {
+
+        private static final int VERSION_1 = 1;
+
+        public static final ExternalizerImpl INSTANCE = new ExternalizerImpl();
+
+        private static AuthenticationSessionModel.ExecutionStatus fromOrdinal(int ordinal) {
+            ExecutionStatus[] values = AuthenticationSessionModel.ExecutionStatus.values();
+            return (ordinal < 0 || ordinal >= values.length)
+              ? null
+              : values[ordinal];
+        }
+
+        public static final Externalizer<AuthenticationSessionModel.ExecutionStatus> EXECUTION_STATUS_EXT = new Externalizer<AuthenticationSessionModel.ExecutionStatus>() {
+
+            @Override
+            public void writeObject(ObjectOutput output, AuthenticationSessionModel.ExecutionStatus e) throws IOException {
+                MarshallUtil.marshallEnum(e, output);
+            }
+
+            @Override
+            public AuthenticationSessionModel.ExecutionStatus readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+                return MarshallUtil.unmarshallEnum(input, ExternalizerImpl::fromOrdinal);
+            }
+        };
+
+        @Override
+        public void writeObject(ObjectOutput output, AuthenticationSessionEntity value) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(value.clientUUID, output);
+
+            MarshallUtil.marshallString(value.authUserId, output);
+
+            MarshallUtil.marshallString(value.redirectUri, output);
+            MarshallUtil.marshallString(value.action, output);
+            KeycloakMarshallUtil.writeCollection(value.roles, KeycloakMarshallUtil.STRING_EXT, output);
+            KeycloakMarshallUtil.writeCollection(value.protocolMappers, KeycloakMarshallUtil.STRING_EXT, output);
+
+            KeycloakMarshallUtil.writeMap(value.executionStatus, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, output);
+            MarshallUtil.marshallString(value.protocol, output);
+
+            KeycloakMarshallUtil.writeMap(value.clientNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
+            KeycloakMarshallUtil.writeMap(value.authNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
+            KeycloakMarshallUtil.writeCollection(value.requiredActions, KeycloakMarshallUtil.STRING_EXT, output);
+            KeycloakMarshallUtil.writeMap(value.userSessionNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
+        }
+
+        @Override
+        public AuthenticationSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public AuthenticationSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            return new AuthenticationSessionEntity(
+              MarshallUtil.unmarshallString(input),     // clientUUID
+
+              MarshallUtil.unmarshallString(input),     // authUserId
+
+              MarshallUtil.unmarshallString(input),     // redirectUri
+              MarshallUtil.unmarshallString(input),     // action
+              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>()),  // roles
+              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>()),  // protocolMappers
+
+              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
+              MarshallUtil.unmarshallString(input),     // protocol
+
+              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
+              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
+              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>()),  // requiredActions
+              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
+            );
+        }
+    }
+}

@@ -39,7 +39,11 @@ import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConsta
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,9 +51,26 @@ import java.util.List;
  */
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
+    private static final Pattern PROTOCOL_MAP_PATTERN = Pattern.compile("\\s*([a-zA-Z][a-zA-Z\\d+-.]*)\\s*=\\s*(\\d+)\\s*");
+    private static final String[] DEFAULT_PROTOCOL_TO_PORT_MAP = new String[] { "http=80", "https=443" };
+
+    private final Map<Integer, String> knownPorts = new HashMap<>();
+    private final Map<String, Integer> knownProtocols = new HashMap<>();
+
+    private void addToProtocolPortMaps(String protocolMapping) {
+        Matcher m = PROTOCOL_MAP_PATTERN.matcher(protocolMapping);
+        if (m.matches()) {
+            Integer port = Integer.valueOf(m.group(2));
+            String proto = m.group(1);
+
+            knownPorts.put(port, proto);
+            knownProtocols.put(proto, port);
+        }
+    }
+
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new SamlService(realm, event);
+        return new SamlService(realm, event, knownProtocols, knownPorts);
     }
 
     @Override
@@ -61,6 +82,15 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     public void init(Config.Scope config) {
         //PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
         //sts.installDefaultConfiguration();
+
+        String[] protocolMappings = config.getArray("knownProtocols");
+        if (protocolMappings == null) {
+            protocolMappings = DEFAULT_PROTOCOL_TO_PORT_MAP;
+        }
+
+        for (String protocolMapping : protocolMappings) {
+            addToProtocolPortMaps(protocolMapping);
+        }
     }
 
     @Override

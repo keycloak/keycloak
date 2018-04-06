@@ -16,27 +16,28 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.services.ServicesLogger;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import java.util.Hashtable;
-
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPConnectionTestManager {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(LDAPConnectionTestManager.class);
 
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
 
-    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi) {
+    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout) {
         if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
-            logger.unknownAction(action);
+            ServicesLogger.LOGGER.unknownAction(action);
             return false;
         }
 
@@ -69,18 +70,22 @@ public class LDAPConnectionTestManager {
 
             LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, connectionUrl, env);
 
+            if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
+                env.put("com.sun.jndi.ldap.connect.timeout", connectionTimeout);
+            }
+
             ldapContext = new InitialLdapContext(env, null);
             return true;
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";
-            logger.errorAuthenticating(ne, errorMessage + ne.getMessage());
+            ServicesLogger.LOGGER.errorAuthenticating(ne, errorMessage + ne.getMessage());
             return false;
         } finally {
             if (ldapContext != null) {
                 try {
                     ldapContext.close();
                 } catch (NamingException ne) {
-                    logger.errorClosingLDAP(ne);
+                    ServicesLogger.LOGGER.errorClosingLDAP(ne);
                 }
             }
         }

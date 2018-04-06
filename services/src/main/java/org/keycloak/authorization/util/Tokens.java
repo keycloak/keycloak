@@ -22,6 +22,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
@@ -47,16 +48,22 @@ public class Tokens {
         return null;
     }
 
-    public static String getAccessTokenAsString(KeycloakSession keycloakSession) {
+    public static AccessToken getAccessToken(String accessToken, KeycloakSession keycloakSession) {
         AppAuthManager authManager = new AppAuthManager();
+        KeycloakContext context = keycloakSession.getContext();
+        AuthResult authResult = authManager.authenticateBearerToken(accessToken, keycloakSession, context.getRealm(), context.getUri(), context.getConnection(), context.getRequestHeaders());
 
-        return authManager.extractAuthorizationHeaderToken(keycloakSession.getContext().getRequestHeaders());
+        if (authResult != null) {
+            return authResult.getToken();
+        }
+
+        return null;
     }
 
-    public static boolean verifySignature(String token, PublicKey publicKey) {
+    public static boolean verifySignature(KeycloakSession keycloakSession, RealmModel realm, String token) {
         try {
             JWSInput jws = new JWSInput(token);
-
+            PublicKey publicKey = keycloakSession.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
             return RSAProvider.verify(jws, publicKey);
         } catch (Exception e) {
             throw new ErrorResponseException("invalid_signature", "Unexpected error while validating signature.", Status.INTERNAL_SERVER_ERROR);

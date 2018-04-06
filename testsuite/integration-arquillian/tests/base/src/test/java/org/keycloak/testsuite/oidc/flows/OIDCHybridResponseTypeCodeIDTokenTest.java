@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -29,6 +26,9 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Tests with response_type=code id_token
@@ -46,11 +46,16 @@ public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseT
     }
 
 
-    protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
+    @Override
+    protected boolean isFragment() {
+        return true;
+    }
+
+
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
         Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
         // IDToken from the authorization response
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
         Assert.assertNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
@@ -59,6 +64,12 @@ public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseT
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertNotNull(idToken.getCodeHash());
         Assert.assertEquals(idToken.getCodeHash(), HashProvider.oidcHash(jwsAlgorithm, authzResponse.getCode()));
+
+        // Financial API - Part 2: Read and Write API Security Profile
+        // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+        // Validate "s_hash"
+        Assert.assertNotNull(idToken.getStateHash());
+        Assert.assertEquals(idToken.getStateHash(), HashProvider.oidcHash(jwsAlgorithm, authzResponse.getState())); 
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);

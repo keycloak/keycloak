@@ -17,86 +17,102 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.IDToken;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Base class for mapping of user role mappings to an ID and Access Token claim.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
-
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) {
-            return token;
-        }
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) {
-            return token;
-        }
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
-
-    protected abstract void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession);
+abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     /**
-     * Returns the role names extracted from the given {@code roleModels} while recursively traversing "Composite Roles".
-     * <p>
-     * Optionally prefixes each role name with the given {@code prefix}.
-     * </p>
-     *
-     * @param roleModels
-     * @param prefix     the prefix to apply, may be {@literal null}
+     * Returns a stream with roles that come from:
+     * <ul>
+     * <li>Direct assignment of the role to the user</li>
+     * <li>Direct assignment of the role to any group of the user or any of its parent group</li>
+     * <li>Composite roles are expanded recursively, the composite role itself is also contained in the returned stream</li>
+     * </ul>
+     * @param user User to enumerate the roles for
      * @return
      */
-    protected Set<String> flattenRoleModelToRoleNames(Set<RoleModel> roleModels, String prefix) {
+    public static Stream<RoleModel> getAllUserRolesStream(UserModel user) {
+        return Stream.concat(
+          user.getRoleMappings().stream(),
+          user.getGroups().stream()
+            .flatMap(g -> groupAndItsParentsStream(g))
+            .flatMap(g -> g.getRoleMappings().stream()))
+          .flatMap(RoleUtils::expandCompositeRolesStream);
+    }
 
-        Set<String> roleNames = new LinkedHashSet<>();
+    /**
+     * Returns stream of the given group and its parents (recursively).
+     * @param group
+     * @return
+     */
+    private static Stream<GroupModel> groupAndItsParentsStream(GroupModel group) {
+        Stream.Builder<GroupModel> sb = Stream.builder();
+        while (group != null) {
+            sb.add(group);
+            group = group.getParent();
+        }
+        return sb.build();
+    }
 
-        Deque<RoleModel> stack = new ArrayDeque<>(roleModels);
-        while (!stack.isEmpty()) {
+    /**
+     * Retrieves all roles of the current user based on direct roles set to the user, its groups and their parent groups.
+     * Then it recursively expands all composite roles, and restricts according to the given predicate {@code restriction}.
+     * If the current client sessions is restricted (i.e. no client found in active user session has full scope allowed),
+     * the final list of roles is also restricted by the client scope. Finally, the list is mapped to the token into
+     * a claim.
+     *
+     * @param token
+     * @param mappingModel
+     * @param userSession
+     * @param restriction
+     * @param prefix
+     */
+    protected static void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
+      Predicate<RoleModel> restriction, String prefix) {
+        String rolePrefix = prefix == null ? "" : prefix;
+        UserModel user = userSession.getUser();
 
-            RoleModel current = stack.pop();
+        // get a set of all realm roles assigned to the user or its group
+        Stream<RoleModel> clientUserRoles = getAllUserRolesStream(user).filter(restriction);
 
-            if (current.isComposite()) {
-                for (RoleModel compositeRoleModel : current.getComposites()) {
-                    stack.push(compositeRoleModel);
-                }
-            }
+        boolean dontLimitScope = userSession.getAuthenticatedClientSessions().values().stream().anyMatch(cs -> cs.getClient().isFullScopeAllowed());
+        if (! dontLimitScope) {
+            Set<RoleModel> clientRoles = userSession.getAuthenticatedClientSessions().values().stream()
+              .flatMap(cs -> cs.getClient().getScopeMappings().stream())
+              .collect(Collectors.toSet());
 
-            String roleName = current.getName();
-
-            if (prefix != null && !prefix.trim().isEmpty()) {
-                roleName = prefix.trim() + roleName;
-            }
-
-            roleNames.add(roleName);
+            clientUserRoles = clientUserRoles.filter(clientRoles::contains);
         }
 
-        return roleNames;
+        List<String> realmRoleNames = clientUserRoles
+          .map(m -> rolePrefix + m.getName())
+          .collect(Collectors.toList());
+
+        Object claimValue = realmRoleNames;
+
+        boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
+        if (!multiValued) {
+            claimValue = realmRoleNames.toString();
+        }
+
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
     }
 }

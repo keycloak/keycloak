@@ -16,15 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.factories;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
-import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
@@ -37,6 +28,15 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -80,7 +80,7 @@ public class JBossSAMLAuthnResponseFactory {
     public static StatusType createStatusTypeForResponder(String statusCodeURI) {
         StatusCodeType topLevelCode = new StatusCodeType();
 
-        topLevelCode.setValue(URI.create(JBossSAMLURIConstants.STATUS_RESPONDER.get()));
+        topLevelCode.setValue(JBossSAMLURIConstants.STATUS_RESPONDER.getUri());
 
         StatusCodeType secondLevelCode = new StatusCodeType();
 

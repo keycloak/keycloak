@@ -1,0 +1,10 @@
+{
+    "realm": "Test",
+    "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "auth-server-url": "/auth",
+    "ssl-required": "external",
+    "resource": "app-profile-jee",
+    "credentials": {
+        "secret": "4f36f31a-be9d-4f92-b982-425301bac5df"
+    }
+}

@@ -19,45 +19,51 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import java.io.Serializable;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+
 /**
+ * Represents an entity containing data about a session, i.e. an object that is stored in infinispan cache and can be
+ * potentially shared across DCs. Due to conflict management in {@code RemoteCacheInvoker} and
+ * {@code InfinispanChangelogBasedTransaction} that use Infinispan's {@code replace()} method, overriding {@link #hashCode()}
+ * and {@link #equals(java.lang.Object)} is <b>mandatory</b> in descendants.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class SessionEntity implements Serializable {
+public abstract class SessionEntity implements Serializable {
 
-    private String id;
+    private String realmId;
 
-    private String realm;
-
-    public String getId() {
-        return id;
+    /**
+     * Returns realmId ID.
+     * @return
+     */
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
-    public String getRealm() {
-        return realm;
+    public SessionEntity() {
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    protected SessionEntity(String realmId) {
+        this.realmId = realmId;
     }
+
+    public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+        if (localEntityWrapper == null) {
+            return new SessionEntityWrapper<>(this);
+        } else {
+            return new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
+        }
+    };
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SessionEntity)) return false;
-
-        SessionEntity that = (SessionEntity) o;
-
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-
-        return true;
-    }
+    public abstract boolean equals(Object obj);
 
     @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
-    }
+    public abstract int hashCode();
+
 }

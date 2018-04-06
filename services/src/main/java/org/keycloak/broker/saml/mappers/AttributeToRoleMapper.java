@@ -127,7 +127,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
             for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                 AttributeType attr = choice.getAttribute();
                 if (name != null && !name.equals(attr.getName())) continue;
-                if (friendly != null && !name.equals(attr.getFriendlyName())) continue;
+                if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
                 for (Object val : attr.getAttributeValue()) {
                     if (val.equals(desiredValue)) return true;
                 }
@@ -139,10 +139,12 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
         if (!isAttributePresent(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.deleteRoleMapping(role);
+        }else{
+            user.grantRole(role);
         }
 
     }

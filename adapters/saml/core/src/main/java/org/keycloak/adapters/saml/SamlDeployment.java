@@ -22,14 +22,19 @@ import org.keycloak.saml.SignatureAlgorithm;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.Set;
+import org.apache.http.client.HttpClient;
+import org.keycloak.rotation.KeyLocator;
+import java.net.URI;
 
 /**
+ * Represents SAML deployment configuration.
+ * 
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface SamlDeployment {
+
     enum Binding {
         POST,
         REDIRECT;
@@ -41,20 +46,84 @@ public interface SamlDeployment {
     }
 
     public interface IDP {
+        /**
+         * Returns entity identifier of this IdP.
+         * @return see description.
+         */
         String getEntityID();
 
+        /**
+         * Returns Single sign on service configuration for this IdP.
+         * @return see description.
+         */
         SingleSignOnService getSingleSignOnService();
+
+        /**
+         * Returns Single logout service configuration for this IdP.
+         * @return see description.
+         */
         SingleLogoutService getSingleLogoutService();
-        PublicKey getSignatureValidationKey();
+
+        /**
+         * Returns {@link KeyLocator} looking up public keys used for validation of IdP signatures.
+         * @return see description.
+         */
+        KeyLocator getSignatureValidationKeyLocator();
+
+        /**
+         * Returns minimum time (in seconds) between issuing requests to IdP SAML descriptor.
+         * Used e.g. by {@link KeyLocator} looking up public keys for validation of IdP signatures
+         * to prevent too frequent requests.
+         *
+         * @return see description.
+         */
+        int getMinTimeBetweenDescriptorRequests();
+
+        /**
+         * Returns {@link HttpClient} instance that will be used for http communication with this IdP.
+         * @return see description
+         */
+        HttpClient getClient();
 
         public interface SingleSignOnService {
+            /**
+             * Returns {@code true} if the requests to IdP need to be signed by SP key.
+             * @return see dscription
+             */
             boolean signRequest();
+            /**
+             * Returns {@code true} if the complete response message from IdP should
+             * be checked for valid signature.
+             * @return see dscription
+             */
             boolean validateResponseSignature();
+            /**
+             * Returns {@code true} if individual assertions in response from IdP should
+             * be checked for valid signature.
+             * @return see dscription
+             */
             boolean validateAssertionSignature();
             Binding getRequestBinding();
+            /**
+             * SAML allows the client to request what binding type it wants authn responses to use. The default is
+             * that the client will not request a specific binding type for responses.
+             * @return
+             */
             Binding getResponseBinding();
+            /**
+             * Returns URL for the IDP login service that the client will send requests to.
+             * @return
+             */
             String getRequestBindingUrl();
+            /**
+             * Returns URI where the IdP should send the responses to. The default is
+             * that the client will not request a specific assertion consumer service URL.
+             * This property is typically accompanied by the ProtocolBinding attribute.
+             * @return
+             */
+            URI getAssertionConsumerServiceUrl();
         }
+
         public interface SingleLogoutService {
             boolean validateRequestSignature();
             boolean validateResponseSignature();
@@ -67,10 +136,19 @@ public interface SamlDeployment {
         }
     }
 
+    /**
+     * Returns Identity Provider configuration for this SAML deployment.
+     * @return see description.
+     */
     public IDP getIDP();
 
     public boolean isConfigured();
     SslRequired getSslRequired();
+
+    /**
+     * Returns entity identifier of this SP.
+     * @return see description.
+     */
     String getEntityID();
     String getNameIDPolicyFormat();
     boolean isForceAuthentication();
@@ -80,7 +158,6 @@ public interface SamlDeployment {
     KeyPair getSigningKeyPair();
     String getSignatureCanonicalizationMethod();
     SignatureAlgorithm getSignatureAlgorithm();
-    String getAssertionConsumerServiceUrl();
     String getLogoutPage();
 
     Set<String> getRoleAttributeNames();
@@ -91,6 +168,6 @@ public interface SamlDeployment {
     }
     PrincipalNamePolicy getPrincipalNamePolicy();
     String getPrincipalAttributeName();
-
+    boolean isAutodetectBearerOnly();
 
 }

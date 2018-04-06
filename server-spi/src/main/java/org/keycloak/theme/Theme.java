@@ -28,23 +28,19 @@ import java.util.Properties;
  */
 public interface Theme {
 
-    public enum Type { LOGIN, ACCOUNT, ADMIN, EMAIL, WELCOME, COMMON };
+    enum Type { LOGIN, ACCOUNT, ADMIN, EMAIL, WELCOME, COMMON };
 
-    public String getName();
+    String getName();
 
-    public String getParentName();
+    String getParentName();
 
-    public String getImportName();
+    String getImportName();
 
-    public Type getType();
+    Type getType();
 
-    public URL getTemplate(String name) throws IOException;
+    URL getTemplate(String name) throws IOException;
 
-    public InputStream getTemplateAsStream(String name) throws IOException;
-
-    public URL getResource(String path) throws IOException;
-
-    public InputStream getResourceAsStream(String path) throws IOException;
+    InputStream getResourceAsStream(String path) throws IOException;
 
     /**
      * Same as getMessages(baseBundlename, locale), but uses a default baseBundlename
@@ -54,7 +50,7 @@ public interface Theme {
      * @return The localized messages from the bundle.
      * @throws IOException If bundle can not be read.
      */
-    public Properties getMessages(Locale locale) throws IOException;
+    Properties getMessages(Locale locale) throws IOException;
 
     /**
      * Retrieve localized messages from a message bundle.
@@ -65,8 +61,8 @@ public interface Theme {
      * @return The localized messages from the bundle.
      * @throws IOException If bundle can not be read.
      */
-    public Properties getMessages(String baseBundlename, Locale locale) throws IOException;
+    Properties getMessages(String baseBundlename, Locale locale) throws IOException;
 
-    public Properties getProperties() throws IOException;
+    Properties getProperties() throws IOException;
 
 }

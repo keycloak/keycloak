@@ -23,7 +23,8 @@ import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * HTTP header inspecting API request matcher tests.
@@ -39,13 +40,8 @@ public class HttpHeaderInspectingApiRequestMatcherTest {
     }
 
     @Test
-    public void testMatches() throws Exception {
-        assertTrue(apiRequestMatcher.matches(request));
-    }
-
-    @Test
     public void testMatchesBrowserRequest() throws Exception {
-        request.addHeader(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        request.addHeader(HttpHeaders.ACCEPT, "application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         assertFalse(apiRequestMatcher.matches(request));
     }
 
@@ -54,7 +50,7 @@ public class HttpHeaderInspectingApiRequestMatcherTest {
         request.addHeader(
                 HttpHeaderInspectingApiRequestMatcher.X_REQUESTED_WITH_HEADER,
                 HttpHeaderInspectingApiRequestMatcher.X_REQUESTED_WITH_HEADER_AJAX_VALUE);
+        
         assertTrue(apiRequestMatcher.matches(request));
     }
-
 }

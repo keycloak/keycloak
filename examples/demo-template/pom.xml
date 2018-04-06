@@ -20,10 +20,10 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
-    <name>Examples</name>
+    <name>Demo Examples</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
@@ -51,7 +51,6 @@
         <module>example-ear</module>
         <module>admin-access-app</module>
         <module>angular-product-app</module>
-        <module>angular2-product-app</module>
         <module>database-service</module>
         <module>third-party</module>
         <module>third-party-cdi</module>

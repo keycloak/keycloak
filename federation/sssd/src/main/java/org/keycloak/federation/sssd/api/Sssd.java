@@ -18,13 +18,12 @@
 package org.keycloak.federation.sssd.api;
 
 import cx.ath.matthew.LibraryLoader;
-import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.sssd.infopipe.InfoPipe;
-import org.freedesktop.sssd.infopipe.User;
 import org.jboss.logging.Logger;
+import org.keycloak.models.UserModel;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,17 +36,10 @@ import java.util.Vector;
  */
 public class Sssd {
 
-    public static User user() {
-        return SingletonHolder.USER_OBJECT;
-    }
-
-    public static InfoPipe infopipe() {
-        return SingletonHolder.INFOPIPE_OBJECT;
-    }
-
+    private static DBusConnection dBusConnection;
 
     public static void disconnect() {
-        SingletonHolder.DBUS_CONNECTION.disconnect();
+        dBusConnection.disconnect();
     }
 
     private String username;
@@ -58,22 +50,13 @@ public class Sssd {
 
     public Sssd(String username) {
         this.username = username;
-    }
-
-    private static final class SingletonHolder {
-        private static InfoPipe INFOPIPE_OBJECT;
-        private static User USER_OBJECT;
-        private static DBusConnection DBUS_CONNECTION;
-
-        static {
-            try {
-                DBUS_CONNECTION = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, User.OBJECTPATH, User.class);
-            } catch (DBusException e) {
-                logger.error("Failed to obtain D-Bus connection", e);
-            }
+        try {
+            if (LibraryLoader.load().succeed())
+                dBusConnection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+        } catch (DBusException e) {
+            e.printStackTrace();
         }
+
     }
 
     public static String getRawAttribute(Variant variant) {
@@ -86,49 +69,102 @@ public class Sssd {
         return null;
     }
 
-    public Map<String, Variant> getUserAttributes() {
-        String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
-        Map<String, Variant> attributes = null;
+    public List<String> getGroups() {
+        List<String> userGroups;
         try {
-            InfoPipe infoPipe = infopipe();
-            attributes = infoPipe.getUserAttributes(username, Arrays.asList(attr));
-        } catch (Exception e) {
-            logger.error("Failed to retrieve user's attributes from SSSD", e);
-        }
-
-        return attributes;
-    }
-
-    public List<String> getUserGroups() {
-        List<String> userGroups = null;
-        try {
-            InfoPipe infoPipe = Sssd.infopipe();
+            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
             userGroups = infoPipe.getUserGroups(username);
         } catch (Exception e) {
-            logger.error("Failed to retrieve user's groups from SSSD", e);
+            throw new SSSDException("Failed to retrieve user's groups from SSSD. Check if SSSD service is active.");
         }
         return userGroups;
     }
 
-    public static boolean isAvailable(){
+    public static boolean isAvailable() {
         boolean sssdAvailable = false;
         try {
             if (LibraryLoader.load().succeed()) {
                 DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                DBus dbus = connection.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
-                sssdAvailable = Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
-                if (!sssdAvailable) {
+                InfoPipe infoPipe = connection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+
+                if (infoPipe.ping("PING") == null || infoPipe.ping("PING").isEmpty()) {
                     logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
                 } else {
                     sssdAvailable = true;
                 }
-                connection.disconnect();
             } else {
-                logger.debugv("libunix_dbus_java not found. Federation provider will be disabled.");
+                logger.debugv("The RPM libunix-dbus-java is not installed. SSSD Federation provider will be disabled.");
             }
-        } catch (DBusException e) {
-            logger.error("Failed to check the status of SSSD", e);
+        } catch (Exception e) {
+            logger.debugv("SSSD is not available in your system. Federation provider will be disabled.", e);
         }
         return sssdAvailable;
+    }
+
+    public User getUser() {
+
+        String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
+        User user = null;
+        try {
+            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+            user = new User(infoPipe.getUserAttributes(username, Arrays.asList(attr)));
+        } catch (Exception e) {
+            throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
+        }
+        return user;
+    }
+
+    public class User {
+
+        private final String email;
+        private final String firstName;
+        private final String lastName;
+
+        public User(Map<String, Variant> userAttributes) {
+            this.email = getRawAttribute(userAttributes.get("mail"));
+            this.firstName = getRawAttribute(userAttributes.get("givenname"));
+            this.lastName = getRawAttribute(userAttributes.get("sn"));
+
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) return false;
+
+            UserModel userModel = (UserModel) o;
+            if (firstName != null && !firstName.equals(userModel.getFirstName())) {
+                return false;
+            }
+            if (lastName != null && !lastName.equals(userModel.getLastName())) {
+                return false;
+            }
+            if (email != null) {
+                return email.equals(userModel.getEmail());
+            }
+            if (email != userModel.getEmail()) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = email != null ? email.hashCode() : 0;
+            result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+            result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+            return result;
+        }
     }
 }

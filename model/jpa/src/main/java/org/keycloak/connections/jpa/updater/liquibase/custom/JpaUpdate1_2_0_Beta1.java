@@ -16,11 +16,6 @@
  */
 
 package org.keycloak.connections.jpa.updater.liquibase.custom;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.DatabaseException;
@@ -33,6 +28,12 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

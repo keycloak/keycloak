@@ -22,10 +22,10 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.spi.HttpFacade;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;

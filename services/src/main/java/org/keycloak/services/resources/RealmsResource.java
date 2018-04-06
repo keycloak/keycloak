@@ -16,30 +16,33 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resources.account.AccountLoader;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.utils.MediaTypeMatcher;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -57,7 +60,7 @@ import java.net.URI;
  */
 @Path("/realms")
 public class RealmsResource {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(RealmsResource.class);
 
     @Context
     protected KeycloakSession session;
@@ -163,7 +166,7 @@ public class RealmsResource {
             targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
         }
 
-        return Response.temporaryRedirect(targetUri).build();
+        return Response.seeOther(targetUri).build();
     }
 
     @Path("{realm}/login-actions")
@@ -204,20 +207,10 @@ public class RealmsResource {
     }
 
     @Path("{realm}/account")
-    public AccountService getAccountService(final @PathParam("realm") String name) {
+    public Object getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
-
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client == null || !client.isEnabled()) {
-            logger.debug("account management not enabled");
-            throw new NotFoundException("account management not enabled");
-        }
-
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AccountService accountService = new AccountService(realm, client, event);
-        ResteasyProviderFactory.getInstance().injectProperties(accountService);
-        accountService.init();
-        return accountService;
+        return new AccountLoader().getAccountService(session, event);
     }
 
     @Path("{realm}")
@@ -240,6 +233,14 @@ public class RealmsResource {
         return brokerService;
     }
 
+    @OPTIONS
+    @Path("{realm}/.well-known/{provider}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getVersionPreflight(final @PathParam("realm") String name,
+                                        final @PathParam("provider") String providerName) {
+        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+    }
+
     @GET
     @Path("{realm}/.well-known/{provider}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -249,13 +250,17 @@ public class RealmsResource {
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
 
-        ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").build();
+        if (wellKnown != null) {
+            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
+            return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+        }
+
+        throw new NotFoundException();
     }
 
     @Path("{realm}/authz")
     public Object getAuthorizationService(@PathParam("realm") String name) {
-        ProfileHelper.requirePreview();
+        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
 
         init(name);
         AuthorizationProvider authorization = this.session.getProvider(AuthorizationProvider.class);

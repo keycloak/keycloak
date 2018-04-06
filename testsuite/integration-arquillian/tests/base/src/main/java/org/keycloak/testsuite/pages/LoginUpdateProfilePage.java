@@ -41,12 +41,18 @@ public class LoginUpdateProfilePage extends AbstractPage {
     private WebElement loginErrorMessage;
 
     public void update(String firstName, String lastName, String email) {
-        firstNameInput.clear();
-        firstNameInput.sendKeys(firstName);
-        lastNameInput.clear();
-        lastNameInput.sendKeys(lastName);
-        emailInput.clear();
-        emailInput.sendKeys(email);
+        if (firstName != null) {
+            firstNameInput.clear();
+            firstNameInput.sendKeys(firstName);
+        }
+        if (lastName != null) {
+            lastNameInput.clear();
+            lastNameInput.sendKeys(lastName);
+        }
+        if (email != null) {
+            emailInput.clear();
+            emailInput.sendKeys(email);
+        }
         submitButton.click();
     }
 
@@ -67,7 +73,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Update Account Information");
+        return PageUtils.getPageTitle(driver).equals("Update Account Information");
     }
 
     @Override

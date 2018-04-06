@@ -41,7 +41,10 @@ public class CamelClient {
 
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
+
+        StringBuilder sb = new StringBuilder();
         try {
+            // Initially let's invoke a simple Camel-Jetty exposed endpoint
             HttpGet get = new HttpGet("http://localhost:8383/admin-camel-endpoint");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
@@ -53,7 +56,26 @@ public class CamelClient {
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();
                 try {
-                    return getStringFromInputStream(is);
+                    sb.append(getStringFromInputStream(is));
+                } finally {
+                    is.close();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // Here we invoke a Jetty endpoint, published using Camel RestDSL
+            get = new HttpGet("http://localhost:8484/restdsl/hello/world");
+            get.addHeader("Authorization", "Bearer " + session.getTokenString());
+            try {
+                HttpResponse response = client.execute(get);
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return "There was a failure processing request with the RestDSL endpoint.  You either didn't configure Keycloak properly or you don't have admin permission? Status code is "
+                            + response.getStatusLine().getStatusCode();
+                }
+                HttpEntity entity = response.getEntity();
+                InputStream is = entity.getContent();
+                try {
+                    sb.append(getStringFromInputStream(is));
                 } finally {
                     is.close();
                 }
@@ -63,6 +85,8 @@ public class CamelClient {
         } finally {
             client.getConnectionManager().shutdown();
         }
+
+        return sb.toString();
     }
 
     private static String getStringFromInputStream(InputStream is) {

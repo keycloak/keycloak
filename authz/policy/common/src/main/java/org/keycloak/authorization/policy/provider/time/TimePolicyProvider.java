@@ -17,71 +17,75 @@
  */
 package org.keycloak.authorization.policy.provider.time;
 
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.provider.PolicyProvider;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import static com.sun.corba.se.spi.activation.IIOP_CLEAR_TEXT.value;
+import org.keycloak.authorization.attribute.Attributes;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.policy.evaluation.Evaluation;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class TimePolicyProvider implements PolicyProvider {
 
-    static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd hh:mm:ss";
+    static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
-    private final Policy policy;
-    private final SimpleDateFormat dateFormat;
-    private final Date currentDate;
-
-    public TimePolicyProvider(Policy policy) {
-        this.policy = policy;
-        this.dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
-        this.currentDate = new Date();
-    }
+    static String CONTEXT_TIME_ENTRY = "kc.time.date_time";
 
     @Override
     public void evaluate(Evaluation evaluation) {
+        Policy policy = evaluation.getPolicy();
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
         try {
-            String notBefore = this.policy.getConfig().get("nbf");
-            if (notBefore != null) {
-                if (this.currentDate.before(this.dateFormat.parse(format(notBefore)))) {
+            String contextTime = null;
+            EvaluationContext context = evaluation.getContext();
+            if (context.getAttributes() != null && context.getAttributes().exists(CONTEXT_TIME_ENTRY)) {
+                Attributes.Entry contextTimeEntry = context.getAttributes().getValue(CONTEXT_TIME_ENTRY);
+                if (!contextTimeEntry.isEmpty()) {
+                    contextTime = contextTimeEntry.asString(0);
+                }
+            }
+            Date actualDate = contextTime == null ? new Date() : dateFormat.parse(contextTime);
+
+            String notBefore = policy.getConfig().get("nbf");
+            if (notBefore != null && !"".equals(notBefore)) {
+                if (actualDate.before(dateFormat.parse(format(notBefore)))) {
                     evaluation.deny();
                     return;
                 }
             }
 
-            String notOnOrAfter = this.policy.getConfig().get("noa");
-            if (notOnOrAfter != null) {
-                if (this.currentDate.after(this.dateFormat.parse(format(notOnOrAfter)))) {
+            String notOnOrAfter = policy.getConfig().get("noa");
+            if (notOnOrAfter != null && !"".equals(notOnOrAfter)) {
+                if (actualDate.after(dateFormat.parse(format(notOnOrAfter)))) {
                     evaluation.deny();
                     return;
                 }
             }
 
-            if (isInvalid(Calendar.DAY_OF_MONTH, "dayMonth")
-                    || isInvalid(Calendar.MONTH, "month")
-                    || isInvalid(Calendar.YEAR, "year")
-                    || isInvalid(Calendar.HOUR_OF_DAY, "hour")
-                    || isInvalid(Calendar.MINUTE, "minute")) {
+            if (isInvalid(actualDate, Calendar.DAY_OF_MONTH, "dayMonth", policy)
+                    || isInvalid(actualDate, Calendar.MONTH, "month", policy)
+                    || isInvalid(actualDate, Calendar.YEAR, "year", policy)
+                    || isInvalid(actualDate, Calendar.HOUR_OF_DAY, "hour", policy)
+                    || isInvalid(actualDate, Calendar.MINUTE, "minute", policy)) {
                 evaluation.deny();
                 return;
             }
 
             evaluation.grant();
         } catch (Exception e) {
-            throw new RuntimeException("Could not evaluate time-based policy [" + this.policy.getName() + "].", e);
+            throw new RuntimeException("Could not evaluate time-based policy [" + policy.getName() + "].", e);
         }
     }
 
-    private boolean isInvalid(int timeConstant, String configName) {
+    private boolean isInvalid(Date actualDate, int timeConstant, String configName, Policy policy) {
         Calendar calendar = Calendar.getInstance();
 
-        calendar.setTime(this.currentDate);
+        calendar.setTime(actualDate);
 
         int dateField = calendar.get(timeConstant);
 
@@ -89,9 +93,9 @@ public class TimePolicyProvider implements PolicyProvider {
             dateField++;
         }
 
-        String start = this.policy.getConfig().get(configName);
+        String start = policy.getConfig().get(configName);
         if (start != null) {
-            String end = this.policy.getConfig().get(configName + "End");
+            String end = policy.getConfig().get(configName + "End");
             if (end != null) {
                 if (dateField < Integer.parseInt(start)  || dateField > Integer.parseInt(end)) {
                     return true;

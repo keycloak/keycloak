@@ -98,7 +98,7 @@ public final class StringPropertyReplacer
     public static String replaceProperties(final String string, final Properties props)
     {
         final char[] chars = string.toCharArray();
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean properties = false;
         int state = NORMAL;
         int start = 0;

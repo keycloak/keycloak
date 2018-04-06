@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.springsecurity.client;
 
-import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClients;
 import org.keycloak.KeycloakSecurityContext;

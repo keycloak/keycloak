@@ -21,7 +21,7 @@
 	<parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>2.3.0-SNAPSHOT</version>
+		<version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -38,6 +38,11 @@
             <plugin>
                 <groupId>com.samaxes.maven</groupId>
                 <artifactId>minify-maven-plugin</artifactId>
+                <configuration>
+                    <jsEngine>CLOSURE</jsEngine>
+                    <closureLanguageIn>ECMASCRIPT5</closureLanguageIn>
+                    <closureCreateSourceMap>true</closureCreateSourceMap>
+                </configuration>
                 <executions>
                     <execution>
                         <id>min-js</id>

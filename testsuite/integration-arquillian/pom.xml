@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -41,14 +41,23 @@
         <app.server.java.home>${java.home}</app.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.1.11.Final</arquillian-core.version>
-        <selenium.version>2.53.0</selenium.version>
-        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
-        <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-        <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
+        <arquillian-core.version>1.1.13.Final</arquillian-core.version>
+        <selenium.version>3.5.3</selenium.version>
+        <arquillian-drone.version>2.4.2</arquillian-drone.version>
+        <arquillian-graphene.version>2.3.1</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>2.1.0.Final</arquillian-wildfly-container.version>
+        <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
+        <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
+        <version.shrinkwrap.resolvers>2.2.6</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
+        <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
 
+        <!--migration properties-->
+        <migration.70.version>1.9.8.Final</migration.70.version>
+        <migration.70.authz.version>2.2.1.Final</migration.70.authz.version>
+        <migration.71.version>2.5.5.Final</migration.71.version>
+        <google.guava.version>23.0</google.guava.version>
+        
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
@@ -83,6 +92,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.infinispan.arquillian.container</groupId>
+                <artifactId>infinispan-arquillian-impl</artifactId>
+                <version>${arquillian-infinispan-container.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.arquillian</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
@@ -97,6 +111,12 @@
                 <artifactId>wildfly-arquillian-container-domain-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-wls-remote-12.1.x</artifactId>
+                <version>${arquillian-wls-container.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
@@ -105,6 +125,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.19.1</version>
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
@@ -124,9 +145,71 @@
     
     <modules>
         <module>test-apps</module>
-        <module>test-utils</module>
         <module>servers</module>
         <module>tests</module>
     </modules>
+    
+    <profiles>
+        <profile>
+            <id>test-70-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.70.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-70-authz-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.70.authz.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-71-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.71.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

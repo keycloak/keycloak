@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.junit.Ignore;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
@@ -63,7 +62,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
         resultList.get(0).findElement(By.xpath("//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
-        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
 
         loginEventsPage.table().reset();
         loginEventsPage.table().filterForm().addEventType("LOGOUT");
@@ -74,7 +73,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGOUT']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
-        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
 
         loginEventsPage.table().reset();
         loginEventsPage.table().filterForm().addEventType("LOGIN_ERROR");
@@ -87,7 +86,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Error']/../td[text()='invalid_user_credentials']"));
-        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
 
 
     }

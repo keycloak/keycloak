@@ -25,10 +25,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -38,6 +36,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -206,6 +205,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
+        Assert.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
+
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
@@ -329,10 +330,10 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("invalid_grant", response.getError());
-        assertEquals("Account is not fully set up", response.getErrorDescription());
+        assertEquals("Invalid user credentials", response.getErrorDescription());
 
         events.expectLogin()
                 .client("resource-owner")
@@ -360,10 +361,10 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
             OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
 
-            assertEquals(400, response.getStatusCode());
+            assertEquals(401, response.getStatusCode());
 
             assertEquals("invalid_grant", response.getError());
-            assertEquals("Account is not fully set up", response.getErrorDescription());
+            assertEquals("Invalid user credentials", response.getErrorDescription());
 
             setTimeOffset(0);
 

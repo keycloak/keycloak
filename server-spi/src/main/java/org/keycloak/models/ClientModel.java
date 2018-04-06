@@ -17,7 +17,6 @@
 
 package org.keycloak.models;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,8 +34,16 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
 
     void updateClient();
 
+    /**
+     * Returns client internal ID (UUID).
+     * @return
+     */
     String getId();
 
+    /**
+     * Returns client ID as defined by the user.
+     * @return
+     */
     String getClientId();
 
     void setClientId(String clientId);
@@ -110,6 +117,18 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
     void removeAttribute(String name);
     String getAttribute(String name);
     Map<String, String> getAttributes();
+
+    /**
+     * Get authentication flow binding override for this client.  Allows client to override an authentication flow binding.
+     *
+     * @param binding examples are "browser", "direct_grant"
+     *
+     * @return
+     */
+    public String getAuthenticationFlowBindingOverride(String binding);
+    public Map<String, String> getAuthenticationFlowBindingOverrides();
+    public void removeAuthenticationFlowBindingOverride(String binding);
+    public void setAuthenticationFlowBindingOverride(String binding, String flowId);
 
     boolean isFrontchannelLogout();
     void setFrontchannelLogout(boolean flag);

@@ -19,18 +19,26 @@ package org.keycloak.representations.info;
 
 import org.keycloak.common.Profile;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ProfileInfoRepresentation {
 
     private String name;
-    private boolean previewEnabled;
+    private List<String> disabledFeatures;
 
     public static ProfileInfoRepresentation create() {
         ProfileInfoRepresentation info = new ProfileInfoRepresentation();
-        info.setName(Profile.getName());
-        info.setPreviewEnabled(Profile.isPreviewEnabled());
+
+        info.name = Profile.getName();
+        info.disabledFeatures = new LinkedList<>();
+        for (Profile.Feature f : Profile.getDisabledFeatures()) {
+            info.disabledFeatures.add(f.name());
+        }
+
         return info;
     }
 
@@ -38,16 +46,8 @@ public class ProfileInfoRepresentation {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isPreviewEnabled() {
-        return previewEnabled;
-    }
-
-    public void setPreviewEnabled(boolean previewEnabled) {
-        this.previewEnabled = previewEnabled;
+    public List<String> getDisabledFeatures() {
+        return disabledFeatures;
     }
 
 }

@@ -18,18 +18,41 @@ package org.keycloak.storage.user;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * Optional capability interface implemented by UserStorageProviders.
+ * Defines complex queries that are used to locate one or more users.  You must implement this interface
+ * if you want to view and manager users from the administration console.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserQueryProvider {
 
+    /**
+     * Returns the number of users, without consider any service account.
+     *
+     * @param realm the realm
+     * @return the number of users
+     */
     int getUsersCount(RealmModel realm);
+
+    /**
+     * Returns the number of users.
+     *
+     * @param realm the realm
+     * @param includeServiceAccount if true, the number of users will also include service accounts. Otherwise, only the number of users.
+     * @return the number of users
+     */
+    default int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        throw new RuntimeException("Not implemented");
+    }
 
     List<UserModel> getUsers(RealmModel realm);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
@@ -81,7 +104,7 @@ public interface UserQueryProvider {
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
 
     /**
-     * Search for user by parameter.  Valid parameters are:
+     * Search for user by parameter.    Valid parameters are:
      * "first" - first name
      * "last" - last name
      * "email" - email
@@ -99,10 +122,76 @@ public interface UserQueryProvider {
      */
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
 
+    /**
+     * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param realm
+     * @param group
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+
+    /**
+     * Get users that belong to a specific role.
+     * 
+     *
+     *
+     * @param realm
+     * @param role
+     * @return
+     */
+    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role)
+    {
+        return Collections.EMPTY_LIST;
+    }
+
+    /**
+     * Search for users that have a specific role with a specific roleId.
+     * 
+     *
+     *
+     * @param firstResult
+     * @param maxResults
+     * @param role
+     * @return
+     */
+    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults)
+    {
+        return Collections.EMPTY_LIST;
+    }
+
+    /**
+     * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     *
+     *
+     * @param realm
+     * @param group
+     * @return
+     */
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
 
+    /**
+     * Search for users that have a specific attribute with a specific value.
+     * Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
 
-    // Searching by UserModel.attribute (not property)
+     *
+     * @param attrName
+     * @param attrValue
+     * @param realm
+     * @return
+     */
     List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
 }

@@ -17,16 +17,8 @@
 
 package org.keycloak.testsuite.admin.authentication;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticator;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -36,7 +28,12 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.AssertAdminEvents;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

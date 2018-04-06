@@ -32,14 +32,14 @@ public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
 
     //EAP6 URL fix
     protected URL createInjectedURL(String url) {
-        if (!System.getProperty("app.server").equals("eap6")) {
+        if (!System.getProperty("app.server","").startsWith("eap6")) {
             return null;
         }
         try {
             if(Boolean.parseBoolean(System.getProperty("app.server.ssl.required"))) {
-                return new URL("https://localhost:" + System.getProperty("app.server.https.port", "8543") + "/" + url);
+                return new URL("https://localhost:" + System.getProperty("app.server.https.port", "8643") + "/" + url);
             };
-            return new URL("http://localhost:" + System.getProperty("app.server.http.port", "8180") + "/" + url);
+            return new URL("http://localhost:" + System.getProperty("app.server.http.port", "8280") + "/" + url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

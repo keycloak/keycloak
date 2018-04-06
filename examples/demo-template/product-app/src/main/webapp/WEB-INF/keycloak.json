@@ -3,7 +3,14 @@
   "resource" : "product-portal",
   "auth-server-url" : "/auth",
   "ssl-required" : "external",
-  "credentials" : {
-      "secret": "password"
+  "credentials": {
+    "jwt": {
+      "client-keystore-file": "classpath:keystore-client.jks",
+      "client-keystore-type": "JKS",
+      "client-keystore-password": "storepass",
+      "client-key-password": "keypass",
+      "client-key-alias": "clientkey",
+      "token-expiration": 10
+    }
   }
 }

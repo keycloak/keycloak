@@ -20,6 +20,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
@@ -35,8 +36,8 @@ public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFac
 	}
 
 	@Override
-	public LinkedInIdentityProvider create(IdentityProviderModel model) {
-		return new LinkedInIdentityProvider(new OAuth2IdentityProviderConfig(model));
+	public LinkedInIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+		return new LinkedInIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
 	}
 
 	@Override

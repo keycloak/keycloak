@@ -16,19 +16,18 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.assertion.SAML11NameIdentifierType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectConfirmationType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType.SAML11SubjectTypeChoice;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-import org.keycloak.dom.saml.v1.assertion.SAML11NameIdentifierType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectConfirmationType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType.SAML11SubjectTypeChoice;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -37,6 +36,7 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.net.URI;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the saml subject
@@ -44,7 +44,7 @@ import java.net.URI;
  * @author Anil.Saldhana@redhat.com
  * @since Oct 12, 2010
  */
-public class SAML11SubjectParser implements ParserNamespaceSupport {
+public class SAML11SubjectParser implements StaxParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
@@ -65,14 +65,14 @@ public class SAML11SubjectParser implements ParserNamespaceSupport {
                     endElement = StaxParserUtil.getNextEndElement(xmlEventReader);
                     break;
                 } else
-                    throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
+                    throw logger.parserUnknownEndElement(StaxParserUtil.getElementName(endElement), xmlEvent.getLocation());
             }
 
             StartElement peekedElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (peekedElement == null)
                 break;
 
-            String tag = StaxParserUtil.getStartElementName(peekedElement);
+            String tag = StaxParserUtil.getElementName(peekedElement);
 
             if (SAML11Constants.NAME_IDENTIFIER.equalsIgnoreCase(tag)) {
                 peekedElement = StaxParserUtil.getNextStartElement(xmlEventReader);
@@ -100,14 +100,5 @@ public class SAML11SubjectParser implements ParserNamespaceSupport {
         return subject;
     }
 
-    /**
-     * @see {@link ParserNamespaceSupport#supports(QName)}
-     */
-    public boolean supports(QName qname) {
-        String nsURI = qname.getNamespaceURI();
-        String localPart = qname.getLocalPart();
-
-        return nsURI.equals(JBossSAMLURIConstants.ASSERTION_NSURI.get()) && localPart.equals(JBossSAMLConstants.SUBJECT.get());
-    }
 
 }

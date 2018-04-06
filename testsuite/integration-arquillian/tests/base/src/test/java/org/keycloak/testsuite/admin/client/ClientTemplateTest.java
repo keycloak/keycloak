@@ -17,19 +17,10 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -41,11 +32,27 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.Matchers;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -149,6 +156,34 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Remove template1
         clientTemplates().get(template1Id).remove();
+    }
+
+
+    @Test
+    public void testRenameTemplate() {
+        // Create two templates
+        ClientTemplateRepresentation template1Rep = new ClientTemplateRepresentation();
+        template1Rep.setName("template1");
+        template1Rep.setDescription("template1-desc");
+        template1Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template1Rep.setFullScopeAllowed(true);
+        createTemplate(template1Rep);
+
+        ClientTemplateRepresentation template2Rep = new ClientTemplateRepresentation();
+        template2Rep.setName("template2");
+        template2Rep.setDescription("template2-desc");
+        template2Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template2Rep.setFullScopeAllowed(true);
+        String template2Id = createTemplate(template2Rep);
+
+        // Test updating
+        template2Rep.setName("template1");
+
+        try {
+            clientTemplates().get(template2Id).update(template2Rep);
+        } catch (ClientErrorException ex) {
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.CONFLICT));
+        }
     }
 
 
@@ -284,7 +319,6 @@ public class ClientTemplateTest extends AbstractClientTest {
         return testRealmResource().roles().get(roleName).toRepresentation();
     }
 
-
     // KEYCLOAK-2844
     @Test
     public void testRemoveTemplateInUse() {
@@ -317,6 +351,48 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Can remove clientTemplate now
         removeTemplate(templateId);
+    }
+
+    // KEYCLOAK-5863
+    @Test
+    public void testUpdateProtocolMappers() {
+        ClientTemplateRepresentation templateRep = new ClientTemplateRepresentation();
+        templateRep.setName("testUpdateProtocolMappers");
+        templateRep.setProtocol("openid-connect");
+
+
+        String templateId = createTemplate(templateRep);
+
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("test");
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper("oidc-usermodel-attribute-mapper");
+
+        Map<String, String> m = new HashMap<>();
+        m.put("user.attribute", "test");
+        m.put("claim.name", "");
+        m.put("jsonType.label", "");
+
+        mapper.setConfig(m);
+
+        ProtocolMappersResource protocolMappers = clientTemplates().get(templateId).getProtocolMappers();
+
+        Response response = protocolMappers.createMapper(mapper);
+        String mapperId = ApiUtil.getCreatedId(response);
+
+        mapper = protocolMappers.getMapperById(mapperId);
+
+        mapper.getConfig().put("claim.name", "claim");
+
+        protocolMappers.update(mapperId, mapper);
+
+        List<ProtocolMapperRepresentation> mappers = protocolMappers.getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals(2, mappers.get(0).getConfig().size());
+        assertEquals("test", mappers.get(0).getConfig().get("user.attribute"));
+        assertEquals("claim", mappers.get(0).getConfig().get("claim.name"));
+
+        clientTemplates().get(templateId).remove();
     }
 
 

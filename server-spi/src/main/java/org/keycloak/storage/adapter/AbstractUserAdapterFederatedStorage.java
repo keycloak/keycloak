@@ -23,11 +23,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultRoles;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -42,7 +40,7 @@ import java.util.Set;
  * of "f:" + providerId + ":" + getUsername().  UserModel properties like enabled, firstName, lastName, email, etc. are all
  * stored as attributes in federated storage.
  *
- * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated
+ * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated storage
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -72,30 +70,30 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public Set<String> getRequiredActions() {
-        return getFederatedStorage().getRequiredActions(realm, this);
+        return getFederatedStorage().getRequiredActions(realm, this.getId());
     }
 
     @Override
     public void addRequiredAction(String action) {
-        getFederatedStorage().addRequiredAction(realm, this, action);
+        getFederatedStorage().addRequiredAction(realm, this.getId(), action);
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        getFederatedStorage().removeRequiredAction(realm, this, action);
+        getFederatedStorage().removeRequiredAction(realm, this.getId(), action);
 
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        getFederatedStorage().addRequiredAction(realm, this, action.name());
+        getFederatedStorage().addRequiredAction(realm, this.getId(), action.name());
 
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getFederatedStorage().removeRequiredAction(realm, this, action.name());
+        getFederatedStorage().removeRequiredAction(realm, this.getId(), action.name());
     }
 
     /**
@@ -118,10 +116,18 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return true;
     }
 
+    /**
+     * Gets groups from federated storage and automatically appends default groups of realm.
+     * Also calls getGroupsInternal() method
+     * to pull group membership from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>();
-        set.addAll(getFederatedStorage().getGroups(realm, this));
+        set.addAll(getFederatedStorage().getGroups(realm, this.getId()));
         if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
         set.addAll(getGroupsInternal());
         return set;
@@ -129,22 +135,30 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
-        getFederatedStorage().joinGroup(realm, this, group);
+        getFederatedStorage().joinGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        getFederatedStorage().leaveGroup(realm, this, group);
+        getFederatedStorage().leaveGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public boolean isMemberOf(GroupModel group) {
         Set<GroupModel> roles = getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
+        return RoleUtils.isMember(roles, group);
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
         Set<RoleModel> roleMappings = getRoleMappings();
@@ -159,6 +173,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return realmRoles;
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> roleMappings = getRoleMappings();
@@ -179,12 +201,13 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override
     public void grantRole(RoleModel role) {
-        getFederatedStorage().grantRole(realm, this, role);
+        getFederatedStorage().grantRole(realm, this.getId(), role);
 
     }
 
@@ -203,6 +226,13 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return Collections.EMPTY_SET;
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>();
@@ -213,12 +243,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     }
 
     protected Set<RoleModel> getFederatedRoleMappings() {
-        return getFederatedStorage().getRoleMappings(realm, this);
+        return getFederatedStorage().getRoleMappings(realm, this.getId());
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        getFederatedStorage().deleteRoleMapping(realm, this, role);
+        getFederatedStorage().deleteRoleMapping(realm, this.getId(), role);
 
     }
 
@@ -308,35 +338,35 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        getFederatedStorage().setSingleAttribute(realm, this, name, value);
+        getFederatedStorage().setSingleAttribute(realm, this.getId(), name, value);
 
     }
 
     @Override
     public void removeAttribute(String name) {
-        getFederatedStorage().removeAttribute(realm, this, name);
+        getFederatedStorage().removeAttribute(realm, this.getId(), name);
 
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getFederatedStorage().setAttribute(realm, this, name, values);
+        getFederatedStorage().setAttribute(realm, this.getId(), name, values);
 
     }
 
     @Override
     public String getFirstAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this).getFirst(name);
+        return getFederatedStorage().getAttributes(realm, this.getId()).getFirst(name);
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getFederatedStorage().getAttributes(realm, this);
+        return getFederatedStorage().getAttributes(realm, this.getId());
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this).get(name);
+        return getFederatedStorage().getAttributes(realm, this.getId()).get(name);
     }
 
     @Override
@@ -344,6 +374,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(FIRST_NAME_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * FIRST_NAME_ATTRIBUTE
+     *
+     * @param firstName
+     */
     @Override
     public void setFirstName(String firstName) {
         setSingleAttribute(FIRST_NAME_ATTRIBUTE, firstName);
@@ -355,6 +391,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(LAST_NAME_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * LAST_NAME_ATTRIBUTE
+     *
+     * @param lastName
+     */
     @Override
     public void setLastName(String lastName) {
         setSingleAttribute(LAST_NAME_ATTRIBUTE, lastName);
@@ -366,6 +408,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(EMAIL_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * EMAIL_ATTRIBUTE
+     *
+     * @param email
+     */
     @Override
     public void setEmail(String email) {
         setSingleAttribute(EMAIL_ATTRIBUTE, email);
@@ -379,6 +427,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         else return Boolean.valueOf(val);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * EMAIL_VERIFIED_ATTRIBUTE
+     *
+     * @param verified
+     */
     @Override
     public void setEmailVerified(boolean verified) {
         setSingleAttribute(EMAIL_VERIFIED_ATTRIBUTE, Boolean.toString(verified));

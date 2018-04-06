@@ -1,0 +1,46 @@
+<div class="page-header">
+    <h1>Authenticator</h1>
+</div>
+
+<div class="col-sm-9 content-area">
+
+    <ol>
+        <li>
+            <p>Install <a href="https://fedorahosted.org/freeotp/" target="_blank">FreeOTP</a> or Google Authenticator on your device. Both applications are available in <a href="https://play.google.com">Google Play</a> and Apple App Store.</p>
+        </li>
+        <li>
+            <p>Open the application and scan the barcode or enter the key.</p>
+            <p><img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACiElEQVR42u2ZTa6jMBCEG7FgyRF8k+RilkDiYuEmHIGlF4ieqm7+3sxodqP2IiwQ+Eskx+4qlx3Rf16bfPmX/1++ikijYyovGbSb0dp9JKMRr1XwQXVesxTpVUuj09LpmpOBKngW9HoUeeO18Kazbkmamvg6LBhVEcUtyUtyZRz9L69eF3n1Y+L8V8Rt/nH7eH1ipJs/6yOQizdgkB+33/QVyA+nwaja+Mqw/M2f4jj6jwlv1eoTv6RVOFG7sByq4KqL7uSzTtrxl+BjqNn9Gt9Yjg7Dv/G0e33CHyn3e3yDORp8/imiwk/iScSWmyr4lmx96fZ+dH+EieM789n/YO59bc1/3B9Zp0net//E8izef1hjMn+0mu2u+gjn8GprxVN50x8//fTQfzAn+vRMDVCNCIoA84/rqo9gvrYL5lo8H9J6fP4f/hPMj/WvHFWZbc3+4e+xPLvXCEfV/YdKv/wnnLdsHZNaPrQkhuiwFKmEA8F1JpUjHyrXZ3E7r4LDa6CfZK22P7EiMBFVwuVwHexPjpU63/4dzkczRM/XZkcmHZ0r4e7akqzXDLFqcpf3vb6Ecgqa/Yeqt+SvpqlqONY6zj93xdf8D/rMZ7Ec14e7TguJth3YoXQ7bqiBr9ywgxemfjxtrARcl39HcztaQHSgicuRrwfuCbQS7hs6UxKPPjj/limGOriVpnrgZ4gQyl26+ZFfI7ldzF+CTYCwKn18X30d/MxfQBNRy+iQU/fjfDWS8/zIzgfPXae1PfQTzO18MHv+x61VPxO566MGPqilVtM3pb081ucaOHq9n/mLi8xz/Q7mx/mlh8Tm1Pytn2hu+uH5KqO12PkClFQarYN//7/68mr5LwnkYjOKw3BlAAAAAElFTkSuQmCC" alt="Figure: Barcode"></p>
+            <p><span class="code">MVFU 4UKB IYZU 2RBZ NJSW 2MTK NQZT QVBZ</span></p>
+        </li>
+        <li>
+            <p>Enter the one-time code provided by the application and click Save to finish the setup.</p>
+        </li>
+    </ol>
+
+    <hr>
+
+    <form action="http://localhost:8180/auth/realms/master/account/totp" class="form-horizontal" method="post">
+        <input id="stateChecker" name="stateChecker" value="7L6A5K0Mghuc4cm2DBF78rIMI5140AnKc01_q3Pj-4o" type="hidden">
+        <div class="form-group">
+            <div class="col-sm-2 col-md-2">
+                <label for="totp" class="control-label">One-time code</label>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input class="form-control" id="totp" name="totp" autocomplete="off" autofocus="" type="text">
+                <input id="totpSecret" name="totpSecret" value="eKNQAF3MD9jem2jl38T9" type="hidden">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
+                <div class="">
+                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">Save</button>
+                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>

@@ -16,36 +16,39 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.List;
 import java.util.Map;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditionsTest extends TestRealmKeycloakTest {
+public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -84,15 +87,15 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
 
         termsPage.acceptTerms();
 
-        String sessionId = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(sessionId).assertEvent();
+        events.expectLogin().assertEvent();
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        Map<String,List<String>> attributes = user.getAttributes();
         assertNotNull("timestamp for terms acceptance was not stored in user attributes", attributes);
         List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
         assertTrue("timestamp for terms acceptance was not stored in user attributes as "
@@ -121,12 +124,13 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
         events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
                 .removeDetail(Details.CONSENT)
+                .session(Matchers.nullValue(String.class))
                 .assertEvent();
 
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        Map<String,List<String>> attributes = user.getAttributes();
         if (attributes != null) {
             assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));

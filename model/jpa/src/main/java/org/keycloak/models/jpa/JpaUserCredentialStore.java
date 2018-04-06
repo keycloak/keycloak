@@ -119,7 +119,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         entity.setUser(userRef);
         em.persist(entity);
         MultivaluedHashMap<String, String> config = cred.getConfig();
-        if (config != null || !config.isEmpty()) {
+        if (config != null && !config.isEmpty()) {
 
             for (String key : config.keySet()) {
                 List<String> values = config.getList(key);

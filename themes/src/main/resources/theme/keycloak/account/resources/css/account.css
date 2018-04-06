@@ -53,6 +53,10 @@ header .navbar {
     padding: 0 30px;
 }
 
+.margin-bottom {
+    margin-bottom: 10px;
+}
+
 /* Sidebar */
 
 .bs-sidebar {
@@ -208,18 +212,6 @@ ol li img {
     border: 1px solid #eee;
 }
 
-ol li span {
-    padding: 15px;
-    background-color: #f5f5f5;
-    border: 1px solid #eee;
-    top: 46px;
-    left: 270px;
-    right: 50px;
-    position: absolute;
-    font-family: courier, ​monospace;
-    font-size: 25px;
-}
-
 hr + .form-horizontal {
     border: none;
     padding-top: 0;
@@ -274,4 +266,12 @@ hr + .form-horizontal {
 }
 .kc-dropdown:hover ul{
     display:block;
+}
+
+
+#kc-totp-secret-key {
+    border: 1px solid #eee;
+    font-size: 16px;
+    padding: 10px;
+    margin: 50px 0;
 }

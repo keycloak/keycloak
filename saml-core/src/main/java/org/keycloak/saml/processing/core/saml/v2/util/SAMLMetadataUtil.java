@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.dom.saml.v2.metadata.SSODescriptorType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
-import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.dom.saml.v2.metadata.SSODescriptorType;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;

@@ -1,0 +1,12 @@
+embed-server --server-config=standalone.xml
+
+/interface=private:add(inet-address=${jboss.bind.address.private:127.0.0.1})
+
+/socket-binding-group=standard-sockets/socket-binding=modcluster-advertise:add(interface=private, multicast-port=23364, multicast-address=${jboss.default.multicast.address:224.0.1.105})
+/socket-binding-group=standard-sockets/socket-binding=modcluster-management:add(interface=private, port=6666)
+
+/extension=org.jboss.as.modcluster/:add
+/subsystem=undertow/configuration=filter/mod-cluster=modcluster:add(advertise-socket-binding=modcluster-advertise, advertise-frequency=${modcluster.advertise-frequency:2000}, management-socket-binding=modcluster-management, enable-http2=true)
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=modcluster:add
+/subsystem=undertow/server=default-server/http-listener=modcluster:add(socket-binding=modcluster-management, enable-http2=true)
+

@@ -23,13 +23,48 @@ goto wait_for_jboss
 
 :install_adapters
 call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-install.cli"
-if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
-if "%SAML_SUPPORTED%" == "true" (
-    call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-install-saml.cli"
-    if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
+set ERROR=%ERRORLEVEL%
+echo Installation of OIDC adapter ended with error code: "%ERROR%"
+if %ERROR% neq 0 (
+    goto shutdown_jboss
+)
+
+if "%ELYTRON_SUPPORTED%" == "true" (
+    call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-elytron-install.cli"
+    set ERROR=%ERRORLEVEL%
+    echo Installation of elytron ended with error code: "%ERROR%"
+    if %ERROR% neq 0 (
+        goto shutdown_jboss
+    )
+) else (
+    call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%CLI_PATH%\remove-elytron-subsystem.cli"
+    set ERROR=%ERRORLEVEL%
+    echo Removing elytron subsystem ended with error code: "%ERROR%"
+    if %ERROR% neq 0 (
+        goto shutdown_jboss
+    )
 )
 
 
+if "%SAML_SUPPORTED%" == "true" (
+    call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-install-saml.cli"
+    set ERROR=%ERRORLEVEL%
+    echo Installation of SAML adapter ended with error code: "%ERROR%"
+    if %ERROR% neq 0 (
+        goto shutdown_jboss
+    )
+
+    if "%ELYTRON_SUPPORTED%" == "true" (
+        call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-elytron-install-saml.cli"
+        set ERROR=%ERRORLEVEL%
+        echo Installation of saml elytron ended with error code: "%ERROR%"
+        if %ERROR% neq 0 (
+            goto shutdown_jboss
+        )
+    )
+)
+
 :shutdown_jboss
+echo Shutting down with error code: "%ERROR%"
 call %JBOSS_HOME%\bin\jboss-cli.bat -c --command=":shutdown"
 exit /b %ERROR%

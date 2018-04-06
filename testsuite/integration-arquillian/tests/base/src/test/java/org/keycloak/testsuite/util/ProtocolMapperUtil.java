@@ -1,11 +1,16 @@
 package org.keycloak.testsuite.util;
 
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
+import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
+import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
+import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
+import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -102,5 +107,65 @@ public class ProtocolMapperUtil {
                 tokenClaimName, jsonType,
                 consentRequired, consentText,
                 accessToken, idToken));
+    }
+
+
+    public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken) {
+
+        return createUserRealmRoleMappingMapper(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken, boolean multiValued) {
+
+        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, multiValued));
+    }
+
+    public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken) {
+
+        return createUserClientRoleMappingMapper(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
+                                                                                 String name,
+                                                                                 String tokenClaimName,
+                                                                                 boolean accessToken, boolean idToken, boolean multiValued) {
+
+        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, multiValued));
+    }
+
+    public static ProtocolMapperRepresentation getMapperByNameAndProtocol(ProtocolMappersResource protocolMappers, String protocol, String name) {
+        for (ProtocolMapperRepresentation mapper : protocolMappers.getMappersPerProtocol(protocol)) {
+            if (name.equals(mapper.getName())) {
+                return mapper;
+            }
+        }
+        return null;
+    }
+
+    public static ProtocolMapperRepresentation createScriptMapper(String name,
+                                                                  String userAttribute,
+                                                                  String tokenClaimName,
+                                                                  String claimType,
+                                                                  boolean accessToken,
+                                                                  boolean idToken,
+                                                                  String script,
+                                                                  boolean multiValued) {
+
+        return ModelToRepresentation.toRepresentation(
+          ScriptBasedOIDCProtocolMapper.create(name, userAttribute, tokenClaimName, claimType, false, null, accessToken, idToken, script, multiValued)
+        );
+    }
+
+    public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
+        return SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, salt);
     }
 }

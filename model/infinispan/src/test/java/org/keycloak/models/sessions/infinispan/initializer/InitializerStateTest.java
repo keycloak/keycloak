@@ -17,10 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.models.cache.infinispan.UserCacheSession;
+import org.keycloak.storage.CacheableStorageProviderModel;
+
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,8 +34,7 @@ public class InitializerStateTest {
 
     @Test
     public void testComputationState() {
-        InitializerState state = new InitializerState();
-        state.init(28, 5);
+        InitializerState state = new InitializerState(28, 5);
 
         Assert.assertFalse(state.isFinished());
         List<Integer> segments = state.getUnfinishedSegments(3);
@@ -58,5 +62,32 @@ public class InitializerStateTest {
         for (int i : expected) {
             Assert.assertTrue(segments.contains(i));
         }
+    }
+
+    @Test
+    public void testDailyTimeout() throws Exception {
+        Date date = new Date(CacheableStorageProviderModel.dailyTimeout(10, 30));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(CacheableStorageProviderModel.dailyTimeout(17, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(CacheableStorageProviderModel.weeklyTimeout(Calendar.MONDAY, 13, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(CacheableStorageProviderModel.weeklyTimeout(Calendar.THURSDAY, 13, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        System.out.println("----");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR, 1);
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int min = cal.get(Calendar.MINUTE);
+        date = new Date(cal.getTimeInMillis());
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(CacheableStorageProviderModel.dailyTimeout(hour, min));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        date = new Date(cal.getTimeInMillis());
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+
+
     }
 }

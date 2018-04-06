@@ -24,8 +24,27 @@
 	
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
+        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+        <property name="githubUsername">${github.username}</property>
+        <property name="githubToken">${github.secretToken}</property>
+        <property name="ieDriverArch">${ieDriverArch}</property>
+
+        <!-- htmlunit -->
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
+
+        <!-- firefox -->
         <property name="firefox_binary">${firefox_binary}</property>
-        <property name="phantomjs.cli.args">--ignore-ssl-errors=true --web-security=false</property>
+        <property name="firefoxLogLevel">OFF</property>
+        <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+
+        <!-- chrome -->
+        <property name="chromeBinary">${chromeBinary}</property>
+        <property name="chromeArguments">${chromeArguments}</property>
+    </extension>
+
+    <extension qualifier="drone">
+       <property name="instantiationTimeoutInSeconds">${droneInstantiationTimeoutInSeconds}</property>
     </extension>
     
     <extension qualifier="graphene">
@@ -34,7 +53,15 @@
         <property name="waitModelInterval">10</property>
         <property name="waitGuardInterval">5</property>
     </extension>
-    
+
+    <extension qualifier="webdriver-javascriptbrowser">
+        <property name="browser">${js.browser}</property>
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="chromeDriverBinary">${webdriver.chrome.driver}</property>
+        <property name="chromeArguments">${js.chromeArguments}</property>
+    </extension>
+
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
         <property name="firefox_binary">${firefox_binary}</property>
@@ -47,16 +74,17 @@
     
     <container qualifier="auth-server-undertow" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.undertow}</property>
-            <property name="bindAddress">localhost</property>
+            <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
+            <property name="bindAddress">0.0.0.0</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
             <property name="bindHttpPort">${auth.server.http.port}</property>
+            <property name="remoteMode">${undertow.remote}</property>
         </configuration>
     </container>
     
     <container qualifier="auth-server-${auth.server}" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.jboss}</property>
+            <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
             <property name="jbossHome">${auth.server.home}</property>
             <property name="${auth.server.config.property.name}">${auth.server.config.property.value}</property>
@@ -65,9 +93,19 @@
             <property name="jbossArguments">
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 -Djboss.bind.address=0.0.0.0 
+                -Dauth.server.http.port=${auth.server.http.port}
+                -Dauth.server.https.port=${auth.server.https.port}
+                -Dkeycloak.password.blacklists.path=${keycloak.password.blacklists.path}
                 ${adapter.test.props}
+                ${migration.import.properties}
+                ${auth.server.profile}
+                ${auth.server.feature}
+                ${kie.maven.settings}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="javaVmArguments">
+                ${auth.server.jboss.jvm.debug.args}
                 ${auth.server.memory.settings}
                 -Djava.net.preferIPv4Stack=true
             </property>
@@ -85,9 +123,12 @@
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset} 
+                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset}
                     -Djboss.node.name=node1
                     ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -96,6 +137,7 @@
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend1.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend1.port.offset}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-${auth.server}-backend2" mode="manual" >
@@ -108,6 +150,9 @@
                     -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
                     -Djboss.node.name=node2
                     ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -116,9 +161,322 @@
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend2.port.offset}</property>
             </configuration>
         </container>
     </group>
+
+    <!-- Clustering with embedded undertow -->
+    <group qualifier="auth-server-undertow-cluster">
+        <container qualifier="auth-server-undertow-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">1</property>
+                <property name="route">node1</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.nodeName": "node1"
+                    }
+                </property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">2</property>
+                <property name="route">node2</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.nodeName": "node2"
+                    }
+                </property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-balancer-undertow" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="nodes">node1=http://localhost:8181,node2=http://localhost:8182</property>
+            </configuration>
+        </container>
+    </group>
+
+
+    <!-- Cross DC. Node numbering is [centre #].[node #] -->
+    <group qualifier="auth-server-jboss-cross-dc">
+        <container qualifier="cache-server-cross-dc-1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${cache.server.home}</property>
+                <property name="serverConfig">clustered-1.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${cache.server.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.99
+                    -Djboss.node.name=cache-server-dc-1
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${cache.server.crossdc1.jvm.debug.args}
+                </property>
+                <property name="outputToConsole">${cache.server.console.output}</property>
+                <property name="managementPort">${cache.server.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="cache-server-cross-dc-2" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${cache.server.home}</property>
+                <property name="setupCleanServerBaseDir">true</property>
+                <property name="cleanServerBaseDir">${cache.server.home}/standalone-dc-2</property>
+                <property name="serverConfig">clustered-2.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${cache.server.2.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.100
+                    -Djboss.node.name=cache-server-dc-2
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${cache.server.crossdc2.jvm.debug.args}
+                </property>
+                <property name="outputToConsole">${cache.server.console.output}</property>
+                <property name="managementPort">${cache.server.2.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-balancer-cross-dc" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="nodes">auth-server-${node.name}-cross-dc-0_1=http://localhost:8101,auth-server-${node.name}-cross-dc-0_2-manual=http://localhost:8102,auth-server-${node.name}-cross-dc-1_1=http://localhost:8111,auth-server-${node.name}-cross-dc-1_2-manual=http://localhost:8112</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-79</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">0</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.siteName": "dc-0",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-cross-dc-0_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-78</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">0</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.siteName": "dc-0",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_2-manual",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-69</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">1</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.siteName": "dc-1",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-cross-dc-1_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-68</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">1</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.siteName": "dc-1",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_2-manual",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc01.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.1
+                    -Dremote.cache.port=12232
+                    -Djboss.site.name=dc0
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc01.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc01.management.port}</property>
+                <property name="bindHttpPortOffset">-79</property>
+                <property name="dataCenter">0</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-jboss-cross-dc-0_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc02.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.1
+                    -Dremote.cache.port=12232
+                    -Djboss.site.name=dc0
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc02.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc02.management.port}</property>
+                <property name="bindHttpPortOffset">-78</property>
+                <property name="dataCenter">0</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc11.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.2
+                    -Dremote.cache.port=13232
+                    -Djboss.site.name=dc1
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc11.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc11.management.port}</property>
+                <property name="bindHttpPortOffset">-69</property>
+                <property name="dataCenter">1</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-jboss-cross-dc-1_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc12.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.2
+                    -Dremote.cache.port=13232
+                    -Djboss.site.name=dc1
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc12.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc12.management.port}</property>
+                <property name="bindHttpPortOffset">-68</property>
+                <property name="dataCenter">1</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+    </group>
+    
 
     <container qualifier="auth-server-balancer-wildfly" mode="suite" >
         <configuration>
@@ -126,7 +484,9 @@
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${auth.server.balancer.home}</property>
             <property name="jbossArguments">
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset} 
+                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="javaVmArguments">
                 -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
@@ -158,13 +518,11 @@
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
-                -Dkeycloak.migration.action=import 
-                -Dkeycloak.migration.provider=singleFile
-                -Dkeycloak.migration.file=${keycloak.migration.file}
-                -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
-                -Dkeycloak.migration.realmName=Migration
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset} 
+                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
+                ${migration.import.props.previous}
                 ${auth.server.memory.settings}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>

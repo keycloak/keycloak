@@ -17,10 +17,9 @@
 
 package org.keycloak.adapters.saml.config;
 
-import org.keycloak.adapters.saml.SamlDeployment;
-
 import java.io.Serializable;
 import java.util.List;
+import org.keycloak.adapters.cloned.AdapterHttpClientConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,34 +27,36 @@ import java.util.List;
  */
 public class IDP implements Serializable {
     public static class SingleSignOnService implements Serializable {
-        private boolean signRequest;
-        private boolean validateResponseSignature;
+        private Boolean signRequest;
+        private Boolean validateResponseSignature;
         private String requestBinding;
         private String responseBinding;
         private String bindingUrl;
-        private boolean validateAssertionSignature;
+        private String assertionConsumerServiceUrl;
+        private Boolean validateAssertionSignature;
+        private boolean signaturesRequired = false;
 
         public boolean isSignRequest() {
-            return signRequest;
+            return signRequest == null ? signaturesRequired : signRequest;
         }
 
-        public void setSignRequest(boolean signRequest) {
+        public void setSignRequest(Boolean signRequest) {
             this.signRequest = signRequest;
         }
 
         public boolean isValidateResponseSignature() {
-            return validateResponseSignature;
+            return validateResponseSignature == null ? signaturesRequired : validateResponseSignature;
         }
 
-        public void setValidateResponseSignature(boolean validateResponseSignature) {
+        public void setValidateResponseSignature(Boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
         }
 
         public boolean isValidateAssertionSignature() {
-            return validateAssertionSignature;
+            return validateAssertionSignature == null ? false : validateAssertionSignature;
         }
 
-        public void setValidateAssertionSignature(boolean validateAssertionSignature) {
+        public void setValidateAssertionSignature(Boolean validateAssertionSignature) {
             this.validateAssertionSignature = validateAssertionSignature;
         }
 
@@ -82,47 +83,60 @@ public class IDP implements Serializable {
         public void setBindingUrl(String bindingUrl) {
             this.bindingUrl = bindingUrl;
         }
+
+        public String getAssertionConsumerServiceUrl() {
+            return assertionConsumerServiceUrl;
+        }
+
+        public void setAssertionConsumerServiceUrl(String assertionConsumerServiceUrl) {
+            this.assertionConsumerServiceUrl = assertionConsumerServiceUrl;
+        }
+
+        private void setSignaturesRequired(boolean signaturesRequired) {
+            this.signaturesRequired = signaturesRequired;
+        }
     }
 
     public static class SingleLogoutService implements Serializable {
-        private boolean signRequest;
-        private boolean signResponse;
-        private boolean validateRequestSignature;
-        private boolean validateResponseSignature;
+        private Boolean signRequest;
+        private Boolean signResponse;
+        private Boolean validateRequestSignature;
+        private Boolean validateResponseSignature;
         private String requestBinding;
         private String responseBinding;
         private String postBindingUrl;
         private String redirectBindingUrl;
+        private boolean signaturesRequired = false;
 
         public boolean isSignRequest() {
-            return signRequest;
+            return signRequest == null ? signaturesRequired : signRequest;
         }
 
-        public void setSignRequest(boolean signRequest) {
+        public void setSignRequest(Boolean signRequest) {
             this.signRequest = signRequest;
         }
 
         public boolean isSignResponse() {
-            return signResponse;
+            return signResponse == null ? signaturesRequired : signResponse;
         }
 
-        public void setSignResponse(boolean signResponse) {
+        public void setSignResponse(Boolean signResponse) {
             this.signResponse = signResponse;
         }
 
         public boolean isValidateRequestSignature() {
-            return validateRequestSignature;
+            return validateRequestSignature == null ? signaturesRequired : validateRequestSignature;
         }
 
-        public void setValidateRequestSignature(boolean validateRequestSignature) {
+        public void setValidateRequestSignature(Boolean validateRequestSignature) {
             this.validateRequestSignature = validateRequestSignature;
         }
 
         public boolean isValidateResponseSignature() {
-            return validateResponseSignature;
+            return validateResponseSignature == null ? signaturesRequired : validateResponseSignature;
         }
 
-        public void setValidateResponseSignature(boolean validateResponseSignature) {
+        public void setValidateResponseSignature(Boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
         }
 
@@ -157,6 +171,94 @@ public class IDP implements Serializable {
         public void setRedirectBindingUrl(String redirectBindingUrl) {
             this.redirectBindingUrl = redirectBindingUrl;
         }
+
+        private void setSignaturesRequired(boolean signaturesRequired) {
+            this.signaturesRequired = signaturesRequired;
+        }
+    }
+
+    public static class HttpClientConfig implements AdapterHttpClientConfig {
+
+        private String truststore;
+        private String truststorePassword;
+        private String clientKeystore;
+        private String clientKeystorePassword;
+        private boolean allowAnyHostname;
+        private boolean disableTrustManager;
+        private int connectionPoolSize;
+        private String proxyUrl;
+
+        @Override
+        public String getTruststore() {
+            return truststore;
+        }
+
+        public void setTruststore(String truststore) {
+            this.truststore = truststore;
+        }
+
+        @Override
+        public String getTruststorePassword() {
+            return truststorePassword;
+        }
+
+        public void setTruststorePassword(String truststorePassword) {
+            this.truststorePassword = truststorePassword;
+        }
+
+        @Override
+        public String getClientKeystore() {
+            return clientKeystore;
+        }
+
+        public void setClientKeystore(String clientKeystore) {
+            this.clientKeystore = clientKeystore;
+        }
+
+        @Override
+        public String getClientKeystorePassword() {
+            return clientKeystorePassword;
+        }
+
+        public void setClientKeystorePassword(String clientKeystorePassword) {
+            this.clientKeystorePassword = clientKeystorePassword;
+        }
+
+        @Override
+        public boolean isAllowAnyHostname() {
+            return allowAnyHostname;
+        }
+
+        public void setAllowAnyHostname(boolean allowAnyHostname) {
+            this.allowAnyHostname = allowAnyHostname;
+        }
+
+        @Override
+        public boolean isDisableTrustManager() {
+            return disableTrustManager;
+        }
+
+        public void setDisableTrustManager(boolean disableTrustManager) {
+            this.disableTrustManager = disableTrustManager;
+        }
+
+        @Override
+        public int getConnectionPoolSize() {
+            return connectionPoolSize;
+        }
+
+        public void setConnectionPoolSize(int connectionPoolSize) {
+            this.connectionPoolSize = connectionPoolSize;
+        }
+
+        @Override
+        public String getProxyUrl() {
+            return proxyUrl;
+        }
+
+        public void setProxyUrl(String proxyUrl) {
+            this.proxyUrl = proxyUrl;
+        }
     }
 
     private String entityID;
@@ -165,6 +267,8 @@ public class IDP implements Serializable {
     private SingleSignOnService singleSignOnService;
     private SingleLogoutService singleLogoutService;
     private List<Key> keys;
+    private AdapterHttpClientConfig httpClientConfig = new HttpClientConfig();
+    private boolean signaturesRequired = false;
 
     public String getEntityID() {
         return entityID;
@@ -180,6 +284,9 @@ public class IDP implements Serializable {
 
     public void setSingleSignOnService(SingleSignOnService singleSignOnService) {
         this.singleSignOnService = singleSignOnService;
+        if (singleSignOnService != null) {
+            singleSignOnService.setSignaturesRequired(signaturesRequired);
+        }
     }
 
     public SingleLogoutService getSingleLogoutService() {
@@ -188,6 +295,9 @@ public class IDP implements Serializable {
 
     public void setSingleLogoutService(SingleLogoutService singleLogoutService) {
         this.singleLogoutService = singleLogoutService;
+        if (singleLogoutService != null) {
+            singleLogoutService.setSignaturesRequired(signaturesRequired);
+        }
     }
 
     public List<Key> getKeys() {
@@ -212,6 +322,22 @@ public class IDP implements Serializable {
 
     public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
         this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
+    }
+
+    public AdapterHttpClientConfig getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    public void setHttpClientConfig(AdapterHttpClientConfig httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+    }
+
+    public boolean isSignaturesRequired() {
+        return signaturesRequired;
+    }
+
+    public void setSignaturesRequired(boolean signaturesRequired) {
+        this.signaturesRequired = signaturesRequired;
     }
 
 }

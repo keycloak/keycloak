@@ -65,4 +65,11 @@ public class RealmBean {
         return realm.isEditUsernameAllowed();
     }
 
+    public boolean isRegistrationEmailAsUsername() {
+        return realm.isRegistrationEmailAsUsername();
+    }
+
+    public boolean isUserManagedAccessAllowed() {
+        return realm.isUserManagedAccessAllowed();
+    }
 }

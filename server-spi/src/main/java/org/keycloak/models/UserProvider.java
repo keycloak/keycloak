@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.storage.user.UserBulkUpdateProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -33,7 +34,8 @@ import java.util.Set;
 public interface UserProvider extends Provider,
         UserLookupProvider,
         UserQueryProvider,
-        UserRegistrationProvider {
+        UserRegistrationProvider,
+        UserBulkUpdateProvider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
@@ -43,12 +45,14 @@ public interface UserProvider extends Provider,
     FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
     UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
 
-    void addConsent(RealmModel realm, UserModel user, UserConsentModel consent);
-    UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId);
-    List<UserConsentModel> getConsents(RealmModel realm, UserModel user);
-    void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent);
-    boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId);
+    void addConsent(RealmModel realm, String userId, UserConsentModel consent);
+    UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId);
+    List<UserConsentModel> getConsents(RealmModel realm, String userId);
+    void updateConsent(RealmModel realm, String userId, UserConsentModel consent);
+    boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
 
+    void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore);
+    int getNotBeforeOfUser(RealmModel realm, UserModel user);
 
     UserModel getServiceAccount(ClientModel client);
     List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
@@ -67,17 +71,27 @@ public interface UserProvider extends Provider,
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
     void preRemove(RealmModel realm);
 
-    void preRemove(RealmModel realm, UserFederationProviderModel link);
+    /**
+     * Removes any imported users from a specific User Storage Provider.
+     *
+     * @param realm
+     * @param storageProviderId
+     */
+    void removeImportedUsers(RealmModel realm, String storageProviderId);
+
+    /**
+     * Set federation link to null to imported users of a specific User Storage Provider
+     *
+     * @param realm
+     * @param storageProviderId
+     */
+    void unlinkUsers(RealmModel realm, String storageProviderId);
 
     void preRemove(RealmModel realm, RoleModel role);
     void preRemove(RealmModel realm, GroupModel group);
 
     void preRemove(RealmModel realm, ClientModel client);
     void preRemove(ProtocolMapperModel protocolMapper);
-
-
-    CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input);
-
 
     void close();
 

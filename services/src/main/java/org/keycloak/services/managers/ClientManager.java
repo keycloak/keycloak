@@ -18,13 +18,16 @@ package org.keycloak.services.managers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -34,10 +37,9 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
-import org.keycloak.common.util.Time;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import java.net.URI;
 import java.util.Collections;
@@ -52,7 +54,7 @@ import java.util.TreeSet;
  * @version $Revision: 1 $
  */
 public class ClientManager {
-    protected ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientManager.class);
 
     protected RealmManager realmManager;
 
@@ -101,6 +103,11 @@ public class ClientManager {
             UserSessionPersisterProvider sessionsPersister = realmManager.getSession().getProvider(UserSessionPersisterProvider.class);
             if (sessionsPersister != null) {
                 sessionsPersister.onClientRemoved(realm, client);
+            }
+
+            AuthenticationSessionProvider authSessions = realmManager.getSession().authenticationSessions();
+            if (authSessions != null) {
+                authSessions.onClientRemoved(realm, client);
             }
 
             UserModel serviceAccountUser = realmManager.getSession().users().getServiceAccount(client);
@@ -155,7 +162,7 @@ public class ClientManager {
             logger.debugf("Creating service account user '%s'", username);
 
             // Don't use federation for service account user
-            UserModel user = realmManager.getSession().userStorage().addUser(client.getRealm(), username);
+            UserModel user = realmManager.getSession().userLocalStorage().addUser(client.getRealm(), username);
             user.setEnabled(true);
             user.setEmail(username + "@placeholder.org");
             user.setServiceAccountClientLink(client.getId());
@@ -191,6 +198,17 @@ public class ClientManager {
                     false, "",
                     true, true);
             client.addProtocolMapper(protocolMapper);
+        }
+    }
+
+    public void clientIdChanged(ClientModel client, String newClientId) {
+        logger.debugf("Updating clientId from '%s' to '%s'", client.getClientId(), newClientId);
+
+        UserModel serviceAccountUser = realmManager.getSession().users().getServiceAccount(client);
+        if (serviceAccountUser != null) {
+            String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + newClientId;
+            serviceAccountUser.setUsername(username);
+            serviceAccountUser.setEmail(username + "@placeholder.org");
         }
     }
 

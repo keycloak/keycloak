@@ -17,41 +17,44 @@
  */
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.function.BiFunction;
+
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import org.keycloak.scripting.EvaluatableScriptAdapter;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyProvider implements PolicyProvider {
+class JSPolicyProvider implements PolicyProvider {
 
-    private final Policy policy;
+    private final BiFunction<AuthorizationProvider, Policy, EvaluatableScriptAdapter> evaluatableScript;
 
-    public JSPolicyProvider(Policy policy) {
-        this.policy = policy;
+    JSPolicyProvider(final BiFunction<AuthorizationProvider, Policy, EvaluatableScriptAdapter> evaluatableScript) {
+        this.evaluatableScript = evaluatableScript;
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("nashorn");
-
-        engine.put("$evaluation", evaluation);
+        Policy policy = evaluation.getPolicy();
+        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
+        final EvaluatableScriptAdapter adapter = evaluatableScript.apply(authorization, policy);
 
         try {
-            engine.eval(policy.getConfig().get("code"));
-        } catch (ScriptException e) {
+            //how to deal with long running scripts -> timeout?
+            adapter.eval(bindings -> {
+                bindings.put("script", adapter.getScriptModel());
+                bindings.put("$evaluation", evaluation);
+            });
+        }
+        catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);
         }
     }
 
     @Override
     public void close() {
-
     }
 }

@@ -30,7 +30,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
@@ -44,9 +43,12 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -137,7 +139,7 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     @Override
     public UserModel addUser(RealmModel realm, String username) {
         UserEntity entity = new UserEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        entity.setId(UUID.randomUUID().toString());
         entity.setUsername(username);
         em.persist(entity);
         logger.info("added user: " + username);
@@ -151,11 +153,6 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
         if (entity == null) return false;
         em.remove(entity);
         return true;
-    }
-
-    @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
     }
 
     @Override
@@ -197,6 +194,17 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 
         getUserAdapter(user).setPassword(null);
 
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (getUserAdapter(user).getPassword() != null) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.PASSWORD);
+            return set;
+        } else {
+            return Collections.emptySet();
+        }
     }
 
     @Override
@@ -288,6 +296,16 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         return Collections.EMPTY_LIST;
     }
 

@@ -17,8 +17,6 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +34,7 @@ public class GroupRepresentation {
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
     protected List<GroupRepresentation> subGroups;
+    private Map<String, Boolean> access;
 
     public String getId() {
         return id;
@@ -98,5 +97,13 @@ public class GroupRepresentation {
 
     public void setSubGroups(List<GroupRepresentation> subGroups) {
         this.subGroups = subGroups;
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 }

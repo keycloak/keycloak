@@ -17,10 +17,11 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.*;
+import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
@@ -33,12 +34,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -48,8 +46,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
+    private static final Logger logger = Logger.getLogger(UpdatePassword.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
@@ -76,6 +74,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         Response challenge = context.form()
+                .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                 .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
         context.challenge(challenge);
     }
@@ -89,11 +88,12 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         String passwordConfirm = formData.getFirst("password-confirm");
 
         EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
-                .client(context.getClientSession().getClient())
-                .user(context.getClientSession().getUserSession().getUser());
+                .client(context.getAuthenticationSession().getClient())
+                .user(context.getAuthenticationSession().getAuthenticatedUser());
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(Messages.MISSING_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -101,6 +101,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(Messages.NOTMATCH_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -109,11 +110,12 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
-            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew));
+            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew, false));
             context.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(me.getMessage(), me.getParameters())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -121,6 +123,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } catch (Exception ape) {
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(ape.getMessage())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -137,6 +140,15 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
+
+
+    @Override
+    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
+        if (displayType == null) return this;
+        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
+        return ConsoleUpdatePassword.SINGLETON;
+    }
+
 
     @Override
     public void init(Config.Scope config) {
@@ -157,5 +169,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
+    }
+
+    @Override
+    public boolean isOneTimeAction() {
+        return true;
     }
 }

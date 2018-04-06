@@ -18,9 +18,8 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.*;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -28,7 +27,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.CredentialValidation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
@@ -39,8 +37,7 @@ import javax.ws.rs.core.Response;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -48,8 +45,13 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         Response challenge = context.form()
+                .setAttribute("mode", getMode(context))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
+    }
+
+    private String getMode(RequiredActionContext context) {
+        return context.getUriInfo().getQueryParameters().getFirst("mode");
     }
 
     @Override
@@ -62,12 +64,14 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         if (Validation.isBlank(totp)) {
             Response challenge = context.form()
+                    .setAttribute("mode", getMode(context))
                     .setError(Messages.MISSING_TOTP)
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
         } else if (!CredentialValidation.validOTP(context.getRealm(), totp, totpSecret)) {
             Response challenge = context.form()
+                    .setAttribute("mode", getMode(context))
                     .setError(Messages.INVALID_TOTP)
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
@@ -100,6 +104,15 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         return this;
     }
 
+
+    @Override
+    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
+        if (displayType == null) return this;
+        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
+        return ConsoleUpdateTotp.SINGLETON;
+    }
+
+
     @Override
     public void init(Config.Scope config) {
 
@@ -119,5 +132,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
+    }
+
+    @Override
+    public boolean isOneTimeAction() {
+        return true;
     }
 }

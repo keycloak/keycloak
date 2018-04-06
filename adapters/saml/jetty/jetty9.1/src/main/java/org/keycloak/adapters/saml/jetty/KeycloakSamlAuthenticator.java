@@ -17,14 +17,13 @@
 
 package org.keycloak.adapters.saml.jetty;
 
-import org.bouncycastle.cert.ocsp.Req;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
-import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 
 import javax.servlet.ServletRequest;
@@ -46,6 +45,11 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     }
 
     @Override
+    public JettyUserSessionManagement createSessionManagement(Request request) {
+        return new JettyUserSessionManagement(new Jetty9SessionManager(request.getSessionManager()));
+    }
+
+    @Override
     protected Request resolveRequest(ServletRequest req) {
         return (req instanceof Request) ? (Request)req : HttpChannel.getCurrentHttpChannel().getRequest();
     }
@@ -63,7 +67,7 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     @Override
     protected JettySamlSessionStore createJettySamlSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         JettySamlSessionStore store;
-        store = new Jetty9SamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, new JettyUserSessionManagement(request.getSessionManager()), resolvedDeployment);
+        store = new Jetty9SamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, createSessionManagement(request), resolvedDeployment);
         return store;
     }
 

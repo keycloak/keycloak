@@ -18,8 +18,9 @@ package org.keycloak.social.facebook;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Pedro Igor
@@ -34,8 +35,8 @@ public class FacebookIdentityProviderFactory extends AbstractIdentityProviderFac
     }
 
     @Override
-    public FacebookIdentityProvider create(IdentityProviderModel model) {
-        return new FacebookIdentityProvider(new OAuth2IdentityProviderConfig(model));
+    public FacebookIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new FacebookIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
     }
 
     @Override

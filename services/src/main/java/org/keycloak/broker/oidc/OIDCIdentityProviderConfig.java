@@ -23,6 +23,12 @@ import org.keycloak.models.IdentityProviderModel;
  */
 public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
+    public static final String JWKS_URL = "jwksUrl";
+
+    public static final String USE_JWKS_URL = "useJwksUrl";
+    public static final String VALIDATE_SIGNATURE = "validateSignature";
+
+
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
     }
@@ -46,13 +52,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public void setLogoutUrl(String url) {
         getConfig().put("logoutUrl", url);
     }
-    public String getCertificateSignatureVerifier() {
-        return getConfig().get("certificateSignatureVerifier");
-    }
 
-    public void setCertificateSignatureVerifier(String signingCertificate) {
-        getConfig().put("certificateSignatureVerifier", signingCertificate);
-    }
     public String getPublicKeySignatureVerifier() {
         return getConfig().get("publicKeySignatureVerifier");
     }
@@ -61,12 +61,36 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("publicKeySignatureVerifier", signingCertificate);
     }
 
+    public String getPublicKeySignatureVerifierKeyId() {
+        return getConfig().get("publicKeySignatureVerifierKeyId");
+    }
+
+    public void setPublicKeySignatureVerifierKeyId(String publicKeySignatureVerifierKeyId) {
+        getConfig().put("publicKeySignatureVerifierKeyId", publicKeySignatureVerifierKeyId);
+    }
+
     public boolean isValidateSignature() {
         return Boolean.valueOf(getConfig().get("validateSignature"));
     }
 
     public void setValidateSignature(boolean validateSignature) {
-        getConfig().put("validateSignature", String.valueOf(validateSignature));
+        getConfig().put(VALIDATE_SIGNATURE, String.valueOf(validateSignature));
+    }
+
+    public boolean isUseJwksUrl() {
+        return Boolean.valueOf(getConfig().get(USE_JWKS_URL));
+    }
+
+    public void setUseJwksUrl(boolean useJwksUrl) {
+        getConfig().put(USE_JWKS_URL, String.valueOf(useJwksUrl));
+    }
+
+    public String getJwksUrl() {
+        return getConfig().get(JWKS_URL);
+    }
+
+    public void setJwksUrl(String jwksUrl) {
+        getConfig().put(JWKS_URL, jwksUrl);
     }
 
     public boolean isBackchannelSupported() {
@@ -75,6 +99,15 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setBackchannelSupported(boolean backchannel) {
         getConfig().put("backchannelSupported", String.valueOf(backchannel));
+    }
+
+    public boolean isDisableUserInfoService() {
+        String disableUserInfo = getConfig().get("disableUserInfo");
+        return disableUserInfo == null ? false : Boolean.valueOf(disableUserInfo);
+    }
+
+    public void setDisableUserInfoService(boolean disable) {
+        getConfig().put("disableUserInfo", String.valueOf(disable));
     }
 
 

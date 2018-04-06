@@ -20,10 +20,10 @@
     <parent>
         <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
-    <name>User Storage JPA Provider Exapmle</name>
+    <name>User Storage JPA Provider Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
@@ -75,7 +75,7 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-             <plugin>
+            <plugin>
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
                 <configuration>
@@ -84,4 +84,58 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <!-- this profile deploys an XA H2 datasource connection.  It is in-memory only, so rebooting the server will lose
+             your changes.  Run type: mvn -Padd-datasource install.  THis can only be run once.  If you run it again
+             you'll get an error that the datasource already exists -->
+        <profile>
+            <id>add-datasource</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <force>true</force>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>add-datasource</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>add-resource</goal>
+                                </goals>
+                                <configuration>
+                                    <force/>
+                                    <address>subsystem=datasources</address>
+                                    <resources>
+                                        <resource>
+                                            <address>xa-data-source=java:jboss/datasources/ExampleXADS</address>
+                                            <properties>
+                                                <jndi-name>java:jboss/datasources/ExampleXADS</jndi-name>
+                                                <enabled>true</enabled>
+                                                <driver-name>h2</driver-name>
+                                            </properties>
+                                            <resources>
+                                                <resource>
+                                                    <address>
+                                                        xa-datasource-properties=URL
+                                                    </address>
+                                                    <properties>
+                                                        <value>jdbc:h2:mem:test</value>
+                                                    </properties>
+                                                </resource>
+                                            </resources>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

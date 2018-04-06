@@ -1,0 +1,12 @@
+<div *ngIf="isVisible" class="toast-pf 
+                              toast-pf-max-width 
+                              toast-pf-top-right 
+                              alert 
+                              {{notification.alertType}} 
+                              alert-dismissable">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+    </button>
+    <span class="pficon {{notification.icon}}"></span>
+    {{notification.message}}
+</div>

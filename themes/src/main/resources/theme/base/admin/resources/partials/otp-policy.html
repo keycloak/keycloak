@@ -65,6 +65,14 @@
             <kc-tooltip>{{:: 'otp-token-period.tooltip' | translate}}</kc-tooltip>
         </div>
 
+        <div class="form-group">
+            <label class="col-md-2 control-label">{{:: 'otp-supported-applications' | translate}}</label>
+            <div class="col-md-6">
+                {{realm.otpSupportedApplications.join(', ')}}
+            </div>
+            <kc-tooltip>{{:: 'otp-supported-applications.tooltip' | translate}}</kc-tooltip>
+        </div>
+
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">

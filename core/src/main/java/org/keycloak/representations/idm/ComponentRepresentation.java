@@ -19,19 +19,19 @@ package org.keycloak.representations.idm;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ComponentRepresentation {
+
+    public static final String SECRET_VALUE = "**********";
 
     private String id;
     private String name;
     private String providerId;
     private String providerType;
     private String parentId;
+    private String subType;
     private MultivaluedHashMap<String, String> config;
 
     public String getId() {
@@ -72,6 +72,14 @@ public class ComponentRepresentation {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 
     public MultivaluedHashMap<String, String> getConfig() {

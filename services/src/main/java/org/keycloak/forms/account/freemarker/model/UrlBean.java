@@ -17,9 +17,9 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
-import org.keycloak.theme.Theme;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
+import org.keycloak.theme.Theme;
 
 import java.net.URI;
 
@@ -33,7 +33,6 @@ public class UrlBean {
     private URI baseURI;
     private URI baseQueryURI;
     private URI currentURI;
-    private String stateChecker;
 
     public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI, String stateChecker) {
         this.realm = realm.getName();
@@ -41,7 +40,6 @@ public class UrlBean {
         this.baseURI = baseURI;
         this.baseQueryURI = baseQueryURI;
         this.currentURI = currentURI;
-        this.stateChecker = stateChecker;
     }
 
     public String getApplicationsUrl() {
@@ -72,20 +70,24 @@ public class UrlBean {
         return Urls.accountSessionsPage(baseQueryURI, realm).toString();
     }
 
-    public String getSessionsLogoutUrl() {
-        return Urls.accountSessionsLogoutPage(baseQueryURI, realm, stateChecker).toString();
-    }
-
-    public String getRevokeClientUrl() {
-        return Urls.accountRevokeClientPage(baseQueryURI, realm).toString();
-    }
-
-    public String getTotpRemoveUrl() {
-        return Urls.accountTotpRemove(baseQueryURI, realm, stateChecker).toString();
-    }
-
     public String getLogoutUrl() {
         return Urls.accountLogout(baseQueryURI, currentURI, realm).toString();
+    }
+
+    public String getResourceUrl() {
+        return Urls.accountResourcesPage(baseQueryURI, realm).toString();
+    }
+
+    public String getResourceDetailUrl(String id) {
+        return Urls.accountResourceDetailPage(id, baseQueryURI, realm).toString();
+    }
+
+    public String getResourceGrant(String id) {
+        return Urls.accountResourceGrant(id, baseQueryURI, realm).toString();
+    }
+
+    public String getResourceShare(String id) {
+        return Urls.accountResourceShare(id, baseQueryURI, realm).toString();
     }
 
     public String getResourcesPath() {

@@ -17,12 +17,7 @@
 
 package org.keycloak.authentication;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
+import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -31,12 +26,17 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
 
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientAuthenticationFlow implements AuthenticationFlow {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientAuthenticationFlow.class);
 
     Response alternativeChallenge = null;
     AuthenticationProcessor processor;
@@ -74,7 +74,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 // Fallback to secret just in case (for backwards compatibility)
                 if (expectedClientAuthType == null) {
                     expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
-                    logger.authMethodFallback(client.getClientId(), expectedClientAuthType);
+                    ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
                 }
 
                 // Check if client authentication matches
@@ -98,7 +98,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             processor.getEvent().error(Errors.INVALID_CLIENT);
             return alternativeChallenge;
         }
-        throw new AuthenticationFlowException("Client was not identified by any client authenticator", AuthenticationFlowError.UNKNOWN_CLIENT);
+        throw new AuthenticationFlowException("Invalid client credentials", AuthenticationFlowError.INVALID_CREDENTIALS);
     }
 
     protected List<AuthenticationExecutionModel> findExecutionsToRun() {
@@ -155,7 +155,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
         } else {
-            logger.unknownResultStatus();
+            ServicesLogger.LOGGER.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }

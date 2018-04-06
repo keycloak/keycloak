@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -28,6 +25,9 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tests with response_type=id_token
@@ -45,10 +45,15 @@ public class OIDCImplicitResponseTypeIDTokenTest extends AbstractOIDCResponseTyp
     }
 
 
-    protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
+    @Override
+    protected boolean isFragment() {
+        return true;
+    }
+
+
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
         Assert.assertEquals(OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
         Assert.assertNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);

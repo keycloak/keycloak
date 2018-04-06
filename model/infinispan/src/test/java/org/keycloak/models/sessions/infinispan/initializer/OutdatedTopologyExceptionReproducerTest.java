@@ -17,25 +17,23 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.interceptors.locking.NonTransactionalLockingInterceptor;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.statetransfer.StateTransferInterceptor;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reproducer for KEYCLOAK-3306. Uncomment the snippet for adding StateTransferInterceptor to have test fixed.

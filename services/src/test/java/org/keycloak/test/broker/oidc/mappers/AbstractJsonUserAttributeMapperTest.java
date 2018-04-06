@@ -16,8 +16,6 @@
  */
 package org.keycloak.test.broker.oidc.mappers;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,9 +23,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 
+import java.io.IOException;
+import java.util.Arrays;
+
 /**
  * Unit test for {@link org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper}
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class AbstractJsonUserAttributeMapperTest {
@@ -38,7 +39,7 @@ public class AbstractJsonUserAttributeMapperTest {
 
 	private JsonNode getJsonNode() throws IOException {
 		if (baseNode == null)
-			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
+			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_null\" : null,\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_null\" : null,\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
 		return baseNode;
 	}
 
@@ -58,9 +59,11 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		//unknown field returns null
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_unknown"));
-		
+
 		// we check value is trimmed also!
 		Assert.assertEquals("v1", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value1"));
+		// test for KEYCLOAK-4202 bug (null value handling)
+		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_null"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_empty"));
 
 		Assert.assertEquals("true", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_b"));
@@ -81,6 +84,8 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		// we check value is trimmed also!
 		Assert.assertEquals("fgh", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value1"));
+		// test for KEYCLOAK-4202 bug (null value handling)
+        Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_null"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_empty"));
 
 		Assert.assertEquals("false", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_b"));
@@ -95,14 +100,14 @@ public class AbstractJsonUserAttributeMapperTest {
 	public void getJsonValue_simpleArray() throws JsonProcessingException, IOException {
 
 		// array field itself returns null if no index is provided
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array"));
+		Assert.assertEquals(Arrays.asList("a1", "a2"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array"));
 		// outside index returns null
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array[2]"));
 
 		//corect index
 		Assert.assertEquals("a1", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array[0]"));
 		Assert.assertEquals("a2", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array[1]"));
-		
+
 		//incorrect array constructs
 		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array[]"));
 		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array]"));
@@ -125,7 +130,7 @@ public class AbstractJsonUserAttributeMapperTest {
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a.av1"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a].av1"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[.av1"));
-		
+
 	}
 
 }

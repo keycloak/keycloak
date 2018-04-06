@@ -1,8 +1,6 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
-    <#if section = "title">
-        ${msg("loginProfileTitle")}
-    <#elseif section = "header">
+    <#if section = "header">
         ${msg("loginProfileTitle")}
     <#elseif section = "form">
         <form id="kc-update-profile-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
@@ -12,7 +10,7 @@
                         <label for="username" class="${properties.kcLabelClass!}">${msg("username")}</label>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
-                        <input type="text" id="username" name="username" value="${(user.username!'')?html}" class="${properties.kcInputClass!}"/>
+                        <input type="text" id="username" name="username" value="${(user.username!'')}" class="${properties.kcInputClass!}"/>
                     </div>
                 </div>
             </#if>
@@ -21,7 +19,7 @@
                     <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" name="email" value="${(user.email!'')?html}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="email" name="email" value="${(user.email!'')}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -30,7 +28,7 @@
                     <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="firstName" name="firstName" value="${(user.firstName!'')?html}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="firstName" name="firstName" value="${(user.firstName!'')}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -39,7 +37,7 @@
                     <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="lastName" name="lastName" value="${(user.lastName!'')?html}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="lastName" name="lastName" value="${(user.lastName!'')}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -50,7 +48,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
                 </div>
             </div>
         </form>

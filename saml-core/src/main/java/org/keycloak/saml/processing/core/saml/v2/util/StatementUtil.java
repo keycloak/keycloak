@@ -16,10 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.core.constants.AttributeConstants;
-import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -27,6 +23,10 @@ import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.constants.AttributeConstants;
+import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;

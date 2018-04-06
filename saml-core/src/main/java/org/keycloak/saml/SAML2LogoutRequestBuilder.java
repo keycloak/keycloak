@@ -17,28 +17,32 @@
 
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.w3c.dom.Document;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2LogoutRequestBuilder {
+public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2LogoutRequestBuilder> {
     protected String userPrincipal;
     protected String userPrincipalFormat;
     protected String sessionIndex;
     protected long assertionExpiration;
     protected String destination;
     protected String issuer;
+    protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2LogoutRequestBuilder destination(String destination) {
         this.destination = destination;
@@ -47,6 +51,12 @@ public class SAML2LogoutRequestBuilder {
 
     public SAML2LogoutRequestBuilder issuer(String issuer) {
         this.issuer = issuer;
+        return this;
+    }
+
+    @Override
+    public SAML2LogoutRequestBuilder addExtension(NodeGenerator extension) {
+        this.extensions.add(extension);
         return this;
     }
 
@@ -75,18 +85,20 @@ public class SAML2LogoutRequestBuilder {
     }
 
     public Document buildDocument() throws ProcessingException, ConfigurationException, ParsingException {
-        Document document = new SAML2Request().convert(createLogoutRequest());
+        Document document = SAML2Request.convert(createLogoutRequest());
         return document;
     }
 
     private LogoutRequestType createLogoutRequest() throws ConfigurationException {
-        LogoutRequestType lort = new SAML2Request().createLogoutRequest(issuer);
+        LogoutRequestType lort = SAML2Request.createLogoutRequest(issuer);
 
         NameIDType nameID = new NameIDType();
         nameID.setValue(userPrincipal);
         //Deal with NameID Format
         String nameIDFormat = userPrincipalFormat;
-        nameID.setFormat(URI.create(nameIDFormat));
+        if (nameIDFormat != null) {
+            nameID.setFormat(URI.create(nameIDFormat));
+        }
         lort.setNameID(nameID);
 
         if (issuer != null) {
@@ -99,6 +111,15 @@ public class SAML2LogoutRequestBuilder {
 
         if (assertionExpiration > 0) lort.setNotOnOrAfter(XMLTimeUtil.add(lort.getIssueInstant(), assertionExpiration * 1000));
         lort.setDestination(URI.create(destination));
+
+        if (! this.extensions.isEmpty()) {
+            ExtensionsType extensionsType = new ExtensionsType();
+            for (NodeGenerator extension : this.extensions) {
+                extensionsType.addExtension(extension);
+            }
+            lort.setExtensions(extensionsType);
+        }
+
         return lort;
     }
 }

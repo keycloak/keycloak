@@ -1,6 +1,10 @@
 package org.keycloak.testsuite.arquillian.annotation;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -13,8 +17,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface UseServletFilter {
 
+    String filterDependency();
     String filterName();
     String filterClass();
     String filterPattern() default "/*";
     String dispatcherType() default "";
+    String skipPattern() default "";
 }

@@ -1,0 +1,191 @@
+{
+  "allowRemoteResourceManagement": false,
+  "policyEnforcementMode": "ENFORCING",
+  "resources": [
+    {
+      "name": "Administration resource",
+      "uri": "/admin/*",
+      "type": "http://acme.com/admin",
+      "scopes": [
+        {
+          "name": "urn:acme.com:scopes:admin:manage"
+        },
+        {
+          "name": "urn:acme.com:scopes:admin:view"
+        }
+      ]
+    },
+    {
+      "name": "Role resource",
+      "uri": "/{REALM}/roles",
+      "type": "http://acme.com/roles",
+      "scopes": [
+        {
+          "name": "urn:acme.com:scopes:role:view"
+        }
+      ]
+    },
+    {
+      "name": "User profile resource",
+      "uri": "/{REALM}/userprofiles/*",
+      "type": "http://acme.com/userprofiles",
+      "scopes": [
+        {
+          "name": "urn:acme.com:scopes:userprofile:manage"
+        },
+        {
+          "name": "urn:acme.com:scopes:userprofile:view"
+        }
+      ]
+    },
+    {
+      "name": "Account resource",
+      "uri": "/{REALM}/account/*",
+      "type": "http://acme.com/account",
+      "scopes": [
+        {
+          "name": "urn:acme.com:scopes:account:manage"
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "Acme admin policy",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"Acme administrator\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Acme viewer policy",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"Acme viewer\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Tenant user policy",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"tenant user\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Tenant administrator policy",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"tenant administrator\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Tenant viewer policy",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"tenant viewer\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Any user policy",
+      "description": "Defines that only users from well known clients are allowed to access",
+      "type": "aggregate",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "applyPolicies": "[\"Tenant user policy\",\"Acme admin policy\",\"Acme viewer policy\",\"Tenant viewer policy\",\"Tenant administrator policy\"]"
+      }
+    },
+    {
+      "name": "Super tenant admin permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "scopes": "[\"urn:acme.com:scopes:admin:manage\"]",
+        "applyPolicies": "[\"Acme admin policy\"]"
+      }
+    },
+    {
+      "name": "Super tenant admin read permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:acme.com:scopes:admin:view\"]",
+        "applyPolicies": "[\"Acme admin policy\",\"Acme viewer policy\"]"
+      }
+    },
+    {
+      "name": "View tenant role permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "resources": "[\"Role resource\"]",
+        "scopes": "[\"urn:acme.com:scopes:role:view\"]",
+        "applyPolicies": "[\"Any user policy\"]"
+      }
+    },
+    {
+      "name": "Manage account permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "resources": "[\"Account resource\"]",
+        "scopes": "[\"urn:acme.com:scopes:account:manage\"]",
+        "applyPolicies": "[\"Any user policy\"]"
+      }
+    },
+    {
+      "name": "Manage user profile permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:acme.com:scopes:userprofile:manage\"]",
+        "applyPolicies": "[\"Acme admin policy\",\"Tenant administrator policy\"]"
+      }
+    },
+    {
+      "name": "View user profile permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:acme.com:scopes:userprofile:view\"]",
+        "applyPolicies": "[\"Acme admin policy\",\"Acme viewer policy\",\"Tenant viewer policy\",\"Tenant administrator policy\"]"
+      }
+    }
+  ],
+  "scopes": [
+    {
+      "name": "urn:acme.com:scopes:admin:manage"
+    },
+    {
+      "name": "urn:acme.com:scopes:admin:view"
+    },
+    {
+      "name": "urn:acme.com:scopes:role:view"
+    },
+    {
+      "name": "urn:acme.com:scopes:account:manage"
+    },
+    {
+      "name": "urn:acme.com:scopes:userprofile:view"
+    },
+    {
+      "name": "urn:acme.com:scopes:userprofile:manage"
+    }
+  ]
+}

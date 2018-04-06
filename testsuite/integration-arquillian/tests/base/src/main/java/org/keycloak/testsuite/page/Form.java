@@ -18,14 +18,14 @@
 package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import static org.jboss.arquillian.graphene.Graphene.guardAjax;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.jboss.arquillian.graphene.Graphene.guardAjax;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  *
@@ -46,9 +46,7 @@ public class Form {
     private WebElement cancel;
 
     public void save() {
-//        guardAjax(save).click();
-        save.click();
-        WaitUtils.waitForPageToLoad(driver);
+        clickLink(save);
     }
 
     public void cancel() {
@@ -71,5 +69,11 @@ public class Form {
             // TODO log warning
         }
     }
+    public WebElement saveBtn() {
+        return save;
+    }
 
+    public WebElement cancelBtn() {
+        return cancel;
+    }
 }

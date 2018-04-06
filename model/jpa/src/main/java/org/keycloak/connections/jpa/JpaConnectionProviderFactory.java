@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa;
 
-import java.sql.Connection;
-
 import org.keycloak.provider.ProviderFactory;
+
+import java.sql.Connection;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

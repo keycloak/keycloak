@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.domainextension.rest;
 
-import java.util.List;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.testsuite.domainextension.CompanyRepresentation;
+import org.keycloak.testsuite.domainextension.spi.ExampleService;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -28,11 +31,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.testsuite.domainextension.CompanyRepresentation;
-import org.keycloak.testsuite.domainextension.spi.ExampleService;
+import java.util.List;
 
 public class CompanyResource {
 

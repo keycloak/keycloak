@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -26,7 +25,6 @@ import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Allows mapping of user realm role mappings to an ID and Access Token claim.
@@ -37,7 +35,7 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
     public static final String PROVIDER_ID = "oidc-usermodel-realm-role-mapper";
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
 
@@ -48,9 +46,18 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         realmRolePrefix.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(realmRolePrefix);
 
-        OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES);
+        ProviderConfigProperty multiValued = new ProviderConfigProperty();
+        multiValued.setName(ProtocolMapperUtils.MULTIVALUED);
+        multiValued.setLabel(ProtocolMapperUtils.MULTIVALUED_LABEL);
+        multiValued.setHelpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT);
+        multiValued.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        multiValued.setDefaultValue(false);
+        CONFIG_PROPERTIES.add(multiValued);
+
+        OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES, UserRealmRoleMappingMapper.class);
     }
 
+    @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return CONFIG_PROPERTIES;
     }
@@ -75,13 +82,30 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         return "Map a user realm role to a token claim.";
     }
 
+    @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-
-        UserModel user = userSession.getUser();
-
         String rolePrefix = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX);
-        Set<String> realmRoleNames = flattenRoleModelToRoleNames(user.getRoleMappings(), rolePrefix);
+        AbstractUserRoleMappingMapper.setClaim(token, mappingModel, userSession, role -> ! role.isClientRole(), rolePrefix);
+    }
 
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, realmRoleNames);
+    public static ProtocolMapperModel create(String realmRolePrefix,
+                                             String name,
+                                             String tokenClaimName, boolean accessToken, boolean idToken) {
+
+        return create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperModel create(String realmRolePrefix,
+                                             String name,
+                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean multiValued) {
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
+          tokenClaimName, "String",
+          true, name,
+          accessToken, idToken,
+          PROVIDER_ID);
+
+        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
+        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX, realmRolePrefix);
+        return mapper;
     }
 }

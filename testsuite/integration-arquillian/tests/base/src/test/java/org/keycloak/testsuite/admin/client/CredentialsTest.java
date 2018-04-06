@@ -22,17 +22,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.core.MediaType;
-
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -44,8 +43,8 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -157,6 +156,23 @@ public class CredentialsTest extends AbstractClientTest {
         form = new MultipartFormDataOutput();
         form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
         form.addFormData("file", certificate2.getBytes(Charset.forName("ASCII")), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        cert = certRsc.uploadJks(form);
+        assertNotNull("cert not null", cert);
+        assertEquals("cert properly extracted", certificate2, cert.getCertificate());
+        assertNull("privateKey not included", cert.getPrivateKey());
+
+        // Get the certificate again - to make sure cert is set, and privateKey is null
+        cert = certRsc.getKeyInfo();
+        assertEquals("cert properly set", certificate2, cert.getCertificate());
+        assertNull("privateKey nullified", cert.getPrivateKey());
+
+        // Upload certificate with header - should be stored without header
+        form = new MultipartFormDataOutput();
+        form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
+
+        String certificate2WithHeaders = "-----BEGIN CERTIFICATE-----\n" + certificate2 + "\n-----END CERTIFICATE-----";
+
+        form.addFormData("file", certificate2WithHeaders.getBytes(Charset.forName("ASCII")), MediaType.APPLICATION_OCTET_STREAM_TYPE);
         cert = certRsc.uploadJks(form);
         assertNotNull("cert not null", cert);
         assertEquals("cert properly extracted", certificate2, cert.getCertificate());

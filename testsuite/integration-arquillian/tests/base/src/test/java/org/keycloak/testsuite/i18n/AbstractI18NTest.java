@@ -19,14 +19,14 @@ package org.keycloak.testsuite.i18n;
 
 import org.junit.After;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractI18NTest extends TestRealmKeycloakTest {
+public abstract class AbstractI18NTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

@@ -17,9 +17,11 @@
  */
 package org.keycloak.authorization.client.util;
 
-import org.keycloak.util.JsonSerialization;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -41,7 +43,7 @@ public class HttpMethodResponse<R> {
         });
     }
 
-    public HttpMethodResponse<R> json(Class<R> responseType) {
+    public HttpMethodResponse<R> json(final Class<R> responseType) {
         return new HttpMethodResponse<R>(this.method) {
             @Override
             public R execute() {
@@ -50,6 +52,24 @@ public class HttpMethodResponse<R> {
                     public R process(byte[] entity) {
                         try {
                             return JsonSerialization.readValue(entity, responseType);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error parsing JSON response.", e);
+                        }
+                    }
+                });
+            }
+        };
+    }
+
+    public HttpMethodResponse<R> json(final TypeReference responseType) {
+        return new HttpMethodResponse<R>(this.method) {
+            @Override
+            public R execute() {
+                return method.execute(new HttpResponseProcessor<R>() {
+                    @Override
+                    public R process(byte[] entity) {
+                        try {
+                            return (R) JsonSerialization.readValue(new ByteArrayInputStream(entity), responseType);
                         } catch (IOException e) {
                             throw new RuntimeException("Error parsing JSON response.", e);
                         }

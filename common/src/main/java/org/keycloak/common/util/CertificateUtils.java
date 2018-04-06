@@ -17,14 +17,6 @@
 
 package org.keycloak.common.util;
 
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.Date;
-
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -48,6 +40,14 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
@@ -75,7 +75,6 @@ public class CertificateUtils {
      */
     public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
             String subject) throws Exception {
-
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 
@@ -140,11 +139,13 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) throws Exception {
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
+        return generateV1SelfSignedCertificate(caKeyPair, subject, BigInteger.valueOf(System.currentTimeMillis()));
+    }
 
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
-            BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
             Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.YEAR, 10);

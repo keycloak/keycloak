@@ -17,8 +17,9 @@
 
 package org.keycloak.partialimport;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -27,6 +28,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * PartialImport handler for Clients.
  *
@@ -34,9 +41,28 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
  */
 public class ClientsPartialImport extends AbstractPartialImport<ClientRepresentation> {
 
+    private static Set<String> INTERNAL_CLIENTS = Collections.unmodifiableSet(new HashSet(Constants.defaultClients));
+
+    private static Logger logger = Logger.getLogger(ClientsPartialImport.class);
+
     @Override
     public List<ClientRepresentation> getRepList(PartialImportRepresentation partialImportRep) {
-        return partialImportRep.getClients();
+        List<ClientRepresentation> clients = partialImportRep.getClients();
+        if (clients == null || clients.size() == 0) {
+            return clients;
+        }
+
+        // filter out internal clients
+        List<ClientRepresentation> ret = new ArrayList();
+
+        for (ClientRepresentation c: clients) {
+            if (!isInternalClient(c.getClientId())) {
+                ret.add(c);
+            } else {
+                logger.debugv("Internal client {0} will not be processed", c.getClientId());
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -55,7 +81,7 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     }
 
     @Override
-    public String existsMessage(ClientRepresentation clientRep) {
+    public String existsMessage(RealmModel realm, ClientRepresentation clientRep) {
         return "Client id '" + getName(clientRep) + "' already exists";
     }
 
@@ -84,4 +110,10 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
         RepresentationToModel.createClient(session, realm, clientRep, true);
     }
 
+    public static boolean isInternalClient(String clientId) {
+        if (clientId != null && clientId.endsWith("-realm")) {
+            return true;
+        }
+        return INTERNAL_CLIENTS.contains(clientId);
+    }
 }

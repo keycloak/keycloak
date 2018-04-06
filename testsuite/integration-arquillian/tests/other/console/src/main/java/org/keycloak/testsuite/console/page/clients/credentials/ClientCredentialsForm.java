@@ -25,6 +25,7 @@ import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
@@ -56,18 +57,18 @@ public class ClientCredentialsForm extends Form {
     public void regenerateSecret() {
         waitUntilElement(regenerateSecretButton).is().visible();
         regenerateSecretButton.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void regenerateRegistrationAccessToken() {
         waitUntilElement(regenerateRegistrationAccessTokenButton).is().visible();
         regenerateRegistrationAccessTokenButton.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void generateNewKeysAndCert() {
         waitUntilElement(generateNewKeysAndCert).is().visible();
         generateNewKeysAndCert.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 }

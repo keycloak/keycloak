@@ -9,7 +9,7 @@ For more information about Keycloak visit [Keycloak homepage](http://keycloak.or
 Building
 --------
 
-Ensure you have JDK 8 (or newer), Maven 3.2.1 (or newer) and Git installed
+Ensure you have JDK 8 (or newer), Maven 3.1.1 (or newer) and Git installed
 
     java -version
     mvn -version
@@ -36,19 +36,23 @@ Once completed you will find distribution archives in `distribution`.
 Starting Keycloak
 -----------------
 
-To start Keycloak during development first build as specficied above, then run:
+To start Keycloak during development first build as specified above, then run:
 
-    mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server 
+    mvn -f testsuite/utils/pom.xml exec:java -Pkeycloak-server 
 
 
-To start Keycloak from the appliance distribution first build the distribution it as specified above, then run:
+To start Keycloak from the server distribution first build the distribution it as specified above, then run:
 
-    tar xfz distribution/appliance-dist/target/keycloak-appliance-dist-all-<VERSION>.tar.gz
-    cd keycloak-appliance-dist-all-<VERSION>/keycloak
+    tar xfz distribution/server-dist/target/keycloak-<VERSION>.tar.gz
+    cd keycloak-<VERSION>
     bin/standalone.sh
     
 To stop the server press `Ctrl + C`.
 
+Reporting security vulnerabilities
+----------------------------------
+
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](http://www.keycloak.org/security.html)
 
 Help and Documentation
 ----------------------

@@ -17,6 +17,9 @@
  */
 package org.keycloak.authorization.policy.provider.drools;
 
+import java.util.function.Function;
+
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
@@ -25,15 +28,15 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
  */
 public class DroolsPolicyProvider implements PolicyProvider {
 
-    private final DroolsPolicy policy;
+    private final Function<Policy, DroolsPolicy> policy;
 
-    public DroolsPolicyProvider(DroolsPolicy policy) {
-        this.policy = policy;
+    public DroolsPolicyProvider(Function<Policy, DroolsPolicy> policyProvider) {
+        this.policy = policyProvider;
     }
 
     @Override
-    public void evaluate(Evaluation evaluationt) {
-        this.policy.evaluate(evaluationt);
+    public void evaluate(Evaluation evaluation) {
+        policy.apply(evaluation.getPolicy()).evaluate(evaluation);
     }
 
     @Override

@@ -27,7 +27,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URLEncoder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +43,12 @@ public class TotpUtils {
             }
         }
         return sb.toString();
+    }
+
+    public static String decode(String totpSecretEncoded) {
+        String encoded = totpSecretEncoded.replace(" ", "");
+        byte[] bytes = Base32.decode(encoded);
+        return new String(bytes);
     }
 
     public static String qrCode(String totpSecret, RealmModel realm, UserModel user) {

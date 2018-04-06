@@ -1,9 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
-<%@ page import="org.keycloak.example.ProductServiceAccountServlet" %>
-<%@ page import="org.keycloak.representations.AccessToken" %>
 <%@ page import="org.keycloak.common.constants.ServiceAccountConstants" %>
 <%@ page import="org.keycloak.common.util.Time" %>
+<%@ page import="org.keycloak.example.ProductServiceAccountServlet" %>
+<%@ page import="org.keycloak.representations.AccessToken" %>
 <html>
 <head>
     <title>Service account portal</title>
@@ -13,16 +13,12 @@
     AccessToken token = (AccessToken) request.getSession().getAttribute(ProductServiceAccountServlet.TOKEN_PARSED);
     String products = (String) request.getAttribute(ProductServiceAccountServlet.PRODUCTS);
     String appError = (String) request.getAttribute(ProductServiceAccountServlet.ERROR);
-    String clientAuthMethod = (String) request.getAttribute(ProductServiceAccountServlet.CLIENT_AUTH_METHOD);
 
     String loginUrl = ProductServiceAccountServlet.getLoginUrl(request);
-    String refreshUrl = ProductServiceAccountServlet.getRefreshUrl(request);
     String logoutUrl = ProductServiceAccountServlet.getLogoutUrl(request);
 %>
 <h1>Service account portal</h1>
-<h2>Client authentication method: <%= clientAuthMethod %></h2>
-<p><a href="<%= loginUrl %>">Login</a> | <a href="<%= refreshUrl %>">Refresh token</a> | <a
-        href="<%= logoutUrl %>">Logout</a></p>
+<p><a href="<%= loginUrl %>">Login</a> | <a href="<%= logoutUrl %>">Logout</a></p>
 <hr />
 
 <% if (appError != null) { %>

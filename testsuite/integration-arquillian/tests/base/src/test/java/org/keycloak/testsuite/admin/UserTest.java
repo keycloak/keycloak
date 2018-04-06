@@ -18,9 +18,11 @@
 package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,10 +30,17 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.util.Base64;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -42,9 +51,17 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.federation.DummyUserFederationProvider;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.pages.ProceedPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -53,6 +70,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -62,11 +80,18 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
 
 /**
@@ -83,7 +108,6 @@ public class UserTest extends AbstractAdminTest {
     @Page
     protected LoginPasswordUpdatePage passwordUpdatePage;
 
-
     @ArquillianResource
     protected OAuthClient oAuthClient;
 
@@ -91,7 +115,22 @@ public class UserTest extends AbstractAdminTest {
     protected InfoPage infoPage;
 
     @Page
+    protected ProceedPage proceedPage;
+
+    @Page
+    protected ErrorPage errorPage;
+
+    @Page
     protected LoginPage loginPage;
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(
+                AbstractAdminTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                DummyUserFederationProviderFactory.class, DummyUserFederationProvider.class,
+                UserResource.class);
+    }
 
     public String createUser() {
         return createUser("user1", "user1@localhost");
@@ -113,6 +152,9 @@ public class UserTest extends AbstractAdminTest {
         response.close();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep, ResourceType.USER);
+
+        getCleanup().addUserId(createdId);
+
         return createdId;
     }
 
@@ -154,7 +196,74 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
+    @Test
+    public void createUserWithHashedCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_creds");
+        user.setEmail("email@localhost");
+
+        CredentialRepresentation hashedPassword = new CredentialRepresentation();
+        hashedPassword.setAlgorithm("my-algorithm");
+        hashedPassword.setCounter(11);
+        hashedPassword.setCreatedDate(1001l);
+        hashedPassword.setDevice("deviceX");
+        hashedPassword.setDigits(6);
+        hashedPassword.setHashIterations(22);
+        hashedPassword.setHashedSaltedValue("ABC");
+        hashedPassword.setPeriod(99);
+        hashedPassword.setSalt(Base64.encodeBytes("theSalt".getBytes()));
+        hashedPassword.setType(CredentialRepresentation.PASSWORD);
+
+        user.setCredentials(Arrays.asList(hashedPassword));
+
+        createUser(user);
+
+        CredentialModel credentialHashed = fetchCredentials("user_creds");
+        assertNotNull("Expecting credential", credentialHashed);
+        assertEquals("my-algorithm", credentialHashed.getAlgorithm());
+        assertEquals(11, credentialHashed.getCounter());
+        assertEquals(Long.valueOf(1001), credentialHashed.getCreatedDate());
+        assertEquals("deviceX", credentialHashed.getDevice());
+        assertEquals(6, credentialHashed.getDigits());
+        assertEquals(22, credentialHashed.getHashIterations());
+        assertEquals("ABC", credentialHashed.getValue());
+        assertEquals(99, credentialHashed.getPeriod());
+        assertEquals("theSalt", new String(credentialHashed.getSalt()));
+        assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
+    }
+
+    @Test
+    public void createUserWithRawCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_rawpw");
+        user.setEmail("email.raw@localhost");
+
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Arrays.asList(rawPassword));
+
+        createUser(user);
+
+        CredentialModel credential = fetchCredentials("user_rawpw");
+        assertNotNull("Expecting credential", credential);
+        assertEquals(PasswordPolicy.HASH_ALGORITHM_DEFAULT, credential.getAlgorithm());
+        assertEquals(PasswordPolicy.HASH_ITERATIONS_DEFAULT, credential.getHashIterations());
+        assertNotEquals("ABCD", credential.getValue());
+        assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
+    }
+
+    private CredentialModel fetchCredentials(String username) {
+        return getTestingClient().server(REALM_NAME).fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(username, realm);
+            List<CredentialModel> storedCredentialsByType = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialRepresentation.PASSWORD);
+            System.out.println(storedCredentialsByType.size());
+            return storedCredentialsByType.get(0);
+        }, CredentialModel.class);
+    }
+
     @Test
     public void createDuplicatedUser3() {
         createUser();
@@ -165,7 +274,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
     @Test
     public void createDuplicatedUser4() {
         createUser();
@@ -188,7 +297,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
     @Test
     public void createDuplicatedUser6() {
         createUser();
@@ -215,7 +324,33 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEmpty();
 
     }
-    
+
+    @Test
+    public void createUserWithFederationLink() {
+
+        // add a dummy federation provider
+        ComponentRepresentation dummyFederationProvider = new ComponentRepresentation();
+        dummyFederationProvider.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setProviderType(UserStorageProvider.class.getName());
+        adminClient.realms().realm(REALM_NAME).components().add(dummyFederationProvider);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.componentPath(DummyUserFederationProviderFactory.PROVIDER_NAME), dummyFederationProvider, ResourceType.COMPONENT);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setEmail("user1@localhost");
+        user.setFederationLink(DummyUserFederationProviderFactory.PROVIDER_NAME);
+
+        String userId = createUser(user);
+
+        // fetch user again and see federation link filled in
+        UserRepresentation createdUser = realm.users().get(userId).toRepresentation();
+        assertNotNull(createdUser);
+        assertEquals(user.getFederationLink(), createdUser.getFederationLink());
+    }
+
     private void createUsers() {
         for (int i = 1; i < 10; i++) {
             UserRepresentation user = new UserRepresentation();
@@ -273,9 +408,31 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void countUsersNotServiceAccount() {
+        createUsers();
+
+        Integer count = realm.users().count();
+        assertEquals(9, count.intValue());
+
+        ClientRepresentation client = new ClientRepresentation();
+
+        client.setClientId("test-client");
+        client.setPublicClient(false);
+        client.setSecret("secret");
+        client.setServiceAccountsEnabled(true);
+        client.setEnabled(true);
+        client.setRedirectUris(Arrays.asList("http://url"));
+
+        getAdminClient().realm(REALM_NAME).clients().create(client);
+
+        // KEYCLOAK-5660, should not consider service accounts
+        assertEquals(9, realm.users().count().intValue());
+    }
+
+    @Test
     public void delete() {
         String userId = createUser();
-        Response response = realm.users().delete( userId );
+        Response response = realm.users().delete(userId);
         assertEquals(204, response.getStatus());
         response.close();
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
@@ -283,7 +440,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void deleteNonExistent() {
-        Response response = realm.users().delete( "does-not-exist" );
+        Response response = realm.users().delete("does-not-exist");
         assertEquals(404, response.getStatus());
         response.close();
         assertAdminEvents.assertEmpty();
@@ -414,19 +571,19 @@ public class UserTest extends AbstractAdminTest {
         List<String> vals = new ArrayList<>();
         vals.add("value2user2");
         vals.add("value2user2_2");
-        user2.getAttributesAsListValues().put("attr2", vals);
+        user2.getAttributes().put("attr2", vals);
 
         String user2Id = createUser(user2);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value1user1", user1.getAttributesAsListValues().get("attr1"));
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value1user1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
 
         user2 = realm.users().get(user2Id).toRepresentation();
-        assertEquals(2, user2.getAttributesAsListValues().size());
-        assertAttributeValue("value1user2", user2.getAttributesAsListValues().get("attr1"));
-        vals = user2.getAttributesAsListValues().get("attr2");
+        assertEquals(2, user2.getAttributes().size());
+        assertAttributeValue("value1user2", user2.getAttributes().get("attr1"));
+        vals = user2.getAttributes().get("attr2");
         assertEquals(2, vals.size());
         assertTrue(vals.contains("value2user2") && vals.contains("value2user2_2"));
 
@@ -436,18 +593,18 @@ public class UserTest extends AbstractAdminTest {
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(3, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value3user1", user1.getAttributesAsListValues().get("attr1"));
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
-        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
+        assertEquals(3, user1.getAttributes().size());
+        assertAttributeValue("value3user1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().remove("attr1");
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
-        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().clear();
         updateUser(realm.users().get(user1Id), user1);
@@ -497,7 +654,7 @@ public class UserTest extends AbstractAdminTest {
             userRep.setEnabled(true);
             updateUser(user, userRep);
 
-            user.executeActionsEmail("invalidClientId", actions);
+            user.executeActionsEmail("invalidClientId", "invalidUri", actions);
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -519,7 +676,142 @@ public class UserTest extends AbstractAdminTest {
         UserResource user = realm.users().get(id);
         List<String> actions = new LinkedList<>();
         actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
-        user.executeActionsEmail("account", actions);
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+
+        assertTrue(body.getText().contains("Update Password"));
+        assertTrue(body.getText().contains("your Admin-client-test account"));
+        assertTrue(body.getText().contains("This link will expire within 12 hours"));
+
+        assertTrue(body.getHtml().contains("Update Password"));
+        assertTrue(body.getHtml().contains("your Admin-client-test account"));
+        assertTrue(body.getHtml().contains("This link will expire within 12 hours"));
+
+        String link = MailUtils.getPasswordResetEmailLink(body);
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+
+        driver.navigate().to(link);
+
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessTwoLinks() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        int i = 1;
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            driver.navigate().to(link);
+
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
+            passwordUpdatePage.assertCurrent();
+
+            passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            i++;
+
+            assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+        }
+
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(link);
+            errorPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        int i = 1;
+        for (int j = greenMail.getReceivedMessages().length - 1; j >= 0; j--) {
+            MimeMessage message = greenMail.getReceivedMessages()[j];
+
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            driver.navigate().to(link);
+
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
+            passwordUpdatePage.assertCurrent();
+
+            passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            i++;
+
+            assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+        }
+
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(link);
+            errorPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
@@ -530,15 +822,198 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-        assertTrue(passwordUpdatePage.isCurrent());
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
 
-        passwordUpdatePage.changePassword("new-pass", "new-pass");
-
-        assertEquals("Your account has been updated.", driver.getTitle());
+        driver.manage().deleteAllCookies();
+        driver.navigate().to("about:blank");
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", driver.getTitle());
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        final AtomicInteger originalValue = new AtomicInteger();
+
+        RealmRepresentation realmRep = realm.toRepresentation();
+        originalValue.set(realmRep.getActionTokenGeneratedByAdminLifespan());
+        realmRep.setActionTokenGeneratedByAdminLifespan(60);
+        realm.update(realmRep);
+
+        try {
+            UserResource user = realm.users().get(id);
+            List<String> actions = new LinkedList<>();
+            actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+            user.executeActionsEmail(actions);
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            setTimeOffset(70);
+
+            driver.navigate().to(link);
+
+            errorPage.assertCurrent();
+            assertEquals("Action expired.", errorPage.getError());
+        } finally {
+            setTimeOffset(0);
+
+            realmRep.setActionTokenGeneratedByAdminLifespan(originalValue.get());
+            realm.update(realmRep);
+        }
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessWithRecycledAuthSession() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        // The following block creates a client and requests updating password with redirect to this client.
+        // After clicking the link (starting a fresh auth session with client), the user goes away and sends the email
+        // with password reset again - now without the client - and attempts to complete the password reset.
+        {
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId("myclient2");
+            client.setRedirectUris(new LinkedList<>());
+            client.getRedirectUris().add("http://myclient.com/*");
+            client.setName("myclient2");
+            client.setEnabled(true);
+            Response response = realm.clients().create(client);
+            String createdId = ApiUtil.getCreatedId(response);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(createdId), client, ResourceType.CLIENT);
+
+            user.executeActionsEmail("myclient2", "http://myclient.com/home.html", actions);
+            assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            driver.navigate().to(link);
+        }
+
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+
+        driver.navigate().to(link);
+
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    public void sendResetPasswordEmailWithRedirect() throws IOException, MessagingException {
+
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("myclient");
+        client.setRedirectUris(new LinkedList<>());
+        client.getRedirectUris().add("http://myclient.com/*");
+        client.setName("myclient");
+        client.setEnabled(true);
+        Response response = realm.clients().create(client);
+        String createdId = ApiUtil.getCreatedId(response);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(createdId), client, ResourceType.CLIENT);
+
+
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        try {
+            // test that an invalid redirect uri is rejected.
+            user.executeActionsEmail("myclient", "http://unregistered-uri.com/", actions);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Invalid redirect uri.", error.getErrorMessage());
+        }
+
+
+        user.executeActionsEmail("myclient", "http://myclient.com/home.html", actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
+
+        String pageSource = driver.getPageSource();
+
+        // check to make sure the back link is set.
+        Assert.assertTrue(pageSource.contains("http://myclient.com/home.html"));
+
+        driver.navigate().to(link);
+
+        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
     }
 
 
@@ -596,12 +1071,23 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
+        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        driver.navigate().to("about:blank");
+
+        driver.navigate().to(link); // It should be possible to use the same action token multiple times
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     @Test
     public void updateUserWithNewUsername() {
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
         String id = createUser();
 
         UserResource user = realm.users().get(id);
@@ -611,13 +1097,14 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11", userRep.getUsername());
+
+        // Revert
+        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithoutUsername() {
-
-
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
 
         String id = createUser();
 
@@ -641,6 +1128,9 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("user1@localhost", rep.getEmail());
         assertEquals("Firstname", rep.getFirstName());
         assertEquals("Lastname", rep.getLastName());
+
+        // Revert
+        switchEditUsernameAllowedOn(false);
     }
 
     @Test
@@ -658,7 +1148,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithNewUsernameAccessingViaOldUsername() {
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
         createUser();
 
         try {
@@ -671,13 +1161,15 @@ public class UserTest extends AbstractAdminTest {
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(404, e.getResponse().getStatus());
+        } finally {
+            switchEditUsernameAllowedOn(false);
         }
     }
 
     @Test
     public void updateUserWithExistingUsername() {
-        switchEditUsernameAllowedOn();
-        enableBruteForce();
+        switchEditUsernameAllowedOn(true);
+        enableBruteForce(true);
         createUser();
 
         UserRepresentation userRep = new UserRepresentation();
@@ -697,6 +1189,9 @@ public class UserTest extends AbstractAdminTest {
             // TODO adminEvents: Event queue should be empty, but it's not because of bug in UsersResource.updateUser, which sends event earlier than transaction commit.
             // assertAdminEvents.assertEmpty();
             assertAdminEvents.poll();
+        } finally {
+            enableBruteForce(false);
+            switchEditUsernameAllowedOn(false);
         }
     }
 
@@ -716,7 +1211,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log in to admin-client-test", driver.getTitle());
+        assertEquals("Log In", PageUtils.getPageTitle(driver));
 
         loginPage.login("user1", "password");
 
@@ -814,7 +1309,7 @@ public class UserTest extends AbstractAdminTest {
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
-        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium");
+        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role");
         assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
         // List client roles
@@ -844,16 +1339,29 @@ public class UserTest extends AbstractAdminTest {
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
     }
 
-    private void switchEditUsernameAllowedOn() {
+    @Test
+    public void defaultMaxResults() {
+        UsersResource users = adminClient.realms().realm("test").users();
+
+        for (int i = 0; i < 110; i++) {
+            users.create(UserBuilder.create().username("test-" + i).build()).close();
+        }
+
+        assertEquals(100, users.search("test", null, null).size());
+        assertEquals(105, users.search("test", 0, 105).size());
+        assertEquals(111, users.search("test", 0, 1000).size());
+    }
+
+    private void switchEditUsernameAllowedOn(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
-        rep.setEditUsernameAllowed(true);
+        rep.setEditUsernameAllowed(enable);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }
 
-    private void enableBruteForce() {
+    private void enableBruteForce(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
-        rep.setBruteForceProtected(true);
+        rep.setBruteForceProtected(enable);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }

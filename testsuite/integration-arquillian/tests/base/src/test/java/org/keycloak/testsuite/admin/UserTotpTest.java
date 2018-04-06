@@ -21,7 +21,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -29,9 +28,9 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -43,10 +42,10 @@ import java.util.List;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class UserTotpTest extends TestRealmKeycloakTest {
+public class UserTotpTest extends AbstractTestRealmKeycloakTest {
 
     private static final UriBuilder BASE = UriBuilder.fromUri("http://localhost:8180/auth");
-    public static String ACCOUNT_REDIRECT = AccountService.loginRedirectUrl(BASE.clone()).build("test").toString();
+    public static String ACCOUNT_REDIRECT = AccountFormService.loginRedirectUrl(BASE.clone()).build("test").toString();
 
     @Rule
     public AssertEvents events = new AssertEvents(this);

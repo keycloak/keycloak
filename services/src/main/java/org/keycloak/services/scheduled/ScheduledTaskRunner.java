@@ -17,6 +17,7 @@
 
 package org.keycloak.services.scheduled;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
@@ -27,7 +28,7 @@ import org.keycloak.timer.ScheduledTask;
  */
 public class ScheduledTaskRunner implements Runnable {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ScheduledTaskRunner.class);
 
     protected final KeycloakSessionFactory sessionFactory;
     protected final ScheduledTask task;
@@ -43,14 +44,14 @@ public class ScheduledTaskRunner implements Runnable {
         try {
             runTask(session);
         } catch (Throwable t) {
-            logger.failedToRunScheduledTask(t, task.getClass().getSimpleName());
+            ServicesLogger.LOGGER.failedToRunScheduledTask(t, task.getClass().getSimpleName());
 
             session.getTransactionManager().rollback();
         } finally {
             try {
                 session.close();
             } catch (Throwable t) {
-                logger.failedToCloseProviderSession(t);
+                ServicesLogger.LOGGER.failedToCloseProviderSession(t);
             }
         }
     }

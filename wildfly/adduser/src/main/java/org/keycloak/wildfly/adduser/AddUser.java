@@ -29,8 +29,10 @@ import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
 import org.jboss.aesh.console.command.registry.CommandRegistry;
 import org.keycloak.common.util.Base64;
-import org.keycloak.hash.Pbkdf2PasswordHashProvider;
-import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.PasswordHashProviderFactory;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -40,11 +42,11 @@ import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,6 +55,7 @@ public class AddUser {
 
     private static final String COMMAND_NAME = "add-user";
     private static final int DEFAULT_HASH_ITERATIONS = 100000;
+    private static final String DEFAULT_HASH_ALGORITH = PasswordPolicy.HASH_ALGORITHM_DEFAULT;
 
     public static void main(String[] args) throws Exception {
         AddUserCommand command = new AddUserCommand();
@@ -153,14 +156,18 @@ public class AddUser {
         user.setUsername(userName);
         user.setCredentials(new LinkedList<CredentialRepresentation>());
 
-        UserCredentialValueModel credentialValueModel = new Pbkdf2PasswordHashProvider().encode(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS);
+        PasswordHashProviderFactory hashProviderFactory = getHashProviderFactory(DEFAULT_HASH_ALGORITH);
+        PasswordHashProvider hashProvider = hashProviderFactory.create(null);
+
+        CredentialModel credentialModel = new CredentialModel();
+        hashProvider.encode(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS, credentialModel);
 
         CredentialRepresentation credentials = new CredentialRepresentation();
-        credentials.setType(credentialValueModel.getType());
-        credentials.setAlgorithm(credentialValueModel.getAlgorithm());
-        credentials.setHashIterations(credentialValueModel.getHashIterations());
-        credentials.setSalt(Base64.encodeBytes(credentialValueModel.getSalt()));
-        credentials.setHashedSaltedValue(credentialValueModel.getValue());
+        credentials.setType(credentialModel.getType());
+        credentials.setAlgorithm(credentialModel.getAlgorithm());
+        credentials.setHashIterations(credentialModel.getHashIterations());
+        credentials.setSalt(Base64.encodeBytes(credentialModel.getSalt()));
+        credentials.setHashedSaltedValue(credentialModel.getValue());
 
         user.getCredentials().add(credentials);
 
@@ -202,6 +209,16 @@ public class AddUser {
 
         JsonSerialization.writeValuePrettyToStream(new FileOutputStream(addUserFile), realms);
         System.out.println("Added '" + userName + "' to '" + addUserFile + "', restart server to load user");
+    }
+
+    private static PasswordHashProviderFactory getHashProviderFactory(String providerId) {
+        ServiceLoader<PasswordHashProviderFactory> providerFactories = ServiceLoader.load(PasswordHashProviderFactory.class);
+        for (PasswordHashProviderFactory f : providerFactories) {
+            if (f.getId().equals(providerId)) {
+                return f;
+            }
+        }
+        return null;
     }
 
     private static void checkRequired(Command command, String field) throws Exception {
@@ -276,7 +293,7 @@ public class AddUser {
         private boolean help;
 
         @Override
-        public CommandResult execute(CommandInvocation commandInvocation) throws IOException, InterruptedException {
+        public CommandResult execute(CommandInvocation commandInvocation) throws InterruptedException {
             return CommandResult.SUCCESS;
         }
 

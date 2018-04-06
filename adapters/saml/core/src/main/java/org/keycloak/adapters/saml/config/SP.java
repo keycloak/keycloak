@@ -58,6 +58,7 @@ public class SP implements Serializable {
     private PrincipalNameMapping principalNameMapping;
     private Set<String> roleAttributes;
     private IDP idp;
+    private boolean autodetectBearerOnly;
 
     public String getEntityID() {
         return entityID;
@@ -79,24 +80,24 @@ public class SP implements Serializable {
         return forceAuthentication;
     }
 
-    public void setForceAuthentication(boolean forceAuthentication) {
-        this.forceAuthentication = forceAuthentication;
+    public void setForceAuthentication(Boolean forceAuthentication) {
+        this.forceAuthentication = forceAuthentication != null && forceAuthentication;
     }
 
     public boolean isIsPassive() {
         return isPassive;
     }
 
-    public void setIsPassive(boolean isPassive) {
-        this.isPassive = isPassive;
+    public void setIsPassive(Boolean isPassive) {
+        this.isPassive = isPassive != null && isPassive;
     }
 
     public boolean isTurnOffChangeSessionIdOnLogin() {
         return turnOffChangeSessionIdOnLogin;
     }
 
-    public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
-        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
+    public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
+        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin != null && turnOffChangeSessionIdOnLogin;
     }
 
     public List<Key> getKeys() {
@@ -147,4 +148,11 @@ public class SP implements Serializable {
         this.logoutPage = logoutPage;
     }
 
+    public boolean isAutodetectBearerOnly() {
+        return autodetectBearerOnly;
+    }
+
+    public void setAutodetectBearerOnly(Boolean autodetectBearerOnly) {
+        this.autodetectBearerOnly = autodetectBearerOnly != null && autodetectBearerOnly;
+    }
 }

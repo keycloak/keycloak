@@ -1,0 +1,38 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://c3js.org/">http://c3js.org/</a>'
+categories: [Charts]
+layout: page
+title: Line Charts
+resource: true
+url-js-extra: ['https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js']
+---
+<h2>Sparkline</h2>
+<div class="row">
+  <div class="col-md-4">
+    {% include widgets/charts/sparkline.html id="sparklineChart" %}
+  </div>
+</div>
+<h2>Line Chart</h2>
+<div class="row">
+  <div class="col-lg-6 col-sm-12">
+    {% include widgets/charts/line-multiple.html id="lineChart" %}
+  </div>
+</div>
+<h2>Single Line Chart</h2>
+<div class="row">
+  <div class="col-lg-6 col-sm-12">
+    {% include widgets/charts/line-single.html id="singleLineChart" %}
+  </div>
+</div>
+<h2>Spline Chart</h2>
+<div class="row">
+  <div class="col-lg-6 col-sm-12">
+    {% include widgets/charts/spline-multiple.html id="splineChart" %}
+  </div>
+</div>
+<h2>Single Spline Chart</h2>
+<div class="row">
+  <div class="col-lg-6 col-sm-12">
+    {% include widgets/charts/spline-single.html id="singleSplineChart" %}
+  </div>
+</div>

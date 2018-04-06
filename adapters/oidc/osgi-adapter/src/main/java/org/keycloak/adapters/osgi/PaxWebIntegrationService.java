@@ -17,11 +17,6 @@
 
 package org.keycloak.adapters.osgi;
 
-import java.net.URL;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
-
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.util.security.Constraint;
 import org.jboss.logging.Logger;
@@ -31,6 +26,11 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.service.http.HttpContext;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
+import java.net.URL;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Integration with pax-web, which allows to inject custom jetty-web.xml configuration from current bundle classpath into {@link WebContainer}

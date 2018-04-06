@@ -18,9 +18,8 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -29,7 +28,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
@@ -42,8 +40,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -65,7 +62,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         RealmModel realm = context.getRealm();
 
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)
@@ -106,16 +103,18 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
 
         if (emailChanged) {
-            UserModel userByEmail = session.users().getUserByEmail(email, realm);
+            if (!realm.isDuplicateEmailsAllowed()) {
+                UserModel userByEmail = session.users().getUserByEmail(email, realm);
 
-            // check for duplicated email
-            if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
-                Response challenge = context.form()
-                        .setError(Messages.EMAIL_EXISTS)
-                        .setFormData(formData)
-                        .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
-                context.challenge(challenge);
-                return;
+                // check for duplicated email
+                if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
+                    Response challenge = context.form()
+                            .setError(Messages.EMAIL_EXISTS)
+                            .setFormData(formData)
+                            .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+                    context.challenge(challenge);
+                    return;
+                }
             }
 
             user.setEmail(email);
@@ -141,6 +140,16 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
+
+
+    @Override
+    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
+        if (displayType == null) return this;
+        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
+        return ConsoleUpdateProfile.SINGLETON;
+    }
+
+
 
     @Override
     public void init(Config.Scope config) {

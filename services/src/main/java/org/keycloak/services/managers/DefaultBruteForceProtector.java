@@ -17,13 +17,14 @@
 package org.keycloak.services.managers;
 
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserLoginFailureModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtector implements Runnable, BruteForceProtector {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -84,6 +85,14 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
     }
 
+    protected class SuccessfulLogin extends LoginEvent {
+        protected final CountDownLatch latch = new CountDownLatch(1);
+
+        public SuccessfulLogin(String realmId, String userId, String ip) {
+            super(realmId, userId, ip);
+        }
+    }
+
     public DefaultBruteForceProtector(KeycloakSessionFactory factory) {
         this.factory = factory;
     }
@@ -95,44 +104,67 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
         String userId = event.userId;
         UserModel user = session.users().getUserById(userId, realm);
+        if (user == null) {
+            return;
+        }
+
         UserLoginFailureModel userLoginFailure = getUserModel(session, event);
-        if (user != null) {
-            if (userLoginFailure == null) {
-                userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
-            }
-            userLoginFailure.setLastIPFailure(event.ip);
-            long currentTime = Time.currentTimeMillis();
-            long last = userLoginFailure.getLastFailure();
-            long deltaTime = 0;
-            if (last > 0) {
-                deltaTime = currentTime - last;
-            }
-            userLoginFailure.setLastFailure(currentTime);
-            if (deltaTime > 0) {
-                // if last failure was more than MAX_DELTA clear failures
-                if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
-                    userLoginFailure.clearFailures();
-                }
-            }
+        if (userLoginFailure == null) {
+            userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
+        }
+        userLoginFailure.setLastIPFailure(event.ip);
+        long currentTime = Time.currentTimeMillis();
+        long last = userLoginFailure.getLastFailure();
+        long deltaTime = 0;
+        if (last > 0) {
+            deltaTime = currentTime - last;
+        }
+        userLoginFailure.setLastFailure(currentTime);
+
+        if(realm.isPermanentLockout()) {
             userLoginFailure.incrementFailures();
             logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-            int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
-            logger.debugv("waitSeconds: {0}", waitSeconds);
-            logger.debugv("deltaTime: {0}", deltaTime);
-
-            if (waitSeconds == 0) {
-                if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
-                    logger.debugv("quick login, set min wait seconds");
-                    waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
-                }
+            if(userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
+                logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
+                user.setEnabled(false);
+                return;
             }
-            if (waitSeconds > 0) {
-                waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
+
+            if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
+                logger.debugv("quick login, set min wait seconds");
+                int waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
                 int notBefore = (int) (currentTime / 1000) + waitSeconds;
                 logger.debugv("set notBefore: {0}", notBefore);
                 userLoginFailure.setFailedLoginNotBefore(notBefore);
             }
+            return;
+        }
+
+        if (deltaTime > 0) {
+            // if last failure was more than MAX_DELTA clear failures
+            if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
+                userLoginFailure.clearFailures();
+            }
+        }
+        userLoginFailure.incrementFailures();
+        logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
+
+        int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        logger.debugv("waitSeconds: {0}", waitSeconds);
+        logger.debugv("deltaTime: {0}", deltaTime);
+
+        if (waitSeconds == 0) {
+            if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
+                logger.debugv("quick login, set min wait seconds");
+                waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
+            }
+        }
+        if (waitSeconds > 0) {
+            waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
+            int notBefore = (int) (currentTime / 1000) + waitSeconds;
+            logger.debugv("set notBefore: {0}", notBefore);
+            userLoginFailure.setFailedLoginNotBefore(notBefore);
         }
     }
 
@@ -184,6 +216,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             for (LoginEvent event : events) {
                                 if (event instanceof FailedLogin) {
                                     failure(session, event);
+                                } else if (event instanceof SuccessfulLogin) {
+                                    success(session, event);
                                 } else if (event instanceof ShutdownEvent) {
                                     run = false;
                                 }
@@ -196,13 +230,15 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             for (LoginEvent event : events) {
                                 if (event instanceof FailedLogin) {
                                     ((FailedLogin) event).latch.countDown();
+                                } else if (event instanceof SuccessfulLogin) {
+                                    ((SuccessfulLogin) event).latch.countDown();
                                 }
                             }
                             events.clear();
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.failedProcessingType(e);
+                        ServicesLogger.LOGGER.failedProcessingType(e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -213,8 +249,19 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
     }
 
+    private void success(KeycloakSession session, LoginEvent event) {
+        String userId = event.userId;
+        UserModel model = session.users().getUserById(userId, getRealmModel(session, event));
+
+        UserLoginFailureModel user = getUserModel(session, event);
+        if(user == null) return;
+
+        logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
+        user.clearFailures();
+    }
+
     protected void logFailure(LoginEvent event) {
-        logger.loginFailure(event.userId, event.ip);
+        ServicesLogger.LOGGER.loginFailure(event.userId, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
@@ -240,6 +287,18 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         } catch (InterruptedException e) {
         }
         logger.trace("sent failure event");
+    }
+
+    @Override
+    public void successfulLogin(final RealmModel realm, final UserModel user, final ClientConnection clientConnection) {
+        try {
+            SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+            queue.offer(event);
+
+            event.latch.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+        }
+        logger.trace("sent success event");
     }
 
     @Override

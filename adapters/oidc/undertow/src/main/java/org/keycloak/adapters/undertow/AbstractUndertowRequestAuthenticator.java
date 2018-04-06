@@ -20,14 +20,13 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.Sessions;
-
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.HttpFacade;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -27,11 +27,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.truststore.TruststoreProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.truststore.TruststoreProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +39,22 @@ import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
+ * <p>
+ * The constructed clients can be configured via Keycloaks SPI configuration, e.g. {@code standalone.xml, standalone-ha.xml, domain.xml}.
+ * </p>
+ * <p>
+ * Examples for jboss-cli
+ * </p>
+ * <pre>
+ * {@code
+ *
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:add(enabled=true)
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.connection-pool-size,value=128)
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.proxy-mappings,value=[".*\\.(google|googleapis)\\.com;http://www-proxy.acme.corp.com:8080",".*\\.acme\\.corp\\.com;NO_PROXY",".*;http://fallback:8080"])
+ * }
+ * </pre>
+ * </p>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultHttpClientFactory implements HttpClientFactory {
@@ -127,6 +143,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
+                    String[] proxyMappings = config.getArray("proxy-mappings");
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTrustManager = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -137,13 +154,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());
 
                     HttpClientBuilder builder = new HttpClientBuilder();
+
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies);
+                            .disableCookies(disableCookies)
+                            .proxyMappings(ProxyMappings.valueOf(proxyMappings));
 
                     if (disableTrustManager) {
                         // TODO: is it ok to do away with disabling trust manager?

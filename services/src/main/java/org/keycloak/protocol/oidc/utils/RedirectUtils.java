@@ -17,14 +17,16 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,16 +35,21 @@ import java.util.Set;
  */
 public class RedirectUtils {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
         Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
-        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects);
+        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects, true);
     }
 
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
-        Set<String> validRedirects = client.getRedirectUris();
-        return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, validRedirects);
+        return verifyRedirectUri(uriInfo, redirectUri, realm, client, true);
+    }
+
+    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client, boolean requireRedirectUri) {
+        if (client != null)
+            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris(), requireRedirectUri);
+        return null;
     }
 
     public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
@@ -67,10 +74,16 @@ public class RedirectUtils {
         return redirects;
     }
 
-    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
+    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects, boolean requireRedirectUri) {
         if (redirectUri == null) {
-            logger.debug("No Redirect URI parameter specified");
-            return null;
+            if (!requireRedirectUri) {
+                redirectUri = getSingleValidRedirectUri(validRedirects);
+            }
+
+            if (redirectUri == null) {
+                logger.debug("No Redirect URI parameter specified");
+                return null;
+            }
         } else if (validRedirects.isEmpty()) {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
@@ -121,15 +134,12 @@ public class RedirectUtils {
 
     private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
         if (rootUrl == null || rootUrl.isEmpty()) {
-            URI baseUri = uriInfo.getBaseUri();
-            String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-            if (baseUri.getPort() != -1) {
-                uri += ":" + baseUri.getPort();
-            }
-            rootUrl = uri;
+            rootUrl = UriUtils.getOrigin(uriInfo.getBaseUri());
         }
-        relative = rootUrl + relative;
-        return relative;
+        StringBuilder sb = new StringBuilder();
+        sb.append(rootUrl);
+        sb.append(relative);
+        return sb.toString();
     }
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
@@ -148,6 +158,16 @@ public class RedirectUtils {
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;
+    }
+
+    private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
+        if (validRedirects.size() != 1) return null;
+        String validRedirect = validRedirects.iterator().next();
+        int idx = validRedirect.indexOf("/*");
+        if (idx > -1) {
+            validRedirect = validRedirect.substring(0, idx);
+        }
+        return validRedirect;
     }
 
 }

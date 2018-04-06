@@ -17,16 +17,16 @@
 
 package org.keycloak.testsuite.events;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -152,12 +152,13 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         testing().onAdminEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
         testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin", null, null, null, null).size());
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/realms", null, null, null, null).size());
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/master", null, null, null, null).size());
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/realms", null, null, null, null).size());
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/realms/master", null, null, null, null).size());
-        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/realms/master", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/*", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "*/realms/*", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "*/master", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/realms/*", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "*/realms/master", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/admin/*/master", null, null, null, null).size());
+        Assert.assertEquals(6, testing().getAdminEvents(null, null, null, null, null, null, "/ad*/*/master", null, null, null, null).size());
     }
 
     @Test

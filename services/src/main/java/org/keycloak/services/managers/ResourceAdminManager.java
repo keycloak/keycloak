@@ -16,15 +16,23 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -32,10 +40,6 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -53,7 +57,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResourceAdminManager.class);
     private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
@@ -106,13 +110,15 @@ public class ResourceAdminManager {
     }
 
     public void logoutUser(URI requestUri, RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
+        keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
+
         List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
         logoutUserSessions(requestUri, realm, userSessions);
     }
 
     protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
         // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
+        MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
         for (UserSessionModel userSession : userSessions) {
             putClientSessions(clientSessions, userSession);
         }
@@ -120,37 +126,26 @@ public class ResourceAdminManager {
         logger.debugv("logging out {0} resources ", clientSessions.size());
         //logger.infov("logging out resources: {0}", clientSessions);
 
-        for (Map.Entry<ClientModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
-            logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void putClientSessions(MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientModel client = clientSession.getClient();
-            clientSessions.add(client, clientSession);
-        }
-    }
-
-    public void logoutUserFromClient(URI requestUri, RealmModel realm, ClientModel resource, UserModel user) {
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        List<ClientSessionModel> ourAppClientSessions = null;
-        if (userSessions != null) {
-            MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
-            for (UserSessionModel userSession : userSessions) {
-                putClientSessions(clientSessions, userSession);
+        for (Map.Entry<String, List<AuthenticatedClientSessionModel>> entry : clientSessions.entrySet()) {
+            if (entry.getValue().size() == 0) {
+                continue;
             }
-            ourAppClientSessions = clientSessions.get(resource);
+            logoutClientSessions(requestUri, realm, entry.getValue().get(0).getClient(), entry.getValue());
         }
-
-        logoutClientSessions(requestUri, realm, resource, ourAppClientSessions);
     }
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientSessionModel clientSession) {
+    private void putClientSessions(MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions, UserSessionModel userSession) {
+        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : userSession.getAuthenticatedClientSessions().entrySet()) {
+            clientSessions.add(entry.getKey(), entry.getValue());
+        }
+    }
+
+
+    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientSessionModel> clientSessions) {
+    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
@@ -159,7 +154,7 @@ public class ResourceAdminManager {
             List<String> userSessions = new LinkedList<>();
             if (clientSessions != null && clientSessions.size() > 0) {
                 adapterSessionIds = new MultivaluedHashMap<String, String>();
-                for (ClientSessionModel clientSession : clientSessions) {
+                for (AuthenticatedClientSessionModel clientSession : clientSessions) {
                     String adapterSessionId = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
                     if (adapterSessionId != null) {
                         String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
@@ -244,7 +239,7 @@ public class ResourceAdminManager {
 
     protected boolean sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
-        String token = new TokenManager().encodeToken(realm, adminAction);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build();
         try {
@@ -253,7 +248,7 @@ public class ResourceAdminManager {
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.logoutFailed(e, resource.getClientId());
+            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return false;
         }
     }
@@ -294,19 +289,14 @@ public class ResourceAdminManager {
     }
 
     protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
-        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
-        String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
-        URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
-        try {
-            int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
-            boolean success = status == 204 || status == 200;
-            logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
-            return success;
-        } catch (IOException e) {
-            logger.failedToSendRevocation(e);
-            return false;
+        String protocol = resource.getProtocol();
+        if (protocol == null) {
+            protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
+        LoginProtocol loginProtocol = (LoginProtocol) session.getProvider(LoginProtocol.class, protocol);
+        return loginProtocol == null
+          ? false
+          : loginProtocol.sendPushRevocationPolicyRequest(realm, resource, notBefore, managementUrl);
     }
 
     public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ClientModel client) {
@@ -333,7 +323,7 @@ public class ResourceAdminManager {
 
     protected boolean sendTestNodeAvailabilityRequest(RealmModel realm, ClientModel client, String managementUrl) {
         TestAvailabilityAction adminAction = new TestAvailabilityAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, client.getClientId());
-        String token = new TokenManager().encodeToken(realm, adminAction);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
         logger.debugv("testNodes availability resource: {0} url: {1}", client.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_TEST_AVAILABLE).build();
         try {
@@ -342,7 +332,7 @@ public class ResourceAdminManager {
             logger.debugf("testAvailability success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.availabilityTestFailed(managementUrl);
+            ServicesLogger.LOGGER.availabilityTestFailed(managementUrl);
             return false;
         }
    }

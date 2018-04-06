@@ -19,30 +19,24 @@ package org.keycloak.federation.sssd;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import org.keycloak.storage.UserStorageProviderFactory;
+import org.keycloak.storage.UserStorageProviderModel;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  * @version $Revision: 1 $
  */
-public class SSSDFederationProviderFactory implements UserFederationProviderFactory, EnvironmentDependentProviderFactory {
+public class SSSDFederationProviderFactory implements UserStorageProviderFactory<SSSDFederationProvider>, EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_NAME = "sssd";
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
 
-    static final Set<String> configOptions = new HashSet<String>();
 
     @Override
     public String getId() {
@@ -50,24 +44,8 @@ public class SSSDFederationProviderFactory implements UserFederationProviderFact
     }
 
     @Override
-    public UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
-        return new SSSDFederationProvider(session, model, this);
-    }
-
-    /**
-     * List the configuration options to render and display in the admin console's generic management page for this
-     * plugin
-     *
-     * @return
-     */
-    @Override
-    public Set<String> getConfigurationOptions() {
-        return configOptions;
-    }
-
-    @Override
-    public UserFederationProvider create(KeycloakSession session) {
-        return null;
+    public SSSDFederationProvider create(KeycloakSession session, ComponentModel model) {
+        return new SSSDFederationProvider(session, new UserStorageProviderModel(model), this);
     }
 
     @Override
@@ -83,18 +61,6 @@ public class SSSDFederationProviderFactory implements UserFederationProviderFact
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
-        logger.info("Sync users not supported for this provider");
-        return UserFederationSyncResult.empty();
-    }
-
-    @Override
-    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
-        logger.info("Sync users not supported for this provider");
-        return UserFederationSyncResult.empty();
     }
 
     protected PAMAuthenticator createPAMAuthenticator(String username, String... factors) {

@@ -20,12 +20,15 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.utils.EncryptionConstants;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -36,7 +39,9 @@ import javax.xml.namespace.QName;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.HashMap;
+import java.util.Objects;
+import javax.xml.XMLConstants;
+import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * Utility for XML Encryption <b>Note: </b> This utility is currently using Apache XML Security library API. JSR-106 is
@@ -55,72 +60,11 @@ public class XMLEncryptionUtil {
         org.apache.xml.security.Init.init();
     }
 
-    public static final String CIPHER_DATA_LOCALNAME = "CipherData";
-
-    public static final String ENCRYPTED_KEY_LOCALNAME = "EncryptedKey";
-
     public static final String DS_KEY_INFO = "ds:KeyInfo";
 
-    public static final String XMLNS = "http://www.w3.org/2000/xmlns/";
-
-    public static final String XMLSIG_NS = "http://www.w3.org/2000/09/xmldsig#";
-
-    public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
-
-    private static HashMap<String, EncryptionAlgorithm> algorithms = new HashMap<String, EncryptionAlgorithm>(4);
-
-    private static class EncryptionAlgorithm {
-
-        EncryptionAlgorithm(String jceName, String xmlSecName, int size) {
-            this.jceName = jceName;
-            this.xmlSecName = xmlSecName;
-            this.size = size;
-        }
-
-        @SuppressWarnings("unused")
-        public String jceName;
-
-        public String xmlSecName;
-
-        public int size;
-    }
-
-    static {
-        algorithms.put("aes-128", new EncryptionAlgorithm("AES", XMLCipher.AES_128, 128));
-        algorithms.put("aes-192", new EncryptionAlgorithm("AES", XMLCipher.AES_192, 192));
-        algorithms.put("aes-256", new EncryptionAlgorithm("AES", XMLCipher.AES_256, 256));
-        algorithms.put("aes", new EncryptionAlgorithm("AES", XMLCipher.AES_256, 256));
-
-        algorithms.put("tripledes", new EncryptionAlgorithm("TripleDes", XMLCipher.TRIPLEDES, 168));
-    }
-
-    /**
-     * Given the JCE algorithm, get the XML Encryption URL
-     *
-     * @param certAlgo
-     *
-     * @return
-     */
-    public static String getEncryptionURL(String certAlgo) {
-        EncryptionAlgorithm ea = algorithms.get(certAlgo);
-        if (ea == null)
-            throw logger.encryptUnknownAlgoError(certAlgo);
-        return ea.xmlSecName;
-    }
-
-    /**
-     * Given the JCE algorithm, get the XML Encryption KeySize
-     *
-     * @param certAlgo
-     *
-     * @return
-     */
-    public static int getEncryptionKeySize(String certAlgo) {
-        EncryptionAlgorithm ea = algorithms.get(certAlgo);
-        if (ea == null)
-            throw logger.encryptUnknownAlgoError(certAlgo);
-        return ea.size;
-    }
+    private static final String RSA_ENCRYPTION_SCHEME = Objects.equals(System.getProperty("keycloak.saml.key_trans.rsa_v1.5"), "true")
+      ? XMLCipher.RSA_v1dot5
+      : XMLCipher.RSA_OAEP;
 
     /**
      * <p>
@@ -144,7 +88,7 @@ public class XMLEncryptionUtil {
      */
     public static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
                                           int keySize) throws ProcessingException {
-        XMLCipher keyCipher = null;
+        XMLCipher keyCipher;
         String pubKeyAlg = keyUsedToEncryptSecretKey.getAlgorithm();
 
         try {
@@ -163,13 +107,12 @@ public class XMLEncryptionUtil {
      * data
      *
      * @param elementQName QName of the element that we like to encrypt
+     * @param document
      * @param publicKey
      * @param secretKey
      * @param keySize
      * @param wrappingElementQName A QName of an element that will wrap the encrypted element
      * @param addEncryptedKeyInKeyInfo Need for the EncryptedKey to be placed in ds:KeyInfo
-     *
-     * @return
      *
      * @throws ProcessingException
      */
@@ -180,7 +123,7 @@ public class XMLEncryptionUtil {
         if (document == null)
             throw logger.nullArgumentError("document");
         String wrappingElementPrefix = wrappingElementQName.getPrefix();
-        if (wrappingElementPrefix == null || wrappingElementPrefix == "")
+        if (wrappingElementPrefix == null || "".equals(wrappingElementPrefix))
             throw logger.wrongTypeError("Wrapping element prefix invalid");
 
         Element documentElement = DocumentUtil.getElement(document, elementQName);
@@ -210,18 +153,22 @@ public class XMLEncryptionUtil {
         // The EncryptedKey element is added
         Element encryptedKeyElement = cipher.martial(document, encryptedKey);
 
-        String wrappingElementName = wrappingElementPrefix + ":" + wrappingElementQName.getLocalPart();
-
-        // Create the wrapping element and set its attribute NS
-        Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
+        final String wrappingElementName;
 
         if (StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
             wrappingElementName = wrappingElementQName.getLocalPart();
+        } else {
+            wrappingElementName = wrappingElementPrefix + ":" + wrappingElementQName.getLocalPart();
         }
-        wrappingElement.setAttributeNS(XMLNS, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
+        // Create the wrapping element and set its attribute NS
+        Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
+
+        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
+            wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
+        }
 
         // Get Hold of the Cipher Data
-        NodeList cipherElements = encryptedDoc.getElementsByTagNameNS(XMLENC_NS, "EncryptedData");
+        NodeList cipherElements = encryptedDoc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
         if (cipherElements == null || cipherElements.getLength() == 0)
             throw logger.domMissingElementError("xenc:EncryptedData");
         Element encryptedDataElement = (Element) cipherElements.item(0);
@@ -233,12 +180,12 @@ public class XMLEncryptionUtil {
 
         if (addEncryptedKeyInKeyInfo) {
             // Outer ds:KeyInfo Element to hold the EncryptionKey
-            Element sigElement = encryptedDoc.createElementNS(XMLSIG_NS, DS_KEY_INFO);
-            sigElement.setAttributeNS(XMLNS, "xmlns:ds", XMLSIG_NS);
+            Element sigElement = encryptedDoc.createElementNS(XMLSignature.XMLNS, DS_KEY_INFO);
+            sigElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", XMLSignature.XMLNS);
             sigElement.appendChild(encryptedKeyElement);
 
             // Insert the Encrypted key before the CipherData element
-            NodeList nodeList = encryptedDoc.getElementsByTagNameNS(XMLENC_NS, CIPHER_DATA_LOCALNAME);
+            NodeList nodeList = encryptedDoc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
             if (nodeList == null || nodeList.getLength() == 0)
                 throw logger.domMissingElementError("xenc:CipherData");
             Element cipherDataElement = (Element) nodeList.item(0);
@@ -321,12 +268,12 @@ public class XMLEncryptionUtil {
         Element encryptedKeyElement = cipher.martial(document, encryptedKey);
 
         // Outer ds:KeyInfo Element to hold the EncryptionKey
-        Element sigElement = encryptedDoc.createElementNS(XMLSIG_NS, DS_KEY_INFO);
-        sigElement.setAttributeNS(XMLNS, "xmlns:ds", XMLSIG_NS);
+        Element sigElement = encryptedDoc.createElementNS(XMLSignature.XMLNS, DS_KEY_INFO);
+        sigElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", XMLSignature.XMLNS);
         sigElement.appendChild(encryptedKeyElement);
 
         // Insert the Encrypted key before the CipherData element
-        NodeList nodeList = encryptedDoc.getElementsByTagNameNS(XMLENC_NS, CIPHER_DATA_LOCALNAME);
+        NodeList nodeList = encryptedDoc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
         if (nodeList == null || nodeList.getLength() == 0)
             throw logger.domMissingElementError("xenc:CipherData");
         Element cipherDataElement = (Element) nodeList.item(0);
@@ -335,7 +282,7 @@ public class XMLEncryptionUtil {
     }
 
     /**
-     * Encrypt the root document element inside a Document. <b>NOTE:</> The document root element will be replaced by
+     * Encrypt the root document element inside a Document. <b>NOTE:</b> The document root element will be replaced by
      * the
      * wrapping element.
      *
@@ -354,7 +301,7 @@ public class XMLEncryptionUtil {
     public static Element encryptElementInDocument(Document document, PublicKey publicKey, SecretKey secretKey, int keySize,
                                                    QName wrappingElementQName, boolean addEncryptedKeyInKeyInfo) throws ProcessingException, ConfigurationException {
         String wrappingElementPrefix = wrappingElementQName.getPrefix();
-        if (wrappingElementPrefix == null || wrappingElementPrefix == "")
+        if (wrappingElementPrefix == null || "".equals(wrappingElementPrefix))
             throw logger.wrongTypeError("Wrapping element prefix invalid");
 
         XMLCipher cipher = null;
@@ -379,15 +326,19 @@ public class XMLEncryptionUtil {
         // The EncryptedKey element is added
         Element encryptedKeyElement = cipher.martial(document, encryptedKey);
 
-        String wrappingElementName = wrappingElementPrefix + ":" + wrappingElementQName.getLocalPart();
-
-        // Create the wrapping element and set its attribute NS
-        Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
+        final String wrappingElementName;
 
         if (StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
             wrappingElementName = wrappingElementQName.getLocalPart();
+        } else {
+            wrappingElementName = wrappingElementPrefix + ":" + wrappingElementQName.getLocalPart();
         }
-        wrappingElement.setAttributeNS(XMLNS, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
+        // Create the wrapping element and set its attribute NS
+        Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
+
+        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
+            wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
+        }
 
         Element encryptedDocRootElement = encryptedDoc.getDocumentElement();
         // Bring in the encrypted wrapping element to wrap the root node
@@ -397,12 +348,12 @@ public class XMLEncryptionUtil {
 
         if (addEncryptedKeyInKeyInfo) {
             // Outer ds:KeyInfo Element to hold the EncryptionKey
-            Element sigElement = encryptedDoc.createElementNS(XMLSIG_NS, DS_KEY_INFO);
-            sigElement.setAttributeNS(XMLNS, "xmlns:ds", XMLSIG_NS);
+            Element sigElement = encryptedDoc.createElementNS(XMLSignature.XMLNS, DS_KEY_INFO);
+            sigElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", XMLSignature.XMLNS);
             sigElement.appendChild(encryptedKeyElement);
 
             // Insert the Encrypted key before the CipherData element
-            NodeList nodeList = encryptedDocRootElement.getElementsByTagNameNS(XMLENC_NS, CIPHER_DATA_LOCALNAME);
+            NodeList nodeList = encryptedDocRootElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
             if (nodeList == null || nodeList.getLength() == 0)
                 throw logger.domMissingElementError("xenc:CipherData");
 
@@ -423,9 +374,6 @@ public class XMLEncryptionUtil {
      * @param privateKey key need to unwrap the encryption key
      *
      * @return the document with the encrypted element replaced by the data element
-     *
-     * @throws XMLEncryptionException
-     * @throws ProcessingException
      */
     public static Element decryptElementInDocument(Document documentWithEncryptedElement, PrivateKey privateKey)
             throws ProcessingException {
@@ -442,7 +390,7 @@ public class XMLEncryptionUtil {
         Element encKeyElement = getNextElementNode(encDataElement.getNextSibling());
         if (encKeyElement == null) {
             // Search the enc data element for enc key
-            NodeList nodeList = encDataElement.getElementsByTagNameNS(XMLENC_NS, ENCRYPTED_KEY_LOCALNAME);
+            NodeList nodeList = encDataElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDKEY);
 
             if (nodeList == null || nodeList.getLength() == 0)
                 throw logger.nullValueError("Encrypted Key not found in the enc data");
@@ -514,9 +462,7 @@ public class XMLEncryptionUtil {
             }
         }
         if (publicKeyAlgo.contains("RSA"))
-            return XMLCipher.RSA_v1dot5;
-        if (publicKeyAlgo.contains("DES"))
-            return XMLCipher.TRIPLEDES_KeyWrap;
+            return RSA_ENCRYPTION_SCHEME;
         throw logger.unsupportedType("unsupported publicKey Algo:" + publicKeyAlgo);
     }
 
@@ -541,8 +487,6 @@ public class XMLEncryptionUtil {
         }
         if (algo.contains("RSA"))
             return XMLCipher.RSA_v1dot5;
-        if (algo.contains("DES"))
-            return XMLCipher.TRIPLEDES_KeyWrap;
         throw logger.unsupportedType("Secret Key with unsupported algo:" + algo);
     }
 

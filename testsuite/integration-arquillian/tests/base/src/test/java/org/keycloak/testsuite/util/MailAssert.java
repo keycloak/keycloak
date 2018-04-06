@@ -17,14 +17,17 @@
 
 package org.keycloak.testsuite.util;
 
-import java.io.IOException;
-import javax.mail.MessagingException;
+import org.jboss.logging.Logger;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMessage.RecipientType;
 import javax.mail.internet.MimeMultipart;
-import org.jboss.logging.Logger;
-import static org.junit.Assert.*;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MailAssert {
 
@@ -38,7 +41,8 @@ public class MailAssert {
                 message= SslMailServer.getLastReceivedMessage();
             } else {
                 message = MailServer.getLastReceivedMessage();
-            }            assertNotNull("There is no received email.", message);
+            }            
+            assertNotNull("There is no received email.", message);
             assertEquals(recipient, message.getRecipients(RecipientType.TO)[0].toString());
             assertEquals(from, message.getFrom()[0].toString());
 
@@ -46,6 +50,7 @@ public class MailAssert {
             if (message.getContent() instanceof MimeMultipart) {
                 MimeMultipart mimeMultipart = (MimeMultipart) message.getContent();
 
+                // TEXT content is on index 0
                 messageContent = String.valueOf(mimeMultipart.getBodyPart(0).getContent());
             } else {
                 messageContent = String.valueOf(message.getContent());
@@ -57,6 +62,9 @@ public class MailAssert {
             assertTrue(errorMessage, messageContent.contains(content));
             for (String string : messageContent.split("\n")) {
                 if (string.contains("http://")) {
+
+                    // Ampersand escaped in the text version. Needs to be replaced to have correct URL
+                    string = string.replace("&amp;", "&");
                     return string;
                 }
             }

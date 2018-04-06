@@ -53,10 +53,10 @@ public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
         events = Collections.synchronizedList(new LinkedList<Event>());
         adminEvents = Collections.synchronizedList(new LinkedList<AdminEvent>());
 
-        String excludes = config.get("excludes");
+        String[] excludes = config.getArray("exclude-events");
         if (excludes != null) {
             excludedEvents = new HashSet<>();
-            for (String e : excludes.split(",")) {
+            for (String e : excludes) {
                 excludedEvents.add(EventType.valueOf(e));
             }
         }

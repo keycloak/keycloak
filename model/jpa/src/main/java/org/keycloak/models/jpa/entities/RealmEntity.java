@@ -73,6 +73,10 @@ public class RealmEntity {
     protected boolean verifyEmail;
     @Column(name="RESET_PASSWORD_ALLOWED")
     protected boolean resetPasswordAllowed;
+    @Column(name="LOGIN_WITH_EMAIL_ALLOWED")
+    protected boolean loginWithEmailAllowed;
+    @Column(name="DUPLICATE_EMAILS_ALLOWED")
+    protected boolean duplicateEmailsAllowed;
     @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
 
@@ -98,6 +102,8 @@ public class RealmEntity {
 
     @Column(name="REVOKE_REFRESH_TOKEN")
     private boolean revokeRefreshToken;
+    @Column(name="REFRESH_TOKEN_MAX_REUSE")
+    private int refreshTokenMaxReuse;
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
     @Column(name="SSO_MAX_LIFESPAN")
@@ -116,15 +122,6 @@ public class RealmEntity {
     protected int accessCodeLifespanLogin;
     @Column(name="NOT_BEFORE")
     protected int notBefore;
-
-    @Column(name="PUBLIC_KEY", length = 4000)
-    protected String publicKeyPem;
-    @Column(name="PRIVATE_KEY", length = 4000)
-    protected String privateKeyPem;
-    @Column(name="CERTIFICATE", length = 4000)
-    protected String certificatePem;
-    @Column(name="CODE_SECRET", length = 255)
-    protected String codeSecret;
 
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
@@ -163,6 +160,9 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_GROUPS", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="GROUP_ID")})
     protected Collection<GroupEntity> defaultGroups = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    protected Collection<GroupEntity> groups = new ArrayList<>();
 
     @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
@@ -204,6 +204,9 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
 
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.ALL}, orphanRemoval = true, mappedBy = "realm")
+    Set<ComponentEntity> components = new HashSet<>();
+
     @Column(name="BROWSER_FLOW")
     protected String browserFlow;
 
@@ -219,6 +222,8 @@ public class RealmEntity {
     @Column(name="CLIENT_AUTH_FLOW")
     protected String clientAuthenticationFlow;
 
+    @Column(name="DOCKER_AUTH_FLOW")
+    protected String dockerAuthenticationFlow;
 
 
     @Column(name="INTERNATIONALIZATION_ENABLED")
@@ -231,6 +236,9 @@ public class RealmEntity {
 
     @Column(name="DEFAULT_LOCALE")
     protected String defaultLocale;
+
+    @Column(name="ALLOW_USER_MANAGED_ACCESS")
+    private boolean allowUserManagedAccess;
 
 
     public String getId() {
@@ -296,6 +304,22 @@ public class RealmEntity {
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
+    }
 
     public boolean isResetPasswordAllowed() {
         return resetPasswordAllowed;
@@ -319,6 +343,14 @@ public class RealmEntity {
 
     public void setRevokeRefreshToken(boolean revokeRefreshToken) {
         this.revokeRefreshToken = revokeRefreshToken;
+    }
+
+    public int getRefreshTokenMaxReuse() {
+        return refreshTokenMaxReuse;
+    }
+
+    public void setRefreshTokenMaxReuse(int revokeRefreshTokenCount) {
+        this.refreshTokenMaxReuse = revokeRefreshTokenCount;
     }
 
     public int getSsoSessionIdleTimeout() {
@@ -384,30 +416,6 @@ public class RealmEntity {
         this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public void setPublicKeyPem(String publicKeyPem) {
-        this.publicKeyPem = publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public void setPrivateKeyPem(String privateKeyPem) {
-        this.privateKeyPem = privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
-    }
-
-    public void setCodeSecret(String codeSecret) {
-        this.codeSecret = codeSecret;
-    }
-
     public Collection<RequiredCredentialEntity> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -437,6 +445,14 @@ public class RealmEntity {
 
     public void setDefaultGroups(Collection<GroupEntity> defaultGroups) {
         this.defaultGroups = defaultGroups;
+    }
+
+    public Collection<GroupEntity> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(Collection<GroupEntity> groups) {
+        this.groups = groups;
     }
 
     public String getPasswordPolicy() {
@@ -567,14 +583,6 @@ public class RealmEntity {
         this.attributes = attributes;
     }
 
-    public String getCertificatePem() {
-        return certificatePem;
-    }
-
-    public void setCertificatePem(String certificatePem) {
-        this.certificatePem = certificatePem;
-    }
-
     public List<IdentityProviderEntity> getIdentityProviders() {
         return this.identityProviders;
     }
@@ -642,6 +650,14 @@ public class RealmEntity {
 
     public void setAuthenticationFlows(Collection<AuthenticationFlowEntity> authenticationFlows) {
         this.authenticationFlows = authenticationFlows;
+    }
+
+    public Set<ComponentEntity> getComponents() {
+        return components;
+    }
+
+    public void setComponents(Set<ComponentEntity> components) {
+        this.components = components;
     }
 
     public String getOtpPolicyType() {
@@ -732,12 +748,29 @@ public class RealmEntity {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
 
+    public String getDockerAuthenticationFlow() {
+        return dockerAuthenticationFlow;
+    }
+
+    public RealmEntity setDockerAuthenticationFlow(String dockerAuthenticationFlow) {
+        this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
+    }
+
     public Collection<ClientTemplateEntity> getClientTemplates() {
         return clientTemplates;
     }
 
     public void setClientTemplates(Collection<ClientTemplateEntity> clientTemplates) {
         this.clientTemplates = clientTemplates;
+    }
+
+    public void setAllowUserManagedAccess(boolean allowUserManagedAccess) {
+        this.allowUserManagedAccess = allowUserManagedAccess;
+    }
+
+    public boolean isAllowUserManagedAccess() {
+        return allowUserManagedAccess;
     }
 
     @Override
@@ -757,6 +790,5 @@ public class RealmEntity {
     public int hashCode() {
         return id.hashCode();
     }
-
 }
 

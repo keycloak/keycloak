@@ -19,11 +19,11 @@ package org.keycloak.adapters.saml.wildfly;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.undertow.ServletSamlAuthMech;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 /**
@@ -37,6 +37,6 @@ public class WildflySamlAuthMech extends ServletSamlAuthMech {
 
     @Override
     protected SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext) {
-        return new WildflySamlSessionStore(exchange, sessionManagement, securityContext, idMapper, deployment);
+        return new WildflySamlSessionStore(exchange, sessionManagement, securityContext, idMapper, getIdMapperUpdater(), deployment);
     }
 }

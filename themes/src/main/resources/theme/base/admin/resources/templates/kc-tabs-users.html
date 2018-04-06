@@ -1,0 +1,11 @@
+<div >
+    <h1>{{:: 'users' | translate}}</h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: path[2] == 'users'}"><a href="#/realms/{{realm.realm}}/users">{{:: 'lookup' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'users-permissions'}" data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && access.manageUsers && access.manageAuthorization">
+            <a href="#/realms/{{realm.realm}}/users-permissions">{{:: 'authz-permissions' | translate}}</a>
+            <kc-tooltip>{{:: 'manage-permissions-users.tooltip' | translate}}</kc-tooltip>
+        </li>
+    </ul>
+</div>

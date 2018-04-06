@@ -17,17 +17,13 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.concurrent.TimeUnit;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.requiredactions.VerifyEmail;
+import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionToken;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -35,121 +31,75 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import java.net.URI;
+import java.util.Objects;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.util.concurrent.TimeUnit;
+import javax.ws.rs.core.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static Logger logger = Logger.getLogger(IdpEmailVerificationAuthenticator.class);
+
+    public static final String VERIFY_ACCOUNT_IDP_USERNAME = "VERIFY_ACCOUNT_IDP_USERNAME";
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
         KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
-        ClientSessionModel clientSession = context.getClientSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        if (realm.getSmtpConfig().size() == 0) {
-            logger.smtpNotConfigured();
+        if (realm.getSmtpConfig().isEmpty()) {
+            ServicesLogger.LOGGER.smtpNotConfigured();
             context.attempted();
             return;
         }
 
-        // Create action cookie to detect if email verification happened in same browser
-        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getClientSession().getId());
+        if (Objects.equals(authSession.getAuthNote(VERIFY_ACCOUNT_IDP_USERNAME), brokerContext.getUsername())) {
+            UserModel existingUser = getExistingUser(session, realm, authSession);
 
-        VerifyEmail.setupKey(clientSession);
+            logger.debugf("User '%s' confirmed that wants to link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
+                    brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
 
-        UserModel existingUser = getExistingUser(session, realm, clientSession);
-
-        String link = UriBuilder.fromUri(context.getActionUrl())
-                .queryParam(Constants.KEY, clientSession.getNote(Constants.VERIFY_EMAIL_KEY))
-                .build().toString();
-
-        EventBuilder event = context.getEvent().clone().event(EventType.SEND_IDENTITY_PROVIDER_LINK)
-                .user(existingUser)
-                .detail(Details.USERNAME, existingUser.getUsername())
-                .detail(Details.EMAIL, existingUser.getEmail())
-                .detail(Details.CODE_ID, clientSession.getId())
-                .removeDetail(Details.AUTH_METHOD)
-                .removeDetail(Details.AUTH_TYPE);
-
-        long expiration = TimeUnit.SECONDS.toMinutes(context.getRealm().getAccessCodeLifespanUserAction());
-        try {
-
-            context.getSession().getProvider(EmailTemplateProvider.class)
-                    .setRealm(realm)
-                    .setUser(existingUser)
-                    .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
-                    .sendConfirmIdentityBrokerLink(link, expiration);
-
-            event.success();
-        } catch (EmailException e) {
-            event.error(Errors.EMAIL_SEND_FAILED);
-
-            logger.confirmBrokerEmailFailed(e);
-            Response challenge = context.form()
-                    .setError(Messages.EMAIL_SENT_ERROR)
-                    .createErrorPage();
-            context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
+            context.setUser(existingUser);
+            context.success();
             return;
         }
 
-        Response challenge = context.form()
-                .setStatus(Response.Status.OK)
-                .setAttribute(LoginFormsProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
-                .createIdpLinkEmailPage();
-        context.forceChallenge(challenge);
+        UserModel existingUser = getExistingUser(session, realm, authSession);
+
+        // Do not allow resending e-mail by simple page refresh
+        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), existingUser.getEmail())) {
+            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, existingUser.getEmail());
+            sendVerifyEmail(session, context, existingUser, brokerContext);
+        } else {
+            showEmailSentPage(context, brokerContext);
+        }
     }
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
-        String key = queryParams.getFirst(Constants.KEY);
-        ClientSessionModel clientSession = context.getClientSession();
-        RealmModel realm = context.getRealm();
-        KeycloakSession session = context.getSession();
+        logger.debugf("Re-sending email requested for user, details follow");
 
-        if (key != null) {
-            String keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
-            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
-            if (key.equals(keyFromSession)) {
-                UserModel existingUser = getExistingUser(session, realm, clientSession);
+        // This will allow user to re-send email again
+        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
 
-                logger.debugf("User '%s' confirmed that wants to link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
-                        brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
-
-                String actionCookieValue = LoginActionsService.getActionCookie(session.getContext().getRequestHeaders(), realm, session.getContext().getUri(), context.getConnection());
-                if (actionCookieValue == null || !actionCookieValue.equals(clientSession.getId())) {
-                    clientSession.setNote(IS_DIFFERENT_BROWSER, "true");
-                }
-
-                // User successfully confirmed linking by email verification. His email was defacto verified
-                existingUser.setEmailVerified(true);
-
-                context.setUser(existingUser);
-                context.success();
-            } else {
-                logger.keyParamDoesNotMatch();
-                Response challengeResponse = context.form()
-                        .setError(Messages.INVALID_ACCESS_CODE)
-                        .createErrorPage();
-                context.failureChallenge(AuthenticationFlowError.IDENTITY_PROVIDER_ERROR, challengeResponse);
-            }
-        } else {
-            Response challengeResponse = context.form()
-                    .setError(Messages.MISSING_PARAMETER, Constants.KEY)
-                    .createErrorPage();
-            context.failureChallenge(AuthenticationFlowError.IDENTITY_PROVIDER_ERROR, challengeResponse);
-        }
+        authenticateImpl(context, serializedCtx, brokerContext);
     }
 
     @Override
@@ -161,4 +111,70 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return false;
     }
+
+    private void sendVerifyEmail(KeycloakSession session, AuthenticationFlowContext context, UserModel existingUser, BrokeredIdentityContext brokerContext) throws UriBuilderException, IllegalArgumentException {
+        RealmModel realm = session.getContext().getRealm();
+        UriInfo uriInfo = session.getContext().getUri();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(IdpVerifyAccountLinkActionToken.TOKEN_TYPE);
+        int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
+
+        EventBuilder event = context.getEvent().clone().event(EventType.SEND_IDENTITY_PROVIDER_LINK)
+                .user(existingUser)
+                .detail(Details.USERNAME, existingUser.getUsername())
+                .detail(Details.EMAIL, existingUser.getEmail())
+                .detail(Details.CODE_ID, authSession.getParentSession().getId())
+                .removeDetail(Details.AUTH_METHOD)
+                .removeDetail(Details.AUTH_TYPE);
+
+        String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
+        IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
+          existingUser.getId(), absoluteExpirationInSecs, authSessionEncodedId,
+          brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
+        );
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                authSession.getClient().getClientId(), authSession.getTabId());
+        String link = builder
+                .queryParam(Constants.EXECUTION, context.getExecution().getId())
+                .build(realm.getName()).toString();
+        long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
+
+        try {
+            context.getSession().getProvider(EmailTemplateProvider.class)
+                    .setRealm(realm)
+                    .setAuthenticationSession(authSession)
+                    .setUser(existingUser)
+                    .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
+                    .sendConfirmIdentityBrokerLink(link, expirationInMinutes);
+
+            event.success();
+        } catch (EmailException e) {
+            event.error(Errors.EMAIL_SEND_FAILED);
+
+            ServicesLogger.LOGGER.confirmBrokerEmailFailed(e);
+            Response challenge = context.form()
+                    .setError(Messages.EMAIL_SENT_ERROR)
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
+            context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
+            return;
+        }
+
+        showEmailSentPage(context, brokerContext);
+    }
+
+
+    protected void showEmailSentPage(AuthenticationFlowContext context, BrokeredIdentityContext brokerContext) {
+        String accessCode = context.generateAccessCode();
+        URI action = context.getActionUrl(accessCode);
+
+        Response challenge = context.form()
+                .setStatus(Response.Status.OK)
+                .setAttribute(LoginFormsProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
+                .setActionUri(action)
+                .setExecution(context.getExecution().getId())
+                .createIdpLinkEmailPage();
+        context.forceChallenge(challenge);
+    }
+
 }

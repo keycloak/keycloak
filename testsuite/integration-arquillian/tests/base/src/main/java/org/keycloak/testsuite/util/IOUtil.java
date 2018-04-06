@@ -33,7 +33,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -82,13 +89,18 @@ public class IOUtil {
         }
     }
 
-    public static String documentToString(Document newDoc) throws TransformerException {
-        DOMSource domSource = new DOMSource(newDoc);
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        StringWriter sw = new StringWriter();
-        StreamResult sr = new StreamResult(sw);
-        transformer.transform(domSource, sr);
-        return sw.toString();
+    public static String documentToString(Document newDoc) {
+        try {
+            DOMSource domSource = new DOMSource(newDoc);
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            StringWriter sw = new StringWriter();
+            StreamResult sr = new StreamResult(sw);
+            transformer.transform(domSource, sr);
+            return sw.toString();
+        } catch (TransformerException e) {
+            log.error("Can't transform document to String");
+            throw new RuntimeException(e);
+        }
     }
 
     public static void modifyDocElementAttribute(Document doc, String tagName, String attributeName, String regex, String replacement) {
@@ -104,6 +116,29 @@ public class IOUtil {
             return;
         }
         node.setTextContent(node.getTextContent().replace(regex, replacement));
+    }
+
+    public static void removeNodeByAttributeValue(Document doc, String parentTag, String tagName, String attributeName, String value){
+        NodeList parentNodes = doc.getElementsByTagName(parentTag);
+        if (parentNodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + parentTag);
+            return;
+        }
+
+        Element parentElement = (Element) parentNodes.item(0);
+        if (parentElement == null) {
+            log.warn("Not able to find element: " + parentTag);
+            return;
+        }
+
+        NodeList nodes = doc.getElementsByTagName(tagName);
+        for (int i = 0; i < nodes.getLength(); i++){
+            Node node = nodes.item(i).getAttributes().getNamedItem(attributeName);
+            if (node.getTextContent().equals(value)){
+                parentElement.removeChild(nodes.item(i));
+                return;
+            }
+        }
     }
 
     public static void modifyDocElementValue(Document doc, String tagName, String regex, String replacement) {
@@ -122,7 +157,23 @@ public class IOUtil {
         node.setTextContent(node.getTextContent().replace(regex, replacement));
     }
 
-    public static void removeElementFromDoc(Document doc, String parentTag, String removeNode) {
+    public static void setDocElementAttributeValue(Document doc, String tagName, String attributeName, String value) {
+        NodeList nodes = doc.getElementsByTagName(tagName);
+        if (nodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + tagName);
+            return;
+        }
+
+        Element node = (Element) nodes.item(0);
+        if (node == null) {
+            log.warn("Not able to find element: " + tagName);
+            return;
+        }
+
+        node.setAttribute(attributeName, value);
+    }
+
+    public static void removeElementsFromDoc(Document doc, String parentTag, String removeNode) {
         NodeList nodes = doc.getElementsByTagName(parentTag);
         if (nodes.getLength() != 1) {
             log.warn("Not able or ambiguous to find element: " + parentTag);
@@ -136,18 +187,23 @@ public class IOUtil {
         }
 
         NodeList removeNodes = parentElement.getElementsByTagName(removeNode);
-        if (removeNodes.getLength() != 1) {
-            log.warn("Not able or ambiguous to find element: " + removeNode + " within node " + parentTag);
-            return;
-        }
-
-        Element removeElement = (Element) removeNodes.item(0);
-        if (removeElement == null) {
+        if (removeNodes == null) {
             log.warn("Not able to find element: " + removeNode + " within node " + parentTag);
             return;
         }
 
-        parentElement.removeChild(removeElement);
+        for (int i = 0; i < removeNodes.getLength();){
+            Element removeElement = (Element) removeNodes.item(i);
+            if (removeElement == null) {
+                log.warn("Not able to find element: " + removeNode + " within node " + parentTag);
+                return;
+            }
+
+            log.info("Removing node " + removeNode);
+            parentElement.removeChild(removeElement);
+
+        }
+
     }
 
     public static String getElementTextContent(Document doc, String path) {
@@ -171,20 +227,46 @@ public class IOUtil {
         return currentElement.getTextContent();
     }
 
-    public static void appendChildInDocument(Document doc, String parentTag, Element node) {
-        NodeList nodes = doc.getElementsByTagName(parentTag);
-        if (nodes.getLength() != 1) {
-            log.warn("Not able or ambiguous to find element: " + parentTag);
+    public static void appendChildInDocument(Document doc, String parentPath, Element node) {
+        String[] pathSegments = parentPath.split("/");
+
+        Element currentElement = (Element) doc.getElementsByTagName(pathSegments[0]).item(0);
+        if (currentElement == null) {
+            log.warn("Not able to find element: " + pathSegments[0] + " in document");
             return;
         }
 
-        Element parentElement = (Element) nodes.item(0);
-        if (parentElement == null) {
-            log.warn("Not able to find element: " + parentTag);
+        for (int i = 1; i < pathSegments.length; i++) {
+            currentElement = (Element) currentElement.getElementsByTagName(pathSegments[i]).item(0);
+
+            if (currentElement == null) {
+                log.warn("Not able to find element: " + pathSegments[i] + " in " + pathSegments[i - 1]);
+                return;
+            }
+        }
+
+        currentElement.appendChild(node);
+    }
+
+    public static void removeElementFromDoc(Document doc, String path) {
+        String[] pathSegments = path.split("/");
+
+        Element currentElement = (Element) doc.getElementsByTagName(pathSegments[0]).item(0);
+        if (currentElement == null) {
+            log.warn("Not able to find element: " + pathSegments[0] + " in document");
             return;
         }
 
-        parentElement.appendChild(node);
+        for (int i = 1; i < pathSegments.length; i++) {
+            currentElement = (Element) currentElement.getElementsByTagName(pathSegments[i]).item(0);
+
+            if (currentElement == null) {
+                log.warn("Not able to find element: " + pathSegments[i] + " in " + pathSegments[i - 1]);
+                return;
+            }
+        }
+
+        currentElement.getParentNode().removeChild(currentElement);
     }
 
     public static void execCommand(String command, File dir) throws IOException, InterruptedException {

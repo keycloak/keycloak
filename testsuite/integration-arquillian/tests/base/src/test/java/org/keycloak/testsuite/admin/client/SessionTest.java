@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +28,8 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class SessionTest extends AbstractClientTest {
-    private static boolean testUserCreated = false;
+
 
     @Page
     protected AccountManagement testRealmAccountManagementPage;
@@ -45,13 +46,18 @@ public class SessionTest extends AbstractClientTest {
     @Before
     public void init() {
         // make user test user exists in test realm
-        if (!testUserCreated) {
-            createTestUserWithAdminClient();
+        createTestUserWithAdminClient();
+        getCleanup().addUserId(testUser.getId());
 
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.userResourcePath(testUser.getId()), ResourceType.USER);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.userResetPasswordPath(testUser.getId()), ResourceType.USER);
-        }
-        testUserCreated = true;
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.userResourcePath(testUser.getId()), ResourceType.USER);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.userResetPasswordPath(testUser.getId()), ResourceType.USER);
+    }
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmAccountManagementPage.setAuthRealm(getRealmId());
+        loginPage.setAuthRealm(getRealmId());
     }
 
     @Test

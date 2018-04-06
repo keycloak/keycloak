@@ -17,23 +17,16 @@
 
 package org.keycloak.models.jpa.session;
 
-import java.io.Serializable;
-import java.util.Collection;
+import org.keycloak.storage.jpa.KeyUtils;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
-import org.keycloak.models.jpa.entities.UserEntity;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -41,7 +34,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 @NamedQueries({
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
-        @NamedQuery(name="deleteDetachedUserSessions", query="delete from PersistentUserSessionEntity sess where sess.userSessionId NOT IN (select c.userSessionId from PersistentClientSessionEntity c)"),
+        @NamedQuery(name="deleteDetachedUserSessions", query="delete from PersistentUserSessionEntity sess where NOT EXISTS (select c.userSessionId from PersistentClientSessionEntity c where c.userSessionId = sess.userSessionId)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
         @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline order by sess.userSessionId"),
         @NamedQuery(name="updateUserSessionsTimestamps", query="update PersistentUserSessionEntity c set lastSessionRefresh = :lastSessionRefresh"),
@@ -59,7 +52,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "REALM_ID", length = 36)
     protected String realmId;
 
-    @Column(name="USER_ID", length = 36)
+    @Column(name="USER_ID", length = 255)
     protected String userId;
 
     @Column(name = "LAST_SESSION_REFRESH")
@@ -93,6 +86,7 @@ public class PersistentUserSessionEntity {
     }
 
     public void setUserId(String userId) {
+        KeyUtils.assertValidKey(userId);
         this.userId = userId;
     }
 

@@ -24,7 +24,11 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +48,16 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setRootUrl("http://root");
 
         client = createClient(c);
+        getCleanup().addClientUuid(client.getId());
+
+        c = new ClientRepresentation();
+        c.setEnabled(true);
+        c.setClientId("SomeOtherClient");
+        c.setSecret("RegistrationAccessTokenTestClientSecret");
+        c.setRootUrl("http://root");
+
+        c = createClient(c);
+        getCleanup().addClientUuid(c.getId());
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
@@ -68,18 +82,41 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
+        setTimeOffset(10);
+
         ClientRepresentation rep = reg.get(client.getClientId());
         assertNotNull(rep);
-        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
 
-        // check registration access token is updated
-        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
-        assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
+        assertEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+        assertNotNull(rep.getRegistrationAccessToken());
+
+        // KEYCLOAK-4984 check registration access token is not updated
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), true);
+    }
+
+    @Test
+    public void getClientWrongClient() throws ClientRegistrationException {
+        try {
+            reg.get("SomeOtherClient");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void getClientMissingClient() throws ClientRegistrationException {
+        try {
+            reg.get("nosuch");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
     }
 
     @Test
     public void getClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.get(client.getClientId());
             fail("Expected 401");
@@ -104,9 +141,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void updateClientWithBadRegistrationToken() throws ClientRegistrationException {
-        client.setRootUrl("http://newroot");
-
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.update(client);
             fail("Expected 401");
@@ -125,7 +162,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void deleteClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.delete(client);
             fail("Expected 401");

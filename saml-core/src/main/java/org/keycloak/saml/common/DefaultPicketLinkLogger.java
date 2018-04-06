@@ -345,8 +345,8 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      *@see org.picketlink.identity.federation.PicketLinkLogger#parserUnknownEndElement(java.lang.String)
      */
     @Override
-    public RuntimeException parserUnknownEndElement(String endElementName) {
-        return new RuntimeException(ErrorCodes.UNKNOWN_END_ELEMENT + endElementName);
+    public RuntimeException parserUnknownEndElement(String endElementName, Location location) {
+        return new RuntimeException(ErrorCodes.UNKNOWN_END_ELEMENT + endElementName + "::location=" + location);
     }
 
     /*
@@ -407,7 +407,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      */
     @Override
     public ParsingException parserExpectedEndTag(String tagName) {
-        return new ParsingException(ErrorCodes.EXPECTED_END_TAG + "RequestAbstract or XACMLAuthzDecisionQuery");
+        return new ParsingException(ErrorCodes.EXPECTED_END_TAG + tagName);
     }
 
     /*
@@ -447,7 +447,12 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      */
     @Override
     public RuntimeException parserExpectedTag(String tag, String foundElementTag) {
-        return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ">.  Found <" + foundElementTag + ">");
+        return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ".  Found <" + foundElementTag + ">");
+    }
+
+    @Override
+    public RuntimeException parserExpectedNamespace(String ns, String foundElementNs) {
+        return new RuntimeException(ErrorCodes.EXPECTED_NAMESPACE + ns + ">.  Found <" + foundElementNs + ">");
     }
 
     /*
@@ -2378,4 +2383,10 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
         return new ProcessingException("Wrong audience [" + serviceURL + "].");
     }
 
+    @Override
+    public ProcessingException samlExtensionUnknownChild(Class<?> clazz) {
+        return new ProcessingException("Unknown child type specified for extension: " 
+          + (clazz == null ? "<null>" : clazz.getSimpleName())
+          + ".");
+    }
 }

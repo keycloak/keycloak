@@ -17,18 +17,16 @@
 
 package org.keycloak.testsuite.admin.authentication;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
+
+import javax.ws.rs.BadRequestException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,8 +55,6 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
             authMgmtResource.addExecution("registration2", data2);
             Assert.fail("Not expected to add execution of type 'registration-profile-action' under top flow");
         } catch (BadRequestException bre) {
-            String errorMessage = bre.getResponse().readEntity(String.class);
-            Assert.assertEquals("No authentication provider found for id: registration-profile-action", errorMessage);
         }
 
         // Should success to add execution under form flow

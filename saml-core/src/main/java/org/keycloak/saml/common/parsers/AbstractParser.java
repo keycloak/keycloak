@@ -21,6 +21,7 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
@@ -31,10 +32,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
-
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.regex.Pattern;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import org.w3c.dom.Node;
 
 /**
  * Base class for parsers
@@ -42,107 +46,110 @@ import java.security.PrivilegedAction;
  * @author Anil.Saldhana@redhat.com
  * @since Oct 12, 2010
  */
-public abstract class AbstractParser implements ParserNamespaceSupport {
+public abstract class AbstractParser implements StaxParser {
 
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    /**
-     * Get the JAXP {@link XMLInputFactory}
-     *
-     * @return
-     */
-    protected XMLInputFactory getXMLInputFactory() {
-        boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = getTCCL();
-        try {
-            if (tccl_jaxp) {
-                setTCCL(getClass().getClassLoader());
-            }
-            return XMLInputFactory.newInstance();
-        } finally {
-            if (tccl_jaxp) {
-                setTCCL(prevTCCL);
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY = new ThreadLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() {
+            return getXMLInputFactory();
+        }
+
+        /**
+         * Get the JAXP {@link XMLInputFactory}
+         *
+         * @return
+         */
+        private XMLInputFactory getXMLInputFactory() {
+            boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                    .equalsIgnoreCase("true");
+            ClassLoader prevTCCL = SecurityActions.getTCCL();
+            try {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(AbstractParser.class.getClassLoader());
+                }
+                return XMLInputFactory.newInstance();
+            } finally {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(prevTCCL);
+                }
             }
         }
-    }
+    };
 
     /**
      * Parse an InputStream for payload
      *
-     * @param configStream
+     * @param stream
      *
      * @return
      *
      * @throws {@link IllegalArgumentException}
      * @throws {@link IllegalArgumentException} when the configStream is null
      */
-    public Object parse(InputStream configStream) throws ParsingException {
-        XMLEventReader xmlEventReader = createEventReader(configStream);
+    public Object parse(InputStream stream) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(stream);
         return parse(xmlEventReader);
     }
 
-    public XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
+    public Object parse(Source source) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(source);
+        return parse(xmlEventReader);
+    }
+
+    public Object parse(Node node) throws ParsingException {
+        return parse(new DOMSource(node));
+    }
+
+    public static XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
         if (configStream == null)
             throw logger.nullArgumentError("InputStream");
 
         XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(configStream);
 
+        return filterWhitespaces(xmlEventReader);
+    }
+
+    public XMLEventReader createEventReader(Source source) throws ParsingException {
+        if (source == null)
+            throw logger.nullArgumentError("Source");
+
+        XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(source);
+
+        return filterWhitespaces(xmlEventReader);
+    }
+
+    private static final Pattern WHITESPACE_ONLY = Pattern.compile("\\s*");
+
+    /**
+     * Creates a derived {@link XMLEventReader} that ignores all events except for: {@link StartElement},
+     * {@link EndElement}, and non-empty and non-whitespace-only {@link Characters}.
+     * 
+     * @param xmlEventReader Original {@link XMLEventReader}
+     * @return Derived {@link XMLEventReader}
+     * @throws XMLStreamException
+     */
+    private static XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws ParsingException {
+        XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
+
         try {
-            xmlEventReader = filterWhitespaces(xmlEventReader);
-        } catch (XMLStreamException e) {
-            throw logger.parserException(e);
-        }
-
-        return xmlEventReader;
-    }
-
-    private ClassLoader getTCCL() {
-        if (System.getSecurityManager() != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
+            xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
+                @Override
+                public boolean accept(XMLEvent xmlEvent) {
+                    // We are going to disregard characters that are new line and whitespace
+                    if (xmlEvent.isCharacters()) {
+                        Characters chars = xmlEvent.asCharacters();
+                        String data = chars.getData();
+                        return data != null && ! WHITESPACE_ONLY.matcher(data).matches();
+                    } else {
+                        return xmlEvent.isStartElement() || xmlEvent.isEndElement();
+                    }
                 }
             });
-        } else {
-            return Thread.currentThread().getContextClassLoader();
+        } catch (XMLStreamException ex) {
+            throw logger.parserException(ex);
         }
-    }
-
-    private void setTCCL(final ClassLoader paramCl) {
-        if (System.getSecurityManager() != null) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread.currentThread().setContextClassLoader(paramCl);
-                    return null;
-                }
-            });
-        } else {
-            Thread.currentThread().setContextClassLoader(paramCl);
-        }
-    }
-
-    protected XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws XMLStreamException {
-        XMLInputFactory xmlInputFactory = getXMLInputFactory();
-
-        xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
-            public boolean accept(XMLEvent xmlEvent) {
-                // We are going to disregard characters that are new line and whitespace
-                if (xmlEvent.isCharacters()) {
-                    Characters chars = xmlEvent.asCharacters();
-                    String data = chars.getData();
-                    data = valid(data) ? data.trim() : null;
-                    return valid(data);
-                } else {
-                    return xmlEvent.isStartElement() || xmlEvent.isEndElement();
-                }
-            }
-
-            private boolean valid(String str) {
-                return str != null && str.length() > 0;
-            }
-
-        });
 
         // Handle IBM JDK bug with Stax parsing when EventReader presented
         if (Environment.IS_IBM_JAVA) {

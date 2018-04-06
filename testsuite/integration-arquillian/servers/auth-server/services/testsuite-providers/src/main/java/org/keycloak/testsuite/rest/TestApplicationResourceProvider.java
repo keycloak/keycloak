@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
@@ -27,8 +28,8 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -36,11 +37,10 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -68,21 +68,21 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Path("/admin/k_logout")
     public void adminLogout(String data) throws JWSInputException {
         adminLogoutActions.add(new JWSInput(data).readJsonContent(LogoutAction.class));
     }
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Path("/admin/k_push_not_before")
     public void adminPushNotBefore(String data) throws JWSInputException {
         adminPushNotBeforeActions.add(new JWSInput(data).readJsonContent(PushNotBeforeAction.class));
     }
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Path("/admin/k_test_available")
     public void testAvailable(String data) throws JWSInputException {
         adminTestAvailabilityAction.add(new JWSInput(data).readJsonContent(TestAvailabilityAction.class));
@@ -118,7 +118,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Produces(MediaType.TEXT_HTML)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
     public String post(@PathParam("action") String action) {
         String title = "APP_REQUEST";
@@ -147,7 +147,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Produces(MediaType.TEXT_HTML)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
     public String get(@PathParam("action") String action) {
         //String requestUri = session.getContext().getUri().getRequestUri().toString();
@@ -165,6 +165,33 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    @GET
+    @NoCache
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    @Path("/get-account-profile")
+    public String getAccountProfile(@QueryParam("token") String token, @QueryParam("account-uri") String accountUri) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("function getProfile() {\n");
+        sb.append(" var req = new XMLHttpRequest();\n");
+        sb.append(" req.open('GET', '" + accountUri + "', false);\n");
+        if (token != null) {
+            sb.append(" req.setRequestHeader('Authorization', 'Bearer " + token + "');\n");
+        }
+        sb.append(" req.setRequestHeader('Accept', 'application/json');\n");
+        sb.append(" req.send(null);\n");
+        sb.append(" document.getElementById('profileOutput').innerHTML=\"<span id='innerOutput'>\" + req.status + '///' + req.responseText; + \"</span>\"\n");
+        sb.append("}");
+        String jsScript = sb.toString();
+
+        sb = new StringBuilder();
+        sb.append("<html><head><title>Account Profile JS Test</title><script>\n")
+                .append(jsScript)
+                .append( "</script></head>\n")
+                .append("<body onload='getProfile()'><div id='profileOutput'></div></body>")
+                .append("</html>");
         return sb.toString();
     }
 

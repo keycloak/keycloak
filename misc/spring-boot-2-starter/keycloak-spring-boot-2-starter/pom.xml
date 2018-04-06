@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-spring-boot-2-starter-parent</artifactId>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
+    </parent>
+    <artifactId>keycloak-spring-boot-2-starter</artifactId>
+    <name>Keycloak :: Spring :: Boot :: 2 :: Default ::  Starter</name>
+    <description>Spring Boot 2 Default Starter for Keycloak</description>
+
+    <properties>
+      <spring-boot.version>2.0.0.RELEASE</spring-boot.version>
+    </properties>
+
+    <dependencies>
+      <dependency>
+          <groupId>org.keycloak</groupId>
+          <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+      </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
+        </dependency>
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter</artifactId>
+          <version>${spring-boot.version}</version>
+      </dependency>    
+      <dependency>
+          <groupId>org.keycloak</groupId>
+          <artifactId>spring-boot-container-bundle</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.keycloak</groupId>
+          <artifactId>keycloak-spring-security-adapter</artifactId>
+      </dependency>
+    </dependencies>
+</project>

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -32,6 +32,7 @@
 
     <properties>
         <timestamp>${maven.build.timestamp}</timestamp>
+        <skip.security-manager.tests>true</skip.security-manager.tests>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>
     <dependencies>
@@ -53,6 +54,22 @@
             <groupId>org.apache.santuario</groupId>
             <artifactId>xmlsec</artifactId>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>
@@ -69,6 +86,35 @@
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>without-security-manager</id>
+                        <goals><goal>test</goal></goals>
+                        <configuration></configuration>
+                    </execution>
+                    <execution>
+                        <id>with-security-manager-all-permissions</id>
+                        <goals><goal>test</goal></goals>
+                        <configuration>
+                            <argLine>-Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/all-permissions.policy</argLine>
+                            <test>SecurityActionsTest</test>
+                            <skip>${skip.security-manager.tests}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>with-security-manager-named-permissions</id>
+                        <goals><goal>test</goal></goals>
+                        <configuration>
+                            <argLine>-Djava.security.debug=access -Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/named-permissions.policy</argLine>
+                            <test>SecurityActionsTest</test>
+                            <skip>${skip.security-manager.tests}</skip>
+                        </configuration>                        
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

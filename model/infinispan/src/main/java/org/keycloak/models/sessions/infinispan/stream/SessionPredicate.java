@@ -17,18 +17,25 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
-import java.io.Serializable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.function.Predicate;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class SessionPredicate implements Predicate<Map.Entry<String, SessionEntity>>, Serializable {
+@SerializeWith(SessionPredicate.ExternalizerImpl.class)
+public class SessionPredicate<S extends SessionEntity> implements Predicate<Map.Entry<String, SessionEntityWrapper<S>>> {
 
-    private String realm;
+    private final String realm;
 
     private SessionPredicate(String realm) {
         this.realm = realm;
@@ -39,8 +46,35 @@ public class SessionPredicate implements Predicate<Map.Entry<String, SessionEnti
     }
 
     @Override
-    public boolean test(Map.Entry<String, SessionEntity> entry) {
-        return realm.equals(entry.getValue().getRealm());
+    public boolean test(Map.Entry<String, SessionEntityWrapper<S>> entry) {
+        return realm.equals(entry.getValue().getEntity().getRealmId());
     }
 
+    public static class ExternalizerImpl implements Externalizer<SessionPredicate> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, SessionPredicate obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.realm, output);
+
+        }
+
+        @Override
+        public SessionPredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public SessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            SessionPredicate res = new SessionPredicate(MarshallUtil.unmarshallString(input));
+            return res;
+        }
+    }
 }

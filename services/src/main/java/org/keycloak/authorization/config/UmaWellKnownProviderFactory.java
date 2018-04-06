@@ -27,6 +27,9 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class UmaWellKnownProviderFactory implements WellKnownProviderFactory {
+
+    public static final String PROVIDER_ID = "uma2-configuration";
+
     @Override
     public WellKnownProvider create(KeycloakSession session) {
         return new UmaWellKnownProvider(session);
@@ -49,6 +52,6 @@ public class UmaWellKnownProviderFactory implements WellKnownProviderFactory {
 
     @Override
     public String getId() {
-        return "uma-configuration";
+        return PROVIDER_ID;
     }
 }

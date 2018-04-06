@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.exportimport;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-
 import org.junit.Assert;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -34,8 +25,6 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -46,21 +35,35 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import org.keycloak.common.Profile;
 
 /**
  *
@@ -151,6 +154,8 @@ public class ExportImportUtil {
 
         Assert.assertNull(realmRsc.users().get(wburke.getId()).roles().getAll().getRealmMappings());
 
+        Assert.assertEquals((Object) 159, wburke.getNotBefore());
+
         UserRepresentation loginclient = findByUsername(realmRsc, "loginclient");
         // user with creation timestamp as string in import
         Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());
@@ -164,13 +169,13 @@ public class ExportImportUtil {
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
         // Test attributes
-        Map<String, List<String>> attrs = wburke.getAttributesAsListValues();
+        Map<String, List<String>> attrs = wburke.getAttributes();
         Assert.assertEquals(1, attrs.size());
         List<String> attrVals = attrs.get("email");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("bburke@redhat.com", attrVals.get(0));
 
-        attrs = admin.getAttributesAsListValues();
+        attrs = admin.getAttributes();
         Assert.assertEquals(2, attrs.size());
         attrVals = attrs.get("key1");
         Assert.assertEquals(1, attrVals.size());
@@ -259,33 +264,34 @@ public class ExportImportUtil {
         Assert.assertEquals("googleId", google.getConfig().get("clientId"));
         Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
 
+        //////////////////
         // Test federation providers
+        // on import should convert UserfederationProviderRepresentation to Component model
         List<UserFederationProviderRepresentation> fedProviders = realm.getUserFederationProviders();
-        Assert.assertTrue(fedProviders.size() == 2);
-        UserFederationProviderRepresentation ldap1 = fedProviders.get(0);
-        Assert.assertEquals("MyLDAPProvider1", ldap1.getDisplayName());
-        Assert.assertEquals("ldap", ldap1.getProviderName());
-        Assert.assertEquals(1, ldap1.getPriority());
-        Assert.assertEquals("ldap://foo", ldap1.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertTrue(fedProviders == null || fedProviders.size() == 0);
+        List<ComponentRepresentation> storageProviders = realmRsc.components().query(realm.getId(), UserStorageProvider.class.getName());
+        Assert.assertTrue(storageProviders.size() == 2);
+        ComponentRepresentation ldap1 = storageProviders.get(0);
+        ComponentRepresentation ldap2 = storageProviders.get(1);
+        if (!"MyLDAPProvider1".equals(ldap1.getName())) {
+            ldap2 = ldap1;
+            ldap1 = storageProviders.get(1);
+        }
+        Assert.assertEquals("MyLDAPProvider1", ldap1.getName());
+        Assert.assertEquals("ldap", ldap1.getProviderId());
+        Assert.assertEquals("1", ldap1.getConfig().getFirst("priority"));
+        Assert.assertEquals("ldap://foo", ldap1.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
-        UserFederationProviderRepresentation ldap2 = fedProviders.get(1);
-        Assert.assertEquals("MyLDAPProvider2", ldap2.getDisplayName());
-        Assert.assertEquals("ldap://bar", ldap2.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertEquals("MyLDAPProvider2", ldap2.getName());
+        Assert.assertEquals("ldap://bar", ldap2.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
         // Test federation mappers
-        List<UserFederationMapperRepresentation> fedMappers1 = realmRsc.userFederation().get(ldap1.getId()).getMappers();
-        Assert.assertTrue(fedMappers1.size() == 1);
-        UserFederationMapperRepresentation fullNameMapper = fedMappers1.iterator().next();
+        List<ComponentRepresentation> fedMappers1 = realmRsc.components().query(ldap1.getId(), LDAPStorageMapper.class.getName());
+        ComponentRepresentation fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
-        Assert.assertEquals(FullNameLDAPFederationMapperFactory.PROVIDER_ID, fullNameMapper.getFederationMapperType());
-        //Assert.assertEquals(ldap1.getId(), fullNameMapper.getFederationProviderId());
-        Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
-
-        // All builtin LDAP mappers should be here
-        List<UserFederationMapperRepresentation> fedMappers2 = realmRsc.userFederation().get(ldap2.getId()).getMappers();
-        Assert.assertTrue(fedMappers2.size() > 3);
-        List<UserFederationMapperRepresentation> allMappers = realm.getUserFederationMappers();
-        Assert.assertEquals(allMappers.size(), fedMappers1.size() + fedMappers2.size());
+        Assert.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
+        Assert.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
+        /////////////////
 
         // Assert that federation link wasn't created during import
         Assert.assertNull(testingClient.testing().getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
@@ -374,8 +380,10 @@ public class ExportImportUtil {
         UserRepresentation linked = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
-
-        assertAuthorizationSettings(realmRsc);
+        
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            assertAuthorizationSettings(realmRsc);
+        }
     }
 
     private static boolean isProtocolMapperGranted(Map<String, Object> consent, ProtocolMapperRepresentation mapperRep) {
@@ -621,11 +629,15 @@ public class ExportImportUtil {
         assertPredicate(scopes, scopePredicates);
 
         List<PolicyRepresentation> policies = authzResource.policies().policies();
-        Assert.assertEquals(10, policies.size());
+        Assert.assertEquals(14, policies.size());
         List<Predicate<PolicyRepresentation>> policyPredicates = new ArrayList<>();
         policyPredicates.add(policyRepresentation -> "Any Admin Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Any User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(representation -> "Client and Realm Role Policy".equals(representation.getName()));
+        policyPredicates.add(representation -> "Client Test Policy".equals(representation.getName()));
+        policyPredicates.add(representation -> "Group Policy Test".equals(representation.getName()));
         policyPredicates.add(policyRepresentation -> "Only Premium User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "wburke policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "All Users Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Premium Resource Permission".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Administrative Resource Permission".equals(policyRepresentation.getName()));

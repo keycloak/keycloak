@@ -17,26 +17,26 @@
 
 package org.keycloak.services;
 
-import java.io.IOException;
-import java.net.URI;
-import javax.naming.NamingException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Once;
+import org.keycloak.email.EmailException;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.models.ModelDuplicateException;
+
+import javax.naming.NamingException;
+import java.io.IOException;
+import java.net.URI;
 
 import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
-
-import org.jboss.logging.annotations.Once;
-import org.keycloak.email.EmailException;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.models.ModelDuplicateException;
 
 
 /**
@@ -47,7 +47,7 @@ import org.keycloak.models.ModelDuplicateException;
 @MessageLogger(projectCode="KC-SERVICES", length=4)
 public interface ServicesLogger extends BasicLogger {
 
-    ServicesLogger ROOT_LOGGER = Logger.getMessageLogger(ServicesLogger.class, "org.keycloak.services");
+    ServicesLogger LOGGER = Logger.getMessageLogger(ServicesLogger.class, "org.keycloak.services");
 
     @LogMessage(level = INFO)
     @Message(id=1, value="Loading config from %s")
@@ -406,7 +406,7 @@ public interface ServicesLogger extends BasicLogger {
     void failedToCloseProviderSession(@Cause Throwable t);
 
     @LogMessage(level = WARN)
-    @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request. This can have impact in future versions (eg. removed IDToken from the Token Response)")
+    @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request.")
     @Once
     void oidcScopeMissing();
 
@@ -434,8 +434,25 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=97, value="Invalid request")
     void invalidRequest(@Cause Throwable t);
 
-    @LogMessage(level = ERROR)
-    @Message(id=98, value="Failed to get redirect uris from sector identifier URI: %s")
-    void failedToGetRedirectUrisFromSectorIdentifierUri(@Cause Throwable t, String sectorIdentifierUri);
+
+    @LogMessage(level = WARN)
+    @Message(id=99, value="Operation '%s' rejected. %s")
+    void clientRegistrationRequestRejected(String opDescription, String detailedMessage);
+
+    @LogMessage(level = WARN)
+    @Message(id=100, value= "ProtocolMapper '%s' of type '%s' not allowed")
+    void clientRegistrationMapperNotAllowed(String mapperName, String mapperType);
+
+    @LogMessage(level = WARN)
+    @Message(id=101, value= "Failed to verify remote host : %s")
+    void failedToVerifyRemoteHost(String hostname);
+
+    @LogMessage(level = WARN)
+    @Message(id=102, value= "URL '%s' doesn't match any trustedHost or trustedDomain")
+    void urlDoesntMatch(String url);
+
+    @LogMessage(level = DEBUG)
+    @Message(id=103, value="Failed to reset password. User is temporarily disabled")
+    void passwordResetFailed(@Cause Throwable t);
 
 }

@@ -20,14 +20,20 @@ package org.keycloak.broker.oidc.mappers;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -37,9 +43,12 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String USER_ATTRIBUTE = "user.attribute";
+    public static final String EMAIL = "email";
+    public static final String FIRST_NAME = "firstName";
+    public static final String LAST_NAME = "lastName";
 
     static {
         ProviderConfigProperty property;
@@ -88,37 +97,63 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
-        Object value = getClaimValue(mapperModel, context);
-        if (value != null) {
-            if (attribute.equalsIgnoreCase("email")) {
-                context.setEmail(value.toString());
-            } else if (attribute.equalsIgnoreCase("firstName")) {
-                context.setFirstName(value.toString());
-            } else if (attribute.equalsIgnoreCase("lastName")) {
-                context.setLastName(value.toString());
-            } else {
-                context.setUserAttribute(attribute, value.toString());
-            }
+        if(StringUtil.isNullOrEmpty(attribute)){
+            return;
         }
+        Object value = getClaimValue(mapperModel, context);
+        List<String> values = toList(value);
+
+        if (EMAIL.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(context::setEmail, values);
+        } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(context::setFirstName, values);
+        } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(context::setLastName, values);
+        } else {
+            List<String> valuesToString = values.stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .collect(Collectors.toList());
+
+            context.setUserAttribute(attribute, valuesToString);
+        }
+    }
+
+    private void setIfNotEmpty(Consumer<String> consumer, List<String> values) {
+        if (values != null && !values.isEmpty()) {
+            consumer.accept(values.get(0));
+        }
+    }
+
+    private List<String> toList(Object value) {
+        List<Object> values = (value instanceof List)
+                ? (List) value
+                : Collections.singletonList(value);
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
+        if(StringUtil.isNullOrEmpty(attribute)){
+            return;
+        }
         Object value = getClaimValue(mapperModel, context);
-        String stringValue = null;
-        if (value != null) stringValue = value.toString();
-        if (attribute.equalsIgnoreCase("email")) {
-            user.setEmail(stringValue);
-        } else if (attribute.equalsIgnoreCase("firstName")) {
-            user.setFirstName(stringValue);
-        } else if (attribute.equalsIgnoreCase("lastName")) {
-            user.setLastName(stringValue);
+        List<String> values = toList(value);
+        if (EMAIL.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(user::setEmail, values);
+        } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(user::setFirstName, values);
+        } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(user::setLastName, values);
         } else {
-            String current = user.getFirstAttribute(attribute);
-            if (stringValue != null && !stringValue.equals(current)) {
-                user.setSingleAttribute(attribute, stringValue);
-            } else if (value == null) {
+            List<String> current = user.getAttribute(attribute);
+            if (!CollectionUtil.collectionEquals(values, current)) {
+                user.setAttribute(attribute, values);
+            } else if (values.isEmpty()) {
                 user.removeAttribute(attribute);
             }
         }

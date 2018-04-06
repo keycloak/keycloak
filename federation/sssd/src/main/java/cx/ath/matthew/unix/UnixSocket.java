@@ -26,7 +26,6 @@
  */
 package cx.ath.matthew.unix;
 
-import cx.ath.matthew.LibraryLoader;
 import cx.ath.matthew.debug.Debug;
 
 import java.io.IOException;
@@ -37,9 +36,6 @@ import java.io.OutputStream;
  * Represents a UnixSocket.
  */
 public class UnixSocket {
-    static {
-        LibraryLoader.load();
-    }
 
     private native void native_set_pass_cred(int sock, boolean passcred) throws IOException;
 
