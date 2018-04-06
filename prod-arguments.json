@@ -1,0 +1,38 @@
+{
+  "mvn": {
+    "profiles": ["product", "jboss-release"],
+    "properties": {
+        "skipTests": "true"
+    }
+  },
+  "pme": {
+    "properties": {
+      "dependencySource": "BOM",
+      "restURL": "",
+      "dependencyManagement": "org.jboss.eap:jboss-eap-parent:$EAP_VERSION",
+      "dependencyRelocations.org.wildfly:@org.jboss.eap:": "$EAP_VERSION",
+      "dependencyExclusion.org.wildfly.core:wildfly-version@*": "3.0.12.Final-redhat-1",
+      "dependencyExclusion.org.jboss.resteasy:*@*": "3.0.25.Final-redhat-1",
+      "dependencyExclusion.io.undertow:*@*": "1.4.18.SP2-redhat-1",
+      "dependencyExclusion.org.wildfly.security:*@*": "1.1.8.Final-redhat-1",
+      "dependencyExclusion.org.freemarker:freemarker@*": "2.3.26.incubating-redhat-1",
+      "dependencyExclusion.org.liquibase:liquibase-core@*": "$COMMONCFG_LIQUIBASE_3_4_1",
+      "dependencyExclusion.org.twitter4j:twitter4j-core@*": "$COMMONCFG_TWITTER4J_4_0_4",
+      "dependencyExclusion.com.google.zxing:core@*": "$COMMONCFG_ZXING_3_2_1",
+      "dependencyExclusion.org.jboss.as:jboss-as-server@*": "$EAP6SUPPORTED_ORG_JBOSS_AS_JBOSS_AS_SERVER",
+      "dependencyOverride.org.infinispan:infinispan-core@org.keycloak:keycloak-saml-as7-adapter": "5.2.23.Final-redhat-1",
+      "dependencyExclusion.org.osgi:org.osgi.core@*": "5.0.0",
+      "dependencyExclusion.org.jboss.spec.javax.servlet:jboss-servlet-api_3.0_spec@*": "$EAP6SUPPORTED_ORG_JBOSS_SPEC_JAVAX_SERVLET_JBOSS_SERVLET_API_3_0_SPEC",
+      "dependencyExclusion.org.drools:drools-bom@*": "6.5.0.Final-redhat-19",
+      "dependencyExclusion.org.jboss:jboss-parent@*": "19.0.0.redhat-2",
+      "dependencyExclusion.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
+      "dependencyExclusion.org.apache.ant:ant-launcher@*": "1.8.3-redhat-1",
+      "dependencyExclusion.org.apache.maven.wagon:*@*": "2.6.0.redhat-1",
+      "dependencyExclusion.org.eclipse.aether:*@*": "1.0.0.v20140518-redhat-1",
+      "dependencyOverride.org.antlr:antlr-runtime@*": "3.5.0.redhat-1",
+      "dependencyOverride.aopalliance:aopalliance@*": "1.0.0.redhat-1",
+      "dependencyOverride.org.infinispan:infinispan-core@*": "8.2.9.Final-redhat-1",
+      "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": ""
+    }
+  }
+}
