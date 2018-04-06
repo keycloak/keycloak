@@ -261,7 +261,7 @@ public KeycloakConfigResolver KeycloakConfigResolver() {
 ====== Avoid double Filter bean registration
 
 Spring Boot attempts to eagerly register filter beans with the web application context.
-Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add two ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice.
+Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice.
 
 
 [source,java]
@@ -285,6 +285,22 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
     @Bean
     public FilterRegistrationBean keycloakPreAuthActionsFilterRegistrationBean(
             KeycloakPreAuthActionsFilter filter) {
+        FilterRegistrationBean registrationBean = new FilterRegistrationBean(filter);
+        registrationBean.setEnabled(false);
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean keycloakAuthenticatedActionsFilterBean(
+            KeycloakAuthenticatedActionsFilter filter) {
+        FilterRegistrationBean registrationBean = new FilterRegistrationBean(filter);
+        registrationBean.setEnabled(false);
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean keycloakSecurityContextRequestFilterBean(
+        KeycloakSecurityContextRequestFilter filter) {
         FilterRegistrationBean registrationBean = new FilterRegistrationBean(filter);
         registrationBean.setEnabled(false);
         return registrationBean;
