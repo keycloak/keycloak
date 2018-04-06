@@ -2,7 +2,6 @@ package org.keycloak.testsuite.rest.resource;
 
 import org.keycloak.testsuite.rest.TestingResourceProvider;
 
-import javax.print.attribute.standard.Media;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

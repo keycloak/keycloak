@@ -32,6 +32,7 @@
 
     <properties>
         <js-adapter.version>${project.version}</js-adapter.version>
+        <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
     </properties>
 
     <dependencies>
@@ -103,7 +104,7 @@
                                     <artifactId>keycloak-js-adapter</artifactId>
                                     <version>${js-adapter.version}</version>
                                     <type>jar</type>
-                                    <outputDirectory>${pom.basedir}/src/main/resources/javascript</outputDirectory>
+                                    <outputDirectory>${js-adapter.file.path}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                             <includes>**/keycloak.js</includes>
