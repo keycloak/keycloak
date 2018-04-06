@@ -118,7 +118,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         try {
             return Integer.parseInt(getConfig().get("allowedClockSkew"));
         } catch (NumberFormatException e) {
-            // ignore it and use defaulr
+            // ignore it and use default
             return 0;
         }
     }
