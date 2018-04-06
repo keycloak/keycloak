@@ -55,7 +55,7 @@ For example, on
 ----
 $ kcadm.sh config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
 $ kcadm.sh create realms -s realm=demorealm -s enabled=true -o
-$ C=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
+$ CID=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
 $ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
 ----
 +
@@ -504,6 +504,29 @@ $ kcadm.sh create clear-user-cache -r demorealm -s realm=demorealm
 $ kcadm.sh create clear-keys-cache -r demorealm -s realm=demorealm
 ----
 
+[discrete]
+==== Importing a realm from exported .json file
+
+. Use the [command]`create` command on the [filename]`partialImport` endpoint.
+. Set `ifResourceExists` to one of `FAIL`, `SKIP`, `OVERWRITE`.
+. Use `-f` to submit the exported realm `.json` file
++
+For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh create partialImport -r demorealm2 -s ifResourceExists=FAIL -o -f demorealm.json
+----
++
+If realm does not yet exist, you first have to create it.
++
+For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh create realms -s realm=demorealm2 -s enabled=true
+----
+
 
 === Role operations
 
@@ -846,6 +869,19 @@ $ kcadm.sh get clients/c7b8547f-e748-4333-95d0-410b76b3f4a3/installation/provide
 ----
 
 [discrete]
+==== Getting a Docker-v2 example configuration for a specific client
+
+Use a client's ID to construct an endpoint URI that targets a specific client, such as [filename]`clients/ID/installation/providers/docker-v2-compose-yaml`.
+
+Note that response will be in `.zip` format.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm.sh get http://localhost:8080/auth/admin/realms/demorealm/clients/8f271c35-44e3-446f-8953-b0893810ebe7/installation/providers/docker-v2-compose-yaml -r demorealm > keycloak-docker-compose-yaml.zip
+----
+
+[discrete]
 ==== Updating a client
 
 Use the [command]`update` command with the same endpoint URI that you used to get a specific client.
@@ -873,6 +909,12 @@ For example:
 ----
 $ kcadm.sh delete clients/c7b8547f-e748-4333-95d0-410b76b3f4a3 -r demorealm
 ----
+
+[discrete]
+==== Adding or removing roles for client's service account
+
+Service account for the client is just a special kind of user account with username [filename]`service-account-CLIENT_ID`.
+You can perform user operations on this account as if it was a regular user.
 
 
 === User operations
