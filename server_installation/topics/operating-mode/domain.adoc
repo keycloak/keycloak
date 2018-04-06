@@ -269,6 +269,13 @@ Now cut and paste the secret value into the _.../domain/configuration/host-slave
                  </server-identities>
 ----
 
+You will also need to add the _username_ of the created user in the _.../domain/configuration/host-slave.xml_ file:
+
+[source,xml]
+----
+     <remote security-realm="ManagementRealm" username="admin">
+----
+
 ===== Run the Boot Scripts
 
 Since we're simulating a two node cluster on one development machine, you'll run the boot script twice:
