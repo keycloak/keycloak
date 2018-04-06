@@ -90,7 +90,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
 
-    private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(RealmModel realm, String authSessionId) {
+    private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
         // Chance created in this transaction
         RootAuthenticationSessionEntity entity = tx.get(cache, authSessionId);
 
@@ -181,7 +181,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
-        RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(realm, authenticationSessionId);
+        RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
         return wrap(realm, entity);
     }
 

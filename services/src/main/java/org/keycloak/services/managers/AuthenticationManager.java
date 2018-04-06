@@ -67,6 +67,7 @@ import java.net.URI;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.AbstractMap.SimpleEntry;
 
 /**
  * Stateless object that manages authentication
@@ -223,20 +224,22 @@ public class AuthenticationManager {
         // Account management client is used as a placeholder
         ClientModel client = SystemClientUtil.getSystemClient(realm);
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
-        String authSessionId = null;
+        String authSessionId;
+        RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
+
+        // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
         if (browserCookie) {
-            authSessionId = asm.getCurrentAuthenticationSessionId(realm);
+            rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }
-        if (authSessionId != null) {
+        if (rootLogoutSession != null) {
+            authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
         } else {
             authSessionId = userSession.getId();
+            rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         }
 
-        // Try to join existing logout session if it exists
-        RootAuthenticationSessionModel rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         if (rootLogoutSession == null) {
             rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
         }
@@ -615,7 +618,20 @@ public class AuthenticationManager {
         String path = getIdentityCookiePath(realm, uriInfo);
         expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, path, true, connection);
         expireCookie(realm, KEYCLOAK_SESSION_COOKIE, path, false, connection);
+
+        String oldPath = getOldCookiePath(realm, uriInfo);
+        expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, oldPath, true, connection);
+        expireCookie(realm, KEYCLOAK_SESSION_COOKIE, oldPath, false, connection);
     }
+    public static void expireOldIdentityCookie(RealmModel realm, UriInfo uriInfo, ClientConnection connection) {
+        logger.debug("Expiring old identity cookie with wrong path");
+
+        String oldPath = getOldCookiePath(realm, uriInfo);
+        expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, oldPath, true, connection);
+        expireCookie(realm, KEYCLOAK_SESSION_COOKIE, oldPath, false, connection);
+    }
+
+
     public static void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo, ClientConnection connection) {
         logger.debug("Expiring remember me cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
@@ -623,11 +639,24 @@ public class AuthenticationManager {
         expireCookie(realm, cookieName, path, true, connection);
     }
 
+    public static void expireOldAuthSessionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection connection) {
+        logger.debugv("Expire {1} cookie .", AuthenticationSessionManager.AUTH_SESSION_ID);
+
+        String oldPath = getOldCookiePath(realm, uriInfo);
+        expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection);
+    }
+
     protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
         return getRealmCookiePath(realm, uriInfo);
     }
 
     public static String getRealmCookiePath(RealmModel realm, UriInfo uriInfo) {
+        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
+        // KEYCLOAK-5270
+        return uri.getRawPath() + "/";
+    }
+
+    public static String getOldCookiePath(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
         return uri.getRawPath();
     }
@@ -658,6 +687,7 @@ public class AuthenticationManager {
         AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, true, tokenString, session.getContext().getRequestHeaders());
         if (authResult == null) {
             expireIdentityCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
+            expireOldIdentityCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
             return null;
         }
         authResult.getSession().setLastSessionRefresh(Time.currentTime());
