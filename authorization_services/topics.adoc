@@ -13,9 +13,8 @@ include::topics/hello-world-create-realm.adoc[leveloffset=+2]
 include::topics/hello-world-create-resource-server.adoc[leveloffset=+2]
 
 include::topics/hello-world-deploy.adoc[leveloffset=+2]
-ifeval::[{project_community}==true]
-include::topics/example-overview.adoc[leveloffset=+2]
-endif::[]
+
+include::topics/authorization-quickstarts.adoc[leveloffset=+2]
 
 include::topics/resource-server-overview.adoc[leveloffset=+1]
 
