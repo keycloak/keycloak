@@ -7,5 +7,5 @@ and server configuration and does not cover any complex deployment options. If y
 in-depth discussion of any features or configuration options, consult the various reference guides available.
 
 ifeval::[{project_product}==true]
-{project_name} is based on the open source link:{https://www.keycloak.org/}[Keycloak] community project, which has its documentation link:{http://www.keycloak.org/documentation.html}[here]. 
+{project_name} is based on the open source link:https://www.keycloak.org/[Keycloak] community project, which has its documentation link:http://www.keycloak.org/documentation.html[here]. 
 endif::[]
