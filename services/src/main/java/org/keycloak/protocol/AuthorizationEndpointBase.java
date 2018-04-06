@@ -35,12 +35,9 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -170,26 +167,25 @@ public abstract class AuthorizationEndpointBase {
 
     protected AuthenticationSessionModel createAuthenticationSession(ClientModel client, String requestState) {
         AuthenticationSessionManager manager = new AuthenticationSessionManager(session);
-        String authSessionId = manager.getCurrentAuthenticationSessionId(realm);
-        RootAuthenticationSessionModel rootAuthSession = authSessionId==null ? null : session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        RootAuthenticationSessionModel rootAuthSession = manager.getCurrentRootAuthenticationSession(realm);
+
         AuthenticationSessionModel authSession;
 
         if (rootAuthSession != null) {
-
             authSession = rootAuthSession.createAuthenticationSession(client);
 
             logger.debugf("Sent request to authz endpoint. Root authentication session with ID '%s' exists. Client is '%s' . Created new authentication session with tab ID: %s",
                     rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
-
         } else {
-
-            UserSessionModel userSession = authSessionId == null ? null : new UserSessionCrossDCManager(session).getUserSessionIfExistsRemotely(realm, authSessionId);
+            UserSessionCrossDCManager userSessionCrossDCManager = new UserSessionCrossDCManager(session);
+            UserSessionModel userSession = userSessionCrossDCManager.getUserSessionIfExistsRemotely(manager, realm);
 
             if (userSession != null) {
-                rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
+                String userSessionId = userSession.getId();
+                rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSessionId, realm);
                 authSession = rootAuthSession.createAuthenticationSession(client);
                 logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
-                        "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", authSessionId, client.getClientId(), authSession.getTabId());
+                        "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
             } else {
                 rootAuthSession = manager.createAuthenticationSession(realm, true);
                 authSession = rootAuthSession.createAuthenticationSession(client);
