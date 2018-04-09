@@ -36,7 +36,13 @@ import org.keycloak.models.utils.RoleUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -99,31 +105,33 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        String firstExistingAttrId = null;
-        List<UserAttributeEntity> toRemove = new ArrayList<>();
-        for (UserAttributeEntity attr : user.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                if (firstExistingAttrId == null && value != null) {
-                    attr.setValue(value);
-                    firstExistingAttrId = attr.getId();
-                } else {
-                    toRemove.add(attr);
+        if (value == null) {
+            user.getAttributes().removeIf(a -> a.getName().equals(name));
+        } else {
+            String firstExistingAttrId = null;
+            List<UserAttributeEntity> toRemove = new ArrayList<>();
+            for (UserAttributeEntity attr : user.getAttributes()) {
+                if (attr.getName().equals(name)) {
+                    if (firstExistingAttrId == null) {
+                        attr.setValue(value);
+                        firstExistingAttrId = attr.getId();
+                    } else {
+                        toRemove.add(attr);
+                    }
                 }
             }
-        }
 
-        if (firstExistingAttrId != null) {
-            // Remove attributes through HQL to avoid StaleUpdateException
-            Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
-            query.setParameter("name", name);
-            query.setParameter("userId", user.getId());
-            query.setParameter("attrId", firstExistingAttrId);
-            int numUpdated = query.executeUpdate();
+            if (firstExistingAttrId != null) {
+                // Remove attributes through HQL to avoid StaleUpdateException
+                Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
+                query.setParameter("name", name);
+                query.setParameter("userId", user.getId());
+                query.setParameter("attrId", firstExistingAttrId);
+                int numUpdated = query.executeUpdate();
 
-            // Remove attribute from local entity
-            user.getAttributes().removeAll(toRemove);
-        } else {
-            if(value != null) {
+                // Remove attribute from local entity
+                user.getAttributes().removeAll(toRemove);
+            } else {
                 persistAttributeValue(name, value);
             }
         }
