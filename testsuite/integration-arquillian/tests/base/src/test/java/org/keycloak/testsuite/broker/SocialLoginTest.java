@@ -30,7 +30,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.social.AbstractSocialConsentPage;
 import org.keycloak.testsuite.pages.social.AbstractSocialLoginPage;
 import org.keycloak.testsuite.pages.social.BitbucketLoginPage;
 import org.keycloak.testsuite.pages.social.FacebookLoginPage;
@@ -38,7 +37,6 @@ import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.GitHubLoginPage;
 import org.keycloak.testsuite.pages.social.GitLabLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
-import org.keycloak.testsuite.pages.social.LinkedInConsentPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
@@ -156,7 +154,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
         config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
-
+    
     @Before
     public void beforeSocialLoginTest() {
         accountPage.setAuthRealm(REALM);
@@ -199,8 +197,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         RealmModel realm = session.realms().getRealmByName(REALM);
         ClientModel client = session.realms().getClientByClientId(EXCHANGE_CLIENT, realm);
         // lazy init
-        if (client != null)
-            return;
+        if (client != null) return;
         client = realm.addClient(EXCHANGE_CLIENT);
         client.setSecret("secret");
         client.setPublicClient(false);
@@ -271,6 +268,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertUpdateProfile(false, false, true);
         assertAccount();
     }
+
 
     @Test
     public void githubLogin() throws InterruptedException {
@@ -371,8 +369,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void assertAccount() {
-        assertTrue(URLUtils.currentUrlStartWith(accountPage.toString())); // Sometimes after login the URL ends with /#
-                                                                          // or similar
+        assertTrue(URLUtils.currentUrlStartWith(accountPage.toString())); // Sometimes after login the URL ends with /# or similar
 
         assertEquals(getConfig("profile.firstName"), accountPage.getFirstName());
         assertEquals(getConfig("profile.lastName"), accountPage.getLastName());
@@ -385,21 +382,24 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (firstName) {
             assertTrue(updateAccountPage.fields().getFirstName().isEmpty());
             updateAccountPage.fields().setFirstName(getConfig("profile.firstName"));
-        } else {
+        }
+        else {
             assertEquals(getConfig("profile.firstName"), updateAccountPage.fields().getFirstName());
         }
 
         if (lastName) {
             assertTrue(updateAccountPage.fields().getLastName().isEmpty());
             updateAccountPage.fields().setLastName(getConfig("profile.lastName"));
-        } else {
+        }
+        else {
             assertEquals(getConfig("profile.lastName"), updateAccountPage.fields().getLastName());
         }
 
         if (email) {
             assertTrue(updateAccountPage.fields().getEmail().isEmpty());
             updateAccountPage.fields().setEmail(getConfig("profile.email"));
-        } else {
+        }
+        else {
             assertEquals(getConfig("profile.email"), updateAccountPage.fields().getEmail());
         }
 
@@ -416,14 +416,22 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         String username = users.get(0).getUsername();
         Client httpClient = ClientBuilder.newClient();
 
-        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT).path("/realms").path(REALM).path("protocol/openid-connect/token");
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(REALM)
+                .path("protocol/openid-connect/token");
 
         // obtain social token
-        Response response = exchangeUrl.request().header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
-                .post(Entity.form(new Form().param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE).param(OAuth2Constants.REQUESTED_SUBJECT, username)
-                        .param(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE).param(OAuth2Constants.REQUESTED_ISSUER, currentTestProvider.id())
+        Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, username)
+                                .param(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_ISSUER, currentTestProvider.id())
 
-        ));
+                ));
         Assert.assertEquals(200, response.getStatus());
         AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
         response.close();
@@ -438,10 +446,16 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Assert.assertEquals(0, users.size());
 
         // now try external exchange where we trust social provider and import the external token.
-        response = exchangeUrl.request().header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret")).post(Entity.form(new Form().param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                .param(OAuth2Constants.SUBJECT_TOKEN, socialToken).param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE).param(OAuth2Constants.SUBJECT_ISSUER, currentTestProvider.id())
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, socialToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.SUBJECT_ISSUER, currentTestProvider.id())
 
-        ));
+                ));
         Assert.assertEquals(200, response.getStatus());
         tokenResponse = response.readEntity(AccessTokenResponse.class);
         response.close();
@@ -464,31 +478,43 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idp.setStoreToken(false);
         adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);
 
-        // first exchange social token to get a user session that should store the social token there
-        response = exchangeUrl.request().header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret")).post(Entity.form(new Form().param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                .param(OAuth2Constants.SUBJECT_TOKEN, socialToken).param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE).param(OAuth2Constants.SUBJECT_ISSUER, currentTestProvider.id())
 
-        ));
+        // first exchange social token to get a user session that should store the social token there
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, socialToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.SUBJECT_ISSUER, currentTestProvider.id())
+
+                ));
         Assert.assertEquals(200, response.getStatus());
         tokenResponse = response.readEntity(AccessTokenResponse.class);
         String keycloakToken = tokenResponse.getToken();
         response.close();
 
-        // now take keycloak token and make sure it can get back the social token from the user session since stored
-        // tokens are off
-        response = exchangeUrl.request().header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
+        // now take keycloak token and make sure it can get back the social token from the user session since stored tokens are off
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(EXCHANGE_CLIENT, "secret"))
                 .post(Entity.form(
-                        new Form().param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE).param(OAuth2Constants.SUBJECT_TOKEN, keycloakToken).param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
-                                .param(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE).param(OAuth2Constants.REQUESTED_ISSUER, currentTestProvider.id())
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, keycloakToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_ISSUER, currentTestProvider.id())
 
-        ));
+                ));
         Assert.assertEquals(200, response.getStatus());
         tokenResponse = response.readEntity(AccessTokenResponse.class);
         response.close();
 
         Assert.assertEquals(socialToken, tokenResponse.getToken());
 
-        // turn on store token
+
+         // turn on store token
         idp = adminClient.realm(REALM).identityProviders().get(currentTestProvider.id).toRepresentation();
         idp.setStoreToken(true);
         adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);

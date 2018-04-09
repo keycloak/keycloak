@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,11 +34,22 @@ public class LinkedInLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "signin")
     private WebElement loginButton;
 
+    @FindBy(name = "action")
+    private WebElement authorizeButton;
+
     @Override
     public void login(String user, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
         loginButton.click();
+
+        try {
+            authorizeButton.click();
+            log.info("LinkedIn test app authorized");
+        }
+        catch (NoSuchElementException e) {
+            log.info("Skipping LinkedIn app authorization");
+        }
     }
 }
