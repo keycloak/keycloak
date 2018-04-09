@@ -5,26 +5,20 @@
  */
 package org.keycloak.testsuite.pages.social;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.logging.Logger;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
-public class LinkedInConsentPage {
+public class LinkedInConsentPage extends AbstractSocialConsentPage {
     
-    @Drone
-    protected WebDriver driver;
-    protected Logger log = Logger.getLogger(this.getClass());
-
     @FindBy(name = "action")
-    private WebElement allowButton;
+    private WebElement authorizeButton;
 
-    public void allow() {
-        allowButton.click();
+    @Override
+    public void authorize() {
+        authorizeButton.click();
     }
 
 }
