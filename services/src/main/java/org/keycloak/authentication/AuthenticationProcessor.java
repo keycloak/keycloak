@@ -254,6 +254,19 @@ public class AuthenticationProcessor {
         getAuthenticationSession().setAuthenticatedUser(null);
     }
 
+    public URI getRefreshUrl(boolean authSessionIdParam) {
+        UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                .path(AuthenticationProcessor.this.flowPath)
+                .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+        if (authSessionIdParam) {
+            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+        }
+        return uriBuilder
+                .build(getRealm().getName());
+    }
+
+
     public class Result implements AuthenticationFlowContext, ClientAuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
         AuthenticationExecutionModel execution;
@@ -546,15 +559,7 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getRefreshUrl(boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
+            return AuthenticationProcessor.this.getRefreshUrl(authSessionIdParam);
         }
 
         @Override
@@ -653,27 +658,33 @@ public class AuthenticationProcessor {
     public Response handleBrowserException(Exception failure) {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
+
             if (e.getError() == AuthenticationFlowError.INVALID_USER) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_NOT_FOUND);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_DISABLED);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_CODE);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.EXPIRED_CODE);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
@@ -701,9 +712,15 @@ public class AuthenticationProcessor {
                 CacheControlUtil.noBackButtonCacheControlHeader();
                 return processor.authenticate();
 
+            } else if (e.getError() == AuthenticationFlowError.DISPLAY_NOT_SUPPORTED) {
+                ServicesLogger.LOGGER.failedAuthentication(e);
+                event.error(Errors.DISPLAY_UNSUPPORTED);
+                if (e.getResponse() != null) return e.getResponse();
+                return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.DISPLAY_UNSUPPORTED);
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
+                if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             }
 

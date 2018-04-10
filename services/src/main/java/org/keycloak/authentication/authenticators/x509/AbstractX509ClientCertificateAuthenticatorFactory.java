@@ -43,6 +43,7 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL;
@@ -68,6 +69,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     private static final String[] mappingSources = {
             MAPPING_SOURCE_CERT_SUBJECTDN,
             MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL,
+            MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL,
             MAPPING_SOURCE_CERT_SUBJECTDN_CN,
             MAPPING_SOURCE_CERT_ISSUERDN,
             MAPPING_SOURCE_CERT_ISSUERDN_EMAIL,

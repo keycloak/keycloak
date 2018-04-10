@@ -345,8 +345,8 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      *@see org.picketlink.identity.federation.PicketLinkLogger#parserUnknownEndElement(java.lang.String)
      */
     @Override
-    public RuntimeException parserUnknownEndElement(String endElementName) {
-        return new RuntimeException(ErrorCodes.UNKNOWN_END_ELEMENT + endElementName);
+    public RuntimeException parserUnknownEndElement(String endElementName, Location location) {
+        return new RuntimeException(ErrorCodes.UNKNOWN_END_ELEMENT + endElementName + "::location=" + location);
     }
 
     /*
@@ -447,7 +447,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      */
     @Override
     public RuntimeException parserExpectedTag(String tag, String foundElementTag) {
-        return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ">.  Found <" + foundElementTag + ">");
+        return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ".  Found <" + foundElementTag + ">");
     }
 
     @Override

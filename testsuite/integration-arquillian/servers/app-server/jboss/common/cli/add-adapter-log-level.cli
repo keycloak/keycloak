@@ -1,0 +1,1 @@
+/subsystem=logging/logger=org.keycloak.adapters:add(level=DEBUG)

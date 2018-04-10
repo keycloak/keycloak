@@ -34,7 +34,7 @@ public class AppServerWelcomePage extends AppServerContextRoot {
     @Page
     protected OIDCLogin loginPage;
 
-    @FindBy(xpath = "//a[text() = 'Access Control']")
+    @FindBy(xpath = "//span[text() = 'Access Control']")
     private WebElement accessControlLink;
 
     @FindBy(xpath = "//a[text() = 'Manage user profile']")

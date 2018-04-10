@@ -17,6 +17,11 @@
  */
 package org.keycloak.authorization.protection.introspect;
 
+import java.io.IOException;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
@@ -24,9 +29,6 @@ import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.util.JsonSerialization;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 /**
  * Introspects token accordingly with UMA Bearer Token Profile.
@@ -45,38 +47,35 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     public Response introspect(String token) {
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken requestingPartyToken = toAccessToken(token);
-            boolean active = isActive(requestingPartyToken);
+            AccessToken accessToken = verifyAccessToken(token);
+
             ObjectNode tokenMetadata;
 
-            if (active) {
-                LOGGER.debug("Token is active");
-                AccessToken introspect = new AccessToken();
-                introspect.type(requestingPartyToken.getType());
-                introspect.expiration(requestingPartyToken.getExpiration());
-                introspect.issuedAt(requestingPartyToken.getIssuedAt());
-                introspect.audience(requestingPartyToken.getAudience());
-                introspect.notBefore(requestingPartyToken.getNotBefore());
-                introspect.setRealmAccess(null);
-                introspect.setResourceAccess(null);
-                tokenMetadata = JsonSerialization.createObjectNode(introspect);
-                tokenMetadata.putPOJO("permissions", requestingPartyToken.getAuthorization().getPermissions());
+            if (accessToken != null) {
+                AccessToken metadata = new AccessToken();
+
+                metadata.id(accessToken.getId());
+                metadata.setAcr(accessToken.getAcr());
+                metadata.type(accessToken.getType());
+                metadata.expiration(accessToken.getExpiration());
+                metadata.issuedAt(accessToken.getIssuedAt());
+                metadata.audience(accessToken.getAudience());
+                metadata.notBefore(accessToken.getNotBefore());
+                metadata.setRealmAccess(null);
+                metadata.setResourceAccess(null);
+
+                tokenMetadata = JsonSerialization.createObjectNode(metadata);
+                tokenMetadata.putPOJO("permissions", accessToken.getAuthorization().getPermissions());
             } else {
-                LOGGER.debug("Token is not active");
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
 
-            tokenMetadata.put("active", active);
+            tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
             throw new RuntimeException("Error creating token introspection response.", e);
         }
-    }
-
-    private boolean isActive(AccessToken requestingPartyToken) {
-        Authorization authorization = requestingPartyToken.getAuthorization();
-        return requestingPartyToken.isActive() && authorization != null && authorization.getPermissions() != null && !authorization.getPermissions().isEmpty();
     }
 
     @Override

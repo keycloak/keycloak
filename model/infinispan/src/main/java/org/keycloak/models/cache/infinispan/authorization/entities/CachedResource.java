@@ -20,8 +20,11 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,23 +38,33 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private String owner;
     private String type;
     private String name;
+    private String displayName;
     private String uri;
     private Set<String> scopesIds;
+    private boolean ownerManagedAccess;
+    private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
 
     public CachedResource(Long revision, Resource resource) {
         super(revision, resource.getId());
         this.name = resource.getName();
+        this.displayName = resource.getDisplayName();
         this.uri = resource.getUri();
         this.type = resource.getType();
         this.owner = resource.getOwner();
         this.iconUri = resource.getIconUri();
         this.resourceServerId = resource.getResourceServer().getId();
         this.scopesIds = resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+        ownerManagedAccess = resource.isOwnerManagedAccess();
+        this.attributes.putAll(resource.getAttributes());
     }
 
 
     public String getName() {
         return this.name;
+    }
+
+    public String getDisplayName() {
+        return this.displayName;
     }
 
     public String getUri() {
@@ -70,11 +83,19 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.owner;
     }
 
+    public boolean isOwnerManagedAccess() {
+        return ownerManagedAccess;
+    }
+
     public String getResourceServerId() {
         return this.resourceServerId;
     }
 
     public Set<String> getScopesIds() {
         return this.scopesIds;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
     }
 }

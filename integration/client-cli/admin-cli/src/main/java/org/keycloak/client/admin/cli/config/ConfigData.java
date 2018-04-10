@@ -16,6 +16,7 @@
  */
 package org.keycloak.client.admin.cli.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -26,6 +27,9 @@ import java.util.Map;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class ConfigData {
+
+    @JsonIgnore
+    private String externalToken;
 
     private String serverUrl;
 
@@ -44,6 +48,16 @@ public class ConfigData {
 
     public void setServerUrl(String serverUrl) {
         this.serverUrl = serverUrl;
+    }
+
+    @JsonIgnore
+    public String getExternalToken() {
+        return externalToken;
+    }
+
+    @JsonIgnore
+    public void setExternalToken(String externalToken) {
+        this.externalToken = externalToken;
     }
 
     public String getRealm() {

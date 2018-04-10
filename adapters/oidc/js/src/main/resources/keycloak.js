@@ -464,6 +464,10 @@
                                 } else {
                                     console.warn('[KEYCLOAK] Failed to refresh token');
 
+                                    if (req.status == 400) {
+                                        kc.clearToken();
+                                    }
+
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setError(true);
@@ -888,10 +892,10 @@
                     supportedParams = ['code', 'state', 'session_state'];
                     break;
                 case 'implicit':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'not-before-policy'];
+                    supportedParams = ['access_token', 'id_token', 'state', 'session_state'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'not-before-policy'];
+                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state'];
                     break;
             }
 

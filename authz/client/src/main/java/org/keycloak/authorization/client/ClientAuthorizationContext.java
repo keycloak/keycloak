@@ -30,8 +30,8 @@ public class ClientAuthorizationContext extends AuthorizationContext {
 
     private final AuthzClient client;
 
-    public ClientAuthorizationContext(AccessToken authzToken, PolicyEnforcerConfig.PathConfig current, Map<String, PolicyEnforcerConfig.PathConfig> paths, AuthzClient client) {
-        super(authzToken, current, paths);
+    public ClientAuthorizationContext(AccessToken authzToken, PolicyEnforcerConfig.PathConfig current, AuthzClient client) {
+        super(authzToken, current);
         this.client = client;
     }
 

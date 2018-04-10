@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -51,6 +51,8 @@
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <app.server.startup.timeout>60</app.server.startup.timeout>
         <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
+        <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
+        <app.server.cluster.tests.memory.settings>-Xmx384m</app.server.cluster.tests.memory.settings>
 
         <!--debug properties-->
         <app.server.debug.port>5006</app.server.debug.port>
@@ -70,6 +72,8 @@
         <settings.path></settings.path>
         <maven.repo.local></maven.repo.local>
         <repo.url></repo.url>
+        <wl.password></wl.password>
+        <wl.home></wl.home>
 
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
@@ -83,6 +87,8 @@
             -Dkie.maven.settings.custom=${settings.path}
             -Dkie.maven.repo.local=${maven.repo.local}
             -Drepo.url=${repo.url}
+            -Dwl.password=${wl.password}
+            -Dwl.home=${wl.home}
         </adapter.test.props>
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
@@ -214,6 +220,7 @@
 
                                 <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                                 <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
+                                <app.server.cluster.tests.memory.settings>${app.server.cluster.tests.memory.settings}</app.server.cluster.tests.memory.settings>
                                 <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
                                 
                                 <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
@@ -267,18 +274,6 @@
                                     </goals>
                                     <configuration>
                                         <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-test-apps-js-console</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-test-apps-js-database</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>hello-world-authz-service</artifactId>
@@ -339,7 +334,7 @@
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
-                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json</includes>
+                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>

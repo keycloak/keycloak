@@ -18,10 +18,8 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -32,17 +30,14 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -58,29 +53,53 @@ import org.keycloak.util.JsonSerialization;
  */
 public class AuthorizationAPITest extends AbstractAuthzTest {
 
+    private static final String RESOURCE_SERVER_TEST = "resource-server-test";
+    private static final String TEST_CLIENT = "test-client";
+    private static final String AUTHZ_CLIENT_CONFIG = "default-keycloak.json";
+    private static final String PAIRWISE_RESOURCE_SERVER_TEST = "pairwise-resource-server-test";
+    private static final String PAIRWISE_TEST_CLIENT = "test-client-pairwise";
+    private static final String PAIRWISE_AUTHZ_CLIENT_CONFIG = "default-keycloak-pairwise.json";
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
                 .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
                 .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrants())
-                .client(ClientBuilder.create().clientId("test-client")
+                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                    .secret("secret")
+                    .authorizationServicesEnabled(true)
+                    .redirectUris("http://localhost/resource-server-test")
+                    .defaultRoles("uma_protection")
+                    .directAccessGrants()
+                    .pairwise("http://pairwise.com"))
+                .client(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/test-client")
                     .directAccessGrants())
+                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/test-client")
+                        .directAccessGrants())
                 .build());
     }
 
     @Before
     public void configureAuthorization() throws Exception {
-        ClientResource client = getClient(getRealm());
+        configureAuthorization(RESOURCE_SERVER_TEST);
+        configureAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
+    }
+
+    private void configureAuthorization(String clientId) throws Exception {
+        ClientResource client = getClient(getRealm(), clientId);
         AuthorizationResource authorization = client.authorization();
         ResourceRepresentation resource = new ResourceRepresentation("Resource A");
 
@@ -107,76 +126,83 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
     @Test
     public void testAccessTokenWithUmaAuthorization() {
-        AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
+        testAccessTokenWithUmaAuthorization(AUTHZ_CLIENT_CONFIG);
+    }
 
-        request.setResourceSetName("Resource A");
+    @Test
+    public void testAccessTokenWithUmaAuthorizationPairwise() {
+        testAccessTokenWithUmaAuthorization(PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
 
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+    public void testAccessTokenWithUmaAuthorization(String authzConfigFile) {
+        AuthzClient authzClient = getAuthzClient(authzConfigFile);
+        PermissionRequest request = new PermissionRequest("Resource A");
+
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-    }
-
-    @Test
-    public void failAccessTokenWithoutUmaAuthorization() {
-        AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
-
-        try {
-            authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-            fail("Should fail because user does not have uma_authorization");
-        } catch (AuthorizationDeniedException cause) {
-            assertEquals(403, ((HttpResponseException) cause.getCause()).getStatusCode());
-        }
-    }
-
-    @Test
-    public void failClientMockingUmaAuthorization() throws Exception {
-        RealmResource realm = getRealm();
-        ClientResource client = getClient(realm);
-        RoleRepresentation umaAuthorizationRole = new RoleRepresentation("uma_authorization", "", false);
-
-        client.roles().create(umaAuthorizationRole);
-        umaAuthorizationRole = client.roles().get(umaAuthorizationRole.getName()).toRepresentation();
-
-        realm.users().get(realm.users().search("kolo").get(0).getId()).roles().clientLevel(client.toRepresentation().getId()).add(Arrays.asList(umaAuthorizationRole));
-
-        failAccessTokenWithoutUmaAuthorization();
+        assertNotNull(response.getToken());
     }
 
     @Test
     public void testResourceServerAsAudience() throws Exception {
-        AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
-        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
-
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
-        assertEquals("resource-server-test", rpt.getAudience()[0]);
+        testResourceServerAsAudience(
+                TEST_CLIENT,
+                RESOURCE_SERVER_TEST,
+                AUTHZ_CLIENT_CONFIG);
     }
 
-    private RealmResource getRealm() throws Exception {
+    @Test
+    public void testResourceServerAsAudienceWithPairwiseClient() throws Exception {
+        testResourceServerAsAudience(
+                PAIRWISE_TEST_CLIENT,
+                RESOURCE_SERVER_TEST,
+                AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testPairwiseResourceServerAsAudience() throws Exception {
+        testResourceServerAsAudience(
+                TEST_CLIENT,
+                PAIRWISE_RESOURCE_SERVER_TEST,
+                PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testPairwiseResourceServerAsAudienceWithPairwiseClient() throws Exception {
+        testResourceServerAsAudience(
+                PAIRWISE_TEST_CLIENT,
+                PAIRWISE_RESOURCE_SERVER_TEST,
+                PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    public void testResourceServerAsAudience(String clientId, String resourceServerClientId, String authzConfigFile) throws Exception {
+        AuthzClient authzClient = getAuthzClient(authzConfigFile);
+        PermissionRequest request = new PermissionRequest();
+
+        request.setResourceId("Resource A");
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(clientId).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
+
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
+        assertEquals(resourceServerClientId, rpt.getAudience()[0]);
+    }
+
+    private RealmResource getRealm() {
         return adminClient.realm("authz-test");
     }
 
-    private ClientResource getClient(RealmResource realm) {
+    private ClientResource getClient(RealmResource realm, String clientId) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 
-    private AuthzClient getAuthzClient() {
+    private AuthzClient getAuthzClient(String configFile) {
         try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
+            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create authz client", cause);
         }

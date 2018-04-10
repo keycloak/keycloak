@@ -177,21 +177,21 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
         performTests(() -> {
             login("alice", "alice");
 
-            navigateTo("/resource/a/resource-d");
+            navigateTo("/a/a/resource-d");
             assertFalse(wasDenied());
             navigateTo("/resource/b/resource-d");
             assertFalse(wasDenied());
 
             updatePermissionPolicies("Pattern 5 Permission", "Deny Policy");
             login("alice", "alice");
-            navigateTo("/resource/a/resource-d");
+            navigateTo("/a/a/resource-d");
             assertTrue(wasDenied());
-            navigateTo("/resource/b/resource-d");
+            navigateTo("/a/b/resource-d");
             assertTrue(wasDenied());
 
             updatePermissionPolicies("Pattern 5 Permission", "Default Policy");
             login("alice", "alice");
-            navigateTo("/resource/b/resource-d");
+            navigateTo("/a/b/resource-d");
             assertFalse(wasDenied());
         });
     }
@@ -379,6 +379,32 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
         });
     }
 
+    @Test
+    public void testPathOrderWithAllPaths() {
+        performTests(() -> {
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 13 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 14 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-6623");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-6623/sub-resource/resource");
+            assertTrue(wasDenied());
+        });
+    }
 
     private void navigateTo(String path) {
         this.driver.navigate().to(getResourceServerUrl() + path);

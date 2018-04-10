@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.PageUtils;
 import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -38,7 +39,7 @@ public class VerifyEmailPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Email verification");
+        return PageUtils.getPageTitle(driver).equals("Email verification");
     }
 
     public void clickResendEmail() {

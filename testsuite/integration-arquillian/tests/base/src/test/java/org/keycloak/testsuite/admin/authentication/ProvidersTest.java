@@ -146,7 +146,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
-        addProviderInfo(result, "cli-username-password", "Username Password Challenge",
+        addProviderInfo(result, "console-username-password", "Username Password Challenge",
                 "Proprietary challenge protocol for CLI clients that queries for username password");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");

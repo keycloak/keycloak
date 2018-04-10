@@ -143,6 +143,22 @@ public class Urls {
         return realmLogout(baseUri).queryParam("redirect_uri", redirectUri).build(realmName);
     }
 
+    public static URI accountResourcesPage(URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountFormService.class, "resourcesPage").build(realmName);
+    }
+
+    public static URI accountResourceDetailPage(String resourceId, URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountFormService.class, "resourceDetailPage").build(realmName, resourceId);
+    }
+
+    public static URI accountResourceGrant(String resourceId, URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountFormService.class, "grantPermission").build(realmName, resourceId);
+    }
+
+    public static URI accountResourceShare(String resourceId, URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountFormService.class, "shareResource").build(realmName, resourceId);
+    }
+
     public static URI loginActionUpdatePassword(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "updatePassword").build(realmName);
     }

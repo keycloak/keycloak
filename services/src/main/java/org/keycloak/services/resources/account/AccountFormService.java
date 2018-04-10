@@ -18,6 +18,13 @@ package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
@@ -47,6 +54,7 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -70,6 +78,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
@@ -78,6 +87,9 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -155,7 +167,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             account.setUser(auth.getUser());
         }
 
-        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true);
+        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, Profile.isFeatureEnabled(Feature.AUTHORIZATION));
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -682,6 +694,193 @@ public class AccountFormService extends AbstractSecuredLocalService {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    @Path("resource")
+    @GET
+    public Response resourcesPage(@QueryParam("resource_id") String resourceId) {
+        return forwardToPage("resources", AccountPages.RESOURCES);
+    }
+
+    @Path("resource/{resource_id}")
+    @GET
+    public Response resourceDetailPage(@PathParam("resource_id") String resourceId) {
+        return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+    }
+
+    @Path("resource/{resource_id}/grant")
+    @POST
+    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+
+        if (resource == null) {
+            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+        }
+
+        if (action == null) {
+            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+        }
+
+        boolean isGrant = "grant".equals(action);
+        boolean isDeny = "deny".equals(action);
+        boolean isRevoke = "revoke".equals(action);
+
+        Map<String, String> filters = new HashMap<>();
+
+        filters.put(PermissionTicket.RESOURCE, resource.getId());
+        filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
+
+        if (isRevoke) {
+            filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+        } else {
+            filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+        }
+
+        List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+        Iterator<PermissionTicket> iterator = tickets.iterator();
+
+        while (iterator.hasNext()) {
+            PermissionTicket ticket = iterator.next();
+
+            if (isGrant) {
+                if (permissionId != null && permissionId.length > 0 && !Arrays.asList(permissionId).contains(ticket.getId())) {
+                    continue;
+                }
+            }
+
+            if (isGrant && !ticket.isGranted()) {
+                ticket.setGrantedTimestamp(System.currentTimeMillis());
+                iterator.remove();
+            } else if (isDeny || isRevoke) {
+                if (permissionId != null && permissionId.length > 0 && Arrays.asList(permissionId).contains(ticket.getId())) {
+                    iterator.remove();
+                }
+            }
+        }
+
+        for (PermissionTicket ticket : tickets) {
+            ticketStore.delete(ticket.getId());
+        }
+
+        if (isRevoke) {
+            return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+        }
+
+        return forwardToPage("resources", AccountPages.RESOURCES);
+    }
+
+    @Path("resource/{resource_id}/share")
+    @POST
+    public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+
+        if (resource == null) {
+            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+        }
+
+        if (userIds == null || userIds.length == 0) {
+            return account.setError(Status.BAD_REQUEST, Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
+        }
+
+        for (String id : userIds) {
+            UserModel user = session.users().getUserById(id, realm);
+
+            if (user == null) {
+                user = session.users().getUserByUsername(id, realm);
+            }
+
+            if (user == null) {
+                user = session.users().getUserByEmail(id, realm);
+            }
+
+            if (user == null) {
+                return account.setError(Status.BAD_REQUEST, Messages.INVALID_USER).createResponse(AccountPages.RESOURCE_DETAIL);
+            }
+
+            Map<String, String> filters = new HashMap<>();
+
+            filters.put(PermissionTicket.RESOURCE, resource.getId());
+            filters.put(PermissionTicket.OWNER, auth.getUser().getId());
+            filters.put(PermissionTicket.REQUESTER, user.getId());
+
+            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+
+            if (tickets.isEmpty()) {
+                if (scopes != null && scopes.length > 0) {
+                    for (String scope : scopes) {
+                        PermissionTicket ticket = ticketStore.create(resourceId, scope, user.getId(), resource.getResourceServer());
+                        ticket.setGrantedTimestamp(System.currentTimeMillis());
+                    }
+                } else {
+                    if (resource.getScopes().isEmpty()) {
+                        PermissionTicket ticket = ticketStore.create(resourceId, null, user.getId(), resource.getResourceServer());
+                        ticket.setGrantedTimestamp(System.currentTimeMillis());
+                    } else {
+                        for (Scope scope : resource.getScopes()) {
+                            PermissionTicket ticket = ticketStore.create(resourceId, scope.getId(), user.getId(), resource.getResourceServer());
+                            ticket.setGrantedTimestamp(System.currentTimeMillis());
+                        }
+                    }
+                }
+            } else if (scopes != null && scopes.length > 0) {
+                List<String> grantScopes = new ArrayList<>(Arrays.asList(scopes));
+
+                for (PermissionTicket ticket : tickets) {
+                    Scope scope = ticket.getScope();
+
+                    if (scope != null) {
+                        grantScopes.remove(scope.getId());
+                    }
+                }
+
+                for (String grantScope : grantScopes) {
+                    PermissionTicket ticket = ticketStore.create(resourceId, grantScope, user.getId(), resource.getResourceServer());
+                    ticket.setGrantedTimestamp(System.currentTimeMillis());
+                }
+            }
+        }
+
+        return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+    }
+
+    @Path("resource")
+    @POST
+    public Response processResourceActions(@FormParam("resource_id") String[] resourceIds, @FormParam("action") String action) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+
+        if (action == null) {
+            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+        }
+
+        for (String resourceId : resourceIds) {
+            Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+
+            if (resource == null) {
+                return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+            }
+
+            HashMap<String, String> filters = new HashMap<>();
+
+            filters.put(PermissionTicket.REQUESTER, auth.getUser().getId());
+            filters.put(PermissionTicket.RESOURCE, resource.getId());
+
+            if ("cancel".equals(action)) {
+                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+            } else if ("cancelRequest".equals(action)) {
+                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+            }
+
+            for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1)) {
+                ticketStore.delete(ticket.getId());
+            }
+        }
+
+        return forwardToPage("authorization", AccountPages.RESOURCES);
     }
 
     public static UriBuilder loginRedirectUrl(UriBuilder base) {

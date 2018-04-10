@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,7 +37,7 @@ public class IdpConfirmLinkPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("Account already exists");
+        return PageUtils.getPageTitle(driver).equals("Account already exists");
     }
 
     public String getMessage() {

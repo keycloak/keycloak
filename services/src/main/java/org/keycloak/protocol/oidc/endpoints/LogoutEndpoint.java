@@ -164,12 +164,11 @@ public class LogoutEndpoint {
      *
      * returns 204 if successful, 400 if not with a json error response.
      *
-     * @param authorizationHeader
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response logoutToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+    public Response logoutToken() {
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();
 

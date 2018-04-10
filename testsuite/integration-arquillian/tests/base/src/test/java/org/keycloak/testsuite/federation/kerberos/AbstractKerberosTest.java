@@ -224,7 +224,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         // Change password is not possible as editMode is READ_ONLY
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
         Assert.assertTrue(
-                driver.getPageSource().contains("You can't update your password as your account is read only"));
+                driver.getPageSource().contains("You can't update your password as your account is read-only"));
 
         // Change editMode to UNSYNCED
         updateProviderEditMode(UserStorageProvider.EditMode.UNSYNCED);

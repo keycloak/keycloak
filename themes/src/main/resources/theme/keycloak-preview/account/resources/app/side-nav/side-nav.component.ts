@@ -66,6 +66,9 @@ export class SideNavComponent implements OnInit, MenuClickListener {
         });
         
         this.respSvc.addMenuClickListener(this);
+        
+        // direct navigation such as '#/password'
+        this.setActive(window.location.hash.substring(1));
     }
 
     // use itemName for translate key, link, and tooltip

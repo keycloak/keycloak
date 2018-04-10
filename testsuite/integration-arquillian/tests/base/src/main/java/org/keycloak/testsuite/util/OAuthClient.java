@@ -50,6 +50,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -68,6 +69,8 @@ import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.util.*;
+
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -197,11 +200,20 @@ public class OAuthClient {
         origin = null;
     }
 
+    public void setDriver(WebDriver driver) {
+        this.driver = driver;
+    }
+
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);
 
         return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doLogin(UserRepresentation user) {
+
+        return doLogin(user.getUsername(), getPasswordOf(user));
     }
 
     public void fillLoginForm(String username, String password) {

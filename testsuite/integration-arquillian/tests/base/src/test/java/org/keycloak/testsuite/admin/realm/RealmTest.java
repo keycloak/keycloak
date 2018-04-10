@@ -294,6 +294,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setRegistrationAllowed(true);
         rep.setRegistrationEmailAsUsername(true);
         rep.setEditUsernameAllowed(true);
+        rep.setUserManagedAccessAllowed(true);
 
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
@@ -308,11 +309,13 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
+        assertEquals(Boolean.TRUE, rep.isUserManagedAccessAllowed());
 
         // second change
         rep.setRegistrationAllowed(false);
         rep.setRegistrationEmailAsUsername(false);
         rep.setEditUsernameAllowed(false);
+        rep.setUserManagedAccessAllowed(false);
 
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
@@ -321,7 +324,7 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
-
+        assertEquals(Boolean.FALSE, rep.isUserManagedAccessAllowed());
     }
 
     @Test
@@ -527,6 +530,7 @@ public class RealmTest extends AbstractAdminTest {
             assertEquals(realm.getAttributes(), attributes);
         }
 
+        if (realm.isUserManagedAccessAllowed() != null) assertEquals(realm.isUserManagedAccessAllowed(), storedRealm.isUserManagedAccessAllowed());
     }
 
     @Test

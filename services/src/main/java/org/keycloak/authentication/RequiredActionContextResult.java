@@ -33,6 +33,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
@@ -62,6 +63,10 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.httpRequest = httpRequest;
         this.user = user;
         this.factory = factory;
+    }
+
+    public RequiredActionFactory getFactory() {
+        return factory;
     }
 
     @Override
@@ -160,6 +165,15 @@ public class RequiredActionContextResult implements RequiredActionContext {
         String accessCode = generateCode();
         return getActionUrl(accessCode);
 
+    }
+
+    @Override
+    public URI getActionUrl(boolean authSessionIdParam) {
+        URI uri = getActionUrl();
+        if (authSessionIdParam) {
+            uri = UriBuilder.fromUri(uri).queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId()).build();
+        }
+        return uri;
     }
 
     @Override

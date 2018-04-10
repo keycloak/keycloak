@@ -17,52 +17,56 @@
  */
 package org.keycloak.representations.adapters.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PolicyEnforcerConfig {
 
-    @JsonProperty("create-resources")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean createResources = Boolean.FALSE;
-
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
-
-    @JsonProperty("user-managed-access")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private UmaProtocolConfig userManagedAccess;
-
-    @JsonProperty("entitlement")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private EntitlementProtocolConfig entitlement;
 
     @JsonProperty("paths")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
-    @JsonProperty("online-introspection")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean onlineIntrospection = Boolean.FALSE;
+    @JsonProperty("path-cache")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private PathCacheConfig pathCacheConfig;
+
+    @JsonProperty("lazy-load-paths")
+    private Boolean lazyLoadPaths = Boolean.FALSE;
 
     @JsonProperty("on-deny-redirect-to")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String onDenyRedirectTo;
 
-    public Boolean isCreateResources() {
-        return this.createResources;
-    }
+    @JsonProperty("user-managed-access")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private UserManagedAccessConfig userManagedAccess;
 
     public List<PathConfig> getPaths() {
         return this.paths;
+    }
+
+    public PathCacheConfig getPathCacheConfig() {
+        return pathCacheConfig;
+    }
+
+    public Boolean getLazyLoadPaths() {
+        return lazyLoadPaths;
+    }
+
+    public void setLazyLoadPaths(Boolean lazyLoadPaths) {
+        this.lazyLoadPaths = lazyLoadPaths;
     }
 
     public EnforcementMode getEnforcementMode() {
@@ -73,40 +77,24 @@ public class PolicyEnforcerConfig {
         this.enforcementMode = enforcementMode;
     }
 
-    public UmaProtocolConfig getUserManagedAccess() {
+    public UserManagedAccessConfig getUserManagedAccess() {
         return this.userManagedAccess;
-    }
-
-    public EntitlementProtocolConfig getEntitlement() {
-        return this.entitlement;
-    }
-
-    public Boolean isOnlineIntrospection() {
-        return onlineIntrospection;
-    }
-
-    public void setCreateResources(Boolean createResources) {
-        this.createResources = createResources;
-    }
-
-    public void setOnlineIntrospection(Boolean onlineIntrospection) {
-        this.onlineIntrospection = onlineIntrospection;
     }
 
     public void setPaths(List<PathConfig> paths) {
         this.paths = paths;
     }
 
+    public void setPathCacheConfig(PathCacheConfig pathCacheConfig) {
+        this.pathCacheConfig = pathCacheConfig;
+    }
+
     public String getOnDenyRedirectTo() {
         return onDenyRedirectTo;
     }
 
-    public void setUserManagedAccess(UmaProtocolConfig userManagedAccess) {
+    public void setUserManagedAccess(UserManagedAccessConfig userManagedAccess) {
         this.userManagedAccess = userManagedAccess;
-    }
-
-    public void setEntitlement(EntitlementProtocolConfig entitlement) {
-        this.entitlement = entitlement;
     }
 
     public void setOnDenyRedirectTo(String onDenyRedirectTo) {
@@ -114,6 +102,32 @@ public class PolicyEnforcerConfig {
     }
 
     public static class PathConfig {
+
+        public static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
+            PathConfig pathConfig = new PathConfig();
+
+            pathConfig.setId(resourceDescription.getId());
+            pathConfig.setName(resourceDescription.getName());
+
+            String uri = resourceDescription.getUri();
+
+            if (uri == null || "".equals(uri.trim())) {
+                throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+            }
+
+            pathConfig.setPath(uri);
+
+            List<String> scopeNames = new ArrayList<>();
+
+            for (ScopeRepresentation scope : resourceDescription.getScopes()) {
+                scopeNames.add(scope.getName());
+            }
+
+            pathConfig.setScopes(scopeNames);
+            pathConfig.setType(resourceDescription.getType());
+
+            return pathConfig;
+        }
 
         private String name;
         private String type;
@@ -248,6 +262,29 @@ public class PolicyEnforcerConfig {
         }
     }
 
+    public static class PathCacheConfig {
+
+        @JsonProperty("max-entries")
+        int maxEntries = 1000;
+        long lifespan = 30000;
+
+        public int getMaxEntries() {
+            return maxEntries;
+        }
+
+        public void setMaxEntries(int maxEntries) {
+            this.maxEntries = maxEntries;
+        }
+
+        public long getLifespan() {
+            return lifespan;
+        }
+
+        public void setLifespan(long lifespan) {
+            this.lifespan = lifespan;
+        }
+    }
+
     public enum EnforcementMode {
         PERMISSIVE,
         ENFORCING,
@@ -256,14 +293,11 @@ public class PolicyEnforcerConfig {
 
     public enum ScopeEnforcementMode {
         ALL,
-        ANY
+        ANY,
+        DISABLED
     }
 
-    public static class UmaProtocolConfig {
-
-    }
-
-    public static class EntitlementProtocolConfig {
+    public static class UserManagedAccessConfig {
 
     }
 }

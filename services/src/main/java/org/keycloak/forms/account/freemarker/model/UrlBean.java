@@ -74,6 +74,22 @@ public class UrlBean {
         return Urls.accountLogout(baseQueryURI, currentURI, realm).toString();
     }
 
+    public String getResourceUrl() {
+        return Urls.accountResourcesPage(baseQueryURI, realm).toString();
+    }
+
+    public String getResourceDetailUrl(String id) {
+        return Urls.accountResourceDetailPage(id, baseQueryURI, realm).toString();
+    }
+
+    public String getResourceGrant(String id) {
+        return Urls.accountResourceGrant(id, baseQueryURI, realm).toString();
+    }
+
+    public String getResourceShare(String id) {
+        return Urls.accountResourceShare(id, baseQueryURI, realm).toString();
+    }
+
     public String getResourcesPath() {
         URI uri = Urls.themeRoot(baseURI);
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();

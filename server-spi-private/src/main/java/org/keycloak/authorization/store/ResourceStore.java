@@ -97,13 +97,23 @@ public interface ResourceStore {
     List<Resource> findByScope(List<String> id, String resourceServerId);
 
     /**
-     * Find a {@link Resource} by its name.
+     * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
      * @param name the name of the resource
      * @param resourceServerId the identifier of the resource server
      * @return a resource with the given name
      */
     Resource findByName(String name, String resourceServerId);
+
+    /**
+     * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
+     *
+     * @param name the name of the resource
+     * @param ownerId the owner id
+     * @param resourceServerId the identifier of the resource server
+     * @return a resource with the given name
+     */
+    Resource findByName(String name, String ownerId, String resourceServerId);
 
     /**
      * Finds all {@link Resource} with the given type.

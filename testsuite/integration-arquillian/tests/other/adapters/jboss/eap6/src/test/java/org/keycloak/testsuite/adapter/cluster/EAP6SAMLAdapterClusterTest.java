@@ -20,6 +20,7 @@ import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.arquillian.annotation.*;
 
 import java.io.*;
+import java.util.concurrent.TimeoutException;
 
 import org.keycloak.testsuite.adapter.servlet.cluster.AbstractSAMLAdapterClusterTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
@@ -31,6 +32,7 @@ import org.junit.Assert;
 import org.wildfly.extras.creaper.core.*;
 import org.wildfly.extras.creaper.core.online.*;
 import org.wildfly.extras.creaper.core.online.operations.*;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 
@@ -54,7 +56,7 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
     }
 
     @Override
-    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, CliException, NumberFormatException {
+    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, NumberFormatException, TimeoutException, InterruptedException {
         log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
         OnlineManagementClient clientWorkerNodeClient = ManagementClient.online(OnlineOptions
@@ -62,6 +64,7 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
           .hostAndPort("localhost", managementPort)
           .protocol(ManagementProtocol.REMOTE)
           .build());
+        Administration administration = new Administration(clientWorkerNodeClient);
         Operations op = new Operations(clientWorkerNodeClient);
 
         Batch b = new Batch();
@@ -94,7 +97,8 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
         Assert.assertTrue(op.add(Address.extension("org.keycloak.keycloak-saml-adapter-subsystem"), Values.of("module", "org.keycloak.keycloak-saml-adapter-subsystem")).isSuccess());
         Assert.assertTrue(op.add(Address.subsystem("keycloak-saml")).isSuccess());
 
-        clientWorkerNodeClient.execute("reload");
+        //clientWorkerNodeClient.execute("reload");
+        administration.reload();
 
         log.infov("Worker node ({0}) Prepared", managementPort);
     }

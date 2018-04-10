@@ -17,14 +17,17 @@
 
 package org.keycloak.testsuite.admin.client.authorization;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.RegistrationResponse;
-import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -37,12 +40,60 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
 
     private AuthzClient authzClient;
 
-    @Override
-    protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
-        org.keycloak.authorization.client.representation.ResourceRepresentation resource = toResourceRepresentation(newResource);
+    @Test
+    public void testFindMatchingUri() {
+        doCreateResource(new ResourceRepresentation("/*", Collections.emptySet(), "/*", null));
+        doCreateResource(new ResourceRepresentation("/resources/*", Collections.emptySet(), "/resources/*", null));
+        doCreateResource(new ResourceRepresentation("/resources/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/*", null));
+        doCreateResource(new ResourceRepresentation("/resources/{pattern}/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/{pattern}/*", null));
+        doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resources/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
+        doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resource", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
 
         AuthzClient authzClient = getAuthzClient();
-        RegistrationResponse response = authzClient.protection().resource().create(resource);
+
+        List<ResourceRepresentation> resources = authzClient.protection().resource().findByMatchingUri("/test");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources/test");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources/a/b");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/{pattern}/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources/a/b/c");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/{pattern}/{pattern}/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources/a/sub-resources/c/d");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/{pattern}/sub-resources/{pattern}/*", resources.get(0).getUri());
+    }
+
+    @Override
+    protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
+        ResourceRepresentation resource = toResourceRepresentation(newResource);
+
+        AuthzClient authzClient = getAuthzClient();
+        ResourceRepresentation response = authzClient.protection().resource().create(resource);
 
         return toResourceRepresentation(authzClient, response.getId());
     }
@@ -62,7 +113,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
     }
 
     private ResourceRepresentation toResourceRepresentation(AuthzClient authzClient, String id) {
-        org.keycloak.authorization.client.representation.ResourceRepresentation created = authzClient.protection().resource().findById(id).getResourceDescription();
+        ResourceRepresentation created = authzClient.protection().resource().findById(id);
         ResourceRepresentation resourceRepresentation = new ResourceRepresentation();
 
         resourceRepresentation.setId(created.getId());
@@ -70,11 +121,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         resourceRepresentation.setIconUri(created.getIconUri());
         resourceRepresentation.setUri(created.getUri());
         resourceRepresentation.setType(created.getType());
-        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
-
-        owner.setId(created.getOwner());
-
-        resourceRepresentation.setOwner(owner);
+        resourceRepresentation.setOwner(created.getOwner());
         resourceRepresentation.setScopes(created.getScopes().stream().map(scopeRepresentation -> {
             ScopeRepresentation scope = new ScopeRepresentation();
 
@@ -85,11 +132,13 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
             return scope;
         }).collect(Collectors.toSet()));
 
+        resourceRepresentation.setAttributes(created.getAttributes());
+
         return resourceRepresentation;
     }
 
-    private org.keycloak.authorization.client.representation.ResourceRepresentation toResourceRepresentation(ResourceRepresentation newResource) {
-        org.keycloak.authorization.client.representation.ResourceRepresentation resource = new org.keycloak.authorization.client.representation.ResourceRepresentation();
+    private ResourceRepresentation toResourceRepresentation(ResourceRepresentation newResource) {
+        ResourceRepresentation resource = new ResourceRepresentation();
 
         resource.setId(newResource.getId());
         resource.setName(newResource.getName());
@@ -102,13 +151,15 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         }
 
         resource.setScopes(newResource.getScopes().stream().map(scopeRepresentation -> {
-            org.keycloak.authorization.client.representation.ScopeRepresentation scope = new org.keycloak.authorization.client.representation.ScopeRepresentation();
+            ScopeRepresentation scope = new ScopeRepresentation();
 
             scope.setName(scopeRepresentation.getName());
             scope.setIconUri(scopeRepresentation.getIconUri());
 
             return scope;
         }).collect(Collectors.toSet()));
+
+        resource.setAttributes(newResource.getAttributes());
 
         return resource;
     }

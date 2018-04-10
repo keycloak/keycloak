@@ -62,6 +62,7 @@ import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
+import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
@@ -757,6 +758,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } catch (Throwable t) {
             return SerializationUtil.encodeException(t);
         }
+    }
+
+    @Path("/javascript")
+    public TestJavascriptResource getJavascriptResource() {
+        return new TestJavascriptResource();
     }
 
     private RealmModel getRealmByName(String realmName) {

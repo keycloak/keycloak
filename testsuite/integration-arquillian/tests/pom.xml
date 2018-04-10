@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -62,6 +62,8 @@
         <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
+        <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
+        <auth.server.truststore.password>secret</auth.server.truststore.password>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -100,13 +102,16 @@
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
+        <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch/>
+        <js.browser>phantomjs</js.browser>
+        <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</phantomjs.cli.args>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
         <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <chromeBinary/>
         <chromeArguments/>
 
         <frontend.console.output>true</frontend.console.output>
@@ -250,6 +255,8 @@
                             <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
+                            <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
+                            <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
@@ -268,15 +275,18 @@
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
+                            <js.browser>${js.browser}</js.browser>
+                            <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+                            <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
 
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
                             <ieDriverArch>${ieDriverArch}</ieDriverArch>
 
                             <firefox_binary>${firefox_binary}</firefox_binary>
-                            <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
+                            <chromeBinary>${chromeBinary}</chromeBinary>
                             <chromeArguments>${chromeArguments}</chromeArguments>
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
@@ -598,6 +608,8 @@
                                 <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
                                 <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
 
+                                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+
                                 <!--8101-->
                                 <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
                                 <!--8102-->
@@ -648,6 +660,7 @@
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
             </properties>
             <dependencies>
                 <dependency>
@@ -720,6 +733,7 @@
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>true</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
             </properties>
             <dependencies>
                 <dependency>

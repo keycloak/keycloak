@@ -115,6 +115,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isUserManagedAccessAllowed() {
+        return realm.isAllowUserManagedAccess();
+    }
+
+    @Override
+    public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
+        realm.setAllowUserManagedAccess(userManagedAccessAllowed);
+        em.flush();
+    }
+
+    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }
@@ -1062,7 +1073,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
         IdentityProviderEntity entity = new IdentityProviderEntity();
 
-        entity.setInternalId(KeycloakModelUtils.generateId());
+        if (identityProvider.getInternalId() == null) {
+            entity.setInternalId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setInternalId(identityProvider.getInternalId());
+        }
         entity.setAlias(identityProvider.getAlias());
         entity.setDisplayName(identityProvider.getDisplayName());
         entity.setProviderId(identityProvider.getProviderId());

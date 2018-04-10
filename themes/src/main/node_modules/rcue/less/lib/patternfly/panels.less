@@ -1,0 +1,58 @@
+//
+// Panels
+// --------------------------------------------------
+
+.panel-title {
+  font-weight: 700;
+}
+
+//
+// Collapsable panels (aka, accordion)
+// --------------------------------------------------
+
+.panel-group {
+  .panel {
+    color: @gray-pf;
+    + .panel {
+      margin-top: -1px;
+    }
+  }
+  .panel-default {
+    border-color: @panel-default-border-color;
+    border-top-color: @panel-default-border-color;
+  }
+  .panel-heading {
+    #gradient > .vertical(@btn-default-bg-img-start, @btn-default-bg-img-stop);
+    + .panel-collapse .panel-body {
+      border-top: 1px solid @panel-inner-border;
+    }
+  }
+  .panel-title {
+    font-weight: 500;
+    line-height: 1;
+    > a {
+      color: @gray-pf;
+      font-weight: @btn-font-weight;
+      &:before {
+        content: "\f107";
+        display: inline-block;
+        font-family: @icon-font-name-fa;
+        font-size: 13px;
+        margin-right: 5px;
+        text-align: center;
+        vertical-align: 0;
+        width: 8px;
+      }
+      &:focus {
+        outline: none;
+        text-decoration: none;
+      }
+      &:hover {
+        text-decoration: none;
+      }
+      &.collapsed:before {
+        content: "\f105";
+      }
+    }
+  }
+}

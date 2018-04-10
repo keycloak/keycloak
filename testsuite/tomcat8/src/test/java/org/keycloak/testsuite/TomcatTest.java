@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.adapter.AdapterTestStrategy;
+import org.keycloak.testsuite.helper.adapter.AdapterTestStrategy;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import java.io.File;
@@ -143,12 +143,6 @@ public class TomcatTest {
     public void testBadUser() throws Exception {
         testStrategy.testBadUser();
     }
-
-    @Test
-    public void testVersion() throws Exception {
-        testStrategy.testVersion();
-    }
-
 
     /**
      * KEYCLOAK-732

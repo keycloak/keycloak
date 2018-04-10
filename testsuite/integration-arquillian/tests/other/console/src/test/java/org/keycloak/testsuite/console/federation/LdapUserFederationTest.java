@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.federation;
 import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
@@ -176,6 +177,35 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         assertTrue("Vendors list doesn't match", vendorsExpected.containsAll(vendorsActual));
     }
 
+    @Test
+    public void configureConnectionPooling() {
+        createLdapUserProvider.navigateTo();
+        createLdapUserProvider.form().selectVendor(ACTIVE_DIRECTORY);
+        createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
+        createLdapUserProvider.form().selectEditMode(WRITABLE);
+        createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:389");
+        createLdapUserProvider.form().setLdapBindDnInput("KEYCLOAK/Administrator");
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+
+        createLdapUserProvider.form().connectionPoolingSettings();
+        createLdapUserProvider.form().setConnectionPoolingAuthentication("none");
+        createLdapUserProvider.form().setConnectionPoolingDebug("fine");
+        createLdapUserProvider.form().setConnectionPoolingInitSize("10");
+        createLdapUserProvider.form().setConnectionPoolingMaxSize("12");
+        createLdapUserProvider.form().setConnectionPoolingPrefSize("11");
+        createLdapUserProvider.form().setConnectionPoolingProtocol("ssl");
+        createLdapUserProvider.form().setConnectionPoolingTimeout("500");
+
+        createLdapUserProvider.form().save();
+        assertAlertSuccess();
+
+        ComponentRepresentation ufpr = testRealmResource().components()
+                .query(null, "org.keycloak.storage.UserStorageProvider").get(0);
+
+        assertLdapConnectionPoolSettings(ufpr, "none","fine","10","12","11","ssl","500");
+   }
+
     private void assertLdapProviderSetting(ComponentRepresentation ufpr, String name, String priority,
             String editMode, String syncRegistrations, String vendor, String searchScope, String connectionPooling,
             String pagination, String enableAccountAfterPasswordUpdate) {
@@ -214,6 +244,17 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         assertEquals(batchSize, ufpr.getConfig().get("batchSizeForSync").get(0));
         assertEquals(periodicFullSync, ufpr.getConfig().get("fullSyncPeriod").get(0));
         assertEquals(periodicChangedUsersSync, ufpr.getConfig().get("changedSyncPeriod").get(0));
+    }
+
+    private void assertLdapConnectionPoolSettings(ComponentRepresentation ufpr, String authentication, String debug,
+            String initsize, String maxsize, String prefsize, String protocol, String timeout) {
+        assertEquals(authentication, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION).get(0));
+        assertEquals(debug, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_DEBUG).get(0));
+        assertEquals(initsize, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_INITSIZE).get(0));
+        assertEquals(maxsize, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_MAXSIZE).get(0));
+        assertEquals(prefsize, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_PREFSIZE).get(0));
+        assertEquals(protocol, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_PROTOCOL).get(0));
+        assertEquals(timeout, ufpr.getConfig().get(LDAPConstants.CONNECTION_POOLING_TIMEOUT).get(0));
     }
 
     private LDAPEmbeddedServer startEmbeddedLdapServer() throws Exception {

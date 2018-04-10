@@ -37,7 +37,7 @@ import java.util.List;
 @Path("/admin/album")
 public class AdminAlbumService {
 
-    public static final String SCOPE_ADMIN_ALBUM_MANAGE = "urn:photoz.com:scopes:album:admin:manage";
+    public static final String SCOPE_ADMIN_ALBUM_MANAGE = "admin:manage";
 
     @Inject
     private EntityManager entityManager;

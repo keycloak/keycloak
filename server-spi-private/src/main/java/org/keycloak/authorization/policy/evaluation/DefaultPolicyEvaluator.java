@@ -19,6 +19,7 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,17 +76,22 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             evaluatePolicies(() -> policyStore.findByResource(resource.getId(), resourceServer.getId()), consumer);
 
             if (resource.getType() != null) {
-                evaluatePolicies(() -> policyStore.findByResourceType(resource.getType(), resourceServer.getId()), consumer);
-            }
+                evaluatePolicies(() -> {
+                    List<Policy> policies = policyStore.findByResourceType(resource.getType(), resourceServer.getId());
 
-            if (scopes.isEmpty() && !resource.getScopes().isEmpty()) {
-                scopes.removeAll(resource.getScopes());
-                evaluatePolicies(() -> policyStore.findByScopeIds(resource.getScopes().stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
+                    if (!resource.getOwner().equals(resourceServer.getId())) {
+                        for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
+                            policies.addAll(policyStore.findByResource(typedResource.getId(), resourceServer.getId()));
+                        }
+                    }
+
+                    return policies;
+                }, consumer);
             }
         }
 
         if (!scopes.isEmpty()) {
-            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
+            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId()), consumer);
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && !verified.get()) {
@@ -137,7 +143,11 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Set<Resource> policyResources = policy.getResources();
 
         if (resourcePermission != null && !policyResources.isEmpty()) {
-                if (!policyResources.stream().filter(resource -> resource.getId().equals(resourcePermission.getId())).findFirst().isPresent()) {
+            if (!policyResources.stream().filter(resource -> {
+                Iterator<Resource> policyResourceType = policy.getResources().iterator();
+                Resource policyResource = policyResourceType.hasNext() ? policyResourceType.next() : null;
+                return resource.getId().equals(resourcePermission.getId()) || (policyResourceType != null && policyResource.getType() != null && policyResource.getType().equals(resourcePermission.getType()));
+            }).findFirst().isPresent()) {
                 return false;
             }
         }

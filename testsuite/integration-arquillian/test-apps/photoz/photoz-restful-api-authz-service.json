@@ -8,7 +8,7 @@
       "type": "http://photoz.com/profile",
       "scopes": [
         {
-          "name": "urn:photoz.com:scopes:profile:view"
+          "name": "profile:view"
         }
       ]
     },
@@ -18,13 +18,13 @@
       "type": "http://photoz.com/album",
       "scopes": [
         {
-          "name": "urn:photoz.com:scopes:album:view"
+          "name": "album:view"
         },
         {
-          "name": "urn:photoz.com:scopes:album:delete"
+          "name": "album:delete"
         },
         {
-          "name": "urn:photoz.com:scopes:album:create"
+          "name": "album:create"
         }
       ]
     },
@@ -34,7 +34,7 @@
       "type": "http://photoz.com/admin",
       "scopes": [
         {
-          "name": "urn:photoz.com:scopes:album:admin:manage"
+          "name": "admin:manage"
         }
       ]
     },
@@ -165,7 +165,7 @@
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "applyPolicies": "[\"Only From @keycloak.org or Admin\"]",
-        "scopes": "[\"urn:photoz.com:scopes:profile:view\"]"
+        "scopes": "[\"profile:view\"]"
       }
     },
     {
@@ -176,7 +176,18 @@
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "applyPolicies": "[\"Only Owner and Administrators Policy\"]",
-        "scopes": "[\"urn:photoz.com:scopes:album:delete\"]"
+        "scopes": "[\"album:delete\"]"
+      }
+    },
+    {
+      "name": "View Album Permission",
+      "description": "A policy that only allows the owner to view his albums.",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "applyPolicies": "[\"Only Owner and Administrators Policy\"]",
+        "scopes": "[\"album:view\"]"
       }
     },
     {
@@ -213,19 +224,19 @@
   ],
   "scopes": [
     {
-      "name": "urn:photoz.com:scopes:profile:view"
+      "name": "profile:view"
     },
     {
-      "name": "urn:photoz.com:scopes:album:view"
+      "name": "album:view"
     },
     {
-      "name": "urn:photoz.com:scopes:album:create"
+      "name": "album:create"
     },
     {
-      "name": "urn:photoz.com:scopes:album:delete"
+      "name": "album:delete"
     },
     {
-      "name": "urn:photoz.com:scopes:album:admin:manage"
+      "name": "admin:manage"
     }
   ]
 }

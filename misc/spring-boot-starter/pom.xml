@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-boot-starter-parent</artifactId>
@@ -20,7 +20,7 @@
         <dependency>
           <groupId>org.keycloak.bom</groupId>
           <artifactId>keycloak-adapter-bom</artifactId>
-          <version>4.0.0.CR1-SNAPSHOT</version>
+          <version>4.0.0.Beta2-SNAPSHOT</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>

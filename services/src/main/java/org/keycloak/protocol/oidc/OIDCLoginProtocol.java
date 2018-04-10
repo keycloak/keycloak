@@ -218,7 +218,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 if (responseType.hasResponseType(OIDCResponseType.CODE)) {
                     responseBuilder.generateCodeHash(code);
                 }
-
+                
+                // Financial API - Part 2: Read and Write API Security Profile
+                // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+                if (state != null && !state.isEmpty())
+                    responseBuilder.generateStateHash(state);
             }
 
             AccessTokenResponse res = responseBuilder.build();
@@ -229,11 +233,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                 redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
-                redirectUri.addParam("token_type", res.getTokenType());
-                redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
             }
-
-            redirectUri.addParam("not-before-policy", String.valueOf(res.getNotBeforePolicy()));
         }
 
         return redirectUri.build();

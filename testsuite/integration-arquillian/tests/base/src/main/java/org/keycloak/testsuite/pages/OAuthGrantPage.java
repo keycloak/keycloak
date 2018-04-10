@@ -40,7 +40,7 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("Grant Access");
+        return PageUtils.getPageTitle(driver).contains("Grant Access to ");
     }
 
     @Override

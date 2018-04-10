@@ -339,6 +339,7 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         out.println("    -x                    Print full stack trace when exiting with error");
         out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
+        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
         out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");

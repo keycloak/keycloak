@@ -32,19 +32,16 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -121,15 +118,15 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName(resource.getName());
+        request.setResourceId(resource.getName());
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient();
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
         List<Permission> permissions = authorizationClaim.getPermissions();
 
@@ -157,15 +154,15 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName(resource.getName());
+        request.setResourceId(resource.getName());
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient();
         String ticket = authzClient.protection().permission().forResource(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
         List<Permission> permissions = authorizationClaim.getPermissions();
 

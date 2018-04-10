@@ -74,7 +74,7 @@ public class AccountPageTest extends AbstractI18NTest {
         Assert.assertEquals("Deutsch", accountUpdateProfilePage.getLanguageDropdownText());
 
         // When a client has a name provided as a variable, the name should be resolved using a localized bundle and available to the back link
-        Assert.assertEquals("Zur\u00FCck zu Test App Named - Konto", accountUpdateProfilePage.getBackToApplicationLinkText());
+        Assert.assertEquals("Zur\u00FCck zu Test App Named - Clientkonto", accountUpdateProfilePage.getBackToApplicationLinkText());
         Assert.assertEquals(namedClient.getBaseUrl(), accountUpdateProfilePage.getBackToApplicationLinkHref());
     }
 }

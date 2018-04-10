@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -205,27 +205,6 @@
         <profile>
             <id>jboss-release</id>
 
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>central</id>
-                    <name>bintray</name>
-                    <url>https://jcenter.bintray.com</url>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>central</id>
-                    <name>bintray</name>
-                    <url>https://jcenter.bintray.com</url>
-                </pluginRepository>
-            </pluginRepositories>
-
             <build>
                 <plugins>
                     <plugin>
@@ -288,6 +267,28 @@
                         <groupId>io.github.swagger2markup</groupId>
                         <artifactId>swagger2markup-maven-plugin</artifactId>
                         <version>1.1.0</version>
+
+                        <!-- Replace the dependencies that aren't in Maven Central -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>ca.szc.thirdparty.nl.jworks.markdown_to_asciidoc</groupId>
+                                <artifactId>markdown_to_asciidoc</artifactId>
+                                <!-- Keep in sync with markup-document-builder's dependency -->
+                                <version>1.0</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>io.github.swagger2markup</groupId>
+                                <artifactId>swagger2markup</artifactId>
+                                <!-- Keep in sync with swagger2markup-maven-plugin's dependency -->
+                                <version>1.1.0</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>nl.jworks.markdown_to_asciidoc</groupId>
+                                        <artifactId>markdown_to_asciidoc</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
 
                         <executions>
                             <execution>

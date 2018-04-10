@@ -29,6 +29,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -68,6 +70,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.io.File;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -447,6 +450,37 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
     }
+
+
+    /**
+     * KEYCLOAK-6026
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testExportImport() throws Exception {
+        testExternalExchange();
+        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
+        //System.out.println("TARGET PATH: " + targetFilePath);
+        testingClient.testing().exportImport().setFile(targetFilePath);
+        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
+        testingClient.testing().exportImport().setRealmName(CHILD_IDP);
+        testingClient.testing().exportImport().runExport();
+
+        adminClient.realms().realm(CHILD_IDP).remove();
+        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+
+        testingClient.testing().exportImport().runImport();
+        //System.out.println("************* AFTER IMPORT");
+        testExternalExchange();
+        //Thread.sleep(1000000000l);
+
+
+
+    }
+
+
 
     @Test
     public void testExternalExchange() throws Exception {

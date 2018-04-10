@@ -48,24 +48,9 @@ public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         testRealmResource().users().create(UserBuilder.create().username("alice").build());
     }
 
-    @After
-    public void onAfterAuthzTests() {
-        ClientResource clientResource = getClientResource();
-
-        // Needed to disable authz first. TODO: Looks like a bug. Check later...
-        ClientRepresentation client = clientResource.toRepresentation();
-        client.setAuthorizationServicesEnabled(false);
-        clientResource.update(client);
-
-        getClientResource().remove();
-    }
-
     @Test
     public void testImportUnorderedSettings() throws Exception {
         ClientResource clientResource = getClientResource();
-
-        enableAuthorizationServices();
-
         ResourceServerRepresentation toImport = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/import-authorization-unordered-settings.json"), ResourceServerRepresentation.class);
 
         realmsResouce().realm(getRealmId()).roles().create(new RoleRepresentation("user", null, false));
@@ -75,6 +60,6 @@ public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
 
         authorizationResource.importSettings(toImport);
 
-        assertEquals(15, authorizationResource.policies().policies().size());
+        assertEquals(13, authorizationResource.policies().policies().size());
     }
 }

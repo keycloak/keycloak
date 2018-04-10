@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.keycloak.testsuite.adapter.example.authorization.AbstractPhotozExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -25,6 +24,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @AppServerContainer("app-server-wildfly")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class WildflyPhotozExampleAdapterTest extends AbstractPhotozExampleAdapterTest {
+public class WildflyPhotozExampleAdapterTest extends AbstractPhotozExampleNoLazyLoadPathsAdapterTest {
 
 }

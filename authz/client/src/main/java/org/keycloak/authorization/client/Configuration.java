@@ -17,14 +17,14 @@
  */
 package org.keycloak.authorization.client;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.BasicAuthHelper;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -34,10 +34,22 @@ public class Configuration extends AdapterConfig {
     @JsonIgnore
     private HttpClient httpClient;
 
+    @JsonIgnore
+    private ClientAuthenticator clientAuthenticator = createDefaultClientAuthenticator();
+
     public Configuration() {
 
     }
 
+    /**
+     * Creates a new instance.
+     *
+     * @param authServerUrl the server's URL. E.g.: http://{server}:{port}/auth.(not {@code null})
+     * @param realm the realm name (not {@code null})
+     * @param clientId the client id (not {@code null})
+     * @param clientCredentials a map with the client credentials (not {@code null})
+     * @param httpClient the {@link HttpClient} instance that should be used when sending requests to the server, or {@code null} if a default instance should be created
+     */
     public Configuration(String authServerUrl, String realm, String clientId, Map<String, Object> clientCredentials, HttpClient httpClient) {
         this.authServerUrl = authServerUrl;
         setAuthServerUrl(authServerUrl);
@@ -47,29 +59,34 @@ public class Configuration extends AdapterConfig {
         this.httpClient = httpClient;
     }
 
-    @JsonIgnore
-    private ClientAuthenticator clientAuthenticator = new ClientAuthenticator() {
-        @Override
-        public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
-            String secret = (String) getCredentials().get("secret");
-
-            if (secret == null) {
-                throw new RuntimeException("Client secret not provided.");
-            }
-
-            requestHeaders.put("Authorization", BasicAuthHelper.createHeader(getResource(), secret));
-        }
-    };
-
     public HttpClient getHttpClient() {
         if (this.httpClient == null) {
             this.httpClient = HttpClients.createDefault();
         }
-
         return httpClient;
     }
 
-    public ClientAuthenticator getClientAuthenticator() {
+    ClientAuthenticator getClientAuthenticator() {
         return this.clientAuthenticator;
+    }
+
+    /**
+     * Creates a default client authenticator which uses HTTP BASIC and client id and secret to authenticate the client.
+     *
+     * @return the default client authenticator
+     */
+    private ClientAuthenticator createDefaultClientAuthenticator() {
+        return new ClientAuthenticator() {
+            @Override
+            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
+                String secret = (String) getCredentials().get("secret");
+
+                if (secret == null) {
+                    throw new RuntimeException("Client secret not provided.");
+                }
+
+                requestHeaders.put("Authorization", BasicAuthHelper.createHeader(getResource(), secret));
+            }
+        };
     }
 }

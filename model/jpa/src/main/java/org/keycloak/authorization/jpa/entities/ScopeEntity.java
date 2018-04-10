@@ -59,6 +59,9 @@ public class ScopeEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Column(name = "DISPLAY_NAME")
+    private String displayName;
+
     @Column(name = "ICON_URI")
     private String iconUri;
 
@@ -84,6 +87,18 @@ public class ScopeEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        if (displayName != null && !"".equals(displayName.trim())) {
+            this.displayName = displayName;
+        } else {
+            this.displayName = null;
+        }
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getIconUri() {

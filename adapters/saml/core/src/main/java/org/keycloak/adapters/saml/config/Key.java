@@ -114,16 +114,16 @@ public class Key implements Serializable {
         return signing;
     }
 
-    public void setSigning(boolean signing) {
-        this.signing = signing;
+    public void setSigning(Boolean signing) {
+        this.signing = signing != null && signing;
     }
 
     public boolean isEncryption() {
         return encryption;
     }
 
-    public void setEncryption(boolean encryption) {
-        this.encryption = encryption;
+    public void setEncryption(Boolean encryption) {
+        this.encryption = encryption != null && encryption;
     }
 
     public KeyStoreConfig getKeystore() {

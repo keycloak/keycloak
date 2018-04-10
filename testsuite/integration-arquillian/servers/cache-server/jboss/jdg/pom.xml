@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
-        <version>4.0.0.CR1-SNAPSHOT</version>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,6 +34,7 @@
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         
+        <cache.server.jboss.cache-authorization-disabled>false</cache.server.jboss.cache-authorization-disabled>
         <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
         <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
         <cache.server.jboss.version>${jdg.version}</cache.server.jboss.version>

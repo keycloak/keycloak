@@ -18,12 +18,10 @@
 
 package org.keycloak.authorization;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.authorization.authorization.AuthorizationTokenService;
-import org.keycloak.authorization.entitlement.EntitlementService;
-import org.keycloak.authorization.protection.ProtectionService;
-
 import javax.ws.rs.Path;
+
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.protection.ProtectionService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -36,30 +34,12 @@ public class AuthorizationService {
         this.authorization = authorization;
     }
 
-    @Path("/entitlement")
-    public Object getEntitlementService() {
-        EntitlementService service = new EntitlementService(this.authorization);
-
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-
-        return service;
-    }
-
     @Path("/protection")
     public Object getProtectionService() {
-        ProtectionService service = new ProtectionService(this.authorization);
+        ProtectionService service = new ProtectionService(authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(service);
 
         return service;
-    }
-
-    @Path("/authorize")
-    public Object authorize() {
-        AuthorizationTokenService resource = new AuthorizationTokenService(this.authorization);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
     }
 }

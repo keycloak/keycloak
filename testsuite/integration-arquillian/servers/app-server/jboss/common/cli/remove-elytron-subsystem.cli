@@ -1,4 +1,4 @@
-if (result == success) of /subsystem=elytron/:read-resource
+if (outcome == success) of /subsystem=elytron/:read-resource
     echo Removing Elytron subsystem
     /subsystem=elytron/:remove
     echo

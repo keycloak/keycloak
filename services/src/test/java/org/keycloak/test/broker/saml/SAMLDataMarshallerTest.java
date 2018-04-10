@@ -103,7 +103,7 @@ public class SAMLDataMarshallerTest {
 
     @Test
     public void testSerializeWithNamespaceInSignatureElement() throws Exception {
-        SAMLParser parser = new SAMLParser();
+        SAMLParser parser = SAMLParser.getInstance();
         try (InputStream st = SAMLDataMarshallerTest.class.getResourceAsStream("saml-response-ds-ns-in-signature.xml")) {
             Object parsedObject = parser.parse(st);
             assertThat(parsedObject, instanceOf(ResponseType.class));
@@ -121,7 +121,7 @@ public class SAMLDataMarshallerTest {
 
     @Test
     public void testSerializeWithNamespaceNotInSignatureElement() throws Exception {
-        SAMLParser parser = new SAMLParser();
+        SAMLParser parser = SAMLParser.getInstance();
         try (InputStream st = SAMLDataMarshallerTest.class.getResourceAsStream("saml-response-ds-ns-above-signature.xml")) {
             Object parsedObject = parser.parse(st);
             assertThat(parsedObject, instanceOf(ResponseType.class));

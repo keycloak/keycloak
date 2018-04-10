@@ -45,6 +45,8 @@ do
             fi
         fi
 
+        ./jboss-cli.sh -c --file="$CLI_PATH/add-adapter-log-level.cli"
+
         ./jboss-cli.sh -c --command=":shutdown"
         rm -rf $JBOSS_HOME/standalone/data
         rm -rf $JBOSS_HOME/standalone/log

@@ -28,8 +28,8 @@
         <spi name="truststore">
             <provider name="file" enabled="true">
                 <properties>
-                    <property name="file" value="${{jboss.home.dir}}/standalone/configuration/keycloak.truststore"/>
-                    <property name="password" value="secret"/>
+                    <property name="file" value="${{auth.server.truststore}}"/>
+                    <property name="password" value="${{auth.server.truststore.password}}"/>
                     <property name="hostname-verification-policy" value="WILDCARD"/>
                     <property name="disabled" value="false"/>
                 </properties>

@@ -28,6 +28,7 @@ import javax.servlet.Filter;
 import javax.servlet.Servlet;
 
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.ErrorPage;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
@@ -183,9 +184,19 @@ class SimpleWebXmlParser {
                 cfg.setName(cookieName);
                 di.setServletSessionConfig(cfg);
             }
+            
+            // ERROR PAGES
+            List<ElementWrapper> errorPages = document.getElementsByTagName("error-page");
+            for (ElementWrapper errorPage : errorPages) {
+                int errorCode = Integer.parseInt(errorPage.getElementByTagName("error-code").getText());
+                String location = errorPage.getElementByTagName("location").getText();
+                di.addErrorPage(new ErrorPage(location, errorCode));
+            }
 
         } catch (ClassNotFoundException cnfe) {
             throw new RuntimeException(cnfe);
+        } catch (NullPointerException npe) {
+            throw new RuntimeException("Error parsing web.xml of " + di.getDeploymentName(), npe);
         }
     }
 

@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, Input} from '@angular/core';
 import {TranslateUtil} from '../ngx-translate/translate.util';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import {ResponsivenessService} from "../responsiveness-service/responsiveness.service";
 import {Referrer} from "../page/referrer";
 
 declare const resourceUrl: string;
+declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
 
@@ -30,6 +31,7 @@ declare const referrer_uri: string;
     styleUrls: ['./top-nav.component.css']
 })
 export class TopNavComponent implements OnInit {
+    @Input() showSideNav: String;
 
     public resourceUrl: string = resourceUrl;
     
@@ -47,7 +49,7 @@ export class TopNavComponent implements OnInit {
     }
 
     private logout() {
-        this.keycloakService.logout();
+        this.keycloakService.logout(baseUrl);
     }
 
 }

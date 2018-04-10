@@ -63,8 +63,11 @@ public class ConfigUtil {
     }
 
     public static void checkServerInfo(ConfigData config) {
-        if (config.getServerUrl() == null || config.getRealm() == null) {
-            throw new RuntimeException("No server or realm specified. Use --server, --realm, or '" + OsUtil.CMD + " config credentials'.");
+        if (config.getServerUrl() == null) {
+            throw new RuntimeException("No server specified. Use --server, or '" + OsUtil.CMD + " config credentials or connection'.");
+        }
+        if (config.getRealm() == null && config.getExternalToken() == null) {
+            throw new RuntimeException("No realm or token specified. Use --realm, --token, or '" + OsUtil.CMD + " config credentials'.");
         }
     }
 
@@ -73,8 +76,8 @@ public class ConfigUtil {
     }
 
     public static boolean credentialsAvailable(ConfigData config) {
-        return config.getServerUrl() != null && config.getRealm() != null
-                && config.sessionRealmConfigData() != null && config.sessionRealmConfigData().getRefreshToken() != null;
+        return config.getServerUrl() != null && (config.getExternalToken() != null || (config.getRealm() != null
+                && config.sessionRealmConfigData() != null && config.sessionRealmConfigData().getRefreshToken() != null));
     }
 
     public static ConfigData loadConfig() {

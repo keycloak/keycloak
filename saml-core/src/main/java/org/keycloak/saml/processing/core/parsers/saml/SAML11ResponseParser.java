@@ -25,7 +25,6 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -38,6 +37,7 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the SAML 11 Response
@@ -45,11 +45,11 @@ import javax.xml.stream.events.XMLEvent;
  * @author Anil.Saldhana@redhat.com
  * @since 23 June 2011
  */
-public class SAML11ResponseParser implements ParserNamespaceSupport {
+public class SAML11ResponseParser implements StaxParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private final String RESPONSE = JBossSAMLConstants.RESPONSE.get();
+    private final String RESPONSE = JBossSAMLConstants.RESPONSE__PROTOCOL.get();
 
     /**
      * @see {@link ParserNamespaceSupport#parse(XMLEventReader)}
@@ -76,7 +76,7 @@ public class SAML11ResponseParser implements ParserNamespaceSupport {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String elementName = StaxParserUtil.getStartElementName(startElement);
+            String elementName = StaxParserUtil.getElementName(startElement);
             if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
                 Element sig = StaxParserUtil.getDOMElement(xmlEventReader);
                 response.setSignature(sig);
@@ -172,17 +172,11 @@ public class SAML11ResponseParser implements ParserNamespaceSupport {
                 if (StaxParserUtil.matches(endElement, STATUS))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
+                    throw logger.parserUnknownEndElement(StaxParserUtil.getElementName(endElement), xmlEvent.getLocation());
             } else
                 break;
         }
         return status;
     }
 
-    /**
-     * @see {@link ParserNamespaceSupport#supports(QName)}
-     */
-    public boolean supports(QName qname) {
-        return SAML11Constants.PROTOCOL_11_NSURI.equals(qname.getNamespaceURI()) && RESPONSE.equals(qname.getLocalPart());
-    }
 }

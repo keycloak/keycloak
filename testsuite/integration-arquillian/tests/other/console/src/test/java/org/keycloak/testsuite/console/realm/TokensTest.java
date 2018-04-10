@@ -148,7 +148,6 @@ public class TokensTest extends AbstractRealmTest {
         assertAlertSuccess();
 
         loginToTestRealmConsoleAs(testUser);
-        driver.navigate().refresh();
 
         tokenSettingsPage.navigateTo();
         tokenSettingsPage.form().selectOperation(VerifyEmailActionToken.TOKEN_TYPE);

@@ -64,12 +64,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
@@ -304,14 +306,7 @@ public class AuthenticationManagementResource {
             logger.debug("flow not found: " + flowAlias);
             return Response.status(NOT_FOUND).build();
         }
-        AuthenticationFlowModel copy = new AuthenticationFlowModel();
-        copy.setAlias(newName);
-        copy.setDescription(flow.getDescription());
-        copy.setProviderId(flow.getProviderId());
-        copy.setBuiltIn(false);
-        copy.setTopLevel(flow.isTopLevel());
-        copy = realm.addAuthenticationFlow(copy);
-        copy(newName, flow, copy);
+        AuthenticationFlowModel copy = copyFlow(realm, flow, newName);
 
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
@@ -320,7 +315,19 @@ public class AuthenticationManagementResource {
 
     }
 
-    protected void copy(String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
+    public static AuthenticationFlowModel copyFlow(RealmModel realm, AuthenticationFlowModel flow, String newName) {
+        AuthenticationFlowModel copy = new AuthenticationFlowModel();
+        copy.setAlias(newName);
+        copy.setDescription(flow.getDescription());
+        copy.setProviderId(flow.getProviderId());
+        copy.setBuiltIn(false);
+        copy.setTopLevel(flow.isTopLevel());
+        copy = realm.addAuthenticationFlow(copy);
+        copy(realm, newName, flow, copy);
+        return copy;
+    }
+
+    public static void copy(RealmModel realm, String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
         for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(from.getId())) {
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
@@ -332,7 +339,7 @@ public class AuthenticationManagementResource {
                 copy.setTopLevel(false);
                 copy = realm.addAuthenticationFlow(copy);
                 execution.setFlowId(copy.getId());
-                copy(newName, subFlow, copy);
+                copy(realm, newName, subFlow, copy);
             }
             execution.setId(null);
             execution.setParentFlow(to.getId());
@@ -384,7 +391,8 @@ public class AuthenticationManagementResource {
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION_FLOW).resourcePath(uriInfo).representation(data).success();
 
-        return Response.status(Response.Status.CREATED).build();
+        String addExecutionPathSegment = UriBuilder.fromMethod(AuthenticationManagementResource.class, "addExecutionFlow").build(parentFlow.getAlias()).getPath();
+        return Response.created(uriInfo.getBaseUriBuilder().path(uriInfo.getPath().replace(addExecutionPathSegment, "")).path("flows").path(newFlow.getId()).build()).build();
     }
 
     private int getNextPriority(AuthenticationFlowModel parentFlow) {
@@ -402,7 +410,7 @@ public class AuthenticationManagementResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
+    public Response addExecutionToFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
@@ -438,6 +446,9 @@ public class AuthenticationManagementResource {
 
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(uriInfo).representation(data).success();
+
+        String addExecutionPathSegment = UriBuilder.fromMethod(AuthenticationManagementResource.class, "addExecutionToFlow").build(parentFlow.getAlias()).getPath();
+        return Response.created(uriInfo.getBaseUriBuilder().path(uriInfo.getPath().replace(addExecutionPathSegment, "")).path("executions").path(execution.getId()).build()).build();
     }
 
     /**
@@ -560,6 +571,26 @@ public class AuthenticationManagementResource {
     }
 
     /**
+     * Get Single Execution
+     */
+    @Path("/executions/{executionId}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getExecution(final @PathParam("executionId") String executionId) {
+    	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
+        auth.realm().requireManageRealm();
+
+        final Optional<AuthenticationExecutionModel> model = Optional.ofNullable(realm.getAuthenticationExecutionById(executionId));
+        if (!model.isPresent()) {
+            logger.debugv("Could not find execution by Id: {}", executionId);
+            throw new NotFoundException("Illegal execution");
+        }
+
+        return Response.ok(model.get()).build();
+    }
+
+    /**
      * Add new authentication execution
      *
      * @param execution JSON model describing authentication execution
@@ -594,6 +625,7 @@ public class AuthenticationManagementResource {
         }
         return parentFlow;
     }
+
 
     /**
      * Raise execution's priority

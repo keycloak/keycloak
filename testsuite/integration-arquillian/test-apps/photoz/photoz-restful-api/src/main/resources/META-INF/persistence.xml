@@ -15,8 +15,8 @@
 			<property name="hibernate.connection.driver_class" value="org.h2.Driver" />
 			<property name="hibernate.connection.url" value="jdbc:h2:mem:test-keycloak-photoz-example" />
 			<property name="hibernate.connection.user" value="sa" />
-			<property name="hibernate.flushMode" value="FLUSH_AUTO" />
-			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.flushMode" value="COMMIT" />
+			<property name="hibernate.hbm2ddl.auto" value="create-drop" />
 			<property name="hibernate.show_sql" value="false" />
 		</properties>
 	</persistence-unit>

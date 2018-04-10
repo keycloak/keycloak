@@ -30,6 +30,9 @@ public class ScopeForm extends Form {
     @FindBy(id = "name")
     private WebElement name;
 
+    @FindBy(id = "displayName")
+    private WebElement displayName;
+
     @FindBy(id = "iconUri")
     private WebElement iconUri;
 
@@ -41,6 +44,7 @@ public class ScopeForm extends Form {
 
     public void populate(ScopeRepresentation expected) {
         setInputValue(name, expected.getName());
+        setInputValue(displayName, expected.getDisplayName());
         setInputValue(iconUri, expected.getIconUri());
         save();
     }
@@ -48,5 +52,15 @@ public class ScopeForm extends Form {
     public void delete() {
         deleteButton.click();
         modalDialog.confirmDeletion();
+    }
+
+    public ScopeRepresentation toRepresentation() {
+        ScopeRepresentation representation = new ScopeRepresentation();
+
+        representation.setName(getInputValue(name));
+        representation.setDisplayName(getInputValue(displayName));
+        representation.setIconUri(getInputValue(iconUri));
+
+        return representation;
     }
 }

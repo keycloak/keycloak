@@ -34,7 +34,7 @@ import java.util.List;
 @Path("/profile")
 public class ProfileService {
 
-    private static final String PROFILE_VIEW = "urn:photoz.com:scopes:profile:view";
+    private static final String PROFILE_VIEW = "profile:view";
 
     @Inject
     private EntityManager entityManager;

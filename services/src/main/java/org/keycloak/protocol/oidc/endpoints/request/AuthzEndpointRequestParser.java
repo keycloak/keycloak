@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.endpoints.request;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
@@ -91,6 +92,7 @@ abstract class AuthzEndpointRequestParser {
         request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM));
         request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
         request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
+        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));

@@ -16,15 +16,17 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
+
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -80,5 +82,17 @@ public class Scopes extends Form {
                 modalDialog.confirmDeletion();
             }
         }
+    }
+
+    public Scope name(String name) {
+        for (WebElement row : scopes().rows()) {
+            ScopeRepresentation actual = scopes().toRepresentation(row);
+            if (actual.getName().equalsIgnoreCase(name)) {
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
+                return scope;
+            }
+        }
+        return null;
     }
 }

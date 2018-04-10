@@ -67,7 +67,7 @@ public class AuthServerTestEnricher {
     @Inject
     private Event<StopContainer> stopContainerEvent;
 
-    private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
+    public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
     public static final String AUTH_SERVER_CONTAINER = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
 
