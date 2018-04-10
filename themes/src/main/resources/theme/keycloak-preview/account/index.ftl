@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="layout-pf-alt layout-pf-alt-fixed">
     <head>
-        <title>Keycloak Account</title>
+        <title>${msg("accountManagementTitle")}</title>
 
         <script>
             var authUrl = '${authUrl}';
@@ -18,7 +18,7 @@
 
             <#if msg??>
                 var locale = '${locale}';
-                var l18n_msg = JSON.parse('${msg?no_esc}');
+                var l18n_msg = JSON.parse('${msgJSON?no_esc}');
             <#else>
                 var locale = 'en';
                 var l18n_msg = {};
