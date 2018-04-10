@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -28,7 +29,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +87,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
 
         jsDriver.manage().deleteAllCookies();
+
+        setStandardFlowForClient();
     }
 
     private JSObjectBuilder defaultArguments() {
@@ -206,7 +208,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(defaultArguments().implicitFlow(), this::assertSuccessfullyLoggedIn);
 
-        setStandardFlowForClient();
     }
 
     @Test
@@ -223,12 +224,11 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @Test
     public void implicitFlowQueryTest() {
         setImplicitFlowForClient();
-        testExecutor.init(defaultArguments().implicitFlow().queryResponse(), this::assertInitNotAuth)
-                .login(((driver1, output, events) -> {
-                    waitUntilElement(By.tagName("body")).is().present();
-                    Assert.assertThat(driver1.getCurrentUrl(), containsString("Response_mode+%27query%27+not+allowed"));
-                }));
-        setStandardFlowForClient();
+        testExecutor.init(JSObjectBuilder.create().implicitFlow().queryResponse(), this::assertInitNotAuth)
+                .login((driver1, output, events1) -> Retry.execute(
+                        () -> assertThat(driver1.getCurrentUrl(), containsString("Response_mode+%27query%27+not+allowed")),
+                        20, 50)
+                );
     }
 
     @Test
@@ -236,7 +236,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         setImplicitFlowForClient();
         testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertSuccessfullyLoggedIn)
             .refreshToken(9999, assertOutputContains("Failed to refresh token"));
-        setStandardFlowForClient();
     }
 
     @Test
@@ -255,7 +254,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         // Get to origin state
         realm.setAccessTokenLifespanForImplicitFlow(storeAccesTokenLifespan);
         adminClient.realms().realm(REALM_NAME).update(realm);
-        setStandardFlowForClient();
     }
 
     @Test
@@ -268,7 +266,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                                 .addHeader("Accept", "application/json")
                                 .addHeader("Authorization", "Bearer ' + keycloak.token + '"),
                         assertResponseStatus(200));
-        setStandardFlowForClient();
     }
 
     @Test
