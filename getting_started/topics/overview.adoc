@@ -5,3 +5,7 @@ The purpose of this guide is to get you up and running as quickly as possible so
 play with and test-drive various features that {project_name} has. It relies heavily on the default database
 and server configuration and does not cover any complex deployment options. If you want a more
 in-depth discussion of any features or configuration options, consult the various reference guides available.
+
+ifeval::[{project_product}==true]
+{project_name} is based on the open source link:https://www.keycloak.org/[Keycloak] community project, which has its documentation link:http://www.keycloak.org/documentation.html[here]. 
+endif::[]
