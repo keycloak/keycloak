@@ -27,12 +27,12 @@
         <version>4.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>integration-arquillian-tests-adapters-fuse63</artifactId>
+    <artifactId>integration-arquillian-tests-adapters-fuse70</artifactId>
 
-    <name>Adapter Tests - Karaf - JBoss Fuse 6.3</name>
-        
+    <name>Adapter Tests - Karaf - JBoss Fuse 7.0</name>
+
     <properties>
-        <app.server>fuse63</app.server>
+        <app.server>fuse70</app.server>
 
         <app.server.management.user>admin</app.server.management.user>
         <app.server.management.password>admin</app.server.management.password>
@@ -44,5 +44,5 @@
             <artifactId>httpclient</artifactId>
         </dependency>
     </dependencies>
-    
+
 </project>
