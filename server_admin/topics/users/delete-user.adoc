@@ -1,0 +1,19 @@
+[[_delete-user]]
+
+=== Deleting Users
+
+To delete a user click on `Users` in the left menu bar.
+
+.Users
+image:{project_images}/users.png[]
+
+This menu option brings you to the user list page. Click `View all users` or search to find the user you intend to delete.
+
+.Add User
+image:{project_images}/delete-user.png[]
+
+In the list of users, click `Delete` next to the user you want to remove. You will be asked to confirm that you are sure you want to delete this user. Click `Delete` in the confirmation box to confirm.
+
+
+
+
