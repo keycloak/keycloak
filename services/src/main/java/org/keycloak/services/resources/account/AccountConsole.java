@@ -38,6 +38,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.beans.MessageFormatterMethod;
@@ -100,16 +101,13 @@ public class AccountConsole {
                 map.put("referrer_uri", referrer[1]);
             }
             
-            try {
-                if (auth != null) {
-                    Locale locale = session.getContext().resolveLocale(auth.getUser());
-                    map.put("locale", locale.toLanguageTag());
-                    Properties messages = theme.getMessages(locale);
-                    map.put("msg", messagesToJsonString(messages));
-                }
-            } catch (Exception e) {
-                logger.warn("Failed to load messages", e);
-            }
+            UserModel user = null;
+            if (auth != null) user = auth.getUser();
+            Locale locale = LocaleHelper.getLocale(session, realm, user);
+            map.put("locale", locale.toLanguageTag());
+            Properties messages = theme.getMessages(locale);
+            map.put("msg", new MessageFormatterMethod(locale, messages));
+            map.put("msgJSON", messagesToJsonString(messages));
             
             map.put("properties", theme.getProperties());
 
