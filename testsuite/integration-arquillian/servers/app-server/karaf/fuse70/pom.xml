@@ -25,19 +25,19 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-fuse63</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - Karaf - JBoss Fuse 6.3</name>
+    <name>App Server - Karaf - JBoss Fuse 7.0</name>
 
     <properties>
-        <app.server.karaf>fuse63</app.server.karaf>
+        <app.server.karaf>fuse70</app.server.karaf>
         <app.server.karaf.groupId>org.jboss.fuse</app.server.karaf.groupId>
         <app.server.karaf.artifactId>jboss-fuse-karaf</app.server.karaf.artifactId>
-        <app.server.karaf.version>${fuse63.version}</app.server.karaf.version>
-        <app.server.karaf.unpacked.folder.name>jboss-fuse-${fuse63.version}</app.server.karaf.unpacked.folder.name>
+        <app.server.karaf.version>${fuse70.version}</app.server.karaf.version>
+        <app.server.karaf.unpacked.folder.name>jboss-fuse-karaf-${fuse70.version}</app.server.karaf.unpacked.folder.name>
         <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
     </properties>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -50,7 +50,7 @@
                         <configuration>
                             <rules>
                                 <requireProperty>
-                                    <property>fuse63.version</property>
+                                    <property>fuse70.version</property>
                                 </requireProperty>
                             </rules>
                         </configuration>

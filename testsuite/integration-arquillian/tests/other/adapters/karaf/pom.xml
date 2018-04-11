@@ -53,41 +53,6 @@
                     <exists>src</exists>
                 </file>
             </activation>
-            <dependencies>
-
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                    <version>2.1.0.CR18</version>
-                </dependency>
-        
-                <dependency>
-                    <groupId>org.apache.aries.jmx</groupId>
-                    <artifactId>org.apache.aries.jmx</artifactId>
-                    <version>1.1.1</version>
-                </dependency>
-        
-                <dependency>
-                    <groupId>jline</groupId>
-                    <artifactId>jline</artifactId>
-                    <version>2.12</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.karaf.shell</groupId>
-                    <artifactId>org.apache.karaf.shell.console</artifactId>
-                    <version>3.0.3</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.karaf</groupId>
-                    <artifactId>org.apache.karaf.client</artifactId>
-                    <version>3.0.3</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.sshd</groupId>
-                    <artifactId>sshd-core</artifactId>
-                    <version>1.2.0</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -113,33 +78,37 @@
             </build>
         </profile>
         
-        
+
         <profile>
             <id>app-server-karaf3</id>
             <modules>
                 <module>karaf3</module>
             </modules>
-        </profile>        
+        </profile>
         <profile>
             <id>app-server-fuse61</id>
             <modules>
                 <module>fuse61</module>
             </modules>
-        </profile>        
+        </profile>
         <profile>
             <id>app-server-fuse62</id>
             <modules>
                 <module>fuse62</module>
             </modules>
-        </profile>                
+        </profile>
         <profile>
             <id>app-server-fuse63</id>
             <modules>
                 <module>fuse63</module>
             </modules>
-        </profile>                
-        
+        </profile>
+        <profile>
+            <id>app-server-fuse70</id>
+            <modules>
+                <module>fuse70</module>
+            </modules>
+        </profile>
     </profiles>
-
 
 </project>
