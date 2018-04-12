@@ -68,7 +68,7 @@ public class ActionURIUtils {
 
     public static String removeQueryParamFromURI(String actionURI, String paramName) {
         return UriBuilder.fromUri(actionURI)
-                .replaceQueryParam(paramName, null)
+                .replaceQueryParam(paramName, (Object[]) null)
                 .build().toString();
     }
 

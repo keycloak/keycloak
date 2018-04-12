@@ -251,7 +251,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
                 RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");
                 RoleRepresentation roleRepresentation = manageAlbumRole.toRepresentation();
-                List<Map> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
+                List<Map<String, Object>> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
 
                 roles = roles.stream().filter((Map map) -> !map.get("id").equals(roleRepresentation.getId())).collect(Collectors.toList());
 
@@ -389,7 +389,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
             if ("Any User Policy".equals(policy.getName())) {
-                List<Map> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
+                List<Map<String, Object>> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
 
                 roles.forEach(role -> {
                     String roleId = (String) role.get("id");

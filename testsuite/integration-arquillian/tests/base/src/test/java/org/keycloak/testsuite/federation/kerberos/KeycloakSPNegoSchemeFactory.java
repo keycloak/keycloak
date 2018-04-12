@@ -59,6 +59,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
 
     @Override
+    @SuppressWarnings("deprecation")
     public AuthScheme newInstance(HttpParams params) {
         return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
     }

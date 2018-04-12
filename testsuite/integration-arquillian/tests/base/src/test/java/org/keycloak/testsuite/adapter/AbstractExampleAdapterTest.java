@@ -63,7 +63,7 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
 
     protected static WebArchive exampleDeployment(String name, String contextPath) throws IOException {
         URL webXML = Paths.get(EXAMPLES_WEB_XML).toUri().toURL();
-        String webXmlContent = IOUtils.toString(webXML.openStream())
+        String webXmlContent = IOUtils.toString(webXML.openStream(), "UTF-8")
                 .replace("%CONTEXT_PATH%", contextPath);
         WebArchive webArchive = ShrinkWrap.createFromZipFile(WebArchive.class,
                 new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))

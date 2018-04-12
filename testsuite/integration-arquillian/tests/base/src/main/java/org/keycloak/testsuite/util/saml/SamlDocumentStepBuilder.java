@@ -112,6 +112,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
         return (This) this;
     }
 
+    @SuppressWarnings("unchecked")
     public This transformDocument(Saml2DocumentTransformer tr) {
         final StringTransformer original = this.transformer;
         this.transformer = s -> {
@@ -127,6 +128,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
         return (This) this;
     }
 
+    @SuppressWarnings("unchecked")
     public This transformString(StringTransformer tr) {
         final StringTransformer original = this.transformer;
         this.transformer = s -> {

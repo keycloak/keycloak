@@ -57,7 +57,7 @@ public class Registry implements ContainerRegistry {
 
     private final List<Container> containers;
 
-    private Injector injector;
+    private final Injector injector;
 
     private static final Logger logger = Logger.getLogger(RegistryCreator.class.getName());
 
@@ -98,7 +98,7 @@ public class Registry implements ContainerRegistry {
             return addContainer(injector.inject(
                     new ContainerImpl(definition.getContainerName(), dcService, definition)));
 
-        } catch (Exception e) {
+        } catch (ConfigurationException e) {
             throw new ContainerCreationException("Could not create Container " + definition.getContainerName(), e);
         }
     }

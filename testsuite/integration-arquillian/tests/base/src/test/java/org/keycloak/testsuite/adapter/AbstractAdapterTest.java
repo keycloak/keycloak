@@ -233,7 +233,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     public static void addContextXml(Archive archive, String contextPath) {
         try {
-            String contextXmlContent = IOUtils.toString(tomcatContext.openStream())
+            String contextXmlContent = IOUtils.toString(tomcatContext.openStream(), "UTF-8")
                     .replace("%CONTEXT_PATH%", contextPath);
             archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
         } catch (IOException ex) {
@@ -242,45 +242,45 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     }
 
     private static void enableHTTPSForAppServer() throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
-        OnlineManagementClient client = AppServerTestEnricher.getManagementClient();
-        Administration administration = new Administration(client);
-        Operations operations = new Operations(client);
-
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
-        }
-
-        client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
-        client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
-
-        if (APP_SERVER_CONTAINER.contains("eap6")) {
-            if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
-                client.apply(new AddConnector.Builder("https")
-                        .protocol("HTTP/1.1")
-                        .scheme("https")
-                        .socketBinding("https")
-                        .secure(true)
-                        .build());
-
-                client.apply(new AddConnectorSslConfig.Builder("https")
-                        .password("secret")
-                        .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
+        try (OnlineManagementClient client = AppServerTestEnricher.getManagementClient()) {
+            Administration administration = new Administration(client);
+            Operations operations = new Operations(client);
+            
+            if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+                client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+                client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
+            }
+            
+            client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
+            client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
+            
+            if (APP_SERVER_CONTAINER.contains("eap6")) {
+                if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
+                    client.apply(new AddConnector.Builder("https")
+                            .protocol("HTTP/1.1")
+                            .scheme("https")
+                            .socketBinding("https")
+                            .secure(true)
+                            .build());
+                    
+                    client.apply(new AddConnectorSslConfig.Builder("https")
+                            .password("secret")
+                            .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
+                            .build());
+                }
+            } else {
+                client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                        .forDefaultServer());
+                
+                administration.reloadIfRequired();
+                
+                client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                        .securityRealm("UndertowRealm")
                         .build());
             }
-        } else {
-            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                    .forDefaultServer());
 
             administration.reloadIfRequired();
-
-            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                    .securityRealm("UndertowRealm")
-                    .build());
         }
-
-        administration.reloadIfRequired();
-        client.close();
     }
 
 }

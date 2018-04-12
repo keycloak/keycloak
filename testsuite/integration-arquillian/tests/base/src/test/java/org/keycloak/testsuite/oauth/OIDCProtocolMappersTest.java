@@ -277,7 +277,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Object nulll = idToken.getOtherClaims().get("null");
             assertNull(nulll);
 
-            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            oauth.verifyToken(response.getAccessToken());
             oauth.openLogout();
         }
 

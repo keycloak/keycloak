@@ -89,7 +89,7 @@ public class Timer {
 
     private void logOperation(String operation, long duration) {
         if (!stats.containsKey(operation)) {
-            stats.put(operation, new ArrayList<Long>());
+            stats.put(operation, new ArrayList<>());
         }
         stats.get(operation).add(duration);
         log.info(String.format("Operation '%s' took: %s ms", operation, duration));
@@ -133,8 +133,8 @@ public class Timer {
             }
             OutputStream stream = new BufferedOutputStream(new FileOutputStream(f));
             for (Long duration : stats.get(op)) {
-                IOUtils.write(duration.toString(), stream);
-                IOUtils.write("\n", stream);
+                IOUtils.write(duration.toString(), stream, "UTF-8");
+                IOUtils.write("\n", stream, "UTF-8");
             }
             stream.flush();
             IOUtils.closeQuietly(stream);

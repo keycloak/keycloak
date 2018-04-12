@@ -89,6 +89,7 @@ public final class URLUtils {
         return urlCheck(condition, false);
     }
 
+    @SuppressWarnings("unchecked")
     private static boolean urlCheck(ExpectedCondition condition, boolean secondTry) {
         WebDriver driver = getCurrentDriver();
 

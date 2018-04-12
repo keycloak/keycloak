@@ -29,6 +29,7 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.junit.Assert;
@@ -92,7 +93,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream())
+            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
                     .replace("%CONTEXT_PATH%", name);
         } catch (IOException e) {
             throw new RuntimeException(e);

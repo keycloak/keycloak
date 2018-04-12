@@ -35,7 +35,7 @@ public class LogChecker {
 
     public static void checkServerLog(File logFile) throws IOException {
         log.info(String.format("Checking server log: '%s'", logFile.getAbsolutePath()));
-        String[] logContent = FileUtils.readFileToString(logFile).split("\n");
+        String[] logContent = FileUtils.readFileToString(logFile, "UTF-8").split("\n");
 
         for (String logText : logContent) {
             boolean containsError = logText.contains("ERROR") || logText.contains("SEVERE") || logText.contains("Exception ");
