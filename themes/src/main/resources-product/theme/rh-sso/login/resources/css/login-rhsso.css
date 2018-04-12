@@ -16,3 +16,7 @@
     background-attachment: fixed;
   }
 }
+#kc-header-wrapper sup {
+  font-size: 35%;
+  top: -1.4em;
+}
