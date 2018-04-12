@@ -15,3 +15,27 @@ p.description {
 .btn-sign {
   margin-top: 10px;
 }
+
+.layout-pf-alt.layout-pf-alt-fixed .container-pf-alt-nav-pf-vertical-alt {
+    margin-left: 210px;
+}
+
+.content-area {
+  padding: 30px 30px 20px;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+/* personal Info Style */
+.subtitle {
+  color: #4d5258;
+  font-size: 12px;
+}
+
+.content-area .required{
+  color: #cc0000;
+}
+
+.page-header {
+  border-bottom: 0;
+}
