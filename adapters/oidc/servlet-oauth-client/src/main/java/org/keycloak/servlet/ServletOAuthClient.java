@@ -36,6 +36,8 @@ import javax.security.cert.X509Certificate;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -265,6 +267,8 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
         public Request getRequest() {
             return new Request() {
 
+                private InputStream inputStream;
+
                 @Override
                 public String getFirstParam(String param) {
                     return servletRequest.getParameter(param);
@@ -314,10 +318,27 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
 
                 @Override
                 public InputStream getInputStream() {
+                    return getInputStream(false);
+                }
+
+                @Override
+                public InputStream getInputStream(boolean buffered) {
+                    if (inputStream != null) {
+                        return inputStream;
+                    }
+
+                    if (buffered) {
+                        try {
+                            return inputStream = new BufferedInputStream(servletRequest.getInputStream());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
                     try {
                         return servletRequest.getInputStream();
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
 
