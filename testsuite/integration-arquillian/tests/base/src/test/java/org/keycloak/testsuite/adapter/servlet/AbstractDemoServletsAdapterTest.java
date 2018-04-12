@@ -46,7 +46,6 @@ import org.openqa.selenium.Cookie;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.adapters.OIDCAuthenticationError;
-import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -979,7 +978,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         if (serverLogPath != null) {
             log.info("Checking app server log at: " + serverLogPath);
             File serverLog = new File(serverLogPath);
-            String serverLogContent = FileUtils.readFileToString(serverLog);
+            String serverLogContent = FileUtils.readFileToString(serverLog, "UTF-8");
             UserRepresentation bburke = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com");
 
             Pattern pattern = Pattern.compile("User '" + bburke.getId() + "' invoking '" + appServerUrl + "customer-portal[^\\s]+' on client 'customer-portal'");

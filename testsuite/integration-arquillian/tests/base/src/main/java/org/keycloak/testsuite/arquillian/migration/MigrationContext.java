@@ -20,9 +20,9 @@ package org.keycloak.testsuite.arquillian.migration;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -41,20 +41,14 @@ public class MigrationContext {
         String file = getOfflineTokenLocation();
         logger.infof("Reading previously saved offline token from the file: %s", file);
 
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(file);
-            String offlineToken = StreamUtil.readString(fis);
+        try (FileInputStream fis = new FileInputStream(file)) {
+            String offlineToken = StreamUtil.readString(fis, Charset.forName("UTF-8"));
 
             File f = new File(file);
             f.delete();
             logger.infof("Deleted file with offline token: %s", file);
 
             return offlineToken;
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
         }
     }
 
@@ -85,14 +79,8 @@ public class MigrationContext {
         String file = getOfflineTokenLocation();
         logger.infof("Saving offline token to file: %s", file);
 
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
             writer.print(offlineToken);
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 

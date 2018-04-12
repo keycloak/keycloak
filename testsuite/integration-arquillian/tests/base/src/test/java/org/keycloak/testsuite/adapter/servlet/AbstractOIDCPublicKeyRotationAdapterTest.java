@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.core.Response;
@@ -26,9 +27,9 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -60,7 +61,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.URLAssert;
 import org.openqa.selenium.By;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -307,8 +310,7 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
 
     private int invokeRESTEndpoint(String accessTokenString) {
 
-        HttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             String restUrl = customerDb.toString();
             HttpGet get = new HttpGet(restUrl);
             get.addHeader("Authorization", "Bearer " + accessTokenString);
@@ -320,19 +322,16 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
                 }
 
                 HttpEntity entity = response.getEntity();
-                InputStream is = entity.getContent();
-                try {
-                    String body = StreamUtil.readString(is);
+                try (InputStream is = entity.getContent()) {
+                    String body = StreamUtil.readString(is, Charset.forName("UTF-8"));
                     Assert.assertTrue(body.contains("Stian Thorgersen") && body.contains("Bill Burke"));
                     return status;
-                } finally {
-                    is.close();
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } finally {
-            client.getConnectionManager().shutdown();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

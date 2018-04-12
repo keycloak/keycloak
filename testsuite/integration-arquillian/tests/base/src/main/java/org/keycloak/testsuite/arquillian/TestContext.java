@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ws.rs.NotFoundException;
-
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -44,7 +42,7 @@ public final class TestContext {
 
     private boolean adminLoggedIn;
     
-    private final Map customContext = new HashMap<>();
+    private final Map<Object, Object> customContext = new HashMap<>();
 
     private Keycloak adminClient;
     private KeycloakTestingClient testingClient;
@@ -55,7 +53,7 @@ public final class TestContext {
     private boolean initialized;
 
     // Key is realmName, value are objects to clean after the test method
-    private Map<String, TestCleanup> cleanups = new ConcurrentHashMap<>();
+    private final Map<String, TestCleanup> cleanups = new ConcurrentHashMap<>();
 
     public TestContext(SuiteContext suiteContext, Class testClass) {
         this.suiteContext = suiteContext;

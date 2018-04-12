@@ -30,13 +30,6 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import javax.ws.rs.NotFoundException;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.keycloak.testsuite.Assert.assertEquals;
-import static org.keycloak.testsuite.Assert.assertFalse;
-import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.Assert.assertTrue;
-import static org.keycloak.testsuite.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**

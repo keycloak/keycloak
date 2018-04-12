@@ -115,7 +115,7 @@ public class Matchers {
      * @return
      */
     public static <T> Matcher<Response> header(Matcher<Map<String, T>> matcher) {
-        return new ResponseHeaderMatcher(matcher);
+        return new ResponseHeaderMatcher<>(matcher);
     }
 
     /**

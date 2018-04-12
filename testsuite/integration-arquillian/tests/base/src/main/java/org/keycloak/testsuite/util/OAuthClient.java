@@ -27,13 +27,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
@@ -41,6 +40,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -68,7 +68,11 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 
@@ -255,13 +259,13 @@ public class OAuthClient {
             } catch(Exception e) {
                 e.printStackTrace();
             }
-            return (DefaultHttpClient)new HttpClientBuilder()
+            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
                     .keyStore(keystore, keyStorePassword)
                     .trustStore(truststore)
-                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
                     .build();
         }
-        return new DefaultHttpClient();
+        return HttpClientBuilder.create().build();
     }
 
     public CloseableHttpResponse doPreflightRequest() {
@@ -279,7 +283,7 @@ public class OAuthClient {
         try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
 
             if (origin != null) {
@@ -333,7 +337,7 @@ public class OAuthClient {
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
-        try (CloseableHttpClient client = new DefaultHttpClient()) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -377,11 +381,10 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
@@ -419,18 +422,15 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
@@ -463,17 +463,14 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -497,32 +494,26 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
 
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(getCertsUrl(realm));
             CloseableHttpResponse response = client.execute(get);
             return JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
             if (scope != null) {
@@ -538,18 +529,15 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
-        }
+        } 
     }
 
 
     public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getLogoutUrl().build());
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             if (refreshToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
             }
@@ -569,17 +557,14 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return client.execute(post);
-        } finally {
-            closeClient(client);
-        }
+        } 
     }
 
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getRefreshTokenUrl());
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
 
             if (origin != null) {
@@ -615,8 +600,8 @@ public class OAuthClient {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -653,7 +638,7 @@ public class OAuthClient {
                 throw new RuntimeException("Invalid refresh token");
             }
             return jws.readJsonContent(RefreshToken.class);
-        } catch (Exception e) {
+        } catch (RuntimeException | JWSInputException e) {
             throw new RuntimeException("Invalid refresh token", e);
         }
     }
@@ -679,8 +664,8 @@ public class OAuthClient {
     }
 
     public Map<String, String> getCurrentQuery() {
-        Map<String, String> m = new HashMap<String, String>();
-        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), "UTF-8");
+        Map<String, String> m = new HashMap<>();
+        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), Charset.forName("UTF-8"));
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
         }
@@ -688,7 +673,7 @@ public class OAuthClient {
     }
 
     public Map<String, String> getCurrentFragment() {
-        Map<String, String> m = new HashMap<String, String>();
+        Map<String, String> m = new HashMap<>();
 
         String fragment = getCurrentUri().getRawFragment();
         List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, Charset.forName("UTF-8"));
@@ -1013,7 +998,7 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent());
+                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
                 Map responseJson = JsonSerialization.readValue(s, Map.class);
 
                 if (statusCode == 200) {

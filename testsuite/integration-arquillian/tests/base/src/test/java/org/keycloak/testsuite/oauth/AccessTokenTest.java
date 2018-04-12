@@ -22,7 +22,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,7 +34,6 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -952,27 +951,23 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
             parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
             post.setHeader("Authorization", "Negotiate something-which-will-be-ignored");
 
-            UrlEncodedFormEntity formEntity = null;
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             post.setEntity(formEntity);
 
             OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
             Assert.assertEquals(200, response.getStatusCode());
             AccessToken token = oauth.verifyToken(response.getAccessToken());
             events.expectCodeToToken(codeId, sessionId).client("sample-public-client").assertEvent();
-        } finally {
-            oauth.closeClient(client);
         }
     }
 

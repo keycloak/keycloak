@@ -21,6 +21,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
@@ -38,9 +39,8 @@ import javax.ws.rs.core.Response;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
-import org.apache.http.client.params.AuthPolicy;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
@@ -115,6 +115,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     @Before
+    @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
 
@@ -136,6 +137,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     }
 
     @After
+    @Override
     public void afterAbstractKeycloakTest() {
         cleanupApacheHttpClient();
 
@@ -347,20 +349,22 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         if (client != null) {
             cleanupApacheHttpClient();
         }
-
+        
         DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder()
                 .disableCookieCache(false)
                 .build();
 
-        httpClient.getAuthSchemes().register(AuthPolicy.SPNEGO, spnegoSchemeFactory);
+        httpClient.getAuthSchemes().register(AuthSchemes.SPNEGO, spnegoSchemeFactory);
 
         if (useSpnego) {
             Credentials fake = new Credentials() {
 
+                @Override
                 public String getPassword() {
                     return null;
                 }
 
+                @Override
                 public Principal getUserPrincipal() {
                     return null;
                 }
@@ -409,7 +413,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected OAuthClient.AccessTokenResponse assertAuthenticationSuccess(String codeUrl) throws Exception {
-        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), "UTF-8");
+        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), Charset.forName("UTF-8"));
         String code = null;
         String state = null;
         for (NameValuePair pair : pairs) {
@@ -444,6 +448,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
     }
     
+    @Override
     public RealmResource testRealmResource() {
         return adminClient.realm("test");
     }

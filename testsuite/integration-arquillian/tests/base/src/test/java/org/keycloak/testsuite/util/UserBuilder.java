@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -72,7 +71,7 @@ public class UserBuilder {
      */
     public UserBuilder addPassword(String password) {
         if (rep.getCredentials() == null) {
-            rep.setCredentials(new LinkedList<CredentialRepresentation>());
+            rep.setCredentials(new LinkedList<>());
         }
 
         CredentialRepresentation credential = new CredentialRepresentation();
@@ -103,20 +102,18 @@ public class UserBuilder {
 
     public UserBuilder addRoles(String... roles) {
         if (rep.getRealmRoles() == null) {
-            rep.setRealmRoles(new ArrayList<String>());
+            rep.setRealmRoles(new ArrayList<>());
         }
-        for (String role : roles) {
-            rep.getRealmRoles().add(role);
-        }
+        rep.getRealmRoles().addAll(Arrays.asList(roles));
         return this;
     }
 
     public UserBuilder role(String client, String role) {
         if (rep.getClientRoles() == null) {
-            rep.setClientRoles(new HashMap<String, List<String>>());
+            rep.setClientRoles(new HashMap<>());
         }
         if (rep.getClientRoles().get(client) == null) {
-            rep.getClientRoles().put(client, new LinkedList<String>());
+            rep.getClientRoles().put(client, new LinkedList<>());
         }
         rep.getClientRoles().get(client).add(role);
         return this;
@@ -124,7 +121,7 @@ public class UserBuilder {
 
     public UserBuilder requiredAction(String requiredAction) {
         if (rep.getRequiredActions() == null) {
-            rep.setRequiredActions(new LinkedList<String>());
+            rep.setRequiredActions(new LinkedList<>());
         }
         rep.getRequiredActions().add(requiredAction);
         return this;
@@ -137,7 +134,7 @@ public class UserBuilder {
 
     public UserBuilder secret(String type, String secret) {
         if (rep.getCredentials() == null) {
-            rep.setCredentials(new LinkedList<CredentialRepresentation>());
+            rep.setCredentials(new LinkedList<>());
         }
 
         CredentialRepresentation credential = new CredentialRepresentation();
