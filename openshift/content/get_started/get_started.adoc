@@ -111,9 +111,9 @@ When deploying RH-SSO application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADM
 ====
 The lifespan of the RH-SSO server's administrator account depends upon the the storage type used to store the RH-SSO server's database:
 
-* For an in-memory database mode (*_sso71-https_* and *_sso72-https_* templates) the account exist throughout the lifecycle of the particular RH-SSO pod (stored account data is lost upon pod destruction),
-* For an ephemeral database mode (*_sso71-mysql_*, *_sso71-postgresql_*, *_sso72-mysql_*, and *_sso72-postgresql_* templates) the account exist throughout the lifecycle of the database pod (even if RH-SSO pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
-* For persistent database mode (*_sso71-mysql-persistent_*, *_sso71-postgresql-persistent_*, *_sso72-mysql-persistent_*, and *_sso72-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both, the RH-SSO and the database pods are destructed.
+* For an in-memory database mode (*_sso72-https_* template) the account exist throughout the lifecycle of the particular RH-SSO pod (stored account data is lost upon pod destruction),
+* For an ephemeral database mode (*_sso72-mysql_* and *_sso72-postgresql_* templates) the account exist throughout the lifecycle of the database pod (even if RH-SSO pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
+* For persistent database mode (*_sso72-mysql-persistent_* and *_sso72-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both, the RH-SSO and the database pods are destructed.
 
 It is a common practice to deploy an RH-SSO application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new RH-SSO application needs to be instantiated).
 ====
@@ -256,7 +256,7 @@ For more information on OpenShift route types, see the link:https://docs.openshi
 
 ==== Deployment Process
 
-Once deployed, the *_sso71-https_* and *_sso72-https_* templates create a single pod that contains both the database and the RH-SSO servers. The *_sso71-mysql_*, *_sso72-mysql_*, *_sso71-mysql-persistent_*, *_sso72-mysql-persistent_*, *_sso71-postgresql_*, *_sso72-postgresql_*, *_sso71-postgresql-persistent_*, and *_sso72-postgresql-persistent_* templates create two pods, one for the database server and one for the RH-SSO web server.
+Once deployed, the *_sso72-https_* template creates a single pod that contains both the database and the RH-SSO servers. The *_sso72-mysql_*, *_sso72-mysql-persistent_*, *_sso72-postgresql_*, and *_sso72-postgresql-persistent_* templates create two pods, one for the database server and one for the RH-SSO web server.
 
 After the RH-SSO web server pod has started, it can be accessed at its custom configured hostnames, or at the default hostnames:
 
@@ -397,13 +397,9 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 ====
 This guide assumes the {xpaasproduct-shortname} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_jboss_sso_for_openshift/#Example-Deploying-SSO[deployed using one of the following templates:]
 
-* *_sso71-mysql_*
 * *_sso72-mysql_*
-* *_sso71-postgresql_*
 * *_sso72-postgresql_*
-* *_sso71-mysql-persistent_*
 * *_sso72-mysql-persistent_*
-* *_sso71-postgresql-persistent_*
 * *_sso72-postgresql-persistent_*
 ====
 
@@ -428,12 +424,13 @@ In the newly created `demo` realm, click the *Keys* tab and copy the public key 
 
 [NOTE]
 ====
-RH-SSO 7.1 and RH-SSO 7.2 images generate two keys by default:
+The RH-SSO 7.2 image generates three keys by default:
 
-* RSA key, and
-* HMAC key
+* RSA key,
+* HMAC key, and
+* AES key
 
-To copy the public key information for the RH-SSO 7.1 or RH-SSO 7.2 image, click the *Public key* button of the *RSA* row of the keys table. Then select and copy the content of the pop-up window that appears.
+To copy the public key information for the RH-SSO 7.2 image, click the *Public key* button of the *RSA* row of the keys table. Then select and copy the content of the pop-up window that appears.
 ====
 
 The information about the public key is necessary xref:sso-public-key-details[later to deploy] the RH-SSO-enabled EAP 6.4 / 7.0 JSP application.
@@ -457,7 +454,7 @@ Create `user` and `admin` roles in RH-SSO. These roles will be assigned to an RH
 ====
 This is a new realm, so there should only be the default roles:
 
-* `offline_access` and `uma_authorization` role for the RH-SSO 7.1 and RH-SSO 7.2 images.
+* `offline_access` and `uma_authorization` role for the RH-SSO 7.2 image.
 ====
 . Click *Add Role*.
 . Enter the role name (`user`) and click *Save*.

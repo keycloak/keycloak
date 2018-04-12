@@ -33,7 +33,7 @@ information about the image and should not be modified by the user:
 
 |*_JBOSS_IMAGE_NAME_*
 |Image name, same as Name label.
-|*_redhat-sso-7/sso71-openshift_* or *_redhat-sso-7/sso72-openshift_*
+|*_redhat-sso-7/sso72-openshift_*
 
 |*_JBOSS_IMAGE_RELEASE_*
 |Image release, same as Release label.
@@ -362,7 +362,7 @@ if this environment variable is provided.
 |The password for the truststore and certificate.
 |===
 
-==== Template variables specific to *sso71-mysql*, *sso72-mysql*, *sso71-mysql-persistent*, and *sso72-mysql-persistent*
+==== Template variables specific to *sso72-mysql* and *sso72-mysql-persistent*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -396,7 +396,7 @@ broken.
 |The maximum permitted number of simultaneous client connections.
 |===
 
-==== Template variables specific to *sso71-postgresql*, *sso72-postgresql*, *sso71-postgresql-persistent*, and *sso72-postgresql-persistent*
+==== Template variables specific to *sso72-postgresql* and *sso72-postgresql-persistent*
 
 .Configuration Variables Specific To RH-SSO-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -421,7 +421,7 @@ number of prepared transactions.
 |Configures how much memory is dedicated to PostgreSQL for caching data.
 |===
 
-==== Template variables specific to *sso71-mysql-persistent*, *sso72-mysql-persistent*, *sso71-postgresql-persistent*, and *sso72-postgresql-persistent*
+==== Template variables specific to *sso72-mysql-persistent* and *sso72-postgresql-persistent*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL / PostgreSQL Applications With Persistent Storage
 [cols="2*", options="header"]
@@ -540,7 +540,7 @@ is provided.
 |*_SSO_USERNAME_*
 |The username used to access the RH-SSO service. This is used to create the
 application client(s) within the specified RH-SSO realm. This should match the
-*_SSO_SERVICE_USERNAME_* specified through one of the *sso71-* or *sso72-* templates.
+*_SSO_SERVICE_USERNAME_* specified through one of the *sso72-* templates.
 
 |*_SSO_PASSWORD_*
 |The password for the RH-SSO service user.

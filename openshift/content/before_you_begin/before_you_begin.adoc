@@ -10,9 +10,9 @@ See the xPaaS part of the https://access.redhat.com/articles/2176281[OpenShift a
 
 [IMPORTANT]
 ====
-The {xpaasproduct-shortname} image version number 7.0 is deprecated and it will no longer receive updates of image and application templates.
+The {xpaasproduct-shortname} image version number 7.0 and 7.1 are deprecated and they will no longer receive updates of image and application templates.
 
-*To deploy new applications, it is recommended to use the version 7.1 or 7.2 of the {xpaasproduct-shortname} image along with the application templates specific to those versions.*
+*To deploy new applications, it is recommended to use the version 7.2 of the {xpaasproduct-shortname} image along with the application templates specific to that version.*
 ====
 
 === Initial Setup
