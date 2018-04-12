@@ -25,5 +25,6 @@ public class Errors {
     public static final String EMAIL_EXISTS = "email_exists";
     public static final String READ_ONLY_USER = "user_read_only";
     public static final String READ_ONLY_USERNAME = "username_read_only";
+    public static final String INVALID_CREDENTIALS = "invalid_credentials";
 
 }

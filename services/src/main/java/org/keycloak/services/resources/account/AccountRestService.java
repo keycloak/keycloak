@@ -263,6 +263,11 @@ public class AccountRestService {
         return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
     }
 
+    @Path("/credentials")
+    public AccountCredentialResource credentials() {
+        return new AccountCredentialResource(session, event, user);
+    }
+
     // TODO Federated identities
     // TODO Applications
     // TODO Logs

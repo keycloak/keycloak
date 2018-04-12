@@ -28,20 +28,19 @@ import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -190,6 +189,49 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
         assertEquals(1, sessions.size());
+    }
+
+    @Test
+    public void testGetPasswordDetails() throws IOException {
+        getPasswordDetails();
+    }
+
+    @Test
+    public void testPostPasswordUpdate() throws IOException {
+        //Get the time of lastUpdate
+        AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
+
+        //Change the password
+        updatePassword("password", "Str0ng3rP4ssw0rd", 200);
+
+        //Get the new value for lastUpdate
+        AccountCredentialResource.PasswordDetails updatedDetails = getPasswordDetails();
+        assertTrue(initialDetails.getLastUpdate() < updatedDetails.getLastUpdate());
+
+        //Try to change password again; should fail as current password is incorrect
+        updatePassword("password", "Str0ng3rP4ssw0rd", 400);
+
+        //Verify that lastUpdate hasn't changed
+        AccountCredentialResource.PasswordDetails finalDetails = getPasswordDetails();
+        assertEquals(updatedDetails.getLastUpdate(), finalDetails.getLastUpdate());
+
+        //Change the password back
+        updatePassword("Str0ng3rP4ssw0rd", "password", 200);
+   }
+
+    private AccountCredentialResource.PasswordDetails getPasswordDetails() throws IOException {
+        AccountCredentialResource.PasswordDetails details = SimpleHttp.doGet(getAccountUrl("credentials/password"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<AccountCredentialResource.PasswordDetails>() {});
+        assertTrue(details.isRegistered());
+        assertNotNull(details.getLastUpdate());
+        return details;
+    }
+
+    private void updatePassword(String currentPass, String newPass, int expectedStatus) throws IOException {
+        AccountCredentialResource.PasswordUpdate passwordUpdate = new AccountCredentialResource.PasswordUpdate();
+        passwordUpdate.setCurrentPassword(currentPass);
+        passwordUpdate.setNewPassword(newPass);
+        int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
+        assertEquals(expectedStatus, status);
     }
 
     private String getAccountUrl(String resource) {
