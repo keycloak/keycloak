@@ -42,7 +42,11 @@ declare namespace Keycloak {
 		useNonce?: boolean;
 
 		/**
-		 * Allows to use different adapter (default/cordova or custom adapter)
+		 * Allows to use different adapter:
+		 * 
+		 * - {string} default - using browser api for redirects
+		 * - {string} cordova - using cordova plugins 
+		 * - {function} - allows to provide custom function as adapter.
 		 */
 		adapter?: KeycloakAdapterName;
 		
