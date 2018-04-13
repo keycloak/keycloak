@@ -267,7 +267,9 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public void setStatus(final int status) {
-                responseConsumer = responseConsumer.andThen(response -> response.setStatusCode(status));
+                if (status < 200 || status > 300) {
+                    responseConsumer = responseConsumer.andThen(response -> response.setStatusCode(status));
+                }
             }
 
             @Override
