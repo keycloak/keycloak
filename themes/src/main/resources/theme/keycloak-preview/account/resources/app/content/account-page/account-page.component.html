@@ -1,17 +1,8 @@
 <div class="page-header">
-    <h1>{{'editAccountHtmlTitle' | translate}}</h1>
+    <h1>{{'personalInfoHtmlTitle' | translate}}</h1>
 </div>
 
-<div class="col-sm-9 content-area">
-
-    <div class="row">
-        <div class="col-md-10">
-        </div>
-        <div class="col-md-2 subtitle">
-            <span class="subtitle"><span class="required">*</span> {{'requiredFields' | translate}}</span>
-        </div>
-        <hr/>
-    </div>
+<div class="col-sm-12 content-area">
 
     <form #formGroup="ngForm" (ngSubmit)="saveAccount()" class="form-horizontal">
 
@@ -20,7 +11,7 @@
                 <label for="username" class="control-label">{{'username' | translate}}</label><span *ngIf="isEditUserNameAllowed" class="required">*</span>
             </div>
 
-            <div class="col-sm-10 col-md-10">
+            <div class="col-sm-6 col-md-6">
                 <input *ngIf="isEditUserNameAllowed" type="text" class="form-control" required ngModel id="username" name="username" value="{{username}}" >
                 <span *ngIf="!isEditUserNameAllowed">{{ username }}</span>
             </div>
@@ -31,7 +22,7 @@
                 <label for="email" class="control-label">{{'email' | translate }}</label> <span class="required">*</span>
             </div>
 
-            <div class="col-sm-10 col-md-10">
+            <div class="col-sm-6 col-md-6">
                 <input type="email" class="form-control" id="email" name="email" required autofocus="" ngModel type="text">
             </div>
         </div>
@@ -41,7 +32,7 @@
                 <label for="firstName" class="control-label">{{'firstName' | translate}}</label> <span class="required">*</span>
             </div>
 
-            <div class="col-sm-10 col-md-10">
+            <div class="col-sm-6 col-md-6">
                 <input class="form-control" id="firstName" required name="firstName" ngModel type="text">
             </div>
         </div>
@@ -51,7 +42,7 @@
                 <label for="lastName" class="control-label">{{'lastName' | translate}}</label> <span class="required">*</span>
             </div>
 
-            <div class="col-sm-10 col-md-10">
+            <div class="col-sm-6 col-md-6">
                 <input class="form-control" id="lastName" required name="lastName" ngModel type="text">
             </div>
         </div>
@@ -65,4 +56,5 @@
         </div>
     </form>
 
+    <div class="subtitle"><span class="required">*</span> {{'requiredFields' | translate}}</div>
 </div>
