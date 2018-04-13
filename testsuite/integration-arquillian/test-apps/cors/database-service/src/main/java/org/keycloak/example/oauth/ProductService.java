@@ -47,6 +47,7 @@ public class ProductService {
         rtn.add("ipod");
 
         response.addHeader("X-Custom1", "some-value");
+        response.addHeader("WWW-Authenticate", "some-value");
         return rtn;
     }
 }

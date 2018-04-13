@@ -17,11 +17,15 @@
 
 package org.keycloak.testsuite.adapter.example.cors;
 
+import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -53,6 +57,9 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
     public static final String AUTH_SERVER_HOST = "localhost-auth";
     private static String hostBackup;
 
+    @ArquillianResource
+    private Deployer deployer;
+
     @Page
     @JavascriptBrowser
     private AngularCorsProductTestApp jsDriverAngularCorsProductPage;
@@ -66,7 +73,7 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
         return exampleDeployment(AngularCorsProductTestApp.CLIENT_ID);
     }
 
-    @Deployment(name = CorsDatabaseServiceTestApp.DEPLOYMENT_NAME)
+    @Deployment(name = CorsDatabaseServiceTestApp.DEPLOYMENT_NAME, managed = false)
     private static WebArchive corsDatabaseServiceExample() throws IOException {
         return exampleDeployment(CorsDatabaseServiceTestApp.CLIENT_ID);
     }
@@ -74,7 +81,17 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(
-                loadRealm(new File(EXAMPLES_HOME_DIR + "/cors/cors-realm.json")));
+                loadRealm(new File(TEST_APPS_HOME_DIR + "/cors/cors-realm.json")));
+    }
+
+    @Before
+    public void onBefore() {
+        deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+    }
+
+    @After
+    public void onAfter() {
+        deployer.undeploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
     }
 
     static{
@@ -100,6 +117,7 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("ipad");
         waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("ipod");
         waitUntilElement(jsDriverAngularCorsProductPage.getHeaders()).text().contains("\"x-custom1\":\"some-value\"");
+        waitUntilElement(jsDriverAngularCorsProductPage.getHeaders()).text().contains("\"www-authenticate\":\"some-value\"");
 
         jsDriverAngularCorsProductPage.loadRoles();
         waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("user");
