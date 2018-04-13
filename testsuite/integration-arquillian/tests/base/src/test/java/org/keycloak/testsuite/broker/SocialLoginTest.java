@@ -269,6 +269,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertAccount();
     }
 
+
     @Test
     public void githubLogin() throws InterruptedException {
         setTestProvider(GITHUB);
@@ -362,8 +363,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             log.infof("current URL: %s", driver.getCurrentUrl());
             log.infof("performing log in to '%s' ...", currentTestProvider.id());
             currentSocialLoginPage.login(getConfig("username"), getConfig("password"));
-        }
-        else {
+        } else {
             log.infof("already logged in to '%s'; skipping the login process", currentTestProvider.id());
         }
     }

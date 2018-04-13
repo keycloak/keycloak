@@ -292,8 +292,10 @@ The social login tests require setup of all social networks including an example
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
    
 To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft, PayPal and 
-StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
-sample user that can login to the social network.
+StackOverflow. See the server administration guide for details on how to do that. You have to use URLs like 
+`http://localhost:8180/auth/realms/social/broker/google/endpoint` (with `google` replaced by the name 
+of given provider) as an authorized redirect URL when configuring the client. Further, you also need to create a sample user 
+that can login to the social network.
  
 The details should be added to a standard properties file. For some properties you can use shared common properties and
 override when needed. Or you can specify these for all providers. All providers require at least clientId and 
@@ -315,7 +317,8 @@ An example social.properties file looks like:
     facebook.profile.lastName=Test
 
 In the example above the common username, password and profile are shared for all providers, but Facebook has a 
-different last name.
+different last name. Profile informations are used for assertion after login, so you have to set them to be same as 
+user profile information returned by given social login provider for used sample user. 
 
 Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.
 
@@ -328,6 +331,7 @@ To run the tests run:
           -Dbrowser=chrome \
           -Dsocial.config=/path/to/social.properties
 
+To run individual social provider test only you can use option like `-Dtest=SocialLoginTest#linkedinLogin`
 
 ## Different Browsers
  
