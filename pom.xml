@@ -130,7 +130,7 @@
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <minify.plugin.version>1.7.6</minify.plugin.version>
-        <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
+        <osgi.bundle.plugin.version>3.5.0</osgi.bundle.plugin.version>
         <wildfly.plugin.version>1.1.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
         <frontend.plugin.version>1.5</frontend.plugin.version>
