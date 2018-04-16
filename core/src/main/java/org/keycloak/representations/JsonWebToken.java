@@ -91,10 +91,9 @@ public class JsonWebToken implements Serializable {
         return this;
     }
 
-
     @JsonIgnore
-    public boolean isNotBefore() {
-        return Time.currentTime() >= notBefore;
+    public boolean isNotBefore(int allowedTimeSkew) {
+        return Time.currentTime() + allowedTimeSkew >= notBefore;
     }
 
     /**
@@ -104,7 +103,12 @@ public class JsonWebToken implements Serializable {
      */
     @JsonIgnore
     public boolean isActive() {
-        return (!isExpired() || expiration == 0) && (isNotBefore() || notBefore == 0);
+        return isActive(0);
+    }
+
+    @JsonIgnore
+    public boolean isActive(int allowedTimeSkew) {
+        return (!isExpired() || expiration == 0) && (isNotBefore(allowedTimeSkew) || notBefore == 0);
     }
 
     public int getIssuedAt() {
