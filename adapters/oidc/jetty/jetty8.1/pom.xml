@@ -34,6 +34,7 @@
             org.keycloak.adapters.jetty.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            org.eclipse.jetty.*;version="[8.1,8.2)";resolution:=optional,
             javax.servlet.*;version="[2.5,4)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
