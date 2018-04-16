@@ -246,6 +246,14 @@
 
             </div>
 
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="allowedClockSkew">{{:: 'allowed-clock-skew' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.allowedClockSkew" id="allowedClockSkew" type="text" class="form-control"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
         <fieldset data-ng-show="newIdentityProvider">
             <legend uncollapsed><span class="text">{{:: 'import-external-idp-config' | translate}}</span> <kc-tooltip>{{:: 'import-external-idp-config.tooltip' | translate}}</kc-tooltip></legend>
