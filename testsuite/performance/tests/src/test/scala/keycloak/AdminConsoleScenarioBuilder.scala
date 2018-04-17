@@ -62,8 +62,8 @@ class AdminConsoleScenarioBuilder {
       "nonce" -> randomUUID(),
       "randomClientId" -> ("client_" + randomUUID()),
       "realm" -> realm,
-      "username" -> "admin",
-      "password" -> "admin",
+      "username" -> TestConfig.authUser,
+      "password" -> TestConfig.authPassword,
       "clientId" -> "security-admin-console"
     )
   }).exitHereIfFailed

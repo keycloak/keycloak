@@ -60,10 +60,6 @@
         <gatling.simulationClass>keycloak.OIDCLoginAndLogoutSimulation</gatling.simulationClass>
         <gatling.skip.run>true</gatling.skip.run>
 
-        <authRealm>master</authRealm>
-        <authUser>admin</authUser>
-        <authPassword>admin</authPassword>
-        
         <trustStoreArg/>
         <trustStorePasswordArg/>
     </properties>
@@ -268,6 +264,8 @@
                         <!--common params-->
                         <param>-Dproject.build.directory=${project.build.directory}</param>
                         <param>-Dkeycloak.server.uris=${keycloak.frontend.servers}</param>
+                        <param>-DauthUser=${keycloak.admin.user}</param>
+                        <param>-DauthPassword=${keycloak.admin.password}</param>
                         <!--dataset params-->
                         <param>-DnumOfRealms=${numOfRealms}</param>
                         <param>-DusersPerRealm=${usersPerRealm}</param>
@@ -406,6 +404,9 @@
                                         <KEYCLOAK_DS_POOL_PREFILL>${keycloak.ds.pool-prefill}</KEYCLOAK_DS_POOL_PREFILL>
                                         <KEYCLOAK_DS_PS_CACHE_SIZE>${keycloak.ds.ps-cache-size}</KEYCLOAK_DS_PS_CACHE_SIZE>
 
+                                        <KEYCLOAK_ADMIN_USER>${keycloak.admin.user}</KEYCLOAK_ADMIN_USER>
+                                        <KEYCLOAK_ADMIN_PASSWORD>${keycloak.admin.password}</KEYCLOAK_ADMIN_PASSWORD>
+
                                         <DB_CPUSETS>${db.docker.cpusets}</DB_CPUSETS>
                                         <DB_DC1_CPUSETS>${db.dc1.docker.cpusets}</DB_DC1_CPUSETS>
                                         <DB_DC2_CPUSETS>${db.dc2.docker.cpusets}</DB_DC2_CPUSETS>
@@ -500,9 +501,8 @@
                                         <argument>${trustStoreArg}</argument>
                                         <argument>${trustStorePasswordArg}</argument>
                                         <argument>-Dkeycloak.server.uris=${keycloak.frontend.servers}</argument>
-                                        <argument>-DauthRealm=${authRealm}</argument>
-                                        <argument>-DauthUser=${authUser}</argument>
-                                        <argument>-DauthPassword=${authPassword}</argument>
+                                        <argument>-DauthUser=${keycloak.admin.user}</argument>
+                                        <argument>-DauthPassword=${keycloak.admin.password}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
                                         <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
                                         <argument>benchmark-realms.json</argument>

@@ -82,8 +82,8 @@ services:
             MARIADB_DATABASE: keycloak
             MARIADB_USER: keycloak
             MARIADB_PASSWORD: keycloak
-            KEYCLOAK_USER: admin
-            KEYCLOAK_PASSWORD: admin
+            KEYCLOAK_ADMIN_USER: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
             # docker-compose syntax note: ${ENV_VAR:-<DEFAULT_VALUE>}
             JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
             HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-500}
