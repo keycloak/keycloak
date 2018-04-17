@@ -193,7 +193,7 @@ $ .../bin/domain.sh --host-config=host-master.xml
 .Windows
 [source]
 ----
-> ...\bin\domain.bat --host-config=host-slave.xml
+> ...\bin\domain.bat --host-config=host-master.xml
 ----
 
 When running the boot script you will need pass in the host controlling configuration file you are going to use via the
