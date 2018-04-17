@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.adapter.javascript;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -11,7 +9,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -49,15 +46,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
 
 
-    @Drone
-    @JavascriptBrowser
-    protected WebDriver jsDriver;
-
     protected JavascriptExecutor jsExecutor;
-
-    @Page
-    @JavascriptBrowser
-    protected OIDCLogin testRealmLoginPage;
 
     @FindBy(id = "output")
     @JavascriptBrowser
@@ -147,7 +136,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     protected void assertOnLoginPage(WebDriver driver1, Object output, WebElement events) {
         waitUntilElement(By.tagName("body")).is().present();
-        assertCurrentUrlStartsWith(testRealmLoginPage, driver1);
+        assertCurrentUrlStartsWith(jsDriverTestRealmLoginPage, driver1);
     }
 
     public void assertOutputWebElementContains(String value, WebDriver driver1, Object output, WebElement events) {

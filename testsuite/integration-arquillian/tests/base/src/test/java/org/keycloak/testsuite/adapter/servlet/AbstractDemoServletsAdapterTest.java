@@ -16,21 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.conn.params.ConnManagerParams;
@@ -41,11 +26,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.openqa.selenium.Cookie;
-
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.adapters.OIDCAuthenticationError;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -87,6 +70,7 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -96,6 +80,20 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
@@ -635,15 +633,15 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testVersion() {
-        driver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
-        testRealmLoginPage.form().login("admin", "admin");
+        jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
 
         Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
                 "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(driver.getPageSource());
+        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
         String serverVersion = null;
         if (matcher.find()) {
             serverVersion = matcher.group(1);

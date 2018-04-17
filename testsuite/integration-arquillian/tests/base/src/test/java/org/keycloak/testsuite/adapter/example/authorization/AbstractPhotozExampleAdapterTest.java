@@ -16,36 +16,13 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
-
 import org.jboss.arquillian.container.test.api.Deployer;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,7 +44,32 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.NoSuchElementException;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -82,6 +84,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     private Deployer deployer;
 
     @Page
+    @JavascriptBrowser
     private PhotozClientAuthzTestApp clientPage;
 
     @Override
@@ -95,6 +98,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Before
     public void beforePhotozExampleAdapterTest() throws Exception {
+        DroneUtils.addWebDriver(jsDriver);
         deleteAllCookiesForClientPage();
         this.deployer.deploy(RESOURCE_SERVER_ID);
         
@@ -107,6 +111,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     @After
     public void afterPhotozExampleAdapterTest() {
         this.deployer.undeploy(RESOURCE_SERVER_ID);
+        DroneUtils.removeWebDriver();
     }
 
     @Override
@@ -421,7 +426,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         clientPage.createAlbum(resourceName);
 
-        clientPage.logOut();
         loginToClientPage("admin", "admin");
 
         clientPage.navigateToAdminAlbum(false);
@@ -559,10 +563,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         loginToClientPage("admin", "admin");
 
         clientPage.requestEntitlements();
-        assertTrue(driver.getPageSource().contains("admin:manage"));
+        assertTrue(jsDriver.getPageSource().contains("admin:manage"));
 
         clientPage.requestEntitlement();
-        String pageSource = driver.getPageSource();
+        String pageSource = jsDriver.getPageSource();
         assertTrue(pageSource.contains("album:view"));
         assertTrue(pageSource.contains("album:delete"));
     }
@@ -671,14 +675,38 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     private void deleteAllCookiesForClientPage() {
-        driver.manage().deleteAllCookies();
+        jsDriver.manage().deleteAllCookies();
     }
 
     private void loginToClientPage(String username, String password, String... scopes) throws InterruptedException {
         log.debugf("--logging in as {0} with password: {1}; scopes: {2}", username, password, Arrays.toString(scopes));
-        // We need to log out by deleting cookies because the log out button sometimes doesn't work in PhantomJS
-        deleteAllCookiesForTestRealm();
+
         clientPage.navigateTo();
+        if (jsDriver.getCurrentUrl().startsWith(clientPage.toString())) {
+            try {
+                clientPage.logOut();
+            } catch (NoSuchElementException ex) {
+                if ("phantomjs".equals(System.getProperty("js.browser"))) {
+                    // PhantomJS is broken, it can't logout using sign out button sometimes, we have to clean sessions and remove cookies
+                    adminClient.realm(REALM_NAME).logoutAll();
+
+                    jsDriverTestRealmLoginPage.navigateTo();
+                    driver.manage().deleteAllCookies();
+
+                    clientPage.navigateTo();
+                    driver.manage().deleteAllCookies();
+
+                    clientPage.navigateTo();
+                    // Check for correct logout
+                    this.jsDriverTestRealmLoginPage.form().waitForLoginButtonPresent();
+                } else {
+                    throw ex;
+                }
+            }
+        }
+
+        clientPage.navigateTo();
+        waitForPageToLoad();
         clientPage.login(username, password, scopes);
     }
 }

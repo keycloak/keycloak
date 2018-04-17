@@ -16,14 +16,12 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertFalse;
-
-import java.io.File;
-import java.io.IOException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -40,7 +38,7 @@ public abstract class AbstractServletAuthzLazyLoadPathsAdapterTest extends Abstr
     public void testPathPEPDisabled() {
         performTests(() -> {
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             navigateTo();
             getLink("PEP Disabled").click();

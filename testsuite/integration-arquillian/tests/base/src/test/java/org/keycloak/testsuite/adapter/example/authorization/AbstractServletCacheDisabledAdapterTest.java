@@ -16,17 +16,14 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -43,10 +40,10 @@ public abstract class AbstractServletCacheDisabledAdapterTest extends AbstractSe
     public void testCreateNewResource() {
         performTests(() -> {
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             ResourceRepresentation resource = new ResourceRepresentation();
 
@@ -64,10 +61,10 @@ public abstract class AbstractServletCacheDisabledAdapterTest extends AbstractSe
             permission = getAuthorizationResource().permissions().resource().create(permission).readEntity(ResourcePermissionRepresentation.class);
 
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             permission = getAuthorizationResource().permissions().resource().findById(permission.getId()).toRepresentation();
 
@@ -77,10 +74,10 @@ public abstract class AbstractServletCacheDisabledAdapterTest extends AbstractSe
             getAuthorizationResource().permissions().resource().findById(permission.getId()).update(permission);
 
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
 }

@@ -17,14 +17,17 @@
 package org.keycloak.testsuite.adapter.page;
 
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -49,25 +52,36 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @OperateOnDeployment(DEPLOYMENT_NAME)
     private URL url;
 
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver driver;
+
     @Page
+    @JavascriptBrowser
     protected OIDCLogin loginPage;
 
     @Page
+    @JavascriptBrowser
     protected ConsentPage consentPage;
 
     @FindBy(xpath = "//a[@ng-click = 'Identity.logout()']")
+    @JavascriptBrowser
     private WebElement signOutButton;
     
     @FindBy(id = "entitlement")
+    @JavascriptBrowser
     private WebElement entitlement;
     
     @FindBy(id = "entitlements")
+    @JavascriptBrowser
     private WebElement entitlements;
 
     @FindBy(id = "get-all-resources")
+    @JavascriptBrowser
     private WebElement viewAllAlbums;
 
     @FindBy(id = "output")
+    @JavascriptBrowser
     private WebElement output;
 
     public void createAlbum(String name) {
@@ -91,7 +105,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement albumNameInput = driver.findElement(By.id("album.name"));
         waitUntilElement(albumNameInput).is().present();
         Form.setInputValue(albumNameInput, name);
-        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
         waitUntilElement(albumNameInput).attribute(Form.VALUE).contains(name);
         WebElement button = driver.findElement(By.id(buttonId));
         waitUntilElement(button).is().clickable();
@@ -142,9 +155,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void logOut() {
+        navigateTo();
         waitUntilElement(signOutButton).is().clickable(); // Sometimes doesn't work in PhantomJS!
         signOutButton.click();
-        pause(WAIT_AFTER_OPERATION);
+        this.loginPage.form().waitForLoginButtonPresent();
     }
     
     public void requestEntitlement() {
@@ -166,14 +180,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     public void login(String username, String password, String... scopes) throws InterruptedException {
         String currentUrl = this.driver.getCurrentUrl();
 
-        if (currentUrl.startsWith(getInjectedUrl().toString())) {
-            Thread.sleep(1000);
-            logOut();
-            navigateTo();
-        }
-
-        Thread.sleep(1000);
-
         if (scopes.length > 0) {
             StringBuilder scopesValue = new StringBuilder();
 
@@ -186,19 +192,25 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
             scopesValue.append(" openid");
 
+
+            StringBuilder urlWithScopeParam = new StringBuilder(currentUrl);
+
             int scopeIndex = currentUrl.indexOf("scope");
 
             if (scopeIndex != -1) {
-                StringBuilder url = new StringBuilder(currentUrl);
-
-                url.delete(scopeIndex, currentUrl.indexOf('&', scopeIndex));
-
-                url.append("&").append("scope=").append(scopesValue);
-
-                currentUrl = url.toString();
+                // Remove scope param from url
+                urlWithScopeParam.delete(scopeIndex, currentUrl.indexOf('&', scopeIndex));
+                // Add scope param to the end of query
+                urlWithScopeParam.append("&").append("scope=");
             }
 
-            URLUtils.navigateToUri(currentUrl + " " + scopesValue, true);
+            if (!currentUrl.contains("?")) {
+                urlWithScopeParam.append("?scope=");
+            }
+
+            urlWithScopeParam.append(scopesValue);
+
+            URLUtils.navigateToUri(urlWithScopeParam.toString(), true);
         }
 
         this.loginPage.form().login(username, password);
@@ -207,7 +219,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         try {
             if (!isCurrent()) {
                 // simple check if we are at the consent page, if so just click 'Yes'
-                if (this.consentPage.isCurrent()) {
+                if (this.consentPage.isCurrent(driver)) {
                     consentPage.confirm();
                 }
             }
@@ -222,6 +234,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(output).text().contains("You can not access");
     }
 
+    private void waitForNotDenial() {
+        waitUntilElement(output).text().not().contains("You can not access");
+    }
+
     public void viewAllAlbums() {
         viewAllAlbums.click();
         pause(WAIT_AFTER_OPERATION);
@@ -232,8 +248,12 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(viewalbum).is().clickable();
         viewalbum.click();
         waitForPageToLoad();
-        if (shouldBeDenied) waitForDenial();
         driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        if (shouldBeDenied) {
+            waitForDenial();
+        } else {
+            waitForNotDenial();
+        }
         waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
