@@ -119,6 +119,8 @@ function generateProvisionedSystemProperties() {
             echo "infinispan.servers.jmx=service:jmx:remote+http://localhost:$ISPN_DC1_PORT service:jmx:remote+http://localhost:$ISPN_DC2_PORT" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
         ;;
     esac
+    echo "keycloak.admin.user=$KEYCLOAK_ADMIN_USER" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+    echo "keycloak.admin.password=$KEYCLOAK_ADMIN_PASSWORD" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
 }
 
 function loadProvisionedSystemProperties() {
@@ -126,6 +128,8 @@ function loadProvisionedSystemProperties() {
         echo "Loading $PROVISIONED_SYSTEM_PROPERTIES_FILE"
         export DEPLOYMENT=$( sed -n -e '/deployment=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
         export KEYCLOAK_SERVICES=$( sed -n -e '/keycloak.docker.services=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
+        export KEYCLOAK_ADMIN_USER=$( sed -n -e '/keycloak.admin.user=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
+        export KEYCLOAK_ADMIN_PASSWORD=$( sed -n -e '/keycloak.admin.password=/ s/.*\= *//p' $PROVISIONED_SYSTEM_PROPERTIES_FILE )
     else
         echo "$PROVISIONED_SYSTEM_PROPERTIES_FILE not found."
     fi

@@ -20,8 +20,8 @@
             MARIADB_DATABASE: keycloak
             MARIADB_USER: keycloak
             MARIADB_PASSWORD: keycloak
-            KEYCLOAK_USER: admin
-            KEYCLOAK_PASSWORD: admin
+            KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
+            KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
             INFINISPAN_HOST: infinispan_dc1
             SITE: dc1
             
