@@ -28,6 +28,7 @@ p.description {
   padding: 30px 30px 20px;
   background: #ffffff;
   font-size: 13px;
+  margin-bottom: 10px;
 }
 
 /* personal Info Style */
@@ -42,4 +43,10 @@ p.description {
 
 .page-header {
   border-bottom: 0;
+}
+
+
+/* Introduction Message on the left */
+.introMessage {
+    margin: 10px 20px 20px 0;
 }
