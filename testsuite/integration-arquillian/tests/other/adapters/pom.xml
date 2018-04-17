@@ -96,10 +96,6 @@
         <examples.basedir>${main.basedir}/examples</examples.basedir>
         <exclude.test>-</exclude.test>
         <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
-
-        <!-- Use phantomjs as default browser for adapters, since javascript doesn't work correctly on htmlUnit (KEYCLOAK-4703) -->
-        <browser>phantomjs</browser>
-
     </properties>
 
     <modules>

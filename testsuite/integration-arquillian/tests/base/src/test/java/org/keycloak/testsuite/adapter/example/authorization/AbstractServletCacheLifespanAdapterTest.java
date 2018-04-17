@@ -16,17 +16,14 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -43,10 +40,10 @@ public abstract class AbstractServletCacheLifespanAdapterTest extends AbstractSe
     public void testCreateNewResourceWaitExpiration() {
         performTests(() -> {
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             ResourceRepresentation resource = new ResourceRepresentation();
 
@@ -64,18 +61,21 @@ public abstract class AbstractServletCacheLifespanAdapterTest extends AbstractSe
             permission = getAuthorizationResource().permissions().resource().create(permission).readEntity(ResourcePermissionRepresentation.class);
 
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
-            Thread.sleep(5000);
+            //Thread.sleep(5000);
+            setTimeOffset(10000);
 
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertTrue(wasDenied());
+            assertWasDenied();
+
+            resetTimeOffset();
         });
     }
 }

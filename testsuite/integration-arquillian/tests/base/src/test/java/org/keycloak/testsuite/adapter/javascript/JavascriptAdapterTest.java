@@ -35,7 +35,6 @@ import java.util.Map;
 import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
@@ -76,12 +75,12 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void setDefaultEnvironment() {
         testAppUrl = authServerContextRootPage + JAVASCRIPT_URL + "/index.html";
 
-        testRealmLoginPage.setAuthRealm(REALM_NAME);
+        jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
         applicationsPage.setAuthRealm(REALM_NAME);
 
         jsDriver.navigate().to(testAppUrl);
-        testExecutor = JavascriptTestExecutor.create(jsDriver, testRealmLoginPage);
+        testExecutor = JavascriptTestExecutor.create(jsDriver, jsDriverTestRealmLoginPage);
 
         waitUntilElement(outputArea).is().present();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
@@ -401,7 +400,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         testAppUrl = authServerContextRootPage + JAVASCRIPT_SPACE_URL + "/index.html";
         jsDriver.navigate().to(testAppUrl);
-        testRealmLoginPage.setAuthRealm(SPACE_REALM_NAME);
+        jsDriverTestRealmLoginPage.setAuthRealm(SPACE_REALM_NAME);
 
         testExecutor.configure(configuration)
                 .init(defaultArguments(), this::assertInitNotAuth)
@@ -412,7 +411,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         // Clean
         adminClient.realm(SPACE_REALM_NAME).update(RealmBuilder.edit(adminClient.realm(SPACE_REALM_NAME).toRepresentation()).name(REALM_NAME).build());
-        testRealmLoginPage.setAuthRealm(REALM_NAME);
+        jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
     }
 
     @Test

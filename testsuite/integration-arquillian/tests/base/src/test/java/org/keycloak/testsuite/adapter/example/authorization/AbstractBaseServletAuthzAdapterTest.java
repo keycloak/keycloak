@@ -16,20 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertFalse;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.BeforeClass;
@@ -46,6 +32,20 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+
+import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -142,8 +142,12 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
         WaitUtils.waitUntilElement(By.xpath("//a[text() = 'Dynamic Menu']"));
     }
 
-    protected boolean wasDenied() {
-        return this.driver.getPageSource().contains("You can not access this resource.");
+    protected void assertWasDenied() {
+        waitUntilElement(By.tagName("body")).text().contains("You can not access this resource.");
+    }
+
+    protected void assertWasNotDenied() {
+        waitUntilElement(By.tagName("body")).text().not().contains("You can not access this resource.");
     }
 
     protected URL getResourceServerUrl() {
