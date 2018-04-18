@@ -85,7 +85,7 @@
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
     
-    <container qualifier="auth-server-undertow" mode="suite" >
+    <container qualifier="auth-server-undertow" mode="suite" default="true">
         <configuration>
             <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="bindAddress">0.0.0.0</property>
@@ -95,7 +95,7 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-${auth.server}" mode="suite" >
+    <container qualifier="auth-server-${auth.server}" mode="suite" default="true">
         <configuration>
             <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>

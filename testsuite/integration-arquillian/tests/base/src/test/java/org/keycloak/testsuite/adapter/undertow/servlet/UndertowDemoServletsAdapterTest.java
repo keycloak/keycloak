@@ -17,21 +17,15 @@
 
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
-import org.junit.Test;
 import org.keycloak.testsuite.adapter.servlet.AbstractDemoServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_DEFAULT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
+@AppServerContainer(APP_SERVER_DEFAULT)
 public class UndertowDemoServletsAdapterTest extends AbstractDemoServletsAdapterTest {
-    
-    @Test
-    @Override
-    public void testLoginEncodedRedirectUri() {
-        super.testLoginEncodedRedirectUri();
-    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter.undertow.servlet;
+package org.keycloak.testsuite.arquillian.undertow;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractSessionServletAdapterTest;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_DEFAULT;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.core.spi.LoadableExtension;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-@AppServerContainer(APP_SERVER_DEFAULT)
-public class UndertowSessionServletAdapterTest extends AbstractSessionServletAdapterTest {
+public class UndertowAppServerArquillianExtension implements LoadableExtension {
+
+    @Override
+    public void register(ExtensionBuilder builder) {
+        builder.service(DeployableContainer.class, UndertowAppServer.class);
+    }
+
+
 }

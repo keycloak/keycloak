@@ -126,6 +126,12 @@
             <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
     
     <build>
@@ -165,7 +171,6 @@
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.crossdc}</exclude>
-                        <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
                         <exclude>${exclude.cors.tests}</exclude>
                         <exclude>${exclude.HoK}</exclude>

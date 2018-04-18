@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.arquillian.undertow;
+package org.keycloak.testsuite.utils.undertow;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +36,7 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
+import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ArchivePath;
@@ -48,11 +49,11 @@ import org.xml.sax.SAXException;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class UndertowDeployerHelper {
+public class UndertowDeployerHelper {
 
     private static final Logger log = Logger.getLogger(UndertowDeployerHelper.class);
 
-    DeploymentInfo getDeploymentInfo(KeycloakOnUndertowConfiguration config, WebArchive archive) {
+    public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive) {
         String archiveName = archive.getName();
         String contextPath = "/" + archive.getName().substring(0, archive.getName().lastIndexOf('.'));
         String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
@@ -77,7 +78,7 @@ class UndertowDeployerHelper {
             addAnnotatedServlets(di, archive);
 
             return di;
-        } catch (Exception ioe) {
+        } catch (IOException | IllegalArgumentException ioe) {
             throw new RuntimeException("Error deploying " + archive.getName(), ioe);
         }
     }
