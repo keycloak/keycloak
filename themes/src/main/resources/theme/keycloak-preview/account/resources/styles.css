@@ -20,6 +20,10 @@ p.description {
     margin-left: 210px;
 }
 
+.nav .nav-item-iconic {
+  color: #d1d1d1;
+}
+
 .content-area {
   padding: 30px 30px 20px;
   background: #ffffff;
