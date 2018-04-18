@@ -64,7 +64,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getNearestSuperclassWithAnnotation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getNearestSuperclassWithAppServerAnnotation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -301,7 +301,7 @@ public abstract class AbstractSAMLAdapterClusterTest extends AbstractServletsAda
     }
 
     private String getAppServerId() {
-        Class<?> annotatedClass = getNearestSuperclassWithAnnotation(this.getClass(), AppServerContainer.class);
+        Class<?> annotatedClass = getNearestSuperclassWithAppServerAnnotation(this.getClass());
 
         return (annotatedClass == null ? "<cannot-find-@AppServerContainer>"
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());

@@ -46,16 +46,14 @@ ifconfig lo multicast
 
 Lifecycle of application server is always tied to a particular TestClass.
 
-Each *adapter* test class is annotated by `@AppServerContainer("app-server-*")` annotation 
-that links it to a particular Arquillian container in `arquillian.xml`.
-The `AppServerTestEnricher` then ensures the server is started during `BeforeClass` event and stopped during `AfterClass` event for that particular test class. 
-In case the `@AppServerContainer` annotation has no value it's assumed that the application container 
-is the same as the auth server container - a "relative" adapter test scenario.
+Each *adapter* test class is annotated by one or more `@AppServerContainer("app-server-*")` annotations
+that links it to a particular Arquillian container.
+The `AppServerTestEnricher` then ensures the corresponding server is started during `BeforeClass` event and stopped during `AfterClass` event for that particular test class. 
 
-The app-servers with installed Keycloak adapter are prepared in `servers/app-server` submodules, activated by `-Papp-server-MODULE`.
+The app-servers with installed Keycloak adapter are prepared in `servers/app-server` submodules, activated by `-Papp-server-MODULE` or `-Dapp.server=MODULE`
 [More details.](servers/app-server/README.md)
 
-The corresponding adapter test modules are in `tests/other/adapters` submodules, and are activated by the same profiles.
+NOTE: Some corresponding adapter test modules are in `tests/other/adapters` submodules, and are activated by the same profiles. It will be tranferred into base testsuite.
 
 ## SuiteContext and TestContext
 
@@ -103,13 +101,6 @@ The other test modules depend on this module.
 
 Tests for Keycloak Admin Console are located in a separate module `tests/other/console` 
 and are **disabled** by default. Can be enabled by `-Pconsole-ui-tests`.
-
-### Adapter Tests
-
-Adapter tests are located in submodules of the `tests/other/adapters` module.
-
-They are **disabled** by default; they can be enabled by corresponding profiles.
-Multiple profiles can be enabled for a single test execution.
 
 #### Types of adapter tests
 
@@ -173,7 +164,7 @@ integration-arquillian
    │
    └──other   (common settings for all test modules dependent on base)
       │
-      ├──adapters         (common settings for all adapter test modules)
+      ├──adapters         (common settings for all adapter test modules - will be moved into base)
       │  ├──jboss
       │  ├──tomcat
       │  └──karaf

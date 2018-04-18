@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian.annotation;
+package org.keycloak.testsuite.arquillian.container;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.util.List;
+import org.jboss.shrinkwrap.descriptor.spi.node.Node;
 
 /**
- *
- * @author tkyjovsk
+ * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-@Documented
-@Retention(RUNTIME)
-@Target({ElementType.TYPE})
-@Repeatable(AppServerContainers.class)
-public @interface AppServerContainer {
-    String value();
+public interface AppServerContainerSPI  {
+
+    public static final String APP_SERVER = "app-server";
+
+    /**
+     * @return string name of container
+     */
+    public String getName();
+
+    /**
+     * @return List of available containers or null if there are none
+     */
+    public List<Node> getContainers();
 }

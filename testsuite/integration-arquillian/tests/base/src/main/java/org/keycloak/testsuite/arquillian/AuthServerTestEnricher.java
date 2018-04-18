@@ -49,6 +49,7 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 
 /**
  *
@@ -97,7 +98,7 @@ public class AuthServerTestEnricher {
     private SuiteContext suiteContext;
 
     @Inject
-    @ClassScoped
+    @ApplicationScoped // needed in AdapterTestExecutionDecider
     private InstanceProducer<TestContext> testContextProducer;
 
     @Inject

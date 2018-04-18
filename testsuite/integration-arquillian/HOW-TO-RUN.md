@@ -77,18 +77,15 @@ TODO: Add info about Wildfly logging
 
 ## Run adapter tests
 
+### Undertow
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
-
     
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml clean install \
-       -Pauth-server-wildfly \
-       -Papp-server-wildfly
-
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/wildfly/pom.xml \
+    mvn -f testsuite/integration-arquillian/pom.xml \
        clean install \
-       -Pauth-server-wildfly \
        -Papp-server-wildfly
     
 

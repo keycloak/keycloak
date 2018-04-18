@@ -17,13 +17,16 @@
 package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.TestCleanup;
 
@@ -80,23 +83,43 @@ public final class TestContext {
     public List<ContainerInfo> getAppServerBackendsInfo() {
         return appServerBackendsInfo;
     }
+    
+    public void setAppServerBackendsInfo(List<ContainerInfo> appServerBackendsInfo) {
+        Collections.sort(appServerBackendsInfo);
+        this.appServerBackendsInfo.addAll(appServerBackendsInfo);
+    }
 
     public Class getTestClass() {
         return testClass;
     }
 
     public boolean isAdapterTest() {
-        return appServerInfo != null;
+        return getAppServerQualifiers(testClass) != null;
     }
 
+    public boolean isAdapterContainerEnabled() {
+        if (!isAdapterTest()) return false; //no adapter test
+        if (appServerInfo == null) return false;
+        return getAppServerQualifiers(testClass).contains(appServerInfo.getQualifier());
+    }
+
+    public boolean isAdapterContainerEnabledCluster() {
+        if (!isAdapterTest()) return false; //no adapter test
+        if (appServerBackendsInfo.isEmpty()) return false; //no adapter clustered test
+        
+        List<String> appServerQualifiers = getAppServerQualifiers(testClass);
+        
+        String qualifier = appServerBackendsInfo.stream()
+                .map(ContainerInfo::getQualifier)
+                .collect(Collectors.joining(";"));
+        
+        return appServerQualifiers.contains(qualifier);
+    }
+    
     public boolean isRelativeAdapterTest() {
         return isAdapterTest()
                 && appServerInfo.getQualifier().equals(
                         suiteContext.getAuthServerInfo().getQualifier()); // app server == auth server
-    }
-
-    public boolean isClusteredAdapterTest() {
-        return isAdapterTest() && !appServerBackendsInfo.isEmpty();
     }
 
     public SuiteContext getSuiteContext() {
@@ -106,7 +129,7 @@ public final class TestContext {
     @Override
     public String toString() {
         return "TEST CONTEXT: " + getTestClass().getCanonicalName() + "\n"
-                + (isAdapterTest() ? "App server container: " + getAppServerInfo() + "\n" : "");
+                + (isAdapterTest() ? "Activated @AppServerContainer(" + getAppServerQualifiers(testClass) + ")\n" : "");
     }
 
     public Keycloak getAdminClient() {

@@ -13,7 +13,7 @@ import java.util.Objects;
  *
  * @author tkyjovsk
  */
-public class ContainerInfo {
+public class ContainerInfo implements Comparable<ContainerInfo> {
 
     private URL contextRoot;
     private Container arquillianContainer;
@@ -114,6 +114,11 @@ public class ContainerInfo {
 
     public boolean isManual() {
         return Objects.equals(arquillianContainer.getContainerConfiguration().getMode(), "manual");
+    }
+
+    @Override
+    public int compareTo(ContainerInfo o) {
+        return this.getQualifier().compareTo(o.getQualifier());
     }
 
 }

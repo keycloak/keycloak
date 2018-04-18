@@ -42,7 +42,6 @@ import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,7 +106,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
 //        }
-        if (isWLSAppServer(testClass.getJavaClass())) {
+        if (isWLSAppServer()) {
 //        {
             MavenResolverSystem resolver = Maven.resolver();
             MavenFormatStage dependencies = resolver
@@ -122,7 +121,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     .addClass(org.keycloak.testsuite.arquillian.annotation.UseServletFilter.class);
         }
 
-        if (isWASAppServer(testClass.getJavaClass())) {
+        if (isWASAppServer()) {
 //        {
             MavenResolverSystem resolver = Maven.resolver();
             MavenFormatStage dependencies = resolver
@@ -146,7 +145,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void modifyAdapterConfigs(Archive<?> archive, TestClass testClass) {
-        boolean relative = isRelative(testClass.getJavaClass());
+        boolean relative = isRelative();
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH, relative);
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT1, relative);
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT2, relative);
@@ -260,7 +259,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         } catch (Exception ex) {
             throw new RuntimeException("Error when processing " + archive.getName(), ex);
         }
-        if (isTomcatAppServer(testClass.getJavaClass())) {
+        if (isTomcatAppServer()) {
             modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
         }
 

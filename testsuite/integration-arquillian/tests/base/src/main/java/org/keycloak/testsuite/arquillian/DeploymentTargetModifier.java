@@ -17,17 +17,20 @@
 
 package org.keycloak.testsuite.arquillian;
 
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.List;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 
-import java.util.List;
-
-import java.util.Objects;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifier;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 
 /**
  * Changes target container for all Arquillian deployments based on value of
@@ -39,17 +42,33 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
 
     // Will be replaced in runtime by real auth-server-container
     public static final String AUTH_SERVER_CURRENT = "auth-server-current";
+    // Will be replaced in runtime by real app-server-container
+    public static final String APP_SERVER_CURRENT = "app-server-current";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
+    @Inject
+    private Instance<TestContext> testContext;
+
     @Override
     public List<DeploymentDescription> generate(TestClass testClass) {
+        TestContext context = testContext.get();
+        if (context.isAdapterTest() && !context.isAdapterContainerEnabled() && !context.isAdapterContainerEnabledCluster()) {
+            return new ArrayList<>(); // adapter test will be skipped, no need to genarate dependencies
+        }
+
         List<DeploymentDescription> deployments = super.generate(testClass);
 
-        checkAuthServerTestDeployment(deployments, testClass);
+        checkTestDeployments(deployments, testClass);
+        List<String> appServerQualifiers = getAppServerQualifiers(testClass.getJavaClass());
+        if (appServerQualifiers == null) return deployments; // no adapter test
 
-        String appServerQualifier = getAppServerQualifier(
-                testClass.getJavaClass());
+        String appServerQualifier = appServerQualifiers.stream()
+                .filter(q -> q.contains(AppServerTestEnricher.CURRENT_APP_SERVER))
+                .findAny()
+                .orElse(null);
+
+        if (appServerQualifier.contains(";")) return deployments;
 
         if (appServerQualifier != null && !appServerQualifier.isEmpty()) {
             for (DeploymentDescription deployment : deployments) {
@@ -65,21 +84,24 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
                 }
             }
         }
-
         return deployments;
     }
 
-    private void checkAuthServerTestDeployment(List<DeploymentDescription> descriptions, TestClass testClass) {
+    private void checkTestDeployments(List<DeploymentDescription> descriptions, TestClass testClass) {
         for (DeploymentDescription deployment : descriptions) {
             if (deployment.getTarget() != null) {
                 String containerQualifier = deployment.getTarget().getName();
                 if (AUTH_SERVER_CURRENT.equals(containerQualifier)) {
                     String newAuthServerQualifier = AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
-                    updateAuthServerQualifier(deployment, testClass, newAuthServerQualifier);
+                    updateServerQualifier(deployment, testClass, newAuthServerQualifier);
+                } else if (containerQualifier.contains(APP_SERVER_CURRENT)) {
+                    String suffix = containerQualifier.split(APP_SERVER_CURRENT)[1];
+                    String newAppServerQualifier = AppServerTestEnricher.APP_SERVER_PREFIX  + AppServerTestEnricher.CURRENT_APP_SERVER + "-" + suffix;
+                    updateServerQualifier(deployment, testClass, newAppServerQualifier);
                 } else {
-                    String newAuthServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier);
-                    if (!newAuthServerQualifier.equals(containerQualifier)) {
-                        updateAuthServerQualifier(deployment, testClass, newAuthServerQualifier);
+                    String newServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier);
+                    if (!newServerQualifier.equals(containerQualifier)) {
+                        updateServerQualifier(deployment, testClass, newServerQualifier);
                     }
                 }
 
@@ -88,9 +110,9 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
         }
     }
 
-    private void updateAuthServerQualifier(DeploymentDescription deployment, TestClass testClass, String newAuthServerQualifier) {
-        log.infof("Setting target container for deployment %s.%s: %s", testClass.getName(), deployment.getName(), newAuthServerQualifier);
-        deployment.setTarget(new TargetDescription(newAuthServerQualifier));
+    private void updateServerQualifier(DeploymentDescription deployment, TestClass testClass, String newServerQualifier) {
+        log.infof("Setting target container for deployment %s.%s: %s", testClass.getName(), deployment.getName(), newServerQualifier);
+        deployment.setTarget(new TargetDescription(newServerQualifier));
     }
 
 }

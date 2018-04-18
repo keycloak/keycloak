@@ -77,10 +77,10 @@ fi
 
 if [ $1 == "crossdc" ]; then
     cd testsuite/integration-arquillian
-    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
+    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
 
     cd tests/base
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.**.* 2>&1 |
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=*.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     BASE_TESTS_STATUS=${PIPESTATUS[0]}
 
