@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.arquillian;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -28,6 +45,10 @@ public class AppServerTestEnricher {
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
+    public static final String APP_SERVER_DEFAULT = "app-server-undertow";
+    
+    @Inject
+    private Instance<ContainerController> containerConrollerInstance;
     @Inject
     @ClassScoped
     private InstanceProducer<TestContext> testContextProducer;
@@ -51,14 +72,21 @@ public class AppServerTestEnricher {
 
     public static String getAppServerContextRoot(int clusterPortOffset) {
         String host = System.getProperty("app.server.host", "localhost");
-        int httpPort = Integer.parseInt(System.getProperty("app.server.http.port")); // property must be set
-        int httpsPort = Integer.parseInt(System.getProperty("app.server.https.port")); // property must be set
-
+        
         boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+  
+        int port = sslRequired ? parsePort("app.server.https.port") : parsePort("app.server.http.port");
         String scheme = sslRequired ? "https" : "http";
-        int port = sslRequired ? httpsPort : httpPort;
 
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
+    }
+    
+    private static int parsePort(String property) {
+        try {
+            return Integer.parseInt(System.getProperty(property));
+        } catch (NumberFormatException ex) {
+            throw new RuntimeException("Failed to get " + property, ex);
+        }
     }
 
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
@@ -111,9 +139,6 @@ public class AppServerTestEnricher {
         return managementClient;
     }
 
-    @Inject
-    private Instance<ContainerController> containerConrollerInstance;
-
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {
         if (testContext.isAdapterTest() && !testContext.isRelativeAdapterTest()) {
             ContainerController controller = containerConrollerInstance.get();
@@ -131,7 +156,7 @@ public class AppServerTestEnricher {
      * @return testClass or the nearest superclass of testClass annotated with
      * annotationClass
      */
-    public static Class getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
+    public static Class getNearestSuperclassWithAnnotation(Class<?> testClass, Class annotationClass) {
         return testClass.isAnnotationPresent(annotationClass) ? testClass
                 : (testClass.getSuperclass().equals(Object.class) ? null // stop recursion
                 : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion

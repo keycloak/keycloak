@@ -60,7 +60,7 @@ if [ $1 == "unit" ]; then
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.ad*.**.*Test,!**/adapter/undertow/**/*Test
+    run-server-tests org.keycloak.testsuite.ad*.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then

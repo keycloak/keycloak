@@ -43,8 +43,6 @@
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
         <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
         <exclude.x509>**/x509/*Test.java</exclude.x509>
-        <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
-        <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
     </properties>
     
     <dependencies>
@@ -124,6 +122,12 @@
             <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
     
     <build>
@@ -163,7 +167,6 @@
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.crossdc}</exclude>
-                        <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
                     </excludes>
                 </configuration>
