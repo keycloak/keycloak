@@ -1,16 +1,5 @@
 [[_enforcer_filter]]
-= {project_name} Adapter Policy Enforcer
-
-You can enforce authorization decisions for your applications if you are using {project_name} OIDC adapters.
-
-When you enable policy enforcement for your {project_name} application, the corresponding adapter intercepts all requests to your application and enforces the authorization decisions obtained from the server.
-
-Policy enforcement is strongly linked to your application's paths and the <<_resource_overview, resources>> you created for a resource server using the {project_name} Administration Console. By default,
-when you create a resource server, {project_name} creates a <<_resource_server_default_config, default configuration>> for your resource server so you can enable policy enforcement quickly.
-
-The default configuration allows access for all resources in your application provided the authenticated user belongs to the same realm as the resource server being protected.
-
-== Policy Enforcement Configuration
+= Configuration
 
 To enable policy enforcement for your application, add the following property to your *keycloak.json* file:
 
@@ -156,7 +145,9 @@ Specifies how policies are enforced.
 +
 **** *DISABLED*
 +
-Disables the evaluation of policies for a path
+*** *claim-information-point*
++
+Defines a set of one or more claims that must be resolved and pushed to the {project_name} server in order to make these claims available to policies. See <<_enforcer_claim_information_point, Claim Information Point>> for more details.
 ** *lazy-load-paths*
 +
 Specifies how the adapter should fetch the server for resources associated with paths in your application. If true, the policy
