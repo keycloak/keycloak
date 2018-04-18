@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ Copyright 2018 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
 ~
 ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,22 +25,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server</name>
+    <artifactId>integration-arquillian-servers-util</artifactId>
+    <packaging>jar</packaging>
+    <name>Test Servers Util</name>
 
-    <properties>
-        <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
-        <app.server.worker.io-threads>${jboss.default.worker.io-threads}</app.server.worker.io-threads>
-        <app.server.worker.task-max-threads>${jboss.default.worker.task-max-threads}</app.server.worker.task-max-threads>
-    </properties>
-
-    <modules>
-        <module>app-server-spi</module>
-        <module>jboss</module>
-        <module>karaf</module>
-        <module>tomcat</module>
-        <module>undertow</module>
-    </modules>
-
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>undertow-embedded</artifactId>
+        </dependency>
+    </dependencies>
 </project>

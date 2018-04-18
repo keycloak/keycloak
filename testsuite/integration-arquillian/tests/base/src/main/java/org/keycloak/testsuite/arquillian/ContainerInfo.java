@@ -17,7 +17,6 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
 
     private URL contextRoot;
     private Container arquillianContainer;
-    private boolean adapterLibsInstalled;
 
     public ContainerInfo(Container arquillianContainer) {
         if (arquillianContainer == null) {
@@ -77,14 +76,6 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
     @Override
     public String toString() {
         return getQualifier();
-    }
-
-    public boolean isAdapterLibsInstalled() {
-        return adapterLibsInstalled;
-    }
-
-    public void setAdapterLibsInstalled(boolean adapterLibsInstalled) {
-        this.adapterLibsInstalled = adapterLibsInstalled;
     }
 
     @Override

@@ -16,7 +16,15 @@
  */
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.core.Response;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
@@ -36,24 +44,20 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_DEFAULT;
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -61,7 +65,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
+@AppServerContainer(APP_SERVER_DEFAULT)
 public class UserStorageConsentTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -70,7 +74,15 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
     @Page
     protected ConsentPage consentPage;
 
-
+    @Deployment
+    @TargetsContainer(AUTH_SERVER_CURRENT)
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(
+                AbstractServletsAdapterTest.class, 
+                AbstractAdapterTest.class, 
+                AbstractAuthTest.class, 
+                PageWithLoginUrl.class);
+    }
 
     @Deployment(name = ProductPortal.DEPLOYMENT_NAME)
     protected static WebArchive productPortal() {
@@ -96,9 +108,6 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         getCleanup().addComponentId(id);
         return id;
     }
-
-
-
 
     public static void setupConsent(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("demo");
@@ -146,8 +155,6 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         roleList.add(roleRep);
         adminClient.realm("demo").users().get(uid).roles().realmLevel().add(roleList);
 
-
-
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("memuser", "password");
@@ -165,8 +172,8 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("memuser", "password");
         assertCurrentUrlEquals(productPortal.toString());
-        Assert.assertTrue(driver.getPageSource().contains("iPhone"));   }
-
-
-
+        Assert.assertTrue(driver.getPageSource().contains("iPhone"));
+        
+        adminClient.realm("demo").users().delete(uid).close();
+    }
 }

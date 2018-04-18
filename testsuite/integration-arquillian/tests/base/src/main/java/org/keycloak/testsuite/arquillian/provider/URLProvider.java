@@ -54,10 +54,30 @@ public class URLProvider extends URLResourceProvider {
 
     private static final Set<String> fixedUrls = new HashSet<>();
 
+    /*
+     * TODO: review this for EAP6
+     */
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
         URL url = (URL) super.doLookup(resource, qualifiers);
 
+        if (url == null) {
+            String port = appServerSslRequired ? 
+                                System.getProperty("app.server.https.port", "8643") : 
+                                System.getProperty("app.server.http.port", "8280");
+            String protocol = appServerSslRequired ? "https" : "http";
+
+            try {
+                for (Annotation a : qualifiers) {
+                    if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
+                        return new URL(protocol + "://localhost:" + port + "/" + ((OperateOnDeployment) a).value());
+                    }
+                }
+            } catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        
         // fix injected URL
         if (url != null) {
             try {

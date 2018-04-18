@@ -18,6 +18,7 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -51,6 +52,8 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -58,6 +61,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
@@ -74,7 +78,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -87,6 +93,21 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
     public static final String PARENT2_USERNAME = "parent2";
     public static final String UNAUTHORIZED_CHILD_CLIENT = "unauthorized-child-client";
     public static final String PARENT_CLIENT = "parent-client";
+
+    @Deployment
+    @TargetsContainer(AUTH_SERVER_CURRENT)
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(
+                AbstractBrokerLinkAndTokenExchangeTest.class,
+                AbstractServletsAdapterTest.class,
+                AbstractAdapterTest.class,
+                AbstractAuthTest.class);
+    }
+
+    @Deployment(name = ClientApp.DEPLOYMENT_NAME)
+    protected static WebArchive accountLink() {
+        return servletDeployment(ClientApp.DEPLOYMENT_NAME, LinkAndExchangeServlet.class, ServletTestUtils.class);
+    }
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
@@ -174,12 +195,6 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
 
     }
 
-
-    @Deployment(name = ClientApp.DEPLOYMENT_NAME)
-    protected static WebArchive accountLink() {
-        return servletDeployment(ClientApp.DEPLOYMENT_NAME, LinkAndExchangeServlet.class, ServletTestUtils.class);
-    }
-    
     @Before
     public void addIdpUser() {
         RealmResource realm = adminClient.realms().realm(PARENT_IDP);
