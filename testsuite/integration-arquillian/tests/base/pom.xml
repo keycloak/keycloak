@@ -45,8 +45,8 @@
         <exclude.x509>**/x509/*Test.java</exclude.x509>
         <!-- KEYCLOAK-6771 exclude Mutual TLS Holder of Key Token x509 tests by default, enabled by 'ssl' profile -->
         <exclude.HoK>**/hok/**/*Test.java</exclude.HoK>
-        <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
-        <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
+        <!-- see include-CORS-tests profile -->
+        <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
     
     <dependencies>
@@ -121,6 +121,11 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -162,6 +167,7 @@
                         <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
+                        <exclude>${exclude.cors.tests}</exclude>
                         <exclude>${exclude.HoK}</exclude>
                     </excludes>
                 </configuration>
@@ -330,7 +336,25 @@
                 </kie.maven.settings>
             </properties>
         </profile>
-        
+        <profile>
+            <id>include-CORS-tests</id>
+            <!--
+            If you want to run CORS tests it is necessary to put
+
+            127.0.0.1 localhost-auth
+            127.0.0.1 localhost-db
+
+            to your /etc/hosts file
+            -->
+            <activation>
+                <property>
+                    <name>includeCorsTests</name>
+                </property>
+            </activation>
+            <properties>
+                <exclude.cors.tests>-</exclude.cors.tests>
+            </properties>
+        </profile>
     </profiles>
 
 </project>

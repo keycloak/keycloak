@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,20 +19,18 @@ package org.keycloak.testsuite.arquillian.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- *
- * @author tkyjovsk
+ * Holder for @AppServerContainer annotations
+ * 
  */
 @Documented
 @Retention(RUNTIME)
 @Target({ElementType.TYPE})
-@Repeatable(AppServerContainers.class)
-public @interface AppServerContainer {
-    String value();
+public @interface AppServerContainers {
+    AppServerContainer[] value();
 }

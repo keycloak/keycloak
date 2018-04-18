@@ -49,10 +49,12 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 /**
- *
+ * <code>@AppServerContainer</code> is needed for stopping recursion in 
+ * AppServerTestEnricher.getNearestSuperclassWithAnnotation
+ * 
  * @author tkyjovsk
  */
-@AppServerContainer
+@AppServerContainer("")
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     @Page

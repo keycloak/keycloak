@@ -2,13 +2,12 @@ package org.keycloak.testsuite.arquillian;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
-import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -17,6 +16,10 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 
@@ -28,21 +31,25 @@ public class AppServerTestEnricher {
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
-    @Inject
-    @ClassScoped
-    private InstanceProducer<TestContext> testContextProducer;
+    public static final String APP_SERVER_PREFIX = "app-server-";
+    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
+
+    @Inject private Instance<ContainerController> containerConrollerInstance;
+    @Inject private Instance<TestContext> testContextInstance;
     private TestContext testContext;
 
-    public static String getAppServerQualifier(Class testClass) {
-        Class<? extends AuthServerTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class);
+    public static List<String> getAppServerQualifiers(Class testClass) {
+        Class<?> annotatedClass = getNearestSuperclassWithAppServerAnnotation(testClass);
 
-        String appServerQ = (annotatedClass == null ? null
-                : annotatedClass.getAnnotation(AppServerContainer.class).value());
-
-        return annotatedClass == null ? null // no @AppServerContainer annotation --> no adapter test
-                : (appServerQ == null || appServerQ.isEmpty() // @AppServerContainer annotation present but qualifier not set --> relative adapter test
-                        ? AuthServerTestEnricher.AUTH_SERVER_CONTAINER // app server == auth server
-                        : appServerQ);
+        if (annotatedClass == null) return null; // no @AppServerContainer annotation --> no adapter test
+        
+        AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
+        
+        List<String> appServerQualifiers = new ArrayList<>();
+        for (AppServerContainer appServerContainer : appServerContainers) {
+            appServerQualifiers.add(appServerContainer.value());
+        }
+        return appServerQualifiers;
     }
 
     public static String getAppServerContextRoot() {
@@ -62,11 +69,32 @@ public class AppServerTestEnricher {
     }
 
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
-        testContext = testContextProducer.get();
-        String appServerQualifier = getAppServerQualifier(testContext.getTestClass());
-        for (ContainerInfo container : testContext.getSuiteContext().getContainers()) {
-            if (container.getQualifier().equals(appServerQualifier)) {
-                testContext.setAppServerInfo(updateWithAppServerInfo(container));
+        testContext = testContextInstance.get();
+
+        List<String> appServerQualifiers = getAppServerQualifiers(testContext.getTestClass());
+        if (appServerQualifiers == null) { // no adapter test
+            log.info("\n\n" + testContext);
+            return;
+        } 
+
+        String appServerQualifier = null;
+        for (String qualifier : appServerQualifiers) {
+            if (qualifier.contains(";")) {// cluster adapter test
+                final List<String> appServers = Arrays.asList(qualifier.split("\\s*;\\s*"));
+                List<ContainerInfo> appServerBackendsInfo = testContext.getSuiteContext().getContainers().stream()
+                    .filter(ci -> appServers.contains(ci.getQualifier()))
+                    .map(this::updateWithAppServerInfo)
+                    .collect(Collectors.toList());
+                testContext.setAppServerBackendsInfo(appServerBackendsInfo);
+            } else {// non-cluster adapter test
+                for (ContainerInfo container : testContext.getSuiteContext().getContainers()) {
+                    if (container.getQualifier().equals(qualifier)) {
+                        testContext.setAppServerInfo(updateWithAppServerInfo(container));
+                        appServerQualifier = qualifier;
+                        break;
+                    }
+                    //TODO add warning if there are two or more matching containers.
+                }
             }
         }
         // validate app server
@@ -83,7 +111,7 @@ public class AppServerTestEnricher {
     private ContainerInfo updateWithAppServerInfo(ContainerInfo appServerInfo, int clusterPortOffset) {
         try {
 
-            String appServerContextRootStr = isRelative(testContext.getTestClass())
+            String appServerContextRootStr = isRelative()
                     ? getAuthServerContextRoot(clusterPortOffset)
                     : getAppServerContextRoot(clusterPortOffset);
 
@@ -110,12 +138,9 @@ public class AppServerTestEnricher {
 
         return managementClient;
     }
-
-    @Inject
-    private Instance<ContainerController> containerConrollerInstance;
-
+    
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {
-        if (testContext.isAdapterTest() && !testContext.isRelativeAdapterTest()) {
+        if (testContext.isAdapterContainerEnabled() && !testContext.isRelativeAdapterTest()) {
             ContainerController controller = containerConrollerInstance.get();
             if (!controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
@@ -131,39 +156,42 @@ public class AppServerTestEnricher {
      * @return testClass or the nearest superclass of testClass annotated with
      * annotationClass
      */
-    public static Class getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
-        return testClass.isAnnotationPresent(annotationClass) ? testClass
+    private static Class getNearestSuperclassWithAppServerAnnotation(Class<?> testClass) {
+        return (testClass.isAnnotationPresent(AppServerContainer.class) || testClass.isAnnotationPresent(AppServerContainers.class)) ? testClass
                 : (testClass.getSuperclass().equals(Object.class) ? null // stop recursion
-                : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
+                : getNearestSuperclassWithAppServerAnnotation(testClass.getSuperclass())); // continue recursion
     }
 
     public static boolean hasAppServerContainerAnnotation(Class testClass) {
-        return getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class) != null;
+        return getNearestSuperclassWithAppServerAnnotation(testClass) != null;
     }
 
-    public static boolean isRelative(Class testClass) {
-        return getAppServerQualifier(testClass).equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER);
+    public static boolean isUndertowAppServer() {
+        return CURRENT_APP_SERVER.equals("undertow");
     }
 
-    public static boolean isWildflyAppServer(Class testClass) {
-        return getAppServerQualifier(testClass).contains("wildfly");
+    public static boolean isRelative() {
+        return CURRENT_APP_SERVER.equals("relative");
     }
 
-    public static boolean isTomcatAppServer(Class testClass) {
-        return getAppServerQualifier(testClass).contains("tomcat");
+    public static boolean isWildflyAppServer() {
+        return CURRENT_APP_SERVER.equals("wildfly");
     }
 
-    public static boolean isWASAppServer(Class testClass) {
-        return getAppServerQualifier(testClass).contains("was");
+    public static boolean isTomcatAppServer() {
+        return CURRENT_APP_SERVER.equals("tomcat");
     }
 
-    public static boolean isWLSAppServer(Class testClass) {
-        return getAppServerQualifier(testClass).contains("wls");
+    public static boolean isWASAppServer() {
+        return CURRENT_APP_SERVER.equals("was");
     }
 
-    public static boolean isOSGiAppServer(Class testClass) {
-        String q = getAppServerQualifier(testClass);
-        return q.contains("karaf") || q.contains("fuse");
+    public static boolean isWLSAppServer() {
+        return CURRENT_APP_SERVER.equals("wls");
+    }
+
+    public static boolean isOSGiAppServer() {
+        return CURRENT_APP_SERVER.contains("karaf") || CURRENT_APP_SERVER.contains("fuse");
     }
 
 }
