@@ -16,9 +16,11 @@
  */
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
+import java.net.URL;
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,22 +28,27 @@ import org.junit.Test;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.page.MultiTenant;
 import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
 import org.keycloak.testsuite.adapter.servlet.MultiTenantResolver;
 import org.keycloak.testsuite.adapter.servlet.MultiTenantServlet;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_DEFAULT;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 /**
  * note: migrated from old testsuite
  * 
  * @author Juraci Paixão Kröhling <juraci at kroehling.de>
  */
-@AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
+@AppServerContainer(APP_SERVER_DEFAULT)
 public class MultiTenancyTest extends AbstractServletsAdapterTest {
+    
+    @Page
+    private MultiTenant tenantPage;
     
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -54,9 +61,9 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
         return false;
     }
     
-    @Deployment(name = "multi-tenant")
+    @Deployment(name = MultiTenant.DEPLOYMENT_NAME)
     protected static WebArchive multiTenant() {
-        return servletDeploymentMultiTenant("multi-tenant", MultiTenantServlet.class, ErrorServlet.class, MultiTenantResolver.class);
+        return servletDeploymentMultiTenant(MultiTenant.DEPLOYMENT_NAME, MultiTenantServlet.class, ErrorServlet.class, MultiTenantResolver.class);
     }
     
     @After
@@ -97,12 +104,10 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
     public void testUnauthorizedAccessNotLoggedIn() {
         String keycloakServerBaseUrl = authServerPage.toString();
         
-        driver.navigate().to(authServerContextRootPage + "/multi-tenant/tenant1");
+        driver.navigate().to(tenantPage.getTenantRealmUrl("tenant1"));
         WaitUtils.waitForPageToLoad();
         URLAssert.assertCurrentUrlStartsWith(keycloakServerBaseUrl);
         
-        String currentUrl = driver.getCurrentUrl();
-        String toString = testRealmLoginPage.toString();
         testRealmLoginPage.form().login("user-tenant2", "user-tenant2");
         URLAssert.assertCurrentUrlStartsWith(keycloakServerBaseUrl);
     }
@@ -116,20 +121,20 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
     public void testUnauthorizedAccessLoggedIn() {
         doTenantRequests("tenant1", false);
         
-        driver.navigate().to(authServerContextRootPage + "/multi-tenant/tenant2");
+        driver.navigate().to(tenantPage.getTenantRealmUrl("tenant2"));
         URLAssert.assertCurrentUrlStartsWith(authServerPage.toString());
     }
     
     private void doTenantRequests(String tenant, boolean logout) {
         String tenantLoginUrl = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerPage.getAuthRoot())).build(tenant).toString();
-        String tenantUrl = authServerContextRootPage + "/multi-tenant/" + tenant;
+        URL tenantUrl = tenantPage.getTenantRealmUrl(tenant);
         
         driver.navigate().to(tenantUrl);
         URLAssert.assertCurrentUrlStartsWith(tenantLoginUrl);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         log.debug("Current url: " + driver.getCurrentUrl());
         
-        URLAssert.assertCurrentUrlStartsWith(tenantUrl);
+        URLAssert.assertCurrentUrlStartsWith(tenantUrl.toString());
         String pageSource = driver.getPageSource();
         log.debug(pageSource);
         
@@ -137,7 +142,7 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
         Assert.assertTrue(pageSource.contains("Realm: " + tenant));
 
         if (logout) {
-            driver.navigate().to(authServerContextRootPage + "/multi-tenant/" + tenant + "/logout");
+            driver.navigate().to(tenantUrl + "/logout");
             Assert.assertFalse(driver.getPageSource().contains("Username: bburke@redhat.com"));
             Assert.assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
         }

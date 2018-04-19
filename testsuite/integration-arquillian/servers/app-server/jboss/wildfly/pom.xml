@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>App Server - JBoss - Wildfly</name>
     
     <properties>
@@ -41,4 +41,15 @@
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+    </dependencies>
 </project>

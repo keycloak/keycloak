@@ -199,7 +199,7 @@ public class IOUtil {
                 return;
             }
 
-            log.info("Removing node " + removeNode);
+            log.trace("Removing node " + removeNode);
             parentElement.removeChild(removeElement);
 
         }

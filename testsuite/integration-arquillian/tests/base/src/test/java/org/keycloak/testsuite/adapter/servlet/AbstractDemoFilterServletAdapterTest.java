@@ -27,16 +27,14 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
 
     @Test
     @Override
-    @Ignore
+    @Ignore(value = "Can't test because of the way filter works")
     public void testNullBearerTokenCustomErrorPage() {
-        //can't test because of the way filter works
     }
     
     @Test
     @Override
-    @Ignore
+    @Ignore(value = "Don't need to test this because HttpServletRequest.authenticate doesn't make sense with filter implementation")
     public void testAuthenticated() {
-        //Don't need to test this because HttpServletRequest.authenticate doesn't make sense with filter implementation
     }
 
     @Test
