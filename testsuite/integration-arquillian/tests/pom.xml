@@ -78,6 +78,21 @@
         <auth.server.profile/>
         <auth.server.feature/>
 
+        <app.server.skip.unpack>true</app.server.skip.unpack>
+        <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
+        <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
+        <app.server.port.offset>200</app.server.port.offset>
+        <app.server.http.port>8280</app.server.http.port>
+        <app.server.https.port>8643</app.server.https.port>
+        <app.server.management.protocol>http-remoting</app.server.management.protocol>
+        <app.server.management.port>10190</app.server.management.port>
+        <app.server.startup.timeout>60</app.server.startup.timeout>
+        <app.server.reverse-proxy.port.offset>500</app.server.reverse-proxy.port.offset>
+        <app.server.1.port.offset>300</app.server.1.port.offset>
+        <app.server.1.management.port>10290</app.server.1.management.port>
+        <app.server.2.port.offset>400</app.server.2.port.offset>
+        <app.server.2.management.port>10390</app.server.2.management.port>
+
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
@@ -163,6 +178,25 @@
                                 <outputDirectory>${containers.home}</outputDirectory>
                                 <overWriteIfNewer>true</overWriteIfNewer>
                                 <skip>${auth.server.jboss.skip.unpack}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>unpack-app-server</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>${app.server.artifactId}</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${containers.home}</outputDirectory>
+                                <skip>${app.server.skip.unpack}</skip>
                             </configuration>
                         </execution>
                     </executions>
@@ -264,6 +298,21 @@
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
+
+                            <app.server>${app.server}</app.server>
+                            <app.server.home>${app.server.home}</app.server.home>
+                            <app.server.java.home>${app.server.java.home}</app.server.java.home>
+                            <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
+                            <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                            <app.server.https.port>${app.server.https.port}</app.server.https.port>
+                            <app.server.management.protocol>${app.server.management.protocol}</app.server.management.protocol>
+                            <app.server.management.port>${app.server.management.port}</app.server.management.port>
+                            <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
+                            <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
+                            <app.server.1.port.offset>${app.server.1.port.offset}</app.server.1.port.offset>
+                            <app.server.1.management.port>${app.server.1.management.port}</app.server.1.management.port>
+                            <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
+                            <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>

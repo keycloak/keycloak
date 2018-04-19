@@ -84,7 +84,6 @@
             <dependency>
                 <groupId>org.jboss.shrinkwrap.resolver</groupId>
                 <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
-                <version>${version.shrinkwrap.resolvers}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

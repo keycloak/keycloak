@@ -50,9 +50,8 @@
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <app.server.startup.timeout>60</app.server.startup.timeout>
-        <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
-        <app.server.cluster.tests.memory.settings>-Xmx384m</app.server.cluster.tests.memory.settings>
+        <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
 
         <!--debug properties-->
         <app.server.debug.port>5006</app.server.debug.port>
@@ -216,7 +215,6 @@
 
                                 <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                                 <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
-                                <app.server.cluster.tests.memory.settings>${app.server.cluster.tests.memory.settings}</app.server.cluster.tests.memory.settings>
                                 <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
                                 
                                 <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
@@ -236,7 +234,6 @@
                     <plugin>
                         <groupId>org.jboss.shrinkwrap.resolver</groupId>
                         <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
-                        <version>${version.shrinkwrap.resolvers}</version>
                         <executions>
                             <execution>
                                 <goals>
