@@ -174,7 +174,7 @@ public class OAuthRequestAuthenticator {
         url = UriUtils.stripQueryParam(url, OAuth2Constants.UI_LOCALES_PARAM);
 
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
-                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, deployment.getResponseType())
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, rewrittenRedirectUri(url))
                 .queryParam(OAuth2Constants.STATE, state)

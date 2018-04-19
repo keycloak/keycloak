@@ -97,6 +97,8 @@ public class KeycloakDeployment {
 
     protected boolean delegateBearerErrorResponseSending = false;
 
+    protected String responseType;
+
     public KeycloakDeployment() {
     }
 
@@ -206,6 +208,14 @@ public class KeycloakDeployment {
 
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
+    }
+
+    public String getResponseType() {
+        return responseType;
+    }
+
+    public void setResponseType(String responseType) {
+        this.responseType = responseType;
     }
 
     public boolean isBearerOnly() {
