@@ -128,6 +128,14 @@
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
+
+        <!--todo: once adapter tests will be tranfered into base testsuite, it will be moved into its own profile.-->
+<!--        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>-->
     </dependencies>
     
     <build>
