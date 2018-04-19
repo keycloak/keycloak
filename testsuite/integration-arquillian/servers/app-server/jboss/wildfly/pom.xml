@@ -26,8 +26,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - JBoss - Wildfly</name>
+    <packaging>jar</packaging>
+    <name>App Server - Wildfly</name>
     
     <properties>
         <app.server.jboss>wildfly</app.server.jboss>
@@ -43,4 +43,15 @@
         <skip.elytron.adapter.installation>false</skip.elytron.adapter.installation>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+    </dependencies>
 </project>

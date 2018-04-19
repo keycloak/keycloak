@@ -189,6 +189,36 @@
                                     </nonFilteredFileExtensions>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-configs-cluster</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-cluster</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-configs-crossdc</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-crossdc</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -356,6 +386,35 @@
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>add-secured-deployments</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>./jboss-cli.sh</executable>
+                                    <arguments>
+                                        <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>configure-cluster-config</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>./jboss-cli.sh</executable>
+                                    <arguments>
+                                        <argument>--file=${common.resources}/cli/configure-cluster-config.cli</argument>
+                                        <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-cluster/configuration</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

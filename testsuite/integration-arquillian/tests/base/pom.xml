@@ -282,7 +282,7 @@
                             <tag>0.5</tag>
                         </configuration>
                     </execution>
-                  </executions>
+                </executions>
             </plugin>
 
         </plugins>
@@ -309,7 +309,38 @@
                 </plugins>
             </build>
         </profile>
-
+        <profile>
+            <id>app-server-wildfly</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>wildfly</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>wildfly</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
