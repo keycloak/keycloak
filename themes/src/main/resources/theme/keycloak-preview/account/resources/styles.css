@@ -49,4 +49,38 @@ p.description {
 /* Introduction Message on the left */
 .introMessage {
     margin: 10px 20px 20px 0;
+    
+/* Device Activity */
+.card-title{
+	margin-left: 20px;
+	margin-bottom: 30px;
+}
+.detail-description{
+	margin-top:-10px;
+}
+.list-view-pf-view {
+	margin-top: 0;
+}
+.m-l{
+	margin-left: 20px;
+}
+.activity-item {
+	padding-left: 60px;
+}
+.activity-item ul{
+	list-style: none;
+}
+.activity-item h3 .fa{
+	margin-left: -30px;
+	margin-right: 5px;
+	font-size: 20px;
+}
+.btn-logout{
+	margin-left: 40px;
+	margin-bottom: 20px;
+	margin-top: 5px;
+}
+.list-view-pf .current-color{
+	font-weight: bold;
+	color: #4F9207!important;
 }
