@@ -395,6 +395,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginSuccess();
     }
 
+    @Test
     public void testLockoutDisplayMessage() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
 
