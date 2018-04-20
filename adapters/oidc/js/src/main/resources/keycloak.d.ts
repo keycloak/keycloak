@@ -29,7 +29,7 @@ export = Keycloak;
 declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
-	type KeycloakAdapterName = 'cordova'|'default';
+	type KeycloakAdapterName = 'cordova'|'default' | any;
 	type KeycloakOnLoad = 'login-required'|'check-sso';
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
@@ -42,7 +42,11 @@ declare namespace Keycloak {
 		useNonce?: boolean;
 
 		/**
-		 * @private Undocumented.
+		 * Allows to use different adapter:
+		 * 
+		 * - {string} default - using browser api for redirects
+		 * - {string} cordova - using cordova plugins 
+		 * - {function} - allows to provide custom function as adapter.
 		 */
 		adapter?: KeycloakAdapterName;
 		

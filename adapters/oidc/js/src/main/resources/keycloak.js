@@ -51,6 +51,8 @@
                 adapter = loadAdapter('cordova');
             } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
+            } else if (initOptions && typeof initOptions.adapter === "object") {
+                adapter = initOptions.adapter;
             } else {
                 if (window.Cordova || window.cordova) {
                     adapter = loadAdapter('cordova');
