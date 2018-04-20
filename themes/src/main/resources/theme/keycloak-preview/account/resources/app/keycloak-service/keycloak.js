@@ -278,7 +278,7 @@
             }
 
             if (options && options.locale) {
-                url += '&ui_locales=' + encodeURIComponent(options.locale);
+                url += '&kc_locale=' + encodeURIComponent(options.locale);
             }
 
             return url;
