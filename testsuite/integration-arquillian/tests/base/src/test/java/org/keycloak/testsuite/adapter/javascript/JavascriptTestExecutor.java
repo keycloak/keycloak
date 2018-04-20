@@ -36,11 +36,19 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor login() {
-        return login(null);
+        return login(null, null);
     }
-
+    
     public JavascriptTestExecutor login(JavascriptStateValidator validator) {
-        jsExecutor.executeScript("keycloak.login()");
+        return login(null, validator);
+    }
+    
+    public JavascriptTestExecutor login(String options, JavascriptStateValidator validator) {
+        if (options == null)
+            jsExecutor.executeScript("keycloak.login()");
+        else {
+            jsExecutor.executeScript("keycloak.login(" + options + ")");
+        }
 
         if (validator != null) {
             validator.validate(jsDriver, output, events);
