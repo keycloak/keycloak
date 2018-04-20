@@ -87,4 +87,4 @@
 :fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:4.0
-:saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
+:saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

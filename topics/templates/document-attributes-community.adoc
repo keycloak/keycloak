@@ -6,7 +6,7 @@
 :project_versionNpm: 4.0.0-beta.1
 :project_versionDoc: 4.0
 :project_images: keycloak-images
-:project_doc_base_url: http://www.keycloak.org/docs/{project_versionDoc}
+:project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
 
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
@@ -51,9 +51,9 @@
 :installguide_troubleshooting_link: {installguide_link}#troubleshooting
 
 :apidocs_javadocs_name: JavaDocs Documentation
-:apidocs_javadocs_link: http://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
+:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
 :apidocs_adminrest_name: Administration REST API
-:apidocs_adminrest_link: http://www.keycloak.org/docs-api/{project_versionDoc}/rest-api/
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_versionDoc}/rest-api/
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
@@ -84,4 +84,4 @@
 :fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:4.0
-:saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
+:saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

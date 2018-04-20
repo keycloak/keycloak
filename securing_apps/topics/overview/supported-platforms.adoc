@@ -32,7 +32,7 @@ ifeval::[{project_community}==true]
 * https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN] (community)
 
 ==== Python
-* https://pypi.python.org/pypi/oic/[oidc] (generic)
+* https://pypi.org/project/oic/[oidc] (generic)
 
 ==== Android
 * https://github.com/openid/AppAuth-Android[AppAuth] (generic)
