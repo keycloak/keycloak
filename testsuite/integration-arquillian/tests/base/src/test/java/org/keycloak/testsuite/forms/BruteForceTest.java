@@ -395,6 +395,26 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginSuccess();
     }
 
+    public void testLockoutDisplayMessage() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        try {
+            // arrange
+            realm.setDisplayLockoutOnLogin(true);
+            testRealm().update(realm);
+
+            // act
+            loginInvalidPassword();
+            loginInvalidPassword();
+
+            // assert
+            expectTemporarilyDisabled(true);
+        } finally {
+            realm.setDisplayLockoutOnLogin(false);
+            testRealm().update(realm);
+        }
+    }
+
     @Test
     public void testPermanentLockout() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
@@ -477,20 +497,28 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     public void expectTemporarilyDisabled() throws Exception {
-        expectTemporarilyDisabled("test-user@localhost", null, "password");
+        expectTemporarilyDisabled(false);
+    }
+
+    public void expectTemporarilyDisabled(boolean displayStatus) throws Exception {
+        expectTemporarilyDisabled("test-user@localhost", null, "password", displayStatus);
     }
 
     public void expectTemporarilyDisabled(String username, String userId) throws Exception {
-        expectTemporarilyDisabled(username, userId, "password");
+        expectTemporarilyDisabled(username, userId, "password", false);
     }
 
-    public void expectTemporarilyDisabled(String username, String userId, String password) throws Exception {
+    public void expectTemporarilyDisabled(String username, String userId, String password, boolean displayStatus) throws Exception {
         loginPage.open();
         loginPage.login(username, password);
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals(displayStatus ?
+                "Account is temporarily disabled, contact admin or try again later." :
+                "Invalid username or password.",
+                loginPage.getError());
+
         ExpectedEvent event = events.expectLogin()
                 .session((String) null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
