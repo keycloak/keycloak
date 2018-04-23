@@ -199,6 +199,7 @@ When running the tests it is necessary to define the dataset to be used.
 | `filterResults` | Whether to filter out requests which are outside of the `measurementPeriod`. | `false` |
 | `userThinkTime` | Pause between individual scenario steps. | `5` |
 | `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
+| `logoutPct`| Percentage of users who should log out at the end of scenario. | `100` |
 
 | Test Assertion | Description | Default Value |
 | --- | --- | --- | 
