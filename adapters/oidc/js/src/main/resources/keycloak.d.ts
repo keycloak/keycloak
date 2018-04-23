@@ -152,7 +152,7 @@ declare namespace Keycloak {
 		locale?: string;
                 
                 /**
-		 * Specifies the desired Keyclaok locale for the UI.  This differs from
+		 * Specifies the desired Keycloak locale for the UI.  This differs from
                  * the locale param in that it tells the Keycloak server to set a cookie and update
                  * the user's profile to a new preferred locale.
 		 */
