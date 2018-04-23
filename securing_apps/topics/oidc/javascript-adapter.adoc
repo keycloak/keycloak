@@ -269,7 +269,8 @@ Options is an Object, where:
 * maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.
 * action - If value is 'register' then user is redirected to registration page, otherwise to login page.
-* locale - Specifies the desired locale for the UI.
+* locale - Sets the 'ui_locales' query param in compliance with section 3.1.2.1 of the OIDC 1.0 specification.
+* kcLocale - Specifies the desired Keycloak locale for the UI.  This differs from the locale param in that it tells the Keycloak server to set a cookie and update the user's profile to a new preferred locale.
 
 ====== createLoginUrl(options)
 
