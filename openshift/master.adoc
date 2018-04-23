@@ -10,8 +10,11 @@ include::content/introduction/introduction.adoc[]
 == Before You Begin
 include::content/before_you_begin/before_you_begin.adoc[]
 
-== Get Started
-include::content/get_started/get_started.adoc[]
+== Getting Started
+include::content/getting_started/getting_started.adoc[]
+
+== Advanced Concepts
+include::content/advanced_concepts/advanced_concepts.adoc[]
 
 == Tutorials
 include::content/tutorials/tutorials.adoc[]

@@ -41,7 +41,7 @@ information about the image and should not be modified by the user:
 
 |*_JBOSS_IMAGE_VERSION_*
 |Image version, same as Version label.
-|*_1.0_*
+|*_1.1_*
 
 |*_JBOSS_MODULES_SYSTEM_PKGS_*
 |-
@@ -362,7 +362,7 @@ if this environment variable is provided.
 |The password for the truststore and certificate.
 |===
 
-==== Template variables specific to *sso72-mysql* and *sso72-mysql-persistent*
+==== Template variables specific to *_sso72-mysql_*, *_sso72-mysql-persistent_*, and *_sso72-x509-mysql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -396,7 +396,7 @@ broken.
 |The maximum permitted number of simultaneous client connections.
 |===
 
-==== Template variables specific to *sso72-postgresql* and *sso72-postgresql-persistent*
+==== Template variables specific to *_sso72-postgresql_*, *_sso72-postgresql-persistent_*, and *_sso72-x509-postgresql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -421,7 +421,7 @@ number of prepared transactions.
 |Configures how much memory is dedicated to PostgreSQL for caching data.
 |===
 
-==== Template variables specific to *sso72-mysql-persistent* and *sso72-postgresql-persistent*
+==== Template variables specific to *_sso72-mysql-persistent_*, *_sso72-x509-mysql-persistent_*, *_sso72-postgresql-persistent_*, and *_sso72-x509-postgresql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL / PostgreSQL Applications With Persistent Storage
 [cols="2*", options="header"]
@@ -523,7 +523,7 @@ ImageStreams in a different namespace/project.
 |Git source URI for application.
 |===
 
-==== Template variables specific to *eap64-sso-s2i*, *eap70-sso-s2i*, and *eap71-sso-s2i* for automatic client registration
+==== Template variables specific to *_eap64-sso-s2i_*, *_eap70-sso-s2i_*, and *_eap71-sso-s2i_* for automatic client registration
 
 .Configuration Variables For EAP 6.4 and EAP 7 RH-SSO-enabled Applications Built Via S2I
 [cols="2*", options="header"]
@@ -576,7 +576,7 @@ avoid man-in-the-middle security attacks.
 |Enable CORS for RH-SSO applications.
 |===
 
-==== Template variables specific to *eap64-sso-s2i*, *eap70-sso-s2i*, and *eap71-sso-s2i* for automatic client registration with SAML clients
+==== Template variables specific to *_eap64-sso-s2i_*, *_eap70-sso-s2i_*, and *_eap71-sso-s2i_* for automatic client registration with SAML clients
 
 .Configuration Variables For EAP 6.4 and EAP 7 RH-SSO-enabled Applications Built Via S2I Using SAML Protocol
 [cols="2*", options="header"]

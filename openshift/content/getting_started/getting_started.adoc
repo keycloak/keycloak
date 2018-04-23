@@ -1,0 +1,150 @@
+=== Using the {xpaasproduct-shortname} Image Streams and Application Templates
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:http://registry.access.redhat.com[registry.access.redhat.com]. To update to the latest {xpaasproduct-shortname} images, run the following commands:
+
+. On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
++
+----
+$ oc login -u system:admin
+----
+. Run the following commands to update the core set of RH-SSO 7.2 resources for OpenShift in the `openshift` project:
++
+----
+$ for resource in sso72-image-stream.json \
+  sso72-https.json \
+  sso72-mysql.json \
+  sso72-mysql-persistent.json \
+  sso72-postgresql.json \
+  sso72-postgresql-persistent.json \
+  sso72-x509-https.json \
+  sso72-x509-mysql-persistent.json \
+  sso72-x509-postgresql-persistent.json
+do
+  oc replace -n openshift --force -f \
+  https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.11/sso/${resource}
+done
+----
+. Run the following command to install the RH-SSO 7.2 OpenShift image streams in the `openshift` project:
++
+----
+$ oc -n openshift import-image redhat-sso72-openshift:1.1
+----
+
+[[Example-Deploying-SSO]]
+=== Deploying the {xpaasproduct-shortname} Image
+[[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
+==== Preparing the Deployment
+Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+
+. Create a new project:
++
+----
+$ oc new-project sso-app-demo
+----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
++
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
+
+==== Deploying the {xpaasproduct-shortname} Image using Application Template
+
+===== Deploying the Template via OpenShift CLI
+
+. List the available RH-SSO application templates:
++
+----
+$ oc get templates -n openshift -o name | grep -o 'sso72.\+'
+sso72-https
+sso72-mysql
+sso72-mysql-persistent
+sso72-postgresql
+sso72-postgresql-persistent
+sso72-x509-https
+sso72-x509-mysql-persistent
+sso72-x509-postgresql-persistent
+----
+. Deploy the selected one:
++
+----
+$ oc new-app --template=sso72-x509-https
+--> Deploying template "openshift/sso72-x509-https" to project sso-app-demo
+
+     Red Hat Single Sign-On 7.2 (Ephemeral)
+     ---------
+     An example RH-SSO 7 application. For more information about using this template, see https://github.com/jboss-openshift/application-templates.
+
+     A new RH-SSO service has been created in your project. The admin username/password for accessing the master realm via the RH-SSO console is IACfQO8v/nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc. The HTTPS keystore used for serving secure content, the JGroups keystore used for securing JGroups communications, and server truststore used for securing RH-SSO requests were automatically created via OpenShift's service serving x509 certificate secrets.
+
+     * With parameters:
+        * Application Name=sso
+        * JGroups Cluster Password=jg0Rssom0gmHBnooDF3Ww7V4Mu5RymmB # generated
+        * Datasource Minimum Pool Size=
+        * Datasource Maximum Pool Size=
+        * Datasource Transaction Isolation=
+        * ImageStream Namespace=openshift
+        * RH-SSO Administrator Username=IACfQO8v # generated
+        * RH-SSO Administrator Password=nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc # generated
+        * RH-SSO Realm=
+        * RH-SSO Service Username=
+        * RH-SSO Service Password=
+        * Container Memory Limit=1Gi
+
+--> Creating resources ...
+    service "sso" created
+    service "secure-sso" created
+    service "sso-ping" created
+    route "sso" created
+    route "secure-sso" created
+    deploymentconfig "sso" created
+--> Success
+    Run 'oc status' to view your app.
+----
+
+===== Deploying the Template via OpenShift Web Console
+
+Alternatively, perform the following steps to deploy the RH-SSO template via OpenShift web console:
+
+. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+. Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
+. Use the *Filter by Keyword* search bar to limit the list to those that match _sso_. You may need to click *Middleware*, then *Integration* to show the desired application template.
+. Select an RH-SSO application template. This example uses *_Red Hat Single Sign-On 7.2 (Ephemeral)_*.
+. Click *Next* in the *Information* step.
+. From the *Add to Project* drop-down menu, select the _sso-app-demo_ project space. Then click *Next*.
+. Select *Do not bind at this time* radio button in the *Binding* step. Click *Create* to continue.
+. In the *Results* step, click the *Continue to the project overview* link to verify the status of the deployment.
+
+==== Accessing the Administrator Console of the RH-SSO Pod
+
+After the template got deployed, identify the available routes:
+
+----
+$ oc get routes
+----
+
+[cols="7",options="header"]
+|===
+|NAME |HOST/PORT |PATH |SERVICES |PORT |TERMINATION |WILDCARD
+
+|secure-sso
+|secure-sso-sso-app-demo.openshift.example.com
+|
+|secure-sso
+|<all>
+|reencrypt
+|None
+
+|sso
+|sso-sso-app-demo.openshift.example.com
+|
+|sso
+|<all>
+|
+|None
+|===
+
+and access the RH-SSO administrator console at:
+
+* *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
+* *\http://sso-sso-app-demo.openshift.example.com/auth/admin*
+
+using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account].
