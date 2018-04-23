@@ -28,4 +28,8 @@ table provides a brief description of the available authorization quickstarts:
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-springboot[app-authz-springboot]
 | Demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by Keycloak.
+
+| https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-uma-photoz[app-authz-uma-photoz]
+| A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable User-Managed Access to your application and let users to manage permissions for their resources.
+
 |===
