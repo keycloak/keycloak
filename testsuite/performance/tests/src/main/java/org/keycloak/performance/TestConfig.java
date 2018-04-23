@@ -70,6 +70,7 @@ public class TestConfig {
     public static final boolean filterResults = Boolean.getBoolean("filterResults"); // filter out results outside of measurementPeriod
     public static final int userThinkTime = Integer.getInteger("userThinkTime", 0);
     public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 0);
+    public static final double logoutPct = Double.valueOf(System.getProperty("logoutPct", "100"));
 
     // Computed timestamps
     public static final long simulationStartTime = System.currentTimeMillis();
@@ -139,8 +140,9 @@ public class TestConfig {
         "  measurementPeriod: %s\n"+
         "  filterResults: %s\n"+
         "  userThinkTime: %s\n"+ 
-        "  refreshTokenPeriod: %s",
-        usersPerSec, rampUpPeriod, warmUpPeriod, measurementPeriod, filterResults, userThinkTime, refreshTokenPeriod);
+        "  refreshTokenPeriod: %s\n"+ 
+        "  logoutPct: %s",
+        usersPerSec, rampUpPeriod, warmUpPeriod, measurementPeriod, filterResults, userThinkTime, refreshTokenPeriod, logoutPct);
     }
     
     public static SimpleDateFormat SIMPLE_TIME = new SimpleDateFormat("HH:mm:ss");
@@ -306,6 +308,9 @@ public class TestConfig {
         }
         if (sequentialUsersFrom < -1 || sequentialUsersFrom >= usersPerRealm) {
             throw new RuntimeException("The folowing condition must be met: (-1 <= sequentialUsersFrom < usersPerRealm).");
+        }
+        if (logoutPct < 0 || logoutPct > 100) {
+            throw new RuntimeException("The `logoutPct` needs to be between 0 and 100.");
         }
     }
     
