@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractOIDCPublicKeyRotationAdapterTest;
+import org.keycloak.testsuite.adapter.servlet.OIDCPublicKeyRotationAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @AppServerContainer("app-server-eap")
-public class EAPOIDCPublicKeyRotationAdapterTest extends AbstractOIDCPublicKeyRotationAdapterTest {
+public class EAPOIDCPublicKeyRotationAdapterTest extends OIDCPublicKeyRotationAdapterTest {
 }

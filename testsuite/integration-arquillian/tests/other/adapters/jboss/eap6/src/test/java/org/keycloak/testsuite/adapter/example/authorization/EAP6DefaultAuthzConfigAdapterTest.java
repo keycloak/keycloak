@@ -23,6 +23,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author tkyjovsk
  */
 @AppServerContainer("app-server-eap6")
-public class EAP6DefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
+public class EAP6DefaultAuthzConfigAdapterTest extends DefaultAuthzConfigAdapterTest {
 
 }

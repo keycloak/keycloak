@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractDemoFilterServletAdapterTest;
+import org.keycloak.testsuite.adapter.servlet.DemoFilterServletAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -8,5 +8,5 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 
 @AppServerContainer("app-server-wildfly10")
-public class Wildfly10OIDCFilterAdapterTest extends AbstractDemoFilterServletAdapterTest{
+public class Wildfly10OIDCFilterAdapterTest extends DemoFilterServletAdapterTest{
 }

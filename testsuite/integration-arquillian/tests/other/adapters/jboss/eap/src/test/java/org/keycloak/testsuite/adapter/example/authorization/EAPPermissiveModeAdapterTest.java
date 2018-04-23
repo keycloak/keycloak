@@ -25,6 +25,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @RunAsClient
 @AppServerContainer("app-server-eap")
-public class EAPPermissiveModeAdapterTest extends AbstractPermissiveModeAdapterTest {
+public class EAPPermissiveModeAdapterTest extends PermissiveModeAdapterTest {
 
 }

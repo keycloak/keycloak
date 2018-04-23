@@ -92,7 +92,7 @@
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
         <adapter.config.bundled>true</adapter.config.bundled>
-        <examples.basedir>${main.basedir}/examples</examples.basedir>
+        <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir>
         <exclude.test>-</exclude.test>
         <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
@@ -119,16 +119,15 @@
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
-                        <version>0.1</version>
                         <executions>
                             <execution>
-                                <id>directories</id>
+                                <id>keycloak-parent-basedir</id>
                                 <goals>
                                     <goal>directory-of</goal>
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <property>main.basedir</property>
+                                    <property>keycloak-parent.basedir</property>
                                     <project>
                                         <groupId>org.keycloak</groupId>
                                         <artifactId>keycloak-parent</artifactId>
@@ -231,7 +230,7 @@
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
-                    <plugin>
+<!--                    <plugin>
                         <groupId>org.jboss.shrinkwrap.resolver</groupId>
                         <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
                         <executions>
@@ -241,7 +240,7 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
+                    </plugin>-->
                 </plugins>
             </build>
         </profile>

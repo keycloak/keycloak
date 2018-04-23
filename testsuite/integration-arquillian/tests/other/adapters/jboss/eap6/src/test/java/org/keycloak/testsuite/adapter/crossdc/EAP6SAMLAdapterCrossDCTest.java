@@ -21,7 +21,7 @@ import org.keycloak.testsuite.arquillian.annotation.*;
 
 import java.io.*;
 
-import org.keycloak.testsuite.adapter.servlet.cluster.AbstractSAMLAdapterClusterTest;
+import org.keycloak.testsuite.adapter.AbstractSAMLAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 
 import org.apache.commons.lang3.math.NumberUtils;
@@ -40,7 +40,9 @@ import org.wildfly.extras.creaper.core.online.operations.*;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import org.junit.Before;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 /**
  *
@@ -48,14 +50,14 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
  */
 @Ignore("Infinispan version 5 does not support remote cache events, hence this test is left here for development purposes only")
 @AppServerContainer("app-server-eap6")
-public class EAP6SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusterTest {
+public class EAP6SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {
 
     @BeforeClass
     public static void checkCrossDcTest() {
         Assume.assumeThat("Seems not to be running cross-DC tests", System.getProperty("cache.server"), not(is("undefined")));
     }
 
-    protected static final int PORT_OFFSET_CACHE_1 = NumberUtils.toInt(System.getProperty("cache.server.port.offset"), 0);
+    protected static final int PORT_OFFSET_CACHE_1 = NumberUtils.toInt(System.getProperty("cache.server.1.port.offset"), 0);
     protected static final int CACHE_HOTROD_PORT_CACHE_1 = 11222 + PORT_OFFSET_CACHE_1;
     protected static final int PORT_OFFSET_CACHE_2 = NumberUtils.toInt(System.getProperty("cache.server.2.port.offset"), 0);
     protected static final int CACHE_HOTROD_PORT_CACHE_2 = 11222 + PORT_OFFSET_CACHE_2;
@@ -96,7 +98,6 @@ public class EAP6SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusterTest {
         return employee();
     }
 
-    @Override
     protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, CliException, NumberFormatException {
         log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
@@ -164,6 +165,28 @@ public class EAP6SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusterTest {
         clientWorkerNodeClient.execute("reload");
 
         log.infov("Worker node ({0}) Prepared", managementPort);
+    }
+
+    @Before
+    @Override
+    public void startServers() throws Exception {
+        prepareServerDirectories();
+        
+        for (ContainerInfo containerInfo : testContext.getAppServerBackendsInfo()) {
+            controller.start(containerInfo.getQualifier());
+        }
+        
+        prepareWorkerNode(0, Integer.valueOf(System.getProperty("app.server.1.management.port")));
+        prepareWorkerNode(1, Integer.valueOf(System.getProperty("app.server.2.management.port")));
+        
+        deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME);
+        deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME + "_2");
+    }
+
+    @Override
+    protected void prepareServerDirectories() throws Exception {
+        prepareServerDirectory("standalone-crossdc", "standalone-" + NODE_1_NAME);
+        prepareServerDirectory("standalone-crossdc", "standalone-" + NODE_2_NAME);
     }
 
 }

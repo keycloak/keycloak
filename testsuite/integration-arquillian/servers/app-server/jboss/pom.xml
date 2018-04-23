@@ -233,6 +233,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
+                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <executable>./jboss-cli.${script.suffix}</executable>
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <arguments>
@@ -247,6 +248,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
+                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <executable>./jboss-cli.${script.suffix}</executable>
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <arguments>
@@ -396,6 +398,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
+                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
@@ -410,11 +413,28 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
+                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/configure-cluster-config.cli</argument>
                                         <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-cluster/configuration</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>configure-crossdc-config</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>./jboss-cli.sh</executable>
+                                    <arguments>
+                                        <argument>--file=${common.resources}/cli/configure-crossdc-config.cli</argument>
+                                        <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-crossdc/configuration</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

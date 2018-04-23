@@ -92,11 +92,14 @@
         <app.server.1.management.port>10290</app.server.1.management.port>
         <app.server.2.port.offset>400</app.server.2.port.offset>
         <app.server.2.management.port>10390</app.server.2.management.port>
+        <app.server.debug.port>5006</app.server.debug.port>
+        <app.server.debug.suspend>n</app.server.debug.suspend>
+        <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
-        <cache.server.port.offset>1010</cache.server.port.offset>
+        <cache.server.1.port.offset>1010</cache.server.1.port.offset>
         <cache.server.management.port>11000</cache.server.management.port>
         <cache.server.2.port.offset>2010</cache.server.2.port.offset>
         <cache.server.2.management.port>12000</cache.server.2.management.port>
@@ -114,6 +117,8 @@
         <kie.maven.settings/>
 
         <examples.home>${project.build.directory}/examples</examples.home>
+        <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
+        <examples.version.suffix>${project.version}</examples.version.suffix>
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
@@ -313,6 +318,7 @@
                             <app.server.1.management.port>${app.server.1.management.port}</app.server.1.management.port>
                             <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
+                            <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -320,6 +326,9 @@
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                            <examples.home>${examples.home}</examples.home>
+                            <examples.version.suffix>${examples.version.suffix}</examples.version.suffix>
+
                             <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
@@ -370,7 +379,7 @@
                             <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
 
                             <cache.server>${cache.server}</cache.server>
-                            <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>
+                            <cache.server.1.port.offset>${cache.server.1.port.offset}</cache.server.1.port.offset>
                             <cache.server.container>${cache.server.container}</cache.server.container>
                             <cache.server.home>${cache.server.home}</cache.server.home>
                             <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
@@ -398,6 +407,31 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <!--
+                    Required for Filter Adapter tests - this plugin has to be here to prevent
+                    org.jboss.shrinkwrap.resolver.api.maven.InvalidEnvironmentException
+
+                    ShrinkWrap Maven Resolver Plugin sets automatically following properties:
+                        maven.execution.pom-file
+                        maven.execution.offline
+                        maven.execution.user-settings
+                        maven.execution.global-settings
+                        maven.execution.active-profiles
+                -->
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
+                <version>${shrinkwrap-resolver.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>propagate-execution-context</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <dependencies>

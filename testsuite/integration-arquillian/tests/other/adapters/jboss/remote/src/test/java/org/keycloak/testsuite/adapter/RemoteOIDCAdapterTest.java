@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractJBossOIDCServletsAdapterTest;
+import org.keycloak.testsuite.adapter.servlet.DemoServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -8,6 +8,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author tkyjovsk
  */
 @AppServerContainer("app-server-remote")
-public class RemoteOIDCAdapterTest extends AbstractJBossOIDCServletsAdapterTest {
+public class RemoteOIDCAdapterTest extends DemoServletsAdapterTest {
 
 }

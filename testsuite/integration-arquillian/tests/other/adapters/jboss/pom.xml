@@ -84,12 +84,6 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-wildfly</id>
-            <modules>
-                <module>wildfly</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-wildfly9</id>
             <modules>
                 <module>wildfly9</module>

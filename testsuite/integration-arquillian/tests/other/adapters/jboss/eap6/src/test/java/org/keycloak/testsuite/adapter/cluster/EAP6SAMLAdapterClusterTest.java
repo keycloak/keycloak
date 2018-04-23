@@ -22,26 +22,28 @@ import org.keycloak.testsuite.arquillian.annotation.*;
 import java.io.*;
 import java.util.concurrent.TimeoutException;
 
-import org.keycloak.testsuite.adapter.servlet.cluster.AbstractSAMLAdapterClusterTest;
+import org.keycloak.testsuite.adapter.AbstractSAMLAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.wildfly.extras.creaper.core.*;
 import org.wildfly.extras.creaper.core.online.*;
 import org.wildfly.extras.creaper.core.online.operations.*;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 /**
  *
  * @author hmlnarik
  */
 @AppServerContainer("app-server-eap6")
-public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
+public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusteredTest {
 
     @TargetsContainer(value = "app-server-eap6-" + NODE_1_NAME)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME, managed = false)
@@ -55,7 +57,6 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
         return employee();
     }
 
-    @Override
     protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, NumberFormatException, TimeoutException, InterruptedException {
         log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
@@ -101,6 +102,28 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
         administration.reload();
 
         log.infov("Worker node ({0}) Prepared", managementPort);
+    }
+    
+    @Before
+    @Override
+    public void startServers() throws Exception {
+        prepareServerDirectories();
+        
+        for (ContainerInfo containerInfo : testContext.getAppServerBackendsInfo()) {
+            controller.start(containerInfo.getQualifier());
+        }
+        
+        prepareWorkerNode(0, Integer.valueOf(System.getProperty("app.server.1.management.port")));
+        prepareWorkerNode(1, Integer.valueOf(System.getProperty("app.server.2.management.port")));
+        
+        deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME);
+        deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME + "_2");
+    }
+
+    @Override
+    protected void prepareServerDirectories() throws Exception {
+        prepareServerDirectory("standalone-cluster", "standalone-" + NODE_1_NAME);
+        prepareServerDirectory("standalone-cluster", "standalone-" + NODE_2_NAME);
     }
 
 }

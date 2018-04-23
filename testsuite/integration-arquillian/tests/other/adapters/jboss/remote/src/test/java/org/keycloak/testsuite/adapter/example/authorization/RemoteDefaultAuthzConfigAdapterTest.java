@@ -23,6 +23,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author tkyjovsk
  */
 @AppServerContainer("app-server-remote")
-public class RemoteDefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
+public class RemoteDefaultAuthzConfigAdapterTest extends DefaultAuthzConfigAdapterTest {
 
 }

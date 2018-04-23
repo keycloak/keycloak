@@ -28,7 +28,7 @@ import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDepl
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 
@@ -96,7 +96,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
                     updateServerQualifier(deployment, testClass, newAuthServerQualifier);
                 } else if (containerQualifier.contains(APP_SERVER_CURRENT)) {
                     String suffix = containerQualifier.split(APP_SERVER_CURRENT)[1];
-                    String newAppServerQualifier = AppServerTestEnricher.APP_SERVER_PREFIX  + AppServerTestEnricher.CURRENT_APP_SERVER + "-" + suffix;
+                    String newAppServerQualifier = ContainerConstants.APP_SERVER_PREFIX  + AppServerTestEnricher.CURRENT_APP_SERVER + "-" + suffix;
                     updateServerQualifier(deployment, testClass, newAppServerQualifier);
                 } else {
                     String newServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier);

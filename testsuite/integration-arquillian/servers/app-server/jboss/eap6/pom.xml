@@ -39,6 +39,8 @@
         
         <app.server.oidc.adapter.artifactId>keycloak-eap6-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-eap6-adapter-dist</app.server.saml.adapter.artifactId>
+        
+        <skip.apply.offline.cli>true</skip.apply.offline.cli>
     </properties>
     
     <build>

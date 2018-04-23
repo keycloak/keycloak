@@ -131,6 +131,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
             driver.navigate().to(timeOffsetUri);
             WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+            String pageSource = driver.getPageSource();
+            System.out.println(pageSource);
         }
     }
 
