@@ -149,10 +149,18 @@ declare namespace Keycloak {
 		 */
 		idpHint?: string;
 
-		/**
-		 * Specifies the desired locale for the UI.
+	        /**
+		 * Sets the 'ui_locales' query param in compliance with section 3.1.2.1
+                 * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
+                
+                /**
+		 * Specifies the desired Keycloak locale for the UI.  This differs from
+                 * the locale param in that it tells the Keycloak server to set a cookie and update
+                 * the user's profile to a new preferred locale.
+		 */
+		kcLocale?: string;
 	}
 
 	type KeycloakPromiseCallback<T> = (result: T) => void;

@@ -282,6 +282,10 @@
             if (options && options.locale) {
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
+            
+            if (options && options.kcLocale) {
+                url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
+            }
 
             return url;
         }

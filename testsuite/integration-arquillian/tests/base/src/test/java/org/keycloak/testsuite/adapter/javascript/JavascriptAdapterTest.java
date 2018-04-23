@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.Math.toIntExact;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -42,6 +44,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.ProfileAssume;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -113,6 +116,25 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(defaultArguments(), this::assertInitNotAuth);
     }
 
+    @Test
+    public void testLoginWithKCLocale() {
+        ProfileAssume.assumeCommunity();
+
+        RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
+        testRealmRep.setInternationalizationEnabled(true);
+        testRealmRep.setDefaultLocale("en");
+        testRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
+        testRealmResource().update(testRealmRep);
+        
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
+                .login("{kcLocale: 'de'}", assertLocaleIsSet("de"))
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
+                .login("{kcLocale: 'en'}", assertLocaleIsSet("en"));
+    }
+    
     @Test
     public void testRefreshToken() {
         testExecutor.init(defaultArguments(), this::assertInitNotAuth)
