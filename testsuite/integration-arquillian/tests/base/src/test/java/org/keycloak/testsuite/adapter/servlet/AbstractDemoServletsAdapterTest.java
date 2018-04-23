@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
@@ -95,6 +94,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
@@ -108,6 +108,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
@@ -163,7 +164,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = CustomerCookiePortal.DEPLOYMENT_NAME)
     protected static WebArchive customerCookiePortal() {
-        return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
+        return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
     
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
@@ -271,17 +272,17 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testTokenInCookieRefresh() {
         // Set token timeout 3 sec
         RealmRepresentation demo = adminClient.realm("demo").toRepresentation();
-        int originalTokenTimeout = demo.getAccessCodeLifespan();
-        demo.setAccessTokenLifespan(3);
+        int originalTokenTimeout = demo.getAccessTokenLifespan();
+        demo.setAccessTokenLifespan(10);
         adminClient.realm("demo").update(demo);
-        
+
         try {
             // login to customer-cookie-portal
             String tokenCookie1 = loginToCustomerCookiePortal();
             
-            // Simulate waiting 4 seconds
-            setTimeOffset(4);
-            
+            // Simulate waiting 12 seconds
+            setAdapterAndServerTimeOffset(12, customerCookiePortal.toString());
+
             // assert cookie was refreshed
             customerCookiePortal.navigateTo();
             assertCurrentUrlEquals(customerCookiePortal);
@@ -295,25 +296,35 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
             assertLogged();
             
             driver.navigate().to(customerCookiePortal.logoutURL());
+
+            pause(200); // can't use wait utils as logout page is only TextPage without elements -> can't use By.tagName("body")
             assertTrue(driver.getPageSource().contains("servlet logout ok"));
+
             customerPortal.navigateTo();
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
             
-            // Simulate another 4 seconds
-            setTimeOffset(8);
+            // Simulate another 12 seconds
+            setAdapterAndServerTimeOffset(24, customerCookiePortal.toString());
             
             // assert not logged in customer-cookie-portal
             customerCookiePortal.navigateTo();
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         } finally {
+            loginToCustomerCookiePortal();
+
+            setAdapterAndServerTimeOffset(0, customerCookiePortal.toString());
+
+            driver.navigate().to(customerCookiePortal.logoutURL());
+            pause(200); // can't use wait utils as logout page is only TextPage without elements -> can't use By.tagName("body")
+            assertTrue(driver.getPageSource().contains("servlet logout ok"));
+
             // Set token timeout 3 sec
             demo.setAccessTokenLifespan(originalTokenTimeout);
             adminClient.realm("demo").update(demo);
-            
-            resetTimeOffset();
+
         }
     }
-    
+
     //KEYCLOAK-702
     @Test
     public void testInvalidTokenCookie() {
@@ -584,31 +595,21 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     //KEYCLOAK-1368
     @Test
     public void testNullBearerTokenCustomErrorPage() {
-        ErrorServlet.authError = null;
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(customerDbErrorPage.toString());
         
         Response response = target.request().get();
-
         assertEquals(401, response.getStatus());
         String errorPageResponse = response.readEntity(String.class);
-        assertTrue(errorPageResponse.contains("Error Page"));
+        assertThat(errorPageResponse, allOf(containsString("reason=NO_BEARER_TOKEN"), containsString("Error Page")));
         response.close();
-        Assert.assertNotNull(ErrorServlet.authError);
-        OIDCAuthenticationError error = (OIDCAuthenticationError) ErrorServlet.authError;
-        Assert.assertEquals(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, error.getReason());
 
-        ErrorServlet.authError = null;
         response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
-
         assertEquals(401, response.getStatus());
         errorPageResponse = response.readEntity(String.class);
-        assertTrue(errorPageResponse.contains("Error Page"));
+        assertThat(errorPageResponse, allOf(containsString("Error Page"), containsString("reason=INVALID_TOKEN")));
         response.close();
-        Assert.assertNotNull(ErrorServlet.authError);
-        error = (OIDCAuthenticationError) ErrorServlet.authError;
-        Assert.assertEquals(OIDCAuthenticationError.Reason.INVALID_TOKEN, error.getReason());
-        
+
         client.close();
     }
 
@@ -742,6 +743,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        waitForPageToLoad();
         assertCurrentUrlEquals(securePortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));

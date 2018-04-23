@@ -32,6 +32,11 @@
         <servlet-class>org.keycloak.testsuite.adapter.servlet.ErrorServlet</servlet-class>
     </servlet>
 
+    <filter>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <filter-class>org.keycloak.testsuite.adapter.filter.AdapterActionsFilter</filter-class>
+    </filter>
+
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>
         <url-pattern>/*</url-pattern>
@@ -41,6 +46,11 @@
         <servlet-name>Error Servlet</servlet-name>
         <url-pattern>/error.html</url-pattern>
     </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <security-constraint>
         <web-resource-collection>
