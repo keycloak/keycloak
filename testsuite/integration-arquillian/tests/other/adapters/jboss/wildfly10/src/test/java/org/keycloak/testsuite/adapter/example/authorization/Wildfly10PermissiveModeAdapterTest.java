@@ -26,6 +26,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 @RunAsClient
 @AppServerContainer("app-server-wildfly10")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class Wildfly10PermissiveModeAdapterTest extends AbstractPermissiveModeAdapterTest {
+public class Wildfly10PermissiveModeAdapterTest extends PermissiveModeAdapterTest {
 
 }

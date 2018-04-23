@@ -19,9 +19,11 @@ package org.keycloak.testsuite.pages;
 
 import org.keycloak.models.Constants;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
@@ -137,10 +139,13 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         return attrElement.getAttribute("value");
     }
 
+    @Override
     public boolean isCurrent() {
-        return driver.getTitle().contains("Account Management") && driver.getPageSource().contains("Edit Account");
+        WebDriver currentDriver = DroneUtils.getCurrentDriver();
+        return currentDriver.getTitle().contains("Account Management") && currentDriver.getPageSource().contains("Edit Account");
     }
 
+    @Override
     public void open() {
         driver.navigate().to(getPath());
     }

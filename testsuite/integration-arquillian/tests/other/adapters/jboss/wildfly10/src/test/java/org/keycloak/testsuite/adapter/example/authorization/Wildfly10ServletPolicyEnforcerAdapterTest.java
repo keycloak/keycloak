@@ -25,6 +25,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 @RunAsClient
 @AppServerContainer("app-server-wildfly10")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class Wildfly10ServletPolicyEnforcerAdapterTest extends AbstractServletPolicyEnforcerTest {
+public class Wildfly10ServletPolicyEnforcerAdapterTest extends ServletPolicyEnforcerTest {
 
 }

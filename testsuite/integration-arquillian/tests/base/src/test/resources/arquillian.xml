@@ -233,7 +233,7 @@
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered-1.xml</property>
                 <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${cache.server.port.offset}
+                    -Djboss.socket.binding.port-offset=${cache.server.1.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
                     -Djboss.node.name=cache-server-dc-1
                     ${adapter.test.props}

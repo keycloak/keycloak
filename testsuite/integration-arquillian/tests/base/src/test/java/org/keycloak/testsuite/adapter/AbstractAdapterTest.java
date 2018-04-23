@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.junit.Assume;
 
 /**
  * <code>@AppServerContainer</code> is needed for stopping recursion in 
@@ -231,6 +232,16 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                 }
             }
         }
+    }
+
+    protected void assumeNotOnAppServerUndertow() {
+        log.warn("TODO: Not stable on app-server-undertow. "
+                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
+                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond");
+        Assume.assumeFalse("Not stable on app-server-undertow. "
+                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
+                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond",
+                System.getProperty("app.server", "undertow").equals("undertow"));
     }
 
     public static void addContextXml(Archive archive, String contextPath) {

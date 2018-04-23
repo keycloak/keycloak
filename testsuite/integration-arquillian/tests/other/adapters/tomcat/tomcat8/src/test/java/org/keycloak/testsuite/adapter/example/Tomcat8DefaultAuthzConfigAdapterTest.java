@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.example;
 
-import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
+import org.keycloak.testsuite.adapter.example.authorization.DefaultAuthzConfigAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -25,6 +25,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @AppServerContainer("app-server-tomcat8")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class Tomcat8DefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
+public class Tomcat8DefaultAuthzConfigAdapterTest extends DefaultAuthzConfigAdapterTest {
 
 }

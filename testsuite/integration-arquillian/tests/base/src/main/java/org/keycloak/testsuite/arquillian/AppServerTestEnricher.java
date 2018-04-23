@@ -48,13 +48,6 @@ public class AppServerTestEnricher {
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
-    public static final String APP_SERVER_PREFIX = "app-server-";
-
-    public static final String APP_SERVER_UNDERTOW = APP_SERVER_PREFIX + "undertow";
-
-    public static final String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
-    public static final String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;"+ APP_SERVER_WILDFLY + "-ha-node-2";
-
     public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
@@ -157,7 +150,7 @@ public class AppServerTestEnricher {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()
-                    .hostAndPort(System.getProperty("app.server.host"), System.getProperty("app.server","").startsWith("eap6") ? 10199 : 10190)
+                    .hostAndPort(System.getProperty("app.server.host", "localhost"), System.getProperty("app.server","").startsWith("eap6") ? 10199 : 10190)
                     .protocol(System.getProperty("app.server","").startsWith("eap6") ? ManagementProtocol.REMOTE : ManagementProtocol.HTTP_REMOTING)
                     .build()
             );

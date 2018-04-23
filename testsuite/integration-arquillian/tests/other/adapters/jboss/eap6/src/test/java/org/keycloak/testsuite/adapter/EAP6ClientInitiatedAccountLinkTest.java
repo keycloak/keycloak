@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractClientInitiatedAccountLinkTest;
+import org.keycloak.testsuite.adapter.servlet.ClientInitiatedAccountLinkTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -24,6 +24,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 @AppServerContainer("app-server-eap6")
-public class EAP6ClientInitiatedAccountLinkTest extends AbstractClientInitiatedAccountLinkTest {
+public class EAP6ClientInitiatedAccountLinkTest extends ClientInitiatedAccountLinkTest {
 
 }

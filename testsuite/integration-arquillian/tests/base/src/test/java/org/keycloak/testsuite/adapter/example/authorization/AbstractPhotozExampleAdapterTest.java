@@ -46,9 +46,11 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
@@ -182,6 +184,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice-Family-Album");
 
@@ -233,6 +237,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminOnlyFromSpecificAddress() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("admin", "admin");
         clientPage.navigateToAdminAlbum(false);
 
@@ -251,6 +257,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminWithoutPermissionsToTypedResource() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
         
@@ -300,6 +308,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminWithoutPermissionsToDeleteAlbum() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
 
@@ -343,6 +353,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
         clientPage.viewAlbum("Alice Family Album", false);
@@ -423,6 +435,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testOverridePermissionFromResourceParent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         String resourceName = "My Resource Instance";
         clientPage.createAlbum(resourceName);
@@ -483,6 +497,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testInheritPermissionFromResourceParent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
 
         String resourceName = "My Resource Instance";
@@ -567,6 +583,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     //KEYCLOAK-3777
     @Test
     public void testEntitlementRequest() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         clientPage.navigateTo();
         loginToClientPage("admin", "admin");
 
@@ -716,5 +734,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         clientPage.navigateTo();
         waitForPageToLoad();
         clientPage.login(username, password, scopes);
+        waitUntilElement(By.linkText("Sign Out")).is().clickable();
     }
 }

@@ -7,5 +7,5 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author tkyjovsk
  */
 @AppServerContainer("app-server-eap6")
-public class EAP6CorsExampleAdapterTest extends AbstractCorsExampleAdapterTest {
+public class EAP6CorsExampleAdapterTest extends CorsExampleAdapterTest {
 }

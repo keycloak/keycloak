@@ -47,8 +47,10 @@ public class CustomerServlet extends HttpServlet {
         KeycloakSecurityContext context = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
         if (req.getRequestURI().endsWith("logout")) {
             resp.setStatus(200);
-            pw.println("servlet logout ok");
-            
+            pw.println("<html><body>");
+            pw.println("<div id=\"customer_portal_logout\">servlet logout ok</div>");
+            pw.println("</body></html>");
+
             //Clear principal form database-service by calling logout
             StringBuilder result = new StringBuilder();
             String urlBase = ServletTestUtils.getUrlBase(req);
