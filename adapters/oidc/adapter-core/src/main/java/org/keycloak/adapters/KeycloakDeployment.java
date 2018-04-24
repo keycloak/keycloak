@@ -19,6 +19,7 @@ package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
@@ -97,7 +98,9 @@ public class KeycloakDeployment {
 
     protected boolean delegateBearerErrorResponseSending = false;
 
-    protected String responseType;
+    protected String flow;
+    protected String responseType = OAuth2Constants.CODE;
+    protected boolean useNonce = false;
 
     public KeycloakDeployment() {
     }
@@ -170,6 +173,14 @@ public class KeycloakDeployment {
         jwksUrl = authUrlBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
     }
 
+    public String getResponseType() {
+        return responseType;
+    }
+
+    public boolean isUseNonce() {
+        return useNonce;
+    }
+
     public RelativeUrlsUsed getRelativeUrls() {
         return relativeUrls;
     }
@@ -210,12 +221,15 @@ public class KeycloakDeployment {
         this.resourceName = resourceName;
     }
 
-    public String getResponseType() {
-        return responseType;
-    }
-
-    public void setResponseType(String responseType) {
-        this.responseType = responseType;
+    public void setFlow(String flow) {
+        this.flow = flow;
+        if((flow != null) && flow.equals("implicit")) {
+            this.responseType = "id_token token";
+            this.useNonce = true;
+        } else {
+            this.responseType = OAuth2Constants.CODE;
+            this.useNonce = false;
+        }
     }
 
     public boolean isBearerOnly() {

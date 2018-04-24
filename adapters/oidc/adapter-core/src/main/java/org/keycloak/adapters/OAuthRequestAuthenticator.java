@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.logging.Level;
 
 
 /**
@@ -179,6 +178,11 @@ public class OAuthRequestAuthenticator {
                 .queryParam(OAuth2Constants.REDIRECT_URI, rewrittenRedirectUri(url))
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
+
+        if(deployment.isUseNonce()) {
+            redirectUriBuilder.queryParam("nonce", AdapterUtils.generateId());
+        }
+
         if(loginHint != null && loginHint.length() > 0){
             redirectUriBuilder.queryParam("login_hint",loginHint);
         }

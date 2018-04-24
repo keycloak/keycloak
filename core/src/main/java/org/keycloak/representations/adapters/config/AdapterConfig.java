@@ -40,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
-        "policy-enforcer", "ignore-oauth-query-parameter", "response-type"
+        "policy-enforcer", "ignore-oauth-query-parameter", "flow"
 })
 public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
@@ -85,8 +85,9 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected boolean pkce = false;
     @JsonProperty("ignore-oauth-query-parameter")
     protected boolean ignoreOAuthQueryParameter = false;
-    @JsonProperty("response-type")
-    protected String responseType = "code";
+    @JsonProperty("flow")
+    protected String flow = "standard";
+
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -271,11 +272,11 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
         this.ignoreOAuthQueryParameter = ignoreOAuthQueryParameter;
     }
 
-    public String getResponseType() {
-        return responseType;
+    public String getFlow() {
+        return flow;
     }
 
-    public void setResponseType(String responseType) {
-        this.responseType = responseType;
+    public void setFlow(String flow) {
+        this.flow = flow;
     }
 }

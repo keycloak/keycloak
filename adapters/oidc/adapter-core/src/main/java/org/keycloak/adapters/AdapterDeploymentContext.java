@@ -198,6 +198,21 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public void setFlow(String flow) {
+            delegate.setFlow(flow);
+        }
+
+        @Override
+        public String getResponseType() {
+            return delegate.getResponseType();
+        }
+
+        @Override
+        public boolean isUseNonce() {
+            return delegate.isUseNonce();
+        }
+
+        @Override
         public boolean isBearerOnly() {
             return delegate.isBearerOnly();
         }
