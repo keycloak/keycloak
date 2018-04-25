@@ -44,7 +44,9 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
     public void testFindMatchingUri() {
         doCreateResource(new ResourceRepresentation("/*", Collections.emptySet(), "/*", null));
         doCreateResource(new ResourceRepresentation("/resources/*", Collections.emptySet(), "/resources/*", null));
-        doCreateResource(new ResourceRepresentation("/resources/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/*", null));
+        doCreateResource(new ResourceRepresentation("/resources-a/*", Collections.emptySet(), "/resources-a/*", null));
+        doCreateResource(new ResourceRepresentation("/resources-b/{pattern}", Collections.emptySet(), "/resources-b/{pattern}", null));
+        doCreateResource(new ResourceRepresentation("/resources-c/{pattern}/*", Collections.emptySet(), "/resources-c/{pattern}/*", null));
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/{pattern}/*", null));
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resources/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resource", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
@@ -57,11 +59,11 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertEquals(1, resources.size());
         assertEquals("/*", resources.get(0).getUri());
 
-        resources = authzClient.protection().resource().findByMatchingUri("/resources/test");
+        resources = authzClient.protection().resource().findByMatchingUri("/resources-a/test");
 
         assertNotNull(resources);
         assertEquals(1, resources.size());
-        assertEquals("/resources/*", resources.get(0).getUri());
+        assertEquals("/resources-a/*", resources.get(0).getUri());
 
         resources = authzClient.protection().resource().findByMatchingUri("/resources");
 
@@ -69,11 +71,17 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertEquals(1, resources.size());
         assertEquals("/resources/*", resources.get(0).getUri());
 
-        resources = authzClient.protection().resource().findByMatchingUri("/resources/a/b");
+        resources = authzClient.protection().resource().findByMatchingUri("/resources-b/a");
 
         assertNotNull(resources);
         assertEquals(1, resources.size());
-        assertEquals("/resources/{pattern}/*", resources.get(0).getUri());
+        assertEquals("/resources-b/{pattern}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources-c/a/b");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources-c/{pattern}/*", resources.get(0).getUri());
 
         resources = authzClient.protection().resource().findByMatchingUri("/resources/a/b/c");
 

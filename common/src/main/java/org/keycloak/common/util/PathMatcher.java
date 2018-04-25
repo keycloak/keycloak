@@ -46,7 +46,7 @@ public abstract class PathMatcher<P> {
             }
 
             if (isTemplate(expectedUri)) {
-                String templateUri = buildUriFromTemplate(expectedUri, targetUri);
+                String templateUri = buildUriFromTemplate(expectedUri, targetUri, false);
 
                 if (templateUri != null) {
                     int length = expectedUri.split("\\/").length;
@@ -144,8 +144,13 @@ public abstract class PathMatcher<P> {
         return false;
     }
 
-    public String buildUriFromTemplate(String expectedUri, String targetUri) {
+    protected String buildUriFromTemplate(String template, String targetUri, boolean onlyFirstParam) {
+        String expectedUri = template;
         int patternStartIndex = expectedUri.indexOf("{");
+
+        if (expectedUri.endsWith("/*")) {
+            expectedUri = expectedUri.substring(0, expectedUri.length() - 2);
+        }
 
         if (patternStartIndex == -1 || patternStartIndex >= targetUri.length()) {
             return null;
@@ -195,6 +200,10 @@ public abstract class PathMatcher<P> {
                     }
 
                     i = expectedUri.indexOf('}', i);
+
+                    if (i == expectedUri.lastIndexOf('}') && onlyFirstParam) {
+                        return String.valueOf(matchingUri).substring(0, matchingUriLastIndex);
+                    }
                 } else {
                     if (c == '/') {
                         paramIndex++;
@@ -204,6 +213,13 @@ public abstract class PathMatcher<P> {
             }
 
             if (matchingUri[matchingUri.length - 1] == '\u0000') {
+                if (template.endsWith("*")) {
+                    StringBuilder firstParam = new StringBuilder(String.valueOf(matchingUri).substring(0, matchingUriLastIndex));
+
+                    firstParam.append(targetUri.substring(firstParam.length()));
+
+                    return firstParam.toString();
+                }
                 return null;
             }
 

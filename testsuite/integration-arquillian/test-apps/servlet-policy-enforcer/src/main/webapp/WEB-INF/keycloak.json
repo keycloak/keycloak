@@ -69,6 +69,10 @@
             {
               "name": "Pattern 13",
               "path": "/keycloak-6623/*"
+            },
+            {
+                "name": "Pattern 15",
+                "path": "/keycloak-7148/{id}/*"
             }
         ]
     }
