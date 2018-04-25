@@ -189,7 +189,7 @@
                             <hr/>
                             <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/sessions">${msg("deviceActivityHtmlTitle")}</a></h3>
+                            <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
                             <hr/>
                             <h3><a href="${baseUrl}/#/account">${msg("federatedIdentity")}</a></h3>
                         </div>
