@@ -89,9 +89,7 @@ public class AccountConsole {
 
             map.put("authUrl", session.getContext().getContextPath());
             map.put("baseUrl", session.getContext().getContextPath() + "/realms/" + realm.getName() + "/account");
-            map.put("realm", realm.getName());
-            map.put("isRegistrationEmailAsUsername", realm.isRegistrationEmailAsUsername());
-            map.put("isEditUserNameAllowed", realm.isEditUsernameAllowed());
+            map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/account/" + theme.getName());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             
@@ -108,7 +106,7 @@ public class AccountConsole {
             Properties messages = theme.getMessages(locale);
             map.put("msg", new MessageFormatterMethod(locale, messages));
             map.put("msgJSON", messagesToJsonString(messages));
-            
+            map.put("supportedLocales", supportedLocales(messages));
             map.put("properties", theme.getProperties());
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
@@ -118,7 +116,16 @@ public class AccountConsole {
             return builder.build();
         }
     }
-
+    
+    private Map<String, String> supportedLocales(Properties messages) throws IOException {
+        Map<String, String> supportedLocales = new HashMap<>();
+        for (String l : realm.getSupportedLocales()) {
+            String label = messages.getProperty("locale_" + l, l);
+            supportedLocales.put(l, label);
+        }
+        return supportedLocales;
+    }
+    
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
         

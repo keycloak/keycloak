@@ -6,10 +6,16 @@
         <script>
             var authUrl = '${authUrl}';
             var baseUrl = '${baseUrl}';
-            var realm = '${realm}';
+            var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
-            var isRegistrationEmailAsUsername = ${isRegistrationEmailAsUsername?c};
-            var isEditUserNameAllowed = ${isEditUserNameAllowed?c};
+            var isRegistrationEmailAsUsername = ${realm.registrationEmailAsUsername?c};
+            var isEditUserNameAllowed = ${realm.editUsernameAllowed?c};
+            var isInternationalizationEnabled = ${realm.internationalizationEnabled?c};
+                
+            var availableLocales = [];
+            <#list supportedLocales as locale, label>
+                availableLocales.push({locale : '${locale}', label : '${label}'});
+            </#list>
 
             <#if referrer??>
                 var referrer = '${referrer}';
@@ -67,7 +73,7 @@
         <script src="${authUrl}/js/keycloak.js"></script>
 
         <script>
-            var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
+            var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 var loadjs = function (url,loadListener) {
                     const script = document.createElement("script");
@@ -128,27 +134,15 @@
                      we are unable to localize the button's message.  Not sure what to do about that yet.
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
-                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">Log In</button></li>
+                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
                     <li class="dropdown">
                       <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        ${msg("locale_en")} <span class="caret"></span>
+                        ${msg("locale_" + locale)} <span class="caret"></span>
                       </a>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                        <li><a href="#">${msg("locale_ca")}</a></li>
-                        <li><a href="#">${msg("locale_de")}</a></li>
-                        <li><a href="#">${msg("locale_en")}</a></li>
-                        <li><a href="#">${msg("locale_es")}</a></li>
-                        <li><a href="#">${msg("locale_fr")}</a></li>
-                        <li><a href="#">${msg("locale_it")}</a></li>
-                        <li><a href="#">${msg("locale_ja")}</a></li>
-                        <li><a href="#">${msg("locale_nl")}</a></li>
-                        <li><a href="#">${msg("locale_no")}</a></li>
-                        <li><a href="#">${msg("locale_lt")}</a></li>
-                        <li><a href="#">${msg("locale_pt-BR")}</a></li>
-                        <li><a href="#">${msg("locale_ru")}</a></li>
-                        <li><a href="#">${msg("locale_sk")}</a></li>
-                        <li><a href="#">${msg("locale_sv")}</a></li>
-                        <li><a href="#">${msg("locale_zh-CN")}</a></li>
+                      <#list supportedLocales as locale, label>
+                        <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
+                      </#list>
                       </ul>
                     </li>
                 </ul>

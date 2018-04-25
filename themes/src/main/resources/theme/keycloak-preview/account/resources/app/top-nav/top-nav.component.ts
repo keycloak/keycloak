@@ -24,6 +24,7 @@ declare const resourceUrl: string;
 declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
+declare const availableLocales: Array<Object>;
 
 @Component({
     selector: 'app-top-nav',
@@ -34,10 +35,13 @@ export class TopNavComponent implements OnInit {
     @Input() showSideNav: String;
 
     public resourceUrl: string = resourceUrl;
+    public availableLocales: Array<Object> = availableLocales;
     
     private referrer: Referrer;
     
-    constructor(private keycloakService: KeycloakService, translateUtil: TranslateUtil, private respSvc: ResponsivenessService) {
+    constructor(private keycloakService: KeycloakService, 
+                translateUtil: TranslateUtil, 
+                private respSvc: ResponsivenessService) {
         this.referrer = new Referrer(translateUtil);
     }
     
@@ -50,6 +54,10 @@ export class TopNavComponent implements OnInit {
 
     private logout() {
         this.keycloakService.logout(baseUrl);
+    }
+    
+    private changeLocale(newLocale: string) {
+        this.keycloakService.login({kcLocale: newLocale });
     }
 
 }

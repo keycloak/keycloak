@@ -28,6 +28,12 @@
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
                     <li><a href="#" (click)="logout()">{{'doSignOut' | translate}}</a></li>
+                    <li class="dropdown-submenu pull-left">
+                        <a class="test" tabindex="-1" href="#">Change language</a>
+                        <ul class="dropdown-menu">
+                            <li *ngFor="let locale of availableLocales" (click)="changeLocale(locale.locale)"><a tabindex="-1" href="#">{{ locale.label }}</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </li>
         </ul>
