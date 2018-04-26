@@ -142,5 +142,9 @@ public interface Attributes {
         public long asLong(int idx) {
             return Long.parseLong(asString(idx));
         }
+
+        public double asDouble(int idx) {
+            return Double.parseDouble(asString(idx));
+        }
     }
 }

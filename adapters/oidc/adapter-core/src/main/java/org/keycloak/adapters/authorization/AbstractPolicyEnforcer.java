@@ -18,7 +18,10 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
@@ -161,7 +164,8 @@ public abstract class AbstractPolicyEnforcer {
                         if (HTTP_METHOD_DELETE.equalsIgnoreCase(request.getMethod()) && actualPathConfig.isInstance()) {
                             policyEnforcer.getPathMatcher().removeFromCache(getPath(request));
                         }
-                        return true;
+
+                        return hasValidClaims(actualPathConfig, httpFacade, authorization);
                     }
                 }
             } else {
@@ -181,6 +185,41 @@ public abstract class AbstractPolicyEnforcer {
         }
 
         return false;
+    }
+
+    private boolean hasValidClaims(PathConfig actualPathConfig, OIDCHttpFacade httpFacade, Authorization authorization) {
+        Map<String, Map<String, Object>> claimInformationPointConfig = actualPathConfig.getClaimInformationPointConfig();
+
+        if (claimInformationPointConfig != null) {
+            Map<String, List<String>> claims = new HashMap<>();
+
+            for (Entry<String, Map<String, Object>> entry : claimInformationPointConfig.entrySet()) {
+                ClaimInformationPointProviderFactory factory = policyEnforcer.getClaimInformationPointProviderFactories().get(entry.getKey());
+
+                if (factory == null) {
+                    throw new RuntimeException("Could not find claim information provider with name [" + entry.getKey() + "]");
+                }
+
+                claims.putAll(factory.create(entry.getValue()).resolve(httpFacade));
+            }
+
+            Map<String, List<String>> grantedClaims = authorization.getClaims();
+
+            if (grantedClaims != null) {
+                if (claims.isEmpty()) {
+                    return false;
+                }
+                for (Entry<String, List<String>> entry : grantedClaims.entrySet()) {
+                    List<String> requestClaims = claims.get(entry.getKey());
+
+                    if (requestClaims == null || requestClaims.isEmpty() || !entry.getValue().containsAll(requestClaims)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     protected void handleAccessDenied(OIDCHttpFacade httpFacade) {

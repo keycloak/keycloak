@@ -20,19 +20,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -61,6 +67,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     private static final String PAIRWISE_RESOURCE_SERVER_TEST = "pairwise-resource-server-test";
     private static final String PAIRWISE_TEST_CLIENT = "test-client-pairwise";
     private static final String PAIRWISE_AUTHZ_CLIENT_CONFIG = "default-keycloak-pairwise.json";
+    private static final String PUBLIC_TEST_CLIENT = "test-public-client";
+    private static final String PUBLIC_TEST_CLIENT_CONFIG = "default-keycloak-public-client.json";
 
     private AuthzClient authzClient;
 
@@ -94,6 +102,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .redirectUris("http://localhost/test-client")
                         .pairwise("http://pairwise.com")
                         .directAccessGrants())
+                .client(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
+                        .secret("secret")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*")
+                        .publicClient())
                 .build());
     }
 
@@ -164,6 +176,65 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         testRptRequestWithResourceName(PAIRWISE_AUTHZ_CLIENT_CONFIG);
     }
 
+    @Test
+    public void testInvalidRequestWithClaimsFromConfidentialClient() throws IOException {
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource 13");
+        HashMap<Object, Object> obj = new HashMap<>();
+
+        obj.put("claim-a", "claim-a");
+
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
+
+        assertResponse(new Metadata(), () -> getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password").authorize(request));
+    }
+
+    @Test
+    public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+
+        oauth.doLogin("marta", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource 13");
+        HashMap<Object, Object> obj = new HashMap<>();
+
+        obj.put("claim-a", "claim-a");
+
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
+
+        try {
+            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        } catch (AuthorizationDeniedException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("Public clients are not allowed to send claims"));
+        }
+    }
+
+    @Test
+    public void testRequestWithoutClaimsFromPublicClient() {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+
+        oauth.doLogin("marta", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource 13");
+
+        assertResponse(new Metadata(), () -> getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request));
+    }
 
     public void testRptRequestWithResourceName(String configFile) {
         Metadata metadata = new Metadata();

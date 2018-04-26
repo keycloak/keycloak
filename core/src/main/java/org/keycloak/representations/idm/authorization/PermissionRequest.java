@@ -18,10 +18,15 @@
 package org.keycloak.representations.idm.authorization;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -31,6 +36,9 @@ public class PermissionRequest {
     private String resourceId;
     private Set<String> scopes;
     private String resourceServerId;
+
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    private Map<String, List<String>> claims;
 
     public PermissionRequest(String resourceId, String... scopes) {
         this.resourceId = resourceId;
@@ -68,5 +76,29 @@ public class PermissionRequest {
 
     public String getResourceServerId() {
         return resourceServerId;
+    }
+
+    public Map<String, List<String>> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(Map<String, List<String>> claims) {
+        this.claims = claims;
+    }
+
+    public void setClaim(String name, String... value) {
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
+
+        claims.put(name, Arrays.asList(value));
+    }
+
+    public void addScope(String... name) {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
+
+        scopes.addAll(Arrays.asList(name));
     }
 }

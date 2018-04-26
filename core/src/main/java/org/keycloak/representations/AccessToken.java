@@ -88,12 +88,23 @@ public class AccessToken extends IDToken {
         @JsonProperty("permissions")
         private List<Permission> permissions;
 
+        @JsonProperty("claims")
+        private Map<String, List<String>> claims;
+
         public List<Permission> getPermissions() {
             return permissions;
         }
 
         public void setPermissions(List<Permission> permissions) {
             this.permissions = permissions;
+        }
+
+        public void setClaims(Map<String, List<String>> claims) {
+            this.claims = claims;
+        }
+
+        public Map<String, List<String>> getClaims() {
+            return claims;
         }
     }
 
