@@ -1,8 +1,8 @@
 package org.keycloak.performance;
 
 import java.text.SimpleDateFormat;
-import org.keycloak.performance.util.FilteredIterator;
-import org.keycloak.performance.util.LoopingIterator;
+import org.keycloak.performance.iteration.FilteredIterator;
+import org.keycloak.performance.iteration.LoopingIterator;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
+import org.apache.commons.configuration.CombinedConfiguration;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeAppUrl;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeClientId;
@@ -19,14 +21,24 @@ import static org.keycloak.performance.RealmsConfigurationBuilder.computeLastNam
 import static org.keycloak.performance.RealmsConfigurationBuilder.computePassword;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeSecret;
 import static org.keycloak.performance.RealmsConfigurationBuilder.computeUsername;
+import org.keycloak.performance.util.CombinedConfigurationNoInterpolation;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
+ * @author <a href="mailto:tkyjovsk@redhat.com">Tomas Kyjovsky</a>
  */
 public class TestConfig {
 
+    private static final Logger LOGGER = Logger.getLogger(TestConfig.class);
+
+    public static final CombinedConfiguration CONFIG;
+
+    static {
+        CONFIG = new CombinedConfigurationNoInterpolation();
+    }
+
     //
-    // Settings used by RealmsConfigurationBuilder only - when generating the dataset
+    // Settings used by RealmsConfigurationBuilder only - when generating the DATASET
     //
     public static final int hashIterations = Integer.getInteger("hashIterations", 27500);
 
@@ -49,7 +61,7 @@ public class TestConfig {
     public static final String authClient = System.getProperty("authClient", "admin-cli");
 
     //
-    // Settings used by RealmsConfigurationBuilder to generate the dataset and by tests to work within constraints of the dataset
+    // Settings used by RealmsConfigurationBuilder to generate the DATASET and by tests to work within constraints of the DATASET
     //
     public static final int numOfRealms = Integer.getInteger("numOfRealms", 1);
     public static final int usersPerRealm = Integer.getInteger("usersPerRealm", 2);
@@ -59,12 +71,12 @@ public class TestConfig {
     public static final int clientRolesPerUser = Integer.getInteger("clientRolesPerUser", 2);
     public static final int clientRolesPerClient = Integer.getInteger("clientRolesPerClient", 2);
 
-    // sequential vs random dataset iteration
+    // sequential vs random DATASET iteration
     public static final int sequentialRealmsFrom = Integer.getInteger("sequentialRealmsFrom", -1); // -1 means random iteration
     public static final int sequentialUsersFrom = Integer.getInteger("sequentialUsersFrom", -1); // -1 means random iteration
     public static final boolean sequentialRealms = sequentialRealmsFrom >= 0;
     public static final boolean sequentialUsers = sequentialUsersFrom >= 0;
-    
+
     //
     // Settings used by tests to control common test parameters
     //
@@ -92,7 +104,7 @@ public class TestConfig {
     public static final String serverUris;
     public static final List<String> serverUrisList;
 
-    // Round-robin infinite iterator that directs each next session to the next server
+    // Round-robin infinite ENTITY_ITERATOR that directs each next session to the next server
     public static final Iterator<String> serverUrisIterator;
 
     static {
@@ -109,7 +121,7 @@ public class TestConfig {
         serverUrisList = Arrays.asList(serverUris.split(" "));
         serverUrisIterator = new LoopingIterator<>(serverUrisList);
     }
-    
+
     // assertion properties
     public static final int maxFailedRequests = Integer.getInteger("maxFailedRequests", 0);
     public static final int maxMeanReponseTime = Integer.getInteger("maxMeanReponseTime", 300);
@@ -139,33 +151,33 @@ public class TestConfig {
 
     public static String toStringCommonTestParameters() {
         return String.format(
-        "  usersPerSec: %s\n" + 
-        "  rampUpPeriod: %s\n"+ 
-        "  warmUpPeriod: %s\n"+ 
-        "  measurementPeriod: %s\n"+
-        "  filterResults: %s\n"+
-        "  userThinkTime: %s\n"+ 
-        "  refreshTokenPeriod: %s\n"+ 
-        "  logoutPct: %s",
-        usersPerSec, rampUpPeriod, warmUpPeriod, measurementPeriod, filterResults, userThinkTime, refreshTokenPeriod, logoutPct);
+                "  usersPerSec: %s\n"
+                + "  rampUpPeriod: %s\n"
+                + "  warmUpPeriod: %s\n"
+                + "  measurementPeriod: %s\n"
+                + "  filterResults: %s\n"
+                + "  userThinkTime: %s\n"
+                + "  refreshTokenPeriod: %s\n"
+                + "  logoutPct: %s",
+                usersPerSec, rampUpPeriod, warmUpPeriod, measurementPeriod, filterResults, userThinkTime, refreshTokenPeriod, logoutPct);
     }
-    
+
     public static SimpleDateFormat SIMPLE_TIME = new SimpleDateFormat("HH:mm:ss");
-    
+
     public static String toStringTimestamps() {
         return String.format("  simulationStartTime: %s\n"
                 + "  warmUpStartTime: %s\n"
                 + "  measurementStartTime: %s\n"
                 + "  measurementEndTime: %s",
-                SIMPLE_TIME.format(simulationStartTime), 
-                SIMPLE_TIME.format(warmUpStartTime), 
-                SIMPLE_TIME.format(measurementStartTime), 
+                SIMPLE_TIME.format(simulationStartTime),
+                SIMPLE_TIME.format(warmUpStartTime),
+                SIMPLE_TIME.format(measurementStartTime),
                 SIMPLE_TIME.format(measurementEndTime));
     }
 
     public static String toStringDatasetProperties() {
         return String.format(
-                  "  numOfRealms: %s%s\n"
+                "  numOfRealms: %s%s\n"
                 + "  usersPerRealm: %s%s\n"
                 + "  clientsPerRealm: %s\n"
                 + "  realmRoles: %s\n"
@@ -173,23 +185,23 @@ public class TestConfig {
                 + "  clientRolesPerUser: %s\n"
                 + "  clientRolesPerClient: %s\n"
                 + "  hashIterations: %s",
-                numOfRealms, sequentialRealms ? ",   sequential iteration starting from " + sequentialRealmsFrom: "",
-                usersPerRealm, sequentialUsers ? ",   sequential iteration starting from " + sequentialUsersFrom: "",
-                clientsPerRealm, 
-                realmRoles, 
-                realmRolesPerUser, 
-                clientRolesPerUser, 
-                clientRolesPerClient, 
+                numOfRealms, sequentialRealms ? ",   sequential iteration starting from " + sequentialRealmsFrom : "",
+                usersPerRealm, sequentialUsers ? ",   sequential iteration starting from " + sequentialUsersFrom : "",
+                clientsPerRealm,
+                realmRoles,
+                realmRolesPerUser,
+                clientRolesPerUser,
+                clientRolesPerClient,
                 hashIterations);
     }
-    
+
     public static String toStringAssertionProperties() {
         return String.format("  maxFailedRequests: %s\n"
                 + "  maxMeanReponseTime: %s",
                 maxFailedRequests,
                 maxMeanReponseTime);
     }
-    
+
     public static Iterator<UserInfo> sequentialUsersIterator(final String realm) {
 
         return new Iterator<UserInfo>() {
@@ -208,9 +220,9 @@ public class TestConfig {
                 }
 
                 String user = computeUsername(realm, idx);
-                String firstName= computeFirstName(idx);
+                String firstName = computeFirstName(idx);
                 idx += 1;
-                return new UserInfo(user, 
+                return new UserInfo(user,
                         computePassword(user),
                         firstName,
                         computeLastName(realm),
@@ -233,7 +245,7 @@ public class TestConfig {
             public UserInfo next() {
                 int idx = ThreadLocalRandom.current().nextInt(usersPerRealm);
                 String user = computeUsername(realm, idx);
-                return new UserInfo(user, 
+                return new UserInfo(user,
                         computePassword(user),
                         computeFirstName(idx),
                         computeLastName(realm),
@@ -267,7 +279,7 @@ public class TestConfig {
         return new Iterator<String>() {
 
             int idx = sequentialRealms ? sequentialRealmsFrom : 0;
-            
+
             @Override
             public boolean hasNext() {
                 return true;
@@ -318,5 +330,5 @@ public class TestConfig {
             throw new RuntimeException("The `logoutPct` needs to be between 0 and 100.");
         }
     }
-    
+
 }

@@ -16,6 +16,7 @@ import org.jboss.perf.util.Util.randomUUID
 import org.keycloak.adapters.spi.HttpFacade.Cookie
 import org.keycloak.gatling.AuthorizeAction
 import org.keycloak.performance.TestConfig
+import org.keycloak.performance.templates.DatasetTemplate
 
 
 /**
@@ -73,6 +74,11 @@ object OIDCScenarioBuilder {
       .adapterExchangesCodeForTokens()
       .thinkPause()
       .randomLogout()
+      
+  val datasetTemplate = new DatasetTemplate()
+  datasetTemplate.validateConfiguration
+  val dataset = datasetTemplate.produce
+  val usersIterator = dataset.randomUsersIterator
 
 }
 
@@ -81,25 +87,23 @@ class OIDCScenarioBuilder {
 
   var chainBuilder = exec(s => {
 
-      // initialize session with host, user, client app, login failure ratio ...
-      val realm = TestConfig.getRealmsIterator().next();
-      val userInfo = TestConfig.getUsersIterator(realm).next();
-      val clientInfo = TestConfig.getConfidentialClientsIterator(realm).next()
+      val user = usersIterator.next
+      val client = user.randomConfidentialClientIterator.next
 
       AuthorizeAction.init(s)
         .setAll("keycloakServer" -> TestConfig.serverUrisIterator.next(),
           "state" -> randomUUID(),
           "wrongPasswordCount" -> new AtomicInteger(TestConfig.badLoginAttempts),
           "refreshTokenCount" -> new AtomicInteger(TestConfig.refreshTokenCount),
-          "realm" -> realm,
-          "firstName" -> userInfo.firstName,
-          "lastName" -> userInfo.lastName,
-          "email" -> userInfo.email,
-          "username" -> userInfo.username,
-          "password" -> userInfo.password,
-          "clientId" -> clientInfo.clientId,
-          "secret" -> clientInfo.secret,
-          "appUrl" -> clientInfo.appUrl
+          "realm" -> user.getRealm.toString,
+          "firstName" -> user.getRepresentation.getFirstName,
+          "lastName" -> user.getRepresentation.getLastName,
+          "email" -> user.getRepresentation.getEmail,
+          "username" -> user.getRepresentation.getUsername,
+          "password" -> user.getCredentials.get(0).getRepresentation.getValue,
+          "clientId" -> client.getRepresentation.getClientId,
+          "secret" -> client.getRepresentation.getSecret,
+          "appUrl" -> client.getRepresentation.getBaseUrl
         )
     })
     .exitHereIfFailed

@@ -34,11 +34,11 @@
         <deployment>singlenode</deployment>
 
         <provisioning.properties>${provisioner}/4cpus/${deployment}</provisioning.properties>
-        <dataset>2u2c</dataset>
+        <dataset>default</dataset>
         <test.properties>oidc-login-logout</test.properties>
         
         <provisioning.properties.file>${project.basedir}/parameters/provisioning/${provisioning.properties}.properties</provisioning.properties.file>
-        <dataset.properties.file>${project.basedir}/parameters/datasets/${dataset}.properties</dataset.properties.file>
+        <dataset.properties.file>${project.basedir}/src/test/resources/dataset/${dataset}.properties</dataset.properties.file>
         <test.properties.file>${project.basedir}/parameters/test/${test.properties}.properties</test.properties.file>
 
         <provisioned.system.properties.file>${project.build.directory}/provisioned-system.properties</provisioned.system.properties.file>
@@ -56,9 +56,14 @@
         <gatling-plugin.version>2.2.1</gatling-plugin.version>
         <scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
         <jboss-logging.version>3.3.0.Final</jboss-logging.version>
+        
+        <jackson.version>2.9.6</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
 
         <gatling.simulationClass>keycloak.OIDCLoginAndLogoutSimulation</gatling.simulationClass>
         <gatling.skip.run>true</gatling.skip.run>
+        <surefire.skip.run>true</surefire.skip.run>
 
         <trustStoreArg/>
         <trustStorePasswordArg/>
@@ -94,9 +99,33 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.annotations.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
             <version>${server.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>1.10</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <version>1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
@@ -137,8 +166,12 @@
     <build>
         <testResources>
             <testResource>
-                <directory>src/test/resources</directory>
                 <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>**/*.gz</exclude>
+                    <exclude>**/*.properties</exclude>
+                </excludes>
             </testResource>
         </testResources>
         <plugins>
@@ -188,7 +221,6 @@
                             <quiet>true</quiet>
                             <files>
                                 <file>${provisioning.properties.file}</file>
-                                <file>${dataset.properties.file}</file>
                                 <file>${test.properties.file}</file>
                             </files>
                         </configuration>
@@ -261,6 +293,7 @@
                     <skip>${gatling.skip.run}</skip>
                     <disableCompiler>true</disableCompiler>
                     <runMultipleSimulations>true</runMultipleSimulations>
+                    <propagateSystemProperties>true</propagateSystemProperties>
                     <jvmArgs>
                         <!--common params-->
                         <param>-Dproject.build.directory=${project.build.directory}</param>
@@ -268,14 +301,17 @@
                         <param>-DauthUser=${keycloak.admin.user}</param>
                         <param>-DauthPassword=${keycloak.admin.password}</param>
                         <!--dataset params-->
-                        <param>-DnumOfRealms=${numOfRealms}</param>
+                        
+                        <param>-Ddataset.properties.file=${dataset.properties.file}</param>
+                        
+                        <!--                        <param>-DnumOfRealms=${numOfRealms}</param>
                         <param>-DusersPerRealm=${usersPerRealm}</param>
                         <param>-DclientsPerRealm=${clientsPerRealm}</param>
                         <param>-DrealmRoles=${realmRoles}</param>
                         <param>-DrealmRolesPerUser=${realmRolesPerUser}</param>
                         <param>-DclientRolesPerUser=${clientRolesPerUser}</param>
                         <param>-DclientRolesPerClient=${clientRolesPerClient}</param>
-                        <param>-DhashIterations=${hashIterations}</param>
+                        <param>-DhashIterations=${hashIterations}</param>-->
                         <!--test params-->
                         <param>-DusersPerSec=${usersPerSec}</param>
                         <param>-DrampUpPeriod=${rampUpPeriod}</param>
@@ -309,6 +345,17 @@
                     <workingDirectory>${project.basedir}</workingDirectory>
                 </configuration>
             </plugin>
+            
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <dataset.properties.file>${dataset.properties.file}</dataset.properties.file>
+                    </systemPropertyVariables>
+                    <skip>${surefire.skip.run}</skip>
+                </configuration>
+            </plugin>
+            
         </plugins>
     </build>
 
@@ -458,10 +505,14 @@
         <profile>
             <id>generate-data</id>
             <properties>
-                <startAtRealmIdx>0</startAtRealmIdx>
-                <ignoreConflicts>false</ignoreConflicts>
-                <skipRealmRoles>false</skipRealmRoles>
-                <skipClientRoles>false</skipClientRoles>
+                <delete>false</delete>
+                <log.every>5</log.every>
+                <queue.timeout>60</queue.timeout>
+                <shutdown.timeout>60</shutdown.timeout>
+                <template.cache.size>10000</template.cache.size>
+                <randoms.cache.size>10000</randoms.cache.size>
+                <entity.cache.size>100000</entity.cache.size>
+                <max.heap>2g</max.heap>
             </properties>
             <build>
                 <plugins>
@@ -469,30 +520,6 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <execution>
-                                <id>generate-data</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>java</executable>
-                                    <workingDirectory>${project.build.directory}</workingDirectory>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <classpath/>
-                                        <argument>-DnumOfRealms=${numOfRealms}</argument>
-                                        <argument>-DusersPerRealm=${usersPerRealm}</argument>
-                                        <argument>-DclientsPerRealm=${clientsPerRealm}</argument>
-                                        <argument>-DrealmRoles=${realmRoles}</argument>
-                                        <argument>-DrealmRolesPerUser=${realmRolesPerUser}</argument>
-                                        <argument>-DclientRolesPerUser=${clientRolesPerUser}</argument>
-                                        <argument>-DclientRolesPerClient=${clientRolesPerClient}</argument>
-                                        <argument>-DhashIterations=${hashIterations}</argument>
-                                        <argument>org.keycloak.performance.RealmsConfigurationBuilder</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <id>load-data</id>
                                 <phase>pre-integration-test</phase>
@@ -503,20 +530,33 @@
                                     <executable>java</executable>
                                     <workingDirectory>${project.build.directory}</workingDirectory>
                                     <arguments>
+                                        
                                         <argument>-classpath</argument>
                                         <classpath/>
-                                        <argument>${trustStoreArg}</argument>
-                                        <argument>${trustStorePasswordArg}</argument>
+                                        
+                                        <argument>-Xms64m</argument>
+                                        <argument>-Xmx${max.heap}</argument>
+                                        <argument>-XX:MetaspaceSize=96M</argument>
+                                        <argument>-XX:MaxMetaspaceSize=256m</argument>
+                                        
                                         <argument>-Dkeycloak.server.uris=${keycloak.frontend.servers}</argument>
                                         <argument>-DauthUser=${keycloak.admin.user}</argument>
                                         <argument>-DauthPassword=${keycloak.admin.password}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
-                                        <argument>-DstartAtRealmIdx=${startAtRealmIdx}</argument>
-                                        <argument>-DignoreConflicts=${ignoreConflicts}</argument>
-                                        <argument>-DskipRealmRoles=${skipRealmRoles}</argument>
-                                        <argument>-DskipClientRoles=${skipClientRoles}</argument>
-                                        <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
-                                        <argument>benchmark-realms.json</argument>
+                                        <argument>-Ddataset.properties.file=${dataset.properties.file}</argument>
+                                        <argument>${trustStoreArg}</argument>
+                                        <argument>${trustStorePasswordArg}</argument>
+                                        
+                                        <argument>-Ddelete=${delete}</argument>
+                                        <argument>-Dlog.every=${log.every}</argument>
+                                        <argument>-Dqueue.timeout=${queue.timeout}</argument>
+                                        <argument>-Dshutdown.timeout=${shutdown.timeout}</argument>
+                                        <argument>-Dtemplate.cache.size=${template.cache.size}</argument>
+                                        <argument>-Drandoms.cache.size=${randoms.cache.size}</argument>
+                                        <argument>-Dentity.cache.size=${entity.cache.size}</argument>
+                                        
+                                        <argument>org.keycloak.performance.dataset.DatasetLoader</argument>
+                                        
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -591,6 +631,13 @@
             <id>test</id>
             <properties>
                 <gatling.skip.run>false</gatling.skip.run>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>junit</id>
+            <properties>
+                <surefire.skip.run>false</surefire.skip.run>
             </properties>
         </profile>
         
