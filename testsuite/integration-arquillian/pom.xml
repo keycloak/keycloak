@@ -52,6 +52,7 @@
         <version.shrinkwrap.resolvers>2.2.6</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
+        <testcontainers.version>1.5.1</testcontainers.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
