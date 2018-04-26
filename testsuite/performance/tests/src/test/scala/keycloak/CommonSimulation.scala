@@ -2,7 +2,7 @@ package keycloak
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
-import org.keycloak.performance.log.LogProcessor
+import org.keycloak.gatling.log.LogProcessor
 import io.gatling.core.validation.Validation
 
 import io.gatling.core.controller.inject.InjectionStep
@@ -21,8 +21,8 @@ abstract class CommonSimulation extends Simulation {
   println("Using test parameters:\n" + TestConfig.toStringCommonTestParameters);
   printSpecificTestParameters
   println()
-  println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
-  println()
+//  println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
+//  println()
   println("Using assertion properties:\n" + TestConfig.toStringAssertionProperties)
   println()
   println("Timestamps: \n" + TestConfig.toStringTimestamps)
