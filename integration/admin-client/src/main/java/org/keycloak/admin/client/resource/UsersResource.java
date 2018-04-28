@@ -46,6 +46,19 @@ public interface UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username);
 
+    /**
+     * Search for users whose username or email matches the value provided by {@code search}. The {@code search}
+     * argument also allows finding users by specific attributes as follows:
+     *
+     * <ul>
+     *     <li><i>id:</i> - Find users by identifier. For instance, <i>id:aa497859-bbf5-44ac-bf1a-74dbffcaf197</i></li>
+     * </ul>
+     *
+     * @param search the value to search. It can be the username, email or any of the supported options to query based on user attributes
+     * @param firstResult the position of the first result to retrieve
+     * @param maxResults the maximum number of results to retreive
+     * @return a list of {@link UserRepresentation}
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("search") String search,
