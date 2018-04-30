@@ -1,0 +1,112 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>keycloak-distribution-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>4.0.0.Beta2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>kcinit-dist</artifactId>
+    <packaging>pom</packaging>
+    <name>Kcinit distribution</name>
+    <description/>
+
+    <dependencies>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.1.6</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>1.9.2</goVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>get-kcinit</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <tag>${kcinit.version}</tag>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-kcinit-linux</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <targetOs>linux</targetOs>
+                            <targetArch>amd64</targetArch>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <resultName>kcinit-linux-amd64</resultName>
+                            <tag>${kcinit.version}</tag>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-kcinit-osx</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <targetOs>darwin</targetOs>
+                            <targetArch>amd64</targetArch>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <resultName>kcinit-osx-amd64</resultName>
+                            <tag>${kcinit.version}</tag>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-kcinit-windows</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <targetOs>windows</targetOs>
+                            <targetArch>amd64</targetArch>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <tag>${kcinit.version}</tag>
+                            <resultName>kcinit-windows-amd64.exe</resultName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

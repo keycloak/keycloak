@@ -88,6 +88,7 @@
         <xmlsec.version>2.0.9</xmlsec.version>
         <glassfish.json.version>1.0.4</glassfish.json.version>
         <wildfly.common.version>1.2.0.Final</wildfly.common.version>
+        <kcinit.version>0.5</kcinit.version>
 
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>6.5.0.Final</version.org.drools>

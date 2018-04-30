@@ -33,7 +33,7 @@
             <includes>
                 <include>**/module.xml</include>
             </includes>
-            <!-- unused resteasy providers eat up memory, can't remove them as it my effect RH-SSO patching
+            <!-- unused resteasy providers eat up memory, can't remove them as it may effect RH-SSO patching
             <excludes>
                 <exclude>**/jose-jwt/**</exclude>
                 <exclude>**/resteasy-atom-provider/**</exclude>
@@ -66,7 +66,7 @@
                 <exclude>version.txt</exclude>
                 <exclude>${profileExcludes}</exclude>
                 <exclude>docs/licenses-${product.slot}/**</exclude>
-                <!-- unused resteasy providers eat up memory can't remove them as it my effect RH-SSO patching
+                <!-- unused resteasy providers eat up memory can't remove them as it may effect RH-SSO patching
                 <exclude>**/jose-jwt/**</exclude>
                 <exclude>**/resteasy-atom-provider/**</exclude>
                 <exclude>**/resteasy-crypto/**</exclude>

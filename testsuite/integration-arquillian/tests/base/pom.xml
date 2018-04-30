@@ -243,18 +243,6 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>get-mousetrap</id>
-                        <goals>
-                            <goal>get</goal>
-                        </goals>
-                        <configuration>
-                            <packages>
-                                <package>github.com/inconshreveable/mousetrap</package>
-                            </packages>
-                            <goPath>${project.build.directory}/gopath</goPath>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>get-kcinit</id>
                         <goals>
                             <goal>get</goal>
@@ -264,7 +252,7 @@
                                 <package>github.com/keycloak/kcinit</package>
                             </packages>
                             <goPath>${project.build.directory}/gopath</goPath>
-                            <tag>0.5</tag>
+                            <tag>${kcinit.version}</tag>
                         </configuration>
                     </execution>
                   </executions>

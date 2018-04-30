@@ -53,6 +53,7 @@
                 <module>demo-dist</module>
                 <module>examples-dist</module>
                 <module>proxy-dist</module>
+                <module>kcinit-dist</module>
                 <module>downloads</module>
             </modules>
         </profile>
