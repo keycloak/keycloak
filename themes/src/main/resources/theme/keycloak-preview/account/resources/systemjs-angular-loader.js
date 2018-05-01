@@ -10,6 +10,11 @@ module.exports.translate = function(load){
 
   basePathParts.pop();
   var basePath = basePathParts.join('/');
+  
+  // basePath leaves out leading slash on IE 11
+  if (!basePath.startsWith('/')) {
+      basePath = '/' + basePath;
+  }
 
   var baseHref = document.createElement('a');
   baseHref.href = this.baseURL;

@@ -54,7 +54,9 @@ export class AppComponent implements MenuClickListener {
                 if (navEnd.url !== '/') {
                     this.showSideNav = true;
                     var welcomeScreen = document.getElementById('welcomeScreen')
-                    if (welcomeScreen) welcomeScreen.remove();
+                    
+                    // must use removeChild() -- remove() not available on IE 11
+                    if (welcomeScreen) welcomeScreen.parentNode.removeChild(welcomeScreen);
                 }
             }
         });
