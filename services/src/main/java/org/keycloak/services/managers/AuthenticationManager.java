@@ -629,8 +629,7 @@ public class AuthenticationManager {
 
     public static String getRealmCookiePath(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
-        // KEYCLOAK-5270
-        return uri.getRawPath() + "/";
+        return uri.getRawPath();
     }
 
     public static String getAccountCookiePath(RealmModel realm, UriInfo uriInfo) {
