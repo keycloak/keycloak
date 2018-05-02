@@ -3,6 +3,11 @@
     <head>
         <title>${msg("accountManagementTitle")}</title>
 
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
         <script>
             var authUrl = '${authUrl}';
             var baseUrl = '${baseUrl}';
@@ -32,11 +37,6 @@
         </script>
 
         <base href="${baseUrl}/">
-
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-        <meta name="robots" content="noindex, nofollow">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
 
@@ -72,15 +72,34 @@
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
 
+   <!-- TODO: We should save these css and js into variables and then load in
+        main.ts for better performance.  These might be loaded twice.
+        -->
+        <#if properties.styles?has_content>
+            <#list properties.styles?split(' ') as style>
+            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+            </#list>
+            <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
+        </#if>
+
+        <#if properties.scripts?has_content>
+            <#list properties.scripts?split(' ') as script>
+        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+            </#list>
+        </#if>
+    </head>
+
+    <body>
+
         <script>
             var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
-            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
-                var loadjs = function (url,loadListener) {
+            var loadjs = function (url,loadListener) {
                     const script = document.createElement("script");
                     script.src = resourceUrl + url;
                     if (loadListener) script.addEventListener("load", loadListener);
                     document.head.appendChild(script);
                 };
+            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 loadjs("/node_modules/core-js/client/shim.min.js", function(){
                     loadjs("/node_modules/zone.js/dist/zone.min.js");
                     loadjs("/node_modules/systemjs/dist/system.src.js", function() {
@@ -95,26 +114,6 @@
                 alert('failed to initialize keycloak');
             });
         </script>
-
-
-   <!-- TODO: We should save these css and js into variables and then load in
-        main.ts for better performance.  These might be loaded twice.
-        -->
-        <#if properties.styles?has_content>
-            <#list properties.styles?split(' ') as style>
-        <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-            </#list>
-    <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
-        </#if>
-
-        <#if properties.scripts?has_content>
-            <#list properties.scripts?split(' ') as script>
-        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
-            </#list>
-        </#if>
-        </head>
-    <body>
-
 
 
 <!-- Top Navigation -->
@@ -151,7 +150,7 @@
 
 <!--Top Nav -->
 
-<!-- Home Page --->
+<!-- Home Page -->
 
     <div class="cards-pf" id="welcomeScreen">
         <div class="text-center">
@@ -232,8 +231,8 @@
 
         <script>
             var winHash = window.location.hash;
-            if (winHash.startsWith('#/') && !winHash.startsWith('#/&state')) {
-                document.getElementById("welcomeScreen").style.visibility='hidden';
+            if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
+                document.getElementById("welcomeScreen").style.display='none';
             }
         </script>
 
