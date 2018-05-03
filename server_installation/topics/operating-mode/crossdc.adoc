@@ -827,3 +827,12 @@ of redirects in your browser and you see the errors like this in the {project_na
 ```
 +
 it probably means that your load balancer needs to be set to support sticky sessions. Make sure that the provided route name used during startup of {project_name} server (Property `jboss.node.name`) contains the correct name used by the load balancer server to identify the current server.
+
+* If the {jdgserver_name} `work` cache grows indefinitely, you may be experiencing https://issues.jboss.org/browse/JDG-987[this {jdgserver_name} issue],
+which is caused by cache items not being properly expired. In that case, update the cache declaration with an empty `<expiration />` tag like this:
++
+```xml
+    <replicated-cache name="work" configuration="sessions-cfg">
+        <expiration />
+    </replicated-cache>
+```
