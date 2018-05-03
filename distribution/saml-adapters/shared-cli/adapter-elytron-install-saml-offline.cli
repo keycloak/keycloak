@@ -1,4 +1,4 @@
-embed-server --server-config=standalone.xml
+embed-server --server-config=${server.config:standalone.xml}
 
 if (outcome != success) of /extension=org.keycloak.keycloak-saml-adapter-subsystem:read-resource
     /extension=org.keycloak.keycloak-saml-adapter-subsystem/:add(module=org.keycloak.keycloak-saml-adapter-subsystem)
