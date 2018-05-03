@@ -18,7 +18,7 @@ endif::[]
 
 You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
 
-Alternatively, you don't have to modify your WAR at all and you can secure it via the {project_name} adapter subsystem configuration in `standalone.xml`.
+Alternatively, you don't have to modify your WAR at all and you can secure it via the {project_name} adapter subsystem configuration in the configuration file, such as `standalone.xml`.
 Both methods are described in this section.
 
 [[_jboss_adapter_installation]]
@@ -101,6 +101,8 @@ endif::[]
 This ZIP archive contains JBoss Modules specific to the {project_name} adapter. It also contains JBoss CLI scripts to configure the adapter subsystem.
 
 To configure the adapter subsystem if the server is not running execute:
+
+NOTE: Alternatively, you can specify the `server.config` property while installing adapters from the command line to install adapters using a different config, for example: `-Dserver.config=standalone-ha.xml`.
 
 ifeval::[{project_community}==true]
 .WildFly 11
