@@ -42,7 +42,7 @@ public class UsernameOnlyAuthenticator implements Authenticator, AuthenticatorFa
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         String username = context.getHttpRequest().getDecodedFormParameters().getFirst("username");
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username, null);
         if (user == null) {
             context.failure(AuthenticationFlowError.UNKNOWN_USER);
             return;

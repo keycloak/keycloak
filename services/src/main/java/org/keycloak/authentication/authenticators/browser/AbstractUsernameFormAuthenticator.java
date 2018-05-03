@@ -50,6 +50,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+    public static final String ATTEMPTED_USERID = "ATTEMPTED_USERID";
 
     @Override
     public void action(AuthenticationFlowContext context) {
@@ -135,7 +136,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public boolean validateUserAndPassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
+        if (username == null || username.trim().isEmpty()) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -144,13 +145,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
         // remove leading and trailing whitespace
         username = username.trim();
+        String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
 
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
-            user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+            user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username, password);
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);
 
@@ -164,11 +166,15 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return false;
         }
 
+        if (user != null) {
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERID, user.getId());
+        }
+
         if (invalidUser(context, user)) {
             return false;
         }
 
-        if (!validatePassword(context, user, inputData)) {
+        if (!validatePassword(context, user, password)) {
             return false;
         }
 
@@ -188,14 +194,15 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return true;
     }
 
-    public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {
-        List<CredentialInput> credentials = new LinkedList<>();
-        String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        credentials.add(UserCredentialModel.password(password));
+    public boolean validatePassword(AuthenticationFlowContext context, UserModel user, String password) {
 
         if (isTemporarilyDisabledByBruteForce(context, user)) return false;
-
-        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
+        
+        if(password == null || password.isEmpty()) return false;
+        
+        List<CredentialInput> credentials = new LinkedList<>();
+        credentials.add(UserCredentialModel.password(password));
+        if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
             return true;
         } else {
             context.getEvent().user(user);

@@ -342,7 +342,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
         realm.setLoginWithEmailAllowed(loginWithEmailAllowed);
-        if (loginWithEmailAllowed) realm.setDuplicateEmailsAllowed(false);
         em.flush();
     }
 
@@ -355,7 +354,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
         realm.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
         if (duplicateEmailsAllowed) {
-            realm.setLoginWithEmailAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
         }
         em.flush();

@@ -24,6 +24,7 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
@@ -54,7 +55,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         // Restore formData for the case of error
         setupForm(context, formData, existingUser);
 
-        return validatePassword(context, existingUser, formData);
+        return validatePassword(context, existingUser, formData.getFirst(CredentialRepresentation.PASSWORD));
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {

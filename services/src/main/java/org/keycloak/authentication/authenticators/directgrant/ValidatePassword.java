@@ -117,7 +117,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
         return PROVIDER_ID;
     }
 
-    protected String retrievePassword(AuthenticationFlowContext context) {
+    protected static String retrievePassword(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(CredentialRepresentation.PASSWORD);
     }

@@ -381,13 +381,6 @@ module.controller('DefenseHeadersCtrl', function($scope, Current, Realm, realm, 
 });
 
 module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
-    // KEYCLOAK-5474: Make sure duplicateEmailsAllowed is disabled if loginWithEmailAllowed
-    $scope.$watch('realm.loginWithEmailAllowed', function() {
-        if ($scope.realm.loginWithEmailAllowed) {
-            $scope.realm.duplicateEmailsAllowed = false;
-        }
-    });
-    
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings");
 });
 
