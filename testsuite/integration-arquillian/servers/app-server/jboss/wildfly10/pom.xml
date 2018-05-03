@@ -39,6 +39,8 @@
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
+
+        <skip.adapter.offline.installation>false</skip.adapter.offline.installation>
     </properties>
 
 </project>

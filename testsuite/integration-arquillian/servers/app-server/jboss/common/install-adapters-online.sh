@@ -26,26 +26,11 @@ do
         RESULT=$?
         echo "Return code of adapter-install:"${RESULT}
 
-        if [ "$ELYTRON_SUPPORTED" = true ] && [ ${RESULT} -eq 0 ]; then
-            echo "Installing elytron adapter."
-            ./jboss-cli.sh -c --file="adapter-elytron-install.cli"
-            RESULT=$?
-        else
-            ./jboss-cli.sh -c --file="$CLI_PATH/remove-elytron-subsystem.cli"
-        fi
-
         if [ "$SAML_SUPPORTED" = true ] && [ ${RESULT} -eq 0 ]; then
             ./jboss-cli.sh -c --file="adapter-install-saml.cli"
             RESULT=$?
             echo "Return code of saml adapter-install:"$RESULT
-
-            if [ "$ELYTRON_SUPPORTED" = true ] && [ ${RESULT} -eq 0 ]; then
-                ./jboss-cli.sh -c --file="adapter-elytron-install-saml.cli"
-                RESULT=$?
-            fi
         fi
-
-        ./jboss-cli.sh -c --file="$CLI_PATH/add-adapter-log-level.cli"
 
         ./jboss-cli.sh -c --command=":shutdown"
         rm -rf $JBOSS_HOME/standalone/data
