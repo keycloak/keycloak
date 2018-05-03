@@ -1096,6 +1096,10 @@ public class RepresentationToModel {
                 if (entry.getValue() == null || entry.getValue().trim().equals("")) {
                     continue;
                 } else {
+                    String flowId = entry.getValue();
+                    if (client.getRealm().getAuthenticationFlowById(flowId) == null) {
+                        throw new RuntimeException("Unable to resolve auth flow binding override for: " + entry.getKey());
+                    }
                     client.setAuthenticationFlowBindingOverride(entry.getKey(), entry.getValue());
                 }
             }
@@ -1230,8 +1234,11 @@ public class RepresentationToModel {
                 if (entry.getValue() == null || entry.getValue().trim().equals("")) {
                     resource.removeAuthenticationFlowBindingOverride(entry.getKey());
                 } else {
+                    String flowId = entry.getValue();
+                    if (resource.getRealm().getAuthenticationFlowById(flowId) == null) {
+                        throw new RuntimeException("Unable to resolve auth flow binding override for: " + entry.getKey());
+                    }
                     resource.setAuthenticationFlowBindingOverride(entry.getKey(), entry.getValue());
-
                 }
             }
         }
