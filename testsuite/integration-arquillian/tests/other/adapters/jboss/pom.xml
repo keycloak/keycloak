@@ -38,45 +38,8 @@
         <app.server.type>managed</app.server.type>
         <auth.server.actual.protocol>http</auth.server.actual.protocol>
         <auth.server.actual.http.port>${auth.server.http.port}</auth.server.actual.http.port>
-        <keycloak.subsystem.xsl>keycloak-subsystem.xsl</keycloak.subsystem.xsl>
     </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>configure-keycloak-subsystem</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>transform</goal>
-                        </goals>
-                        <configuration>
-                            <transformationSets>
-                                <transformationSet>
-                                    <dir>${app.server.home}/standalone/configuration</dir>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <stylesheet>${common.resources}/xslt/${keycloak.subsystem.xsl}</stylesheet>
-                                    <outputDir>${app.server.home}/standalone/configuration</outputDir>
-                                    <parameters>
-                                        <parameter>
-                                            <name>auth-server-host</name>
-                                            <value>${auth.server.actual.protocol}://localhost:${auth.server.actual.http.port}</value>
-                                        </parameter>
-                                    </parameters>
-                                </transformationSet>
-                            </transformationSets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-    
     <profiles>
         <profile>
             <id>ssl</id>
@@ -90,13 +53,6 @@
                 <!-- one realm definition for each secure-deployment -->
                 <auth.server.actual.protocol>https</auth.server.actual.protocol>
                 <auth.server.actual.http.port>${auth.server.https.port}</auth.server.actual.http.port>
-            </properties>
-        </profile>
-        <profile>
-            <id>keycloak-subsystem-separate-realm</id>
-            <properties>
-                <!-- single realm definition, multiple secure-deployments -->
-                <keycloak.subsystem.xsl>keycloak-subsystem_separate-realm-def.xsl</keycloak.subsystem.xsl>
             </properties>
         </profile>
         <profile>
