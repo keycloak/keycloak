@@ -331,18 +331,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-as7</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>as7</value>
-                </property>
-            </activation>
-            <modules>
-                <module>as7</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-eap</id>
             <activation>
                 <property>
@@ -379,18 +367,6 @@
             </activation>
             <modules>
                 <module>wildfly</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly8</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly8</value>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly8</module>
             </modules>
         </profile>
         <profile>

@@ -116,12 +116,6 @@
         </profile>
 
         <profile>
-            <id>app-server-as7</id>
-            <modules>
-                <module>as7</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-eap</id>
             <modules>
                 <module>eap</module>
@@ -137,12 +131,6 @@
             <id>app-server-wildfly</id>
             <modules>
                 <module>wildfly</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly8</id>
-            <modules>
-                <module>wildfly8</module>
             </modules>
         </profile>
         <profile>
