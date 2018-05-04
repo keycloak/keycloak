@@ -198,20 +198,21 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
         if (isTemporarilyDisabledByBruteForce(context, user)) return false;
         
-        if(password == null || password.isEmpty()) return false;
+        if(password != null && !password.isEmpty()) {
+            List<CredentialInput> credentials = new LinkedList<>();
+            credentials.add(UserCredentialModel.password(password));
+            if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
+                return true;
+            }
+        } 
         
-        List<CredentialInput> credentials = new LinkedList<>();
-        credentials.add(UserCredentialModel.password(password));
-        if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
-            return true;
-        } else {
-            context.getEvent().user(user);
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = invalidCredentials(context);
-            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
-            context.clearUser();
-            return false;
-        }
+        context.getEvent().user(user);
+        context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+        Response challengeResponse = invalidCredentials(context);
+        context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+        context.clearUser();
+        return false;
+        
     }
 
     private boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
