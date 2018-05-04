@@ -217,7 +217,7 @@ public final class KeycloakModelUtils {
         
         UserModel byUsername = session.users().getUserByUsername(username, realm); 
         
-        if (byUsername == null || !byUsername.isEnabled() || password != null && (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1)) {
+        if ((byUsername == null || !byUsername.isEnabled() || password != null) && realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
             if (!realm.isDuplicateEmailsAllowed()) {
                 UserModel byEmail = session.users().getUserByEmail(username, realm);
                 if (byEmail != null && byUsername != null) {
