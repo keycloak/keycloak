@@ -53,7 +53,6 @@ import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
@@ -115,15 +114,6 @@ public abstract class AbstractKeycloakTest {
 
     @Drone
     protected WebDriver driver;
-
-    // Javascript browser needed KEYCLOAK-4703
-    @Drone
-    @JavascriptBrowser
-    protected WebDriver jsDriver;
-
-    @Page
-    @JavascriptBrowser
-    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @Page
     protected AuthServerContextRoot authServerContextRootPage;

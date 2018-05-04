@@ -21,6 +21,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.jboss.arquillian.container.test.api.Deployer;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
@@ -44,10 +45,12 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,6 +85,15 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @ArquillianResource
     private Deployer deployer;
+
+    // Javascript browser needed KEYCLOAK-4703
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
+    @Page
+    @JavascriptBrowser
+    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @Page
     @JavascriptBrowser

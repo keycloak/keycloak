@@ -97,18 +97,18 @@ public class JavascriptTestExecutor {
 
     public JavascriptTestExecutor configure(JSObjectBuilder argumentsBuilder) {
         if (argumentsBuilder == null) {
-            jsExecutor.executeScript("keycloak = Keycloak()");
+            jsExecutor.executeScript("window.keycloak = Keycloak();");
         } else {
             String configArguments = argumentsBuilder.build();
-            jsExecutor.executeScript("keycloak = Keycloak(" + configArguments + ")");
+            jsExecutor.executeScript("window.keycloak = Keycloak(" + configArguments + ");");
         }
 
-        jsExecutor.executeScript("keycloak.onAuthSuccess = function () {event('Auth Success')}"); // event function is declared in index.html
-        jsExecutor.executeScript("keycloak.onAuthError = function () {event('Auth Error')}");
-        jsExecutor.executeScript("keycloak.onAuthRefreshSuccess = function () {event('Auth Refresh Success')}");
-        jsExecutor.executeScript("keycloak.onAuthRefreshError = function () {event('Auth Refresh Error')}");
-        jsExecutor.executeScript("keycloak.onAuthLogout = function () {event('Auth Logout')}");
-        jsExecutor.executeScript("keycloak.onTokenExpired = function () {event('Access token expired.')}");
+        jsExecutor.executeScript("window.keycloak.onAuthSuccess = function () {event('Auth Success')};"); // event function is declared in index.html
+        jsExecutor.executeScript("window.keycloak.onAuthError = function () {event('Auth Error')}");
+        jsExecutor.executeScript("window.keycloak.onAuthRefreshSuccess = function () {event('Auth Refresh Success')}");
+        jsExecutor.executeScript("window.keycloak.onAuthRefreshError = function () {event('Auth Refresh Error')}");
+        jsExecutor.executeScript("window.keycloak.onAuthLogout = function () {event('Auth Logout')}");
+        jsExecutor.executeScript("window.keycloak.onTokenExpired = function () {event('Access token expired.')}");
 
         configured = true;
 
@@ -128,7 +128,7 @@ public class JavascriptTestExecutor {
 
         Object output = jsExecutor.executeAsyncScript(
                 "var callback = arguments[arguments.length - 1];" +
-                "   keycloak.init(" + arguments + ").success(function (authenticated) {" +
+                "   window.keycloak.init(" + arguments + ").success(function (authenticated) {" +
                 "       callback(\"Init Success (\" + (authenticated ? \"Authenticated\" : \"Not Authenticated\") + \")\");" +
                 "   }).error(function () {" +
                 "       callback(\"Init Error\");" +
@@ -157,11 +157,11 @@ public class JavascriptTestExecutor {
     public JavascriptTestExecutor refreshToken(int value, JavascriptStateValidator validator) {
         Object output = jsExecutor.executeAsyncScript(
                     "var callback = arguments[arguments.length - 1];" +
-                    "   keycloak.updateToken(" + Integer.toString(value) + ").success(function (refreshed) {" +
+                    "   window.keycloak.updateToken(" + Integer.toString(value) + ").success(function (refreshed) {" +
                     "       if (refreshed) {" +
-                    "            callback(keycloak.tokenParsed);" +
+                    "            callback(window.keycloak.tokenParsed);" +
                     "       } else {" +
-                    "            callback('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');" +
+                    "            callback('Token not refreshed, valid for ' + Math.round(window.keycloak.tokenParsed.exp + window.keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');" +
                     "       }" +
                     "   }).error(function () {" +
                     "       callback('Failed to refresh token');" +
@@ -182,7 +182,7 @@ public class JavascriptTestExecutor {
 
         Object output = jsExecutor.executeAsyncScript(
                 "var callback = arguments[arguments.length - 1];" +
-                "   keycloak.loadUserProfile().success(function (profile) {" +
+                "   window.keycloak.loadUserProfile().success(function (profile) {" +
                 "       callback(profile);" +
                 "   }).error(function () {" +
                 "       callback('Failed to load profile');" +
@@ -202,19 +202,19 @@ public class JavascriptTestExecutor {
 
     public JavascriptTestExecutor refresh() {
         jsDriver.navigate().refresh();
-        configured = false; // Refreshing webpage => Loosing keycloak variable
+        configured = false; // Refreshing webpage => Loosing window.keycloak variable
 
         return this;
     }
 
     public JavascriptTestExecutor addTimeSkew(int addition) {
-        jsExecutor.executeScript("keycloak.timeSkew += " + Integer.toString(addition));
+        jsExecutor.executeScript("window.keycloak.timeSkew += " + Integer.toString(addition));
 
         return this;
     }
 
     public JavascriptTestExecutor checkTimeSkew(JavascriptStateValidator validator) {
-        Object timeSkew = jsExecutor.executeScript("return keycloak.timeSkew");
+        Object timeSkew = jsExecutor.executeScript("return window.keycloak.timeSkew");
 
         validator.validate(jsDriver, timeSkew, events);
 

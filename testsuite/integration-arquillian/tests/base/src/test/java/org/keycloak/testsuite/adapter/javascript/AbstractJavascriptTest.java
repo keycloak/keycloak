@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.adapter.javascript;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -9,14 +11,17 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriver.Options;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -25,10 +30,8 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver.Options;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author mhajas
@@ -50,6 +53,15 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
 
     protected JavascriptExecutor jsExecutor;
+
+    // Javascript browser needed KEYCLOAK-4703
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
+    @Page
+    @JavascriptBrowser
+    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @FindBy(id = "output")
     @JavascriptBrowser

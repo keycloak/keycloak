@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.example.cors;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -32,9 +33,11 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.auth.page.account.Account;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +62,15 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
 
     @ArquillianResource
     private Deployer deployer;
+
+    // Javascript browser needed KEYCLOAK-4703
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
+    @Page
+    @JavascriptBrowser
+    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @Page
     @JavascriptBrowser
