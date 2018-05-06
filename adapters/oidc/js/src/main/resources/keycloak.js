@@ -1187,17 +1187,41 @@
                         return window.open(loginUrl, target, options);
                     }
                 };
+
+                var shallowCloneCordovaOptions = function (userOptions) {
+                    if (userOptions && userOptions.cordovaOptions) {
+                        return Object.keys(userOptions.cordovaOptions).reduce(function (options, optionName) {
+                            options[optionName] = userOptions.cordovaOptions[optionName];
+                            return options;
+                        }, {});
+                    } else {
+                        return {};
+                    }
+                };
+
+                var formatCordovaOptions = function (cordovaOptions) {
+                    return Object.keys(cordovaOptions).reduce(function (options, optionName) {
+                        options.push(optionName+"="+cordovaOptions[optionName]);
+                        return options;
+                    }, []).join(",");
+                };
+
+                var createCordovaOptions = function (userOptions) {
+                    var cordovaOptions = shallowCloneCordovaOptions(userOptions);
+                    cordovaOptions.location = 'no';
+                    if (userOptions && userOptions.prompt == 'none') {
+                        cordovaOptions.hidden = 'yes';
+                    }                    
+                    return formatCordovaOptions(cordovaOptions);
+                };
+
                 return {
                     login: function(options) {
                         var promise = createPromise();
 
-                        var o = 'location=no';
-                        if (options && options.prompt == 'none') {
-                            o += ',hidden=yes';
-                        }
-
+                        var cordovaOptions = createCordovaOptions(options);
                         var loginUrl = kc.createLoginUrl(options);
-                        var ref = cordovaOpenWindowWrapper(loginUrl, '_blank', o);
+                        var ref = cordovaOpenWindowWrapper(loginUrl, '_blank', cordovaOptions);
                         var completed = false;
 
                         ref.addEventListener('loadstart', function(event) {
@@ -1228,7 +1252,7 @@
 
                     logout: function(options) {
                         var promise = createPromise();
-
+                        
                         var logoutUrl = kc.createLogoutUrl(options);
                         var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
 
@@ -1263,7 +1287,8 @@
 
                     register : function() {
                         var registerUrl = kc.createRegisterUrl();
-                        var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', 'location=no');
+                        var cordovaOptions = createCordovaOptions(options);
+                        var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
                                 ref.close();
