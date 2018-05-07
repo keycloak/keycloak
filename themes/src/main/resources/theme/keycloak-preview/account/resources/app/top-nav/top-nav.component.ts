@@ -24,6 +24,7 @@ declare const resourceUrl: string;
 declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
+declare const isInternationalizationEnabled: boolean;
 declare const availableLocales: Array<Object>;
 
 @Component({
@@ -54,6 +55,10 @@ export class TopNavComponent implements OnInit {
 
     private logout() {
         this.keycloakService.logout(baseUrl);
+    }
+    
+    private showLocales(): boolean {
+        return isInternationalizationEnabled && (this.availableLocales.length > 1); 
     }
     
     private changeLocale(newLocale: string) {

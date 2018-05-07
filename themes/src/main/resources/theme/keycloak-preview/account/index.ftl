@@ -134,16 +134,18 @@
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
                     <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
-                    <li class="dropdown">
-                      <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        ${msg("locale_" + locale)} <span class="caret"></span>
-                      </a>
-                      <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                      <#list supportedLocales as locale, label>
-                        <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
-                      </#list>
-                      </ul>
-                    </li>
+                    <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
+                        <li class="dropdown">
+                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            ${msg("locale_" + locale)} <span class="caret"></span>
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                          <#list supportedLocales as locale, label>
+                            <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
+                          </#list>
+                          </ul>
+                        </li>
+                    </#if>
                 </ul>
             </nav>
         </nav>
