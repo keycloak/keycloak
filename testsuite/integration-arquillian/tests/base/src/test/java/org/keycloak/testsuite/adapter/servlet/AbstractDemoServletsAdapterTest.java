@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
@@ -62,14 +63,17 @@ import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -117,6 +121,15 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  */
 public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
+    // Javascript browser needed KEYCLOAK-4703
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
+    @Page
+    @JavascriptBrowser
+    protected OIDCLogin jsDriverTestRealmLoginPage;
+    
     @Page
     private CustomerPortal customerPortal;
     @Page

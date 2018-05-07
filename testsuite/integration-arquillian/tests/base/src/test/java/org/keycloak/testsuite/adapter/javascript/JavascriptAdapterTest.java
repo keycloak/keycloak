@@ -16,6 +16,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -23,7 +24,6 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -31,10 +31,10 @@ import org.openqa.selenium.WebElement;
 
 import java.util.List;
 import java.util.Map;
-
-import static java.lang.Math.toIntExact;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -44,9 +44,9 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.testsuite.ProfileAssume;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -98,7 +98,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events) {
-        waitUntilElement(By.tagName("body")).is().present();
+        waitForPageToLoad();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
 
@@ -420,7 +420,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .add("realm", SPACE_REALM_NAME)
                 .add("clientId", CLIENT_ID);
 
-        testAppUrl = authServerContextRootPage + JAVASCRIPT_SPACE_URL + "/index.html";
+        testAppUrl = authServerContextRootPage + JAVASCRIPT_ENCODED_SPACE_URL + "/index.html";
         jsDriver.navigate().to(testAppUrl);
         jsDriverTestRealmLoginPage.setAuthRealm(SPACE_REALM_NAME);
 

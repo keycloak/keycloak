@@ -16,12 +16,11 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -45,7 +44,7 @@ public class OAuthGrant extends LoginActions {
 
     public boolean isCurrent(WebDriver driver1) {
         if (driver1 == null) driver1 = driver;
-        waitUntilElement(By.tagName("body")).is().present();
+        waitForPageToLoad();
         return driver1.getPageSource().contains("Do you grant these access privileges");
     }
 

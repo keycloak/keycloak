@@ -107,7 +107,7 @@
                                     <outputDirectory>${js-adapter.file.path}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <includes>**/keycloak.js</includes>
+                            <includes>keycloak.js</includes>
                         </configuration>
                     </execution>
                 </executions>
