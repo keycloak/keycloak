@@ -5,10 +5,8 @@ The {project_name} Server is contained in one distribution file:
 
 * 'rh-sso-{project_version}.GA.zip'
 
-NOTE: This file can be downloaded in the Red Hat customer portal
-https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Downloads].
+NOTE: This file can be downloaded from https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[the Red Hat customer portal].
 
-The 'rh-sso-{project_version}.GA.zip' file is the server-only distribution. It contains only the scripts and binaries
-to run the {project_name} server.
+The 'rh-sso-{project_version}.GA.zip' file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
 
 To unpack these files run the `unzip` or `gunzip` utilities.
