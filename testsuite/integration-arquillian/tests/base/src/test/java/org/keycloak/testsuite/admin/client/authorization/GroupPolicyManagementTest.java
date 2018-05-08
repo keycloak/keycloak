@@ -151,6 +151,19 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
     }
 
     @Test
+    public void testRemoveWithoutPath() {
+        GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
+
+        representation.setName("Delete Group Path Policy");
+        representation.setGroupsClaim("groups");
+        representation.addGroup("Group A");
+
+        representation.removeGroup("Group A");
+
+        assertTrue(representation.getGroups().isEmpty());
+    }
+
+    @Test
     public void testGenericConfig() {
         AuthorizationResource authorization = getClient().authorization();
         GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
