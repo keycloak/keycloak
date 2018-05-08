@@ -832,6 +832,10 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
 module.controller('ClientDetailCtrl', function($scope, realm, client, templates, flows, $route, serverInfo, Client, ClientDescriptionConverter, Components, ClientStorageOperations, $location, $modal, Dialog, Notifications) {
     $scope.flows = [];
     $scope.clientFlows = [];
+    var emptyFlow = {
+        id: "",
+        alias: ""
+    }
     for (var i=0 ; i<flows.length ; i++) {
         if (flows[i].providerId == 'client-flow') {
             $scope.clientFlows.push(flows[i]);
@@ -839,6 +843,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.flows.push(flows[i]);
         }
     }
+    $scope.flows.push(emptyFlow)
+    $scope.clientFlows.push(emptyFlow)
 
 
 
