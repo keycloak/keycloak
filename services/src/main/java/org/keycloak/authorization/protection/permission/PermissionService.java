@@ -138,7 +138,7 @@ public class PermissionService extends AbstractPermissionService {
 
         return Response.ok().entity(permissionTicketStore.find(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
                     .stream()
-                        .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, returnNames == null ? false : returnNames))
+                        .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
                         .collect(Collectors.toList()))
                 .build();
     }
