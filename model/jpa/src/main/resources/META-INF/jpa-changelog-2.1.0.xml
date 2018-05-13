@@ -159,7 +159,7 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(4000)"/>
+            <column name="VALUE" type="TEXT(4000)"/>
         </createTable>
         <createTable tableName="COMPONENT">
             <column name="ID" type="VARCHAR(36)">

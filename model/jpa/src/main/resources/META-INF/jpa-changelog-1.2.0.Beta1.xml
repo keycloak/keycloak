@@ -124,7 +124,7 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="VALUE" type="TEXT(2048)"/>
         </createTable>
         <addColumn tableName="CLIENT">
             <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false">

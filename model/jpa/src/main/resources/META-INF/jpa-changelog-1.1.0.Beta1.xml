@@ -26,7 +26,7 @@
             <column name="CLIENT_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="VALUE" type="TEXT(2048)"/>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -59,7 +59,7 @@
             <column name="REALM_ID" type="VARCHAR(255)"/>
         </addColumn>
         <addColumn tableName="REALM">
-            <column name="CERTIFICATE" type="VARCHAR(2048)"/>
+            <column name="CERTIFICATE" type="TEXT(2048)"/>
             <column name="CODE_SECRET" type="VARCHAR(255)"/>
         </addColumn>
         <addColumn tableName="CLIENT">

@@ -24,8 +24,8 @@
             </not>
         </preConditions>
 
-        <modifyDataType tableName="REALM" columnName="PRIVATE_KEY" newDataType="VARCHAR(4000)"/>
-        <modifyDataType tableName="REALM" columnName="PUBLIC_KEY" newDataType="VARCHAR(4000)"/>
-        <modifyDataType tableName="REALM" columnName="CERTIFICATE" newDataType="VARCHAR(4000)"/>
+        <modifyDataType tableName="REALM" columnName="PRIVATE_KEY" newDataType="TEXT(4000)"/>
+        <modifyDataType tableName="REALM" columnName="PUBLIC_KEY" newDataType="TEXT(4000)"/>
+        <modifyDataType tableName="REALM" columnName="CERTIFICATE" newDataType="TEXT(4000)"/>
     </changeSet>
 </databaseChangeLog>

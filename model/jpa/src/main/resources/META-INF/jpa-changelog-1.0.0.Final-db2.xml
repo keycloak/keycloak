@@ -171,8 +171,8 @@
                 <constraints nullable="false"/>
             </column>
             <column name="PASSWORD_POLICY" type="VARCHAR(255)"/>
-            <column name="PRIVATE_KEY" type="VARCHAR(2048)"/>
-            <column name="PUBLIC_KEY" type="VARCHAR(2048)"/>
+            <column name="PRIVATE_KEY" type="TEXT(2048)"/>
+            <column name="PUBLIC_KEY" type="TEXT(2048)"/>
             <column name="REGISTRATION_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>

@@ -91,7 +91,7 @@
         <modifyDataType tableName="USER_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
         <modifyDataType tableName="GROUP_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
         <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(4000)"/>
+        <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NTEXT(4000)"/>
 
         <dropUniqueConstraint constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
