@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.0.0.Beta2-SNAPSHOT</version>
+        <version>4.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -347,12 +347,12 @@
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-karaf-managed</artifactId>
-            <version>2.1.0.CR18</version>
+            <version>${arquillian-container-karaf.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-osgi</artifactId>
-            <version>2.1.0.CR18</version>
+            <version>${arquillian-container-karaf.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>

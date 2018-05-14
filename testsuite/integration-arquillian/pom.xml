@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>4.0.0.Beta2-SNAPSHOT</version>
+        <version>4.0.0.Beta3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -47,10 +47,12 @@
         <arquillian-graphene.version>2.3.1</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.0.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
+        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <version.shrinkwrap.resolvers>2.2.6</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
+        <testcontainers.version>1.5.1</testcontainers.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>

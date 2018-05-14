@@ -19,6 +19,7 @@ package org.keycloak.representations.adapters.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -139,6 +140,9 @@ public class PolicyEnforcerConfig {
         @JsonProperty("enforcement-mode")
         private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
+        @JsonProperty("claim-information-point")
+        private Map<String, Map<String, Object>> claimInformationPointConfig;
+
         @JsonIgnore
         private PathConfig parentConfig;
 
@@ -196,6 +200,14 @@ public class PolicyEnforcerConfig {
 
         public void setEnforcementMode(EnforcementMode enforcementMode) {
             this.enforcementMode = enforcementMode;
+        }
+
+        public Map<String, Map<String, Object>> getClaimInformationPointConfig() {
+            return claimInformationPointConfig;
+        }
+
+        public void setClaimInformationPointConfig(Map<String, Map<String, Object>> claimInformationPointConfig) {
+            this.claimInformationPointConfig = claimInformationPointConfig;
         }
 
         @Override

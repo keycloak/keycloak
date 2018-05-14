@@ -47,6 +47,7 @@ export class SideNavComponent implements OnInit, MenuClickListener {
             this.makeSideNavItem("account", new Icon("pficon", "user"), "active"),
             this.makeSideNavItem("password", new Icon("pficon", "key")),
             this.makeSideNavItem("authenticator", new Icon("pficon", "cloud-security")),
+            this.makeSideNavItem("device-activity", new Icon("fa", "desktop")),
             this.makeSideNavItem("sessions", new Icon("fa", "clock-o")),
             this.makeSideNavItem("applications", new Icon("fa", "th"))
         ];

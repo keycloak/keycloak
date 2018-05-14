@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.Beta2-SNAPSHOT</version>
+        <version>4.0.0.Beta3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -69,50 +69,49 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>install node and yarn</id>
+                                <id>install node and npm</id>
                                 <goals>
-                                    <goal>install-node-and-yarn</goal>
+                                    <goal>install-node-and-npm</goal>
                                 </goals>
                                 <phase>generate-resources</phase>
                                 <configuration>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
-                                    <nodeVersion>v6.9.1</nodeVersion>
-                                    <yarnVersion>v0.28.4</yarnVersion>
+                                    <nodeVersion>v8.9.4</nodeVersion>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>yarn install keycloak preview</id>
+                                <id>npm install</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
+                                <phase>generate-resources</phase>
                                 <configuration>
-                                    <arguments>install --production=false --frozen-lockfile</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <arguments>install</arguments>
                                 </configuration>
                             </execution>
                             <execution>
                                 <id>compile typescript</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
                                     <arguments>run build</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>yarn remove dev dependencies production=true</id>
+                                <id>npm remove dev dependencies production=true</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
                                 <phase>process-classes</phase>
                                 <configuration>
-                                    <arguments>install --production=true --frozen-lockfile</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <arguments>install --production=true --no-package-lock</arguments>
                                 </configuration>
                             </execution>
                         </executions>
+                        <configuration>
+                            <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>maven-clean-plugin</artifactId>

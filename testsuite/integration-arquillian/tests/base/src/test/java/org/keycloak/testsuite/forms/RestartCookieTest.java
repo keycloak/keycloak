@@ -88,9 +88,9 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    // KEYCLOAK-5440
+    // KEYCLOAK-5440 -- migration from Keycloak 3.1.0
     @Test
-    public void testRestartCookieBackwardsCompatible() throws IOException, MessagingException {
+    public void testRestartCookieBackwardsCompatible_Keycloak25() throws IOException, MessagingException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
             try {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
@@ -100,6 +100,46 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
                 String encodedToken = new JWSBuilder()
                         .kid(activeKey.getKid())
+                        .content(cookieVal.getBytes("UTF-8"))
+                        .hmac256(activeKey.getSecretKey());
+
+                return encodedToken;
+
+
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        });
+
+        oauth.openLoginForm();
+
+        driver.manage().deleteAllCookies();
+        driver.manage().addCookie(new Cookie(RestartLoginCookie.KC_RESTART, oldRestartCookie));
+
+        loginPage.login("foo", "bar");
+        loginPage.assertCurrent();
+        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                .client((String) null)
+                .assertEvent();
+    }
+
+
+    // KEYCLOAK-7158 -- migration from Keycloak 1.9.8
+    @Test
+    public void testRestartCookieBackwardsCompatible_Keycloak19() throws IOException, MessagingException {
+        String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
+            try {
+                String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
+                RealmModel realm = session.realms().getRealmByName("test");
+
+                KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+
+                // There was no KID in the token in Keycloak 1.9.8
+                String encodedToken = new JWSBuilder()
+                        //.kid(activeKey.getKid())
                         .content(cookieVal.getBytes("UTF-8"))
                         .hmac256(activeKey.getSecretKey());
 

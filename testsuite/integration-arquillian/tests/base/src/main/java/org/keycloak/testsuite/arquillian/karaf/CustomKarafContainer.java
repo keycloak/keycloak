@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.arquillian.karaf;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * KarafManagedDeployableContainer
- *
+ * 
  * @author thomas.diesler@jboss.com
  */
 public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> extends JMXDeployableContainer<T> {
@@ -79,7 +78,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
             String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
             _logger.info(String.format("Using java: %s", java));
 
-            List<String> cmd = new ArrayList<String>();
+            List<String> cmd = new ArrayList<>();
             cmd.add(java);
 
             // JavaVM args
@@ -95,6 +94,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
             cmd.add("-Dkaraf.etc=" + karafHomeDir + "/etc");
             cmd.add("-Dkaraf.data=" + karafHomeDir + "/data");
             cmd.add("-Dkaraf.instances=" + karafHomeDir + "/instances");
+            cmd.add("-Dkaraf.restart.jvm.supported=true");
             cmd.add("-Dkaraf.startLocalConsole=false");
             cmd.add("-Dkaraf.startRemoteShell=true");
 
@@ -105,16 +105,23 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
 
             // Classpath
             StringBuilder classPath = new StringBuilder();
-            File karafLibDir = new File(karafHomeDir, "lib");
-            String[] libs = karafLibDir.list(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.startsWith("karaf");
+            boolean fuse7 = new File(karafHomeDir, "lib/boot/").exists();
+            if (fuse7) {
+                _logger.info("Adding karaf4 libraries to classpath.");
+                File karafLibBootDir = new File(karafHomeDir, "lib/boot/");
+                String[] libs = karafLibBootDir.list((File dir, String name) -> name.endsWith(".jar"));
+                for (String lib : libs) {
+                    String separator = classPath.length() > 0 ? File.pathSeparator : "";
+                    classPath.append(separator).append(new File(karafLibBootDir, lib));
                 }
-            });
-            for (String lib : libs) {
-                String separator = classPath.length() > 0 ? File.pathSeparator : "";
-                classPath.append(separator).append(new File(karafHomeDir, "lib/" + lib));
+            } else { //fuse6
+                _logger.info("Adding karaf3 libraries to classpath.");
+                File karafLibDir = new File(karafHomeDir, "lib");
+                String[] libs = karafLibDir.list((File dir, String name) -> name.startsWith("karaf"));
+                for (String lib : libs) {
+                    String separator = classPath.length() > 0 ? File.pathSeparator : "";
+                    classPath.append(separator).append(new File(karafHomeDir, "lib/" + lib));
+                }
             }
             cmd.add("-classpath");
             cmd.add(classPath.toString());
@@ -194,7 +201,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
 
     private void destroyKarafProcess() throws LifecycleException {
         if (process != null) {
-            process.destroy();            
+            process.destroy();
             try {
                 process.waitFor();
             } catch (InterruptedException e) {

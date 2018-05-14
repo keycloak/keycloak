@@ -441,7 +441,7 @@
                 <label for="browser" class="col-md-2 control-label">{{:: 'browser-flow' | translate}}</label>
                 <div class="col-md-2">
                     <div>
-                        <select id="browser" data-ng-model="clientEdit.authenticationFlowBindingOverrides['browser']" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                        <select id="browser" data-ng-model="clientEdit.authenticationFlowBindingOverrides['browser']" class="form-control" ng-options="flow.id as flow.alias for flow in flows">
                         </select>
                     </div>
                 </div>
@@ -451,7 +451,7 @@
                 <label for="grant" class="col-md-2 control-label">{{:: 'direct-grant-flow' | translate}}</label>
                 <div class="col-md-2">
                     <div>
-                        <select id="grant" ng-model="clientEdit.authenticationFlowBindingOverrides['direct_grant']" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                        <select id="grant" ng-model="clientEdit.authenticationFlowBindingOverrides['direct_grant']" class="form-control" ng-options="flow.id as flow.alias for flow in flows">
                         </select>
                     </div>
                 </div>

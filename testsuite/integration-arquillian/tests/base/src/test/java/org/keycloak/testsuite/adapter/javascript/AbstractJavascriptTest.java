@@ -18,8 +18,10 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriver.Options;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -28,6 +30,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -49,15 +52,16 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
 
 
+    protected JavascriptExecutor jsExecutor;
+
+    // Javascript browser needed KEYCLOAK-4703
     @Drone
     @JavascriptBrowser
     protected WebDriver jsDriver;
 
-    protected JavascriptExecutor jsExecutor;
-
     @Page
     @JavascriptBrowser
-    protected OIDCLogin testRealmLoginPage;
+    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @FindBy(id = "output")
     @JavascriptBrowser
@@ -147,11 +151,23 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     protected void assertOnLoginPage(WebDriver driver1, Object output, WebElement events) {
         waitUntilElement(By.tagName("body")).is().present();
-        assertCurrentUrlStartsWith(testRealmLoginPage, driver1);
+        assertCurrentUrlStartsWith(jsDriverTestRealmLoginPage, driver1);
     }
 
     public void assertOutputWebElementContains(String value, WebDriver driver1, Object output, WebElement events) {
         waitUntilElement((WebElement) output).text().contains(value);
+    }
+    
+    public void assertLocaleCookie(String locale, WebDriver driver1, Object output, WebElement events) {
+        waitForPageToLoad();
+        Options ops = driver1.manage();
+        Cookie cookie = ops.getCookieNamed("KEYCLOAK_LOCALE");
+        Assert.assertNotNull(cookie);
+        Assert.assertEquals(locale, cookie.getValue());
+    }
+    
+    public JavascriptStateValidator assertLocaleIsSet(String locale) {
+        return buildFunction(this::assertLocaleCookie, locale);
     }
 
     public void assertOutputContains(String value, WebDriver driver1, Object output, WebElement events) {

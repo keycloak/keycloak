@@ -219,7 +219,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         try {
             authzClient.authorization().authorize(request);
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
 
         List permissions = authzClient.protection().permission().findByResource(resource.getId());

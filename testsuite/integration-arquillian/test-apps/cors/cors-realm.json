@@ -26,6 +26,14 @@
             "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
+        },
+        {
+            "username": "service-account-cors-database-service",
+            "enabled": true,
+            "serviceAccountClientId": "cors-database-service",
+            "clientRoles": {
+                "cors-database-service" : ["uma_protection"]
+            }
         }
     ],
     "roles" : {
@@ -54,6 +62,49 @@
             "webOrigins": [
                 "http://localhost:8080"
             ]
+        },
+        {
+            "clientId": "cors-database-service",
+            "secret" : "secret",
+            "enabled": true,
+            "baseUrl": "http://localhost:8080/cors-database/products",
+            "redirectUris": [
+                "http://localhost:8080/cors-database/*"
+            ],
+            "webOrigins": [
+                "http://localhost:8080"
+            ],
+            "authorizationServicesEnabled" : true,
+            "authorizationSettings" : {
+                "allowRemoteResourceManagement" : false,
+                "policyEnforcementMode" : "ENFORCING",
+                "resources" : [ {
+                    "name" : "Default Resource",
+                    "uri" : "/*",
+                    "type" : "default"
+                } ],
+                "policies" : [ {
+                    "name" : "Default Policy",
+                    "description" : "A policy that grants access only for users within this realm",
+                    "type" : "js",
+                    "logic" : "POSITIVE",
+                    "decisionStrategy" : "AFFIRMATIVE",
+                    "config" : {
+                        "code" : "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
+                    }
+                }, {
+                    "name" : "Default Permission",
+                    "description" : "A permission that applies to the default resource type",
+                    "type" : "resource",
+                    "logic" : "POSITIVE",
+                    "decisionStrategy" : "UNANIMOUS",
+                    "config" : {
+                        "defaultResourceType" : "default",
+                        "applyPolicies" : "[\"Default Policy\"]"
+                    }
+                } ],
+                "scopes" : [ ]
+            }
         }
     ],
     "clientScopeMappings": {

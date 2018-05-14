@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-karaf</artifactId>
-        <version>4.0.0.Beta2-SNAPSHOT</version>
+        <version>4.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-fuse63</artifactId>
@@ -42,7 +42,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${apache.httpcomponents.version}</version>
         </dependency>
     </dependencies>
     

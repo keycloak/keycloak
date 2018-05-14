@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.representations.idm.authorization.PermissionTicketToken.ResourcePermission;
 
@@ -40,6 +41,7 @@ public class AuthorizationRequest {
     private String audience;
     private String accessToken;
     private boolean submitRequest;
+    private Map<String, List<String>> claims;
 
     public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
@@ -127,6 +129,14 @@ public class AuthorizationRequest {
 
     public String getAccessToken() {
         return accessToken;
+    }
+
+    public Map<String, List<String>> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(Map<String, List<String>> claims) {
+        this.claims = claims;
     }
 
     public void addPermission(String resourceId, List<String> scopes) {

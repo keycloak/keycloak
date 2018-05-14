@@ -18,11 +18,13 @@
 package org.keycloak.jose;
 
 import org.junit.Test;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 
+import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -35,7 +37,7 @@ public class JsonWebTokenTest {
     public void testAudSingle() throws IOException {
         String single = "{ \"aud\": \"test\" }";
         JsonWebToken s = JsonSerialization.readValue(single, JsonWebToken.class);
-        assertArrayEquals(new String[] { "test" }, s.getAudience());
+        assertArrayEquals(new String[]{"test"}, s.getAudience());
     }
 
     @Test
@@ -57,6 +59,42 @@ public class JsonWebTokenTest {
         JsonWebToken jsonWebToken = new JsonWebToken();
         jsonWebToken.audience("test", "test2");
         assertTrue(JsonSerialization.writeValueAsPrettyString(jsonWebToken).contains("\"aud\" : [ \"test\", \"test2\" ]"));
+    }
+
+    @Test
+    public void isActiveReturnFalseWhenBeforeTimeInFuture() {
+        int currentTime = Time.currentTime();
+        int futureTime = currentTime + 10;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.notBefore(futureTime);
+        assertFalse(jsonWebToken.isActive());
+    }
+
+    @Test
+    public void isActiveReturnTrueWhenBeforeTimeInPast() {
+        int currentTime = Time.currentTime();
+        int pastTime = currentTime - 10;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.notBefore(pastTime);
+        assertTrue(jsonWebToken.isActive());
+    }
+
+    @Test
+    public void isActiveShouldReturnTrueWhenBeforeTimeInFutureWithinTimeSkew() {
+        int notBeforeTime = Time.currentTime() + 5;
+        int allowedClockSkew = 10;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.notBefore(notBeforeTime);
+        assertTrue(jsonWebToken.isActive(allowedClockSkew));
+    }
+
+    @Test
+    public void isActiveShouldReturnFalseWhenWhenBeforeTimeInFutureOutsideTimeSkew() {
+        int notBeforeTime = Time.currentTime() + 10;
+        int allowedClockSkew = 5;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.notBefore(notBeforeTime);
+        assertFalse(jsonWebToken.isActive(allowedClockSkew));
     }
 
 }

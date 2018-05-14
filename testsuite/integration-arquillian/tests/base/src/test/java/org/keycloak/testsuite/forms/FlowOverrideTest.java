@@ -348,6 +348,19 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         clients.get(clientRep.getId()).update(clientRep);
         testWithClientBrowserOverride();
 
+        query = clients.findByClientId(TEST_APP_FLOW);
+        clientRep = query.get(0);
+        clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.BROWSER_BINDING, "bad-id");
+        try {
+            clients.get(clientRep.getId()).update(clientRep);
+            Assert.fail();
+        } catch (Exception e) {
+
+        }
+        query = clients.findByClientId(TEST_APP_FLOW);
+        clientRep = query.get(0);
+        Assert.assertEquals(browserFlowId, clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING));
+
     }
 
 }

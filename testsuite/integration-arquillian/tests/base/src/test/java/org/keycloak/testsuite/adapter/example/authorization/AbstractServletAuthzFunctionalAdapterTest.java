@@ -16,14 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -39,6 +31,13 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -58,7 +57,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
         }, () -> {
             login("jdoe", "jdoe");
             driver.navigate().to(getResourceServerUrl().toString() + "/enforcing/resource");
-            assertTrue(wasDenied());
+            assertWasDenied();
         });
     }
 
@@ -66,7 +65,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testRegularUserPermissions() throws Exception {
         performTests(() -> {
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
             assertTrue(hasText("urn:servlet-authz:page:main:actionForUser"));
@@ -79,10 +78,10 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             assertFalse(hasText("Do administration thing"));
 
             navigateToUserPremiumPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             navigateToAdminPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
         });
     }
 
@@ -90,7 +89,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testUserPremiumPermissions() throws Exception {
         performTests(() -> {
             login("jdoe", "jdoe");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
             assertTrue(hasText("urn:servlet-authz:page:main:actionForUser"));
@@ -103,10 +102,10 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             assertFalse(hasText("Do administration thing"));
 
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             navigateToAdminPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
         });
     }
 
@@ -114,7 +113,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testAdminPermissions() throws Exception {
         performTests(() -> {
             login("admin", "admin");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
             assertTrue(hasText("urn:servlet-authz:page:main:actionForUser"));
@@ -127,10 +126,10 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             assertFalse(hasText("Do  user premium thing"));
 
             navigateToUserPremiumPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             navigateToAdminPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
 
@@ -138,24 +137,24 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testGrantPremiumAccessToUser() throws Exception {
         performTests(() -> {
             login("alice", "alice");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             navigateToUserPremiumPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             updatePermissionPolicies("Premium Resource Permission", "Any User Policy");
 
             login("alice", "alice");
 
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             updatePermissionPolicies("Premium Resource Permission", "Only Premium User Policy");
 
             login("alice", "alice");
 
             navigateToUserPremiumPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             createUserPolicy("Temporary Premium Access Policy", "alice");
 
@@ -164,7 +163,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             login("alice", "alice");
 
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
 
@@ -174,7 +173,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             login("jdoe", "jdoe");
 
             navigateToAdminPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             RealmResource realmResource = realmsResouce().realm(REALM_NAME);
             UsersResource usersResource = realmResource.users();
@@ -190,7 +189,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             login("jdoe", "jdoe");
 
             navigateToAdminPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
     
@@ -209,7 +208,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
         performTests(() -> {
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             RolesResource rolesResource = getClientResource(RESOURCE_SERVER_ID).roles();
 
@@ -230,7 +229,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
 
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             policy.getRoles().clear();
             policy.addRole("user_premium", false);
@@ -240,7 +239,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
 
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             UsersResource users = realmsResouce().realm(REALM_NAME).users();
             UserRepresentation user = users.search("jdoe").get(0);
@@ -251,7 +250,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
 
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             policy.getRoles().clear();
             policy.addRole("user_premium", false);
@@ -261,13 +260,13 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
 
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             roleScopeResource.remove(Arrays.asList(requiredRole));
 
             login("jdoe", "jdoe");
             navigateToUserPremiumPage();
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
 
@@ -275,7 +274,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testOnlySpecificClient() throws Exception {
         performTests(() -> {
             login("jdoe", "jdoe");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
 
             ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
 
@@ -290,13 +289,13 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             updatePermissionPolicies("Protected Resource Permission", policy.getName());
 
             login("jdoe", "jdoe");
-            assertTrue(wasDenied());
+            assertWasDenied();
 
             policy.addClient("servlet-authz-app");
             policyResource.findById(policy.getId()).update(policy);
 
             login("jdoe", "jdoe");
-            assertFalse(wasDenied());
+            assertWasNotDenied();
         });
     }
 

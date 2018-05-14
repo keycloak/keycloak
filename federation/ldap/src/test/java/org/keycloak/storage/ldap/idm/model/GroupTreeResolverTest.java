@@ -110,7 +110,7 @@ public class GroupTreeResolverTest {
     @Test
     public void testGroupResolvingMissingGroup() throws GroupTreeResolver.GroupTreeResolveException {
         GroupTreeResolver.Group group1 = new GroupTreeResolver.Group("group1", "group2");
-        GroupTreeResolver.Group group2 = new GroupTreeResolver.Group("group2", "group3");
+        GroupTreeResolver.Group group2 = new GroupTreeResolver.Group("group2", "group3", "group5");
         GroupTreeResolver.Group group4 = new GroupTreeResolver.Group("group4");
         List<GroupTreeResolver.Group> groups = Arrays.asList(group1, group2, group4);
 

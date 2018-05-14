@@ -49,6 +49,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +64,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class UsersResource {
+
     private static final Logger logger = Logger.getLogger(UsersResource.class);
+    private static final String SEARCH_ID_PARAMETER = "id:";
 
     protected RealmModel realm;
 
@@ -187,9 +190,16 @@ public class UsersResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
-        List<UserModel> userModels;
+        List<UserModel> userModels = Collections.emptyList();
         if (search != null) {
-            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                if (userModel != null) {
+                    userModels = Arrays.asList(userModel);
+                }
+            } else {
+                userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+            }
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {

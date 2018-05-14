@@ -102,6 +102,14 @@ public class AuthenticatedActionsHandler {
         KeycloakSecurityContext securityContext = facade.getSecurityContext();
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
         String exposeHeaders = deployment.getCorsExposedHeaders();
+
+        if (deployment.getPolicyEnforcer() != null) {
+            if (exposeHeaders != null) {
+                exposeHeaders += ",";
+            }
+            exposeHeaders += "WWW-Authenticate";
+        }
+
         String requestOrigin = UriUtils.getOrigin(facade.getRequest().getURI());
         log.debugv("Origin: {0} uri: {1}", origin, facade.getRequest().getURI());
         if (securityContext != null && origin != null && !origin.equals(requestOrigin)) {

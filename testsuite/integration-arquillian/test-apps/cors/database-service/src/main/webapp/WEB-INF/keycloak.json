@@ -6,5 +6,11 @@
   "bearer-only" : true,
   "ssl-required": "external",
   "enable-cors": true,
-  "cors-exposed-headers": "X-Custom1"
+  "cors-exposed-headers": "X-Custom1",
+  "credentials": {
+    "secret": "secret"
+  },
+  "policy-enforcer": {
+    "enforcement-mode": "DISABLED"
+  }
 }

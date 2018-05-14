@@ -110,7 +110,16 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("disableUserInfo", String.valueOf(disable));
     }
 
-
-
-
+    public int getAllowedClockSkew() {
+        String allowedClockSkew = getConfig().get("allowedClockSkew");
+        if (allowedClockSkew == null || allowedClockSkew.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(getConfig().get("allowedClockSkew"));
+        } catch (NumberFormatException e) {
+            // ignore it and use default
+            return 0;
+        }
+    }
 }

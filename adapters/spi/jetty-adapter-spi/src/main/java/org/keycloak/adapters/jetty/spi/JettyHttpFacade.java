@@ -25,6 +25,8 @@ import org.keycloak.common.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,6 +71,9 @@ public class JettyHttpFacade implements HttpFacade {
     }
 
     protected class RequestFacade implements Request {
+
+        private InputStream inputStream;
+
         @Override
         public String getURI() {
             StringBuffer buf = request.getRequestURL();
@@ -128,6 +133,23 @@ public class JettyHttpFacade implements HttpFacade {
 
         @Override
         public InputStream getInputStream() {
+            return getInputStream(false);
+        }
+
+        @Override
+        public InputStream getInputStream(boolean buffered) {
+            if (inputStream != null) {
+                return inputStream;
+            }
+
+            if (buffered) {
+                try {
+                    return inputStream = new BufferedInputStream(request.getInputStream());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
             try {
                 return request.getInputStream();
             } catch (IOException e) {

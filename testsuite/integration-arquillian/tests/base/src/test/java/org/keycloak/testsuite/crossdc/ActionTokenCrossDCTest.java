@@ -24,6 +24,7 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import java.io.IOException;
@@ -132,7 +133,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
                 }
         );
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         // Verify that there was an action token added in the node which was targetted by the link
         assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
@@ -179,7 +180,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.getTitle());
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         disableDcOnLoadBalancer(DC.FIRST);
         getManuallyStartedBackendNodes(DC.SECOND)

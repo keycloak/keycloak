@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>4.0.0.Beta2-SNAPSHOT</version>
+        <version>4.0.0.Beta3-SNAPSHOT</version>
     </parent>
     
     <artifactId>integration-arquillian-tests-smoke-clean-start</artifactId>
@@ -73,6 +73,7 @@
                 <auth.server.config.dir>${auth.server.home}/domain/configuration</auth.server.config.dir>
                 <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.domain.managed.ManagedDomainDeployableContainer</auth.server.adapter.impl.class>
                 <auth.server.management.port>9990</auth.server.management.port>
+                <auth.server.jboss.jvm.debug.args></auth.server.jboss.jvm.debug.args> <!-- because of KEYCLOAK-6647 -->
             </properties>
             <dependencies>
                 <dependency>

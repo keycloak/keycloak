@@ -373,6 +373,13 @@ public class RealmManager {
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         RoleModel adminRole = realmAdminClient.getRole(AdminRoles.REALM_ADMIN);
 
+        // if realm-admin role isn't in the realm model, create it
+        if (adminRole == null) {
+            adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
+            adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+            adminRole.setScopeParamRequired(false);
+        }
+
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel found = realmAdminClient.getRole(r);
             if (found == null) {

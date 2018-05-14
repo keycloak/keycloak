@@ -16,14 +16,14 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertTrue;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -50,7 +50,7 @@ public abstract class AbstractPermissiveModeAdapterTest extends AbstractBaseServ
             }
 
             driver.navigate().to(getResourceServerUrl() + "/protected/admin");
-            assertTrue(wasDenied());
+            assertWasDenied();
         });
     }
 

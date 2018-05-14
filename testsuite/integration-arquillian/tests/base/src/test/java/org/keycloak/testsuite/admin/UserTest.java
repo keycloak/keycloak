@@ -351,7 +351,9 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(user.getFederationLink(), createdUser.getFederationLink());
     }
 
-    private void createUsers() {
+    private List<String> createUsers() {
+        List<String> ids = new ArrayList<>();
+
         for (int i = 1; i < 10; i++) {
             UserRepresentation user = new UserRepresentation();
             user.setUsername("username" + i);
@@ -359,8 +361,10 @@ public class UserTest extends AbstractAdminTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
-            createUser(user);
+            ids.add(createUser(user));
         }
+
+        return ids;
     }
 
     @Test
@@ -383,6 +387,20 @@ public class UserTest extends AbstractAdminTest {
 
         users = realm.users().search("user", null, null, null, null, null);
         assertEquals(9, users.size());
+    }
+
+    @Test
+    public void searchById() {
+        String expectedUserId = createUsers().get(0);
+        List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+
+        users = realm.users().search("id:   " + expectedUserId + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
     }
 
     @Test

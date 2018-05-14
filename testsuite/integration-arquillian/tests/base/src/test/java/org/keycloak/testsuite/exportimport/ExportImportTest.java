@@ -168,6 +168,25 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
     }
+
+    @Test
+    public void testImportFromPartialExport() {
+        // import a realm with clients without roles
+        importRealmFromFile("/import/partial-import.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-import"));
+
+        // import a realm with clients without roles
+        importRealmFromFile("/import/import-without-roles.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-roles"));
+
+        // import a realm with roles without clients
+        importRealmFromFile("/import/import-without-clients.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-clients"));
+    }
+
+    private boolean isRealmPresent(String realmId) {
+        return adminClient.realms().findAll().stream().filter(realm -> realmId.equals(realm.getId())).findFirst().isPresent();
+    }
     
     private void testFullExportImport() throws LifecycleException {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
@@ -305,5 +324,14 @@ public class ExportImportTest extends AbstractKeycloakTest {
         }
     }
 
+    private void importRealmFromFile(String path) {
+        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        URL url = ExportImportTest.class.getResource(path);
+        String targetFilePath = new File(url.getFile()).getAbsolutePath();
+        testingClient.testing().exportImport().setFile(targetFilePath);
 
+        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+
+        testingClient.testing().exportImport().runImport();
+    }
 }

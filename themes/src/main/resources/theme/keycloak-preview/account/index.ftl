@@ -3,13 +3,24 @@
     <head>
         <title>${msg("accountManagementTitle")}</title>
 
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
         <script>
             var authUrl = '${authUrl}';
             var baseUrl = '${baseUrl}';
-            var realm = '${realm}';
+            var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
-            var isRegistrationEmailAsUsername = ${isRegistrationEmailAsUsername?c};
-            var isEditUserNameAllowed = ${isEditUserNameAllowed?c};
+            var isRegistrationEmailAsUsername = ${realm.registrationEmailAsUsername?c};
+            var isEditUserNameAllowed = ${realm.editUsernameAllowed?c};
+            var isInternationalizationEnabled = ${realm.internationalizationEnabled?c};
+                
+            var availableLocales = [];
+            <#list supportedLocales as locale, label>
+                availableLocales.push({locale : '${locale}', label : '${label}'});
+            </#list>
 
             <#if referrer??>
                 var referrer = '${referrer}';
@@ -26,11 +37,6 @@
         </script>
 
         <base href="${baseUrl}/">
-
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-        <meta name="robots" content="noindex, nofollow">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
 
@@ -66,15 +72,34 @@
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
 
+   <!-- TODO: We should save these css and js into variables and then load in
+        main.ts for better performance.  These might be loaded twice.
+        -->
+        <#if properties.styles?has_content>
+            <#list properties.styles?split(' ') as style>
+            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+            </#list>
+            <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
+        </#if>
+
+        <#if properties.scripts?has_content>
+            <#list properties.scripts?split(' ') as script>
+        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+            </#list>
+        </#if>
+    </head>
+
+    <body>
+
         <script>
-            var keycloak = Keycloak('${authUrl}/realms/${realm}/account/keycloak.json');
-            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
-                var loadjs = function (url,loadListener) {
+            var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
+            var loadjs = function (url,loadListener) {
                     const script = document.createElement("script");
                     script.src = resourceUrl + url;
                     if (loadListener) script.addEventListener("load", loadListener);
                     document.head.appendChild(script);
                 };
+            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 loadjs("/node_modules/core-js/client/shim.min.js", function(){
                     loadjs("/node_modules/zone.js/dist/zone.min.js");
                     loadjs("/node_modules/systemjs/dist/system.src.js", function() {
@@ -89,26 +114,6 @@
                 alert('failed to initialize keycloak');
             });
         </script>
-
-
-   <!-- TODO: We should save these css and js into variables and then load in
-        main.ts for better performance.  These might be loaded twice.
-        -->
-        <#if properties.styles?has_content>
-            <#list properties.styles?split(' ') as style>
-        <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-            </#list>
-    <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
-        </#if>
-
-        <#if properties.scripts?has_content>
-            <#list properties.scripts?split(' ') as script>
-        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
-            </#list>
-        </#if>
-        </head>
-    <body>
-
 
 
 <!-- Top Navigation -->
@@ -128,18 +133,30 @@
                      we are unable to localize the button's message.  Not sure what to do about that yet.
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
-                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">Log In</button></li>
+                    <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
+                    <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
+                        <li class="dropdown">
+                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            ${msg("locale_" + locale)} <span class="caret"></span>
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                          <#list supportedLocales as locale, label>
+                            <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
+                          </#list>
+                          </ul>
+                        </li>
+                    </#if>
                 </ul>
             </nav>
         </nav>
 
 <!--Top Nav -->
 
-<!-- Home Page --->
-    
+<!-- Home Page -->
+
     <div class="cards-pf" id="welcomeScreen">
         <div class="text-center">
-          <h1>Welcome to Keycloak Account Management</h1>
+          <h1>${msg("accountManagementWelcomeMessage")}</h1>
         </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
@@ -150,11 +167,11 @@
                                 <span class="fa pficon-user card-pf-icon-circle"></span>
                             </div>
                             <h2>
-                                Personal Info
+                                ${msg("personalInfoHtmlTitle")}
                             </h2>
-                            <p>Manage your basic information <br>such as name and email</p>
+                            <p>${msg("personalInfoIntroMessage")}</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Personal Info</a></h3>
+                            <h3><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
                         </div>
                     </div>
                 </div>
@@ -165,17 +182,17 @@
                                 <span class="fa fa-shield card-pf-icon-circle"></span>
                             </div>
                             <h2>
-                                Account Security
+                                ${msg("accountSecurityTitle")}
                             </h2>
-                            <p>Control your password and account access</p>
+                            <p>${msg("accountSecurityIntroMessage")}</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/password">Change password</a></h3>
+                            <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/authenticator">Authenticator</a></h3>
+                            <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/sessions">Device activity</a></h3>
+                            <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Federated identities</a></h3>
+                            <h3><a href="${baseUrl}/#/account">${msg("federatedIdentity")}</a></h3>
                         </div>
                     </div>
                 </div>
@@ -186,11 +203,11 @@
                                 <span class="fa fa-th card-pf-icon-circle"></span>
                             </div>
                             <h2>
-                                Applications
+                                ${msg("applicationsHtmlTitle")}
                             </h2>
-                            <p>Track and manage your app permission to access your account</p>
+                            <p>${msg("applicationsIntroMessage")}</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/applications">Applications</a></h3>
+                            <h3><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
                         </div>
                     </div>
                 </div>
@@ -201,11 +218,11 @@
                                 <span class="fa pficon-repository card-pf-icon-circle"></span>
                             </div>
                             <h2>
-                                My Resources
+                                ${msg("myResources")}
                             </h2>
-                            <p>Share your resources among team members</p>
+                            <p>${msg("resourceIntroMessage")}</p>
                             <hr/>
-                            <h3><a href="${baseUrl}/#/account">Resources</a></h3>
+                            <h3><a href="${baseUrl}/#/account">${msg("myResources")}</a></h3>
                         </div>
                     </div>
                 </div>
@@ -213,11 +230,11 @@
             </div>
         </div>
     </div>
-        
+
         <script>
             var winHash = window.location.hash;
-            if (winHash.startsWith('#/') && !winHash.startsWith('#/&state')) {
-                document.getElementById("welcomeScreen").style.visibility='hidden';
+            if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
+                document.getElementById("welcomeScreen").style.display='none';
             }
         </script>
 

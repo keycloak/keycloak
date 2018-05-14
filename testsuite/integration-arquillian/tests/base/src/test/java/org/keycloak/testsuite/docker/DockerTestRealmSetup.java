@@ -1,10 +1,6 @@
 package org.keycloak.testsuite.docker;
 
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
-import org.keycloak.protocol.docker.DockerAuthenticator;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -29,31 +25,6 @@ public final class DockerTestRealmSetup {
         createdRealm.setAuthenticatorConfig(new ArrayList<>());
 
         return createdRealm;
-    }
-
-    public static void configureDockerAuthenticationFlow(final RealmRepresentation dockerRealm, final String authFlowAlais) {
-        final AuthenticationFlowRepresentation dockerBasicAuthFlow = new AuthenticationFlowRepresentation();
-        dockerBasicAuthFlow.setId(UUID.randomUUID().toString());
-        dockerBasicAuthFlow.setAlias(authFlowAlais);
-        dockerBasicAuthFlow.setProviderId("basic-flow");
-        dockerBasicAuthFlow.setTopLevel(true);
-        dockerBasicAuthFlow.setBuiltIn(false);
-
-        final AuthenticationExecutionExportRepresentation dockerBasicAuthExecution = new AuthenticationExecutionExportRepresentation();
-        dockerBasicAuthExecution.setAuthenticator(DockerAuthenticator.ID);
-        dockerBasicAuthExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-        dockerBasicAuthExecution.setPriority(0);
-        dockerBasicAuthExecution.setUserSetupAllowed(false);
-        dockerBasicAuthExecution.setAutheticatorFlow(false);
-
-        final List<AuthenticationExecutionExportRepresentation> authenticationExecutions = Optional.ofNullable(dockerBasicAuthFlow.getAuthenticationExecutions()).orElse(new ArrayList<>());
-        authenticationExecutions.add(dockerBasicAuthExecution);
-        dockerBasicAuthFlow.setAuthenticationExecutions(authenticationExecutions);
-
-        final List<AuthenticationFlowRepresentation> authenticationFlows = Optional.ofNullable(dockerRealm.getAuthenticationFlows()).orElse(new ArrayList<>());
-        authenticationFlows.add(dockerBasicAuthFlow);
-        dockerRealm.setAuthenticationFlows(authenticationFlows);
-        dockerRealm.setBrowserFlow(dockerBasicAuthFlow.getAlias());
     }
 
 

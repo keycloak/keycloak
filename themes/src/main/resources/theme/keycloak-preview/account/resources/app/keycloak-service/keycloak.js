@@ -51,6 +51,8 @@
                 adapter = loadAdapter('cordova');
             } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
+            } else if (initOptions && typeof initOptions.adapter === "object") {
+                adapter = initOptions.adapter;
             } else {
                 if (window.Cordova || window.cordova) {
                     adapter = loadAdapter('cordova');
@@ -280,6 +282,10 @@
             if (options && options.locale) {
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
+            
+            if (options && options.kcLocale) {
+                url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
+            }
 
             return url;
         }
@@ -463,6 +469,10 @@
                                     }
                                 } else {
                                     console.warn('[KEYCLOAK] Failed to refresh token');
+
+                                    if (req.status == 400) {
+                                        kc.clearToken();
+                                    }
 
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {

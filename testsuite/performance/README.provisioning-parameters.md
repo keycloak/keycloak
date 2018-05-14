@@ -24,6 +24,8 @@
 | Category    | Setting                       | Property                           | Default Value                                                      |
 |-------------|-------------------------------|------------------------------------|--------------------------------------------------------------------|
 | Keycloak    | Server version                | `server.version`                   | `${project.version}` from the project `pom.xml` file.              |
+|             | Admin user                    | `keycloak.admin.user`              | `admin`                                                            |
+|             | Admin user's password         | `keycloak.admin.password`          | `admin`                                                            |
 | Scaling<sup>[1]</sup> | Scale for cluster   | `keycloak.scale`                   | Maximum size<sup>[2]</sup> of cluster.                             |
 |             | Scale for DC1                 | `keycloak.dc1.scale`               | Maximum size of DC1.                                               |
 |             | Scale for DC2                 | `keycloak.dc2.scale`               | Maximum size of DC2.                                               |

@@ -11,7 +11,7 @@
   "policy-enforcer": {
     "on-deny-redirect-to" : "/servlet-authz-app/accessDenied.jsp",
     "path-cache": {
-      "lifespan": 5000,
+      "lifespan": 10000,
       "max-entries": 1000
     },
     "paths": [

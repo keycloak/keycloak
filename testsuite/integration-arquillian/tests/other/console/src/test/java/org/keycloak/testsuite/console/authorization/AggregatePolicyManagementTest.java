@@ -235,7 +235,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
         rulePolicy.setName(UUID.randomUUID().toString());
         rulePolicy.setDescription("description");
-        rulePolicy.setArtifactGroupId("org.keycloak");
+        rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
         rulePolicy.setArtifactId("photoz-authz-policy");
         rulePolicy.setArtifactVersion(Version.VERSION);
         rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
