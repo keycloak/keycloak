@@ -66,6 +66,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -620,20 +621,15 @@ public class AuthenticationProcessor {
 
     public void logFailure() {
         if (realm.isBruteForceProtected()) {
-            String userid = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERID);
-            if (userid != null) {
-                UserModel user = session.users().getUserById(userid, realm);
-                if (user != null) {
-                    getBruteForceProtector().failedLogin(realm, user, connection);
-                }
-            } else {
-                String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-                // todo need to handle non form failures
-                if (username == null) {
+            String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+            // todo need to handle non form failures
+            if (username == null) {
 
-                } else {
-                    UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username, null);
-                    if (user != null) {
+            } else {
+                //KEYCLOAK-6799 in case duplicate emails are allowed we have to log failure for all matching accounts
+                Set<UserModel> users = KeycloakModelUtils.findUsersByNameOrEmail(session, realm, username);
+                if (users != null && !users.isEmpty()) {
+                    for(UserModel user: users) {
                         getBruteForceProtector().failedLogin(realm, user, connection);
                     }
                 }

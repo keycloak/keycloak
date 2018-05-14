@@ -26,6 +26,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -199,6 +200,34 @@ public final class KeycloakModelUtils {
                                 .filter(x -> x.isComposite() && searchFor(role, x, visited))
                                 .findFirst()
                                 .isPresent();
+    }
+    
+    /**
+     * Try to find all relevant users by username or email for authentication, depending on relm settings and provided input info.
+     *
+     * @param session
+     * @param realm to find user for
+     * @param username username or email of the users to find
+     * @return found users, never null
+     */
+    public static Set<UserModel> findUsersByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
+        UserModel byUsername = session.users().getUserByUsername(username, realm);
+        Set<UserModel> allByEmail = null;
+        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
+            Map<String, String> params = new HashMap<>();
+            params.put("email", username);
+            List<UserModel> allByEmailList = session.users().searchForUser(params, realm);
+            if(allByEmailList != null && !allByEmailList.isEmpty()) {
+                allByEmail = preprocessByEmailListForUserSelection(allByEmailList, byUsername);
+            }
+        }
+        Set<UserModel> ret = new LinkedHashSet<UserModel>();
+        if(byUsername!=null)
+            ret.add(byUsername);
+        if(allByEmail!=null) {
+            ret.addAll(allByEmail);
+        }
+        return ret;
     }
 
     /**
