@@ -3,13 +3,32 @@
 body {
   background: #f5f5f5;
 }
-
+.cards-pf {
+  background: #f5f5f5;
+}
+.card-pf .row-cards-pf:first-child {
+  padding-top: 0px;
+}
+.cards-pf .row-cards-pf {
+  padding: 0 20px;
+}
 p.description {
   font-size: 14px;
   margin: 10px auto 20px;
   max-width: 60%;
   padding: 0 10px;
   text-align: center;
+}
+.card-pf-content-intro {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.card-pf-content h3 {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.card-pf-content h3:last-child {
+  border-bottom: 0;
 }
 
 .btn-sign {
@@ -29,6 +48,90 @@ p.description {
   background: #ffffff;
   font-size: 13px;
   margin-bottom: 10px;
+}
+
+/*Responsive Design*/
+@media (max-width: 767px) {
+  body {
+    background: #fff;
+  }
+
+  .cards-pf {
+    background: #ffffff;
+  }
+  .cards-pf .row-cards-pf {
+    padding: 0;
+  }
+
+  .card-pf {
+    margin: 0;
+    background: #ffffff !important;
+    box-shadow: 0 0 0;
+    border-bottom: 1px solid #f5f5f5;
+    border-top: 0;
+  }
+  .card-pf-body  {
+    padding-bottom: 5px;
+  }
+  .card-pf-view.card-pf-view-select:hover {
+    box-shadow: 0 0 0;
+  }
+  .cards-pf .row-cards-pf:first-child {
+    padding-top: 0;
+  }
+  .container-cards-pf {
+    margin-top: 0;
+  }
+  .col-xs-12,
+  .col-sm-4,
+  .col-md-4,
+  .col-lg-3,
+  .container-cards-pf {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  #welcomeScreen .text-center h1,
+  #welcomeScreen .card-pf-body hr{
+    display: none;
+  }
+  .card-pf-view .card-pf-top-element .card-pf-icon-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .card-pf-content-intro {
+    border-bottom: 0;
+  }
+  .card-pf-content p {
+    padding-bottom: 5px;
+  }
+  .card-pf-content h3 {
+    border-bottom: 0;
+    margin-top: 5px;
+  }
+  .card-pf-content {
+    text-align: left;
+    margin-top: -20px;
+  }
+  .card-pf-content h2 {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .card-pf-content h3{
+    font-size: 14px;
+    padding-bottom: 0;
+  }
+
+}
+
+@media (min-width: 768px) {
+  .cards-pf .row-cards-pf {
+    padding: 0;
+  }
+  .container-cards-pf {
+    margin-top: 0;
+  }
 }
 
 /* personal Info Style */

@@ -7,7 +7,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <meta name="robots" content="noindex, nofollow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        
+
         <script>
             var authUrl = '${authUrl}';
             var baseUrl = '${baseUrl}';
@@ -16,7 +16,7 @@
             var isRegistrationEmailAsUsername = ${realm.registrationEmailAsUsername?c};
             var isEditUserNameAllowed = ${realm.editUsernameAllowed?c};
             var isInternationalizationEnabled = ${realm.internationalizationEnabled?c};
-                
+
             var availableLocales = [];
             <#list supportedLocales as locale, label>
                 availableLocales.push({locale : '${locale}', label : '${label}'});
@@ -160,69 +160,62 @@
         </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
-                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body text-center">
-                            <div class="card-pf-top-element">
+                        <div class="card-pf-body text-center row">
+                            <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
                                 <span class="fa pficon-user card-pf-icon-circle"></span>
                             </div>
-                            <h2>
-                                ${msg("personalInfoHtmlTitle")}
-                            </h2>
-                            <p>${msg("personalInfoIntroMessage")}</p>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                            <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
+                              <h2>${msg("personalInfoHtmlTitle")}</h2>
+                              <p class="card-pf-content-intro">${msg("personalInfoIntroMessage")}</p>
+                              <h3><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body text-center">
-                            <div class="card-pf-top-element">
+                        <div class="card-pf-body text-center row">
+                            <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
                                 <span class="fa fa-shield card-pf-icon-circle"></span>
                             </div>
-                            <h2>
-                                ${msg("accountSecurityTitle")}
-                            </h2>
-                            <p>${msg("accountSecurityIntroMessage")}</p>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/account">${msg("federatedIdentity")}</a></h3>
+                            <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
+                              <h2>${msg("accountSecurityTitle")}</h2>
+                              <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
+                              <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
+                              <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
+                              <h3><a href="${baseUrl}/#/account">${msg("federatedIdentity")}</a></h3>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body text-center">
-                            <div class="card-pf-top-element">
+                        <div class="card-pf-body text-center row">
+                            <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
                                 <span class="fa fa-th card-pf-icon-circle"></span>
                             </div>
-                            <h2>
-                                ${msg("applicationsHtmlTitle")}
-                            </h2>
-                            <p>${msg("applicationsIntroMessage")}</p>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                            <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
+                              <h2>${msg("applicationsHtmlTitle")}</h2>
+                              <p class="card-pf-content-intro">${msg("applicationsIntroMessage")}</p>
+                              <h3><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
-                        <div class="card-pf-body text-center">
-                            <div class="card-pf-top-element">
+                        <div class="card-pf-body text-center row">
+                            <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
                                 <span class="fa pficon-repository card-pf-icon-circle"></span>
                             </div>
-                            <h2>
-                                ${msg("myResources")}
-                            </h2>
-                            <p>${msg("resourceIntroMessage")}</p>
-                            <hr/>
-                            <h3><a href="${baseUrl}/#/account">${msg("myResources")}</a></h3>
+                            <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
+                              <h2>${msg("myResources")}</h2>
+                              <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
+                              <h3><a href="${baseUrl}/#/account">${msg("myResources")}</a></h3>
+                            </div>
                         </div>
                     </div>
                 </div>
