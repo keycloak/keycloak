@@ -848,16 +848,17 @@ public class ModelToRepresentation {
         return resource;
     }
 
-    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket) {
-        return toRepresentation(ticket, false);
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, AuthorizationProvider authorization) {
+        return toRepresentation(ticket, authorization, false);
     }
 
-    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, boolean returnNames) {
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, AuthorizationProvider authorization, boolean returnNames) {
         PermissionTicketRepresentation representation = new PermissionTicketRepresentation();
 
         representation.setId(ticket.getId());
         representation.setGranted(ticket.isGranted());
         representation.setOwner(ticket.getOwner());
+        representation.setRequester(ticket.getRequester());
 
         Resource resource = ticket.getResource();
 
@@ -865,6 +866,12 @@ public class ModelToRepresentation {
 
         if (returnNames) {
             representation.setResourceName(resource.getName());
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            RealmModel realm = authorization.getRealm();
+            UserModel owner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
+            UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), realm);
+            representation.setRequesterName(requester.getUsername());
+            representation.setOwnerName(owner.getUsername());
         }
 
         Scope scope = ticket.getScope();
