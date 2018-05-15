@@ -1,23 +1,12 @@
 
 === Logging in to the Admin Console
 
-After you create the initial admin account, use the following steps to log in to the Admin Console:
+After you create the initial admin account, use the following steps to log in to the admin console:
 
-. At the bottom of the *Welcome* page click the *Administration Console* link.
-Alternatively you can go to the console URL directly at http://localhost:8080/auth/admin/
-+
-.Login Page
-image:{project_images}/login-page.png[]
+. Click the *Administration Console* link on the *Welcome* page or go directly to the console URL http://localhost:8080/auth/admin/
 
-. Type the username and password you created on the Welcome page to open the *{project_name} Admin Console* page.
+. Type the username and password you created on the *Welcome* page to open the *{project_name} Admin Console*.
 +
 .Admin Console
 image:{project_images}/admin-console.png[]
-
-NOTE:  If you are curious about a certain feature, button, or field within the Admin Console, hover your mouse
-      over the question mark `?` icon. This will pop up tooltip text to describe the area of the console you are interested in.
-      The image above shows the tooltip in action.
-
-
-
 

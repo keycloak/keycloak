@@ -1,10 +1,28 @@
 
 === Installing Distribution Files
 
-The {project_name} Server is contained in one https://www.keycloak.org/downloads.html[distribution file]:
+Download the {project_name} Server:
 
-* 'keycloak-{project_version}.[zip|tar.gz]'
+* *keycloak-{project_version}.[zip|tar.gz]*
 
-The 'keycloak-{project_version}.[zip|tar.gz]' file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+NOTE: This file can be downloaded from https://www.keycloak.org/downloads.html[Keycloak downloads].
 
-To unpack these files run the `unzip` or `gunzip` and `tar` utilities.
+The *keycloak-{project_version}.[zip|tar.gz]* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+
+Place the file in a directory you choose and use either the `unzip` or `tar` utility to extract it.
+
+.Linux/Unix
+[source]
+----
+$ unzip keycloak-{project_version}.zip
+
+or
+
+$ tar -xvzf keycloak-{project_version}.tar.gz
+----
+
+.Windows
+[source]
+----
+> unzip keycloak-{project_version}.zip
+----

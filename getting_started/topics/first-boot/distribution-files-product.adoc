@@ -1,12 +1,24 @@
 
 === Installing the Server
 
-The {project_name} Server is contained in one distribution file:
+Download the {project_name} Server:
 
-* 'rh-sso-{project_version}.GA.zip'
+* *rh-sso-{project_version}.GA.zip*
 
 NOTE: This file can be downloaded from https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[the Red Hat customer portal].
 
-The 'rh-sso-{project_version}.GA.zip' file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+The *rh-sso-{project_version}.GA.zip* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
 
-To unpack these files run the `unzip` or `gunzip` utilities.
+Place the file in a directory you choose and use the `unzip` utility to unpack it, like this:
+
+.Linux/Unix
+[source]
+----
+$ unzip rh-sso-{project_version}.GA.zip
+----
+
+.Windows
+[source]
+----
+> unzip rh-sso-{project_version}.GA.zip
+----

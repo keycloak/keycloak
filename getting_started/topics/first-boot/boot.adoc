@@ -1,12 +1,7 @@
 
 === Booting the Server
 
-To boot the {project_name} server, go to the _bin/_ directory of the server distribution and run the `standalone` boot script.
-
-.Standalone Boot Scripts
-image:{project_images}/standalone-boot-files.png[]
-
-To boot the server:
+To boot the {project_name} server, go to the `bin` directory of the server distribution and run the `standalone` boot script:
 
 .Linux/Unix
 [source]
