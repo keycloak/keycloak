@@ -95,6 +95,41 @@ public class PermissionResource {
     }
 
     /**
+     * Creates a new uma permission for a single resource and scope(s).
+     *
+     * @param ticket the {@link PermissionTicketRepresentation} representing the resource and scope(s) (not {@code null})
+     * @return a permission response holding the permission ticket representation
+     */
+    public PermissionTicketRepresentation create(final PermissionTicketRepresentation ticket) {
+        if (ticket == null) {
+            throw new IllegalArgumentException("Permission ticket must not be null or empty");
+        }
+        if (ticket.getRequester() == null || ticket.getRequesterName() == null) {
+            throw new IllegalArgumentException("Permission ticket must have a requester");
+        }
+        if (ticket.getResource() == null || ticket.getResourceName() == null) {
+            throw new IllegalArgumentException("Permission ticket must have a resource");
+        }
+        if (ticket.getScope() == null || ticket.getScopeName() == null) {
+            throw new IllegalArgumentException("Permission ticket must have a scope");
+        }
+        Callable<PermissionTicketRepresentation> callable = new Callable<PermissionTicketRepresentation>() {
+            @Override
+            public PermissionTicketRepresentation call() throws Exception {
+                return http.<PermissionTicketRepresentation>post(serverConfiguration.getPermissionEndpoint()+"/ticket")
+                        .json(JsonSerialization.writeValueAsBytes(ticket))
+                        .authorizationBearer(pat.call())
+                        .response().json(new TypeReference<PermissionTicketRepresentation>(){}).execute();
+            }
+        };
+        try {
+            return callable.call();
+        } catch (Exception cause) {
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating permission ticket", cause);
+        }
+    }
+    
+    /**
      * Query the server for any permission ticket associated with the given <code>scopeId</code>.
      *
      * @param scopeId the scope id (not {@code null})
@@ -107,7 +142,7 @@ public class PermissionResource {
         Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
             @Override
             public List<PermissionTicketRepresentation> call() throws Exception {
-                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .authorizationBearer(pat.call())
                         .param("scopeId", scopeId)
                         .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
@@ -133,7 +168,7 @@ public class PermissionResource {
         Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
             @Override
             public List<PermissionTicketRepresentation> call() throws Exception {
-                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .authorizationBearer(pat.call())
                         .param("resourceId", resourceId)
                         .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
@@ -170,7 +205,7 @@ public class PermissionResource {
         Callable<List<PermissionTicketRepresentation>> callable = new Callable<List<PermissionTicketRepresentation>>() {
             @Override
             public List<PermissionTicketRepresentation> call() throws Exception {
-                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .authorizationBearer(pat.call())
                         .param("resourceId", resourceId)
                         .param("scopeId", scopeId)
@@ -205,7 +240,7 @@ public class PermissionResource {
         Callable callable = new Callable() {
             @Override
             public Object call() throws Exception {
-                http.<List>put(serverConfiguration.getPermissionEndpoint())
+                http.<List>put(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .json(JsonSerialization.writeValueAsBytes(ticket))
                         .authorizationBearer(pat.call())
                         .response().json(List.class).execute();
