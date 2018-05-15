@@ -136,14 +136,10 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-2-starter</artifactId>
-                <version>4.0.0.Beta3-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-authz-client</artifactId>
                 <version>4.0.0.Beta3-SNAPSHOT</version>
-            </dependency>
+  	    </dependency>
+
         </dependencies>
     </dependencyManagement>
 
