@@ -123,10 +123,33 @@ See link:{adapterguide_link}[{adapterguide_name}] for more information.
 To fill in the `Web Origins` data, enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
 
+==== Advanced Settings
 
+[[_mtls-client-certificate-bound-tokens]]
+*OAuth 2.0 Mutual TLS Client Certificate Bound Access Token*
 
+Mutual TLS binds an access token and a refresh token with a client certificate exchanged during TLS handshake. This prevents an attacker who finds a way to steal these tokens from exercising the tokens. The type of token is called a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify whether the sender of the token is legitimate.
 
+If the following conditions are satisfied on a token request, {project_name} will bind an access token and a refresh token with a client certificate and issue them as holder-of-key tokens. If all conditions are not met, {project_name} rejects the token request.
 
+* The feature is turned on
+* A token request is sent to the token endpoint in an authorization code flow or a hybrid flow
+* On TLS handshake, {project_name} requests a client certificate and a client send its client certificate
+* On TLS handshake, {project_name} successfully verifies the client certificate
+
+To enable mutual TLS in {project_name}, see <<_enable-mtls-wildfly, Enable mutual SSL in WildFly>>.
+
+In the following cases, {project_name} will verify the client sending the access token or the refresh token; if verification fails, {project_name} rejects the token.
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token
+* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token
+* A logout request is sent to Logout endpoint with a holder-of-key refresh token
+
+Please see https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+
+WARNING:
+None of the keycloak client adapters currently support holder-of-key token verification.
+Instead, keycloak adapters currently treat access and refresh tokens as bearer tokens.
 
 
 

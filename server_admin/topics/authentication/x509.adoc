@@ -56,6 +56,7 @@ Other Features: Extended Certificate Validation::
 
 The following sections describe how to configure WildFly/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
+[[_enable-mtls-wildfly]]
 Enable mutual SSL in WildFly::
 See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in WildFly.
 
