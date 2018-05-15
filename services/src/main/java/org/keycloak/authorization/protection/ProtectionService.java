@@ -57,7 +57,7 @@ public class ProtectionService {
         KeycloakIdentity identity = createIdentity(true);
         ResourceServer resourceServer = getResourceServer(identity);
         RealmModel realm = authorization.getRealm();
-        ClientModel client = realm.getClientById(identity.getId());
+        ClientModel client = realm.getClientById(resourceServer.getId());
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
