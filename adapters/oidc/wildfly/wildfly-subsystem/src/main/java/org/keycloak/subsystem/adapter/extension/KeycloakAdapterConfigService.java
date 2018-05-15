@@ -24,6 +24,7 @@ import org.jboss.dmr.Property;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -248,21 +249,14 @@ public final class KeycloakAdapterConfigService {
     }
 
     public String getJSON(DeploymentUnit deploymentUnit) {
-        ModelNode deployment = getSecureDeployment(deploymentUnit);
-        String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
-        ModelNode realm = this.realms.get(realmName);
-
-        ModelNode json = new ModelNode();
-        json.get(RealmDefinition.TAG_NAME).set(realmName);
-
-        // Realm values set first.  Some can be overridden by deployment values.
-        if (realm != null) setJSONValues(json, realm);
-        setJSONValues(json, deployment);
-        return json.toJSONString(true);
+        return getJSON(getSecureDeployment(deploymentUnit));
     }
 
     public String getJSON(String deploymentName) {
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        return getJSON(this.secureDeployments.get(deploymentName));
+    }
+
+    private String getJSON(ModelNode deployment) {
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
@@ -271,18 +265,15 @@ public final class KeycloakAdapterConfigService {
 
         // Realm values set first.  Some can be overridden by deployment values.
         if (realm != null) setJSONValues(json, realm);
-        setJSONValues(json, deployment);
+        setJSONValues(json, deployment.asObject());
         return json.toJSONString(true);
     }
 
     private void setJSONValues(ModelNode json, ModelNode values) {
-        synchronized (values) {
-            for (Property prop : new ArrayList<>(values.asPropertyList())) {
-                String name = prop.getName();
-                ModelNode value = prop.getValue();
-                if (value.isDefined()) {
-                    json.get(name).set(value);
-                }
+        for (String key : values.keys()) {
+            ModelNode value = values.get(key);
+            if (value.isDefined()) {
+                json.get(key).set(value);
             }
         }
     }
@@ -292,6 +283,10 @@ public final class KeycloakAdapterConfigService {
 
         String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    public boolean isSecureDeployment(String factoryName) {
+        return this.secureDeployments.containsKey(factoryName);
     }
 
     public boolean isElytronEnabled(DeploymentUnit deploymentUnit) {

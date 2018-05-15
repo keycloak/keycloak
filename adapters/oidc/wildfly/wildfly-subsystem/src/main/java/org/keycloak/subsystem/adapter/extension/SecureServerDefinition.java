@@ -112,8 +112,10 @@ final class SecureServerDefinition extends AbstractAdapterConfigurationDefinitio
             ServiceTarget serviceTarget = context.getServiceTarget();
             InjectedValue<ExtensibleHttpManagement> injectedValue = new InjectedValue<>();
             serviceTarget.addService(serviceName.append("http-management-context"), createHttpManagementConfigContextService(factoryName, injectedValue))
-                    .addDependency(context.getCapabilityServiceName(HTTP_MANAGEMENT_HTTP_EXTENSIBLE_CAPABILITY, ExtensibleHttpManagement.class), ExtensibleHttpManagement.class, injectedValue).setInitialMode(Mode.ACTIVE).install();
-            serviceTarget.addService(serviceName, service).setInitialMode(Mode.ACTIVE).install();
+                    .addDependency(context.getCapabilityServiceName(HTTP_MANAGEMENT_HTTP_EXTENSIBLE_CAPABILITY, ExtensibleHttpManagement.class), ExtensibleHttpManagement.class, injectedValue)
+                    .addDependency(serviceName)
+                    .setInitialMode(Mode.ACTIVE).install();
+            serviceTarget.addService(serviceName, service).setInitialMode(Mode.LAZY).install();
         }
     }
 
@@ -157,14 +159,15 @@ final class SecureServerDefinition extends AbstractAdapterConfigurationDefinitio
                 ExtensibleHttpManagement extensibleHttpManagement = (ExtensibleHttpManagement)httpConfigContext.getValue();
                 extensibleHttpManagement.addStaticContext(contextName, new ResourceManager() {
                     public Resource getResource(final String path) throws IOException {
-                        KeycloakAdapterConfigService adapterConfigService = KeycloakAdapterConfigService.getInstance();
-                        final String config = adapterConfigService.getJSON(factoryName);
+                        final KeycloakAdapterConfigService adapterConfigService = KeycloakAdapterConfigService.getInstance();
 
-                        if (config == null) {
+                        if (!adapterConfigService.isSecureDeployment(factoryName)) {
                             return null;
                         }
 
                         return new Resource() {
+                            private String config;
+
                             public String getPath() {
                                 return null;
                             }
@@ -198,11 +201,18 @@ final class SecureServerDefinition extends AbstractAdapterConfigurationDefinitio
                             }
 
                             public void serve(Sender sender, HttpServerExchange exchange, IoCallback completionCallback) {
-                                sender.send(config);
+                                sender.send(getJson());
                             }
 
                             public Long getContentLength() {
-                                return Long.valueOf((long)config.length());
+                                return Long.valueOf((long)getJson().length());
+                            }
+
+                            private String getJson() {
+                                if (config == null) {
+                                    config = adapterConfigService.getJSON(factoryName);
+                                }
+                                return config;
                             }
 
                             public String getCacheKey() {
