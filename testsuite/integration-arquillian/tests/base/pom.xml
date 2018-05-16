@@ -240,6 +240,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>1.9.2</goVersion>
+                    <useMavenProxy>true</useMavenProxy>
                 </configuration>
                 <executions>
                     <execution>
