@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,10 +31,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toList;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -112,13 +115,21 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.authorization.UmaPermissionTypeRepresentation;
+import org.keycloak.representations.idm.authorization.UmaPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -2552,6 +2563,141 @@ public class RepresentationToModel {
             }
         }
         return m;
+    }
+    
+    private static Policy createPolicyfromUmaPolicyRepresentation(UmaPolicyRepresentation representation, ResourceServer resourceServer,
+            AuthorizationProvider authorization, Identity identity){
+        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+        Policy model = null;
+        PolicyProviderFactory provider = authorization.getProviderFactory(representation.getType());
+        if (Arrays.asList(UmaPermissionTypeRepresentation.supportedPolicies).indexOf(representation.getType()) < 0)
+           throw new RuntimeException("The following policy [" + representation.getType() +"] is not supported by Uma policies"); 
+        boolean update = (representation.getId()!=null);
+        if (update)
+            if (policyStore.findById(representation.getId(), resourceServer.getId()) != null)
+                model = policyStore.findById(representation.getId(), resourceServer.getId());
+            else 
+                throw new RuntimeException("Policy id ["+representation.getId()+"] not found");
+        
+        if (representation.getType().equals("user")){
+            UserPolicyRepresentation userPolicyRep = new UserPolicyRepresentation();
+            userPolicyRep.setUsers(representation.getSubjects());
+            userPolicyRep.setLogic(representation.getLogic());
+            userPolicyRep.setDecisionStrategy(representation.getDecisionStrategy());
+            userPolicyRep.setName(KeycloakModelUtils.generateId());
+            userPolicyRep.setDescription("user managed user policy");
+            if (update)
+                provider.onUpdate(model, userPolicyRep, authorization);
+            else 
+                model = policyStore.create(userPolicyRep, resourceServer);
+        } else if (representation.getType().equals("group")){
+            GroupPolicyRepresentation groupPolicyRep = new GroupPolicyRepresentation();
+            groupPolicyRep.setLogic(representation.getLogic());
+            groupPolicyRep.setDecisionStrategy(representation.getDecisionStrategy());
+            groupPolicyRep.setName(KeycloakModelUtils.generateId());
+            groupPolicyRep.setDescription("user managed group policy");
+            if ( representation.getOptions() !=null && representation.getOptions().get("groupClaim") != null && !representation.getOptions().get("groupClaim").isEmpty() )
+                groupPolicyRep.setGroupsClaim(representation.getOptions().get("groupClaim").get(0));
+            else //define default groups claim
+                groupPolicyRep.setGroupsClaim("groups");
+            if( representation.getOptions() != null && representation.getOptions().get("includeChildren") != null && !representation.getOptions().get("includeChildren").isEmpty()){
+                List<String> includeChildren = representation.getOptions().get("includeChildren");
+            representation.getSubjects().forEach(groupId -> {
+                if (includeChildren.contains(groupId))
+                    groupPolicyRep.addGroup(groupId, true);
+                else
+                    groupPolicyRep.addGroup(groupId);
+            });
+            } else
+                representation.getSubjects().forEach(groupId -> {
+                    groupPolicyRep.addGroup(groupId);
+                });
+            if (update)
+                provider.onUpdate(model, groupPolicyRep, authorization);
+            else
+                model = policyStore.create(groupPolicyRep, resourceServer);
+        } else if (representation.getType().equals("client")){
+            ClientPolicyRepresentation clientPolicyRep = new ClientPolicyRepresentation();
+            clientPolicyRep.setLogic(representation.getLogic());
+            clientPolicyRep.setDecisionStrategy(representation.getDecisionStrategy());
+            clientPolicyRep.setName(KeycloakModelUtils.generateId());
+            clientPolicyRep.setDescription("user managed client policy");
+            clientPolicyRep.setClients(representation.getSubjects());
+            if (update)
+                provider.onUpdate(model, clientPolicyRep, authorization);
+            else 
+                model = policyStore.create(clientPolicyRep, resourceServer);
+        } else if (representation.getType().equals("role")){
+            RolePolicyRepresentation rolePolicyRep = new RolePolicyRepresentation();
+            rolePolicyRep.setLogic(representation.getLogic());
+            rolePolicyRep.setDecisionStrategy(representation.getDecisionStrategy());
+            rolePolicyRep.setName(KeycloakModelUtils.generateId());
+            rolePolicyRep.setDescription("user managed role policy");
+            if( representation.getOptions() != null){
+                List<String> requiredRoles = representation.getOptions().get("requiredRoles");
+                representation.getSubjects().forEach(roleId -> {
+                    if (requiredRoles != null && requiredRoles.contains(roleId))
+                        rolePolicyRep.addRole(roleId, true);
+                    else
+                        rolePolicyRep.addRole(roleId);
+                });
+            } else
+                representation.getSubjects().forEach(roleId -> {
+                    rolePolicyRep.addRole(roleId);
+                });             
+            if (update)
+                provider.onUpdate(model, rolePolicyRep, authorization);
+            else 
+                model = policyStore.create(rolePolicyRep, resourceServer);
+        }
+        model.setOwner(identity.getId());
+        return model;
+    }
+    
+    public static Policy createPolicyfromUmaPermissionTypeRepresentation(UmaPermissionTypeRepresentation uptr, String resourceId, ResourceServer resourceServer, AuthorizationProvider authorization, Identity identity){
+        PolicyRepresentation representation = new PolicyRepresentation();
+        Set scopes = uptr.getScopes();
+        representation.setType("uma");
+        representation.addResource(resourceId);
+        representation.setScopes(scopes);
+        
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        Policy model = null;
+        boolean update = (uptr.getId()!=null);
+        if (update)
+            if (policyStore.findById(uptr.getId(), resourceServer.getId()) != null)
+                model = policyStore.findById(uptr.getId(), resourceServer.getId());
+            else 
+                throw new RuntimeException("Policy id ["+uptr.getId()+"] not found");
+
+        Set<UmaPolicyRepresentation> umaPolicies = uptr.getPolicies();
+        if (umaPolicies != null && !umaPolicies.isEmpty())
+            umaPolicies.forEach((UmaPolicyRepresentation upr) -> {
+                representation.addPolicy(createPolicyfromUmaPolicyRepresentation(upr,resourceServer,authorization,identity).getId());
+            });
+        
+        PolicyProviderFactory provider = authorization.getProviderFactory(representation.getType());
+        
+        if(update){
+            representation.setId(model.getId());
+            representation.setName(model.getName());
+            representation.setDescription(model.getDescription());
+            model.getAssociatedPolicies().forEach(policy ->{
+                if(!representation.getPolicies().contains(policy.getId()))
+                    policyStore.delete(policy.getId());
+            });
+            provider.onUpdate(model, representation, authorization);  
+        } else {
+            representation.setName(KeycloakModelUtils.generateId());
+            representation.setDescription("user managed permission for resource [" + resourceId + "]");
+            model = policyStore.create(representation, resourceServer);
+            model.setOwner(identity.getId());
+        }
+        
+        representation.setId(model.getId());
+
+        return model;
     }
 
 }

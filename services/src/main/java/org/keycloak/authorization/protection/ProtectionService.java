@@ -38,6 +38,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
 import org.keycloak.authorization.protection.permission.PermissionTicketService;
+import org.keycloak.authorization.protection.policy.PolicyService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -89,6 +90,17 @@ public class ProtectionService {
         KeycloakIdentity identity = createIdentity(false);
 
         PermissionTicketService resource = new PermissionTicketService(identity, getResourceServer(identity), this.authorization);
+
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+
+        return resource;
+    }
+    
+    @Path("/uma-policy")
+    public Object policy() {
+        KeycloakIdentity identity = createIdentity(false);
+
+        PolicyService resource = new PolicyService(identity, getResourceServer(identity), this.authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

@@ -102,6 +102,9 @@ public class ServerConfiguration {
 
     @JsonProperty("permission_endpoint")
     private String permissionEndpoint;
+    
+    @JsonProperty("policy_endpoint")
+    private String policyEndpoint;
 
     public String getIssuer() {
         return issuer;
@@ -205,5 +208,9 @@ public class ServerConfiguration {
 
     public String getPermissionEndpoint() {
         return permissionEndpoint;
+    }
+    
+    public String getPolicyEndpoint() {
+        return policyEndpoint;
     }
 }
