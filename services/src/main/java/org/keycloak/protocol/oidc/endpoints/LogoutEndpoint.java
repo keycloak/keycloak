@@ -88,7 +88,11 @@ public class LogoutEndpoint {
     /**
      * Logout user session.  User must be logged in via a session cookie.
      *
+     * When the logout is initiated by a remote idp, the parameter "initiating_idp" can be supplied. This param will
+     * prevent upstream logout (since the logout procedure has already been started in the remote idp).
+     *
      * @param redirectUri
+     * @param initiatingIdp The alias of the idp initiating the logout.
      * @return
      */
     @GET
@@ -97,7 +101,7 @@ public class LogoutEndpoint {
                            @QueryParam("id_token_hint") String encodedIdToken,
                            @QueryParam("post_logout_redirect_uri") String postLogoutRedirectUri,
                            @QueryParam("state") String state,
-                           @DefaultValue("true") @QueryParam("logout_broker") Boolean logoutBroker) {
+                           @QueryParam("initiating_idp") String initiatingIdp) {
         String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
 
         if (redirect != null) {
@@ -131,12 +135,12 @@ public class LogoutEndpoint {
             if (state != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
             userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
             logger.debug("Initiating OIDC browser logout");
-            Response response =  AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers, logoutBroker);
+            Response response =  AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers, initiatingIdp);
             logger.debug("finishing OIDC browser logout");
             return response;
         } else if (userSession != null) { // non browser logout
             event.event(EventType.LOGOUT);
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, logoutBroker);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
             event.user(userSession.getUser()).session(userSession).success();
         }
 

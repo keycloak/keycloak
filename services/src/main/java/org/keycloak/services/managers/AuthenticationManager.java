@@ -460,7 +460,7 @@ public class AuthenticationManager {
                                          UriInfo uriInfo,
                                          ClientConnection connection,
                                          HttpHeaders headers,
-                                         boolean logoutBroker) {
+                                         String initiatingIdp) {
         if (userSession == null) return null;
 
         if (logger.isDebugEnabled()) {
@@ -481,7 +481,7 @@ public class AuthenticationManager {
         }
 
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
-        if (brokerId != null && logoutBroker) {
+        if (brokerId != null && !brokerId.equals(initiatingIdp)) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
             response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) {
