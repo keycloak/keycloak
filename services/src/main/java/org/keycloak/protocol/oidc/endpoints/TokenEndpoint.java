@@ -315,7 +315,7 @@ public class TokenEndpoint {
         String redirectUriParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
 
         // KEYCLOAK-4478 Backwards compatibility with the adapters earlier than KC 3.4.2
-        if (redirectUriParam != null && redirectUriParam.contains("session_state=")) {
+        if (redirectUriParam != null && redirectUriParam.contains("session_state=") && !redirectUri.contains("session_state=")) {
             redirectUriParam = KeycloakUriBuilder.fromUri(redirectUriParam)
                     .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
                     .build().toString();
