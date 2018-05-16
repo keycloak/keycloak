@@ -125,6 +125,8 @@ public class PermissionTicketService {
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
         
         PermissionTicket ticket = ticketStore.create(resource.getId(), scope.getId(), user.getId(), resourceServer);
+        if(representation.isGranted())
+                ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
         representation = ModelToRepresentation.toRepresentation(ticket, authorization);
         return Response.ok(representation).build();
     }

@@ -28,6 +28,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthorizationContext;
@@ -165,7 +166,7 @@ public abstract class AbstractPolicyEnforcer {
                             policyEnforcer.getPathMatcher().removeFromCache(getPath(request));
                         }
 
-                        return hasValidClaims(actualPathConfig, httpFacade, authorization);
+                        return hasValidClaims(actualPathConfig, permission, httpFacade, authorization);
                     }
                 }
             } else {
@@ -187,34 +188,21 @@ public abstract class AbstractPolicyEnforcer {
         return false;
     }
 
-    private boolean hasValidClaims(PathConfig actualPathConfig, OIDCHttpFacade httpFacade, Authorization authorization) {
-        Map<String, Map<String, Object>> claimInformationPointConfig = actualPathConfig.getClaimInformationPointConfig();
+    private boolean hasValidClaims(PathConfig actualPathConfig, Permission permission, OIDCHttpFacade httpFacade, Authorization authorization) {
+        Map<String, Set<String>> grantedClaims = permission.getClaims();
 
-        if (claimInformationPointConfig != null) {
-            Map<String, List<String>> claims = new HashMap<>();
+        if (grantedClaims != null) {
+            Map<String, List<String>> claims = resolveClaims(actualPathConfig, httpFacade);
 
-            for (Entry<String, Map<String, Object>> entry : claimInformationPointConfig.entrySet()) {
-                ClaimInformationPointProviderFactory factory = policyEnforcer.getClaimInformationPointProviderFactories().get(entry.getKey());
-
-                if (factory == null) {
-                    throw new RuntimeException("Could not find claim information provider with name [" + entry.getKey() + "]");
-                }
-
-                claims.putAll(factory.create(entry.getValue()).resolve(httpFacade));
+            if (claims.isEmpty()) {
+                return false;
             }
 
-            Map<String, List<String>> grantedClaims = authorization.getClaims();
+            for (Entry<String, Set<String>> entry : grantedClaims.entrySet()) {
+                List<String> requestClaims = claims.get(entry.getKey());
 
-            if (grantedClaims != null) {
-                if (claims.isEmpty()) {
+                if (requestClaims == null || requestClaims.isEmpty() || !entry.getValue().containsAll(requestClaims)) {
                     return false;
-                }
-                for (Entry<String, List<String>> entry : grantedClaims.entrySet()) {
-                    List<String> requestClaims = claims.get(entry.getKey());
-
-                    if (requestClaims == null || requestClaims.isEmpty() || !entry.getValue().containsAll(requestClaims)) {
-                        return false;
-                    }
                 }
             }
         }
@@ -341,5 +329,29 @@ public abstract class AbstractPolicyEnforcer {
 
     private PathConfig getPathConfig(Request request) {
         return isDefaultAccessDeniedUri(request) ? null : policyEnforcer.getPathMatcher().matches(getPath(request));
+    }
+
+    protected Map<String, List<String>> resolveClaims(PathConfig pathConfig, OIDCHttpFacade httpFacade) {
+        Map<String, List<String>> claims = getClaims(getEnforcerConfig().getClaimInformationPointConfig(), httpFacade);
+
+        claims.putAll(getClaims(pathConfig.getClaimInformationPointConfig(), httpFacade));
+
+        return claims;
+    }
+
+    private Map<String, List<String>> getClaims(Map<String, Map<String, Object>>claimInformationPointConfig, HttpFacade httpFacade) {
+        Map<String, List<String>> claims = new HashMap<>();
+
+        if (claimInformationPointConfig != null) {
+            for (Entry<String, Map<String, Object>> claimDef : claimInformationPointConfig.entrySet()) {
+                ClaimInformationPointProviderFactory factory = getPolicyEnforcer().getClaimInformationPointProviderFactories().get(claimDef.getKey());
+
+                if (factory != null) {
+                    claims.putAll(factory.create(claimDef.getValue()).resolve(httpFacade));
+                }
+            }
+        }
+
+        return claims;
     }
 }

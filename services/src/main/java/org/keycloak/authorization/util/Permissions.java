@@ -44,6 +44,7 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ErrorResponseException;
@@ -68,23 +69,23 @@ public final class Permissions {
      * @param authorization
      * @return
      */
-    public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization) {
+    public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<ResourcePermission> permissions = new ArrayList<>();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
+        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
 
         // obtain all resources where owner is the current user
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
 
         // obtain all resources granted to the user via permission tickets (uma)
         List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(identity.getId(), resourceServer.getId());
         Map<String, ResourcePermission> userManagedPermissions = new HashMap<>();
 
         for (PermissionTicket ticket : tickets) {
-            userManagedPermissions.computeIfAbsent(ticket.getResource().getId(), id -> new ResourcePermission(ticket.getResource(), new ArrayList<>(), resourceServer));
+            userManagedPermissions.computeIfAbsent(ticket.getResource().getId(), id -> new ResourcePermission(ticket.getResource(), new ArrayList<>(), resourceServer, request.getClaims()));
         }
 
         permissions.addAll(userManagedPermissions.values());
@@ -92,8 +93,7 @@ public final class Permissions {
         return permissions;
     }
 
-    public static List<ResourcePermission> createResourcePermissions(Resource resource, Set<String> requestedScopes, AuthorizationProvider authorization) {
-        List<ResourcePermission> permissions = new ArrayList<>();
+    public static ResourcePermission createResourcePermissions(Resource resource, Set<String> requestedScopes, AuthorizationProvider authorization, AuthorizationRequest request) {
         String type = resource.getType();
         ResourceServer resourceServer = resource.getResourceServer();
         List<Scope> scopes;
@@ -127,12 +127,11 @@ public final class Permissions {
                 return byName;
             }).collect(Collectors.toList());
         }
-        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
 
-        return permissions;
+        return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());
     }
 
-    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization) {
+    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<ResourcePermission> permissions = new ArrayList<>();
         String type = resource.getType();
         ResourceServer resourceServer = resource.getResourceServer();
@@ -153,7 +152,7 @@ public final class Permissions {
             });
         }
 
-        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
+        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims()));
 
         return permissions;
     }

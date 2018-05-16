@@ -454,7 +454,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected class ScopeCache implements ScopeStore {
         @Override
         public Scope create(String name, ResourceServer resourceServer) {
-            Scope scope = getScopeStoreDelegate().create(name, resourceServer);
+            return create(null, name, resourceServer);
+        }
+
+        @Override
+        public Scope create(String id, String name, ResourceServer resourceServer) {
+            Scope scope = getScopeStoreDelegate().create(id, name, resourceServer);
             registerScopeInvalidation(scope.getId(), scope.getName(), resourceServer.getId());
             return scope;
         }
@@ -538,7 +543,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected class ResourceCache implements ResourceStore {
         @Override
         public Resource create(String name, ResourceServer resourceServer, String owner) {
-            Resource resource = getResourceStoreDelegate().create(name, resourceServer, owner);
+            return create(null, name, resourceServer, owner);
+        }
+
+        @Override
+        public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
+            Resource resource = getResourceStoreDelegate().create(id, name, resourceServer, owner);
             Resource cached = findById(resource.getId(), resourceServer.getId());
             registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
             return cached;

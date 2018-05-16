@@ -100,7 +100,7 @@ public class AuthorizationTokenService {
                 try {
                     Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
                     authorizationRequest.setClaims(claims);
-                    return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getAccessToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
+                    return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
                 } catch (IOException cause) {
                     throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
                 }
@@ -112,7 +112,7 @@ public class AuthorizationTokenService {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
                 RealmModel realm = authorization.getRealm();
-                String accessToken = authorizationRequest.getAccessToken();
+                String accessToken = authorizationRequest.getSubjectToken();
 
                 if (accessToken == null) {
                     throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
@@ -161,7 +161,7 @@ public class AuthorizationTokenService {
             List<Result> evaluation;
 
             if (ticket.getResources().isEmpty() && request.getRpt() == null) {
-                evaluation = evaluateAllPermissions(resourceServer, evaluationContext, identity);
+                evaluation = evaluateAllPermissions(request, resourceServer, evaluationContext, identity);
             } else if(!request.getPermissions().getResources().isEmpty()) {
                 evaluation = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
             } else {
@@ -212,9 +212,9 @@ public class AuthorizationTokenService {
                 .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
     }
 
-    private List<Result> evaluateAllPermissions(ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private List<Result> evaluateAllPermissions(AuthorizationRequest request, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
         return authorization.evaluators()
-                .from(Permissions.all(resourceServer, identity, authorization), evaluationContext)
+                .from(Permissions.all(resourceServer, identity, authorization, request), evaluationContext)
                 .evaluate();
     }
 
@@ -235,7 +235,6 @@ public class AuthorizationTokenService {
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
-        authorization.setClaims(request.getClaims());
 
         rpt.setAuthorization(authorization);
 
@@ -309,8 +308,9 @@ public class AuthorizationTokenService {
 
     private List<ResourcePermission> createPermissions(PermissionTicketToken ticket, AuthorizationRequest request, ResourceServer resourceServer, KeycloakIdentity identity, AuthorizationProvider authorization) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Map<String, Set<String>> permissionsToEvaluate = new LinkedHashMap<>();
+        Map<String, ResourcePermission> permissionsToEvaluate = new LinkedHashMap<>();
         ResourceStore resourceStore = storeFactory.getResourceStore();
+        ScopeStore scopeStore = storeFactory.getScopeStore();
         Metadata metadata = request.getMetadata();
         Integer limit = metadata != null ? metadata.getLimit() : null;
 
@@ -359,31 +359,37 @@ public class AuthorizationTokenService {
                 requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
             }
 
+            List<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).collect(Collectors.toList());
+
             if (!existingResources.isEmpty()) {
                 for (Resource resource : existingResources) {
-                    Set<String> scopes = permissionsToEvaluate.get(resource.getId());
+                    ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
 
-                    if (scopes == null) {
-                        scopes = new HashSet<>();
-                        permissionsToEvaluate.put(resource.getId(), scopes);
+                    if (permission == null) {
+                        permission = Permissions.createResourcePermissions(resource, requestedScopes, authorization, request);
+                        permissionsToEvaluate.put(resource.getId(), permission);
                         if (limit != null) {
                             limit--;
                         }
+                    } else {
+                        for (Scope scope : requestedScopesModel) {
+                            if (!permission.getScopes().contains(scope)) {
+                                permission.getScopes().add(scope);
+                            }
+                        }
                     }
-
-                    scopes.addAll(requestedScopes);
                 }
             } else {
-                List<Resource> resources = resourceStore.findByScope(new ArrayList<>(requestedScopes), ticket.getAudience()[0]);
+                List<Resource> resources = resourceStore.findByScope(new ArrayList<>(requestedScopes), resourceServer.getId());
 
                 for (Resource resource : resources) {
-                    permissionsToEvaluate.put(resource.getId(), requestedScopes);
+                    permissionsToEvaluate.put(resource.getId(), Permissions.createResourcePermissions(resource, requestedScopes, authorization, request));
                     if (limit != null) {
                         limit--;
                     }
                 }
 
-                permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", requestedScopes);
+                permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", new ResourcePermission(null, requestedScopesModel, resourceServer, request.getClaims()));
             }
         }
 
@@ -409,28 +415,42 @@ public class AuthorizationTokenService {
                     List<Permission> permissions = authorizationData.getPermissions();
 
                     if (permissions != null) {
-                        for (Permission permission : permissions) {
+                        for (Permission grantedPermission : permissions) {
                             if (limit != null && limit <= 0) {
                                 break;
                             }
 
-                            Resource resourcePermission = resourceStore.findById(permission.getResourceId(), ticket.getAudience()[0]);
+                            Resource resourcePermission = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
 
                             if (resourcePermission != null) {
-                                Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());
+                                ResourcePermission permission = permissionsToEvaluate.get(resourcePermission.getId());
 
-                                if (scopes == null) {
-                                    scopes = new HashSet<>();
-                                    permissionsToEvaluate.put(resourcePermission.getId(), scopes);
+                                if (permission == null) {
+                                    permission = new ResourcePermission(resourcePermission, new ArrayList<>(), resourceServer, grantedPermission.getClaims());
+                                    permissionsToEvaluate.put(resourcePermission.getId(), permission);
                                     if (limit != null) {
                                         limit--;
                                     }
+                                } else {
+                                    if (grantedPermission.getClaims() != null) {
+                                        for (Entry<String, Set<String>> entry : grantedPermission.getClaims().entrySet()) {
+                                            Set<String> claims = permission.getClaims().get(entry.getKey());
+
+                                            if (claims != null) {
+                                                claims.addAll(entry.getValue());
+                                            }
+                                        }
+                                    }
                                 }
 
-                                Set<String> scopePermission = permission.getScopes();
+                                for (String scopeName : grantedPermission.getScopes()) {
+                                    Scope scope = scopeStore.findByName(scopeName, resourceServer.getId());
 
-                                if (scopePermission != null) {
-                                    scopes.addAll(scopePermission);
+                                    if (scope != null) {
+                                        if (!permission.getScopes().contains(scope)) {
+                                            permission.getScopes().add(scope);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -439,19 +459,7 @@ public class AuthorizationTokenService {
             }
         }
 
-        ScopeStore scopeStore = storeFactory.getScopeStore();
-
-        return permissionsToEvaluate.entrySet().stream()
-                .flatMap((Function<Entry<String, Set<String>>, Stream<ResourcePermission>>) entry -> {
-                    String key = entry.getKey();
-                    if ("$KC_SCOPE_PERMISSION".equals(key)) {
-                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> scopeStore.findByName(scopeName, resourceServer.getId())).filter(scope -> Objects.nonNull(scope)).collect(Collectors.toList());
-                        return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
-                    } else {
-                        Resource entryResource = resourceStore.findById(key, resourceServer.getId());
-                        return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
-                    }
-                }).collect(Collectors.toList());
+        return new ArrayList<>(permissionsToEvaluate.values());
     }
 
     private PermissionTicketToken verifyPermissionTicket(AuthorizationRequest request) {

@@ -2381,7 +2381,7 @@ public class RepresentationToModel {
             return existing;
         }
 
-        Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
+        Resource model = resourceStore.create(resource.getId(), resource.getName(), resourceServer, ownerId);
 
         model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
@@ -2426,7 +2426,7 @@ public class RepresentationToModel {
             return existing;
         }
 
-        Scope model = scopeStore.create(scope.getName(), resourceServer);
+        Scope model = scopeStore.create(scope.getId(), scope.getName(), resourceServer);
 
         model.setDisplayName(scope.getDisplayName());
         model.setIconUri(scope.getIconUri());

@@ -64,6 +64,10 @@ public class ProtectionResource {
         return new PermissionResource(http, serverConfiguration, pat);
     }
 
+    public PolicyResource policy(String resourceId) {
+        return new PolicyResource(resourceId, http, serverConfiguration, pat);
+    }
+
     /**
      * Introspects the given <code>rpt</code> using the token introspection endpoint.
      *

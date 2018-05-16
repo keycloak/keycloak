@@ -73,7 +73,7 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Agg
     }
 
     @Override
-    public AggregatePolicyRepresentation toRepresentation(Policy policy) {
+    public AggregatePolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         return new AggregatePolicyRepresentation();
     }
 

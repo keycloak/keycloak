@@ -54,6 +54,10 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UserManagedAccessConfig userManagedAccess;
 
+    @JsonProperty("claim-information-point")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, Map<String, Object>> claimInformationPointConfig;
+
     public List<PathConfig> getPaths() {
         return this.paths;
     }
@@ -100,6 +104,14 @@ public class PolicyEnforcerConfig {
 
     public void setOnDenyRedirectTo(String onDenyRedirectTo) {
         this.onDenyRedirectTo = onDenyRedirectTo;
+    }
+
+    public Map<String, Map<String, Object>> getClaimInformationPointConfig() {
+        return claimInformationPointConfig;
+    }
+
+    public void setClaimInformationPointConfig(Map<String, Map<String, Object>> config) {
+        this.claimInformationPointConfig = config;
     }
 
     public static class PathConfig {

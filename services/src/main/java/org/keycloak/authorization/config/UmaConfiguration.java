@@ -61,6 +61,7 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
 
         configuration.setPermissionEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "permission").build(realm.getName()).toString());
         configuration.setResourceRegistrationEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "resource").build(realm.getName()).toString());
+        configuration.setPolicyEndpoint(uriBuilder.clone().path(RealmsResource.class).path(RealmsResource.class, "getAuthorizationService").path(AuthorizationService.class, "getProtectionService").path(ProtectionService.class, "policy").build(realm.getName()).toString());
 
         return configuration;
     }
@@ -70,6 +71,9 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
 
     @JsonProperty("permission_endpoint")
     private String permissionEndpoint;
+    
+    @JsonProperty("policy_endpoint")
+    private String policyEndpoint;
 
     public String getResourceRegistrationEndpoint() {
         return this.resourceRegistrationEndpoint;
@@ -85,5 +89,13 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
 
     void setPermissionEndpoint(String permissionEndpoint) {
         this.permissionEndpoint = permissionEndpoint;
+    }
+    
+    public String getPolicyEndpoint() {
+        return this.policyEndpoint;
+    }
+
+    void setPolicyEndpoint(String policyEndpoint) {
+        this.policyEndpoint = policyEndpoint;
     }
 }

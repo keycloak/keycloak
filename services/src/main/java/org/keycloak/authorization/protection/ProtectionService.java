@@ -38,6 +38,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
 import org.keycloak.authorization.protection.permission.PermissionTicketService;
+import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -57,12 +58,7 @@ public class ProtectionService {
     public Object resource() {
         KeycloakIdentity identity = createIdentity(true);
         ResourceServer resourceServer = getResourceServer(identity);
-        RealmModel realm = authorization.getRealm();
-        ClientModel client = realm.getClientById(resourceServer.getId());
-        KeycloakSession keycloakSession = authorization.getKeycloakSession();
-        UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
-        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
-        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null, adminEvent.realm(realm).authClient(client).authUser(serviceAccount));
+        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null, createAdminEventBuilder(identity, resourceServer));
 
         ResteasyProviderFactory.getInstance().injectProperties(resourceManager);
 
@@ -71,6 +67,15 @@ public class ProtectionService {
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
+    }
+
+    private AdminEventBuilder createAdminEventBuilder(KeycloakIdentity identity, ResourceServer resourceServer) {
+        RealmModel realm = authorization.getRealm();
+        ClientModel client = realm.getClientById(resourceServer.getId());
+        KeycloakSession keycloakSession = authorization.getKeycloakSession();
+        UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
+        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
+        return adminEvent.realm(realm).authClient(client).authUser(serviceAccount);
     }
 
     @Path("/permission")
@@ -89,6 +94,17 @@ public class ProtectionService {
         KeycloakIdentity identity = createIdentity(false);
 
         PermissionTicketService resource = new PermissionTicketService(identity, getResourceServer(identity), this.authorization);
+
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+
+        return resource;
+    }
+    
+    @Path("/uma-policy")
+    public Object policy() {
+        KeycloakIdentity identity = createIdentity(false);
+
+        UserManagedPermissionService resource = new UserManagedPermissionService(identity, getResourceServer(identity), this.authorization, createAdminEventBuilder(identity, getResourceServer(identity)));
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

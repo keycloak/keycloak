@@ -19,11 +19,11 @@ package org.keycloak.authorization.admin;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,11 +34,9 @@ import java.util.stream.Stream;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
@@ -49,7 +47,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
@@ -62,10 +59,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -90,36 +87,34 @@ public class PolicyEvaluationService {
         this.auth = auth;
     }
 
-    static class Decision extends DecisionResultCollector {
-        Throwable error;
-        List<Result> results;
-
-        @Override
-        protected void onComplete(List<Result> results) {
-            this.results = results;
-        }
-
-        @Override
-        public void onError(Throwable cause) {
-            this.error = cause;
-
-        }
-    }
-
-    public static <T> List<T> asList(T... a) {
-        List<T> list = new LinkedList<T>();
-        for (T t : a) list.add(t);
-        return list;
-    }
-
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public Response evaluate(PolicyEvaluationRequest evaluationRequest) throws Throwable {
+    public Response evaluate(PolicyEvaluationRequest evaluationRequest) {
         this.auth.realm().requireViewAuthorization();
         CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
         try {
-            return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity)), resourceServer, authorization, identity)).build();
+            AuthorizationRequest request = new AuthorizationRequest();
+            Map<String, List<String>> claims = new HashMap<>();
+            Map<String, String> givenAttributes = evaluationRequest.getContext().get("attributes");
+
+            if (givenAttributes != null) {
+                givenAttributes.forEach((key, entryValue) -> {
+                    if (entryValue != null) {
+                        List<String> values = new ArrayList();
+
+                        for (String value : entryValue.split(",")) {
+                            values.add(value);
+                        }
+
+                        claims.put(key, values);
+                    }
+                });
+            }
+
+            request.setClaims(claims);
+
+            return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity), request), resourceServer, authorization, identity)).build();
         } catch (Exception e) {
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
         } finally {
@@ -127,8 +122,8 @@ public class PolicyEvaluationService {
         }
     }
 
-    private List<Result> evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext) {
-        return authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate();
+    private List<Result> evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
+        return authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization, request), evaluationContext).evaluate();
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -157,7 +152,7 @@ public class PolicyEvaluationService {
         };
     }
 
-    private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
+    private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<ResourceRepresentation> resources = representation.getResources();
         return resources.stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
             StoreFactory storeFactory = authorization.getStoreFactory();
@@ -175,18 +170,18 @@ public class PolicyEvaluationService {
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
-                return Permissions.createResourcePermissions(resourceModel, scopeNames, authorization).stream();
+                return Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopeNames, authorization, request)).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().flatMap(resource1 -> Permissions.createResourcePermissions(resource1, scopeNames, authorization).stream());
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopeNames, authorization, request));
             } else {
                 ScopeStore scopeStore = storeFactory.getScopeStore();
                 List<Scope> scopes = scopeNames.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
-                List<ResourcePermission> collect = new ArrayList<ResourcePermission>();
+                List<ResourcePermission> collect = new ArrayList<>();
 
                 if (!scopes.isEmpty()) {
-                    collect.addAll(scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList()));
+                    collect.addAll(scopes.stream().map(scope -> new ResourcePermission(null, Arrays.asList(scope), resourceServer)).collect(Collectors.toList()));
                 } else {
-                    collect.addAll(Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization));
+                    collect.addAll(Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request));
                 }
 
                 return collect.stream();
@@ -266,13 +261,6 @@ public class PolicyEvaluationService {
         }
 
         AccessToken.Access realmAccess = accessToken.getRealmAccess();
-        Map<String, Object> claims = accessToken.getOtherClaims();
-        Map<String, String> givenAttributes = representation.getContext().get("attributes");
-
-        if (givenAttributes != null) {
-            givenAttributes.forEach((key, value) -> claims.put(key, asList(value)));
-        }
-
 
         if (representation.getRoleIds() != null) {
             representation.getRoleIds().forEach(roleName -> realmAccess.addRole(roleName));

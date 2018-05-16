@@ -320,7 +320,6 @@ public class ExportUtils {
                     } else {
                         rep.getOwner().setId(null);
                     }
-                    rep.setId(null);
                     rep.getScopes().forEach(scopeRepresentation -> {
                         scopeRepresentation.setId(null);
                         scopeRepresentation.setIconUri(null);
@@ -335,10 +334,10 @@ public class ExportUtils {
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
         policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
-                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope"))
+                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
         policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
-                .stream().filter(policy -> policy.getType().equals("resource") || policy.getType().equals("scope"))
+                .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
 
         representation.setPolicies(policies);
@@ -346,7 +345,6 @@ public class ExportUtils {
         List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
             ScopeRepresentation rep = toRepresentation(scope);
 
-            rep.setId(null);
             rep.setPolicies(null);
             rep.setResources(null);
 
@@ -361,8 +359,6 @@ public class ExportUtils {
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
         try {
             PolicyRepresentation rep = toRepresentation(policy, authorizationProvider, true, true);
-
-            rep.setId(null);
 
             Map<String, String> config = new HashMap<>(rep.getConfig());
 
