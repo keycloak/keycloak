@@ -2321,7 +2321,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                         }
                         $instance.restoreState($scope);
                     } else if (delegate.onInitUpdate) {
-                        delegate.onInitUpdate(policy);
+                        delegate.onInitUpdate($scope.policy);
                     }
 
                     $scope.$watch('policy', function() {
