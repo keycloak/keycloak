@@ -73,7 +73,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern1() throws Exception {
+    public void testPattern1() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -93,7 +93,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern2() throws Exception {
+    public void testPattern2() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -117,7 +117,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern3() throws Exception {
+    public void testPattern3() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -153,7 +153,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern4() throws Exception {
+    public void testPattern4() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -173,7 +173,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern5() throws Exception {
+    public void testPattern5() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -197,7 +197,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern6() throws Exception {
+    public void testPattern6() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -221,7 +221,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern7() throws Exception {
+    public void testPattern7() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -245,7 +245,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern8() throws Exception {
+    public void testPattern8() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -265,7 +265,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern9() throws Exception {
+    public void testPattern9() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -285,7 +285,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern10() throws Exception {
+    public void testPattern10() {
         performTests(() -> {
             login("alice", "alice");
 
@@ -309,7 +309,7 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
     }
 
     @Test
-    public void testPattern11UsingResourceInstancePermission() throws Exception {
+    public void testPattern11UsingResourceInstancePermission() {
         performTests(() -> {
             login("alice", "alice");
             navigateTo("/api/v1/resource-a");
@@ -402,6 +402,45 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
             navigateTo("/keycloak-6623");
             assertTrue(wasDenied());
             navigateTo("/keycloak-6623/sub-resource/resource");
+            assertTrue(wasDenied());
+        });
+    }
+
+    @Test
+    public void testPathWithPatternSlashAllAndResourceInstance() {
+        performTests(() -> {
+            ResourceRepresentation resource = new ResourceRepresentation("Pattern 15 Instance");
+
+            resource.setType("pattern-15");
+            resource.setUri("/keycloak-7148/1");
+            resource.setOwner("alice");
+
+            getAuthorizationResource().resources().create(resource).close();
+
+            login("alice", "alice");
+            navigateTo("/keycloak-7148/1");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a/2");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a/2/sub-b");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 15 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-7148/1");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a/2");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7148/1/sub-a/2/sub-b");
+            assertTrue(wasDenied());
+
+            // does not exist
+            navigateTo("/keycloak-7148/2");
             assertTrue(wasDenied());
         });
     }

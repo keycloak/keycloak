@@ -115,6 +115,11 @@
                     {
                         "name": "Pattern 14",
                         "uri": "/keycloak-6623/sub-resource/*"
+                    },
+                    {
+                        "name": "Pattern 15",
+                        "type": "pattern-15",
+                        "uri": "/keycloak-7148/{id}"
                     }
                 ],
                 "policies": [
@@ -284,6 +289,17 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "resources": "[\"Pattern 14\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 15 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "pattern-15",
+                            "default": "true",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }

@@ -299,7 +299,17 @@ public class PolicyEnforcer {
         protected PathConfig resolvePathConfig(PathConfig originalConfig, String path) {
             if (originalConfig.hasPattern()) {
                 ProtectedResource resource = authzClient.protection().resource();
+
+                // search by an exact match
                 List<ResourceRepresentation> search = resource.findByUri(path);
+
+                // if exact match not found, try to obtain from current path the parent path.
+                // if path is /resource/1/test and pattern from pathConfig is /resource/{id}/*, parent path is /resource/1
+                // this logic allows to match sub resources of a resource instance (/resource/1) to the parent resource,
+                // so any permission granted to parent also applies to sub resources
+                if (search.isEmpty()) {
+                    search = resource.findByUri(buildUriFromTemplate(originalConfig.getPath(), path, true));
+                }
 
                 if (!search.isEmpty()) {
                     ResourceRepresentation targetResource = search.get(0);
