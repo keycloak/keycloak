@@ -46,7 +46,6 @@ p.description {
 .content-area {
   padding: 30px 30px 20px;
   background: #ffffff;
-  font-size: 13px;
   margin-bottom: 10px;
 }
 
@@ -122,6 +121,30 @@ p.description {
     font-size: 14px;
     padding-bottom: 0;
   }
+  .page-header {
+    background: #f5f5f5;
+    margin-top: 0;
+    margin-left: -20px;
+    margin-right: -20px;
+  }
+  .page-header h1 {
+    margin-top: 0;
+    line-height: 30px;
+    padding-top: 20px;
+    padding-left: 20px;
+    font-size: 18px;
+  }
+  .password-update {
+    margin-left: -20px;
+    margin-right: -20px;
+    border-bottom: solid 10px #f5f5f5;
+  }
+  .content-area {
+    padding-top: 8px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
 
 }
 
@@ -138,6 +161,7 @@ p.description {
 .subtitle {
   color: #4d5258;
   font-size: 12px;
+  margin-bottom: 10px;
 }
 
 .content-area .required{
@@ -148,6 +172,11 @@ p.description {
   border-bottom: 0;
 }
 
+.non-edit {
+  border: 1px solid #bbb;
+  padding: 3px 10px;
+  background-color: #f5f5f5;
+}
 
 /* Introduction Message on the left */
 .introMessage {
