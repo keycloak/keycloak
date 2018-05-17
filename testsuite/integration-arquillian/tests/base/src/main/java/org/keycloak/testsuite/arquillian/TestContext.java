@@ -133,6 +133,10 @@ public final class TestContext {
         this.testRealmReps = testRealmReps;
     }
 
+    public void addTestRealmToTestRealmReps(RealmRepresentation testRealmRep) {
+        this.testRealmReps.add(testRealmRep);
+    }
+
     public boolean isInitialized() {
         return initialized;
     }
