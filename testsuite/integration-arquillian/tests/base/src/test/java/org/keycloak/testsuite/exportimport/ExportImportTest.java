@@ -174,20 +174,35 @@ public class ExportImportTest extends AbstractKeycloakTest {
         // import a realm with clients without roles
         importRealmFromFile("/import/partial-import.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-import"));
+        addTestRealmToTestRealmReps("partial-import");
 
         // import a realm with clients without roles
         importRealmFromFile("/import/import-without-roles.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-roles"));
+        addTestRealmToTestRealmReps("import-without-roles");
 
         // import a realm with roles without clients
         importRealmFromFile("/import/import-without-clients.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-clients"));
+        addTestRealmToTestRealmReps("import-without-clients");
     }
 
     private boolean isRealmPresent(String realmId) {
         return adminClient.realms().findAll().stream().filter(realm -> realmId.equals(realm.getId())).findFirst().isPresent();
     }
-    
+
+    /*
+     * non-JavaDoc
+     *
+     * Adds a testTealm to TestContext.testRealmReps (which are after testClass removed)
+     * 
+     * It prevents from affecting other tests. (auth-server-undertow)
+     * 
+     */
+    private void addTestRealmToTestRealmReps(String realm) {
+        testContext.addTestRealmToTestRealmReps(adminClient.realms().realm(realm).toRepresentation());
+    }
+
     private void testFullExportImport() throws LifecycleException {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName("");
@@ -311,7 +326,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
     private void clearExportImportProperties() {
         // Clear export/import properties after test
         Properties systemProps = System.getProperties();
-        Set<String> propsToRemove = new HashSet<String>();
+        Set<String> propsToRemove = new HashSet<>();
 
         for (Object key : systemProps.keySet()) {
             if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
