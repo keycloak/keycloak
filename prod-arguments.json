@@ -1,6 +1,6 @@
 {
   "mvn": {
-    "profiles": ["product", "jboss-release"],
+    "profiles": ["product", "!community", "jboss-release"],
     "properties": {
         "skipTests": "true"
     }
