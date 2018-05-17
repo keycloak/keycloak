@@ -41,11 +41,9 @@
 
         /**
          * This method enables client applications to better integrate with resource servers protected by a Keycloak
-         * policy enforcer.
+         * policy enforcer using UMA protocol.
          *
-         * In this case, the resource server will respond with a 401 status code and a WWW-Authenticate header holding the
-         * necessary information to ask a Keycloak server for authorization data using both UMA and Entitlement protocol,
-         * depending on how the policy enforcer at the resource server was configured.
+         * The authorization request must be provided with a ticket.
          */
         this.authorize = function (authorizationRequest) {
             this.then = function (onGrant, onDeny, onError) {
@@ -205,6 +203,8 @@
         };
 
         this.init(this);
+
+        return this;
     };
 
     if ( typeof module === "object" && module && typeof module.exports === "object" ) {
