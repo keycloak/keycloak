@@ -42,8 +42,8 @@
     </security-constraint>
 
     <login-config>
-        <auth-method>BASIC</auth-method>
-        <realm-name>does-not-matter</realm-name>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>specified-in-keycloak-json</realm-name>
     </login-config>
 
     <security-role>
