@@ -698,6 +698,11 @@
                 <version>${pax.web.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.ops4j.pax.web</groupId>
+                <artifactId>pax-web-spi</artifactId>
+                <version>${pax.web.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.aesh</groupId>
                 <artifactId>aesh</artifactId>
                 <version>${aesh.version}</version>

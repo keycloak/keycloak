@@ -38,7 +38,7 @@
 
     <bean id="keycloakAuthenticator" class="org.keycloak.adapters.jetty.KeycloakJettyAuthenticator">
         <property name="adapterConfig">
-            <ref local="kcAdapterConfig" />
+            <ref bean="kcAdapterConfig" />
         </property>
     </bean>
 
@@ -62,7 +62,7 @@
         <property name="authenticator" ref="keycloakAuthenticator" />
         <property name="constraintMappings">
             <list>
-                <ref local="constraintMapping" />
+                <ref bean="constraintMapping" />
             </list>
         </property>
         <property name="authMethod" value="BASIC"/>
@@ -72,7 +72,7 @@
     <httpj:engine-factory bus="cxf" id="kc-cxf-endpoint">
         <httpj:engine port="8282">
             <httpj:handlers>
-                <ref local="securityHandler" />
+                <ref bean="securityHandler" />
             </httpj:handlers>
             <httpj:sessionSupport>true</httpj:sessionSupport>
         </httpj:engine>

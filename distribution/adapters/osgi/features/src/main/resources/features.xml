@@ -40,7 +40,7 @@
     <feature name="keycloak-osgi-adapter" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
         <feature>keycloak-adapter-core</feature>
-        <feature version="[2.3,4)">http-whiteboard</feature>
+        <feature>http-whiteboard</feature>
         <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
     </feature>
 
@@ -56,10 +56,19 @@
     <feature name="keycloak-jetty9-adapter" version="${project.version}" resolver="(obr)">
         <details>The keycloak Jetty9 adapter</details>
         <feature>keycloak-adapter-core</feature>
-        <feature version="[9,10)">jetty</feature>
+        <feature version="[9.2,9.3)">jetty</feature>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty92-adapter/${project.version}</bundle>
+    </feature>
+
+    <feature name="keycloak-jetty93-adapter" version="${project.version}" resolver="(obr)">
+        <details>The keycloak Jetty9 adapter</details>
+        <feature>keycloak-adapter-core</feature>
+        <feature version="[9.3,9.4)">jetty</feature>
+        <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty93-adapter/${project.version}</bundle>
     </feature>
 
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
