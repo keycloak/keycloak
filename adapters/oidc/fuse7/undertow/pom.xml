@@ -19,72 +19,76 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-fuse7-integration-pom</artifactId>
         <groupId>org.keycloak</groupId>
         <version>4.0.0.Beta3-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-undertow-adapter</artifactId>
-    <name>Keycloak Undertow Integration</name>
-    <description/>
+    <artifactId>keycloak-pax-web-undertow</artifactId>
+    <name>Keycloak Fuse 7.0 Adapter - Undertow</name>
+    <packaging>bundle</packaging>
 
     <properties>
         <keycloak.osgi.export>
-            org.keycloak.adapters.undertow.*
+            org.keycloak.adapters.osgi.undertow.*;version="${project.version}"
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            !org.keycloak.adapters.osgi.undertow,
+            org.keycloak.*;version="${project.version}",
+            org.keycloak.adapters.osgi.*;version="${project.version}",
+            org.ops4j.pax.web.*;version="[3.0,8)",
+            javax.servlet.*;version="[2.5,4)";resolution:=optional,
+            org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
+            org.apache.cxf.transport.servlet;resolution:=optional;version="[3,4)",
+            io.undertow.*,
             *;resolution:=optional
         </keycloak.osgi.import>
+        <keycloak.osgi.fragment>org.ops4j.pax.web.pax-web-undertow</keycloak.osgi.fragment>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-spi</artifactId>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.enterprise</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter-spi</artifactId>
+            <groupId>org.ops4j.pax.web</groupId>
+            <artifactId>pax-web-runtime</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-core</artifactId>
+            <groupId>org.ops4j.pax.web</groupId>
+            <artifactId>pax-web-spi</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
+            <groupId>org.ops4j.pax.web</groupId>
+            <artifactId>pax-web-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http-undertow</artifactId>
+            <version>3.1.11.fuse-000199-redhat-1</version>
             <scope>provided</scope>
         </dependency>
 
@@ -94,16 +98,17 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-undertow-adapter</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-osgi-adapter</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -139,15 +144,14 @@
                 </executions>
                 <configuration>
                     <instructions>
-                        <Bundle-ClassPath>.</Bundle-ClassPath>
                         <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>${keycloak.osgi.import}</Import-Package>
                         <Export-Package>${keycloak.osgi.export}</Export-Package>
+                        <Fragment-Host>${keycloak.osgi.fragment}</Fragment-Host>
                     </instructions>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>

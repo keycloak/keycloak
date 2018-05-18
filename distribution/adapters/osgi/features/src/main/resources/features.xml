@@ -40,7 +40,7 @@
     <feature name="keycloak-osgi-adapter" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
         <feature>keycloak-adapter-core</feature>
-        <feature version="[2.3,4)">http-whiteboard</feature>
+        <feature version="[2.3,8)">http-whiteboard</feature>
         <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
     </feature>
 
@@ -54,12 +54,22 @@
     </feature>
 
     <feature name="keycloak-jetty9-adapter" version="${project.version}" resolver="(obr)">
-        <details>The keycloak Jetty9 adapter</details>
+        <details>The keycloak Jetty 9.2 adapter (Fuse 6.3)</details>
         <feature>keycloak-adapter-core</feature>
-        <feature version="[9,10)">jetty</feature>
+        <feature version="[9.2,9.3)">jetty</feature>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty92-adapter/${project.version}</bundle>
+    </feature>
+
+    <!-- Keycloak adapter for PaxWeb undertow provider -->
+    <feature name="keycloak-pax-http-undertow" version="${project.version}">
+        <details>Keycloak Pax-Web adapter for Undertow</details>
+        <feature>keycloak-osgi-adapter</feature>
+        <feature>keycloak-adapter-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
     </feature>
 
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
