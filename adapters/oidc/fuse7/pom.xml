@@ -39,6 +39,7 @@
     <modules>
         <module>camel-undertow</module>
         <module>jetty94</module>
+        <module>tomcat8</module>
         <module>undertow</module>
     </modules>
 </project>
