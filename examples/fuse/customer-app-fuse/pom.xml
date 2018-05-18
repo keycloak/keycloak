@@ -37,7 +37,8 @@
         <keycloak.osgi.import>
             org.apache.http.*;version=${apache.httpcomponents.version},
             javax.servlet.*;version="[2.5,4)",
-            org.keycloak.adapters.jetty;version="${project.version}",
+            org.keycloak.adapters.authentication;version="${project.version}";resolution:=optional,
+            org.keycloak.adapters.jetty;version="${project.version}";resolution:=optional,
             org.keycloak.adapters;version="${project.version}",
             org.keycloak.constants;version="${project.version}",
             org.keycloak.util;version="${project.version}",
