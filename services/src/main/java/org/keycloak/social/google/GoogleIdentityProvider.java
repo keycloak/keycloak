@@ -16,33 +16,22 @@
  */
 package org.keycloak.social.google;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
-import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,6 +42,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public static final String TOKEN_URL = "https://www.googleapis.com/oauth2/v3/token";
     public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
     public static final String DEFAULT_SCOPE = "openid profile email";
+
+    private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
 
     public GoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
         super(session, config);
@@ -99,5 +90,38 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         return exchangeExternalUserInfoValidationOnly(event, params);
     }
 
+    @Override
+    protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
+        UriBuilder uriBuilder = super.createAuthorizationUrl(request);
+        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+
+        if (hostedDomain != null) {
+            uriBuilder.queryParam(OIDC_PARAMETER_HOSTED_DOMAINS, hostedDomain);
+        }
+
+        return uriBuilder;
+    }
+
+    @Override
+    protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
+        JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
+        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+
+        if (hostedDomain == null) {
+            return token;
+        }
+
+        Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
+
+        if (receivedHdParam == null) {
+            throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
+        }
+
+        if (hostedDomain.equals("*") || hostedDomain.equals(receivedHdParam))  {
+            return token;
+        }
+
+        throw new IdentityBrokerException("Hosted domain does not match.");
+    }
 
 }

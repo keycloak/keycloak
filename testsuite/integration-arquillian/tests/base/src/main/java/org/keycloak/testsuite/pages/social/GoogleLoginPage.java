@@ -22,31 +22,42 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class GoogleLoginPage extends AbstractSocialLoginPage {
-    @FindBy(xpath = ".//p[@role='heading'][1]")
-    private WebElement firstAccount;
-
     @FindBy(id = "identifierId")
     private WebElement emailInput;
 
     @FindBy(xpath = ".//input[@type='password']")
     private WebElement passwordInput;
 
+    @FindBy(id = "identifierLink")
+    private WebElement useAnotherAccountLink;
+
     @Override
     public void login(String user, String password) {
         try {
-            firstAccount.click();
+            clickLink(useAnotherAccountLink);
         }
         catch (NoSuchElementException e) {
-            emailInput.clear();
-            emailInput.sendKeys(user);
-            emailInput.sendKeys(Keys.RETURN);
+            // nothing to do
         }
 
+        emailInput.clear();
+        emailInput.sendKeys(user);
+        performOperationWithPageReload(() -> emailInput.sendKeys(Keys.RETURN));
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
+    }
+
+    @Override
+    public void logout() {
+        log.info("performing logout from Google");
+        navigateToUri("https://www.google.com/accounts/Logout", false);
     }
 }
