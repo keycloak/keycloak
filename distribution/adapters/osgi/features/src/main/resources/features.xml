@@ -86,6 +86,19 @@
         <bundle>mvn:org.keycloak/keycloak-camel-undertow/${project.version}</bundle>
     </feature>
 
+    <!-- Keycloak adapter for PaxWeb tomcat provider -->
+<!--
+    <feature name="keycloak-pax-http-tomcat" version="${project.version}">
+        <details>Keycloak Pax-Web adapter for Tomcat 8</details>
+        <feature>keycloak-adapter-core</feature>
+        <feature>keycloak-osgi-adapter</feature>
+        <bundle>mvn:org.keycloak/keycloak-tomcat-core-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-tomcat-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-tomcat8-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-pax-web-tomcat8/${project.version}</bundle>
+    </feature>
+ -->
+
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
         <details>The keycloak JAAS configuration</details>
         <feature>keycloak-adapter-core</feature>
