@@ -747,8 +747,6 @@ module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, N
 });
 
 module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, authFlows, $location, Notifications, Dialog) {
-    console.log('RealmIdentityProviderCtrl');
-
     $scope.realm = angular.copy(realm);
 
     $scope.initSamlProvider = function() {

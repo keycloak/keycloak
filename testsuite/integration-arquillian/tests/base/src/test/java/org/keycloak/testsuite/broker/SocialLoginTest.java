@@ -51,6 +51,7 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -73,6 +74,8 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOSTED_DOMAIN;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
@@ -100,6 +103,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     public enum Provider {
         GOOGLE("google", GoogleLoginPage.class),
+        GOOGLE_HOSTED_DOMAIN("google", "google-hosted-domain", GoogleLoginPage.class),
+        GOOGLE_NON_MATCHING_HOSTED_DOMAIN("google", "google-hosted-domain", GoogleLoginPage.class),
         FACEBOOK("facebook", FacebookLoginPage.class),
         GITHUB("github", GitHubLoginPage.class),
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
@@ -238,6 +243,32 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void googleHostedDomainLogin() throws InterruptedException {
+        setTestProvider(GOOGLE_HOSTED_DOMAIN);
+        navigateToLoginPage();
+        assertTrue(driver.getCurrentUrl().contains("hd=" + getConfig(GOOGLE_HOSTED_DOMAIN, "hostedDomain")));
+        doLogin();
+        assertAccount();
+        testTokenExchange();
+    }
+
+    @Test
+    public void googleNonMatchingHostedDomainLogin() throws InterruptedException {
+        setTestProvider(GOOGLE_NON_MATCHING_HOSTED_DOMAIN);
+        navigateToLoginPage();
+        assertTrue(driver.getCurrentUrl().contains("hd=non-matching-hosted-domain"));
+        doLogin();
+
+        // Just to be sure there's no redirect in progress
+        WaitUtils.waitForPageToLoad();
+
+        WebElement errorMessage = driver.findElement(By.xpath(".//p[@class='instruction']"));
+
+        assertTrue(errorMessage.isDisplayed());
+        assertEquals("Unexpected error when authenticating with identity provider", errorMessage.getText());
+    }
+
+    @Test
     public void bitbucketLogin() throws InterruptedException {
         setTestProvider(BITBUCKET);
         performLogin();
@@ -328,6 +359,19 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idp.setStoreToken(true);
         idp.getConfig().put("clientId", getConfig(provider, "clientId"));
         idp.getConfig().put("clientSecret", getConfig(provider, "clientSecret"));
+
+        if (provider == GOOGLE_HOSTED_DOMAIN) {
+            final String hostedDomain = getConfig(provider, "hostedDomain");
+            if (hostedDomain == null) {
+                throw new IllegalArgumentException("'hostedDomain' for Google IdP must be specified");
+            }
+            idp.getConfig().put("hostedDomain", hostedDomain);
+        }
+        if (provider == GOOGLE_NON_MATCHING_HOSTED_DOMAIN) {
+            idp.getConfig().put("hostedDomain", "non-matching-hosted-domain");
+        }
+
+
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
@@ -350,6 +394,11 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void performLogin() {
+        navigateToLoginPage();
+        doLogin();
+    }
+
+    private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
         accountPage.navigateTo();
         loginPage.clickSocial(currentTestProvider.id());
@@ -357,7 +406,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         // Just to be sure there's no redirect in progress
         WaitUtils.pause(3000);
         WaitUtils.waitForPageToLoad();
+    }
 
+    private void doLogin() {
         // Only when there's not active session for the social provider, i.e. login is required
         if (URLUtils.currentUrlDoesntStartWith(getAuthServerRoot().toASCIIString())) {
             log.infof("current URL: %s", driver.getCurrentUrl());
