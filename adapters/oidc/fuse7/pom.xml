@@ -37,6 +37,7 @@
     </properties>
 
     <modules>
+        <module>camel-undertow</module>
         <module>undertow</module>
     </modules>
 </project>

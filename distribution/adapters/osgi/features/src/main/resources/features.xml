@@ -70,6 +70,7 @@
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-camel-undertow/${project.version}</bundle>
     </feature>
 
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
