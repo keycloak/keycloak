@@ -37,6 +37,7 @@
         <module>product-app-fuse</module>
         <module>product-app-fuse7-undertow</module>
         <module>cxf-jaxrs</module>
+        <module>cxf-jaxrs-fuse7-undertow</module>
         <module>cxf-jaxws</module>
         <module>camel</module>
         <module>features</module>
