@@ -34,6 +34,7 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            javax.ws.rs;version="[2,3)",
             META-INF.cxf;version="[2.7,3.2)",
             META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
             org.apache.cxf.transport.http;version="[2.7,3.2)",
