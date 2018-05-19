@@ -41,6 +41,7 @@
         <module>cxf-jaxws</module>
         <module>cxf-jaxws-fuse7-undertow</module>
         <module>camel</module>
+        <module>camel-fuse7-undertow</module>
         <module>features</module>
         <module>external-config</module>
     </modules>
