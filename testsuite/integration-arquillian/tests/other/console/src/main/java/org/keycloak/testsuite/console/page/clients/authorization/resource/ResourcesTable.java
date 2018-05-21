@@ -67,13 +67,13 @@ public class ResourcesTable extends DataTable {
         ResourceRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
         try {
-            if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+            if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
                 representation = new ResourceRepresentation();
-                representation.setName(tds.get(0).getText());
-                representation.setType(tds.get(1).getText());
-                representation.setUri(tds.get(2).getText());
+                representation.setName(tds.get(1).getText());
+                representation.setType(tds.get(2).getText());
+                representation.setUri(tds.get(3).getText());
                 ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
-                owner.setName(tds.get(3).getText());
+                owner.setName(tds.get(4).getText());
                 representation.setOwner(owner);
             }
         } catch (IndexOutOfBoundsException cause) {
