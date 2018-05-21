@@ -22,7 +22,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user" ],
+            "realmRoles": [ "user", "ssh" ],
             "clientRoles": {
                 "account": [ "manage-account" ]
             }
@@ -37,7 +37,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user" ],
+            "realmRoles": [ "user", "ssh" ],
             "clientRoles": {
                 "account": [ "manage-account" ]
             }
@@ -52,7 +52,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user" ],
+            "realmRoles": [ "user", "ssh" ],
             "clientRoles": {
                 "account": [ "manage-account" ]
             }
@@ -67,7 +67,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user","admin" ],
+            "realmRoles": [ "user","admin", "ssh" ],
             "clientRoles": {
                 "realm-management": [ "realm-admin" ],
                 "account": [ "manage-account" ]
@@ -83,7 +83,7 @@
                 { "type" : "password",
                   "value" : "password" }
             ],
-            "realmRoles": [ "user", "jmxAdmin" ],
+            "realmRoles": [ "user", "jmxAdmin", "ssh" ],
             "clientRoles": {
                 "account": [ "manage-account" ],
                 "realm-management": [ "realm-admin" ]
@@ -101,7 +101,7 @@
                     "value" : "password"
                 }
             ],
-            "realmRoles" : [ "viewer" ],
+            "realmRoles" : [ "viewer", "ssh" ],
             "applicationRoles":  {
                 "account" : [ "view-profile", "manage-account" ]
             }
@@ -118,6 +118,7 @@
                     "value" : "password"
                 }
             ],
+            "realmRoles" : [ "ssh" ],
             "applicationRoles":  {
                 "account" : [ "view-profile", "manage-account" ]
             }
@@ -134,7 +135,7 @@
                     "value" : "password"
                 }
             ],
-            "realmRoles" : [ "jmxAdmin" ],
+            "realmRoles" : [ "jmxAdmin", "ssh" ],
             "applicationRoles":  {
                 "account" : [ "view-profile", "manage-account" ],
                 "realm-management" : [ "realm-admin" ]
@@ -176,11 +177,14 @@
                 "name": "SuperUser"
             },
             {
+                "name": "ssh"
+            },
+            {
                 "name": "jmxAdmin",
                 "description": "Admin role with all privileges to SSH and JMX access",
                 "composite": true,
                 "composites": {
-                    "realm": [ "admin", "manager", "viewer", "Operator", "Maintainer", "Deployer", "Auditor", "Administrator", "SuperUser" ]
+                    "realm": [ "admin", "manager", "viewer", "Operator", "Maintainer", "Deployer", "Auditor", "Administrator", "SuperUser", "ssh" ]
                 }
             }
         ]
