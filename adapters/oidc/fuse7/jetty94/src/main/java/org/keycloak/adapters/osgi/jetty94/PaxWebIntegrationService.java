@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.osgi;
+package org.keycloak.adapters.osgi.jetty94;
 
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.util.security.Constraint;
 import org.jboss.logging.Logger;
 import org.ops4j.pax.web.service.WebContainer;
+import org.ops4j.pax.web.service.spi.model.SecurityConstraintMappingModel;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.http.HttpContext;
@@ -34,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Integration with pax-web in Fuse 6.3, which allows to inject custom jetty-web.xml configuration from current bundle classpath into {@link WebContainer}
+ * Integration with pax-web, which allows to inject custom jetty-web.xml configuration from current bundle classpath into {@link WebContainer}
  * and allows to inject custom security constraint for securing resources by Keycloak.
  *
  * <p>It assumes that pax-web {@link WebContainer} is used as implementation of OSGI {@link org.osgi.service.http.HttpService}, which
@@ -164,7 +165,7 @@ public class PaxWebIntegrationService {
         }
     }
 
-    protected void addConstraintMapping(WebContainer service, PaxWebSecurityConstraintMapping constraintMapping) {
+    protected void addConstraintMapping(WebContainer service, SecurityConstraintMappingModel constraintMapping) {
         String name = constraintMapping.getConstraintName();
         if (name == null) {
             name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
@@ -213,10 +214,9 @@ public class PaxWebIntegrationService {
 
     private static class PaxWebConstraintHandler implements ConstraintHandler {
 
-        @Override
         public boolean addConstraintMapping(HttpContext httpContext, WebContainer service, Object cm) {
-            if (cm instanceof PaxWebSecurityConstraintMapping) {
-                PaxWebSecurityConstraintMapping constraintMapping = (PaxWebSecurityConstraintMapping) cm;
+            if (cm instanceof SecurityConstraintMappingModel) {
+                SecurityConstraintMappingModel constraintMapping = (SecurityConstraintMappingModel) cm;
                 String name = constraintMapping.getConstraintName();
                 if (name == null) {
                     name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
@@ -233,7 +233,6 @@ public class PaxWebIntegrationService {
 
     private static class JettyConstraintHandler implements ConstraintHandler {
 
-        @Override
         public boolean addConstraintMapping(HttpContext httpContext, WebContainer service, Object cm) {
             if (cm instanceof ConstraintMapping) {
                 ConstraintMapping constraintMapping = (ConstraintMapping) cm;
