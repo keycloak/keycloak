@@ -37,7 +37,8 @@
         <security.xslt>security.xsl</security.xslt>
         <oidc-adapter.version>${project.version}</oidc-adapter.version>
         <saml-adapter.version>${project.version}</saml-adapter.version>
-        <app.server.elytron.adapter.supported>false</app.server.elytron.adapter.supported>
+        <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
+        <skip.adapter.offline.installation>true</skip.adapter.offline.installation>
     </properties>
 
     <profiles>
@@ -196,21 +197,166 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>install-adapters</id>
+                                <id>add-adapter-log-level-standalone</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>${common.resources}/install-adapters.${script.suffix}</executable>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                        <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                        <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
-                                        <ELYTRON_SUPPORTED>${app.server.elytron.adapter.supported}</ELYTRON_SUPPORTED>
-                                        <CLI_PATH>${common.resources}/cli</CLI_PATH>
-                                    </environmentVariables>
+                                    <arguments>
+                                        <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>add-adapter-log-level-standalone-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
+                                        <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <!--OIDC: eap, wf11-->
+                                <id>adapter-elytron-install-offline-standalone</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.elytron.adapter.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--OIDC: eap, wf11-->
+                                <id>adapter-elytron-install-offline-standalone-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.elytron.adapter.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
+                                        <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--SAML: eap, wf11-->
+                                <id>adapter-elytron-install-saml-offline-standalone</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.elytron.adapter.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--SAML: eap, wf11-->
+                                <id>adapter-elytron-install-saml-offline-standalone-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.elytron.adapter.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
+                                        <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <!--OIDC: wf10, wf9-->
+                                <id>adapter-install-offline-standalone</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.adapter.offline.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--OIDC: wf10, wf9-->
+                                <id>adapter-install-offline-standalone-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.adapter.offline.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
+                                        <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--SAML: wf10, wf9-->
+                                <id>adapter-install-saml-offline-standalone</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.adapter.offline.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--SAML: wf10, wf9-->
+                                <id>adapter-install-saml-offline-standalone-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.adapter.offline.installation}</skip>
+                                    <executable>./jboss-cli.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
+                                        <argument>-Dserver.config=standalone-ha.xml</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
@@ -416,17 +562,6 @@
             <modules>
                 <module>eap6-fuse</module>
             </modules>
-        </profile>
-
-        <profile>
-            <id>app-server-wildfly-elytron</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <wildfly.version>${elytron.wildfly.version}</wildfly.version>
-                <app.server.elytron.adapter.supported>true</app.server.elytron.adapter.supported>
-            </properties>
         </profile>
     </profiles>
 
