@@ -62,6 +62,19 @@
         <bundle>mvn:org.keycloak/keycloak-jetty92-adapter/${project.version}</bundle>
     </feature>
 
+    <!-- Keycloak adapter for PaxWeb jetty provider -->
+<!--
+    <feature name="keycloak-pax-http-jetty" version="${project.version}">
+        <details>Keycloak Pax-Web adapter for Jetty 9.4</details>
+        <feature>keycloak-adapter-core</feature>
+        <feature>keycloak-osgi-adapter</feature>
+        <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty94-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-pax-web-jetty94/${project.version}</bundle>
+    </feature>
+ -->
+
     <!-- Keycloak adapter for PaxWeb undertow provider -->
     <feature name="keycloak-pax-http-undertow" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Undertow</details>
