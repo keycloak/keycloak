@@ -81,3 +81,6 @@ One config option to note on the `Add identity provider` page for Google is the 
 This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
 For a complete list of scopes, please take a look at https://developers.google.com/oauthplayground/ . By default, {project_name}
 uses the following scopes: `openid` `profile` `email`.
+
+If your organization uses the G Suite and you want to restrict access to only members of your organization,
+you must enter the domain that is used for the G Suite into the `Hosted Domain` field to enable it.
