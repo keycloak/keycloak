@@ -135,10 +135,11 @@ public class StoreFactoryCacheManager extends CacheManager {
         }
     }
 
-    public void permissionTicketUpdated(String id, String owner, String resource, String scope, String serverId, Set<String> invalidations) {
+    public void permissionTicketUpdated(String id, String owner, String requester, String resource, String scope, String serverId, Set<String> invalidations) {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByOwner(owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(resource, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, serverId));
         if (scope != null) {
             invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(scope, serverId));
         }
@@ -148,8 +149,8 @@ public class StoreFactoryCacheManager extends CacheManager {
         policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 
-    public void permissionTicketRemoval(String id, String owner, String resource, String scope, String serverId, Set<String> invalidations) {
-        permissionTicketUpdated(id, owner, resource, scope, serverId, invalidations);
+    public void permissionTicketRemoval(String id, String owner, String requester, String resource, String scope, String serverId, Set<String> invalidations) {
+        permissionTicketUpdated(id, owner, requester, resource, scope, serverId, invalidations);
     }
 
 }

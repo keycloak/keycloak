@@ -69,4 +69,9 @@ public interface Evaluation {
      * Denies the requested permission.
      */
     void deny();
+
+    /**
+     * Denies the requested permission if a decision was not made yet.
+     */
+    void denyIfNoEffect();
 }

@@ -208,6 +208,16 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
     }
 
     @Override
+    public void setOwner(String owner) {
+        entity.setOwner(owner);
+    }
+
+    @Override
+    public String getOwner() {
+        return entity.getOwner();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof Policy)) return false;

@@ -235,7 +235,7 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void delete(String id) {
                 Scope scope = findById(id, null);
-                PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
+                PermissionTicketStore ticketStore = AuthorizationProvider.this.getStoreFactory().getPermissionTicketStore();
                 List<PermissionTicket> permissions = ticketStore.findByScope(id, scope.getResourceServer().getId());
 
                 for (PermissionTicket permission : permissions) {
@@ -414,11 +414,23 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void delete(String id) {
                 Resource resource = findById(id, null);
+                StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
                 List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer().getId());
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
+                }
+
+                PolicyStore policyStore = storeFactory.getPolicyStore();
+                List<Policy> policies = policyStore.findByResource(id, resource.getResourceServer().getId());
+
+                for (Policy policyModel : policies) {
+                    if (policyModel.getResources().size() == 1) {
+                        policyStore.delete(policyModel.getId());
+                    } else {
+                        policyModel.removeResource(resource);
+                    }
                 }
 
                 delegate.delete(id);

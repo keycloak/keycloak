@@ -16,9 +16,12 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
+
 import javax.persistence.EntityManager;
 
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
+import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -34,13 +37,13 @@ import org.keycloak.models.jpa.JpaModel;
  */
 public class PermissionTicketAdapter implements PermissionTicket, JpaModel<PermissionTicketEntity> {
 
-    private PermissionTicketEntity entity;
-    private EntityManager em;
-    private StoreFactory storeFactory;
+    private final EntityManager entityManager;
+    private final PermissionTicketEntity entity;
+    private final StoreFactory storeFactory;
 
-    public PermissionTicketAdapter(PermissionTicketEntity entity, EntityManager em, StoreFactory storeFactory) {
+    public PermissionTicketAdapter(PermissionTicketEntity entity, EntityManager entityManager, StoreFactory storeFactory) {
         this.entity = entity;
-        this.em = em;
+        this.entityManager = entityManager;
         this.storeFactory = storeFactory;
     }
 
@@ -82,11 +85,30 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
     @Override
     public void setGrantedTimestamp(Long millis) {
         entity.setGrantedTimestamp(millis);
+        updatePolicy(this, storeFactory);
     }
 
     @Override
     public ResourceServer getResourceServer() {
         return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+    }
+
+    @Override
+    public Policy getPolicy() {
+        PolicyEntity policy = entity.getPolicy();
+
+        if (policy == null) {
+            return null;
+        }
+
+        return storeFactory.getPolicyStore().findById(policy.getId(), entity.getResourceServer().getId());
+    }
+
+    @Override
+    public void setPolicy(Policy policy) {
+        if (policy != null) {
+            entity.setPolicy(entityManager.getReference(PolicyEntity.class, policy.getId()));
+        }
     }
 
     @Override

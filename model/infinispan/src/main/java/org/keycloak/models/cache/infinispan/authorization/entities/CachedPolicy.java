@@ -45,6 +45,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
     private Set<String> associatedPoliciesIds;
     private Set<String> resourcesIds;
     private Set<String> scopesIds;
+    private final String owner;
 
     public CachedPolicy(Long revision, Policy policy) {
         super(revision, policy.getId());
@@ -58,6 +59,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         this.associatedPoliciesIds = policy.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet());
         this.resourcesIds = policy.getResources().stream().map(Resource::getId).collect(Collectors.toSet());
         this.scopesIds = policy.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+        this.owner = policy.getOwner();
     }
 
     public String getType() {
@@ -100,4 +102,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         return this.resourceServerId;
     }
 
+    public String getOwner() {
+        return owner;
+    }
 }

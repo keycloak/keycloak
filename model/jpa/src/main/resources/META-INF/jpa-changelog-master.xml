@@ -55,4 +55,5 @@
     <include file="META-INF/jpa-changelog-3.4.2.xml"/>
     <include file="META-INF/jpa-changelog-4.0.0.xml"/>
     <include file="META-INF/jpa-changelog-authz-4.0.0.CR1.xml"/>
+    <include file="META-INF/jpa-changelog-authz-4.0.0.Beta3.xml"/>
 </databaseChangeLog>

@@ -58,62 +58,16 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
     }
 
     @Override
-    protected void onDeny(Result result) {
-        ResourcePermission permission = result.getPermission();
-        Resource resource = permission.getResource();
-
-        if (resource != null && resource.isOwnerManagedAccess()) {
-            if (!resource.getOwner().equals(identity.getId())) {
-                Map<String, String> filters = new HashMap<>();
-
-                filters.put(PermissionTicket.RESOURCE, resource.getId());
-                filters.put(PermissionTicket.REQUESTER, identity.getId());
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-
-                List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
-
-                if (!permissions.isEmpty()) {
-                    List<Scope> grantedScopes = new ArrayList<>();
-
-                    for (PolicyResult policyResult : result.getResults()) {
-                        for (PermissionTicket ticket : permissions) {
-                            Scope grantedScope = ticket.getScope();
-
-                            if ("resource".equals(policyResult.getPolicy().getType())) {
-                                policyResult.setStatus(Effect.PERMIT);
-                            }
-
-                            if (grantedScope != null) {
-                                grantedScopes.add(grantedScope);
-
-                                for (Scope policyScope : policyResult.getPolicy().getScopes()) {
-                                    if (policyScope.equals(grantedScope)) {
-                                        policyResult.setStatus(Effect.PERMIT);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    permission.getScopes().clear();
-                    permission.getScopes().addAll(grantedScopes);
-                }
-            }
-        }
-
-        super.onDeny(result);
-    }
-
-    @Override
     public void onComplete() {
         super.onComplete();
 
         if (request.isSubmitRequest()) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
+            List<PermissionTicketToken.ResourcePermission> resources = ticket.getResources();
 
-            if (ticket.getResources() != null) {
-                for (PermissionTicketToken.ResourcePermission permission : ticket.getResources()) {
+            if (resources != null) {
+                for (PermissionTicketToken.ResourcePermission permission : resources) {
                     Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
 
                     if (resource == null) {
