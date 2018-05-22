@@ -1322,7 +1322,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.post(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
@@ -1331,7 +1331,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.post(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");
