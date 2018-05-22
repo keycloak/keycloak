@@ -76,6 +76,10 @@ public class PermissionTicketEntity {
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 
+    @ManyToOne(optional = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "POLICY_ID")
+    private PolicyEntity policy;
+
     public String getId() {
         return id;
     }
@@ -142,6 +146,14 @@ public class PermissionTicketEntity {
 
     public boolean isGranted() {
         return grantedTimestamp != null;
+    }
+
+    public PolicyEntity getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(PolicyEntity policy) {
+        this.policy = policy;
     }
 
     @Override

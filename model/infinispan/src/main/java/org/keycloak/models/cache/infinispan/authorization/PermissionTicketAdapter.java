@@ -18,6 +18,7 @@ package org.keycloak.models.cache.infinispan.authorization;
 
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -41,7 +42,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public PermissionTicket getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
+            cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
             updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -113,13 +114,26 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public void setGrantedTimestamp(Long millis) {
         getDelegateForUpdate();
-        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
+        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
         updated.setGrantedTimestamp(millis);
     }
 
     @Override
     public ResourceServer getResourceServer() {
         return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
+    }
+
+    @Override
+    public Policy getPolicy() {
+        if (isUpdated()) return updated.getPolicy();
+        return cacheSession.getPolicyStore().findById(cached.getPolicy(), cached.getResourceServerId());
+    }
+
+    @Override
+    public void setPolicy(Policy policy) {
+        getDelegateForUpdate();
+        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
+        updated.setPolicy(policy);
     }
 
     @Override

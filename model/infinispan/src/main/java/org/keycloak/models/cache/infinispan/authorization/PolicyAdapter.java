@@ -100,7 +100,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         getDelegateForUpdate();
         cacheSession.registerPolicyInvalidation(cached.getId(), name, cached.getResourcesIds(), cached.getScopesIds(), cached.getConfig().get("defaultResourceType"), cached.getResourceServerId());
         updated.setName(name);
-
     }
 
     @Override
@@ -276,6 +275,19 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         }
         scopes = Collections.unmodifiableSet(scopes);
         return scopes;
+    }
+
+    @Override
+    public String getOwner() {
+        if (isUpdated()) return updated.getOwner();
+        return cached.getOwner();
+    }
+
+    @Override
+    public void setOwner(String owner) {
+        getDelegateForUpdate();
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), cached.getScopesIds(), cached.getConfig().get("defaultResourceType"), cached.getResourceServerId());
+        updated.setOwner(owner);
     }
 
     @Override
