@@ -20,11 +20,11 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.openqa.selenium.By.tagName;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -78,7 +78,12 @@ public class Scopes extends Form {
         for (WebElement row : scopes().rows()) {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("td")).get(3).click();
+                WebElement td = row.findElements(tagName("td")).get(2);
+                td.findElement(By.className("dropdown-toggle")).click();
+                WebElement actions = td.findElement(By.className("dropdown-menu"));
+
+                actions.findElement(By.linkText("Delete")).click();
+
                 modalDialog.confirmDeletion();
             }
         }

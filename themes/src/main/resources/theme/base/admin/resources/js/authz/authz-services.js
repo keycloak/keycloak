@@ -200,7 +200,15 @@ module.factory('GroupManagementPermissions', function($resource) {
     });
 });
 
-module.factory('policyState', [function () {
+module.factory('policyViewState', [function () {
+    return {
+        model: {
+            state: {}
+        }
+    };
+}]);
+
+module.factory('viewState', [function () {
     return {
         model: {
             state: {}
