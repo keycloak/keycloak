@@ -25,6 +25,10 @@ import org.jboss.security.SecurityConstants;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
+import org.jboss.security.SubjectInfo;
+import org.jboss.security.identity.RoleGroup;
+import org.jboss.security.identity.plugins.SimpleRole;
+import org.jboss.security.identity.plugins.SimpleRoleGroup;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -87,6 +91,13 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
         org.jboss.security.SecurityContext sc = SecurityContextAssociation.getSecurityContext();
         Principal userPrincipal = getPrincipal(subject);
         sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
+
+        // Roles of subjectInfo are null, because is was constructed by
+        // org.jboss.security.identity.extensions.CredentialIdentityFactory
+        //   .createIdentity(Principal [=userPrincipal], Object [=account], Role [=null]).
+        // Therefore the roles are only contained in the authenticatedSubject (member of subjectInfo)
+        // and subsequent logics do only access subjectInfo#roles instead of authenticatedSubject#roles.
+        mapGroupMembersOfAuthenticatedSubjectIntoSubjectInfo(sc.getSubjectInfo());
     }
 
     /**
@@ -150,4 +161,34 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
         return roleSets;
     }
 
+	private static void mapGroupMembersOfAuthenticatedSubjectIntoSubjectInfo(SubjectInfo subjectInfo) {
+        if (subjectInfo == null) {
+            return;
+        }
+
+        Subject authenticatedSubject = subjectInfo.getAuthenticatedSubject();
+        if (authenticatedSubject == null) {
+            return;
+        }
+
+        // Get role group of subjectInfo in order to add roles of authenticatedSubject.
+        RoleGroup scRoles = subjectInfo.getRoles();
+        if (scRoles == null) {
+            scRoles = new SimpleRoleGroup("Roles");
+            subjectInfo.setRoles(scRoles);
+        }
+
+        // Get group roles of authenticatedSubject and add them into subjectInfo
+        Iterator<Principal> principalItr = authenticatedSubject.getPrincipals().iterator();
+        while (principalItr.hasNext()) {
+            Principal principal = principalItr.next();
+            if (principal instanceof Group) {
+                Enumeration<? extends Principal> members = ((Group) principal).members();
+                while (members.hasMoreElements()) {
+                    Principal role = members.nextElement();
+                    scRoles.addRole(new SimpleRole(role.getName()));
+                }
+            }
+        }
+    }
 }
