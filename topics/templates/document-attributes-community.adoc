@@ -1,9 +1,9 @@
 :project_name: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 4.0.0.Beta3
-:project_versionMvn: 4.0.0.Beta3
-:project_versionNpm: 4.0.0-beta.3
+:project_version: 4.0.0.Final
+:project_versionMvn: 4.0.0.Final
+:project_versionNpm: 4.0.0-final
 :project_versionDoc: 4.0
 :project_images: keycloak-images
 :project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
