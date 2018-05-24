@@ -262,14 +262,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser);
-        DefaultRoles.addDefaultRoles(realm, user);
-        
+        DefaultRoles.addDefaultRoles(realm, proxy);
+
         for (GroupModel g : realm.getDefaultGroups()) {
             proxy.joinGroup(g);
         }
         for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
             if (r.isEnabled() && r.isDefaultAction()) {
-                user.addRequiredAction(r.getAlias());
+                proxy.addRequiredAction(r.getAlias());
             }
         }
 

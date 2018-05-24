@@ -528,4 +528,32 @@ public class LDAPRoleMappingsTest {
         }
     }
 
+    @Test
+    public void test06_newUserDefaultRolesImportModeTest() throws Exception {
+
+        // Check user group memberships
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            // Set a default role on the realm
+            appRealm.addDefaultRole("realmRole1");
+
+            UserModel david = session.users().addUser(appRealm, "davidkeycloak");
+
+            RoleModel defaultRole = appRealm.getRole("realmRole1");
+            RoleModel realmRole2 = appRealm.getRole("realmRole2");
+
+            Assert.assertNotNull(defaultRole);
+            Assert.assertNotNull(realmRole2);
+
+            Set<RoleModel> davidRoles = david.getRealmRoleMappings();
+
+            Assert.assertTrue(davidRoles.contains(defaultRole));
+            Assert.assertFalse(davidRoles.contains(realmRole2));
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
 }
