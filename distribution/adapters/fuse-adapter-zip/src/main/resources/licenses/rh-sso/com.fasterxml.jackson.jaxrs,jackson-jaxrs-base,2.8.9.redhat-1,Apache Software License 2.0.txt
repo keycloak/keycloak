@@ -1,1 +1,0 @@
-com.fasterxml.jackson.core,jackson-databind,2.8.9.redhat-1,Apache Software License 2.0.txt
