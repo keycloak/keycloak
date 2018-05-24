@@ -315,6 +315,45 @@ public class LDAPRoleMappingsNoImportTest {
         }
     }
 
+    @Test
+    public void test03_newUserDefaultRolesNoImportModeTest() throws Exception {
+
+        // Check user group memberships
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            session.userCache().clear();
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
+
+            // Set a default role on the realm
+            appRealm.addDefaultRole("realmRole1");
+
+            UserModel david = session.users().addUser(appRealm, "davidkeycloak");
+
+            // make sure we are in no-import mode
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("davidkeycloak", appRealm));
+
+            RoleModel defaultRole = appRealm.getRole("realmRole1");
+            RoleModel realmRole2 = appRealm.getRole("realmRole2");
+
+            Assert.assertNotNull(defaultRole);
+            Assert.assertNotNull(realmRole2);
+
+            Set<RoleModel> davidRoles = david.getRealmRoleMappings();
+
+            Assert.assertTrue(davidRoles.contains(defaultRole));
+            Assert.assertFalse(davidRoles.contains(realmRole2));
+
+            // Make sure john has not received the default role
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Set<RoleModel> johnRoles = john.getRealmRoleMappings();
+
+            Assert.assertFalse(johnRoles.contains(defaultRole));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
 
     private void deleteRoleMappingsInLDAP(RoleLDAPStorageMapper roleMapper, LDAPObject ldapUser, String roleName) {
         LDAPObject ldapRole1 = roleMapper.loadLDAPRoleByName(roleName);

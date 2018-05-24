@@ -110,12 +110,22 @@ public class LDAPGroupMapperTest {
             LDAPObject group11 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group11");
             LDAPObject group12 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group12", descriptionAttrName, "group12 - description");
 
+            LDAPObject defaultGroup1 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "defaultGroup1", descriptionAttrName, "Default Group1 - description");
+            LDAPObject defaultGroup11 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "defaultGroup11");
+            LDAPObject defaultGroup12 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "defaultGroup12", descriptionAttrName, "Default Group12 - description");
+
             LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
             LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
+
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup11, false);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup12, true);
 
             // Sync LDAP groups to Keycloak DB
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "groupsMapper");
             new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
+
+            appRealm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(appRealm, "/defaultGroup1/defaultGroup11"));
+            appRealm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(appRealm, "/defaultGroup1/defaultGroup12"));
 
             // Delete all LDAP users
             LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
@@ -184,7 +194,7 @@ public class LDAPGroupMapperTest {
 
             UserModel johnDb = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
             Set<GroupModel> johnDbGroups = johnDb.getGroups();
-            Assert.assertEquals(0, johnDbGroups.size());
+            Assert.assertEquals(2, johnDbGroups.size());
 
             // 3 - Check that group mappings are in LDAP and hence available through federation
 
@@ -251,7 +261,7 @@ public class LDAPGroupMapperTest {
 
             // Assert that mary has both LDAP and DB mapped groups
             Set<GroupModel> maryGroups = mary.getGroups();
-            Assert.assertEquals(3, maryGroups.size());
+            Assert.assertEquals(5, maryGroups.size());
             Assert.assertTrue(maryGroups.contains(group1));
             Assert.assertTrue(maryGroups.contains(group11));
             Assert.assertTrue(maryGroups.contains(group12));
@@ -331,7 +341,7 @@ public class LDAPGroupMapperTest {
             rob.leaveGroup(group11);
             rob.leaveGroup(group12);
             robGroups = rob.getGroups();
-            Assert.assertEquals(0, robGroups.size());
+            Assert.assertEquals(2, robGroups.size());
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -522,6 +532,45 @@ public class LDAPGroupMapperTest {
         }
     }
 
+
+    @Test
+    public void test07_newUserDefaultGroupsImportModeTest() throws Exception {
+
+        // Check user group memberships
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm,ldapModel, "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
+            appRealm.updateComponent(mapperModel);
+
+            UserModel david = session.users().addUser(appRealm, "davidkeycloak");
+
+            GroupModel defaultGroup11 =  KeycloakModelUtils.findGroupByPath(appRealm, "/defaultGroup1/defaultGroup11");
+            Assert.assertNotNull(defaultGroup11);
+
+            GroupModel defaultGroup12 =  KeycloakModelUtils.findGroupByPath(appRealm, "/defaultGroup1/defaultGroup12");
+            Assert.assertNotNull(defaultGroup12);
+
+            GroupModel group31 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group31");
+            Assert.assertNotNull(group31);
+            GroupModel group32 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group32");
+            Assert.assertNotNull(group32);
+            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group4");
+            Assert.assertNotNull(group4);
+
+            Set<GroupModel> groups = david.getGroups();
+            Assert.assertTrue(groups.contains(defaultGroup11));
+            Assert.assertTrue(groups.contains(defaultGroup12));
+            Assert.assertFalse(groups.contains(group31));
+            Assert.assertFalse(groups.contains(group32));
+            Assert.assertFalse(groups.contains(group4));
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
 
     private void deleteGroupMappingsInLDAP(GroupLDAPStorageMapper groupMapper, LDAPObject ldapUser, String groupName) {
         LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName(groupName);
