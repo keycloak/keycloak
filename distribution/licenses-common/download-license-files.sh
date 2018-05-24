@@ -61,30 +61,4 @@ echo "==> Normalizing license line endings" >&2
 
 find "$output_dir" -maxdepth 1 -type f -name '*.txt' -print0 | xargs --no-run-if-empty -0 dos2unix
 
-echo "==> Symlinking identical files" >&2
-
-hashtemp="$(mktemp)"
-trap "rm '$hashtemp'" EXIT
-
-cd "$output_dir"
-find -maxdepth 1 -type f -name '*.txt' -print0 | LC_ALL=C sort -z | xargs --no-run-if-empty -0 sha256sum | sed 's, \./,,' > "$hashtemp"
-
-declare -A processed_hashes
-
-while IFS=" " read -r -d $'\n' hash filename
-do
-    if ! [ -v processed_hashes["$hash"] ]
-    then
-        echo "$filename" >&2
-        grep -F "$hash " "$hashtemp" | grep -vxF "$hash $filename" | \
-        while IFS=" " read -r -d $'\n' dup_hash dup_filename
-        do
-            echo " -> $dup_filename" >&2
-            rm "$dup_filename"
-            ln -s "$filename" "$dup_filename"
-        done
-        processed_hashes["$hash"]="$filename"
-    fi
-done < "$hashtemp"
-
 echo "==> Complete" >&2
