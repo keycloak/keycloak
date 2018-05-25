@@ -22,7 +22,7 @@ import java.security.PublicKey;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.common.util.StreamUtil;
@@ -214,7 +214,8 @@ public class PreAuthActionsHandler {
 
         try {
             JWSInput input = new JWSInput(token);
-            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input.getHeader().getKeyId(), deployment);
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            PublicKey publicKey = AdapterTokenVerifier.getPublicKey(input.getHeader().getKeyId(), deployment);
             if (RSAProvider.verify(input, publicKey)) {
                 return input;
             }

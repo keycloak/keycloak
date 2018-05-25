@@ -22,6 +22,7 @@ import org.keycloak.common.util.KeyUtils;
 
 import java.math.BigInteger;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**
@@ -58,6 +59,24 @@ public class JWKBuilder {
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
+
+        return k;
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public JWK es256(PublicKey key) {
+        ECPublicKey ecdsaKey = (ECPublicKey) key;
+
+        ECPublicJWK k = new ECPublicJWK();
+
+        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+        k.setKeyId(kid);
+        k.setKeyType(ECPublicJWK.EC);
+        k.setAlgorithm(ECPublicJWK.ES256);
+        k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
+        k.setCurve(ECPublicJWK.P256);
+        k.setX(Base64Url.encode(toIntegerBytes(ecdsaKey.getW().getAffineX())));
+        k.setY(Base64Url.encode(toIntegerBytes(ecdsaKey.getW().getAffineY())));
 
         return k;
     }

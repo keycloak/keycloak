@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.JWSTokenVerifier;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.ClientConnection;
@@ -29,6 +30,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -130,12 +133,14 @@ public class UserInfoEndpoint {
 
         AccessToken token = null;
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString)
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            JWSInput jws = new JWSInput(tokenString);
+            JWSTokenVerifier verifier = JWSTokenVerifier.create(tokenString)
                     .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-            String kid = verifier.getHeader().getKeyId();
-            verifier.publicKey(session.keys().getRsaPublicKey(realm, kid));
+
+            verifier.publicKey(session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId()));
             token = verifier.verify().getToken();
-        } catch (VerificationException e) {
+        } catch (VerificationException | JWSInputException e) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
         }

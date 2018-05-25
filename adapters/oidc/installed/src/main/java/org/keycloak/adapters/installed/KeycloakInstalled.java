@@ -24,7 +24,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.jose.jws.JWSInput;
@@ -537,7 +537,8 @@ public class KeycloakInstalled {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
 
-        token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
         if (idTokenString != null) {
             try {
                 JWSInput input = new JWSInput(idTokenString);

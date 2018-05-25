@@ -36,6 +36,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -44,6 +45,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
@@ -58,6 +60,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -146,6 +149,77 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
         
         assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Test
+    public void accessTokenRequestInJWSES256() throws Exception {
+        // change JWS algorithm: RS256 to RS256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
+
+        assertEquals("bearer", response.getTokenType());
+
+        String expectedKid = oauth.doCertsRequest("test").getKeys()[1].getKeyId();
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getIdToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
+
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+
+        assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
+        Assert.assertNotEquals("test-user@localhost", token.getSubject());
+
+        assertEquals(sessionId, token.getSessionState());
+
+        assertEquals(1, token.getRealmAccess().getRoles().size());
+        assertTrue(token.getRealmAccess().isUserInRole("user"));
+
+        assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
+        assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+
+        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
+        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(sessionId, token.getSessionState());
+
+        // revert JWS algorithm: ES256 to RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
     }
 
     @Test

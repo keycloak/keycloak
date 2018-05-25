@@ -20,7 +20,7 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessToken;
@@ -130,7 +130,8 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
-            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

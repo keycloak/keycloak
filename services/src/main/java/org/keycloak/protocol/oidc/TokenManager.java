@@ -30,6 +30,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashProvider;
+import org.keycloak.jose.jws.crypto.JWSSignatureProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -90,8 +91,8 @@ public class TokenManager {
     private static final Logger logger = Logger.getLogger(TokenManager.class);
     private static final String JWT = "JWT";
 
-    // Harcoded for now
-    Algorithm jwsAlgorithm = Algorithm.RS256;
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    Algorithm jwsRsaAlgorithm = Algorithm.RS256;
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -332,18 +333,17 @@ public class TokenManager {
 
     public RefreshToken toRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws JWSInputException, OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
-
         PublicKey publicKey;
 
-        // Backwards compatibility. Old offline tokens didn't have KID in the header
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         if (jws.getHeader().getKeyId() == null && TokenUtil.isOfflineToken(encodedRefreshToken)) {
             logger.debugf("KID is null in offline token. Using the realm active key to verify token signature.");
-            publicKey = session.keys().getActiveRsaKey(realm).getPublicKey();
+            publicKey = session.keys().getActivePublicKey(realm, jws.getHeader().getAlgorithm().getType());
         } else {
-            publicKey = session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
+            publicKey = session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId());
         }
 
-        if (!RSAProvider.verify(jws, publicKey)) {
+        if (!JWSSignatureProvider.verify(jws, publicKey)) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
         }
 
@@ -351,18 +351,18 @@ public class TokenManager {
     }
 
     public IDToken verifyIDToken(KeycloakSession session, RealmModel realm, String encodedIDToken) throws OAuthErrorException {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         try {
             JWSInput jws = new JWSInput(encodedIDToken);
             IDToken idToken;
-            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+            PublicKey publicKey = session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId());
+            if (!JWSSignatureProvider.verify(jws, publicKey)) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
-            }
+            } 
             idToken = jws.readJsonContent(IDToken.class);
-
             if (idToken.isExpired()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
             }
-
             if (idToken.getIssuedAt() < realm.getNotBefore()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
             }
@@ -373,14 +373,15 @@ public class TokenManager {
     }
 
     public IDToken verifyIDTokenSignature(KeycloakSession session, RealmModel realm, String encodedIDToken) throws OAuthErrorException {
-        try {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    	try {
             JWSInput jws = new JWSInput(encodedIDToken);
             IDToken idToken;
-            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+            PublicKey publicKey = session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId());
+            if (!JWSSignatureProvider.verify(jws, publicKey)) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
-
             return idToken;
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
@@ -695,8 +696,10 @@ public class TokenManager {
     }
 
     public String encodeToken(KeycloakSession session, RealmModel realm, Object token) {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    	// Authorization Services related tokens are out of scope
         KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
-        return new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(token).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+        return new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(token).sign(jwsRsaAlgorithm, activeRsaKey.getPrivateKey());
     }
 
     public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
@@ -721,7 +724,10 @@ public class TokenManager {
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         String stateHash;
-        
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        Algorithm jwsAlgorithm = Algorithm.RS256;
+
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
             this.realm = realm;
             this.client = client;
@@ -729,6 +735,9 @@ public class TokenManager {
             this.session = session;
             this.userSession = userSession;
             this.clientSession = clientSession;
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            this.jwsAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(client).getIdTokenSignedResponseAlg();
+            if (this.jwsAlgorithm == null) this.jwsAlgorithm = Algorithm.RS256;
         }
 
         public AccessToken getAccessToken() {
@@ -831,7 +840,8 @@ public class TokenManager {
         }
 
         public AccessTokenResponse build() {
-            KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            KeyManager.ActivePublicKeyCryptographyKey activeKey = session.keys().getActivePublicKeyCryptographyKey(realm, jwsAlgorithm);
 
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
@@ -848,7 +858,8 @@ public class TokenManager {
 
             AccessTokenResponse res = new AccessTokenResponse();
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(accessToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(accessToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -870,11 +881,13 @@ public class TokenManager {
                 idToken.setStateHash(stateHash);
             }
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(refreshToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(refreshToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

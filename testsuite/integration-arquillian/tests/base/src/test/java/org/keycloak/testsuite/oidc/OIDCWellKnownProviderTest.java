@@ -100,7 +100,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
-            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256.toString());
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256.toString(), Algorithm.ES256.toString());
             Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), Algorithm.RS256.toString());
             Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), Algorithm.none.toString(), Algorithm.RS256.toString());
 

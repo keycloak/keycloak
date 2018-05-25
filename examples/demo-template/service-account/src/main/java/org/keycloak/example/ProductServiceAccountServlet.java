@@ -31,7 +31,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.UriUtils;
@@ -152,7 +152,8 @@ public class ProductServiceAccountServlet extends HttpServlet {
     private void setTokens(HttpServletRequest req, KeycloakDeployment deployment, AccessTokenResponse tokenResponse) throws IOException, VerificationException {
         String token = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
-        AccessToken tokenParsed = AdapterRSATokenVerifier.verifyToken(token, deployment);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        AccessToken tokenParsed = AdapterTokenVerifier.verifyToken(token, deployment);
         req.getSession().setAttribute(TOKEN, token);
         req.getSession().setAttribute(REFRESH_TOKEN, refreshToken);
         req.getSession().setAttribute(TOKEN_PARSED, tokenParsed);

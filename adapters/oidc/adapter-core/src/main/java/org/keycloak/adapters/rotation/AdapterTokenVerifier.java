@@ -18,6 +18,7 @@
 package org.keycloak.adapters.rotation;
 
 import org.jboss.logging.Logger;
+import org.keycloak.JWSTokenVerifier;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.VerificationException;
@@ -29,9 +30,9 @@ import java.security.PublicKey;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AdapterRSATokenVerifier {
+public class AdapterTokenVerifier {
 
-    private static final Logger log = Logger.getLogger(AdapterRSATokenVerifier.class);
+    private static final Logger log = Logger.getLogger(AdapterTokenVerifier.class);
 
     public static AccessToken verifyToken(String tokenString, KeycloakDeployment deployment) throws VerificationException {
         return verifyToken(tokenString, deployment, true, true);
@@ -51,8 +52,14 @@ public class AdapterRSATokenVerifier {
     }
 
     public static AccessToken verifyToken(String tokenString, KeycloakDeployment deployment, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(deployment.getRealmInfoUrl()).checkActive(checkActive).checkTokenType(checkTokenType);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        JWSTokenVerifier verifier = null;
+        verifier = JWSTokenVerifier.create(tokenString).realmUrl(deployment.getRealmInfoUrl()).checkActive(checkActive).checkTokenType(checkTokenType);
         PublicKey publicKey = getPublicKey(verifier.getHeader().getKeyId(), deployment);
+
+        log.debugf("publicKey = ", publicKey);
+        log.debugf("verifier.publicKey(publicKey).verify().getToken() = ", verifier.publicKey(publicKey).verify().getToken());
+
         return verifier.publicKey(publicKey).verify().getToken();
     }
 }

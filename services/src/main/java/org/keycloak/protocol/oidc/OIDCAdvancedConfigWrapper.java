@@ -43,6 +43,9 @@ public class OIDCAdvancedConfigWrapper {
 
     private static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    private static final String ID_TOKEN_SIGNED_RESPONSE_ALG = "id.token.signed.response.alg";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -60,6 +63,15 @@ public class OIDCAdvancedConfigWrapper {
         return new OIDCAdvancedConfigWrapper(null, clientRep);
     }
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public Algorithm getIdTokenSignedResponseAlg() {
+        String alg = getAttribute(ID_TOKEN_SIGNED_RESPONSE_ALG);
+        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    }
+    public void setIdTokenSignedResponseAlg(Algorithm alg) {
+        String algStr = alg==null ? null : alg.toString();
+        setAttribute(ID_TOKEN_SIGNED_RESPONSE_ALG, algStr);
+    }
 
     public Algorithm getUserInfoSignedResponseAlg() {
         String alg = getAttribute(USER_INFO_RESPONSE_SIGNATURE_ALG);

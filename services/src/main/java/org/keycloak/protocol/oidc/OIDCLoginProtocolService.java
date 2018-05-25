@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -26,6 +27,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.keys.EcdsaKeyMetadata;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.Constants;
@@ -62,6 +64,8 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolService {
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
 
     private RealmModel realm;
     private TokenManager tokenManager;
@@ -195,19 +199,60 @@ public class OIDCLoginProtocolService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response certs() {
-        List<RsaKeyMetadata> publicKeys = session.keys().getRsaKeys(realm, false);
-        JWK[] keys = new JWK[publicKeys.size()];
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        List<RsaKeyMetadata> publicRsaKeys = session.keys().getRsaKeys(realm, false);
+        List<EcdsaKeyMetadata> publicEcdsaKeys = session.keys().getEcdsaKeys(realm, false);
+
+        dumpRealmInfo(realm);
+        for(RsaKeyMetadata rsaMeta : publicRsaKeys) dumpRsaKeyMetadata(rsaMeta);
+        for(EcdsaKeyMetadata ecdsaMeta : publicEcdsaKeys) dumpEcdsaKeyMetadata(ecdsaMeta);
+
+        // only for RSA and ECDSA
+        JWK[] keys = new JWK[publicRsaKeys.size() + publicEcdsaKeys.size()];
 
         int i = 0;
-        for (RsaKeyMetadata k : publicKeys) {
+        for (RsaKeyMetadata k : publicRsaKeys) {
             keys[i++] = JWKBuilder.create().kid(k.getKid()).rs256(k.getPublicKey());
+        }
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        for (EcdsaKeyMetadata k : publicEcdsaKeys) {
+        	// only for ES256
+            keys[i++] = JWKBuilder.create().kid(k.getKid()).es256(k.getPublicKey());
         }
 
         JSONWebKeySet keySet = new JSONWebKeySet();
         keySet.setKeys(keys);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        for(JWK jwk : keySet.getKeys()) dumpJwkInfo(jwk);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
         return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+    }
+    private void dumpRealmInfo(RealmModel realm) {
+        logger.debugf("realm.getId() = ", realm.getId());
+        logger.debugf("realm.getDisplayName() = ", realm.getDisplayName());
+    }
+    private void dumpRsaKeyMetadata(RsaKeyMetadata rsaMeta) {
+        logger.debugf("rsaMeta.getKid() = ", rsaMeta.getKid());
+        logger.debugf("rsaMeta.getProviderId() = ", rsaMeta.getProviderId());
+        logger.debugf("rsaMeta.getProviderPriority() = ", rsaMeta.getProviderPriority());
+        logger.debugf("rsaMeta.getCertificate() = ", rsaMeta.getCertificate());
+        logger.debugf("rsaMeta.getPublicKey() = ", rsaMeta.getPublicKey());
+        logger.debugf("rsaMeta.getStatus() = ", rsaMeta.getStatus());
+    }
+    private void dumpEcdsaKeyMetadata(EcdsaKeyMetadata ecdsaMeta) {
+        logger.debugf("ecdsaMeta.getKid() = ", ecdsaMeta.getKid());
+        logger.debugf("ecdsaMeta.getProviderId() = ", ecdsaMeta.getProviderId());
+        logger.debugf("ecdsaMeta.getProviderPriority() = ", ecdsaMeta.getProviderPriority());
+        logger.debugf("ecdsaMeta.getPublicKey() = ", ecdsaMeta.getPublicKey());
+        logger.debugf("ecdsaMeta.getStatus() = ", ecdsaMeta.getStatus());
+    }
+    private void dumpJwkInfo(JWK jwk) {
+        logger.debugf("jwk.getAlgorithm() = ", jwk.getAlgorithm());
+        logger.debugf("jwk.getKeyId() = ", jwk.getKeyId());
+        logger.debugf("jwk.getKeyType() = ", jwk.getKeyType());
+        logger.debugf("jwk.getPublicKeyUse() = ", jwk.getPublicKeyUse());
+        logger.debugf("jwk.toString() = ", jwk.toString());
     }
 
     @Path("userinfo")

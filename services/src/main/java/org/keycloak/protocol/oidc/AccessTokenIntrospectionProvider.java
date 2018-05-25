@@ -24,9 +24,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.jboss.logging.Logger;
+import org.keycloak.JWSTokenVerifier;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
@@ -38,6 +42,8 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvider {
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    private static final Logger logger = Logger.getLogger(AccessTokenIntrospectionProvider.class);
 
     private final KeycloakSession session;
     private final TokenManager tokenManager;
@@ -74,16 +80,19 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         AccessToken accessToken;
 
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(token)
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            JWSInput jws = new JWSInput(token);
+
+            JWSTokenVerifier verifier = JWSTokenVerifier.create(token)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
+            PublicKey publicKey = session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId());
 
             if (publicKey == null) {
                 return null;
             }
 
             accessToken = verifier.publicKey(publicKey).verify().getToken();
-        } catch (VerificationException e) {
+        } catch (VerificationException | JWSInputException e) {
             return null;
         }
 
@@ -94,14 +103,17 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
     protected AccessToken toAccessToken(String token) {
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(token)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            JWSInput jws = new JWSInput(token);
 
-            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
+            JWSTokenVerifier verifier = JWSTokenVerifier.create(token)
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+            PublicKey publicKey = session.keys().getPublicKey(realm, jws.getHeader().getAlgorithm().getType(), jws.getHeader().getKeyId());
+
             verifier.publicKey(publicKey);
 
             return verifier.verify().getToken();
-        } catch (VerificationException e) {
+        } catch (VerificationException | JWSInputException e) {
             throw new ErrorResponseException("invalid_request", "Invalid token.", Response.Status.UNAUTHORIZED);
         }
     }

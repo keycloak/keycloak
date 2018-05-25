@@ -72,4 +72,25 @@ public class JWKBuilderTest {
         assertEquals("X.509", key.getFormat());
     }
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Test
+    public void publicEs256() throws Exception {
+        PublicKey publicKey = KeyPairGenerator.getInstance("EC").generateKeyPair().getPublic();
+
+        JWK jwk = JWKBuilder.create().es256(publicKey);
+
+        assertNotNull(jwk.getKeyId());
+        assertEquals("EC", jwk.getKeyType());
+        assertEquals("ES256", jwk.getAlgorithm());
+        assertEquals("sig", jwk.getPublicKeyUse());
+
+        assertTrue(jwk instanceof ECPublicJWK);
+        assertNotNull(((ECPublicJWK) jwk).getCurve());
+        assertNotNull(((ECPublicJWK) jwk).getX());
+        assertNotNull(((ECPublicJWK) jwk).getY());
+
+        String jwkJson = JsonSerialization.writeValueAsString(jwk);
+        // Parse
+        assertArrayEquals(publicKey.getEncoded(), JWKParser.create().parse(jwkJson).toPublicKey().getEncoded());
+    }
 }

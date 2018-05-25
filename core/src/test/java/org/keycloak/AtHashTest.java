@@ -45,5 +45,8 @@ public class AtHashTest {
     private void verifyHash(String accessToken, String expectedAtHash) {
         String atHash = HashProvider.oidcHash(Algorithm.RS256, accessToken);
         Assert.assertEquals(expectedAtHash, atHash);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        atHash = HashProvider.oidcHash(Algorithm.ES256, accessToken);
+        Assert.assertEquals(expectedAtHash, atHash);
     }
 }

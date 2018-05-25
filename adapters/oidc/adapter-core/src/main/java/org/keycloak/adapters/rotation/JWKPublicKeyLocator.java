@@ -100,6 +100,16 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
             Map<String, PublicKey> publicKeys = JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
 
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            for(String idx : publicKeys.keySet()) {
+                PublicKey publicKey = publicKeys.get(idx);
+                
+                log.debugf("publicKey id = ", idx);
+                log.debugf("publicKey.getAlgorithm() = ", publicKey.getAlgorithm());
+                log.debugf("publicKey.getFormat() = ", publicKey.getFormat());
+                log.debugf("publicKey.toString() = ", publicKey.toString());
+            }
+
             if (log.isDebugEnabled()) {
                 log.debug("Realm public keys successfully retrieved for client " +  deployment.getResourceName() + ". New kids: " + publicKeys.keySet().toString());
             }

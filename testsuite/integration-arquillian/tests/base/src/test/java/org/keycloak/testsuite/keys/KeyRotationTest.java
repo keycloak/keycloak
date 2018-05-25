@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.JWSTokenVerifier;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -253,7 +254,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     static void assertTokenSignature(PublicKey expectedKey, String token) {
         String kid = null;
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(token).checkTokenType(false).checkRealmUrl(false).checkActive(false).publicKey(expectedKey);
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            JWSTokenVerifier verifier = JWSTokenVerifier.create(token).checkTokenType(false).checkRealmUrl(false).checkActive(false).publicKey(expectedKey);
             kid = verifier.getHeader().getKeyId();
             verifier.verify();
         } catch (VerificationException e) {

@@ -23,7 +23,7 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.common.util.reflections.Reflections;
@@ -202,7 +202,8 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
 
 
     protected Auth bearerAuth(String tokenString) throws VerificationException {
-        AccessToken token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        AccessToken token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
 
         boolean verifyCaller;
         if (deployment.isUseResourceRoleMappings()) {

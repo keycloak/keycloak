@@ -18,12 +18,18 @@
 package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Map;
 
@@ -66,22 +72,47 @@ public class JWKParser {
 
     public PublicKey toPublicKey() {
         String keyType = jwk.getKeyType();
-        if (isKeyTypeSupported(keyType)) {
-            BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
-            BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        if (RSAPublicJWK.RSA.equals(keyType)) return toRSAPublicKey();
+        else if (ECPublicJWK.EC.equals(keyType)) return toECPublicKey();
+        else throw new RuntimeException("Unsupported keyType " + keyType);
+    }
 
-            try {
-                return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            throw new RuntimeException("Unsupported keyType " + keyType);
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    private PublicKey toRSAPublicKey() {
+        BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
+        BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
+
+        try {
+            return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public PublicKey toECPublicKey() {
+        BigInteger x = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(ECPublicJWK.X_COORDINATE).toString()));
+        BigInteger y = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(ECPublicJWK.Y_COORDINATE).toString()));
+        ECPoint w = new ECPoint(x, y);
+
+        // spec for P-256 curve
+        ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec("prime256v1");
+
+        // code below just creates the public key from the bytes contained in publicK
+        // using the curve parameters (spec variable)
+        ECNamedCurveSpec params = new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+
+        try {
+            return KeyFactory.getInstance("EC").generatePublic(new ECPublicKeySpec(w, params));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
     public boolean isKeyTypeSupported(String keyType) {
-        return RSAPublicJWK.RSA.equals(keyType);
+        return RSAPublicJWK.RSA.equals(keyType) || ECPublicJWK.EC.equals(keyType);
     }
 
 }

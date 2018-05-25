@@ -31,16 +31,20 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
+import org.keycloak.ECDSATokenVerifier;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -66,8 +70,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.KeyFactory;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -614,31 +622,75 @@ public class OAuthClient {
     }
 
     public AccessToken verifyToken(String token) {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         try {
-            return RSATokenVerifier.verifyToken(token, getRealmPublicKey(realm), baseUrl + "/realms/" + realm);
+            JWSInput jws = new JWSInput(token);
+            AlgorithmType algorithmType = jws.getHeader().getAlgorithm().getType();
+            PublicKey publicKey = null;
+
+            if (AlgorithmType.RSA.equals(algorithmType)) {
+                publicKey = getRealmRsaPublicKey(realm, jws.getHeader().getKeyId());
+                return RSATokenVerifier.verifyToken(token, publicKey, baseUrl + "/realms/" + realm);
+            } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+                publicKey = getRealmEcdsaPublicKey(realm, jws.getHeader().getKeyId());
+                return ECDSATokenVerifier.verifyToken(token, publicKey, baseUrl + "/realms/" + realm);
+            } else {
+                throw new RuntimeException("Unknown JWS Algorithm = " + algorithmType);
+            }
+
+        } catch (JWSInputException e) {
+            throw new RuntimeException("Failed to JWSInput verify token", e);
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to verify token", e);
         }
     }
 
     public IDToken verifyIDToken(String token) {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         try {
-            IDToken idToken = RSATokenVerifier.verifyToken(token, getRealmPublicKey(realm), baseUrl + "/realms/" + realm, true, false);
+            JWSInput jws = new JWSInput(token);
+            AlgorithmType algorithmType = jws.getHeader().getAlgorithm().getType();
+            PublicKey publicKey = null;
+            IDToken idToken = null;
+            if (AlgorithmType.RSA.equals(algorithmType)) {
+                publicKey = getRealmRsaPublicKey(realm, jws.getHeader().getKeyId());
+                idToken = RSATokenVerifier.verifyToken(token, publicKey, baseUrl + "/realms/" + realm, true, false);
+            } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+                publicKey = getRealmEcdsaPublicKey(realm, jws.getHeader().getKeyId());
+                idToken = ECDSATokenVerifier.verifyToken(token, publicKey, baseUrl + "/realms/" + realm, true, false);
+            } else {
+                throw new RuntimeException("Unknown JWS Algorithm = " + algorithmType);
+            }
             Assert.assertEquals(TokenUtil.TOKEN_TYPE_ID, idToken.getType());
             return idToken;
+        } catch (JWSInputException e) {
+            throw new RuntimeException("Failed to JWSInput verify token", e);
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to verify token", e);
         }
     }
 
     public RefreshToken verifyRefreshToken(String refreshToken) {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         try {
             JWSInput jws = new JWSInput(refreshToken);
-            if (!RSAProvider.verify(jws, getRealmPublicKey(realm))) {
-                throw new RuntimeException("Invalid refresh token");
+            AlgorithmType algorithmType = jws.getHeader().getAlgorithm().getType();
+            String keyId = jws.getHeader().getKeyId();
+            PublicKey publicKey = null;
+            if (AlgorithmType.RSA.equals(algorithmType)) {
+                if (!RSAProvider.verify(jws, getRealmRsaPublicKey(realm, keyId))) {
+                    throw new RuntimeException("Invalid refresh token");
+                }
+            } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+                publicKey = getRealmEcdsaPublicKey(realm, keyId);
+                if (!ECDSAProvider.verify(jws, publicKey)) {
+                    throw new RuntimeException("Invalid refresh token");
+                }
+            } else {
+                throw new RuntimeException("Unknown JWS Algorithm = " + algorithmType);
             }
             return jws.readJsonContent(RefreshToken.class);
-        } catch (RuntimeException | JWSInputException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Invalid refresh token", e);
         }
     }
@@ -1086,6 +1138,54 @@ public class OAuthClient {
 
         return publicKeys.get(realm);
     }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public PublicKey getRealmRsaPublicKey(String realm, String kid) {
+        publicKeys.clear();
+        KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
+        PublicKey publicKey = null;
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getKid().equals(kid)) {
+                publicKey = PemUtils.decodePublicKey(rep.getPublicKey());
+            }
+        }
+        publicKeys.put(realm, publicKey);
+
+        return publicKeys.get(realm);
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public PublicKey getRealmEcdsaPublicKey(String realm, String kid) {
+        publicKeys.clear();
+        KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
+        PublicKey publicKey = null;
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getKid().equals(kid)) {
+                X509EncodedKeySpec publicKeySpec = null;
+                try {
+                    publicKeySpec = new X509EncodedKeySpec(Base64.decode(rep.getPublicKey()));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+
+                KeyFactory kf = null;
+                try {
+                    kf = KeyFactory.getInstance("EC");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    publicKey = kf.generatePublic(publicKeySpec);
+                } catch (InvalidKeySpecException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        publicKeys.put(realm, publicKey);
+
+        return publicKeys.get(realm);
+    }
+
 
     public void removeCachedPublicKeys() {
         publicKeys.clear();

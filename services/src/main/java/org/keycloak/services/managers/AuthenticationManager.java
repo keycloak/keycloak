@@ -1101,6 +1101,17 @@ public class AuthenticationManager {
                     return null;
                 }
                 verifier.secretKey(secretKey);
+            } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+                // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                PublicKey publicKey = session.keys().getEcdsaPublicKey(realm, kid);
+                if (publicKey == null) {
+                    logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
+                    return null;
+                }
+
+                logger.debugf("ECDSA Public Key = %s", publicKey);
+
+                verifier.publicKey(publicKey);
             }
 
             AccessToken token = verifier.verify().getToken();
