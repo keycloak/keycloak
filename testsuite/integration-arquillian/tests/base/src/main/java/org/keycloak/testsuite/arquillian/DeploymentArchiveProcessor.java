@@ -37,9 +37,16 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isEAP6AppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isEAPAppServer;
@@ -81,6 +88,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
     public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
+    public static final String SAML_ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak-saml.xml";
+    public static final String SAML_ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak-saml.xml";
 
     @Inject
     @ClassScoped
@@ -131,15 +140,17 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT2, relative);
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_JS, relative);
         modifyAdapterConfig(archive, SAML_ADAPTER_CONFIG_PATH, relative);
+        modifyAdapterConfig(archive, SAML_ADAPTER_CONFIG_PATH_TENANT1, relative);
+        modifyAdapterConfig(archive, SAML_ADAPTER_CONFIG_PATH_TENANT2, relative);
     }
 
     protected void modifyAdapterConfig(Archive<?> archive, String adapterConfigPath, boolean relative) {
         if (archive.contains(adapterConfigPath)) {
             log.info("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
-            if (adapterConfigPath.equals(SAML_ADAPTER_CONFIG_PATH)) { // SAML adapter config
+            if (adapterConfigPath.endsWith(".xml")) { // SAML adapter config
                 log.info("Modifying saml adapter config in " + archive.getName());
 
-                Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
+                Document doc = loadXML(archive.get(adapterConfigPath).getAsset().openStream());
                 if (AUTH_SERVER_SSL_REQUIRED) {
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
@@ -225,7 +236,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         }
 
         if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class) && archive.contains(JBOSS_DEPLOYMENT_XML_PATH)) {
-
             addFilterDependencies(archive, testClass);
 
             //We need to add filter declaration to web.xml
@@ -240,6 +250,20 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
             filter.appendChild(filterName);
             filter.appendChild(filterClass);
+            
+            // check if there was a resolver for OIDC and set as a filter param
+            String keycloakResolverClass = getKeycloakResolverClass(webXmlDoc);
+            if (keycloakResolverClass != null) {
+                Element initParam = webXmlDoc.createElement("init-param");
+                Element paramName = webXmlDoc.createElement("param-name");
+                paramName.setTextContent("keycloak.config.resolver");
+                Element paramValue = webXmlDoc.createElement("param-value");
+                paramValue.setTextContent(keycloakResolverClass);
+                initParam.appendChild(paramName);
+                initParam.appendChild(paramValue);
+                filter.appendChild(initParam);
+            }
+            
             appendChildInDocument(webXmlDoc, "web-app", filter);
 
             filter.appendChild(filterName);
@@ -291,5 +315,22 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         }
 
         archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
+    }
+    
+    private String getKeycloakResolverClass(Document doc) {
+        try {
+            XPathFactory factory = XPathFactory.newInstance();
+            XPath xpath = factory.newXPath();
+            XPathExpression expr = xpath.compile("//web-app/context-param[param-name='keycloak.config.resolver']/param-value/text()");
+            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            if (nodes != null && nodes.getLength() > 0) {
+                return nodes.item(0).getNodeValue();
+            }
+        } catch(DOMException e) {
+            throw new IllegalStateException(e);
+        } catch (XPathExpressionException e) {
+            throw new IllegalStateException(e);
+        }
+        return null;
     }
 }

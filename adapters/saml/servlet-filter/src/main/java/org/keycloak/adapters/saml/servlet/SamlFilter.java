@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.servlet;
 
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlAuthenticator;
+import org.keycloak.adapters.saml.SamlConfigResolver;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSession;
@@ -74,15 +75,12 @@ public class SamlFilter implements Filter {
         String configResolverClass = filterConfig.getInitParameter("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
-                throw new RuntimeException("Not implemented yet");
-                // KeycloakConfigResolver configResolver = (KeycloakConfigResolver)
-                // context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
-                // deploymentContext = new SamlDeploymentContext(configResolver);
-                // log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.",
-                // configResolverClass);
+                SamlConfigResolver configResolver = (SamlConfigResolver) getClass().getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new SamlDeploymentContext(configResolver);
+                log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
             } catch (Exception ex) {
-                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[] { configResolverClass, ex.getMessage() });
-                // deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                log.log(Level.WARNING, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[] { configResolverClass, ex.getMessage() });
+                deploymentContext = new SamlDeploymentContext(new DefaultSamlDeployment());
             }
         } else {
             String fp = filterConfig.getInitParameter("keycloak.config.file");

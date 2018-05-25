@@ -1,0 +1,73 @@
+{
+    "id": "tenant2",
+    "realm": "tenant2",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user" ]
+        },
+        {
+            "username" : "user-tenant2",
+            "enabled": true,
+            "email" : "user-tenant2@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "user-tenant2" }
+            ],
+            "realmRoles": [ "user" ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "multi-tenant",
+            "name": "multi-tenant",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "frontchannelLogout": true,
+            "baseUrl": "http://localhost:8080/multi-tenant-saml/",
+            "redirectUris": [
+                "http://localhost:8080/multi-tenant-saml/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_single_logout_service_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_single_logout_service_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIICpzCCAY8CBgFjh/X1zDANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxtdWx0aS10ZW5hbnQwHhcNMTgwNTIyMTMwNTMzWhcNMjgwNTIyMTMwNzEzWjAXMRUwEwYDVQQDDAxtdWx0aS10ZW5hbnQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDEIM1mJ9KE9OtVDl+6N9Cyg1byP8g8NARWIxstKR69eb9MlrXdzAZtv6S/DyLHuNpjX1DXisuHYHn4Si/2xa0XpRos151lOrk4YrJPokQWz+/Qej3vpJOeWC/EXeISs59t3zrUf/v2OtI57lln7ItABe6+nbTmGuLVCXYxHTaLxo4PRMh9IdsWIWjGi1F4uUR1P253ty9GgYFiRzNMxT9M4yOc5nXqih0kid7iZp+Idz1qLdxphgwUY5ElV4aBy1g5eudll8UFsGqaYUNC+V048BRoGyjstzoN8nYDN7yn89Vj5mjEzPH+FQwd1YlT2f7jH92UMBDdHpWrVOEF0DPVAgMBAAEwDQYJKoZIhvcNAQELBQADggEBACaadxu5ap+jr1wsXUX7KrrS5zc5yrNndEduFRLCetqeQ2hAmQkawqVDJnbjGH+uK5pNQ9Qk+ez77hbjMd8TlDwWD6wKdnIgZybxZ8WQi2/IWGXhrHwyITKSJukG1aDu1c9gwO9ho8J17bjpiaINx35s6Gf+iAttwv+Az7DytU42nhXxbSIgG4kb/RQkqOyIagCDJtExUgAs0mdG/Qm0uIMBQ3OZon06tAkj8H2M6PagRHDxIvCuu+MvOzv7WKOtOBP8p/cw5+1tagb9zO7U5yzT9iexYKfn5soU80sbUFgy5PZPq5MEF/xqzgwJdZVkRk0XAcIDTLjwquxd0R+u9tg=",
+                "saml.signing.private.key": "MIIEpAIBAAKCAQEAxCDNZifShPTrVQ5fujfQsoNW8j/IPDQEViMbLSkevXm/TJa13cwGbb+kvw8ix7jaY19Q14rLh2B5+Eov9sWtF6UaLNedZTq5OGKyT6JEFs/v0Ho976STnlgvxF3iErOfbd861H/79jrSOe5ZZ+yLQAXuvp205hri1Ql2MR02i8aOD0TIfSHbFiFoxotReLlEdT9ud7cvRoGBYkczTMU/TOMjnOZ16oodJIne4mafiHc9ai3caYYMFGORJVeGgctYOXrnZZfFBbBqmmFDQvldOPAUaBso7Lc6DfJ2Aze8p/PVY+ZoxMzx/hUMHdWJU9n+4x/dlDAQ3R6Vq1ThBdAz1QIDAQABAoIBACKrbcOuLG+mX+dUOCXR8glsYDVIgxvpUg7r+8Ta7P0vhVqDlbiUdVp3Myc3BL3rdmd0lPTVKy9OJaF3c80amoOAgwUERGV9oPpPsBeVppWlwk3HHiW7oQCvtBnxQqJtsDQa7upbiW24bishcBqH3QG/SrnVZQH8JLbmCkeaU2cXrbqZchGTj4nMVlHaFgOqb9A6y911Jlbyh9F2lP5aNRPekcNUV17+JhxKxCeyPesrvwey4DcbTWC0Li+BtnO2YwGADRteiz23g8xz+miQO4vTcOy/rctgNkmlo6U9vSwfuvRmMlVy1q1JnAiyATr/nzAz5zYPSHuQjeA/i9vZU00CgYEA9fSKyd3l+AZDPivVb+uqOu6pWAs3UoVZwE7SeEvvt93o+eOMWn+e9K5XimCfT/EM+B09L186hx5RL46ZNuUGWDtCSZXWpD5MRIt7e3gLSmVUyg9BM5UJk7zRwi933A5+VqwpTw/ivT0XSVbErRPSirmbXLO2n+i00a7J9BmsP/cCgYEAzCNRkaiW4dEMGsdACa+FW+QATvGXtcW10xBD3NuvBo8XvNRf/d2o3Pd99cljTlKiBLMZYap3+AuJzHtHRb9bEhJDKmitVlZpcNCcC0RA3t+9CfNdvHCrpW+lZEdVUFmIbkvgkqeFG2e7o03Q2G1avDnjzQxCworO5XJQMBcYD5MCgYEA4RXSjbsM4laY4ySqR6qcNyKCx5g8IMD4yg1Yf86+qr3ioA2mPIvepH2Ij5KtOTOYctgPTnMP1Ofh1Gvju2EM1WIl38HIlLaOhYxAjVXmv0bMub4MJXCXOyTpsZRPVIvPAvK7OyeGkTh/PxaxFtO1Mk955vRwhRcpo1saZtG32TECgYEAtyWg0xv8cpEJWSUWkRoGfdDrbehXAmBlpv1axVXbi/jphSLNFIjALa9mNRP/oo+EiM7eoL8+by567RhVc4AhBu+Xjv7nNSTF6M9gkMMlqE/33GuZ160GcqDeND/DjRkmzD4LN8hQJaxFrlfsXaCO3XzaomazprK+uSB8TQkLLz0CgYAWja2b42bn9vqXWnhfOorgD+HaBpVhhOAzyJu+U2YJViOSdtZpUgQCmz8XUOm5en2CwAIFOG0NvKtpLMmqNKnC7Gigg6ow2hw0v+VaH2trU295Z/lkRaX6fUT//My04aXPHg5bR3DXyd3YKOUV1MfvpTQelG1MKLX3YaMGxcmZ5w=="
+            }
+        }
+    ]
+}

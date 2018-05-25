@@ -135,6 +135,8 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
+import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
@@ -254,6 +256,18 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     protected EcpSP ecpSPPage;
+
+    @Page
+    protected MultiTenant1Saml mutiTenant1SamlPage;
+    
+    @Page
+    protected MultiTenant2Saml mutiTenant2SamlPage;
+    
+    @Page
+    protected SAMLPostLoginTenant1 tenant1RealmSAMLPostLoginPage;
+    
+    @Page
+    protected SAMLPostLoginTenant2 tenant2RealmSAMLPostLoginPage;
 
     public static final String FORBIDDEN_TEXT = "HTTP status code: 403";
     public static final String WEBSPHERE_FORBIDDEN_TEXT = "Error reported: 403";
@@ -399,9 +413,19 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         return samlServletDeployment(EcpSP.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
+    @Deployment(name = MultiTenant1Saml.DEPLOYMENT_NAME)
+    protected static WebArchive multiTenant() {
+        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml", 
+                "tenant1-keycloak-saml.xml", "tenant2-keycloak-saml.xml",
+                "keystore-tenant1.jks", "keystore-tenant2.jks", 
+                SendUsernameServlet.class, SamlMultiTenantResolver.class);
+    }
+
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant1-realm.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant2-realm.json"));
     }
 
     @Override
@@ -435,6 +459,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
+    }
+    
+    private void assertFailedLogin(AbstractPage page, UserRepresentation user, Login loginPage) {
+        page.navigateTo();
+        assertCurrentUrlStartsWith(loginPage);
+        loginPage.form().login(user);
+        // we remain in login
+        assertCurrentUrlStartsWith(loginPage);
     }
 
     private void assertSuccessfulLogin(AbstractPage page, UserRepresentation user, Login loginPage, String expectedString) {
@@ -552,6 +584,42 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL().getPath(), is("/employee-acs/a/different/endpoint/for/saml"));
 
         assertSuccessfulLogin(employeeAcsServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+    }
+
+    @Test
+    public void multiTenant1SamlTest() throws Exception {
+        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+        setPasswordFor(user1, "user-tenant1");
+        // check the user in the tenant logs in ok
+        assertSuccessfulLogin(mutiTenant1SamlPage, user1, tenant1RealmSAMLPostLoginPage, "principal=user-tenant1");
+        // check the issuer is the correct tenant
+        driver.navigate().to(mutiTenant1SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
+        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant1");
+        // check logout
+        mutiTenant1SamlPage.logout();
+        checkLoggedOut(mutiTenant1SamlPage, tenant1RealmSAMLPostLoginPage);
+        // check a user in the other tenant doesn't login
+        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+        setPasswordFor(user2, "user-tenant2");
+        assertFailedLogin(mutiTenant1SamlPage, user2, tenant1RealmSAMLPostLoginPage);
+    }
+    
+    @Test
+    public void multiTenant2SamlTest() throws Exception {
+        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+        setPasswordFor(user2, "user-tenant2");
+        // check the user in the tenant logs in ok
+        assertSuccessfulLogin(mutiTenant2SamlPage, user2, tenant2RealmSAMLPostLoginPage, "principal=user-tenant2");
+        // check the issuer is the correct tenant
+        driver.navigate().to(mutiTenant2SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
+        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant2");
+        // check logout
+        mutiTenant2SamlPage.logout();
+        checkLoggedOut(mutiTenant2SamlPage, tenant2RealmSAMLPostLoginPage);
+        // check a user in the other tenant doesn't login
+        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+        setPasswordFor(user1, "user-tenant1");
+        assertFailedLogin(mutiTenant2SamlPage, user1, tenant2RealmSAMLPostLoginPage);
     }
 
     private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);

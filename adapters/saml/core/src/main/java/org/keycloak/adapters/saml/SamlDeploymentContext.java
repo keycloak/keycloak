@@ -25,12 +25,21 @@ import org.keycloak.adapters.spi.HttpFacade;
  */
 public class SamlDeploymentContext {
     private SamlDeployment deployment = null;
+    private SamlConfigResolver resolver = null;
 
     public SamlDeploymentContext(SamlDeployment deployment) {
         this.deployment = deployment;
     }
 
+    public SamlDeploymentContext(SamlConfigResolver resolver) {
+        this.resolver = resolver;
+    }
+
     public SamlDeployment resolveDeployment(HttpFacade facade) {
-        return deployment;
+        if (deployment != null) {
+            return deployment;
+        } else {
+            return resolver.resolve(facade.getRequest());
+        }
     }
 }
