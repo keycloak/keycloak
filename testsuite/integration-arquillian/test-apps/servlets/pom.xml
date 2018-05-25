@@ -50,6 +50,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core-public</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

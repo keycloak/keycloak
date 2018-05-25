@@ -18,6 +18,11 @@ package org.keycloak.testsuite.utils.arquillian;
 
 import java.io.File;
 import java.io.IOException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
@@ -28,8 +33,10 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  *
@@ -49,6 +56,8 @@ public class DeploymentArchiveProcessorUtils {
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
     public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
+    public static final String SAML_ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak-saml.xml";
+    public static final String SAML_ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak-saml.xml";
 
     /**
      * @return true iff archive's name equals run-on-server-classes.war
@@ -84,6 +93,19 @@ public class DeploymentArchiveProcessorUtils {
 
         filter.appendChild(filterName);
         filter.appendChild(filterClass);
+
+        // check if there was a resolver for OIDC and set as a filter param
+        String keycloakResolverClass = getKeycloakResolverClass(webXmlDoc);
+        if (keycloakResolverClass != null) {
+            Element initParam = webXmlDoc.createElement("init-param");
+            Element paramName = webXmlDoc.createElement("param-name");
+            paramName.setTextContent("keycloak.config.resolver");
+            Element paramValue = webXmlDoc.createElement("param-value");
+            paramValue.setTextContent(keycloakResolverClass);
+            initParam.appendChild(paramName);
+            initParam.appendChild(paramValue);
+            filter.appendChild(initParam);
+        }
 
         // Limitation that all deployments of annotated class use same skipPattern. Refactor if 
         // something more flexible is needed (would require more tricky web.xml parsing though...)
@@ -131,6 +153,23 @@ public class DeploymentArchiveProcessorUtils {
         
         archive.add(new StringAsset((IOUtil.documentToString(webXmlDoc))), WEBXML_PATH);
     }
+    
+    public static String getKeycloakResolverClass(Document doc) {
+        try {
+            XPathFactory factory = XPathFactory.newInstance();
+            XPath xpath = factory.newXPath();
+            XPathExpression expr = xpath.compile("//web-app/context-param[param-name='keycloak.config.resolver']/param-value/text()");
+            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            if (nodes != null && nodes.getLength() > 0) {
+                return nodes.item(0).getNodeValue();
+            }
+        } catch(DOMException e) {
+            throw new IllegalStateException(e);
+        } catch (XPathExpressionException e) {
+            throw new IllegalStateException(e);
+        }
+        return null;
+    }
 
     public static void addFilterDependencies(Archive<?> archive, TestClass testClass) {
         log.info("Adding filter dependencies to " + archive.getName());
@@ -163,8 +202,8 @@ public class DeploymentArchiveProcessorUtils {
         }
     }
 
-    public static void modifySAMLAdapterConfig(Archive<?> archive) {
-        Document doc = IOUtil.loadXML(archive.get(SAML_ADAPTER_CONFIG_PATH).getAsset().openStream());
+    public static void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {
+        Document doc = IOUtil.loadXML(archive.get(adapterConfigPath).getAsset().openStream());
 
         if (AUTH_SERVER_SSL_REQUIRED) {
             IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
@@ -185,7 +224,7 @@ public class DeploymentArchiveProcessorUtils {
             IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8081", System.getProperty("app.server.http.port"));
         }
 
-        archive.add(new StringAsset(IOUtil.documentToString(doc)), SAML_ADAPTER_CONFIG_PATH);
+        archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
 
         ((WebArchive) archive).addAsResource(new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile()));
     }

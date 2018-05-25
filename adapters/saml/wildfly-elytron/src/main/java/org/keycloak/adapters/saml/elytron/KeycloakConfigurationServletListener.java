@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
+import org.keycloak.adapters.saml.SamlConfigResolver;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
@@ -61,13 +62,12 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
         if (deploymentContext == null) {
             if (configResolverClass != null) {
                 try {
-                    throw new RuntimeException("Not implemented yet");
-                    //configResolver = (SamlConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
-                    //deploymentContext = new AdapterDeploymentContext(configResolver);
-                    //log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+                    SamlConfigResolver configResolver = (SamlConfigResolver) servletContext.getClassLoader().loadClass(configResolverClass).newInstance();
+                    deploymentContext = new SamlDeploymentContext(configResolver);
+                    log.infov("Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
                 } catch (Exception ex) {
-                    log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: " + ex.getMessage());
-                    //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                    log.errorv("The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[] { configResolverClass, ex.getMessage() });
+                    deploymentContext = new SamlDeploymentContext(new DefaultSamlDeployment());
                 }
             } else {
                 InputStream is = getConfigInputStream(servletContext);

@@ -41,7 +41,9 @@ public class Wildfly10DeploymentArchiveProcessor implements ApplicationArchivePr
         modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH);
         modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH_JS);
         
-        modifySAMLAdapterConfig(archive);
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH);
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT1);
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT2);
     }
     
     private void modifyWebXML(Archive<?> archive, TestClass testClass) {
@@ -62,10 +64,10 @@ public class Wildfly10DeploymentArchiveProcessor implements ApplicationArchivePr
         DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(archive, adapterConfigPath);
     }
 
-    private void modifySAMLAdapterConfig(Archive<?> archive) {
-        if (!archive.contains(DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH)) return;
+    private void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {
+        if (!archive.contains(adapterConfigPath)) return;
         
-        log.debug("Modifying adapter config " + DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH + " in " + archive.getName());
-        DeploymentArchiveProcessorUtils.modifySAMLAdapterConfig(archive);
+        log.debug("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
+        DeploymentArchiveProcessorUtils.modifySAMLAdapterConfig(archive, adapterConfigPath);
     }
 }
