@@ -26,7 +26,7 @@ permissions your client can use as bearer tokens to access the protected resourc
 
 == Handling Authorization Responses from a UMA-Protected Resource Server
 
-If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a <<_enforcer_bearer, bearer token>>.
+If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a bearer token.
 Typically, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
 responds with a *401* status code and a `WWW-Authenticate` header.
 
