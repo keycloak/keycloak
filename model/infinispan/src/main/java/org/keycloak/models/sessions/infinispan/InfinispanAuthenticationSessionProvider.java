@@ -120,7 +120,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         while (itr.hasNext()) {
             counter++;
             RootAuthenticationSessionEntity entity = itr.next().getValue();
-            tx.remove(CacheDecorators.localCache(cache), entity.getId());
+            tx.remove(cache, entity.getId());
         }
 
         log.debugf("Removed %d expired authentication sessions for realm '%s'", counter, realm.getName());
