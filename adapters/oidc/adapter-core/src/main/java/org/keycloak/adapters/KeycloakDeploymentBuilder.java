@@ -59,10 +59,25 @@ public class KeycloakDeploymentBuilder {
         deployment.setResourceName(resource);
 
         // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
-        JWKPublicKeyLocator pkLocator = new JWKPublicKeyLocator();
-        deployment.setPublicKeyLocator(pkLocator);
+        //JWKPublicKeyLocator pkLocator = new JWKPublicKeyLocator();
+        //deployment.setPublicKeyLocator(pkLocator);
+
+        //String realmKeyPem = adapterConfig.getRealmKey();
 
         String realmKeyPem = adapterConfig.getRealmKey();
+        if (realmKeyPem != null) {
+            PublicKey realmKey;
+            try {
+                realmKey = PemUtils.decodePublicKey(realmKeyPem);
+                HardcodedPublicKeyLocator pkLocator = new HardcodedPublicKeyLocator(realmKey);
+                deployment.setPublicKeyLocator(pkLocator);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            JWKPublicKeyLocator pkLocator = new JWKPublicKeyLocator();
+            deployment.setPublicKeyLocator(pkLocator);
+        }
 
         if (adapterConfig.getSslRequired() != null) {
             deployment.setSslRequired(SslRequired.valueOf(adapterConfig.getSslRequired().toUpperCase()));
