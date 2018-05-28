@@ -103,6 +103,10 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("request_uri_parameter_supported")
     private Boolean requestUriParameterSupported;
 
+    // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+    @JsonProperty("code_challenge_methods_supported")
+    private List<String> codeChallengeMethodsSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -295,6 +299,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setRequestUriParameterSupported(Boolean requestUriParameterSupported) {
         this.requestUriParameterSupported = requestUriParameterSupported;
+    }
+
+    // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+    public List<String> getCodeChallengeMethodsSupported() {
+        return codeChallengeMethodsSupported;
+    }
+    public void setCodeChallengeMethodsSupported(List<String> codeChallengeMethodsSupported) {
+        this.codeChallengeMethodsSupported = codeChallengeMethodsSupported;
     }
 
     @JsonAnyGetter
