@@ -69,6 +69,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     // TODO: Add more of OIDC scopes
     public static final List<String> SCOPES_SUPPORTED= list(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
 
+    // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+    public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
+
     private KeycloakSession session;
 
     public OIDCWellKnownProvider(KeycloakSession session) {
@@ -112,6 +115,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setRequestParameterSupported(true);
         config.setRequestUriParameterSupported(true);
+
+        // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+        config.setCodeChallengeMethodsSupported(DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED);
 
         return config;
     }
