@@ -115,7 +115,7 @@ By default, the JavaScript adapter creates a hidden iframe that is used to detec
 This does not require any network traffic, instead the status is retrieved by looking at a special status cookie.
 This feature can be disabled by setting `checkLoginIframe: false` in the options passed to the `init` method.
 
-You should not rely on looking at this cookie directly. It's format can change and it's also associated with the URL of the {project_name} server, not
+You should not rely on looking at this cookie directly. Its format can change and it's also associated with the URL of the {project_name} server, not
 your application.
 
 [[_javascript_implicit_flow]]
