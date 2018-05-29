@@ -4,72 +4,69 @@
 
 <!--The new application HTML code-->
 <div class="card-pf card-pf-utilization">
-  <div class="row toolbar-pf">
-    <div class="col-sm-12">
-      <form class="toolbar-pf-actions">
-        <div class="form-group toolbar-pf-filter">
-          <label class="sr-only" for="filter">{{'applicaitonName' | translate}}</label>
-          <div class="input-group">
-            <div class="input-group-btn">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Name <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li class="selected"><a href="#">{{'applicaitonName' | translate}}</a></li>
-                <li><a href="#">{{'applicaitonType' | translate}}</a></li>
-              </ul>
-            </div><!-- /btn-group -->
-            <input type="text" class="form-control" id="filter" placeholder="{{'filterByName' | translate}}">
-          </div><!-- /input-group -->
-        </div>
-        <div class="form-group">
-          <div class="dropdown btn-group">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{'applicaitonType' | translate}} <span class="caret"></span></button>
-            <ul class="dropdown-menu">
-              <li class="selected"><a href="#">{{'allApps' | translate}}</a></li>
-              <li><a href="#">{{'internalApps' | translate}}</a></li>
-              <li><a href="#">{{'thirdpartyApps' | translate}}</a></li>
-            </ul>
+  <div class="card-pf-body">
+    <div class="row toolbar-pf">
+      <div class="col-sm-12">
+        <form class="toolbar-pf-actions">
+          <div class="form-group toolbar-pf-filter">
+            <label class="sr-only" for="filter">{{'applicaitonName' | translate}}</label>
+            <div class="input-group">
+              <div class="input-group-btn">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Name <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                  <li class="selected"><a href="#">{{'applicaitonName' | translate}}</a></li>
+                  <li><a href="#">{{'applicaitonType' | translate}}</a></li>
+                </ul>
+              </div><!-- /btn-group -->
+              <input type="text" class="form-control" id="filter" placeholder="{{'filterByName' | translate}}">
+            </div><!-- /input-group -->
           </div>
-        </div>
-        <div class="form-group">
-          <input id="app-check" type="checkbox" checked> <label for="app-check"> {{'applicationInUse' | translate}}</label>
-        </div>
-
-      </form>
-      <div class="row toolbar-pf-results">
-        <div class="col-sm-12">
-          <h5>40 {{'appResults' | translate}}</h5>
-          <p>{{'activeFilters' | translate}}</p>
-          <ul class="list-inline">
-            <li>
-              <span class="label label-info">
-                {{'applicaitonName' | translate}}: nameofthething
-                <a href="#"><span class="pficon pficon-close"></span></a>
-              </span>
-            </li>
-            <li>
-              <span class="label label-info">
-                {{'applicaitonName' | translate}}: nameofthething
-                <a href="#"><span class="pficon pficon-close"></span></a>
-              </span>
-            </li>
-            <li>
-              <span class="label label-info">
-                {{'applicaitonName' | translate}}: nameofthething
-                <a href="#"><span class="pficon pficon-close"></span></a>
-              </span>
-            </li>
-          </ul>
-          <p><a href="#">{{'clearAllFilter' | translate}}</a></p>
+          <div class="form-group">
+            <div class="dropdown btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{'applicaitonType' | translate}} <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li class="selected"><a href="#">{{'allApps' | translate}}</a></li>
+                <li><a href="#">{{'internalApps' | translate}}</a></li>
+                <li><a href="#">{{'thirdpartyApps' | translate}}</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="form-group">
+            <input id="app-check" type="checkbox" checked> <label for="app-check"> {{'applicationInUse' | translate}}</label>
+          </div>
+        </form>
+        <div class="row toolbar-pf-results">
+          <div class="col-sm-12">
+            <h5>40 {{'appResults' | translate}}</h5>
+            <p>{{'activeFilters' | translate}}</p>
+            <ul class="list-inline">
+              <li>
+                <span class="label label-info">
+                  {{'applicaitonName' | translate}}: nameofthething
+                  <a href="#"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+              <li>
+                <span class="label label-info">
+                  {{'applicaitonName' | translate}}: nameofthething
+                  <a href="#"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+              <li>
+                <span class="label label-info">
+                  {{'applicaitonName' | translate}}: nameofthething
+                  <a href="#"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+            </ul>
+            <p><a href="#">{{'clearAllFilter' | translate}}</a></p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
 
-
-<div class="card-pf-body">
-
-  <div id="pf-list-simple-expansion" class="list-group list-view-pf list-view-pf-view">
+  <div class="list-group list-view-pf list-view-pf-view">
     <div class="list-group-item">
       <div class="list-group-item-header">
         <div class="list-view-pf-expand">
@@ -153,7 +150,7 @@
       <!--The end of the collapse application HTNL code-->
     </div>
   </div>
-  <div id="pf-list-simple-expansion" class="list-group list-view-pf list-view-pf-view">
+  <div class="list-group list-view-pf list-view-pf-view">
     <div class="list-group-item">
       <div class="list-group-item-header">
         <div class="list-view-pf-expand">
@@ -247,7 +244,7 @@
 <script>
     $(document).ready(function () {
       // click the list-view heading then expand a row
-      $("#pf-list-simple-expansion .list-group-item-header").click(function(event){
+      $(".list-group-item-header").click(function(event){
         if(!$(event.target).is("button, a, input, .fa-ellipsis-v")){
           $(this).find(".fa-angle-right").toggleClass("fa-angle-down")
           .end().parent().toggleClass("list-view-pf-expand-active")
@@ -257,7 +254,7 @@
       })
 
       // click the close button, hide the expand row and remove the active status
-      $("#pf-list-simple-expansion .list-group-item-container .close").on("click", function (){
+      $(".list-group-item-container .close").on("click", function (){
         $(this).parent().addClass("hidden")
         .parent().removeClass("list-view-pf-expand-active")
         .find(".fa-angle-right").removeClass("fa-angle-down");
