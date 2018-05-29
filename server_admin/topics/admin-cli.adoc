@@ -1084,7 +1084,7 @@ Use a dedicated [command]`add-roles` command to add realm roles to a user.
 Use the following example to add the [command]`user` role to user [command]`testuser`.
 [options="nowrap"]
 ----
-$ kcadm.sh add-roles --username testuser --rolename user -r demorealm
+$ kcadm.sh add-roles --uusername testuser --rolename user -r demorealm
 ----
 
 [discrete]
@@ -1095,7 +1095,7 @@ Use a dedicated [command]`remove-roles` command to remove realm roles from a use
 Use the following example to remove the [command]`user` role from the user [command]`testuser`.
 [options="nowrap"]
 ----
-$ kcadm.sh remove-roles --username testuser --rolename user -r demorealm
+$ kcadm.sh remove-roles --uusername testuser --rolename user -r demorealm
 ----
 
 [discrete]
