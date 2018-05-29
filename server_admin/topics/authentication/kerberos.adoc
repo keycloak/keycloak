@@ -65,7 +65,7 @@ The Keytab file `/tmp/http.keytab` will need to be accessible on the host where 
 
 You need to install a kerberos client on your machine.  This is also platform dependent.
 If you are on Fedora, Ubuntu or RHEL, you can install the package `freeipa-client`, which contains a Kerberos client and several other utilities.
-Configure the kerberos client (on linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the HTTP domains your server will be running on.
+Configure the kerberos client (on Linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the HTTP domains your server will be running on.
 For the example realm MYDOMAIN.ORG you may configure the `domain_realm` section like this:
 
 [source]

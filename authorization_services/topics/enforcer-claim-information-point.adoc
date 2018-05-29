@@ -10,7 +10,7 @@ to the policy-enforcer in order to resolve claims from different sources, such a
 * Static values defined in configuration
 * Any other source by implementing the Claim Information Provider SPI
 
-When pushing claims to the {project_name} server, policies can base decisions not only on who an user is but also by taking
+When pushing claims to the {project_name} server, policies can base decisions not only on who a user is but also by taking
 context and contents into account, based on who, what, why, when, where, and which for a given transaction. It is all about
 Contextual-based Authorization and how to use runtime information in order to support fine-grained authorization decisions.
 

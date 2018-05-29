@@ -1510,7 +1510,7 @@ Export the SAML Keys:
 Download the Client Adapter:
 
 . Click *Installation*.
-. Use the *Format Option* drop-down menu to select a format. This example uses *Keycloak SAML Wildfly/JBoss Subsystem*.
+. Use the *Format Option* drop-down menu to select a format. This example uses *Keycloak SAML WildFly/JBoss Subsystem*.
 . Click *Download* and save the file *keycloak-saml-subsystem.xml*.
 
 The *keystore-saml.jks* will be used with the other EAP keystores in the next section to create an OpenShift secret for the EAP application project. Copy the *keystore-saml.jks* file to an OpenShift node. +
@@ -1583,7 +1583,7 @@ The *keycloak-saml-subsystem.xml*, exported from the RH-SSO client in a previous
 +
 The mount path of the *keystore-saml.jks* (in this example *_/etc/eap-secret-volume/keystore-saml.jks_*) can be specified in the application template with the parameter *EAP_HTTPS_KEYSTORE_DIR*. +
 The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the RH-SSO client.
-. Delete the second *<CertificatePem>* tag and key and replace it with the the realm certificate information:
+. Delete the second *<CertificatePem>* tag and key and replace it with the realm certificate information:
 +
 ----
 ...

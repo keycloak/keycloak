@@ -101,7 +101,7 @@ To do this include the following header in the request:
 Authorization: basic BASE64(client-id + ':' + client-secret)
 ----        
 
-To retrieve the Adapter Configuration then perfrom an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
+To retrieve the Adapter Configuration then perform an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
 
 No authentication is required for public clients.
 This means that for the JavaScript adapter you can load the client configuration directly from {project_name} using the above URL.
@@ -187,7 +187,7 @@ Currently we have these policy implementations:
 
 * Trusted Hosts Policy - You can configure list of trusted hosts and trusted domains. Request to Client Registration Service can be sent just from those hosts or domains.
 Request sent from some untrusted IP will be rejected. URLs of newly registered client must also use just those trusted hosts or domains. For example it won't be allowed
-to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled by default.
+to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled.
 
 * Consent Required Policy - Newly registered clients will have `Consent Allowed` switch enabled. So after successful authentication, user will always
 see consent screen when he needs to approve personal info and permissions (protocol mappers and roles). It means that client won't have access to any personal

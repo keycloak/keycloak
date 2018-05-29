@@ -1,10 +1,10 @@
 
-==== Openshift
+==== OpenShift
 
-NOTE: Openshift Online is currently in the developer preview mode. This documentation has been based on on-premise installations and local `minishift` development environment.
+NOTE: OpenShift Online is currently in the developer preview mode. This documentation has been based on on-premise installations and local `minishift` development environment.
 
 There are a just a few steps you have to complete to be able to login to OpenShift.  First, go to the `Identity Providers` left menu item
-and select `Openshift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `OpenShift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:images/openshift-add-identity-provider.png[]
@@ -36,4 +36,4 @@ grantMethod: prompt <4>
 Use client ID and secret defined by `oc create` command to enter them back on the {project_name} `Add identity provider` page.
 Go back to {project_name} and specify those items.
 
-Please refer to https://docs.openshift.org/latest/architecture/additional_concepts/authentication.html#oauth[official Openshift documentation] for more detailed guides.
+Please refer to https://docs.openshift.org/latest/architecture/additional_concepts/authentication.html#oauth[official OpenShift documentation] for more detailed guides.

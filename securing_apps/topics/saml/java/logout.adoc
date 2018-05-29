@@ -9,13 +9,13 @@ This will log you out if you have an SSO session with your browser.
 ===== Logout in Clustered Environment
 
 Internally, the SAML adapter stores a mapping between the SAML session index, principal name (when known), and HTTP session ID.
-This mapping can be maintained in JBoss application server family (Wildfly 10/11, EAP 6/7) across cluster for distributable
+This mapping can be maintained in JBoss application server family (WildFly 10/11, EAP 6/7) across cluster for distributable
 applications. As a precondition, the HTTP sessions need to be distributed across cluster (i.e. application is marked with
 `<distributable/>` tag in application's `web.xml`).
 
 To enable the functionality, add the following section to your `/WEB_INF/web.xml` file:
 
-For EAP 7, Wildfly 10/11:
+For EAP 7, WildFly 10/11:
 
 [source,xml]
 ----
@@ -51,7 +51,7 @@ to SAML session index to HTTP session mapping which would lead to unsuccessful l
 [[_saml_logout_in_cross_dc]]
 ===== Logout in Cross DC Scenario
 
-The cross DC scenario only applies to Wildfly 10 and higher, and EAP 7 and higher.
+The cross DC scenario only applies to WildFly 10 and higher, and EAP 7 and higher.
 
 Special handling is needed for handling sessions that span multiple data centers. Imagine the following scenario:
 

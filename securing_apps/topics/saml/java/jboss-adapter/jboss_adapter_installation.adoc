@@ -5,7 +5,7 @@
 Each adapter is a separate download on the {project_name} download site.
 
 ifeval::[{project_community}==true]
-Install on Wildfly 9 or 10, 11 or JBoss EAP 7:
+Install on WildFly 9 or 10, 11 or JBoss EAP 7:
 
 [source]
 ----
@@ -42,7 +42,7 @@ $ unzip rh-sso-saml-eap6-adapter.zip
 endif::[]
 
 
-These zip files create new JBoss Modules specific to the Wildfly/JBoss EAP SAML Adapter within your Wildfly or JBoss EAP distro.
+These zip files create new JBoss Modules specific to the WildFly/JBoss EAP SAML Adapter within your WildFly or JBoss EAP distro.
 
 After adding the modules, you must then enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
 
@@ -50,7 +50,7 @@ There is a CLI script that will help you modify your server configuration.
 Start the server and run the script  from the server's bin directory: 
 
 ifeval::[{project_community}==true]
-.Wildfly 11
+.WildFly 11
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli

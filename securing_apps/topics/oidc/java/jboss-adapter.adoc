@@ -1,7 +1,7 @@
 [[_jboss_adapter]]
 
 ifeval::[{project_community}==true]
-==== JBoss EAP/Wildfly Adapter
+==== JBoss EAP/WildFly Adapter
 endif::[]
 ifeval::[{project_product}==true]
 ==== JBoss EAP Adapter
@@ -29,7 +29,7 @@ Adapters are available as a separate archive depending on what server version yo
 NOTE: {appserver_name} should be running when you install the adapter. If you have either one running, you must stop it before installing and then restart it after installation is complete.
 
 ifeval::[{project_community}==true]
-Install on Wildfly 9, 10 or 11:
+Install on WildFly 9, 10 or 11:
 
 [source, subs="attributes"]
 ----
@@ -37,7 +37,7 @@ $ cd $WILDFLY_HOME
 $ unzip keycloak-wildfly-adapter-dist-{project_version}.zip
 ----
 
-Install on Wildfly 8:
+Install on WildFly 8:
 
 [source, subs="attributes"]
 ----
@@ -138,7 +138,7 @@ NOTE: The offline script is not available for JBoss EAP 6.4
 Alternatively, if the server is running execute:
 
 ifeval::[{project_community}==true]
-.Wildfly 11
+.WildFly 11
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-elytron-install.cli

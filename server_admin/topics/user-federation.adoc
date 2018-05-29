@@ -16,7 +16,7 @@ runtime.  This common user model can then be mapped to OIDC token claims and SAM
 External user databases rarely have every piece of data need to support all the features that {project_name} has.
 In this case, the User Storage Provider can opt to store some things locally in the {project_name} user store.
 Some providers even import the user locally and sync periodically with the external store.  All this depends on the capabilities of the provider and how its configured.  For example, your
-external user store may not support OTP.  Depending on the provider, this OTP support can be handled and stored by {project_name}
+external user store may not support OTP.  Depending on the provider, this OTP can be handled and stored by {project_name}.
 
 === Adding a Provider
 
@@ -25,7 +25,7 @@ To add a storage provider go to the `User Federation` left menu item in the Admi
 .User Federation
 image:{project_images}/user-federation.png[]
 
-On the right side, there is an `Add Provider` list box.  Choose the provider type you want to add and you will be brought to the configuration page of that provider.
+On the center, there is an `Add Provider` list box.  Choose the provider type you want to add and you will be brought to the configuration page of that provider.
 
 === Dealing with Provider Failures
 

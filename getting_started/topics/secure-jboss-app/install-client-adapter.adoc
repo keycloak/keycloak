@@ -31,14 +31,14 @@ $ ./jboss-cli.sh --file=adapter-install-offline.cli
 ----
 
 ifeval::[{project_community}==true]
-.Wildfly 11 and Linux/Unix
+.WildFly 11 and Linux/Unix
 [source]
 ----
 $ cd bin
 $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 ----
 
-.Wildfly 11 and Windows
+.WildFly 11 and Windows
 [source]
 ----
 > cd bin

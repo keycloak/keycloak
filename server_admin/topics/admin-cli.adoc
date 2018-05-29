@@ -91,7 +91,7 @@ c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\trustst
 
 === Authenticating
 
-When you log in with the Admin CLI, you specify a server endpoint URL and a realm, and then you specify a user name. Another option is to specify only a clientId, which results in using a special "service account." When you log in using a user name, you must use a password for the specified user. When you log in using a clientId, you only need the client secret, not the user password. You could also use [command]`Signed JWT` instead of the client secret.
+When you log in with the Admin CLI, you specify a server endpoint URL and a realm, and then you specify a user name. Another option is to specify only a clientId, which results in using a special "service account". When you log in using a user name, you must use a password for the specified user. When you log in using a clientId, you only need the client secret, not the user password. You could also use [command]`Signed JWT` instead of the client secret.
 
 Make sure the account used for the session has the proper permissions to invoke Admin REST API operations. For example, the `realm-admin` role of the `realm-management` client allows the user to administer the realm within which the user is defined.
 
@@ -119,7 +119,7 @@ Run the [command]`kcadm.sh config credentials --help` command for more informati
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
-By default, the Admin CLI automatically maintains a configuration file called [filename]kcadm.config located under the user's home directory. In Linux-based systems, the full path name is [filename]$HOME/.keycloak/kcadm.config. On Windows, the full path name is [filename]%HOMEPATH%\.keycloak\kcadm.config. You can use the [command]`--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
+By default, the Admin CLI automatically maintains a configuration file called [filename]`kcadm.config` located under the user's home directory. In Linux-based systems, the full path name is [filename]`$HOME/.keycloak/kcadm.config`. On Windows, the full path name is [filename]`%HOMEPATH%\.keycloak\kcadm.config`. You can use the [command]`--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
 
 [NOTE]
 ====
@@ -858,7 +858,7 @@ $ kcadm.sh get clients/c7b8547f-e748-4333-95d0-410b76b3f4a3/installation/provide
 ----
 
 [discrete]
-==== Getting a Wildfly subsystem adapter configuration for a specific client
+==== Getting a WildFly subsystem adapter configuration for a specific client
 
 Use a client's ID to construct an endpoint URI that targets a specific client, such as [filename]`clients/ID/installation/providers/keycloak-oidc-jboss-subsystem`.
 
@@ -1635,7 +1635,7 @@ $ kcadm.sh create components -r demorealm -s name=msad-user-account-control-mapp
 ----
 
 [discrete]
-==== Adding an user attribute LDAP mapper
+==== Adding a user attribute LDAP mapper
 
 . Run the [command]`create` command on the [filename]`components` endpoint.
 . Set the [command]`providerType` attribute to [filename]`org.keycloak.storage.ldap.mappers.LDAPStorageMapper`.

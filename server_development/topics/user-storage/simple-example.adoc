@@ -128,7 +128,7 @@ The `isValid()` method is responsible for validating passwords. The `CredentialI
 
 ===== CredentialInputUpdater Implementation
 
-As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overriden in {project_name} local storage. We'll talk more about this later in this chapter.
+As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overridden in {project_name} local storage. We'll talk more about this later in this chapter.
 
 [source,java]
 ----

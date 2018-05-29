@@ -10,7 +10,7 @@ httpServletRequest
     .getAttribute(KeycloakSecurityContext.class.getName());
 ----
 
-Or, it is available in secure and insecure requests in the HttpSession:
+Or, it is available in insecured requests in the HttpSession:
 
 [source,java]
 ----

@@ -30,7 +30,7 @@ a piece of data that a {project_name} feature needs that feature will not work.
 The benefit to this approach is that you do not have the overhead of importing and synchronizing a copy of the LDAP user into the
 {project_name} user database.
 
-This storage mode is controled by the `Import Enabled` switch.  Set to `On` to import users.
+This storage mode is controled by the `Import Users` switch.  Set to `On` to import users.
 
 ==== Edit Mode
 
@@ -57,7 +57,7 @@ Console Display Name::
   Name used when this provider is referenced in the admin console
 
 Priority::
-  The priority of this provider when looking up users or for adding registrations.
+  The priority of this provider when looking up users or adding a user.
 
 Sync Registrations::
   Does your LDAP support adding new users?  Click this switch if you want new users created by {project_name} in the admin console or the registration page

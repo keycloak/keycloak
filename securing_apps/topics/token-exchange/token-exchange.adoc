@@ -8,7 +8,7 @@ include::../templates/techpreview.adoc[]
 
 In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
 A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
-A client may want to exchange a {project_token} for a token stored for a linked social provider account.
+A client may want to exchange a {project_name} token for a token stored for a linked social provider account.
 You may want to trust external tokens minted by other {project_name} realms or foreign IDPs. A client may have a need
 to impersonate a user.  Here's a short summary of the current capabilities of {project_name} around token exchange.
 
@@ -85,7 +85,7 @@ a JSON document as described in the link:https://www.ietf.org/id/draft-ietf-oaut
 
 Clients requesting a refresh token will get back both an access and refresh token in the response.  Clients requesting only
 access token type will only get an access token in the response.  Expiration information may or may not be included for
-clients requesting a an external issuer through the `requested_issuer` paramater.
+clients requesting an external issuer through the `requested_issuer` paramater.
 
 Error responses generally fall under the 400 HTTP response code category, but other error status codes may be returned
 depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.

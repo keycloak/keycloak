@@ -71,7 +71,7 @@ the `Authorization` link shown in the above image. Then click on the policies ta
 
 There's a pull down menu on this page called `Create policy`.  There's a multitude of policies
 you can define.  You can define a policy that is associated with a role or a group or even define
-rules in Javascript.  For this simple example, we're going to create a `User Policy`.
+rules in JavaScript.  For this simple example, we're going to create a `User Policy`.
 
 .User Policy
 image:{project_images}/fine-grain-client-user-policy.png[]

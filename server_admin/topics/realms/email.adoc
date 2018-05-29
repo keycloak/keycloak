@@ -21,13 +21,13 @@ From::
   `From` denotes the address used for the `From` SMTP-Header for the emails sent.
 
 From Display Name::
-  `From Display Name` allows to configure an user friendly email address aliases (optional). If not set the plain `From` email address will be displayed in email clients.
+  `From Display Name` allows to configure a user friendly email address aliases (optional). If not set the plain `From` email address will be displayed in email clients.
 
 Reply To::
   `Reply To` denotes the address used for the `Reply-To` SMTP-Header for the mails sent (optional). If not set the plain `From` email address will be used.
 
 Reply To Display Name::
-  `Reply To Display Name` allows to configure an user friendly email address aliases (optional). If not set the plain `Reply To` email address will be displayed.
+  `Reply To Display Name` allows to configure a user friendly email address aliases (optional). If not set the plain `Reply To` email address will be displayed.
 
 Envelope From::
   `Envelope From` denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the `Return-Path` SMTP-Header for the mails sent (optional).

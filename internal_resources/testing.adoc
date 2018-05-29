@@ -7,7 +7,7 @@ Currently we are testing the following:
 * Variables - check if there are variables that are not resolved
 * Includes - check if there are includes where the included file is not found
 * Images - check if there are images included that are not missing
-* Internal links - check that all internal links (HTML anchors) point to an valid id
+* Internal links - check that all internal links (HTML anchors) point to a valid id
 * External links - check that all external links work, including HTML anchors
 
 More details about each test below and what to do if the tests are not working.

@@ -54,10 +54,10 @@ Other Features: Extended Certificate Validation::
 
 ==== Enable X.509 Client Certificate User Authentication
 
-The following sections describe how to configure Wildfly/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
+The following sections describe how to configure WildFly/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
 Enable mutual SSL in WildFly::
-See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in Wildfly.
+See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in WildFly.
 
 * Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
 ```xml
@@ -112,7 +112,7 @@ The password to open the truststore
 
 Enable https listener::
 
-See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-HTTPSlistener[HTTPS Listener] for the instructions how to enable HTTPS in Wildfly.
+See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-HTTPSlistener[HTTPS Listener] for the instructions how to enable HTTPS in WildFly.
 
 * Add the <https-listener> element as shown below:
 
@@ -139,7 +139,7 @@ If set to `REQUESTED`, the server will optionally ask for a client certificate. 
 
 * Select a realm, click on Authentication link, select the "Browser" flow 
 * Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "X.509 Browser"
-* Using the drop down, select the copied flow, and click on "Add Execution"
+* Using the drop down, select the copied flow, and click on "Add execution"
 * Select "X509/Validate User Form" using the drop down and click on "Save"  
 
 image:images/x509-execution.png[]
@@ -196,8 +196,8 @@ If set, X.509 client certificate authentication will not prompt the user to conf
 
 * Using {project_name} admin console, click on "Authentication" and select the "Direct Grant" flow,
 * Make a copy of the build-in "Direct Grant" flow. You may want to give the new flow a distinctive name, i.e. "X509 Direct Grant",
-* Delete "Validate Username" and "Password" authenticators,
-* Click on "Execution" and add "X509/Validate Username" and click on "Save" to add the execution step to the parent flow.
+* Delete "Username Validation" and "Password" authenticators,
+* Click on "Add execution" and add "X509/Validate Username" and click on "Save" to add the execution step to the parent flow.
 
 image:images/x509-directgrant-execution.png[]
 

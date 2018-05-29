@@ -115,7 +115,7 @@ Once instantiated, install the middleware into your connect-capable app:
 
 Simple authentication::
 
-To enforce that an user must be authenticated before accessing a resource,
+To enforce that a user must be authenticated before accessing a resource,
 simply use a no-argument version of `keycloak.protect()`:
 
 [source,javascript]

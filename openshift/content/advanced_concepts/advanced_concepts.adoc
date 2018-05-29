@@ -274,7 +274,7 @@ When deploying RH-SSO application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADM
 
 [IMPORTANT]
 ====
-The lifespan of the RH-SSO server's administrator account depends upon the the storage type used to store the RH-SSO server's database:
+The lifespan of the RH-SSO server's administrator account depends upon the storage type used to store the RH-SSO server's database:
 
 * For an in-memory database mode (*_sso72-https_* and *_sso72-x509-https_* templates) the account exists throughout the lifecycle of the particular RH-SSO pod (stored account data is lost upon pod destruction),
 * For an ephemeral database mode (*_sso72-mysql_* and *_sso72-postgresql_* templates) the account exists throughout the lifecycle of the database pod (even if the RH-SSO pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
@@ -351,7 +351,7 @@ sh-4.2$ ./jboss-cli.sh --connect ':reload'
 ====
 When restarting the server it is important to restart just the JBoss EAP process within the running RH-SSO container, and not the whole container. This is because restarting the whole container will recreate it from scratch, without the RH-SSO server administration account for the `master` realm.
 ====
-. Log in to the `master` realm's administration console of the RH-SSO server using the the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the RH-SSO web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted RH-SSO web server, and specify the user name and password used to create the administrator user.
+. Log in to the `master` realm's administration console of the RH-SSO server using the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the RH-SSO web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted RH-SSO web server, and specify the user name and password used to create the administrator user.
 
 === Deployment Process
 

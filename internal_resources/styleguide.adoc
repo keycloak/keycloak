@@ -36,7 +36,7 @@ Writers will also refer to these:
 * Do not use Latin abbreviations, such as e.g., etc., and i.e.
 ** Instead, use "and so on" when you list a clear sequence of elements, such as "1, 2, 3, and
 so on". Otherwise, rewrite the sentence to replace etc. with something more descriptive, 
-such as "and other output."
+such as "and other output".
 ** Instead of i.e. use "that is".
 ** Instead of e.g. use "for example" or "such as".
 * Do not use "&" in place of "and".

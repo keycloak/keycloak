@@ -7,7 +7,7 @@ of WS-* specifications so it tends to be a bit more verbose than OIDC.  SAML 2.0
 that works by exchanging XML documents between the authentication server and the application.  XML signatures and encryption
 is used to verify requests and responses.
 
-There is really two types of use cases when using SAML.  The first is an application that asks the {project_name} server to authenticate
+There are really two types of use cases when using SAML.  The first is an application that asks the {project_name} server to authenticate
 a user for them.  After a successful login, the application will receive an XML document that contains
 something called a SAML assertion that specify various attributes about the user.  This XML document is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user

@@ -723,7 +723,7 @@ You cannot modify built in flows, so, to add the Authenticator we've created you
 I'm hoping the UI is intuitive enough so that you can figure out for yourself how to create a flow and add the FormAction. 
 
 Basically you'll have to copy the registration flow.
-Then click Actions menu to the right of the Registration Form, and pick "Add Execution" to add a new execution.
+Then click Actions menu to the right of the Registration Form, and pick "Add execution" to add a new execution.
 You'll pick the FormAction from the selection list.
 Make sure your FormAction comes after "Registration User Creation" by using the down errors to move it if your FormAction isn't already listed after "Registration User Creation".  You want your FormAction to come after user creation because the success() method of Regsitration User Creation is responsible for creating the new UserModel. 
 
