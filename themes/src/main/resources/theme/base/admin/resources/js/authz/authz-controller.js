@@ -229,7 +229,11 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
         });
     }
 
-    $scope.showDetails = function(item) {
+    $scope.showDetails = function(item, event) {
+        if (event.target.localName == 'a' || event.target.localName == 'button') {
+            return;
+        }
+
         if (item) {
             $scope.loadDetails(item);
         } else {
@@ -525,7 +529,10 @@ module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $lo
         });
     }
 
-    $scope.showDetails = function(item) {
+    $scope.showDetails = function(item, event) {
+        if (event.target.localName == 'a' || event.target.localName == 'button') {
+            return;
+        }
         if (item) {
             $scope.loadDetails(item);
         } else {
@@ -727,7 +734,10 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
         });
     }
 
-    $scope.showDetails = function(item) {
+    $scope.showDetails = function(item, event) {
+        if (event.target.localName == 'a' || event.target.localName == 'button') {
+            return;
+        }
         if (item) {
             $scope.loadDetails(item);
         } else {
@@ -829,7 +839,10 @@ module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route
         });
     }
 
-    $scope.showDetails = function(item) {
+    $scope.showDetails = function(item, event) {
+        if (event.target.localName == 'a' || event.target.localName == 'button') {
+            return;
+        }
         if (item) {
             $scope.loadDetails(item);
         } else {

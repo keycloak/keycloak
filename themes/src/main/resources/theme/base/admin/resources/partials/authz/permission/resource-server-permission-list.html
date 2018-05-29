@@ -72,7 +72,7 @@
         </tr>
         </tfoot>
         <tbody>
-            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'" data-ng-click="showDetails(policy);" style="cursor: pointer">
+            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'" data-ng-click="showDetails(policy, $event);" style="cursor: pointer">
                 <td>
                     <span ng-if="!policy.details || !policy.details.loaded" class="fa fa-angle-right"></span>
                     <span ng-if="policy.details && policy.details.loaded" class="fa fa-angle-right fa-angle-down"></span>
@@ -90,7 +90,7 @@
             <tr ng-if="policy.details && policy.details.loaded" ng-repeat-end="">
                 <td colspan="5" style="background-color: #ffffff">
                     <div class="list-group-item-container container-fluid">
-                        <div class="close" data-ng-click="showDetails(policy);" style="padding-top: 10px">
+                        <div class="close" data-ng-click="showDetails(policy, $event);" style="padding-top: 10px">
                             <span class="pficon pficon-close"></span>
                         </div>
                         <div class="row">
