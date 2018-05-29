@@ -3,6 +3,9 @@
 body {
   background: #f5f5f5;
 }
+.layout-pf-alt.layout-pf-alt-fixed body {
+  padding-top: 55px;
+}
 .cards-pf {
   background: #f5f5f5;
 }
@@ -11,6 +14,9 @@ body {
 }
 .cards-pf .row-cards-pf {
   padding: 0 20px;
+}
+.card-pf-title {
+  margin: 0 0 20px;
 }
 p.description {
   font-size: 14px;
@@ -49,12 +55,13 @@ p.description {
   margin-bottom: 10px;
 }
 
+
 /*Responsive Design*/
 @media (max-width: 767px) {
-  body {
-    background: #fff;
+  .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
   }
-
   .cards-pf {
     background: #ffffff;
   }
@@ -63,14 +70,16 @@ p.description {
   }
 
   .card-pf {
-    margin: 0;
+    margin: 0 0 10px;
     background: #ffffff !important;
     box-shadow: 0 0 0;
     border-bottom: 1px solid #f5f5f5;
     border-top: 0;
+    padding: 0;
   }
   .card-pf-body  {
-    padding-bottom: 5px;
+    padding: 20px 20px 10px;
+    margin-top: 0;
   }
   .card-pf-view.card-pf-view-select:hover {
     box-shadow: 0 0 0;
@@ -82,8 +91,12 @@ p.description {
     margin-top: 0;
   }
   .col-xs-12,
+  .col-xs-2,
+  .col-xs-10,
+  .col-sm-12
   .col-sm-4,
   .col-md-4,
+  .col-md-8,
   .col-lg-3,
   .container-cards-pf {
     padding-left: 0;
@@ -98,6 +111,7 @@ p.description {
     height: 30px;
     font-size: 16px;
     line-height: 26px;
+    margin-top: -8px;
   }
   .card-pf-content-intro {
     border-bottom: 0;
@@ -123,9 +137,7 @@ p.description {
   }
   .page-header {
     background: #f5f5f5;
-    margin-top: 0;
-    margin-left: -20px;
-    margin-right: -20px;
+    margin: 0;
   }
   .page-header h1 {
     margin-top: 0;
@@ -134,17 +146,28 @@ p.description {
     padding-left: 20px;
     font-size: 18px;
   }
-  .password-update {
-    margin-left: -20px;
-    margin-right: -20px;
-    border-bottom: solid 10px #f5f5f5;
-  }
   .content-area {
-    padding-top: 8px;
+    padding-top: 20px;
     padding-left: 20px;
     padding-right: 20px;
   }
-
+  .list-view-pf-view {
+    margin-top: 0;
+  }
+  .list-view-pf-main-info {
+    padding-bottom: 10px;
+  }
+  .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .pull-right-sm {
+    float: none !important;
+    margin-bottom: 10px;
+  }
+  .p-b {
+    padding-bottom: 20px;
+  }
 
 }
 
@@ -181,20 +204,26 @@ p.description {
 /* Introduction Message on the left */
 .introMessage {
     margin: 10px 20px 20px 0;
+}
 
 /* Device Activity */
-.card-title{
+
+.card-title {
 	margin-left: 20px;
 	margin-bottom: 30px;
 }
-.detail-description{
+.detail-description {
 	margin-top:-10px;
 }
 .list-view-pf-view {
 	margin-top: 0;
 }
-.m-l{
+.m-l {
 	margin-left: 20px;
+}
+.block-box {
+  margin-left: 0;
+  display: block;
 }
 .activity-item {
 	padding-left: 60px;
@@ -215,4 +244,40 @@ p.description {
 .list-view-pf .current-color {
 	font-weight: bold;
 	color: #4F9207!important;
+}
+.list-view-pf .list-group-item.list-view-pf-expand-active,
+.list-view-pf .list-group-item.list-view-pf-expand-active:first-child {
+  border-top-color: #d8d8d8;
+  border: solid 1px #d8d8d8;
+}
+.list-group-item-container {
+  border-top: solid 1px #d8d8d8;
+}
+
+/* Responsive Design for Devices Activiy*/
+@media (max-width: 767px) {
+  .activity-item {
+    padding-left: 0;
+  }
+  .list-group-item-header {
+    padding: 0;
+  }
+  .list-view-pf .list-group-item.list-view-pf-expand-active {
+    margin-left: -21px;
+    margin-right: -21px;
+  }
+  .list-view-pf .list-group-item.list-view-pf-expand-active .list-group-item-header {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .list-group {
+    margin-bottom: 0;
+  }
+  .list-view-pf .list-group-item:last-child {
+    border-bottom: 0;
+  }
+  .list-group-item-container {
+    padding-left: 5px;
+    padding-right: 25px;
+  }
 }
