@@ -123,6 +123,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -233,6 +235,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected SalesPostAutodetectServlet salesPostAutodetectServletPage;
+
+    @Page
+    protected AdapterLogoutPage adapterLogoutPage;
 
     @Page
     protected EcpSP ecpSPPage;
@@ -362,7 +367,13 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = EmployeeServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeServlet() {
-        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class, ServletTestUtils.class);
+        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class, ServletTestUtils.class)
+          .add(new StringAsset("<html><body>Logged out</body></html>"), "/logout.jsp");
+    }
+
+    @Deployment(name = AdapterLogoutPage.DEPLOYMENT_NAME)
+    protected static WebArchive logoutWar() {
+        return AdapterLogoutPage.createDeployment();
     }
 
     @Deployment(name = SalesPostAutodetectServlet.DEPLOYMENT_NAME)
@@ -639,6 +650,18 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void employeeSigFrontTest() {
         testSuccessfulAndUnauthorizedLogin(employeeSigFrontServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void testLogoutRedirectToExternalPage() throws Exception {
+        employeeServletPage.navigateTo();
+        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+        testRealmSAMLPostLoginPage.form().login("bburke", "password");
+        assertCurrentUrlStartsWith(employeeServletPage);
+        WaitUtils.waitForPageToLoad();
+
+        employeeServletPage.logout();
+        adapterLogoutPage.assertCurrent();
     }
 
     @Test
@@ -980,7 +1003,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         samlidpInitiatedLoginPage.form().login(bburkeUser);
         assertCurrentUrlStartsWith(salesPost2ServletPage);
-        assertTrue(driver.getCurrentUrl().endsWith("/foo"));
+        assertThat(driver.getCurrentUrl(), endsWith("/foo"));
         waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
         salesPost2ServletPage.logout();
         checkLoggedOut(salesPost2ServletPage, testRealmSAMLPostLoginPage);

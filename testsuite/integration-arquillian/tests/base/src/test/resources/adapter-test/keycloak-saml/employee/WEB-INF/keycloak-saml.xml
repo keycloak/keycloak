@@ -21,7 +21,7 @@
     <SP entityID="http://localhost:8081/employee/"
         sslPolicy="EXTERNAL"
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
-        logoutPage="/logout.jsp"
+        logoutPage="http://localhost:8081/logout/index.html"
         forceAuthentication="false">
         <PrincipalNameMapping policy="FROM_NAME_ID"/>
         <RoleIdentifiers>
