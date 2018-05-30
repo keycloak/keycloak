@@ -21,9 +21,9 @@ CODE_TO_TOKEN events add the following to `standalone.xml`:
 
     ...
     <spi name="eventsListener">
-        <provider name="sysout">
+        <provider name="sysout" enabled="true">
             <properties>
                 <property name="exclude-events" value="[&quot;REFRESH_TOKEN&quot;, &quot;CODE_TO_TOKEN&quot;]"/>
             </properties>
-        </provider
+        </provider>
     </spi>
