@@ -25,27 +25,16 @@ import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
-import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
-import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.jetty.JettyServerCustomizer;
-import org.springframework.boot.context.embedded.tomcat.TomcatContextCustomizer;
-import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
-import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -187,7 +176,7 @@ public class KeycloakBaseSpringBootConfiguration {
             WebAppContext webAppContext = server.getBean(WebAppContext.class);
             //if not found as registered bean let's try the handler
             if(webAppContext==null){
-                webAppContext = (WebAppContext) server.getHandler();
+                webAppContext = getWebAppContext(server.getHandlers());
             }
 
             ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
@@ -195,6 +184,21 @@ public class KeycloakBaseSpringBootConfiguration {
             securityHandler.setAuthenticator(keycloakJettyAuthenticator);
 
             webAppContext.setSecurityHandler(securityHandler);
+        }
+
+        private WebAppContext getWebAppContext(Handler... handlers) {
+            for (Handler handler : handlers) {
+                if (handler instanceof WebAppContext) {
+                    return (WebAppContext) handler;
+                } else if (handler instanceof HandlerList) {
+                    return getWebAppContext(((HandlerList) handler).getHandlers());
+                } else if (handler instanceof HandlerCollection) {
+                    return getWebAppContext(((HandlerCollection) handler).getHandlers());
+                } else if (handler instanceof HandlerWrapper) {
+                    return getWebAppContext(((HandlerWrapper) handler).getHandlers());
+                }
+            }
+            throw new RuntimeException("No WebAppContext found in Jetty server handlers");
         }
     }
 
