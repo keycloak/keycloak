@@ -44,7 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.*;
-import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Keycloak authentication valve
@@ -189,16 +189,27 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     protected abstract GenericPrincipalFactory createPrincipalFactory();
     protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
-    protected void forwardToLogoutPage(Request request, HttpServletResponse response,SamlDeployment deployment) {
-        RequestDispatcher disp = request.getRequestDispatcher(deployment.getLogoutPage());
-        //make sure the login page is never cached
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
+    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
+    protected void forwardToLogoutPage(Request request, HttpServletResponse response, SamlDeployment deployment) {
+        final String location = deployment.getLogoutPage();
 
         try {
-            disp.forward(request.getRequest(), response);
+            //make sure the login page is never cached
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setHeader("Expires", "0");
+
+            if (location == null) {
+                log.warn("Logout page not set.");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } else if (PROTOCOL_PATTERN.matcher(location).find()) {
+                response.sendRedirect(response.encodeRedirectURL(location));
+            } else {
+                RequestDispatcher disp = request.getRequestDispatcher(location);
+
+                disp.forward(request.getRequest(), response);
+            }
         } catch (ServletException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
