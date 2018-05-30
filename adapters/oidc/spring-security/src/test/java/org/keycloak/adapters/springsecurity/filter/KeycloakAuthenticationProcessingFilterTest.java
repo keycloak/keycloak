@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
@@ -127,6 +128,8 @@ public class KeycloakAuthenticationProcessingFilterTest {
     public void testAttemptAuthenticationExpectRedirect() throws Exception {
         when(keycloakDeployment.getAuthUrl()).thenReturn(KeycloakUriBuilder.fromUri("http://localhost:8080/auth"));
         when(keycloakDeployment.getResourceName()).thenReturn("resource-name");
+        when(keycloakDeployment.getResponseType()).thenReturn(OAuth2Constants.CODE);
+        when(keycloakDeployment.isUseNonce()).thenReturn(Boolean.FALSE);
         when(keycloakDeployment.getStateCookieName()).thenReturn("kc-cookie");
         when(keycloakDeployment.getSslRequired()).thenReturn(SslRequired.NONE);
         when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.FALSE);
