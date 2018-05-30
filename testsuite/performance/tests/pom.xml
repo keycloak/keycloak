@@ -185,6 +185,7 @@
                             <goal>read-project-properties</goal>
                         </goals>
                         <configuration>
+                            <quiet>true</quiet>
                             <files>
                                 <file>${provisioning.properties.file}</file>
                                 <file>${dataset.properties.file}</file>
@@ -504,6 +505,8 @@
                                         <argument>-DauthUser=${keycloak.admin.user}</argument>
                                         <argument>-DauthPassword=${keycloak.admin.password}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
+                                        <argument>-DstartAtRealmIdx=${startAtRealmIdx}</argument>
+                                        <argument>-DstartAtUserIdx=${startAtUserIdx}</argument>
                                         <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
                                         <argument>benchmark-realms.json</argument>
                                     </arguments>

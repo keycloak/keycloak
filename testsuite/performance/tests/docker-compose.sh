@@ -370,7 +370,7 @@ case "$OPERATION" in
             crossdc) export DB_CONTAINER=${PROJECT_NAME}_mariadb_dc1_1 ;;
             *) echo "Deployment '$DEPLOYMENT' doesn't support operation '$OPERATION'." ; exit 1 ;;
         esac
-        if [ ! -f "$DATASET_PROPERTIES_FILE" ]; then echo "Operation '$OPERATION' requires a valid DATASET_PROPERTIES_FILE parameter."; exit 1; fi
+        #if [ ! -f "$DATASET_PROPERTIES_FILE" ]; then echo "Operation '$OPERATION' requires a valid DATASET_PROPERTIES_FILE parameter."; exit 1; fi
         DATASET_PROPERTIES_FILENAME=`basename $DATASET_PROPERTIES_FILE`
         DATASET=${DATASET_PROPERTIES_FILENAME%.properties}
         echo "DATASET_PROPERTIES_FILE: $DATASET_PROPERTIES_FILE"
@@ -399,7 +399,7 @@ case "$OPERATION" in
                 fi
                 echo "Importing $DATASET.sql.gz"
                 set -o pipefail
-                if ! zcat $DATASET.sql.gz | docker exec -i $DB_CONTAINER /usr/bin/mysql -u root --password=root keycloak ; then
+                if ! gunzip -c $DATASET.sql.gz | docker exec -i $DB_CONTAINER /usr/bin/mysql -u root --password=root keycloak ; then
                     echo Import failed.
                     exit 1
                 fi
