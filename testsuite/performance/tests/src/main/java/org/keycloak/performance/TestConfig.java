@@ -34,6 +34,11 @@ public class TestConfig {
     // Settings used by RealmsConfigurationLoader only - when loading data into Keycloak
     //
     public static final int numOfWorkers = Integer.getInteger("numOfWorkers", 1);
+    public static final int startAtRealmIdx = Integer.getInteger("startAtRealmIdx", 0);
+    public static final int startAtUserIdx = 0; // doesn't work properly, will be removed later //Integer.getInteger("startAtUserIdx", 0);
+    public static final boolean ignoreConflicts = "true".equals(System.getProperty("ignoreConflicts", "false"));
+    public static final boolean skipRealmRoles = "true".equals(System.getProperty("skipRealmRoles", "false"));
+    public static final boolean skipClientRoles = "true".equals(System.getProperty("skipClientRoles", "false"));
 
     //
     // Settings used by RealmConfigurationLoader to connect to Admin REST API
