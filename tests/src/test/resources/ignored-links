@@ -13,4 +13,5 @@ http://node11:8080/auth/
 http://node12:8080*
 http://node21:8080*
 http://node22:8080*
+http://web.example.com*
 https://github.com/keycloak/keycloak-documentation/blob/master/*
