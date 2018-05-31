@@ -34,7 +34,7 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(4000)"/>
+            <column name="VALUE" type="TEXT(4000)"/>
         </createTable>
 
         <createTable tableName="FED_CREDENTIAL_ATTRIBUTE">
@@ -47,9 +47,9 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(4000)"/>
+            <column name="VALUE" type="TEXT(4000)"/>
         </createTable>
-        <modifyDataType tableName="CREDENTIAL" columnName="VALUE" newDataType="VARCHAR(4000)"/>
+        <modifyDataType tableName="CREDENTIAL" columnName="VALUE" newDataType="TEXT(4000)"/>
 
         <addForeignKeyConstraint baseColumnNames="CREDENTIAL_ID" baseTableName="FED_CREDENTIAL_ATTRIBUTE" constraintName="FK_FED_CRED_ATTR" referencedColumnNames="ID" referencedTableName="FED_USER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="CREDENTIAL_ID" baseTableName="CREDENTIAL_ATTRIBUTE" constraintName="FK_CRED_ATTR" referencedColumnNames="ID" referencedTableName="CREDENTIAL"/>

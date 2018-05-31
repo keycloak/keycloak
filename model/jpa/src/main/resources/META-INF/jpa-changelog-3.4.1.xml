@@ -19,7 +19,7 @@
 
     <changeSet author="psilva@redhat.com" id="3.4.1">
         <!-- KEYCLOAK-4231, changing length to same value used by COMPONENT_CONFIG.VALUE -->
-        <modifyDataType tableName="CLIENT_ATTRIBUTES" columnName="VALUE" newDataType="VARCHAR(4000)"/>
+        <modifyDataType tableName="CLIENT_ATTRIBUTES" columnName="VALUE" newDataType="TEXT(4000)"/>
     </changeSet>
 
 </databaseChangeLog>

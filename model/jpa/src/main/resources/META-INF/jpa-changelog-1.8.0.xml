@@ -69,7 +69,7 @@
             <column name="TEMPLATE_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="VALUE" type="TEXT(2048)"/>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

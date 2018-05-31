@@ -23,8 +23,8 @@
         </preConditions>
 
         <!-- Can't increase publicKey on DB2 due the DB2 SQL Error: SQLCODE=-670, SQLSTATE=54010, SQLERRMC=16293;USERSPACE1, DRIVER=4.19.26 . Need to find better solution -->
-        <modifyDataType tableName="REALM" columnName="PRIVATE_KEY" newDataType="VARCHAR(4000)"/>
-        <!--<modifyDataType tableName="REALM" columnName="PUBLIC_KEY" newDataType="VARCHAR(4000)"/>-->
-        <modifyDataType tableName="REALM" columnName="CERTIFICATE" newDataType="VARCHAR(4000)"/>
+        <modifyDataType tableName="REALM" columnName="PRIVATE_KEY" newDataType="TEXT(4000)"/>
+        <!--<modifyDataType tableName="REALM" columnName="PUBLIC_KEY" newDataType="TEXT(4000)"/>-->
+        <modifyDataType tableName="REALM" columnName="CERTIFICATE" newDataType="TEXT(4000)"/>
     </changeSet>
 </databaseChangeLog>
