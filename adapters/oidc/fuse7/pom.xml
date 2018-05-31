@@ -38,8 +38,21 @@
 
     <modules>
         <module>camel-undertow</module>
-        <module>jetty94</module>
         <module>tomcat8</module>
         <module>undertow</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>jetty94</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
