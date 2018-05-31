@@ -72,12 +72,6 @@
         </profile>
 
         <profile>
-            <id>app-server-eap</id>
-            <modules>
-                <module>eap</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-eap6</id>
             <modules>
                 <module>eap6</module>

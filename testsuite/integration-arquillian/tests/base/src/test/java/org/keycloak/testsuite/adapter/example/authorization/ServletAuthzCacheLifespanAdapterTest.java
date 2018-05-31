@@ -16,14 +16,13 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import java.io.File;
+import java.io.IOException;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-
-import java.io.File;
-import java.io.IOException;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
@@ -31,16 +30,17 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-public class ServletCacheDisabledAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+public class ServletAuthzCacheLifespanAdapterTest extends AbstractServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID)
-                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/keycloak-cache-disabled-authz-service.json"), "keycloak.json");
+                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/keycloak-cache-lifespan-authz-service.json"), "keycloak.json");
     }
 
     @Test
-    public void testCreateNewResource() {
+    public void testCreateNewResourceWaitExpiration() {
         performTests(() -> {
             login("alice", "alice");
             assertWasNotDenied();
@@ -61,7 +61,16 @@ public class ServletCacheDisabledAdapterTest extends AbstractServletAuthzFunctio
             permission.addResource(resource.getName());
             permission.addPolicy("Deny Policy");
 
-            permission = getAuthorizationResource().permissions().resource().create(permission).readEntity(ResourcePermissionRepresentation.class);
+            getAuthorizationResource().permissions().resource().create(permission).readEntity(ResourcePermissionRepresentation.class);
+
+            login("alice", "alice");
+            assertWasNotDenied();
+
+            this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
+            assertWasNotDenied();
+
+            //Thread.sleep(5000);
+            setTimeOffset(10000);
 
             login("alice", "alice");
             assertWasNotDenied();
@@ -69,18 +78,7 @@ public class ServletCacheDisabledAdapterTest extends AbstractServletAuthzFunctio
             this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
             assertWasDenied();
 
-            permission = getAuthorizationResource().permissions().resource().findById(permission.getId()).toRepresentation();
-
-            permission.removePolicy("Deny Policy");
-            permission.addPolicy("Any User Policy");
-
-            getAuthorizationResource().permissions().resource().findById(permission.getId()).update(permission);
-
-            login("alice", "alice");
-            assertWasNotDenied();
-
-            this.driver.navigate().to(getResourceServerUrl() + "/new-resource");
-            assertWasNotDenied();
+            resetTimeOffset();
         });
     }
 }

@@ -53,6 +53,7 @@ import org.openqa.selenium.By;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
 
     protected static final String REALM_NAME = "servlet-policy-enforcer-authz";

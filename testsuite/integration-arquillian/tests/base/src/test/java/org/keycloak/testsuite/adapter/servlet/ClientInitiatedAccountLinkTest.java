@@ -74,6 +74,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWit
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";

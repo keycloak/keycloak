@@ -28,6 +28,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class PhotozExampleNoLazyLoadPathsAdapterTest extends AbstractPhotozExampleAdapterTest {
 
     @Deployment(name = PhotozClientAuthzTestApp.DEPLOYMENT_NAME)

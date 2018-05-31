@@ -131,6 +131,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703

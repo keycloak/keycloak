@@ -35,6 +35,7 @@ import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -51,6 +52,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -124,7 +126,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-741
     @Test
     public void testSessionInvalidatedAfterFailedRefresh() {
-        assumeNotOnAppServerUndertow();
+        ContainerAssume.assumeNotAppServerUndertow();
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         ClientResource sessionPortalRes = null;
         for (ClientRepresentation clientRep : testRealmResource().clients().findAll()) {
@@ -182,7 +184,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-1216
     @Test
     public void testAccountManagementSessionsLogout() {
-        assumeNotOnAppServerUndertow();
+        ContainerAssume.assumeNotAppServerUndertow();
         // login as bburke
         loginAndCheckSession(testRealmLoginPage);
         testRealmSessions.navigateTo();
