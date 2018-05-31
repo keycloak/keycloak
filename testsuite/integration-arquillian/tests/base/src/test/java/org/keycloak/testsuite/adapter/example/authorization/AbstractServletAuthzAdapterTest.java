@@ -38,11 +38,12 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.adapter.example.authorization.AbstractBaseServletAuthzAdapterTest.RESOURCE_SERVER_ID;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractServletAuthzFunctionalAdapterTest extends AbstractBaseServletAuthzAdapterTest {
+public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServletAuthzAdapterTest {
 
     @Test
     public void testCanNotAccessWhenEnforcing() throws Exception {

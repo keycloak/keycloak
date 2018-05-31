@@ -12,6 +12,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
  * @author mhajas
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @UseServletFilter(filterName = "saml-filter", filterClass = "org.keycloak.adapters.saml.servlet.SamlFilter",
         filterDependency = "org.keycloak:keycloak-saml-servlet-filter-adapter")
 public class SAMLFilterServletAdapterTest extends SAMLServletsAdapterTest {

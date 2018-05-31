@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,23 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.keycloak.testsuite.adapter.example.authorization.AbstractPhotozExampleAdapterTest;
+import java.io.IOException;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
 /**
- *
- * @author tkyjovsk
+ * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AppServerContainer("app-server-eap")
-//@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class EAPPhotozExampleAdapterTest extends AbstractPhotozExampleAdapterTest {
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+public class ServletAuthzNoLazyLoadPathsAdapterTest extends AbstractServletAuthzAdapterTest {
+
+    @Deployment(name = RESOURCE_SERVER_ID, managed = false)
+    public static WebArchive deployment() throws IOException {
+        return exampleDeployment(RESOURCE_SERVER_ID);
+    }
 
 }

@@ -33,12 +33,16 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
  * @author hmlnarik
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 public class SAMLAdapterClusterTest extends AbstractSAMLAdapterClusteredTest {
 
     @TargetsContainer(value = TARGET_CONTAINER_NODE_1)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive employee() {
-        return samlServletDeployment(EmployeeServletDistributable.DEPLOYMENT_NAME, EmployeeServletDistributable.DEPLOYMENT_NAME + "/WEB-INF/web.xml", SendUsernameServlet.class);
+        return samlServletDeployment(
+                EmployeeServletDistributable.DEPLOYMENT_NAME, 
+                EmployeeServletDistributable.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 
+                SendUsernameServlet.class);
     }
 
     @TargetsContainer(value = TARGET_CONTAINER_NODE_2)

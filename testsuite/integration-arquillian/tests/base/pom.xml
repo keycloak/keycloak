@@ -340,134 +340,51 @@
                     <version>${wildfly.core.version}</version>
                 </dependency>
             </dependencies>
-            <!--todo move the build section higher probably-->
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>keycloak-parent-basedir</id>
-                                <goals>
-                                    <goal>directory-of</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                                <configuration>
-                                    <property>keycloak-parent.basedir</property>
-                                    <project>
-                                        <groupId>org.keycloak</groupId>
-                                        <artifactId>keycloak-parent</artifactId>
-                                    </project>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-eap</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>eap</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
                     <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>example-wars</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>hello-world-authz-service</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>photoz-html5-client</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>photoz-restful-api</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>servlet-authz-app</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>servlet-policy-enforcer</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-test-apps-cors-database-service</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <outputDirectory>${examples.home}</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                    <!--<skip>${skip.example.tests}</skip>-->
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>test-apps-realms</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-test-apps-dist</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>zip</type>
-                                            <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <outputDirectory>${examples.home}</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>example-realms</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${examples.home}/example-realms</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                    <resources>
-                                        <resource>
-                                            <directory>${examples.basedir}</directory>
-                                            <filtering>true</filtering>
-                                            <includes>
-                                                <include>**/*.json</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

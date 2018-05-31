@@ -29,11 +29,13 @@ import org.keycloak.testsuite.adapter.page.ProductPortalSubsystem;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -62,15 +64,17 @@ public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest {
         customerPortalSubsystem.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        String pageSource = driver.getPageSource();
-        log.debug(pageSource);
-        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        assertPageContains("Bill Burke");
+        assertPageContains("Stian Thorgersen");
 
         productPortalSubsystem.navigateTo();
         assertCurrentUrlEquals(productPortalSubsystem);
-        pageSource = driver.getPageSource();
-        log.debug(pageSource);
-        assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
+        assertPageContains("iPhone");
+        assertPageContains("iPad");
     }
 
+    private void assertPageContains(String string) {
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString(string));
+    }
 }

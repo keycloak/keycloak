@@ -204,6 +204,83 @@
                                 <skip>${app.server.skip.unpack}</skip>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>example-wars</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>copy</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${app.server.skip.unpack}</skip>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>hello-world-authz-service</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>photoz-html5-client</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>photoz-restful-api</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>servlet-authz-app</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>servlet-policy-enforcer</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-test-apps-cors-database-service</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>war</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${examples.home}</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>test-apps-realms</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${app.server.skip.unpack}</skip>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-test-apps-dist</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                        <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${examples.home}</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -242,6 +319,27 @@
                                         <directory>src/test/resources</directory>
                                         <includes>
                                             <include>keystore/keycloak.truststore</include>
+                                        </includes>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>example-realms</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${app.server.skip.unpack}</skip>
+                                <outputDirectory>${examples.home}/example-realms</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                                <resources>
+                                    <resource>
+                                        <directory>${examples.basedir}</directory>
+                                        <filtering>true</filtering>
+                                        <includes>
+                                            <include>**/*.json</include>
                                         </includes>
                                     </resource>
                                 </resources>
@@ -404,6 +502,26 @@
                             </property>
                         </properties>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.commonjava.maven.plugins</groupId>
+                    <artifactId>directory-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>keycloak-parent-basedir</id>
+                            <goals>
+                                <goal>directory-of</goal>
+                            </goals>
+                            <phase>initialize</phase>
+                            <configuration>
+                                <property>keycloak-parent.basedir</property>
+                                <project>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-parent</artifactId>
+                                </project>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

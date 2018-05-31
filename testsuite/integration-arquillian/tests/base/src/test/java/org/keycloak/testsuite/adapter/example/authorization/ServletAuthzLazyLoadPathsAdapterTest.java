@@ -29,7 +29,8 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-public class ServletAuthzLazyLoadPathsAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+public class ServletAuthzLazyLoadPathsAdapterTest extends AbstractServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
