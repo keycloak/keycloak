@@ -91,7 +91,7 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
     
     @Test
     public void sshLoginTest() throws Exception {
-        assertCommand("mary", "password", "shell:date", Result.NO_ROLES);
+        assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
         assertCommand("john", "password", "shell:info", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:date", Result.OK);
         assertCommand("root", "password", "shell:info", Result.OK);
