@@ -41,17 +41,27 @@ public class StringListMapDeserializer extends JsonDeserializer<Object> {
             Map.Entry<String, JsonNode> e = itr.next();
             List<String> values = new LinkedList<>();
             if (!e.getValue().isArray()) {
-                values.add(e.getValue().asText());
+                if(e.getValue().isNull()) {
+                    values.add(null);
+                } else {
+                    values.add(e.getValue().asText());
+                }
             } else {
                 ArrayNode a = (ArrayNode) e.getValue();
                 Iterator<JsonNode> vitr = a.elements();
                 while (vitr.hasNext()) {
-                    values.add(vitr.next().asText());
+                    JsonNode node = vitr.next();
+                    if(node.isNull()) {
+                        values.add(null);
+                    } else {
+                        values.add(node.asText());
+                    }
                 }
             }
             map.put(e.getKey(), values);
         }
         return map;
     }
+
 
 }
