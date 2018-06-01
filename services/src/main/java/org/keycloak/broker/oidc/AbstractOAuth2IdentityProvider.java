@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.broker.oidc.OIDCIdentityProvider.OIDCEndpoint;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -42,6 +43,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
@@ -59,6 +61,9 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -326,6 +331,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
         if (acr != null) {
             uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
+        }
+        String forwardParameterConfig = getConfig().getForwardParameters() != null ? getConfig().getForwardParameters(): "";
+        List<String> forwardParameters = Arrays.asList(forwardParameterConfig.split("\\s*,\\s*"));
+        for(String forwardParameter: forwardParameters) {
+            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
+            String parameter = request.getAuthenticationSession().getClientNote(name);
+            if(parameter != null && !parameter.isEmpty()) {
+                uriBuilder.queryParam(forwardParameter, parameter);
+            }
         }
         return uriBuilder;
     }

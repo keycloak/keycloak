@@ -86,4 +86,12 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public String getPrompt() {
         return getConfig().get("prompt");
     }
+
+    public String getForwardParameters() {
+        return getConfig().get("forwardParameters");
+    }
+
+    public void setForwardParameters(String forwardParameters) {
+       getConfig().put("forwardParameters", forwardParameters);
+    }
 }
