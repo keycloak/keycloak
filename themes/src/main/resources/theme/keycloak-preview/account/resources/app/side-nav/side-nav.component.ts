@@ -25,6 +25,8 @@ import {ResponsivenessService, SideNavClasses, MenuClickListener} from "../respo
 import {Media} from "../responsiveness-service/media";
 import {Referrer} from "../page/referrer";
 
+declare const baseUrl: string;
+
 @Component({
     selector: 'app-side-nav',
     templateUrl: './side-nav.component.html',
@@ -80,7 +82,7 @@ export class SideNavComponent implements OnInit, MenuClickListener {
     }
     
     private logout() {
-        this.keycloakService.logout();
+        this.keycloakService.logout(baseUrl);
     }
 
     public menuClicked(): void {
