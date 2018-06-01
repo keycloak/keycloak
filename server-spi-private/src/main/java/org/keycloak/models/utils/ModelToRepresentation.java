@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -24,7 +26,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -37,9 +38,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.util.JsonSerialization;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -761,6 +764,81 @@ public class ModelToRepresentation {
         return server;
     }
 
+    public static UmaPermissionTypeRepresentation toUmaPermissionTypeRepresentation(Policy policy, AuthorizationProvider authorization){
+        if (!policy.getType().equals("uma"))
+            throw new RuntimeException("invalid policy type [" + policy.getType() + "] only uma type is supported");
+        
+        UmaPermissionTypeRepresentation r = new UmaPermissionTypeRepresentation();
+        r.setId(policy.getId());
+        r.setLogic(policy.getLogic());
+        r.setDecisionStrategy(policy.getDecisionStrategy());
+        
+        if (!policy.getScopes().isEmpty())
+            r.setScopes(policy.getScopes().stream().map(scope -> {
+                return scope.getName();
+            }).collect(Collectors.toSet()));
+        
+        if (!policy.getAssociatedPolicies().isEmpty())
+            r.setPolicies(policy.getAssociatedPolicies().stream().map((Policy policy1) -> {
+                return toUmaPolicyRepresentation(policy1,authorization);
+            }).collect(Collectors.toSet()));
+
+        return r;
+    }
+    
+    public static UmaPolicyRepresentation toUmaPolicyRepresentation(Policy policy, AuthorizationProvider authorization){
+        UmaPolicyRepresentation upr = new UmaPolicyRepresentation();
+        upr.setId(policy.getId());
+        String policyType = policy.getType();
+        upr.setType(policyType);
+        upr.setLogic(policy.getLogic());
+        upr.setDecisionStrategy(policy.getDecisionStrategy());
+        if (policyType.equals("user") || policyType.equals("client")){
+            String configKey = null;
+            if (policyType.equals("user"))
+                configKey = "users";
+            else if (policyType.equals("client"))
+                configKey = "clients";
+            try {
+              upr.setSubjects(JsonSerialization.readValue(policy.getConfig().get(configKey), new TypeReference<Set<String>>(){}));
+            } catch (IOException ex) {
+              throw new RuntimeException("Could not serialize config key [" + configKey + "] for policy [" + policy.getId() + "]", ex);
+            }
+        }
+        if (policyType.equals("group") ||  policyType.equals("role") ){
+            String configKey = null;
+            if (policyType.equals("group"))
+                configKey = "groups";
+            else if (policyType.equals("role"))
+                configKey = "roles";
+            try {
+                Set<Map<String,String>> setMap = JsonSerialization.readValue(policy.getConfig().get(configKey), new TypeReference<Set<Map<String,String>>>(){});
+                Set<String> subjects = new HashSet<>();
+                Map<String,List<String>> options = new HashMap<>();
+                if (policyType.equals("group")) {
+                    String groupsClaim = policy.getConfig().get("groupsClaim");
+                    options.put("groupsClaim", Arrays.asList(new String[]{ groupsClaim }));
+                }
+                List<String> includeChildren = new ArrayList<>();
+                List<String> requiredRoles = new ArrayList<>();
+                setMap.forEach((Map<String, String> map) -> {
+                    if(policyType.equals("group") && map.get("extendChildren").equals("true"))
+                            includeChildren.add(map.get("id"));
+                    if(policyType.equals("role") && map.get("required").equals("true"))
+                            requiredRoles.add(map.get("id"));
+                    subjects.add(map.get("id"));
+                });
+                upr.setSubjects(subjects);
+                if(!includeChildren.isEmpty()) options.put("includeChildren",includeChildren);
+                if(!requiredRoles.isEmpty()) options.put("requiredRoles",requiredRoles);
+                if(!options.isEmpty()) upr.setOptions(options);
+            } catch (IOException ex) {
+              throw new RuntimeException("Could not serialize policy [" + policy.getId() + "]", ex);
+            }
+        }
+        return upr;
+    }
+    
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {
         return toRepresentation(policy, authorization, false, true);
     }

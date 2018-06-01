@@ -32,11 +32,13 @@ public class PermissionTicketUpdatedEvent extends InvalidationEvent implements A
     private String resource;
     private String scope;
     private String serverId;
+    private String requester;
 
-    public static PermissionTicketUpdatedEvent create(String id, String owner, String resource, String scope, String serverId) {
+    public static PermissionTicketUpdatedEvent create(String id, String owner, String requester, String resource, String scope, String serverId) {
         PermissionTicketUpdatedEvent event = new PermissionTicketUpdatedEvent();
         event.id = id;
         event.owner = owner;
+        event.requester = requester;
         event.resource = resource;
         event.scope = scope;
         event.serverId = serverId;
@@ -55,6 +57,6 @@ public class PermissionTicketUpdatedEvent extends InvalidationEvent implements A
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.permissionTicketUpdated(id, owner, resource, scope, serverId, invalidations);
+        cache.permissionTicketUpdated(id, owner, requester, resource, scope, serverId, invalidations);
     }
 }

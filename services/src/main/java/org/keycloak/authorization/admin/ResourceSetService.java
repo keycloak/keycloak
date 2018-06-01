@@ -164,17 +164,6 @@ public class ResourceSetService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<Policy> policies = policyStore.findByResource(id, resourceServer.getId());
-
-        for (Policy policyModel : policies) {
-            if (policyModel.getResources().size() == 1) {
-                policyStore.delete(policyModel.getId());
-            } else {
-                policyModel.removeResource(resource);
-            }
-        }
-
         storeFactory.getResourceStore().delete(id);
 
         if (authorization.getRealm().isAdminEventsEnabled()) {
@@ -254,7 +243,8 @@ public class ResourceSetService {
     public Response getPermissions(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource model = resourceStore.findById(id, resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -264,21 +254,36 @@ public class ResourceSetService {
         Set<Policy> policies = new HashSet<>();
 
         policies.addAll(policyStore.findByResource(model.getId(), resourceServer.getId()));
-        policies.addAll(policyStore.findByResourceType(model.getType(), resourceServer.getId()));
+
+        if (model.getType() != null) {
+            policies.addAll(policyStore.findByResourceType(model.getType(), resourceServer.getId()));
+
+            HashMap<String, String[]> resourceFilter = new HashMap<>();
+
+            resourceFilter.put("owner", new String[]{resourceServer.getId()});
+            resourceFilter.put("type", new String[]{model.getType()});
+
+            for (Resource resourceType : resourceStore.findByResourceServer(resourceFilter, resourceServer.getId(), -1, -1)) {
+                policies.addAll(policyStore.findByResource(resourceType.getId(), resourceServer.getId()));
+            }
+        }
+
         policies.addAll(policyStore.findByScopeIds(model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), id, resourceServer.getId()));
         policies.addAll(policyStore.findByScopeIds(model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), null, resourceServer.getId()));
 
         List<PolicyRepresentation> representation = new ArrayList<>();
 
         for (Policy policyModel : policies) {
-            PolicyRepresentation policy = new PolicyRepresentation();
+            if (!"uma".equalsIgnoreCase(policyModel.getType())) {
+                PolicyRepresentation policy = new PolicyRepresentation();
 
-            policy.setId(policyModel.getId());
-            policy.setName(policyModel.getName());
-            policy.setType(policyModel.getType());
+                policy.setId(policyModel.getId());
+                policy.setName(policyModel.getName());
+                policy.setType(policyModel.getType());
 
-            if (!representation.contains(policy)) {
-                representation.add(policy);
+                if (!representation.contains(policy)) {
+                    representation.add(policy);
+                }
             }
         }
 
