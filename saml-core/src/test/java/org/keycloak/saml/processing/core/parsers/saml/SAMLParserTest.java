@@ -708,7 +708,8 @@ public class SAMLParserTest {
     @Test
     public void testInvalidEndElement() throws Exception {
         thrown.expect(ParsingException.class);
-        thrown.expectMessage(containsString("The element type \"NameIDFormat\" must be terminated by the matching end-tag \"</NameIDFormat>\"."));
+        // see KEYCLOAK-7444 
+        thrown.expectMessage(containsString("NameIDFormat"));
 
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
     }
