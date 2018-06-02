@@ -18,6 +18,9 @@
 package org.keycloak.models;
 
 import org.keycloak.keys.SecretKeyMetadata;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.keys.EcdsaKeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 
 import javax.crypto.SecretKey;
@@ -31,6 +34,15 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface KeyManager {
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    ActivePublicKeyCryptographyKey getActivePublicKeyCryptographyKey(RealmModel realm, Algorithm jwsAlgorithm);
+    PublicKey getActivePublicKey(RealmModel realm, AlgorithmType algorithmType);
+    PublicKey getPublicKey(RealmModel realm, AlgorithmType algorithmType, String kid);
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    ActiveEcdsaKey getActiveEcdsaKey(RealmModel realm);
+    PublicKey getEcdsaPublicKey(RealmModel realm, String kid);
+    List<EcdsaKeyMetadata> getEcdsaKeys(RealmModel realm, boolean includeDisabled);
 
     ActiveRsaKey getActiveRsaKey(RealmModel realm);
 
@@ -52,17 +64,16 @@ public interface KeyManager {
 
     List<SecretKeyMetadata> getAesKeys(RealmModel realm, boolean includeDisabled);
 
-    class ActiveRsaKey {
-        private final String kid;
-        private final PrivateKey privateKey;
-        private final PublicKey publicKey;
-        private final X509Certificate certificate;
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    class ActivePublicKeyCryptographyKey {
+        protected final String kid;
+        protected final PrivateKey privateKey;
+        protected final PublicKey publicKey;
 
-        public ActiveRsaKey(String kid, PrivateKey privateKey, PublicKey publicKey, X509Certificate certificate) {
+        public ActivePublicKeyCryptographyKey(String kid, PrivateKey privateKey, PublicKey publicKey) {
             this.kid = kid;
             this.privateKey = privateKey;
             this.publicKey = publicKey;
-            this.certificate = certificate;
         }
 
         public String getKid() {
@@ -75,6 +86,24 @@ public interface KeyManager {
 
         public PublicKey getPublicKey() {
             return publicKey;
+        }
+
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    class ActiveEcdsaKey extends ActivePublicKeyCryptographyKey {
+        public ActiveEcdsaKey(String kid, PrivateKey privateKey, PublicKey publicKey) {
+            super(kid, privateKey, publicKey);
+        }
+    }
+
+     // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    class ActiveRsaKey extends ActivePublicKeyCryptographyKey {
+        private final X509Certificate certificate;
+
+        public ActiveRsaKey(String kid, PrivateKey privateKey, PublicKey publicKey, X509Certificate certificate) {
+            super(kid, privateKey, publicKey);
+            this.certificate = certificate;
         }
 
         public X509Certificate getCertificate() {

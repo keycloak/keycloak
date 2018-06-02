@@ -43,9 +43,26 @@ public class DefaultKeyProviders {
 
             realm.addComponentModel(generated);
         }
-
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        createEcdsaProvider(realm);
         createSecretProvider(realm);
         createAesProvider(realm);
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public static void createEcdsaProvider(RealmModel realm) {
+        if (hasProvider(realm, "ecdsa-generated")) return;
+        ComponentModel generated = new ComponentModel();
+        generated.setName("ecdsa-generated");
+        generated.setParentId(realm.getId());
+        generated.setProviderId("ecdsa-generated");
+        generated.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("priority", "100");
+        generated.setConfig(config);
+
+        realm.addComponentModel(generated);
     }
 
     public static void createSecretProvider(RealmModel realm) {
@@ -107,6 +124,8 @@ public class DefaultKeyProviders {
             realm.addComponentModel(rsa);
         }
 
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        createEcdsaProvider(realm);
         createSecretProvider(realm);
         createAesProvider(realm);
     }

@@ -55,4 +55,12 @@ public interface Attributes {
             String.valueOf(GeneratedHmacKeyProviderFactory.DEFAULT_HMAC_KEY_SIZE),
             "16", "24", "32", "64", "128", "256", "512");
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    String ECDSA_PRIVATE_KEY_KEY = "ecdsaPrivateKey";
+    String ECDSA_PUBLIC_KEY_KEY = "ecdsaPublicKey";
+    String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
+    // only support P-256
+    ProviderConfigProperty ECDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(ECDSA_ELLIPTIC_CURVE_KEY, "Elliptic Curve", "Elliptic Curve used in ECDSA", LIST_TYPE,
+            String.valueOf(GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE),
+            "P-256");
 }

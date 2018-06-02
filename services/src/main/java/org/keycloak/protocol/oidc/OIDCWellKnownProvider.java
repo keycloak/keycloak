@@ -44,8 +44,8 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
-
-    public static final List<String> DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public static final List<String> DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString(), Algorithm.ES256.toString());
 
     public static final List<String> DEFAULT_USER_INFO_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.RS256.toString());
 

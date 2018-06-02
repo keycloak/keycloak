@@ -32,9 +32,14 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -66,6 +71,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findRealmRoleByName;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -425,6 +431,95 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Refresh with both offline tokens is fine
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
         testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
+    }
+
+    @Test
+    public void offlineTokenClientCredentialsGrantFlowInJWSES256() throws Exception {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // RS256 -> ES256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+       try {
+           JWSHeader header = null;
+           String idToken = tokenResponse.getIdToken();
+           String accessToken = tokenResponse.getAccessToken();
+           String refreshToken = tokenResponse.getRefreshToken();
+           if (idToken != null) {
+               header = new JWSInput(idToken).getHeader();
+               assertEquals("ES256", header.getAlgorithm().name());
+               assertEquals("JWT", header.getType());
+               assertNull(header.getContentType());
+           }
+           if (accessToken != null) {
+               header = new JWSInput(accessToken).getHeader();
+               assertEquals("ES256", header.getAlgorithm().name());
+               assertEquals("JWT", header.getType());
+               assertNull(header.getContentType());
+           }
+           if (refreshToken != null) {
+               header = new JWSInput(refreshToken).getHeader();
+               assertEquals("ES256", header.getAlgorithm().name());
+               assertEquals("JWT", header.getType());
+               assertNull(header.getContentType());
+           }
+       } catch (JWSInputException e) {
+           throw new RuntimeException(e);
+       }
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectClientLogin()
+                .client("offline-client")
+                .user(serviceAccountUserId)
+                .session(token.getSessionState())
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
+                .assertEvent();
+
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(0, offlineToken.getExpiration());
+
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
+
+        // Now retrieve another offline token and verify that previous offline token is still valid
+        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString2 = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken2 = oauth.verifyRefreshToken(offlineTokenString2);
+
+        events.expectClientLogin()
+                .client("offline-client")
+                .user(serviceAccountUserId)
+                .session(token2.getSessionState())
+                .detail(Details.TOKEN_ID, token2.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken2.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
+                .assertEvent();
+
+        // Refresh with both offline tokens is fine
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
+        testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
+        
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // ES256 -> RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
     }
 
     @Test

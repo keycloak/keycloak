@@ -21,16 +21,23 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -40,7 +47,9 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -89,6 +98,53 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         }
     }
 
+    @Test
+    public void nonceAndSessionStateMatchesInJWSES256() {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // change : RS256 -> ES256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+
+        EventRepresentation loginEvent = loginUser("abcdef123456");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        try {
+            JWSHeader header = null;
+            String idToken = authzResponse.getIdToken();
+            String accessToken = authzResponse.getAccessToken();
+            if (idToken != null) {
+                header = new JWSInput(idToken).getHeader();
+                assertEquals("ES256", header.getAlgorithm().name());
+                assertEquals("JWT", header.getType());
+                assertNull(header.getContentType());
+            }
+            if (accessToken != null) {
+                header = new JWSInput(accessToken).getHeader();
+                assertEquals("ES256", header.getAlgorithm().name());
+                assertEquals("JWT", header.getType());
+                assertNull(header.getContentType());
+            }
+        } catch (JWSInputException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idToken : idTokens) {
+            Assert.assertEquals("abcdef123456", idToken.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
+        }
+
+        // revert : ES256 -> RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
+    }
 
     @Test
     public void initialSessionStateUsedInRedirect() {

@@ -27,6 +27,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -62,6 +63,8 @@ import java.security.PublicKey;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
@@ -145,6 +148,51 @@ public class UserInfoTest extends AbstractKeycloakTest {
         } finally {
             client.close();
         }
+    }
+
+    @Test
+    public void testSuccess_postMethod_bodyInJWSES256() throws Exception {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // change JWS algorithm: RS256 to RS256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            JWSHeader header = new JWSInput(accessTokenResponse.getToken()).getHeader();
+            assertEquals("ES256", header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+
+            header = new JWSInput(accessTokenResponse.getRefreshToken()).getHeader();
+            assertEquals("ES256", header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+            System.out.println("ZZZZZ UserInfoTest#testSuccess_postMethod_bodyInJWSES256 token = " + accessTokenResponse.getToken());
+
+            Form form = new Form();
+            form.param("access_token", accessTokenResponse.getToken());
+
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .post(Entity.form(form));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
+
+        // revert JWS algorithm: ES256 to RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
     }
 
     @Test

@@ -20,3 +20,5 @@ org.keycloak.keys.GeneratedAesKeyProviderFactory
 org.keycloak.keys.GeneratedRsaKeyProviderFactory
 org.keycloak.keys.JavaKeystoreKeyProviderFactory
 org.keycloak.keys.ImportedRsaKeyProviderFactory
+# KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+org.keycloak.keys.GeneratedEcdsaKeyProviderFactory

@@ -27,6 +27,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.RSAPublicKeySpec;
 
@@ -48,6 +49,19 @@ public class KeyUtils {
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(keysize);
+            KeyPair keyPair = generator.generateKeyPair();
+            return keyPair;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public static KeyPair generateEcdsaKeyPair(int keysize) {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+            SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
+            generator.initialize(keysize, prng);
             KeyPair keyPair = generator.generateKeyPair();
             return keyPair;
         } catch (Exception e) {

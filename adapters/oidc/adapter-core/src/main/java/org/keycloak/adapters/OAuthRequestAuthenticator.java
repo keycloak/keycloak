@@ -19,7 +19,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -359,7 +359,8 @@ public class OAuthRequestAuthenticator {
         }
 
         try {
-            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
             if (idTokenString != null) {
                 try {
                     JWSInput input = new JWSInput(idTokenString);

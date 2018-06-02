@@ -58,6 +58,13 @@ public class HashProvider {
                 return "SHA-384";
             case RS512:
                 return "SHA-512";
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            case ES256:
+                return "SHA-256";
+            case ES384:
+                return "SHA-384";
+            case ES512:
+                return "SHA-512";
             default:
                 throw new IllegalArgumentException("Not an RSA Algorithm");
         }

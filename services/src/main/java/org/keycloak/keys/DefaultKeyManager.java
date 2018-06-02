@@ -19,6 +19,7 @@ package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
@@ -107,6 +108,10 @@ public class DefaultKeyManager implements KeyManager {
         }
 
         for (KeyProvider p : getProviders(realm)) {
+
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            dumpPublicKey(p);
+
             if (p.getType().equals(AlgorithmType.RSA)) {
                 RsaKeyProvider r = (RsaKeyProvider) p;
                 PublicKey publicKey = r.getPublicKey(kid);
@@ -258,6 +263,8 @@ public class DefaultKeyManager implements KeyManager {
             boolean activeRsa = false;
             boolean activeHmac = false;
             boolean activeAes = false;
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            boolean activeEcdsa = false;
 
             for (ComponentModel c : components) {
                 try {
@@ -281,8 +288,13 @@ public class DefaultKeyManager implements KeyManager {
                         if (r.getKid() != null && r.getSecretKey() != null) {
                             activeAes = true;
                         }
+                    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                    } else if (provider.getType().equals(AlgorithmType.ECDSA)) {
+                        EcdsaKeyProvider r = (EcdsaKeyProvider) provider;
+                        if (r.getKid() != null && r.getPrivateKey() != null) {
+                            activeEcdsa = true;
+                        }
                     }
-
                 } catch (Throwable t) {
                     logger.errorv(t, "Failed to load provider {0}", c.getId());
                 }
@@ -300,6 +312,11 @@ public class DefaultKeyManager implements KeyManager {
                 providers.add(new FailsafeAesKeyProvider());
             }
 
+            // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+            if (!activeEcdsa) {
+                providers.add(new FailsafeEcdsaKeyProvider());
+            }
+
             providersMap.put(realm.getId(), providers);
         }
         return providers;
@@ -313,5 +330,116 @@ public class DefaultKeyManager implements KeyManager {
             return i != 0 ? i : o1.getId().compareTo(o2.getId());
         }
 
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public ActiveEcdsaKey getActiveEcdsaKey(RealmModel realm) {
+        for (KeyProvider p : getProviders(realm)) {
+            if (p.getType().equals(AlgorithmType.ECDSA)) {
+                EcdsaKeyProvider r = (EcdsaKeyProvider) p;
+                if (r.getKid() != null && r.getPrivateKey() != null) {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracev("Active key realm={0} kid={1}", realm.getName(), p.getKid());
+                    }
+                    String kid = p.getKid();
+                    return new ActiveEcdsaKey(kid, r.getPrivateKey(), r.getPublicKey(kid));
+                }
+            }
+        }
+        throw new RuntimeException("Failed to get ECDSA keys");
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public PublicKey getEcdsaPublicKey(RealmModel realm, String kid) {
+        if (kid == null) {
+            logger.warnv("KID is null, can't find public key", realm.getName(), kid);
+            return null;
+        }
+
+        for (KeyProvider p : getProviders(realm)) {
+
+            dumpPublicKey(p);
+
+            if (p.getType().equals(AlgorithmType.ECDSA)) {
+                EcdsaKeyProvider r = (EcdsaKeyProvider) p;
+                PublicKey publicKey = r.getPublicKey(kid);
+                if (publicKey != null) {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracev("Found public key realm={0} kid={1}", realm.getName(), kid);
+                    }
+                    return publicKey;
+                }
+            }
+        }
+        if (logger.isTraceEnabled()) {
+            logger.tracev("Failed to find public key realm={0} kid={1}", realm.getName(), kid);
+        }
+        return null;
+    }
+    private void dumpPublicKey(KeyProvider p) {
+        logger.debugf("p = %s", p);
+        logger.debugf("p.getKid() = %s", p.getKid());
+        logger.debugf("p.getType() = %s", p.getType());
+        logger.debugf("p.getKeyMetadata() = %s", p.getKeyMetadata());
+    }
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public List<EcdsaKeyMetadata> getEcdsaKeys(RealmModel realm, boolean includeDisabled) {
+        List<EcdsaKeyMetadata> keys = new LinkedList<>();
+        for (KeyProvider p : getProviders(realm)) {
+            if (p instanceof EcdsaKeyProvider) {
+                if (includeDisabled) {
+                    keys.addAll(p.getKeyMetadata());
+                } else {
+                    List<EcdsaKeyMetadata> metadata = p.getKeyMetadata();
+                    metadata.stream().filter(k -> k.getStatus() != KeyMetadata.Status.DISABLED).forEach(k -> keys.add(k));
+                }
+            }
+        }
+        return keys;
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public ActivePublicKeyCryptographyKey getActivePublicKeyCryptographyKey(RealmModel realm, Algorithm jwsAlgorithm) {
+        ActivePublicKeyCryptographyKey activePublicKeyCryptographyKey = null;
+        AlgorithmType algorithmType = jwsAlgorithm.getType();
+        if (AlgorithmType.RSA.equals(algorithmType)) {
+            activePublicKeyCryptographyKey = getActiveRsaKey(realm);
+        } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+            activePublicKeyCryptographyKey = getActiveEcdsaKey(realm);
+        } else {
+            // error
+        }
+        return activePublicKeyCryptographyKey;
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public PublicKey getActivePublicKey(RealmModel realm, AlgorithmType algorithmType) {
+        PublicKey publicKey = null;
+        if (AlgorithmType.RSA.equals(algorithmType)) {
+            publicKey = getActiveRsaKey(realm).getPublicKey();
+        } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+            publicKey = getActiveEcdsaKey(realm).getPublicKey();
+        } else {
+            // error
+        }
+        return publicKey;
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    @Override
+    public PublicKey getPublicKey(RealmModel realm, AlgorithmType algorithmType, String kid) {
+        PublicKey publicKey = null;
+        if (AlgorithmType.RSA.equals(algorithmType)) {
+            publicKey = getRsaPublicKey(realm, kid);
+        } else if (AlgorithmType.ECDSA.equals(algorithmType)) {
+            publicKey = getEcdsaPublicKey(realm, kid);
+        } else {
+        }
+        return publicKey;
     }
 }

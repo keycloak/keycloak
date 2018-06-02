@@ -24,13 +24,16 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -39,6 +42,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -119,6 +123,22 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         realm.user(user2);
 
         testRealms.add(realm.build());
+    }
+
+    @Test
+    public void grantAccessTokenUsernameInJWSES256() throws Exception {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // RS256 -> ES256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+        grantAccessToken("direct-login", "resource-owner");
+        // ES256 -> RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
     }
 
     @Test

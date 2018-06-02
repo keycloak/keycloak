@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -69,6 +70,26 @@ public class SkeletonKeyTokenTest {
         token = input.readJsonContent(AccessToken.class);
         Assert.assertEquals("111", token.getId());
         Assert.assertTrue(RSAProvider.verify(input, keyPair.getPublic()));
+    }
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    public void testECDSA() throws Exception {
+        AccessToken token = createSimpleToken();
+        token.id("111");
+        token.addAccess("foo").addRole("admin");
+        token.addAccess("bar").addRole("user");
+
+        KeyPair keyPair = KeyPairGenerator.getInstance("EC").generateKeyPair();
+
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .ecdsa256(keyPair.getPrivate());
+
+        JWSInput input = new JWSInput(encoded);
+
+        token = input.readJsonContent(AccessToken.class);
+        Assert.assertEquals("111", token.getId());
+        Assert.assertTrue(ECDSAProvider.verify(input, keyPair.getPublic()));
     }
 
     @Test

@@ -422,6 +422,21 @@
                 </div>
                 <kc-tooltip>{{:: 'request-object-required.tooltip' | translate}}</kc-tooltip>
             </div>
+            <!-- KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing -->
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="tokenSignatureAlg">{{:: 'id-token-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="tokenSignatureAlg"
+                                ng-change="changeTokenSignatureAlg()"
+                                ng-model="tokenSignatureAlg"
+                                ng-options="sig for sig in tokenSignatureAlgorithms">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">

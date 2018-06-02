@@ -58,6 +58,12 @@ public class KeycloakDeploymentBuilder {
         if (resource == null) throw new RuntimeException("Must set 'resource' in config");
         deployment.setResourceName(resource);
 
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        //JWKPublicKeyLocator pkLocator = new JWKPublicKeyLocator();
+        //deployment.setPublicKeyLocator(pkLocator);
+
+        //String realmKeyPem = adapterConfig.getRealmKey();
+
         String realmKeyPem = adapterConfig.getRealmKey();
         if (realmKeyPem != null) {
             PublicKey realmKey;

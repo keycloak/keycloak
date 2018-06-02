@@ -115,6 +115,12 @@ public class DescriptionConverter {
             configWrapper.setRequestObjectSignatureAlg(algorithm);
         }
 
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getIdTokenSignedResponseAlg());
+            configWrapper.setIdTokenSignedResponseAlg(algorithm);
+        }
+
         return client;
     }
 
@@ -187,6 +193,10 @@ public class DescriptionConverter {
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
+        }
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        if (config.getIdTokenSignedResponseAlg() != null) {
+            response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg().toString());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

@@ -18,6 +18,7 @@
 package org.keycloak.jose.jws;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.util.JsonSerialization;
@@ -108,17 +109,41 @@ public class JWSBuilder {
             return encodeAll(buffer, null);
         }
 
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
         public String sign(Algorithm algorithm, PrivateKey privateKey) {
             StringBuffer buffer = new StringBuffer();
             byte[] data = marshalContent();
             encode(algorithm, data, buffer);
             byte[] signature = null;
             try {
-                signature = RSAProvider.sign(buffer.toString().getBytes("UTF-8"), algorithm, privateKey);
+                switch (algorithm.getType()) {
+                    case RSA:
+                        signature = RSAProvider.sign(buffer.toString().getBytes("UTF-8"), algorithm, privateKey);
+                        break;
+                    case ECDSA:
+                        signature = ECDSAProvider.sign(buffer.toString().getBytes("UTF-8"), algorithm, privateKey);
+                        break;
+                    default: throw new UnsupportedEncodingException("no such algorithm supported.");
+                }
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
             return encodeAll(buffer, signature);
+        }
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        public String ecdsa256(PrivateKey privateKey) {
+            return sign(Algorithm.ES256, privateKey);   
+        }
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        public String ecdsa384(PrivateKey privateKey) {
+            return sign(Algorithm.ES384, privateKey);   
+        }
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        public String ecdsa512(PrivateKey privateKey) {
+            return sign(Algorithm.ES512, privateKey);   
         }
 
         public String rsa256(PrivateKey privateKey) {

@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.SecretKeyMetadata;
+import org.keycloak.keys.EcdsaKeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeyManager;
@@ -66,6 +67,8 @@ public class KeyResource {
         active.put(AlgorithmType.RSA.name(), keystore.getActiveRsaKey(realm).getKid());
         active.put(AlgorithmType.HMAC.name(), keystore.getActiveHmacKey(realm).getKid());
         active.put(AlgorithmType.AES.name(), keystore.getActiveAesKey(realm).getKid());
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        active.put(AlgorithmType.ECDSA.name(), keystore.getActiveEcdsaKey(realm).getKid());
         keys.setActive(active);
 
         List<KeysMetadataRepresentation.KeyMetadataRepresentation> l = new LinkedList<>();
@@ -96,6 +99,17 @@ public class KeyResource {
             r.setKid(m.getKid());
             r.setStatus(m.getStatus() != null ? m.getStatus().name() : null);
             r.setType(AlgorithmType.AES.name());
+            l.add(r);
+        }
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        for (EcdsaKeyMetadata m : session.keys().getEcdsaKeys(realm, true)) {
+            KeysMetadataRepresentation.KeyMetadataRepresentation r = new KeysMetadataRepresentation.KeyMetadataRepresentation();
+            r.setProviderId(m.getProviderId());
+            r.setProviderPriority(m.getProviderPriority());
+            r.setKid(m.getKid());
+            r.setStatus(m.getStatus() != null ? m.getStatus().name() : null);
+            r.setType(AlgorithmType.ECDSA.name());
+            r.setPublicKey(PemUtils.encodeKey(m.getPublicKey()));
             l.add(r);
         }
 

@@ -21,18 +21,25 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -193,6 +200,103 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
     }
+
+    @Test
+    public void refreshTokenRequestInJWSES256() throws Exception {
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // change JWS algorithm: RS256 to RS256
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.ES256);
+        clientResource.update(clientRep);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getIdToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
+        assertEquals("ES256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String refreshTokenString = tokenResponse.getRefreshToken();
+        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        Assert.assertNotNull(refreshTokenString);
+
+        assertEquals("bearer", tokenResponse.getTokenType());
+
+        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        int actual = refreshToken.getExpiration() - getCurrentTime();
+        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799), lessThanOrEqualTo(1800)));
+
+        assertEquals(sessionId, refreshToken.getSessionState());
+
+        setTimeOffset(2);
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
+        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals(sessionId, refreshedToken.getSessionState());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+
+        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+
+        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+
+        Assert.assertNotEquals(token.getId(), refreshedToken.getId());
+        Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
+
+        assertEquals("bearer", response.getTokenType());
+
+        assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
+        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+
+        assertEquals(1, refreshedToken.getRealmAccess().getRoles().size());
+        Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
+
+        assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
+        Assert.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+
+        EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+
+        setTimeOffset(0);
+
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        // revert JWS algorithm: ES256 to RS256
+        clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
+    }
+
     @Test
     public void refreshTokenWithAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");

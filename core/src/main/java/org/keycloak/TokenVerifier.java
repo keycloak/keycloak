@@ -24,6 +24,7 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
@@ -335,7 +336,7 @@ public class TokenVerifier<T extends JsonWebToken> {
 
     public void verifySignature() throws VerificationException {
         AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
-
+        // NOTE : if signed by ECDSA and call RSAVerifier, here checks algorithm type from token and call ECDSAProvier.verify
         if (null == algorithmType) {
             throw new VerificationException("Unknown or unsupported token algorithm");
         } else switch (algorithmType) {
@@ -346,6 +347,17 @@ public class TokenVerifier<T extends JsonWebToken> {
                 if (!RSAProvider.verify(jws, publicKey)) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }   break;
+                // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+                case ECDSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("ECDSA Public key not set");
+                    }
+
+                    dumpSignatureInfo(realmUrl, getHeader(), publicKey);
+
+                    if (!ECDSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "ECDSA Invalid token signature");
+                    }   break;
             case HMAC:
                 if (secretKey == null) {
                     throw new VerificationException("Secret key not set");
@@ -356,6 +368,18 @@ public class TokenVerifier<T extends JsonWebToken> {
             default:
                 throw new VerificationException("Unknown or unsupported token algorithm");
         }
+    }
+    private  void dumpSignatureInfo(String realmUrl, JWSHeader header, PublicKey publicKey) {
+        final String className = TokenVerifier.class.getName();
+        final String methodName = "dumpSignatureInfo";
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("realmUrl = ").append(realmUrl).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("header.getKeyId() = ").append(header.getKeyId()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("header.getType() = ").append(header.getType()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("header.getAlgorithm() = ").append(header.getAlgorithm()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("header.getContentType() = ").append(header.getContentType()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("publicKey.getAlgorithm() = ").append(publicKey.getAlgorithm()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("publicKey.getFormat() = ").append(publicKey.getFormat()).toString());
+        LOG.logp(Level.FINE, className, methodName, new StringBuilder("publicKey.toString() = ").append(publicKey.toString()).toString());
     }
 
     public TokenVerifier<T> verify() throws VerificationException {

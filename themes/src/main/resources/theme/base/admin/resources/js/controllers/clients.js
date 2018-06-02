@@ -905,6 +905,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "request_uri only"
     ];
 
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    $scope.tokenSignatureAlgorithms = [
+        "RS256",
+        "ES256"
+    ];
+
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
     $scope.samlOneTimeUseCondition = false;
@@ -1061,6 +1067,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         var attrVal3 = $scope.client.attributes['request.object.required'];
         $scope.requestObjectRequired = attrVal3==null ? 'not required' : attrVal3;
 
+        // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+        var attrVal4 = $scope.client.attributes['id.token.signed.response.alg'];
+        $scope.tokenSignatureAlg = attrVal4==null ? 'RS256' : attrVal4;
+
         if ($scope.client.attributes["exclude.session.state.from.auth.response"]) {
             if ($scope.client.attributes["exclude.session.state.from.auth.response"] == "true") {
                 $scope.excludeSessionStateFromAuthResponse = true;
@@ -1166,6 +1176,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         } else {
             $scope.clientEdit.attributes['request.object.required'] = $scope.requestObjectRequired;
         }
+    };
+
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    $scope.changeTokenSignatureAlg = function() {
+        $scope.clientEdit.attributes['id.token.signed.response.alg'] = $scope.tokenSignatureAlg;
     };
 
     $scope.$watch(function() {

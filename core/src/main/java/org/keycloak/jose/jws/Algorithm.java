@@ -18,6 +18,7 @@
 package org.keycloak.jose.jws;
 
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.SignatureProvider;
 
 /**
@@ -33,9 +34,10 @@ public enum Algorithm {
     RS256(AlgorithmType.RSA, new RSAProvider()),
     RS384(AlgorithmType.RSA, new RSAProvider()),
     RS512(AlgorithmType.RSA, new RSAProvider()),
-    ES256(AlgorithmType.ECDSA, null),
-    ES384(AlgorithmType.ECDSA, null),
-    ES512(AlgorithmType.ECDSA, null)
+    // KEYCLOAK-6770 JWS signatures using PS256 or ES256 algorithms for signing
+    ES256(AlgorithmType.ECDSA, new ECDSAProvider()),
+    ES384(AlgorithmType.ECDSA, new ECDSAProvider()),
+    ES512(AlgorithmType.ECDSA, new ECDSAProvider())
     ;
 
     private AlgorithmType type;
