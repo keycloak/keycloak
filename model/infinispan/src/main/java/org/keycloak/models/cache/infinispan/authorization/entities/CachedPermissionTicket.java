@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 /**
@@ -33,6 +34,7 @@ public class CachedPermissionTicket extends AbstractRevisioned implements InReso
     private boolean granted;
     private Long createdTimestamp;
     private Long grantedTimestamp;
+    private String policy;
 
     public CachedPermissionTicket(Long revision, PermissionTicket permissionTicket) {
         super(revision, permissionTicket.getId());
@@ -46,6 +48,10 @@ public class CachedPermissionTicket extends AbstractRevisioned implements InReso
         this.granted = permissionTicket.isGranted();
         createdTimestamp = permissionTicket.getCreatedTimestamp();
         grantedTimestamp = permissionTicket.getGrantedTimestamp();
+        Policy policy = permissionTicket.getPolicy();
+        if (policy != null) {
+            this.policy = policy.getId();
+        }
     }
 
     public String getOwner() {
@@ -80,4 +86,7 @@ public class CachedPermissionTicket extends AbstractRevisioned implements InReso
         return this.resourceServerId;
     }
 
+    public String getPolicy() {
+        return policy;
+    }
 }

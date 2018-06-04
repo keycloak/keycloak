@@ -18,9 +18,12 @@ package org.keycloak.authorization.policy.provider.group;
 
 import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 
+import java.util.List;
 import java.util.function.Function;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
+import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -42,11 +45,13 @@ public class GroupPolicyProvider implements PolicyProvider {
     @Override
     public void evaluate(Evaluation evaluation) {
         GroupPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy());
-        RealmModel realm = evaluation.getAuthorizationProvider().getRealm();
+        AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
+        RealmModel realm = authorizationProvider.getRealm();
         Attributes.Entry groupsClaim = evaluation.getContext().getIdentity().getAttributes().getValue(policy.getGroupsClaim());
 
         if (groupsClaim == null || groupsClaim.isEmpty()) {
-            return;
+            List<String> userGroups = evaluation.getRealm().getUserGroups(evaluation.getContext().getIdentity().getId());
+            groupsClaim = new Entry(policy.getGroupsClaim(), userGroups);
         }
 
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {

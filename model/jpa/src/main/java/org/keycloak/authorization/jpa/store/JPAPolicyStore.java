@@ -142,10 +142,20 @@ public class JPAPolicyStore implements PolicyStore {
                 }
             } else if ("id".equals(name)) {
                 predicates.add(root.get(name).in(value));
+            } else if ("owner".equals(name)) {
+                predicates.add(root.get(name).in(value));
+            } else if ("owner_is_not_null".equals(name)) {
+                predicates.add(builder.isNotNull(root.get("owner")));
+            } else if ("resource".equals(name)) {
+                predicates.add(root.join("resources").get("id").in(value));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }
         });
+
+        if (!attributes.containsKey("owner") && !attributes.containsKey("owner_is_not_null")) {
+            predicates.add(builder.isNull(root.get("owner")));
+        }
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
 

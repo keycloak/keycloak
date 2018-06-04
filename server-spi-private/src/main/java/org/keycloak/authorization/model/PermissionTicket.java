@@ -29,6 +29,7 @@ public interface PermissionTicket {
     String GRANTED = "granted";
     String REQUESTER = "requester";
     String REQUESTER_IS_NULL = "requester_is_null";
+    String POLICY_IS_NOT_NULL = "policy_is_not_null";
 
     /**
      * Returns the unique identifier for this instance.
@@ -73,4 +74,8 @@ public interface PermissionTicket {
      * @return a resource server
      */
     ResourceServer getResourceServer();
+
+    Policy getPolicy();
+
+    void setPolicy(Policy policy);
 }

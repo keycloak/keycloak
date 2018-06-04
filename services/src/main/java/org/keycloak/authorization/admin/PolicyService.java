@@ -55,7 +55,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -253,12 +252,13 @@ public class PolicyService {
         this.auth.realm().requireViewAuthorization();
         return Response.ok(
                 authorization.getProviderFactories().stream()
-                        .map(provider -> {
+                        .filter(factory -> !factory.isInternal())
+                        .map(factory -> {
                             PolicyProviderRepresentation representation = new PolicyProviderRepresentation();
 
-                            representation.setName(provider.getName());
-                            representation.setGroup(provider.getGroup());
-                            representation.setType(provider.getId());
+                            representation.setName(factory.getName());
+                            representation.setGroup(factory.getGroup());
+                            representation.setType(factory.getId());
 
                             return representation;
                         })
