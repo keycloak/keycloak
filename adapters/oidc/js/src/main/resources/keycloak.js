@@ -258,7 +258,14 @@
         function generateCodeVerifier(len) {
             var validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             var array = new Uint8Array(len);
-            window.crypto.getRandomValues(array);
+            var crypto = window.crypto || window.msCrypto;
+            if (crypto && crypto.getRandomValues) {
+                crypto.getRandomValues(array);
+            } else {
+                for (var j = 0; j < array.length; j++) {
+                    array[j] = Math.floor(256 * Math.random());
+                }
+            }
             for (var i = 0; i < array.length; i++) {
                 array[i] = validChars.charCodeAt(array[i] % validChars.length);
             }
