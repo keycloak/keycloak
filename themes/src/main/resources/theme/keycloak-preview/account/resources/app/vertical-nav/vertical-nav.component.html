@@ -5,11 +5,10 @@
         [contentContainer]="contentContainer"
         [items]="navigationItems"
         [persistentSecondary]="false"
-        [pinnableMenus]="true"
+        [pinnableMenus]="false"
         [showBadges]="true"
         [showIcons]="true"
-        [updateActiveItemsOnClick]="true"
-        (onItemClickEvent)="onItemClicked($event)">
+        [updateActiveItemsOnClick]="true">
 
         <div>
             <ul class="nav navbar-nav navbar-right navbar-iconic">
@@ -38,7 +37,7 @@
 
 
     <div #contentContainer
-        class="container-fluid container-cards-pf container-pf-nav-pf-vertical example-page-container nav-pf-vertical-with-badges"
+        class="container-fluid container-cards-pf container-pf-nav-pf-vertical example-page-container"
         style="background-color: white;">
         <div class="row">
             <div class="col-sm-12">
