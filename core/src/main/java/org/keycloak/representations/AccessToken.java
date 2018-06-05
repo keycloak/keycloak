@@ -244,4 +244,30 @@ public class AccessToken extends IDToken {
     public void setAuthorization(Authorization authorization) {
         this.authorization = authorization;
     }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
+    public static class CertConf {
+        @JsonProperty("x5t#S256")
+        protected String certThumbprint;
+        
+        public String getCertThumbprint() {
+            return certThumbprint;
+        }
+
+        public void setCertThumbprint(String certThumbprint) {
+            this.certThumbprint = certThumbprint;
+        }
+    }
+
+    @JsonProperty("cnf")
+    protected CertConf certConf;
+    
+    public CertConf getCertConf() {
+        return certConf;
+    }
+
+    public void setCertConf(CertConf certConf) {
+        this.certConf = certConf;
+    }
 }

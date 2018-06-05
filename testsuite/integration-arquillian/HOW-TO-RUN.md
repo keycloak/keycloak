@@ -369,7 +369,18 @@ To run the X.509 client certificate authentication tests:
 	  -Dauth.server.ssl.required \
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
-	  
+
+## Run Mutual TLS Client Certificate Bound Access Tokens tests
+
+To run the Mutual TLS Client Certificate Bound Access Tokens tests:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+      -Pauth-server-wildfly \
+      -Dauth.server.ssl.required \
+      -Dbrowser=phantomjs \
+      -Dtest=org.keycloak.testsuite.hok.HoKTest
+
 ## Cluster tests
 
 Cluster tests use 2 backend servers (Keycloak on Wildfly/EAP) and 1 frontend loadbalancer server node. Invalidation tests don't use loadbalancer. 

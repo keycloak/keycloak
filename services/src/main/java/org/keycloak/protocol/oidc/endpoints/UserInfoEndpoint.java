@@ -44,6 +44,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -159,6 +160,15 @@ public class UserInfoEndpoint {
         if (userModel == null) {
             event.error(Errors.USER_NOT_FOUND);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
+        }
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
+            if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request)) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match", Response.Status.UNAUTHORIZED);
+            }
         }
 
         event.user(userModel)

@@ -43,6 +43,8 @@
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
         <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
         <exclude.x509>**/x509/*Test.java</exclude.x509>
+        <!-- KEYCLOAK-6771 exclude Mutual TLS Holder of Key Token x509 tests by default, enabled by 'ssl' profile -->
+        <exclude.HoK>**/hok/**/*Test.java</exclude.HoK>
         <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
         <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
     </properties>
@@ -160,6 +162,7 @@
                         <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
+                        <exclude>${exclude.HoK}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
