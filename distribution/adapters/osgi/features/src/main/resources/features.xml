@@ -68,7 +68,8 @@
     <feature name="keycloak-pax-http-jetty" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Jetty 9.4</details>
         <feature>keycloak-adapter-core</feature>
-        <feature>keycloak-osgi-adapter</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty94-adapter/${project.version}</bundle>
@@ -79,8 +80,9 @@
     <!-- Keycloak adapter for PaxWeb undertow provider -->
     <feature name="keycloak-pax-http-undertow" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Undertow</details>
-        <feature>keycloak-osgi-adapter</feature>
         <feature>keycloak-adapter-core</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
@@ -92,7 +94,8 @@
     <feature name="keycloak-pax-http-tomcat" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Tomcat 8</details>
         <feature>keycloak-adapter-core</feature>
-        <feature>keycloak-osgi-adapter</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-core-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat8-adapter/${project.version}</bundle>
