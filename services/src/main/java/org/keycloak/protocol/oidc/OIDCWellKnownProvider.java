@@ -119,6 +119,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
         config.setCodeChallengeMethodsSupported(DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED);
 
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
+        config.setTlsClientCertificateBoundAccessTokens(true);
+
         return config;
     }
 

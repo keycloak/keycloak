@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -61,6 +62,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.common.util.Time;
@@ -238,8 +240,8 @@ public class TokenManager {
 
 
     public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
-                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
-        RefreshToken refreshToken = verifyRefreshToken(session, realm, encodedRefreshToken);
+                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request) throws OAuthErrorException {
+        RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
@@ -264,6 +266,15 @@ public class TokenManager {
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
                 .generateRefreshToken();
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
+        // bind refreshed access and refresh token with Client Certificate
+        AccessToken.CertConf certConf = refreshToken.getCertConf();
+        if (certConf != null) {
+            responseBuilder.getAccessToken().setCertConf(certConf);
+            responseBuilder.getRefreshToken().setCertConf(certConf);
+        }
 
         String scopeParam = validation.clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
@@ -307,6 +318,10 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
+        return verifyRefreshToken(session, realm, null, null, encodedRefreshToken, true);
+    }
+
+    public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, ClientModel client, HttpRequest request, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
         try {
             RefreshToken refreshToken = toRefreshToken(session, realm, encodedRefreshToken);
 
@@ -321,6 +336,13 @@ public class TokenManager {
 
                 if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                }
+            }
+
+            // KEYCLOAK-6771 Certificate Bound Token
+            if (client != null && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+                if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request)) {
+                    throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
                 }
             }
 
@@ -936,7 +958,7 @@ public class TokenManager {
                         returnedScopes.add(s);
                     }
                 }
-            }       	
+            }
         }
     }
 

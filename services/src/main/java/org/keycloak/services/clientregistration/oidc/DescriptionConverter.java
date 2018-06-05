@@ -32,7 +32,6 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.SubjectType;
@@ -44,7 +43,6 @@ import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 
-import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -113,6 +111,14 @@ public class DescriptionConverter {
         if (clientOIDC.getRequestObjectSigningAlg() != null) {
             Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
             configWrapper.setRequestObjectSignatureAlg(algorithm);
+        }
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+        Boolean tlsClientCertificateBoundAccessTokens = clientOIDC.getTlsClientCertificateBoundAccessTokens();
+        if (tlsClientCertificateBoundAccessTokens != null) {
+            if (tlsClientCertificateBoundAccessTokens.booleanValue()) configWrapper.setUseMtlsHoKToken(true);
+            else configWrapper.setUseMtlsHoKToken(false);
         }
 
         return client;
@@ -187,6 +193,13 @@ public class DescriptionConverter {
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
+        }
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+        if (config.isUseMtlsHokToken()) {
+            response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
+        } else {
+            response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

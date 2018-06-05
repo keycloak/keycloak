@@ -107,6 +107,11 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("code_challenge_methods_supported")
     private List<String> codeChallengeMethodsSupported;
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
+    @JsonProperty("tls_client_certificate_bound_access_tokens")
+    private Boolean tlsClientCertificateBoundAccessTokens;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -305,8 +310,19 @@ public class OIDCConfigurationRepresentation {
     public List<String> getCodeChallengeMethodsSupported() {
         return codeChallengeMethodsSupported;
     }
+
     public void setCodeChallengeMethodsSupported(List<String> codeChallengeMethodsSupported) {
         this.codeChallengeMethodsSupported = codeChallengeMethodsSupported;
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
+    public Boolean getTlsClientCertificateBoundAccessTokens() {
+        return tlsClientCertificateBoundAccessTokens;
+    }
+
+    public void setTlsClientCertificateBoundAccessTokens(Boolean tlsClientCertificateBoundAccessTokens) {
+        this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
     }
 
     @JsonAnyGetter

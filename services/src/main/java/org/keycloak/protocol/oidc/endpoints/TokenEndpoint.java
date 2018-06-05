@@ -58,6 +58,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -79,10 +80,10 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
@@ -361,7 +362,7 @@ public class TokenEndpoint {
 
         if (codeChallenge != null) {
             // based on whether code_challenge has been stored at corresponding authorization code request previously
-        	// decide whether this client(RP) supports PKCE
+            // decide whether this client(RP) supports PKCE
             if (!isValidPkceCodeVerifier(codeVerifier)) {
                 logger.infof("PKCE invalid code verifier");
                 event.error(Errors.INVALID_CODE_VERIFIER);
@@ -371,8 +372,8 @@ public class TokenEndpoint {
             logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
             String codeVerifierEncoded = codeVerifier;
             try {
-            	// https://tools.ietf.org/html/rfc7636#section-4.2
-            	// plain or S256
+                // https://tools.ietf.org/html/rfc7636#section-4.2
+                // plain or S256
                 if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
                     logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
                     codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
@@ -404,6 +405,19 @@ public class TokenEndpoint {
                 .accessToken(token)
                 .generateRefreshToken();
 
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request);
+            if (certConf != null) {
+                responseBuilder.getAccessToken().setCertConf(certConf);
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+            }
+        }
+
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
@@ -424,7 +438,8 @@ public class TokenEndpoint {
 
         AccessTokenResponse res;
         try {
-            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+            // KEYCLOAK-6771 Certificate Bound Token
+            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers, request);
             res = result.getResponse();
 
             if (!result.isOfflineToken()) {
@@ -436,8 +451,14 @@ public class TokenEndpoint {
 
         } catch (OAuthErrorException e) {
             logger.trace(e.getMessage(), e);
-            event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            // KEYCLOAK-6771 Certificate Bound Token
+            if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
+            } else {
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            }
         }
 
         event.success();

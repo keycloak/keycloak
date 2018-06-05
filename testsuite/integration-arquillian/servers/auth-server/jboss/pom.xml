@@ -243,6 +243,8 @@
                                                 <include>client.key</include>
                                                 <include>intermediate-ca.crl</include>
                                                 <include>empty.crl</include>
+                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                                                <include>other_client.jks</include>
                                             </includes>
                                         </resource>
                                         <resource>

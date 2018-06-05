@@ -43,6 +43,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.Consumes;
@@ -180,8 +181,11 @@ public class LogoutEndpoint {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
+
+        RefreshToken token = null;
         try {
-            RefreshToken token = tokenManager.verifyRefreshToken(session, realm, refreshToken, false);
+            // KEYCLOAK-6771 Certificate Bound Token
+            token = tokenManager.verifyRefreshToken(session, realm, client, request, refreshToken, false);
 
             boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType());
 
@@ -197,9 +201,16 @@ public class LogoutEndpoint {
                 logout(userSessionModel, offline);
             }
         } catch (OAuthErrorException e) {
-            event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            // KEYCLOAK-6771 Certificate Bound Token
+            if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
+            } else {
+                event.error(Errors.INVALID_TOKEN);
+                throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            }
         }
+
         return Cors.add(request, Response.noContent()).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
