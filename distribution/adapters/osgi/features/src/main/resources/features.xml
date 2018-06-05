@@ -79,8 +79,9 @@
     <!-- Keycloak adapter for PaxWeb undertow provider -->
     <feature name="keycloak-pax-http-undertow" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Undertow</details>
-        <feature>keycloak-osgi-adapter</feature>
         <feature>keycloak-adapter-core</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
