@@ -36,6 +36,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             !org.keycloak.adapters.osgi.tomcat,
+            org.ops4j.pax.web.*;version="[7.1,9)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>
