@@ -18,9 +18,11 @@ package org.keycloak.authorization.jpa.store;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
@@ -102,9 +104,15 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         List<String> result = query.getResultList();
         List<PermissionTicket> list = new LinkedList<>();
+        PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPermissionTicketStore().findById(id, resourceServerId));
+            PermissionTicket ticket = ticketStore.findById(id, resourceServerId);
+            if (Objects.nonNull(ticket)) {
+                list.add(ticket);
+            }
         }
+
         return list;
     }
 
@@ -118,9 +126,15 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         List<String> result = query.getResultList();
         List<PermissionTicket> list = new LinkedList<>();
+        PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPermissionTicketStore().findById(id, resourceServerId));
+            PermissionTicket ticket = ticketStore.findById(id, resourceServerId);
+            if (Objects.nonNull(ticket)) {
+                list.add(ticket);
+            }
         }
+
         return list;
     }
 
@@ -139,9 +153,15 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         List<String> result = query.getResultList();
         List<PermissionTicket> list = new LinkedList<>();
+        PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPermissionTicketStore().findById(id, resourceServerId));
+            PermissionTicket ticket = ticketStore.findById(id, resourceServerId);
+            if (Objects.nonNull(ticket)) {
+                list.add(ticket);
+            }
         }
+
         return list;
     }
 
@@ -184,6 +204,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                 }
             } else if (PermissionTicket.REQUESTER_IS_NULL.equals(name)) {
                 predicates.add(builder.isNull(root.get("requester")));
+            } else if (PermissionTicket.POLICY_IS_NOT_NULL.equals(name)) {
+                predicates.add(builder.isNotNull(root.get("policy")));
             } else {
                 throw new RuntimeException("Unsupported filter [" + name + "]");
             }
@@ -196,19 +218,33 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
+
         if (maxResult != -1) {
             query.setMaxResults(maxResult);
         }
 
         List<String> result = query.getResultList();
         List<PermissionTicket> list = new LinkedList<>();
-        PermissionTicketStore ticket = provider.getStoreFactory().getPermissionTicketStore();
+        PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
 
         for (String id : result) {
-            list.add(ticket.findById(id, resourceServerId));
+            PermissionTicket ticket = ticketStore.findById(id, resourceServerId);
+            if (Objects.nonNull(ticket)) {
+                list.add(ticket);
+            }
         }
 
         return list;
+    }
+
+    @Override
+    public List<PermissionTicket> findGranted(String userId, String resourceServerId) {
+        HashMap<String, String> filters = new HashMap<>();
+
+        filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.REQUESTER, userId);
+
+        return find(filters, resourceServerId, -1, -1);
     }
 
     @Override
@@ -221,9 +257,15 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         List<String> result = query.getResultList();
         List<PermissionTicket> list = new LinkedList<>();
+        PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getPermissionTicketStore().findById(id, resourceServerId));
+            PermissionTicket ticket = ticketStore.findById(id, resourceServerId);
+            if (Objects.nonNull(ticket)) {
+                list.add(ticket);
+            }
         }
+
         return list;
     }
 }

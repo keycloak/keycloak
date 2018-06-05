@@ -63,7 +63,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         PolicyEnforcementMode enforcementMode = resourceServer.getPolicyEnforcementMode();
 
         if (PolicyEnforcementMode.DISABLED.equals(enforcementMode)) {
-            createEvaluation(permission, executionContext, decision, null, null).grant();
+            createEvaluation(permission, executionContext, decision, null).grant();
             return;
         }
 
@@ -95,7 +95,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && !verified.get()) {
-            createEvaluation(permission, executionContext, decision, null, null).grant();
+            createEvaluation(permission, executionContext, decision, null).grant();
         }
     }
 
@@ -113,25 +113,22 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                 return;
             }
 
-            for (Policy associatedPolicy : parentPolicy.getAssociatedPolicies()) {
-                PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+            PolicyProvider policyProvider = authorization.getProvider(parentPolicy.getType());
 
-                if (policyProvider == null) {
-                    throw new RuntimeException("Unknown parentPolicy provider for type [" + associatedPolicy.getType() + "].");
-                }
-
-                DefaultEvaluation evaluation = createEvaluation(permission, executionContext, decision, parentPolicy, associatedPolicy);
-
-                policyProvider.evaluate(evaluation);
-                evaluation.denyIfNoEffect();
+            if (policyProvider == null) {
+                throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
             }
+
+            DefaultEvaluation evaluation = createEvaluation(permission, executionContext, decision, parentPolicy);
+
+            policyProvider.evaluate(evaluation);
 
             verified.compareAndSet(false, true);
         };
     }
 
-    private DefaultEvaluation createEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, Policy parentPolicy, Policy associatedPolicy) {
-        return new DefaultEvaluation(permission, executionContext, parentPolicy, associatedPolicy, decision, authorization);
+    private DefaultEvaluation createEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, Policy parentPolicy) {
+        return new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorization);
     }
 
     private boolean hasRequestedScopes(final ResourcePermission permission, final Policy policy) {

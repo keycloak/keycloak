@@ -435,6 +435,18 @@
             </div>
         </fieldset>
 
+        <!-- KEYCLOAK-6771 Certificate Bound Token https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3 -->
+        <fieldset data-ng-show="protocol == 'openid-connect'">
+            <legend collapsed><span class="text">{{:: 'advanced-client-settings' | translate}}</span>  <kc-tooltip>{{:: 'advanced-client-settings.tooltip' | translate}}</kc-tooltip></legend>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="tlsClientCertificateBoundAccessTokens">{{:: 'tls-client-certificate-bound-access-tokens' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="tlsClientCertificateBoundAccessTokens" ng-click="switchChange()" name="tlsClientCertificateBoundAccessTokens" id="tlsClientCertificateBoundAccessTokens" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'tls-client-certificate-bound-access-tokens.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
         <fieldset>
             <legend collapsed><span class="text">{{:: 'client-flow-bindings' | translate}}</span>  <kc-tooltip>{{:: 'client-flow-bindings.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group">

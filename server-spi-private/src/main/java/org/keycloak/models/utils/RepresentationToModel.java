@@ -2444,7 +2444,7 @@ public class RepresentationToModel {
         if (granted && !ticket.isGranted()) {
             ticket.setGrantedTimestamp(System.currentTimeMillis());
         } else if (!granted) {
-            ticket.setGrantedTimestamp(null);
+            ticketStore.delete(ticket.getId());
         }
 
         return ticket;

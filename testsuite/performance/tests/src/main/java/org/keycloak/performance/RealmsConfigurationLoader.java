@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -12,6 +13,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
@@ -28,23 +30,36 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import static org.keycloak.performance.RealmsConfigurationBuilder.EXPORT_FILENAME;
 
+import static org.keycloak.performance.TestConfig.ignoreConflicts;
 import static org.keycloak.performance.TestConfig.numOfWorkers;
+import static org.keycloak.performance.TestConfig.skipClientRoles;
+import static org.keycloak.performance.TestConfig.skipRealmRoles;
+import static org.keycloak.performance.TestConfig.startAtRealmIdx;
+import static org.keycloak.performance.TestConfig.startAtUserIdx;
 
 /**
  * # build
- * mvn -f testsuite/integration-arquillian/tests/performance/gatling-perf clean install
+ * mvn -f testsuite/performance/tests clean install
  *
  * # generate benchmark-realms.json file with generated test data
- * mvn -f testsuite/integration-arquillian/tests/performance/gatling-perf exec:java -Dexec.mainClass=org.keycloak.performance.RealmsConfigurationBuilder -DnumOfRealms=2 -DusersPerRealm=2 -DclientsPerRealm=2 -DrealmRoles=2 -DrealmRolesPerUser=2 -DclientRolesPerUser=2 -DclientRolesPerClient=2
+ * mvn -f testsuite/performance/tests exec:java -Dexec.mainClass=org.keycloak.performance.RealmsConfigurationBuilder -DnumOfRealms=2 -DusersPerRealm=2 -DclientsPerRealm=2 -DrealmRoles=2 -DrealmRolesPerUser=2 -DclientRolesPerUser=2 -DclientRolesPerClient=2
  *
  * # use benchmark-realms.json to load the data up to Keycloak Server listening on localhost:8080
- * mvn -f testsuite/integration-arquillian/tests/performance/gatling-perf exec:java -Dexec.mainClass=org.keycloak.performance.RealmsConfigurationLoader -DnumOfWorkers=5 -Dexec.args=benchmark-realms.json > perf-output.txt
+ * mvn -f testsuite/performance/tests exec:java -Dexec.mainClass=org.keycloak.performance.RealmsConfigurationLoader -DnumOfWorkers=5 -Dexec.args=benchmark-realms.json > perf-output.txt
  *
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class RealmsConfigurationLoader {
 
+    static Logger log = Logger.getLogger(RealmsConfigurationLoader.class.getName());
+
     static final int ERROR_CHECK_INTERVAL = 10;
+
+    static int currentRealm = 0;
+    static int currentUser = 0;
+    static int currentClient = 0;
+
+    static boolean started;
 
     // multi-thread mechanics
     static final BlockingQueue<AdminJob> queue = new LinkedBlockingQueue<>(numOfWorkers);
@@ -58,24 +73,28 @@ public class RealmsConfigurationLoader {
     static boolean realmCreated;
 
     public static void main(String [] args) throws IOException {
-        System.out.println("Keycloak servers: "+TestConfig.serverUrisList);
+        println("Keycloak servers: "+TestConfig.serverUrisList);
 
         if (args.length == 0) {
             args = new String[] {EXPORT_FILENAME};
         }
 
         if (args.length != 1) {
-            System.out.println("Usage: java " + RealmsConfigurationLoader.class.getName() + " <FILE>");
+            println("Usage: java " + RealmsConfigurationLoader.class.getName() + " <FILE>");
             return;
         }
 
         String file = args[0];
-        System.out.println("Using file: " + new File(args[0]).getAbsolutePath());
-        System.out.println("Number of workers (numOfWorkers): " + numOfWorkers);
+        println("Using file: " + new File(args[0]).getAbsolutePath());
+        println("Number of workers (numOfWorkers): " + numOfWorkers);
+        println("Parameters: ");
+        println("    startAtRealmIdx: " + startAtRealmIdx);
+//        println("    startAtUserIdx: " + startAtUserIdx);
 
         JsonParser p = initParser(file);
 
         initWorkers();
+        initProgress();
 
         try {
 
@@ -86,6 +105,28 @@ public class RealmsConfigurationLoader {
 
             completeWorkers();
         }
+    }
+
+    private static void initProgress() {
+        Thread t = new Thread(() -> {
+
+            for (;;) {
+                try {
+                    Thread.sleep(60000);
+                    println("At realm: " + currentRealm + ", Clients: " + currentClient + ", Users: " + currentUser);
+                } catch (InterruptedException e) {
+                    return;
+                }
+
+            }
+
+        },"Progress Logger");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private static void println(String s) {
+        System.out.println(s);
     }
 
     private static void completeWorkers() {
@@ -101,7 +142,7 @@ public class RealmsConfigurationLoader {
                 try {
                     w.join(5000);
                     if (w.isAlive()) {
-                        System.out.println("Worker thread failed to stop: ");
+                        println("Worker thread failed to stop: ");
                         dumpThread(w);
                     }
                 } catch (InterruptedException e) {
@@ -117,6 +158,7 @@ public class RealmsConfigurationLoader {
         while (t != JsonToken.END_OBJECT && t != JsonToken.END_ARRAY) {
             if (t != JsonToken.START_ARRAY) {
                 readRealm(p);
+                currentRealm += 1;
             }
             t = p.nextToken();
         }
@@ -150,7 +192,7 @@ public class RealmsConfigurationLoader {
         for (StackTraceElement e: w.getStackTrace()) {
             b.append(e.toString()).append("\n");
         }
-        System.out.print(b);
+        println(b.toString());
     }
 
     private static void readRealm(JsonParser p) throws IOException {
@@ -158,57 +200,112 @@ public class RealmsConfigurationLoader {
         // as soon as we encounter users, roles, clients we create a CreateRealmJob
         // TODO: if after that point in a realm we encounter realm attribute, we report a warning but continue
 
-        RealmRepresentation r = new RealmRepresentation();
-        JsonToken t = p.nextToken();
-        while (t != JsonToken.END_OBJECT) {
+        boolean skip = false;
+        try {
+            RealmRepresentation r = new RealmRepresentation();
+            JsonToken t = p.nextToken();
+            outer:
+            while (t != JsonToken.END_OBJECT && !skip) {
 
-            //System.out.println(t + ", name: " + p.getCurrentName() + ", text: '" + p.getText() + "', value: " + p.getValueAsString());
+                //System.out.println(t + ", name: " + p.getCurrentName() + ", text: '" + p.getText() + "', value: " + p.getValueAsString());
 
-            switch (p.getCurrentName()) {
-                case "realm":
-                    r.setRealm(getStringValue(p));
-                    break;
-                case "enabled":
-                    r.setEnabled(getBooleanValue(p));
-                    break;
-                case "accessTokenLifespan":
-                    r.setAccessCodeLifespan(getIntegerValue(p));
-                    break;
-                case "registrationAllowed":
-                    r.setRegistrationAllowed(getBooleanValue(p));
-                    break;
-                case "passwordPolicy":
-                    r.setPasswordPolicy(getStringValue(p));
-                    break;
-                case "users":
-                    ensureRealm(r);
-                    readUsers(r, p);
-                    break;
-                case "roles":
-                    ensureRealm(r);
-                    readRoles(r, p);
-                    break;
-                case "clients":
-                    ensureRealm(r);
-                    readClients(r, p);
-                    break;
-                default: {
-                    // if we don't understand the field we ignore it - but report that
-                    System.out.println("Realm attribute ignored: " + p.getCurrentName());
-                    consumeAttribute(p);
+                switch (p.getCurrentName()) {
+                    case "realm":
+                        r.setRealm(getStringValue(p));
+                        skip = !started && realmSkipped(r.getRealm()) ;
+                        if (skip) {
+                            break outer;
+                        }
+                        break;
+                    case "enabled":
+                        r.setEnabled(getBooleanValue(p));
+                        break;
+                    case "accessTokenLifespan":
+                        r.setAccessCodeLifespan(getIntegerValue(p));
+                        break;
+                    case "registrationAllowed":
+                        r.setRegistrationAllowed(getBooleanValue(p));
+                        break;
+                    case "passwordPolicy":
+                        r.setPasswordPolicy(getStringValue(p));
+                        break;
+                    case "sslRequired":
+                        r.setSslRequired(getStringValue(p));
+                        break;
+                    case "users":
+                        ensureRealm(r);
+                        if (seekToStart()) {
+                            enqueueFetchRealmRoles(r);
+                            completePending();
+                        }
+                        readUsers(r, p);
+                        break;
+                    case "roles":
+                        ensureRealm(r);
+                        readRoles(r, p);
+                        break;
+                    case "clients":
+                        ensureRealm(r);
+                        readClients(r, p);
+                        completePending();
+                        if (seekToStart()) {
+                            enqueueFetchMissingClients(r);
+                            completePending();
+                        }
+                        break;
+                    default: {
+                        // if we don't understand the field we ignore it - but report that
+                        log.warn("Realm attribute ignored: " + p.getCurrentName());
+                        consumeAttribute(p);
+                        continue; // skip p.nextToken() at end of loop - consumeAttribute() already did it
+                    }
                 }
+
+                t = p.nextToken();
             }
-            t = p.nextToken();
+
+            if (skip) {
+                log.info("Realm skipped: " + r.getRealm());
+                consumeParent(p);
+            }
+
+        } finally {
+            // we wait for realm to complete
+            completePending();
+
+            // reset realm specific cache
+            realmCreated = false;
+            clientIdMap.clear();
+            realmRoleIdMap.clear();
+            clientRoleIdMap.clear();
         }
+    }
 
-        // we wait for realm to complete
-        completePending();
+    private static void consumeParent(JsonParser p) throws IOException {
+        while (p.currentToken() != JsonToken.END_OBJECT) {
+            consumeAttribute(p);
+        }
+    }
 
-        // reset realm specific cache
-        realmCreated = false;
-        clientIdMap.clear();
-        realmRoleIdMap.clear();
-        clientRoleIdMap.clear();
+    private static boolean seekToStart() {
+        return startAtRealmIdx > 0 || startAtUserIdx > 0;
+    }
+
+    private static boolean seeking() {
+        return currentRealm < startAtRealmIdx || currentUser < startAtUserIdx;
+    }
+
+    private static boolean realmSkipped(String realm) {
+        int pos = realm.lastIndexOf("_");
+        int idx = Integer.parseInt(realm.substring(pos+1));
+        return idx < startAtRealmIdx;
+    }
+
+    private static boolean userSkipped(String username) {
+        int pos = username.indexOf("_");
+        int end = username.indexOf("_", pos+1);
+        int idx = Integer.parseInt(username.substring(pos+1, end));
+        return idx < startAtUserIdx;
     }
 
     private static void ensureRealm(RealmRepresentation r) {
@@ -220,34 +317,18 @@ public class RealmsConfigurationLoader {
 
     private static void createRealm(RealmRepresentation r) {
         try {
+            started = true;
             queue.put(new CreateRealmJob(r));
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted", e);
         }
 
-        // now wait for job to appear
-        PendingResult next = pendingResult.poll();
-        while (next == null) {
-            waitForAwhile();
-            next = pendingResult.poll();
-        }
-
-        // then wait for the job to complete
-        while (!next.isDone()) {
-            waitForAwhile();
-        }
-
-        try {
-            next.get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Execution failed", e.getCause());
-        }
+        completePending();
     }
 
     private static void enqueueCreateUser(RealmRepresentation r, UserRepresentation u) {
         try {
+            started = true;
             queue.put(new CreateUserJob(r, u));
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted", e);
@@ -256,6 +337,7 @@ public class RealmsConfigurationLoader {
 
     private static void enqueueCreateRealmRole(RealmRepresentation r, RoleRepresentation role) {
         try {
+            started = true;
             queue.put(new CreateRealmRoleJob(r, role));
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted", e);
@@ -264,6 +346,7 @@ public class RealmsConfigurationLoader {
 
     private static void enqueueCreateClientRole(RealmRepresentation r, RoleRepresentation role, String client) {
         try {
+            started = true;
             queue.put(new CreateClientRoleJob(r, role, client));
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted", e);
@@ -272,7 +355,26 @@ public class RealmsConfigurationLoader {
 
     private static void enqueueCreateClient(RealmRepresentation r, ClientRepresentation client) {
         try {
+            started = true;
             queue.put(new CreateClientJob(r, client));
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted", e);
+        }
+    }
+
+    private static void enqueueFetchMissingClients(RealmRepresentation r) {
+        try {
+            started = true;
+            queue.put(new FetchMissingClientsJob(r));
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted", e);
+        }
+    }
+
+    private static void enqueueFetchRealmRoles(RealmRepresentation r) {
+        try {
+            started = true;
+            queue.put(new FetchRealmRolesJob(r));
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted", e);
         }
@@ -299,18 +401,22 @@ public class RealmsConfigurationLoader {
         if (t != JsonToken.START_ARRAY) {
             throw new RuntimeException("Error reading field 'users'. Expected array of users [" + t + "]");
         }
-        int count = 0;
+
         t = p.nextToken();
         while (t == JsonToken.START_OBJECT) {
             UserRepresentation u = p.readValueAs(UserRepresentation.class);
-            enqueueCreateUser(r, u);
+            if (!started && userSkipped(u.getUsername())) {
+                log.info("User skipped: " + u.getUsername());
+            } else {
+                enqueueCreateUser(r, u);
+            }
             t = p.nextToken();
-            count += 1;
+            currentUser += 1;
 
             // every some users check to see pending errors
             // in order to short-circuit if any errors have occurred
-            if (count % ERROR_CHECK_INTERVAL == 0) {
-                checkPendingErrors();
+            if (currentUser % ERROR_CHECK_INTERVAL == 0) {
+                checkPendingErrors(u.getUsername());
             }
         }
     }
@@ -367,14 +473,16 @@ public class RealmsConfigurationLoader {
             t = p.nextToken();
             while (t != JsonToken.END_ARRAY) {
                 RoleRepresentation u = p.readValueAs(RoleRepresentation.class);
-                enqueueCreateClientRole(r, u, client);
+                if (!seeking() || !skipClientRoles) {
+                    enqueueCreateClientRole(r, u, client);
+                }
                 t = p.nextToken();
                 count += 1;
 
                 // every some roles check to see pending errors
                 // in order to short-circuit if any errors have occurred
                 if (count % ERROR_CHECK_INTERVAL == 0) {
-                    checkPendingErrors();
+                    checkPendingErrors(u.getName());
                 }
             }
             t = p.nextToken();
@@ -393,14 +501,16 @@ public class RealmsConfigurationLoader {
         int count = 0;
         while (t == JsonToken.START_OBJECT) {
             RoleRepresentation u = p.readValueAs(RoleRepresentation.class);
-            enqueueCreateRealmRole(r, u);
+            if (!seeking() || !skipRealmRoles) {
+                enqueueCreateRealmRole(r, u);
+            }
             t = p.nextToken();
             count += 1;
 
             // every some roles check to see pending errors
             // in order to short-circuit if any errors have occurred
             if (count % ERROR_CHECK_INTERVAL == 0) {
-                checkPendingErrors();
+                checkPendingErrors(u.getName());
             }
         }
     }
@@ -410,25 +520,25 @@ public class RealmsConfigurationLoader {
         if (t != JsonToken.START_ARRAY) {
             throw new RuntimeException("Error reading field 'clients'. Expected array of clients [" + t + "]");
         }
-        int count = 0;
+
         t = p.nextToken();
         while (t == JsonToken.START_OBJECT) {
             ClientRepresentation u = p.readValueAs(ClientRepresentation.class);
             enqueueCreateClient(r, u);
             t = p.nextToken();
-            count += 1;
+            currentClient += 1;
 
             // every some users check to see pending errors
-            if (count % ERROR_CHECK_INTERVAL == 0) {
-                checkPendingErrors();
+            if (currentClient % ERROR_CHECK_INTERVAL == 0) {
+                checkPendingErrors(u.getClientId());
             }
         }
     }
 
-    private static void checkPendingErrors() {
+    private static void checkPendingErrors(String label) {
         // now wait for job to appear
         PendingResult next = pendingResult.peek();
-        while (next == null) {
+        while (next == null && queue.size() > 0) {
             waitForAwhile();
             next = pendingResult.peek();
         }
@@ -445,7 +555,7 @@ public class RealmsConfigurationLoader {
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Interrupted");
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution failed", e.getCause());
+                    throw new RuntimeException("Execution failed in the vicinity of " + label + ": ", e.getCause());
                 }
             }
         }
@@ -479,9 +589,15 @@ public class RealmsConfigurationLoader {
     }
 
     private static void consumeAttribute(JsonParser p) throws IOException {
-        JsonToken t = p.nextToken();
+        JsonToken t = p.currentToken();
         if (t == JsonToken.START_OBJECT || t == JsonToken.START_ARRAY) {
             p.skipChildren();
+            p.nextToken();
+        } else if (t == JsonToken.FIELD_NAME) {
+            p.nextToken();
+            consumeAttribute(p);
+        } else {
+            p.nextToken();
         }
     }
 
@@ -528,6 +644,40 @@ public class RealmsConfigurationLoader {
         }
     }
 
+    static class FetchMissingClientsJob extends AdminJob {
+
+        private RealmRepresentation realm;
+
+        FetchMissingClientsJob(RealmRepresentation r) {
+            realm = r;
+        }
+
+        @Override
+        public void run() {
+            List<ClientRepresentation> clients = admin().realms().realm(realm.getRealm()).clients().findAll();
+            for (ClientRepresentation c: clients) {
+                clientIdMap.put(c.getClientId(), c.getId());
+            }
+        }
+    }
+
+    static class FetchRealmRolesJob extends AdminJob {
+
+        private RealmRepresentation realm;
+
+        FetchRealmRolesJob(RealmRepresentation r) {
+            realm = r;
+        }
+
+        @Override
+        public void run() {
+            List<RoleRepresentation> roles = admin().realms().realm(realm.getRealm()).roles().list();
+            for (RoleRepresentation r: roles) {
+                realmRoleIdMap.put(r.getName(), r.getId());
+            }
+        }
+    }
+
     static class CreateRealmJob extends AdminJob {
 
         private RealmRepresentation realm;
@@ -538,7 +688,15 @@ public class RealmsConfigurationLoader {
 
         @Override
         public void run() {
-            admin().realms().create(realm);
+            try {
+                admin().realms().create(realm);
+            } catch (ClientErrorException e) {
+                if (e.getMessage().endsWith("409 Conflict") && ignoreConflicts) {
+                    log.warn("Ignoring conflict when creating a realm: " + realm.getRealm());
+                    return;
+                }
+                throw e;
+            }
         }
     }
 
@@ -556,11 +714,17 @@ public class RealmsConfigurationLoader {
         public void run() {
             Response response = admin().realms().realm(realm.getRealm()).users().create(user);
             response.close();
-            if (response.getStatus() != 201) {
-                throw new RuntimeException("Failed to create user with status: " + response.getStatusInfo().getReasonPhrase());
+
+            if (response.getStatus() == 409 && ignoreConflicts) {
+                log.warn("Ignoring conflict when creating a user: " + user.getUsername());
+                user.setId(admin().realms().realm(realm.getRealm()).users().search(user.getUsername()).get(0).getId());
+            } else if (response.getStatus() == 201) {
+                user.setId(extractIdFromResponse(response));
+            } else {
+                throw new RuntimeException("Failed to create user with status: " + response.getStatusInfo());
             }
 
-            String userId = extractIdFromResponse(response);
+            String userId = user.getId();
 
             List<CredentialRepresentation> creds = user.getCredentials();
             for (CredentialRepresentation cred: creds) {
@@ -641,8 +805,16 @@ public class RealmsConfigurationLoader {
 
         @Override
         public void run() {
-            admin().realms().realm(realm.getRealm()).roles().create(role);
-
+            try {
+                admin().realms().realm(realm.getRealm()).roles().create(role);
+            } catch (ClientErrorException e) {
+                if (e.getMessage().endsWith("409 Conflict") && ignoreConflicts) {
+                    log.warn("Ignoring conflict when creating a realm role: " + role.getName());
+                    role = admin().realms().realm(realm.getRealm()).roles().get(role.getName()).toRepresentation();
+                } else {
+                    throw e;
+                }
+            }
             // we need the id but it's not returned by REST API - we have to perform a get on the created role and save the returned id
             RoleRepresentation rr = admin().realms().realm(realm.getRealm()).roles().get(role.getName()).toRepresentation();
             realmRoleIdMap.put(rr.getName(), rr.getId());
@@ -668,7 +840,18 @@ public class RealmsConfigurationLoader {
             if (id == null) {
                 throw new RuntimeException("No client created for clientId: " + clientId);
             }
-            admin().realms().realm(realm.getRealm()).clients().get(id).roles().create(role);
+
+            try {
+                admin().realms().realm(realm.getRealm()).clients().get(id).roles().create(role);
+
+            } catch (ClientErrorException e) {
+                if (e.getMessage().endsWith("409 Conflict") && ignoreConflicts) {
+                    log.warn("Ignoring conflict when creating a client role: " + role.getName());
+                    role = admin().realms().realm(realm.getRealm()).clients().get(id).roles().get(role.getName()).toRepresentation();
+                } else {
+                    throw e;
+                }
+            }
 
             // we need the id but it's not returned by REST API - we have to perform a get on the created role and save the returned id
             RoleRepresentation rr = admin().realms().realm(realm.getRealm()).clients().get(id).roles().get(role.getName()).toRepresentation();
@@ -680,6 +863,7 @@ public class RealmsConfigurationLoader {
 
             roleIdMap.put(rr.getName(), rr.getId());
         }
+
     }
 
     static class CreateClientJob extends AdminJob {
@@ -697,11 +881,16 @@ public class RealmsConfigurationLoader {
         public void run() {
             Response response = admin().realms().realm(realm.getRealm()).clients().create(client);
             response.close();
-            if (response.getStatus() != 201) {
+
+            if (response.getStatus() == 409 && ignoreConflicts) {
+                log.warn("Ignoring conflict when creating a client: " + client.getClientId());
+                client = admin().realms().realm(realm.getRealm()).clients().findByClientId(client.getClientId()).get(0);
+            } else if (response.getStatus() == 201) {
+                client.setId(extractIdFromResponse(response));
+            } else {
                 throw new RuntimeException("Failed to create client with status: " + response.getStatusInfo().getReasonPhrase());
             }
-            String id = extractIdFromResponse(response);
-            clientIdMap.put(client.getClientId(), id);
+            clientIdMap.put(client.getClientId(), client.getId());
         }
     }
 

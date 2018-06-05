@@ -920,6 +920,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+    $scope.tlsClientCertificateBoundAccessTokens = false;
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1068,6 +1071,16 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 $scope.excludeSessionStateFromAuthResponse = false;
             }
         }
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+       if ($scope.client.attributes["tls.client.certificate.bound.access.tokens"]) {
+           if ($scope.client.attributes["tls.client.certificate.bound.access.tokens"] == "true") {
+               $scope.tlsClientCertificateBoundAccessTokens = true;
+           } else {
+               $scope.tlsClientCertificateBoundAccessTokens = false;
+           }
+       }
     }
 
     if (!$scope.create) {
@@ -1307,6 +1320,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         } else {
             $scope.clientEdit.attributes["exclude.session.state.from.auth.response"] = "false";
 
+        }
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if ($scope.tlsClientCertificateBoundAccessTokens == true) {
+            $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "true";
+        } else {
+            $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "false";
         }
 
         $scope.clientEdit.protocol = $scope.protocol;

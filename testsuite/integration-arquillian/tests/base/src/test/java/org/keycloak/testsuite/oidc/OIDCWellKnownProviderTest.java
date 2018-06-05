@@ -119,6 +119,15 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // Request and Request_Uri
             Assert.assertTrue(oidcConfig.getRequestParameterSupported());
             Assert.assertTrue(oidcConfig.getRequestUriParameterSupported());
+
+            // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+            // PKCE support
+            Assert.assertNames(oidcConfig.getCodeChallengeMethodsSupported(), OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
+
+            // KEYCLOAK-6771 Certificate Bound Token
+            // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
+            Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
+
         } finally {
             client.close();
         }

@@ -199,7 +199,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
-                PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStoreDelegate();
+                PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStore();
                 List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer().getId());
 
                 for (PermissionTicket permission : permissions) {

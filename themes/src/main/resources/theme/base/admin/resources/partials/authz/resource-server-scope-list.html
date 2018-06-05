@@ -46,7 +46,7 @@
         </tr>
         </tfoot>
         <tbody>
-            <tr ng-repeat-start="scope in scopes | filter:search | orderBy:'name'" data-ng-click="showDetails(scope);" style="cursor: pointer">
+            <tr ng-repeat-start="scope in scopes | filter:search | orderBy:'name'" data-ng-click="showDetails(scope, $event);" style="cursor: pointer">
                 <td>
                     <span ng-if="!scope.details || !scope.details.loaded" class="fa fa-angle-right"></span>
                     <span ng-if="scope.details && scope.details.loaded" class="fa fa-angle-right fa-angle-down"></span>
@@ -69,7 +69,7 @@
             <tr ng-if="scope.details && scope.details.loaded" ng-repeat-end="">
                 <td colspan="3" style="background-color: #ffffff">
                     <div class="list-group-item-container container-fluid">
-                        <div class="close" data-ng-click="showDetails(scope);" style="padding-top: 10px">
+                        <div class="close" data-ng-click="showDetails(scope, $event);" style="padding-top: 10px">
                             <span class="pficon pficon-close"></span>
                         </div>
                         <div class="row">

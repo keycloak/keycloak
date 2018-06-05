@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.0.0.Beta3-SNAPSHOT</version>
+        <version>4.0.0.Final-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -130,6 +130,10 @@
         <client.certificate.file>${auth.server.config.dir}/client.crt</client.certificate.file>
         <client.key.file>${auth.server.config.dir}/client.key</client.key.file>
         <client.key.passphrase>secret</client.key.passphrase>
+
+        <!-- KEYCLOAK-6771 Certificate Bound Token -->
+        <hok.client.certificate.keystore>${auth.server.config.dir}/other_client.jks</hok.client.certificate.keystore>
+        <hok.client.certificate.keystore.passphrase>secret</hok.client.certificate.keystore.passphrase>
 
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
@@ -303,6 +307,10 @@
                             <client.certificate.file>${client.certificate.file}</client.certificate.file>
                             <client.key.file>${client.key.file}</client.key.file>
                             <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+
+                            <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                            <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
+                            <hok.client.certificate.keystore.passphrase>${hok.client.certificate.keystore.passphrase}</hok.client.certificate.keystore.passphrase>
 
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
 

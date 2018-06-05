@@ -95,7 +95,7 @@
         </tr>
         </tfoot>
         <tbody>
-        <tr ng-repeat-start="resource in resources | filter:search | orderBy:'name'" data-ng-click="showDetails(resource);" style="cursor: pointer;">
+        <tr ng-repeat-start="resource in resources | filter:search | orderBy:'name'" data-ng-click="showDetails(resource, $event);" style="cursor: pointer;">
             <td>
                 <span ng-if="!resource.details || !resource.details.loaded" class="fa fa-angle-right"></span>
                 <span ng-if="resource.details && resource.details.loaded" class="fa fa-angle-right fa-angle-down"></span>
@@ -128,7 +128,7 @@
         <tr ng-if="resource.details && resource.details.loaded" ng-repeat-end="">
             <td colspan="6" style="background-color: #ffffff">
                 <div class="list-group-item-container container-fluid">
-                    <div class="close" data-ng-click="showDetails(resource);" style="padding-top: 10px">
+                    <div class="close" data-ng-click="showDetails(resource, $event);" style="padding-top: 10px">
                         <span class="pficon pficon-close"></span>
                     </div>
                     <div class="row">

@@ -31,6 +31,8 @@ export const routes: Routes = [
             { path: 'device-activity', loadChildren: resourceUrl + '/app/content/device-activity-page/device-activity.module.js#DeviceActivityModule' },
             { path: 'sessions', loadChildren: resourceUrl + '/app/content/sessions-page/sessions.module.js#SessionsModule' },
             { path: 'applications', loadChildren: resourceUrl + '/app/content/applications-page/applications.module.js#ApplicationsModule' },
+            { path: 'linked-accounts', loadChildren: resourceUrl + '/app/content/linked-accounts-page/linked-accounts.module.js#LinkedAccountsModule' },
+            { path: 'my-resources', loadChildren: resourceUrl + '/app/content/my-resources-page/my-resources.module.js#MyResourcesModule' },
             { path: ':**', loadChildren: resourceUrl + '/app/content/page-not-found/page-not-found.module.js#PageNotFoundModule' },
             ]
         }

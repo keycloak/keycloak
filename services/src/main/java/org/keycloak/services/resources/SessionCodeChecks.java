@@ -18,6 +18,10 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -72,7 +76,6 @@ public class SessionCodeChecks {
     private final String tabId;
     private final String flowPath;
     private final String authSessionId;
-
 
     public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
                              String authSessionId, String code, String execution, String clientId, String tabId, String flowPath) {
@@ -175,28 +178,22 @@ public class SessionCodeChecks {
         }
 
         // See if we are already authenticated and userSession with same ID exists.
-        String sessionId = authSessionManager.getCurrentAuthenticationSessionId(realm);
-        RootAuthenticationSessionModel existingRootAuthSession = null;
-        if (sessionId != null) {
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            if (userSession != null) {
+        UserSessionModel userSession = authSessionManager.getUserSessionFromAuthCookie(realm);
 
-                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
-                        .setSuccess(Messages.ALREADY_LOGGED_IN);
+        if (userSession != null) {
+            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                    .setSuccess(Messages.ALREADY_LOGGED_IN);
 
-                if (client == null) {
-                    loginForm.setAttribute(Constants.SKIP_LINK, true);
-                }
-
-                response = loginForm.createInfoPage();
-                return null;
+            if (client == null) {
+                loginForm.setAttribute(Constants.SKIP_LINK, true);
             }
 
-
-            existingRootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, sessionId);
+            response = loginForm.createInfoPage();
+            return null;
         }
 
         // Otherwise just try to restart from the cookie
+        RootAuthenticationSessionModel existingRootAuthSession = authSessionManager.getCurrentRootAuthenticationSession(realm);
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
         return null;
     }
@@ -433,5 +430,4 @@ public class SessionCodeChecks {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
                 .showPageExpired(authSession);
     }
-
 }

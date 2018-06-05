@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>4.0.0.Beta3-SNAPSHOT</version>
+        <version>4.0.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -243,6 +243,8 @@
                                                 <include>client.key</include>
                                                 <include>intermediate-ca.crl</include>
                                                 <include>empty.crl</include>
+                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                                                <include>other_client.jks</include>
                                             </includes>
                                         </resource>
                                         <resource>

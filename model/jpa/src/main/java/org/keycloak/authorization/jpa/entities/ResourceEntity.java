@@ -56,7 +56,7 @@ import org.hibernate.annotations.FetchMode;
                 @NamedQuery(name="findAnyResourceIdByOwner", query="select r.id from ResourceEntity r where r.owner = :owner"),
                 @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.uri = :uri"),
                 @NamedQuery(name="findResourceIdByName", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
-                @NamedQuery(name="findResourceIdByType", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.type = :type"),
+                @NamedQuery(name="findResourceIdByType", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
                 @NamedQuery(name="findResourceIdByScope", query="select r.id from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
                 @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId")

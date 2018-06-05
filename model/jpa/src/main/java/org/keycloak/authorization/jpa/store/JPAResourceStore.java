@@ -267,6 +267,7 @@ public class JPAResourceStore implements ResourceStore {
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
+        query.setParameter("ownerId", resourceServerId);
         query.setParameter("serverId", resourceServerId);
 
         List<String> result = query.getResultList();

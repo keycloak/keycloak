@@ -90,7 +90,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
 
-    private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(RealmModel realm, String authSessionId) {
+    private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
         // Chance created in this transaction
         RootAuthenticationSessionEntity entity = tx.get(cache, authSessionId);
 
@@ -120,7 +120,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         while (itr.hasNext()) {
             counter++;
             RootAuthenticationSessionEntity entity = itr.next().getValue();
-            tx.remove(CacheDecorators.localCache(cache), entity.getId());
+            tx.remove(cache, entity.getId());
         }
 
         log.debugf("Removed %d expired authentication sessions for realm '%s'", counter, realm.getName());
@@ -181,7 +181,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
-        RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(realm, authenticationSessionId);
+        RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
         return wrap(realm, entity);
     }
 

@@ -43,6 +43,10 @@ public class OIDCAdvancedConfigWrapper {
 
     private static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+    private static final String USE_MTLS_HOK_TOKEN = "tls.client.certificate.bound.access.tokens";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -119,6 +123,18 @@ public class OIDCAdvancedConfigWrapper {
     public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
         String val = String.valueOf(excludeSessionStateFromAuthResponse);
         setAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+    public boolean isUseMtlsHokToken() {
+        String useUtlsHokToken = getAttribute(USE_MTLS_HOK_TOKEN);
+        return Boolean.parseBoolean(useUtlsHokToken);
+    }
+
+    public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
+        String val = String.valueOf(useUtlsHokToken);
+        setAttribute(USE_MTLS_HOK_TOKEN, val);
     }
 
     private String getAttribute(String attrKey) {
