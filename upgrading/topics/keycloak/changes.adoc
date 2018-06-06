@@ -16,6 +16,10 @@ for the particular client in the {project_name} admin console, in client details
 described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
 which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
 
+NOTE: The parameter `session_state` was added in 3.4.2, however the switch `Exclude Session State From Authentication Response` was added
+in 4.0.0.Beta1. If your {project_name} server is on 3.4.2 or 3.4.3 and you have issues with `session_state` parameter, you will need
+to upgrade the server to 4.0.0.Beta1 or newer.
+
 
 === Migrating to 3.2.0
 
