@@ -32,7 +32,7 @@
     <name>Auth Server - JBoss</name>
 
     <properties>
-        <common.resources>${project.parent.basedir}/common</common.resources>
+        <common.resources>${basedir}/../common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
 
         <!--server-dist-->
@@ -262,6 +262,10 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
@@ -659,37 +663,19 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>exec-maven-plugin</artifactId>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>crossdc-setup</id>
+                                    <id>configure-crossdc</id>
                                     <phase>process-resources</phase>
                                     <goals>
-                                        <goal>exec</goal>
+                                        <goal>run</goal>
                                     </goals>
                                     <configuration>
-                                        <executable>${auth.server.home}/bin/jboss-cli.sh</executable>
-                                        <arguments>
-                                            <argument>--file=${common.resources}/crossdc/cross-dc-setup.cli</argument>
-                                        </arguments>
-                                    </configuration>
-                                </execution>
-                                <execution>
-                                    <id>remove-temp-data-crossdc-setup</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>exec</goal>
-                                    </goals>
-                                    <configuration>
-                                        <workingDirectory>${auth.server.home}/standalone/</workingDirectory>
-                                        <executable>rm</executable>
-                                        <arguments>
-                                            <argument>-rf</argument>
-                                            <argument>data</argument>
-                                            <argument>log</argument>
-                                            <argument>tmp</argument>
-                                        </arguments>
+                                        <target>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="crossdc" />
+                                        </target>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -782,33 +768,28 @@
                                         </transformationSets>
                                     </configuration>
                                 </execution>
+                            </executions>
+                        </plugin>
+                        
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
                                 <execution>
-                                    <id>mod-cluster-configuration</id>
+                                    <id>configure-modcluster</id>
                                     <phase>process-resources</phase>
                                     <goals>
-                                        <goal>transform</goal>
+                                        <goal>run</goal>
                                     </goals>
                                     <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone-ha.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/mod_cluster.xsl</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>load.metric</name>
-                                                        <value>${load.metric}</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                        </transformationSets>
+                                        <target>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="modcluster" />
+                                        </target>
                                     </configuration>
                                 </execution>
                             </executions>
                         </plugin>
+                        
                     </plugins>
                 </pluginManagement>
             </build>
