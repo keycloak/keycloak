@@ -33,9 +33,13 @@
         <wildfly.balancer.home>${project.build.directory}/unpacked/wildfly-${wildfly.version}</wildfly.balancer.home>
         <wildfly.balancer.worker.io-threads>${jboss.default.worker.io-threads}</wildfly.balancer.worker.io-threads>
         <wildfly.balancer.worker.task-max-threads>${jboss.default.worker.task-max-threads}</wildfly.balancer.worker.task-max-threads>
+        <wildfly.balancer.http.max-connections>${jboss.default.http.max-connections}</wildfly.balancer.http.max-connections>
+
+        <script.sources.dir>${project.build.scriptSourceDirectory}</script.sources.dir>
     </properties>
     
     <build>
+
         <plugins>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -60,62 +64,47 @@
                     </execution>
                 </executions>
             </plugin>
-            
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>io-worker-threads</id>
-                        <phase>process-resources</phase>
+                        <id>copy-resources</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>transform</goal>
+                            <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <transformationSets>
-                                <transformationSet>
-                                    <dir>${wildfly.balancer.home}/standalone/configuration</dir>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <stylesheet>src/main/xslt/io.xsl</stylesheet>
-                                    <outputDir>${wildfly.balancer.home}/standalone/configuration</outputDir>
-                                    <parameters>
-                                        <parameter>
-                                            <name>worker.io-threads</name>
-                                            <value>${wildfly.balancer.worker.io-threads}</value>
-                                        </parameter>
-                                        <parameter>
-                                            <name>worker.task-max-threads</name>
-                                            <value>${wildfly.balancer.worker.task-max-threads}</value>
-                                        </parameter>
-                                    </parameters>
-                                </transformationSet>
-                            </transformationSets>
-                        </configuration>
+                            <outputDirectory>${wildfly.balancer.home}/bin</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>${script.sources.dir}/jboss-cli</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>              
+                        </configuration>            
                     </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
                     <execution>
-                        <id>configure-mod-cluster</id>
+                        <id>configure-wildfly-modcluster</id>
                         <phase>process-resources</phase>
                         <goals>
-                            <goal>transform</goal>
+                            <goal>run</goal>
                         </goals>
                         <configuration>
-                            <transformationSets>
-                                <transformationSet>
-                                    <dir>${wildfly.balancer.home}/standalone/configuration</dir>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <stylesheet>src/main/xslt/mod_cluster.xsl</stylesheet>
-                                    <outputDir>${wildfly.balancer.home}/standalone/configuration</outputDir>
-                                </transformationSet>
-                            </transformationSets>
+                            <target>
+                                <ant antfile="${script.sources.dir}/ant/configure.xml" target="wildfly-modcluster" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-           
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
