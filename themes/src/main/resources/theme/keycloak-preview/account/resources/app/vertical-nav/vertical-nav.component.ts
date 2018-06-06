@@ -34,7 +34,7 @@ export class VerticalNavComponent implements OnInit {
         this.navigationItems = [
             {
                 title: this.translateUtil.translate('personalInfoHtmlTitle'),
-                iconStyleClass: 'pficon pficon-user',
+                iconStyleClass: 'fa fa-user-circle',
                 url: 'account',
                 mobileItem: false
             },
@@ -89,9 +89,4 @@ export class VerticalNavComponent implements OnInit {
         this.keycloakService.login({kcLocale: newLocale});
     }
 
-    onItemClicked($event: NavigationItemConfig): void {
-        if (this.pfVerticalNav.hoverSecondaryNav) {
-            this.pfVerticalNav.collapseSecondaryNav($event);
-        }
-    }
 }
