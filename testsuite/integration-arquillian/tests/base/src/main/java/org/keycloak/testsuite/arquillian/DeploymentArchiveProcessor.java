@@ -229,17 +229,23 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     public void addFilterDependencies(Archive<?> archive, TestClass testClass) {
-        log.info("Adding filter dependencies to " + archive.getName());
-
         TestContext testContext = testContextProducer.get();
         if (testContext.getAppServerInfo().isUndertow()) {
             return;
         }
-
+        
+        Node jbossDeploymentStructureXml = archive.get(JBOSS_DEPLOYMENT_XML_PATH);
+        if (jbossDeploymentStructureXml == null) {
+            log.debug("Archive doesn't contain " + JBOSS_DEPLOYMENT_XML_PATH);
+            return;
+        }
+        
+        log.info("Adding filter dependencies to " + archive.getName());
+        
         String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
         ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
 
-        Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
+        Document jbossXmlDoc = loadXML(jbossDeploymentStructureXml.getAsset().openStream());
         removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
         removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
         archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
