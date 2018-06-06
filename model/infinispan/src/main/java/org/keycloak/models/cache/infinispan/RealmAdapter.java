@@ -1289,13 +1289,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<ClientScopeModel> getClientScopes() {
         if (isUpdated()) return updated.getClientScopes();
-        List<String> clientTemplates = cached.getClientScopes();
-        if (clientTemplates.isEmpty()) return Collections.EMPTY_LIST;
+        List<String> clientScopes = cached.getClientScopes();
+        if (clientScopes.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientScopeModel> apps = new LinkedList<ClientScopeModel>();
-        for (String id : clientTemplates) {
+        for (String id : clientScopes) {
             ClientScopeModel model = cacheSession.getClientScopeById(id, this);
             if (model == null) {
-                throw new IllegalStateException("Cached clientemplate not found: " + id);
+                throw new IllegalStateException("Cached clientScope not found: " + id);
             }
             apps.add(model);
         }

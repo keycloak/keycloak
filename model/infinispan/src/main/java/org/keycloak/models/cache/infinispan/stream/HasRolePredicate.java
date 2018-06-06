@@ -56,8 +56,8 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>
 
         }
         if (value instanceof CachedClientScope) {
-            CachedClientScope cachedClientTemplate = (CachedClientScope)value;
-            if (cachedClientTemplate.getScope().contains(role)) return true;
+            CachedClientScope cachedClientScope = (CachedClientScope)value;
+            if (cachedClientScope.getScope().contains(role)) return true;
 
         }
         return false;

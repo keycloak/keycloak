@@ -48,8 +48,8 @@ public class TestCacheUtils {
             cacheGroupRecursive(realm, group);
         }
 
-        for (ClientScopeModel clientTemplate : realm.getClientScopes()) {
-            realm.getClientScopeById(clientTemplate.getId());
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            realm.getClientScopeById(clientScope.getId());
         }
 
         for (UserModel user : session.users().getUsers(realm)) {

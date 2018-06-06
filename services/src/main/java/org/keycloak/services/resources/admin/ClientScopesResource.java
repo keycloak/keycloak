@@ -79,12 +79,12 @@ public class ClientScopesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ClientScopeRepresentation> getClientScopes() {
-        auth.clients().requireListTemplates();
+        auth.clients().requireListClientScopes();
 
         List<ClientScopeRepresentation> rep = new ArrayList<>();
         List<ClientScopeModel> clientModels = realm.getClientScopes();
 
-        boolean viewable = auth.clients().canViewTemplates();
+        boolean viewable = auth.clients().canViewClientScopes();
         for (ClientScopeModel clientModel : clientModels) {
             if (viewable) rep.add(ModelToRepresentation.toRepresentation(clientModel));
             else {
@@ -109,7 +109,7 @@ public class ClientScopesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     public Response createClientScope(ClientScopeRepresentation rep) {
-        auth.clients().requireManageTemplates();
+        auth.clients().requireManageClientScopes();
 
         try {
             ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);
@@ -131,7 +131,7 @@ public class ClientScopesResource {
     @Path("{id}")
     @NoCache
     public ClientScopeResource getClientScope(final @PathParam("id") String id) {
-        auth.clients().requireListTemplates();
+        auth.clients().requireListClientScopes();
         ClientScopeModel clientModel = realm.getClientScopeById(id);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client scope");

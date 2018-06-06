@@ -100,7 +100,7 @@ public class ClientScopeResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final ClientScopeRepresentation rep) {
-        auth.clients().requireManageTemplates();
+        auth.clients().requireManageClientScopes();
 
         try {
             RepresentationToModel.updateClientScope(rep, clientScope);

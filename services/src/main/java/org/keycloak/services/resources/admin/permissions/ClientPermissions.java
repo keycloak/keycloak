@@ -235,13 +235,13 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public boolean canListTemplates() {
+    public boolean canListClientScopes() {
         return root.hasAnyAdminRole();
     }
 
     @Override
-    public void requireListTemplates() {
-        if (!canListTemplates()) {
+    public void requireListClientScopes() {
+        if (!canListClientScopes()) {
             throw new ForbiddenException();
         }
     }
@@ -460,51 +460,51 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         }
     }
 
-    // templates
+    // client scopes
 
     @Override
-    public boolean canViewTemplates() {
+    public boolean canViewClientScopes() {
         return canView();
     }
 
     @Override
-    public boolean canManageTemplates() {
+    public boolean canManageClientScopes() {
         return canManageClientsDefault();
     }
 
     @Override
-    public void requireManageTemplates() {
-        if (!canManageTemplates()) {
+    public void requireManageClientScopes() {
+        if (!canManageClientScopes()) {
             throw new ForbiddenException();
         }
     }
     @Override
-    public void requireViewTemplates() {
-        if (!canViewTemplates()) {
+    public void requireViewClientScopes() {
+        if (!canViewClientScopes()) {
             throw new ForbiddenException();
         }
     }
 
     @Override
-    public boolean canManage(ClientScopeModel template) {
+    public boolean canManage(ClientScopeModel clientScope) {
         return canManageClientsDefault();
     }
 
     @Override
-    public void requireManage(ClientScopeModel template) {
-        if (!canManage(template)) {
+    public void requireManage(ClientScopeModel clientScope) {
+        if (!canManage(clientScope)) {
             throw new ForbiddenException();
         }
     }
 
     @Override
-    public boolean canView(ClientScopeModel template) {
+    public boolean canView(ClientScopeModel clientScope) {
         return canViewClientDefault();
     }
 
     @Override
-    public void requireView(ClientScopeModel template) {
-        if (!canView(template)) {
+    public void requireView(ClientScopeModel clientScope) {
+        if (!canView(clientScope)) {
             throw new ForbiddenException();
         }
     }

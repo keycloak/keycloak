@@ -30,29 +30,29 @@ public interface ClientPermissionEvaluator {
 
     void setPermissionsEnabled(ClientModel client, boolean enable);
 
-    void requireListTemplates();
+    void requireListClientScopes();
 
     boolean canManage();
 
     void requireManage();
 
-    boolean canManageTemplates();
+    boolean canManageClientScopes();
 
-    void requireManageTemplates();
+    void requireManageClientScopes();
 
     boolean canView();
 
     boolean canList();
 
-    boolean canViewTemplates();
+    boolean canViewClientScopes();
 
     void requireList();
 
-    boolean canListTemplates();
+    boolean canListClientScopes();
 
     void requireView();
 
-    void requireViewTemplates();
+    void requireViewClientScopes();
 
     boolean canManage(ClientModel client);
 
@@ -66,13 +66,13 @@ public interface ClientPermissionEvaluator {
 
     void requireView(ClientModel client);
 
-    boolean canManage(ClientScopeModel template);
+    boolean canManage(ClientScopeModel clientScope);
 
-    void requireManage(ClientScopeModel template);
+    void requireManage(ClientScopeModel clientScope);
 
-    boolean canView(ClientScopeModel template);
+    boolean canView(ClientScopeModel clientScope);
 
-    void requireView(ClientScopeModel template);
+    void requireView(ClientScopeModel clientScope);
 
     boolean canMapRoles(ClientModel client);
 

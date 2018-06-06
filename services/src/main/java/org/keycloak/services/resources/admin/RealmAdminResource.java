@@ -232,7 +232,7 @@ public class RealmAdminResource {
     }
 
     private List<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
-        auth.clients().requireViewTemplates();
+        auth.clients().requireViewClientScopes();
 
         List<ClientScopeRepresentation> defaults = new LinkedList<>();
         for (ClientScopeModel clientScope : realm.getDefaultClientScopes(defaultScope)) {
@@ -253,7 +253,7 @@ public class RealmAdminResource {
     }
 
     private void addDefaultClientScope(String clientScopeId, boolean defaultScope) {
-        auth.clients().requireManageTemplates();
+        auth.clients().requireManageClientScopes();
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {
@@ -269,7 +269,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
     public void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
-        auth.clients().requireManageTemplates();
+        auth.clients().requireManageClientScopes();
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {

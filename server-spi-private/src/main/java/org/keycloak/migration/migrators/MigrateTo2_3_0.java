@@ -44,8 +44,8 @@ public class MigrateTo2_3_0 implements Migration {
             MigrationUtils.updateProtocolMappers(client);
         }
 
-        for (ClientScopeModel clientTemplate : realm.getClientScopes()) {
-            MigrationUtils.updateProtocolMappers(clientTemplate);
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            MigrationUtils.updateProtocolMappers(clientScope);
         }
     }
 
