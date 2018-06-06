@@ -32,6 +32,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class PermissiveModeAdapterTest extends AbstractBaseServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)

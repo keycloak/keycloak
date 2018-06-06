@@ -16,6 +16,16 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.APP_SERVER_CURRENT;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+
 import io.undertow.Undertow;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
@@ -35,6 +45,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.jboss.arquillian.container.test.api.*;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.logging.Logger;
 import org.junit.*;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.*;
@@ -55,16 +66,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.APP_SERVER_CURRENT;
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *
@@ -159,6 +160,9 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractServletsA
 
     @After
     public void stopServers() {
+        deployer.undeploy(EmployeeServletDistributable.DEPLOYMENT_NAME);
+        deployer.undeploy(EmployeeServletDistributable.DEPLOYMENT_NAME + "_2");
+
         for (ContainerInfo containerInfo : testContext.getAppServerBackendsInfo()) {
             controller.stop(containerInfo.getQualifier());
         }
@@ -231,7 +235,11 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractServletsA
     private static void assumeNotElytronAdapter() {
         if (!AppServerTestEnricher.isUndertowAppServer()) {
             try {
-                Assume.assumeFalse(FileUtils.readFileToString(Paths.get(System.getProperty("app.server.home"), "standalone", "configuration", "standalone.xml").toFile(), "UTF-8").contains("<security-domain name=\"KeycloakDomain\""));
+                boolean contains = FileUtils.readFileToString(Paths.get(System.getProperty("app.server.home"), "standalone", "configuration", "standalone.xml").toFile(), "UTF-8").contains("<security-domain name=\"KeycloakDomain\"");
+                if (contains) {
+                    Logger.getLogger(AbstractSAMLAdapterClusteredTest.class).debug("Elytron adapter installed: skipping");
+                }
+                Assume.assumeFalse(contains);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -305,4 +313,4 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractServletsA
         WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
     }
-}
+} 

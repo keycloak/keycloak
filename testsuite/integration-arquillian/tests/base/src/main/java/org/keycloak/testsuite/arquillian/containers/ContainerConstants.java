@@ -26,4 +26,7 @@ public interface ContainerConstants {
 
     public static final String APP_SERVER_EAP = APP_SERVER_PREFIX + "eap";
     public static final String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
+
+    public static final String APP_SERVER_EAP6 = APP_SERVER_PREFIX + "eap6";
+    public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
 }

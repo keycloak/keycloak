@@ -8,7 +8,7 @@ fi
 
 cd $JBOSS_HOME/bin
 
-./standalone.sh &
+./standalone.sh --server-config=standalone-ha.xml &
 sleep 3
 
 TIMEOUT=10
@@ -26,14 +26,14 @@ do
         RESULT=$?
         echo "Return code of adapter-install:"${RESULT}
 
-        if [ "$SAML_SUPPORTED" = true ] && [ ${RESULT} -eq 0 ]; then
-            ./jboss-cli.sh -c --file="adapter-install-saml.cli"
+        ./jboss-cli.sh -c --file="adapter-install-saml.cli"
             RESULT=$?
             echo "Return code of saml adapter-install:"$RESULT
-        fi
 
         ./jboss-cli.sh -c --file="$CLI_PATH/add-adapter-log-level.cli"
-        ./jboss-cli.sh -c --file="$CLI_PATH/add-secured-deployments.cli"
+        ./jboss-cli.sh -c --file="$CLI_PATH/configure-cluster-config.cli"
+        RESULT=$?
+        echo "Return code:"${RESULT}
 
         ./jboss-cli.sh -c --command=":shutdown"
         rm -rf $JBOSS_HOME/standalone/data

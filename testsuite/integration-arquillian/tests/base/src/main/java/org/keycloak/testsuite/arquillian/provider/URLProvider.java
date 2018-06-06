@@ -54,9 +54,6 @@ public class URLProvider extends URLResourceProvider {
 
     private static final Set<String> fixedUrls = new HashSet<>();
 
-    /*
-     * TODO: review this for EAP6
-     */
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
         URL url = (URL) super.doLookup(resource, qualifiers);
@@ -95,31 +92,6 @@ public class URLProvider extends URLResourceProvider {
                 fixedUrls.add(url.toString());
                 log.debug("Fixed injected @ArquillianResource URL to: " + url);
             }
-        }
-
-        try {
-            if (System.getProperty("app.server.management.protocol","").equals("remote")) {
-                if (url == null) {
-                    url = new URL("http://localhost:8080/");
-                }
-                URL fixedUrl = url;
-                if (url.getPort() == 8080) {
-                    for (Annotation a : qualifiers) {
-                        if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
-                            String port = appServerSslRequired ?  System.getProperty("app.server.https.port", "8643"):System.getProperty("app.server.http.port", "8280");
-                            String protocol = appServerSslRequired ? "https" : "http";
-                            url = new URL(fixedUrl.toExternalForm().replace("8080", port).replace("http", protocol) + ((OperateOnDeployment) a).value());
-                        }
-                    }
-
-                }
-
-                if (url.getPort() == 8080) {
-                    url = null;
-                }
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         }
 
         // inject context roots if annotation present

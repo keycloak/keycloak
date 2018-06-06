@@ -1,6 +1,6 @@
 set NOPAUSE=true
 
-start "JBoss Server" /b cmd /c %JBOSS_HOME%\bin\standalone.bat
+start "JBoss Server" /b cmd /c %JBOSS_HOME%\bin\standalone.bat --server-config=standalone-ha.xml
 
 set ERROR=0
 set TIMEOUT=10
@@ -29,17 +29,27 @@ if %ERROR% neq 0 (
     goto shutdown_jboss
 )
 
-if "%SAML_SUPPORTED%" == "true" (
-    call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-install-saml.cli"
-    set ERROR=%ERRORLEVEL%
-    echo Installation of SAML adapter ended with error code: "%ERROR%"
-    if %ERROR% neq 0 (
-        goto shutdown_jboss
-    )
+call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%JBOSS_HOME%\bin\adapter-install-saml.cli"
+set ERROR=%ERRORLEVEL%
+echo Installation of SAML adapter ended with error code: "%ERROR%"
+if %ERROR% neq 0 (
+    goto shutdown_jboss
 )
 
+
 call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%CLI_PATH%\add-adapter-log-level.cli"
-call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%CLI_PATH%\add-secured-deployments.cli"
+set ERROR=%ERRORLEVEL%
+echo Adding log level for adapters ended with error code: "%ERROR%"
+if %ERROR% neq 0 (
+    goto shutdown_jboss
+)
+
+call %JBOSS_HOME%\bin\jboss-cli.bat -c --file="%CLI_PATH%\configure-cluster-config.cli"
+set ERROR=%ERRORLEVEL%
+echo Configuring cluster config ended with error code: "%ERROR%"
+if %ERROR% neq 0 (
+    goto shutdown_jboss
+)
 
 :shutdown_jboss
 echo Shutting down with error code: "%ERROR%"

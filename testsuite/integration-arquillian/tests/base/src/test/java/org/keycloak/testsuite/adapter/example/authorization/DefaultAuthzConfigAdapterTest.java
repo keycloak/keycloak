@@ -48,6 +48,7 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
 
     private static final String REALM_NAME = "hello-world-authz";
