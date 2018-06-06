@@ -113,6 +113,10 @@ public class RegistryCreator {
         String appServerName = System.getProperty("app.server", "undertow");
 
         List<Node> containers = AppServerContainerService.getInstance().getContainers(appServerName);
+        if (containers == null) {
+            log.warn("None dynamically loaded containers");
+            return;
+        }
         for (Node container : containers) {
             if (container.getName().equals("container")) {
                 containerDefs.add(new ContainerDefImpl("arquillian.xml", parent, container));

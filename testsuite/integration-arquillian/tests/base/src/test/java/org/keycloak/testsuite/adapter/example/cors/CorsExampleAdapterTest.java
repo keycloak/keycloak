@@ -58,6 +58,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";

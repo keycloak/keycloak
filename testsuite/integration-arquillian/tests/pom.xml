@@ -95,6 +95,9 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
+        <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
+        <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
+        <app.server.ssl.required>false</app.server.ssl.required>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>

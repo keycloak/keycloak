@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isEAP6AppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
@@ -261,6 +262,13 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         }
         if (isTomcatAppServer()) {
             modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
+        }
+
+        //temporary solution, will be removed within KEYCLOAK-7510
+        if (isEAP6AppServer()) {
+            modifyDocElementValue(webXmlDoc, "param-value", 
+                    "org.keycloak.adapters.saml.wildfly.infinispan.InfinispanSessionCacheIdMapperUpdater", 
+                    "org.keycloak.adapters.saml.jbossweb.infinispan.InfinispanSessionCacheIdMapperUpdater");
         }
 
         if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {

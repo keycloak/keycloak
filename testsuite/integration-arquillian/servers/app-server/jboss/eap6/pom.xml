@@ -26,8 +26,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - JBoss - EAP 6</name>
+    <packaging>jar</packaging>
+    <name>App Server - EAP 6</name>
     
     <properties>
         <app.server.jboss>eap6</app.server.jboss>
@@ -42,10 +42,21 @@
         
         <skip.apply.offline.cli>true</skip.apply.offline.cli>
     </properties>
-    
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
-                    
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
@@ -69,7 +80,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>install-adapters-online</id>
+                        <id>install-adapters-online-standalone</id>
                         <phase>process-resources</phase>
                         <goals>
                             <goal>exec</goal>
@@ -81,6 +92,23 @@
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                 <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                 <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                <CLI_PATH>${common.resources}/cli/eap6/</CLI_PATH>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-adapters-online-standalone-ha</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${common.resources}/install-adapters-online-ha.${script.suffix}</executable>
+                            <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                            <environmentVariables>
+                                <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                <CLI_PATH>${common.resources}/cli/eap6/</CLI_PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>

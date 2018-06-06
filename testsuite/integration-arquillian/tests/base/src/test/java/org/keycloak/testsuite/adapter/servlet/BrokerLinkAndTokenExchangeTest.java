@@ -91,6 +91,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";

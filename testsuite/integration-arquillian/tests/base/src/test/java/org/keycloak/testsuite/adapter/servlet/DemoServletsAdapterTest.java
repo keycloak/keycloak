@@ -132,6 +132,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703
@@ -1009,10 +1010,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String serverLogContent = FileUtils.readFileToString(serverLog, "UTF-8");
             UserRepresentation bburke = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com");
 
-            Pattern pattern = Pattern.compile("User '" + bburke.getId() + "' invoking '" + appServerUrl + "customer-portal[^\\s]+' on client 'customer-portal'");
-            Matcher matcher = pattern.matcher(serverLogContent);
-
-            assertTrue(matcher.find());
+            //the expected log message has DEBUG level
             assertThat(serverLogContent, containsString("User '" + bburke.getId() + "' invoking '" + appServerUrl + "customer-db/' on client 'customer-db'"));
         } else {
             log.info("Checking app server log on app-server: \"" + System.getProperty("app.server") + "\" is not supported.");

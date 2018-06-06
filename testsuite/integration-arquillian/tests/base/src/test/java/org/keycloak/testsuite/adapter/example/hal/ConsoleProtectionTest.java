@@ -50,6 +50,7 @@ import org.wildfly.extras.creaper.core.online.operations.Operations;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class ConsoleProtectionTest extends AbstractAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703
