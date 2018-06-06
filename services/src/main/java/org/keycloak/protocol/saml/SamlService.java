@@ -201,7 +201,8 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             RequestAbstractType requestAbstractType = (RequestAbstractType) samlObject;
-            String issuer = requestAbstractType.getIssuer().getValue();
+            final NameIDType issuerNameId = requestAbstractType.getIssuer();
+            String issuer = requestAbstractType.getIssuer() == null ? null : issuerNameId.getValue();
             ClientModel client = realm.getClientByClientId(issuer);
 
             if (client == null) {
