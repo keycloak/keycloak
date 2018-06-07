@@ -96,12 +96,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.assertFalse;
 /**
  * Test class for SAML parser.
  *
@@ -678,6 +679,28 @@ public class SAMLParserTest {
         assertThat(req.getRequestedAuthnContext(), notNullValue());
         assertThat(req.getRequestedAuthnContext().getAuthnContextClassRef(), hasItem(is("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")));
         assertThat(req.getRequestedAuthnContext().getAuthnContextDeclRef(), hasItem(is("urn:kc:SAML:2.0:ac:ref:demo:decl")));
+    }
+
+    @Test //https://issues.jboss.org/browse/KEYCLOAK-7316
+    public void testAuthnRequestOptionalIsPassive() throws Exception {
+        AuthnRequestType req = assertParsed("KEYCLOAK-7316-noAtrributes.xml", AuthnRequestType.class);
+
+        assertThat("Not null!", req.isIsPassive(), nullValue());
+        assertThat("Not null!", req.isForceAuthn(), nullValue());
+
+        req = assertParsed("KEYCLOAK-7316-withTrueAttributes.xml", AuthnRequestType.class);
+
+        assertThat(req.isIsPassive(), notNullValue());
+        assertTrue("Wrong value!", req.isIsPassive().booleanValue());
+        assertThat(req.isForceAuthn(), notNullValue());
+        assertTrue("Wrong value!", req.isForceAuthn().booleanValue());
+
+        req = assertParsed("KEYCLOAK-7316-withFalseAttributes.xml", AuthnRequestType.class);
+
+        assertThat(req.isIsPassive(), notNullValue());
+        assertFalse("Wrong value!", req.isIsPassive().booleanValue());
+        assertThat(req.isForceAuthn(), notNullValue());
+        assertFalse("Wrong value!", req.isForceAuthn().booleanValue());
     }
 
     @Test

@@ -338,8 +338,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 }
             }
-
-            return newBrowserAuthentication(authSession, requestAbstractType.isIsPassive(), redirectToAuthentication);
+            //If unset we fall back to default "false"
+            final boolean isPassive = (null == requestAbstractType.isIsPassive() ?
+                    false : requestAbstractType.isIsPassive().booleanValue());
+            return newBrowserAuthentication(authSession, isPassive, redirectToAuthentication);
         }
 
         protected String getBindingType(AuthnRequestType requestAbstractType) {
