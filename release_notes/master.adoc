@@ -1,6 +1,5 @@
 :toc:
-:toclevels: 1
-:numbered:
+:toclevels: 0
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]

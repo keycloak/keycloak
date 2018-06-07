@@ -1,1 +1,15 @@
-include::topics/4_0_0_final.adoc[leveloffset=0]
+ifeval::[{project_community}==true]
+== {project_name_full} 4.0.0.Final
+include::topics/4_0_0_final.adoc[leveloffset=2]
+include::topics/4_0_0_beta3.adoc[leveloffset=2]
+endif::[]
+
+ifeval::[{project_product}==true]
+== {project_name_full} 2
+include::topics/4_0_0_final.adoc[leveloffset=2]
+endif::[]
+
+ifeval::[{project_product}==true]
+== {project_name_full} 1
+include::topics/4_0_0_beta3.adoc[leveloffset=2]
+endif::[]
