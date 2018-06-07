@@ -12,7 +12,7 @@ The *keycloak-{project_version}.[zip|tar.gz]* file is the server-only distributi
 Place the file in a directory you choose and use either the `unzip` or `tar` utility to extract it.
 
 .Linux/Unix
-[source]
+[source,bash,subs=+attributes]
 ----
 $ unzip keycloak-{project_version}.zip
 
