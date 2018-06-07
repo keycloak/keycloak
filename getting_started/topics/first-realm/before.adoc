@@ -1,6 +1,5 @@
 
 === Before You Start
 
-Before you can participate in this tutorial, you need to complete the installation of {project_name} and create the
-initial admin user as shown in the <<_install-boot, Installing and Booting>> tutorial.
+Before you can create your first realm, complete the installation of {project_name} and create the initial admin user as shown in <<_install-boot, Installing and Booting>>.
 

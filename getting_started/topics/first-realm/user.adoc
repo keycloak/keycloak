@@ -2,31 +2,19 @@
 
 === Creating a New User
 
-To create a new user in the `demo` realm as well as a temporary password for that account, complete the following steps:
+To create a new user in the `demo` realm, along with a temporary password for that new user, complete the following steps:
 
-. In the left menu bar click *Users*. The user list page opens.
-+
-.Users
-image:{project_images}/users.png[]
+. From the menu, click *Users* to open the user list page.
 
-. On the right side of the empty user list, click *Add User*.
+. On the right side of the empty user list, click *Add User* to open the add user page.
 
-+
-.Add User
-image:{project_images}/add-user.png[]
+. Enter a name in the `Username` field; this is the only required field. Click *Save* to save the data and open the management page for the new user.
 
-. The only required field is `Username`.  When you are finished, click *Save*.  The management page for your new user opens.
+. Click the *Credentials* tab to set a temporary password for the new user.
 
-. The next step is to define a temporary password for your new user. Click the *Credentials* tab.
-+
-.Set Temporary Password
-image:{project_images}/credentials.png[]
+. Type a new password and confirm it. Click *Reset Password* to set the user password to the new one you specified.  
 
-. Type a new password and confirm it. A red *Reset Password* button is displayed.
-. Click *Reset Password* to reset the user password to the new one you specified.  
-
-NOTE: This password is temporary and the user will be required to change it after first login. You can make it permanent
-by flipping the *Temporary* switch from *On* to *Off* before clicking *Reset Password*.
+NOTE: This password is temporary and the user will be required to change it after the first login. To create a password that is persistent, flip the *Temporary* switch from *On* to *Off* before clicking *Reset Password*.
 
 
 

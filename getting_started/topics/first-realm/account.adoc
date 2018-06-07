@@ -1,20 +1,13 @@
 
 === User Account Service
 
-. After creating the user, log out of the management console by clicking the right dropdown menu and selecting *Sign Off*.
+. After you create the new user, log out of the management console by opening the user drop-down menu and selecting *Sign Off*.
 
-. Log in to the User Account Service of your `demo` realm with the user you just created by clicking this link:
+. Go to http://localhost:8080/auth/realms/demo/account and log in to the User Account Service of your `demo` realm with the user you just created.
 
-User Account Link::
-  http://localhost:8080/auth/realms/demo/account
+. Type the username and password you created. You will be required create a permanent password after you successfully log in, unless you changed the *Temporary* setting to *Off* when you created the password.
 
-. Type the username and password you created previously. You must create a permanent password after you successfully log in if you didn't toggle the Temporary switch to *Off* previously.
-+
-.Update Password
-image:{project_images}/update-password.png[]
-
-The User Account Service page opens. Every user in a realm has access to this Account Service by default.
-You can update profile information and change or add additional credentials. For more information on this service see the link:{adminguide_link}[{adminguide_name}].
+The user account service page will open. Every user in a realm has access to this account service by default. From this page, you can update profile information and change or add additional credentials. For more information on this service see the link:{adminguide_link}[{adminguide_name}].
 
 
 
