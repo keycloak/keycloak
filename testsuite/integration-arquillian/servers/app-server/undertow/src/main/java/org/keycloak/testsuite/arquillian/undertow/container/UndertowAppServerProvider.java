@@ -20,13 +20,13 @@ package org.keycloak.testsuite.arquillian.undertow.container;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.shrinkwrap.descriptor.spi.node.Node;
-import org.keycloak.testsuite.arquillian.container.AppServerContainerSPI;
 import org.keycloak.testsuite.arquillian.undertow.UndertowAppServer;
+import org.keycloak.testsuite.arquillian.container.AppServerContainerProvider;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class UndertowAppServerProvider implements AppServerContainerSPI {
+public class UndertowAppServerProvider implements AppServerContainerProvider {
 
     private Node configuration;
     private static final String containerName = "undertow";
@@ -56,7 +56,7 @@ public class UndertowAppServerProvider implements AppServerContainerSPI {
     private Node standaloneContainer() {
         Node container = new Node("container");
         container.attribute("mode", "manual");
-        container.attribute("qualifier", AppServerContainerSPI.APP_SERVER + "-" + containerName);
+        container.attribute("qualifier", AppServerContainerProvider.APP_SERVER + "-" + containerName);
 
         configuration = container.createChild("configuration");
         createChild("enabled", "true");
@@ -70,7 +70,7 @@ public class UndertowAppServerProvider implements AppServerContainerSPI {
     private Node haNodeContainer(int number) {
         Node container = new Node("container");
         container.attribute("mode", "manual");
-        container.attribute("qualifier", AppServerContainerSPI.APP_SERVER + "-" + containerName + "-ha-node-" + number);
+        container.attribute("qualifier", AppServerContainerProvider.APP_SERVER + "-" + containerName + "-ha-node-" + number);
 
         configuration = container.createChild("configuration");
         createChild("enabled", "true");
