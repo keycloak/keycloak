@@ -33,7 +33,6 @@ public class AuthnRequestTest extends AbstractSamlTest {
 
     // KEYCLOAK-7316
     @Test
-    @Ignore
     public void testIsPassiveNotSet() throws Exception {
         String res = new SamlClientBuilder()
           .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, Binding.POST)
@@ -44,6 +43,22 @@ public class AuthnRequestTest extends AbstractSamlTest {
             .build()
 
           .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
+
+        assertThat(res, containsString("login"));
+    }
+
+    // KEYCLOAK-7316
+    @Test
+    public void testIsForceAuthNotSet() throws Exception {
+        String res = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, Binding.POST)
+                .transformObject(so -> {
+                    so.setForceAuthn(null);
+                    return so;
+                })
+                .build()
+
+                .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
         assertThat(res, containsString("login"));
     }
