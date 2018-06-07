@@ -30,10 +30,10 @@ import org.jboss.shrinkwrap.descriptor.spi.node.Node;
 public class AppServerContainerService  {
 
     private static AppServerContainerService service;
-    private final ServiceLoader<AppServerContainerSPI> loader;
+    private final ServiceLoader<AppServerContainerProvider> loader;
 
     private AppServerContainerService() {
-        loader = ServiceLoader.load(AppServerContainerSPI.class);
+        loader = ServiceLoader.load(AppServerContainerProvider.class);
     }
 
     public static synchronized AppServerContainerService getInstance() {
@@ -46,13 +46,13 @@ public class AppServerContainerService  {
     public List<Node> getContainers(String appServerName) {
         List<Node> containers = null;
         try {
-            Iterator<AppServerContainerSPI> definitions = loader.iterator();
+            Iterator<AppServerContainerProvider> definitions = loader.iterator();
 
-            List<AppServerContainerSPI> availableDefinitions = new ArrayList<>();
+            List<AppServerContainerProvider> availableDefinitions = new ArrayList<>();
             while (definitions != null && definitions.hasNext()) {
                 availableDefinitions.add(definitions.next());
             }
-            for (AppServerContainerSPI def : availableDefinitions) {
+            for (AppServerContainerProvider def : availableDefinitions) {
                 if (def.getName().equals(appServerName)) {
                     containers = def.getContainers();
                 }

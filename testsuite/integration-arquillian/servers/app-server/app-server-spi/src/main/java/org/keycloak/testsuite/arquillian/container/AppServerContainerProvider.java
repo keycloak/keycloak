@@ -23,7 +23,7 @@ import org.jboss.shrinkwrap.descriptor.spi.node.Node;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public interface AppServerContainerSPI  {
+public interface AppServerContainerProvider  {
 
     public static final String APP_SERVER = "app-server";
 
