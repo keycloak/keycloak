@@ -1,17 +1,16 @@
 
 === Configuring the Subsystem
 
-Now that you have copied the XML template from the Installation page, you need to paste this into the _standalone.xml_ file
-that resides in the _standalone/configuration_ directory of the application server instance on which your application is deployed.
+To configure the {appserver_name} instance that the application is deployed on so that this app is secured by {project_name}, complete the following steps.
 
-. Open the standalone/configuration/standalone.xml file and search for the following text:
+. Open the `standalone/configuration/standalone.xml` file in the {appserver_name} instance that the application is deployed on and search for the following text:
 +
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
 ----
 
-. Modify this to prepare it for pasting in your template from the Installation page:
+. Modify this text to prepare the file for pasting in contents from the *Keycloak OIDC JBoss Subsystem XML* template we obtained {project_name} admin console *Installation* tab by changing the XML entry from self-closing to using a pair of opening and closing tags:
 +
 [source,xml]
 ----
@@ -19,7 +18,7 @@ that resides in the _standalone/configuration_ directory of the application serv
 </subsystem>
 ----
 
-. Within the <subsystem> element, paste in the template. It will look something like this:
+. Paste the contents of the template within the `<subsystem>` element, as shown in this example:
 +
 [source,xml]
 ----
@@ -34,7 +33,7 @@ that resides in the _standalone/configuration_ directory of the application serv
 </subsystem>
 ----
 
-. Change the *WAR MODULE NAME* text to *vanilla* as follows:
+. Change the `name` to `vanilla.war`:
 +
 [source,xml]
 ----
@@ -44,8 +43,8 @@ that resides in the _standalone/configuration_ directory of the application serv
 </subsystem>
 ----
 
-. Reboot your application server.  
+. Reboot the application server.
 
-. Go to http://localhost:8080/vanilla and click *login*. The {project_name} login page opens. You can log in using the user you created in the <<_create-new-user, Creating a New User>> chapter.
+. Go to http://localhost:8080/vanilla and click *Login*. When the {project_name} login page opens, log in using the user you created in <<_create-new-user, Creating a New User>>.
 
 

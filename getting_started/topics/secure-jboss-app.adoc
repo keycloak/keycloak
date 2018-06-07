@@ -1,7 +1,8 @@
 
 == Securing a JBoss Servlet Application
 
-In this section you will learn how to secure a Java Servlet application on the {appserver_name} application server.  You will learn how to install the
-{project_name} Client Adapter onto a {appserver_name} application server distribution.  You will create and register a client application in the
-{project_name} Admin Console.  Finally, you will configure the application to be secured by {project_name}.
+This section describes how to secure a Java servlet application on the {appserver_name} application server by:
+* Installing the {project_name} client adapter on a {appserver_name} application server distribution
+* Creating and registering a client application in the {project_name} admin console
+* Configuring the application to be secured by {project_name}
 

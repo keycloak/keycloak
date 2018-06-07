@@ -1,20 +1,19 @@
 
 === Installing the Client Adapter
 
-Download the {appserver_name} distribution and unzip
-it into a directory on your machine.
+Download the {appserver_name} distribution and extract it from the compressed file into a directory on your machine.
 
 ifeval::[{project_community}==true]
-Next download the WildFly OpenID Connect adapter distribution from link:https://www.keycloak.org/downloads.html[keycloak.org].
+Download the WildFly OpenID Connect adapter distribution from link:https://www.keycloak.org/downloads.html[keycloak.org].
 endif::[]
 
 ifeval::[{project_product}==true]
-Next download the RH-SSO-{project_version}-eap7-adapter.zip distribution.
+Download the RH-SSO-{project_version}-eap7-adapter.zip distribution.
 endif::[]
 
-Unzip this file into the root directory of your {appserver_name} distribution.
+Extract the contents of this file into the root directory of your {appserver_name} distribution.
 
-Next perform the following actions:
+Run the appropriate script for your platform:
 
 .WildFly 10 and Linux/Unix
 [source]
@@ -46,8 +45,9 @@ $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 ----
 endif::[]
 
-This script will make the appropriate edits to the _.../standalone/configuration/standalone.xml_ file of your app
-server distribution.  Finally, boot the application server.
+NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution. 
+
+Start the application server.
 
 .Linux/Unix
 [source]
