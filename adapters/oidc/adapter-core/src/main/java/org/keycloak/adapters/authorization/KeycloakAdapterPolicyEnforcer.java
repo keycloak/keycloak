@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
@@ -86,19 +85,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 if (!grantedPermissions.contains(newPermission)) {
                     grantedPermissions.add(newPermission);
                 }
-            }
-
-            Map<String, List<String>> newClaims = newAuthorization.getClaims();
-
-            if (newClaims != null) {
-                Map<String, List<String>> claims = authorization.getClaims();
-
-                if (claims == null) {
-                    claims = new HashMap<>();
-                    authorization.setClaims(claims);
-                }
-
-                claims.putAll(newClaims);
             }
         }
 
@@ -169,11 +155,11 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 String ticket = getPermissionTicket(pathConfig, methodConfig, getAuthzClient(), httpFacade);
                 authzRequest.setTicket(ticket);
             } else {
-                if (accessToken.getAuthorization() != null) {
+                if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
                     authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
                 }
 
-                Map<String, List<String>> claims = getClaims(pathConfig, httpFacade);
+                Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
 
                 if (!claims.isEmpty()) {
                     authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
@@ -186,7 +172,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             }
 
             LOGGER.debug("Obtaining authorization for authenticated user.");
-            AuthorizationResponse authzResponse = getAuthzClient().authorization(accessTokenString).authorize(authzRequest);
+            AuthorizationResponse authzResponse;
+
+            if (isBearerAuthorization(httpFacade)) {
+                authzRequest.setSubjectToken(accessTokenString);
+                authzResponse = getAuthzClient().authorization().authorize(authzRequest);
+            } else {
+                authzResponse = getAuthzClient().authorization(accessTokenString).authorize(authzRequest);
+            }
 
             if (authzResponse != null) {
                 return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
@@ -200,7 +193,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         return null;
     }
 
-    private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient, HttpFacade httpFacade) {
+    private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient, OIDCHttpFacade httpFacade) {
         if (getEnforcerConfig().getUserManagedAccess() != null) {
             ProtectionResource protection = authzClient.protection();
             PermissionResource permission = protection.permission();
@@ -209,7 +202,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             permissionRequest.setResourceId(pathConfig.getId());
             permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
 
-            Map<String, List<String>> claims = getClaims(pathConfig, httpFacade);
+            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
 
             if (!claims.isEmpty()) {
                 permissionRequest.setClaims(claims);
@@ -219,22 +212,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         }
 
         return null;
-    }
-
-    private Map<String, List<String>> getClaims(PathConfig pathConfig, HttpFacade httpFacade) {
-        Map<String, List<String>> claims = new HashMap<>();
-        Map<String, Map<String, Object>> claimInformationPointConfig = pathConfig.getClaimInformationPointConfig();
-
-        if (claimInformationPointConfig != null) {
-            for (Entry<String, Map<String, Object>> claimDef : claimInformationPointConfig.entrySet()) {
-                ClaimInformationPointProviderFactory factory = getPolicyEnforcer().getClaimInformationPointProviderFactories().get(claimDef.getKey());
-
-                if (factory != null) {
-                    claims.putAll(factory.create(claimDef.getValue()).resolve(httpFacade));
-                }
-            }
-        }
-        return claims;
     }
 
     private boolean isBearerAuthorization(OIDCHttpFacade httpFacade) {

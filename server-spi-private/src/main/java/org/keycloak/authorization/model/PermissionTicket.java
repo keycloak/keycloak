@@ -30,6 +30,7 @@ public interface PermissionTicket {
     String REQUESTER = "requester";
     String REQUESTER_IS_NULL = "requester_is_null";
     String POLICY_IS_NOT_NULL = "policy_is_not_null";
+    String POLICY = "policy";
 
     /**
      * Returns the unique identifier for this instance.

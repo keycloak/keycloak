@@ -192,6 +192,16 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             }
         }
 
+        if (policyResources.isEmpty() && scopes.isEmpty()) {
+            String defaultResourceType = policy.getConfig().get("defaultResourceType");
+
+            if (defaultResourceType == null) {
+                return false;
+            }
+
+            return defaultResourceType.equals(permission.getResource().getType());
+        }
+
         return false;
     }
 }

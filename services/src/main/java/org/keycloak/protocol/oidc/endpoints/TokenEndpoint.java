@@ -1069,7 +1069,7 @@ public class TokenEndpoint {
         authorizationRequest.setRpt(formParams.getFirst("rpt"));
         authorizationRequest.setScope(formParams.getFirst("scope"));
         authorizationRequest.setAudience(formParams.getFirst("audience"));
-        authorizationRequest.setAccessToken(accessTokenString);
+        authorizationRequest.setSubjectToken(formParams.getFirst("subject_token") != null ? formParams.getFirst("subject_token") : accessTokenString);
 
         String submitRequest = formParams.getFirst("submit_request");
 

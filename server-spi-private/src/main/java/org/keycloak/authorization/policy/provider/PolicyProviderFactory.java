@@ -40,7 +40,7 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
 
     PolicyProvider create(AuthorizationProvider authorization);
 
-    R toRepresentation(Policy policy);
+    R toRepresentation(Policy policy, AuthorizationProvider authorization);
 
     Class<R> getRepresentationType();
 

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -24,7 +26,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -37,9 +38,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.util.JsonSerialization;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -777,7 +780,7 @@ public class ModelToRepresentation {
             }
         } else {
             try {
-                representation = (R) providerFactory.toRepresentation(policy);
+                representation = (R) providerFactory.toRepresentation(policy, authorization);
             } catch (Exception cause) {
                 throw new RuntimeException("Could not create policy [" + policy.getType() + "] representation", cause);
             }

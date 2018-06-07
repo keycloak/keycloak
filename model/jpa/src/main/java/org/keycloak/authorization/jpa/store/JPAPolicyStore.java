@@ -58,7 +58,12 @@ public class JPAPolicyStore implements PolicyStore {
     public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
         PolicyEntity entity = new PolicyEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
+        if (representation.getId() == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(representation.getId());
+        }
+
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
@@ -136,9 +141,9 @@ public class JPAPolicyStore implements PolicyStore {
         attributes.forEach((name, value) -> {
             if ("permission".equals(name)) {
                 if (Boolean.valueOf(value[0])) {
-                    predicates.add(root.get("type").in("resource", "scope"));
+                    predicates.add(root.get("type").in("resource", "scope", "uma"));
                 } else {
-                    predicates.add(builder.not(root.get("type").in("resource", "scope")));
+                    predicates.add(builder.not(root.get("type").in("resource", "scope", "uma")));
                 }
             } else if ("id".equals(name)) {
                 predicates.add(root.get(name).in(value));
@@ -148,6 +153,8 @@ public class JPAPolicyStore implements PolicyStore {
                 predicates.add(builder.isNotNull(root.get("owner")));
             } else if ("resource".equals(name)) {
                 predicates.add(root.join("resources").get("id").in(value));
+            } else if ("scope".equals(name)) {
+                predicates.add(root.join("scopes").get("id").in(value));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }

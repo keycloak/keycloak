@@ -319,6 +319,7 @@ public class PolicyEnforcer {
                     config.setMethods(originalConfig.getMethods());
                     config.setParentConfig(originalConfig);
                     config.setEnforcementMode(originalConfig.getEnforcementMode());
+                    config.setClaimInformationPointConfig(originalConfig.getClaimInformationPointConfig());
 
                     return config;
                 }

@@ -19,6 +19,7 @@ package org.keycloak.forms.account.freemarker.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
@@ -260,13 +262,38 @@ public class AuthorizationBean {
             if (shares == null) {
                 Map<String, String> filters = new HashMap<>();
 
-                filters.put(PermissionTicket.RESOURCE, resource.getId());
+                filters.put(PermissionTicket.RESOURCE, this.resource.getId());
                 filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
 
                 shares = toPermissionRepresentation(findPermissions(filters));
             }
 
             return shares;
+        }
+
+        public Collection<ManagedPermissionBean> getPolicies() {
+            Map<String, String[]> filters = new HashMap<>();
+
+            filters.put("type", new String[] {"uma"});
+            filters.put("resource", new String[] {this.resource.getId()});
+            filters.put("owner", new String[] {getOwner().getId()});
+
+            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(filters, getResourceServer().getId(), -1, -1);
+
+            if (policies.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            return policies.stream()
+                    .filter(policy -> {
+                        Map<String, String> filters1 = new HashMap<>();
+
+                        filters1.put(PermissionTicket.POLICY, policy.getId());
+
+                        return authorization.getStoreFactory().getPermissionTicketStore().find(filters1, resourceServer.getId(), -1, 1)
+                                .isEmpty();
+                    })
+                    .map(ManagedPermissionBean::new).collect(Collectors.toList());
         }
 
         public ResourceServerBean getResourceServer() {
@@ -326,6 +353,10 @@ public class AuthorizationBean {
             this.clientModel = clientModel;
         }
 
+        public String getId() {
+            return clientModel.getId();
+        }
+
         public String getName() {
             String name = clientModel.getName();
 
@@ -333,6 +364,10 @@ public class AuthorizationBean {
                 return name;
             }
 
+            return clientModel.getClientId();
+        }
+
+        public String getClientId() {
             return clientModel.getClientId();
         }
 
@@ -344,6 +379,36 @@ public class AuthorizationBean {
             }
 
             return redirectUris.iterator().next();
+        }
+    }
+
+    public class ManagedPermissionBean {
+
+        private final Policy policy;
+        private List<ManagedPermissionBean> policies;
+
+        public ManagedPermissionBean(Policy policy) {
+            this.policy = policy;
+        }
+
+        public String getId() {
+            return policy.getId();
+        }
+
+        public Collection<ScopeRepresentation> getScopes() {
+            return policy.getScopes().stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+        }
+
+        public String getDescription() {
+            return this.policy.getDescription();
+        }
+
+        public Collection<ManagedPermissionBean> getPolicies() {
+            if (this.policies == null) {
+                this.policies = policy.getAssociatedPolicies().stream().map(ManagedPermissionBean::new).collect(Collectors.toList());
+            }
+
+            return this.policies;
         }
     }
 }

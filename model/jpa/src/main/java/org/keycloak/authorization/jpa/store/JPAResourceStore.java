@@ -53,9 +53,19 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource create(String name, ResourceServer resourceServer, String owner) {
+        return create(null, name, resourceServer, owner);
+    }
+
+    @Override
+    public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
         ResourceEntity entity = new ResourceEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
+        if (id == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(id);
+        }
+
         entity.setName(name);
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
         entity.setOwner(owner);
@@ -185,6 +195,8 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
                 predicates.add(builder.isNotNull(root.get("uri")));
+            } else if ("owner".equals(name)) {
+                predicates.add(root.get(name).in(value));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }

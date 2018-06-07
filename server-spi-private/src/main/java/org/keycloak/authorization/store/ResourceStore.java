@@ -41,6 +41,17 @@ public interface ResourceStore {
     Resource create(String name, ResourceServer resourceServer, String owner);
 
     /**
+     * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
+     *
+     * @param id the id of this resource. It must be unique.
+     * @param name the name of this resource. It must be unique.
+     * @param resourceServer the resource server to where the given resource belongs to
+     * @param owner the owner of this resource or null if the resource server is the owner
+     * @return an instance backed by the underlying storage implementation
+     */
+    Resource create(String id, String name, ResourceServer resourceServer, String owner);
+
+    /**
      * Removes a {@link Resource} instance, with the given {@code id} from the persistent storage.
      *
      * @param id the identifier of an existing resource instance

@@ -206,6 +206,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                 predicates.add(builder.isNull(root.get("requester")));
             } else if (PermissionTicket.POLICY_IS_NOT_NULL.equals(name)) {
                 predicates.add(builder.isNotNull(root.get("policy")));
+            } else if (PermissionTicket.POLICY.equals(name)) {
+                predicates.add(root.join("policy").get("id").in(value));
             } else {
                 throw new RuntimeException("Unsupported filter [" + name + "]");
             }

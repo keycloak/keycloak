@@ -52,7 +52,7 @@ import java.util.Set;
  */
 public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
-    private RolePolicyProvider provider = new RolePolicyProvider(policy -> toRepresentation(policy));
+    private RolePolicyProvider provider = new RolePolicyProvider(this::toRepresentation);
 
     @Override
     public String getName() {
@@ -75,7 +75,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     }
 
     @Override
-    public RolePolicyRepresentation toRepresentation(Policy policy) {
+    public RolePolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
 
         try {
@@ -114,7 +114,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
         Map<String, String> config = new HashMap<>();
-        Set<RolePolicyRepresentation.RoleDefinition> roles = toRepresentation(policy).getRoles();
+        Set<RolePolicyRepresentation.RoleDefinition> roles = toRepresentation(policy, authorizationProvider).getRoles();
 
         for (RolePolicyRepresentation.RoleDefinition roleDefinition : roles) {
             RoleModel role = authorizationProvider.getRealm().getRoleById(roleDefinition.getId());

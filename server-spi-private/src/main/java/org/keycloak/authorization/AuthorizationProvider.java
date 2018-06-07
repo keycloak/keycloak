@@ -233,6 +233,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public Scope create(String id, String name, ResourceServer resourceServer) {
+                return delegate.create(id, name, resourceServer);
+            }
+
+            @Override
             public void delete(String id) {
                 Scope scope = findById(id, null);
                 PermissionTicketStore ticketStore = AuthorizationProvider.this.getStoreFactory().getPermissionTicketStore();
@@ -409,6 +414,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public Resource create(String name, ResourceServer resourceServer, String owner) {
                 return delegate.create(name, resourceServer, owner);
+            }
+
+            @Override
+            public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
+                return delegate.create(id, name, resourceServer, owner);
             }
 
             @Override

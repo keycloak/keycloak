@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
@@ -43,10 +45,14 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -103,7 +109,9 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response create(@Context UriInfo uriInfo, String payload) {
-        this.auth.realm().requireManageAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireManageAuthorization();
+        }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
         Policy policy = create(representation);
@@ -143,7 +151,10 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response findByName(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
+
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -168,9 +179,12 @@ public class PolicyService {
                             @QueryParam("resource") String resource,
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
+                            @QueryParam("owner") String owner,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         Map<String, String[]> search = new HashMap<>();
 
@@ -186,42 +200,56 @@ public class PolicyService {
             search.put("type", new String[] {type});
         }
 
+        if (owner != null && !"".equals(owner.trim())) {
+            search.put("owner", new String[] {owner});
+        }
+
         StoreFactory storeFactory = authorization.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        if (resource != null || scope != null) {
-            List<Policy> policies = new ArrayList<>();
+        if (resource != null && !"".equals(resource.trim())) {
+            ResourceStore resourceStore = storeFactory.getResourceStore();
+            Resource resourceModel = resourceStore.findById(resource, resourceServer.getId());
 
-            if (resource != null && !"".equals(resource.trim())) {
-                HashMap<String, String[]> resourceSearch = new HashMap<>();
+            if (resourceModel == null) {
+                Map<String, String[]> resourceFilters = new HashMap<>();
 
-                resourceSearch.put("name", new String[]{resource});
+                resourceFilters.put("name", new String[]{resource});
 
-                storeFactory.getResourceStore().findByResourceServer(resourceSearch, resourceServer.getId(), -1, 1).forEach(resource1 -> {
-                    policies.addAll(policyStore.findByResource(resource1.getId(), resourceServer.getId()));
-                    if (resource1.getType() != null) {
-                        policies.addAll(policyStore.findByResourceType(resource1.getType(), resourceServer.getId()));
-                    }
-                });
+                if (owner != null) {
+                    resourceFilters.put("owner", new String[]{owner});
+                }
+
+                Set<String> resources = resourceStore.findByResourceServer(resourceFilters, resourceServer.getId(), -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
+
+                if (resources.isEmpty()) {
+                    return Response.ok().build();
+                }
+
+                search.put("resource", resources.toArray(new String[resources.size()]));
+            } else {
+                search.put("resource", new String[] {resourceModel.getId()});
             }
+        }
 
-            if (scope != null && !"".equals(scope.trim())) {
-                HashMap<String, String[]> scopeSearch = new HashMap<>();
+        if (scope != null && !"".equals(scope.trim())) {
+            ScopeStore scopeStore = storeFactory.getScopeStore();
+            Scope scopeModel = scopeStore.findById(scope, resourceServer.getId());
 
-                scopeSearch.put("name", new String[]{scope});
+            if (scopeModel == null) {
+                Map<String, String[]> scopeFilters = new HashMap<>();
 
-                storeFactory.getScopeStore().findByResourceServer(scopeSearch, resourceServer.getId(), -1, 1).forEach(scope1 -> {
-                    policies.addAll(policyStore.findByScopeIds(Arrays.asList(scope1.getId()), resourceServer.getId()));
-                });
+                scopeFilters.put("name", new String[]{scope});
+
+                Set<String> scopes = scopeStore.findByResourceServer(scopeFilters, resourceServer.getId(), -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
+
+                if (scopes.isEmpty()) {
+                    return Response.ok().build();
+                }
+
+                search.put("scope", scopes.toArray(new String[scopes.size()]));
+            } else {
+                search.put("scope", new String[] {scopeModel.getId()});
             }
-
-            if (policies.isEmpty()) {
-                return Response.ok(Collections.emptyList()).build();
-            }
-
-            new ArrayList<>(policies).forEach(policy -> findAssociatedPolicies(policy, policies));
-
-            search.put("id", policies.stream().map(Policy::getId).toArray(String[]::new));
         }
 
         if (permission != null) {
@@ -249,7 +277,10 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response findPolicyProviders() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
+
         return Response.ok(
                 authorization.getProviderFactories().stream()
                         .filter(factory -> !factory.isInternal())
@@ -268,7 +299,10 @@ public class PolicyService {
 
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
+
         PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
