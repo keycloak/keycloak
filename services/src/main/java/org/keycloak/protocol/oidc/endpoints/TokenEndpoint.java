@@ -162,6 +162,13 @@ public class TokenEndpoint {
         formParams = request.getDecodedFormParameters();
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
+        // https://tools.ietf.org/html/rfc6749#section-5.1
+        // The authorization server MUST include the HTTP "Cache-Control" response header field
+        // with a value of "no-store" as well as the "Pragma" response header field with a value of "no-cache".
+        MultivaluedMap<String, Object> outputHeaders = httpResponse.getOutputHeaders();
+        outputHeaders.putSingle("Cache-Control", "no-store");
+        outputHeaders.putSingle("Pragma", "no-cache");
+
         checkSsl();
         checkRealm();
         checkGrantType();

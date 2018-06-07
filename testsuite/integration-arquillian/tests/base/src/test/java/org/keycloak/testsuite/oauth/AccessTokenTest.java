@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.allOf;
@@ -976,6 +977,26 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             rep.setSsoSessionMaxLifespan(originalSessionMax);
             realm.update(rep);
         }
+    }
+
+    @Test
+    public void accessTokenResponseHeader() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("no-store", headers.get("Cache-Control"));
+        assertEquals("no-cache", headers.get("Pragma"));
     }
 
     private IDToken getIdToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws JWSInputException {
