@@ -140,7 +140,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
-        if (getPolicyEnforcer().getDeployment().isBearerOnly() || (isBearerAuthorization(httpFacade) && getEnforcerConfig().getUserManagedAccess() != null)) {
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
             return null;
         }
 
@@ -151,20 +151,15 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             AccessToken accessToken = securityContext.getToken();
             AuthorizationRequest authzRequest = new AuthorizationRequest();
 
-            if (getEnforcerConfig().getUserManagedAccess() != null) {
-                String ticket = getPermissionTicket(pathConfig, methodConfig, getAuthzClient(), httpFacade);
-                authzRequest.setTicket(ticket);
-            } else {
-                if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
-                    authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
-                }
+            if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
+                authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
+            }
 
-                Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
+            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
 
-                if (!claims.isEmpty()) {
-                    authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
-                    authzRequest.setClaimToken(Base64.encodeBytes(JsonSerialization.writeValueAsBytes(claims)));
-                }
+            if (!claims.isEmpty()) {
+                authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
+                authzRequest.setClaimToken(Base64.encodeBytes(JsonSerialization.writeValueAsBytes(claims)));
             }
 
             if (accessToken.getAuthorization() != null) {
