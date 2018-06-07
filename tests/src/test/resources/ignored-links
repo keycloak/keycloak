@@ -15,3 +15,5 @@ http://node21:8080*
 http://node22:8080*
 http://web.example.com*
 https://github.com/keycloak/keycloak-documentation/blob/master/*
+https://openshift.example.com:8443/console
+https://github.com/keycloak/keycloak-quickstarts.git

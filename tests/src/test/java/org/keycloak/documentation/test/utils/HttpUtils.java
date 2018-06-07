@@ -36,7 +36,7 @@ public class HttpUtils {
                         response.setContent(w.toString());
                     }
                     response.setSuccess(true);
-                } else if (status == 302) {
+                } else if (status == 301 || status == 302) {
                     String location = URLDecoder.decode(connection.getHeaderField("Location"), "utf-8");
                     response.setRedirectLocation(location);
                     response.setSuccess(false);

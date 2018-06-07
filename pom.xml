@@ -37,6 +37,7 @@
         <module>server_development</module>
         <module>server_installation</module>
         <module>upgrading</module>
+        <module>openshift</module>
         <module>aggregation</module>
         <module>tests</module>
   </modules>

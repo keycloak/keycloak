@@ -38,7 +38,7 @@ The *_openssl_* toolkit is used in the following example to generate a CA certif
 ====
 For production environments Red Hat recommends that you use your own SSL certificate purchased from a verified Certificate Authority (CA) for SSL-encrypted connections (HTTPS).
 
-See the https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.1/html-single/Security_Guide/index.html#Generate_a_SSL_Encryption_Key_and_Certificate[JBoss Enterprise Application Platform Security Guide] for more information on how to create a keystore with self-signed or purchased SSL certificates.
+See the https://access.redhat.com/documentation/en-us/jboss_enterprise_application_platform/6.1/html-single/security_guide/index#Generate_a_SSL_Encryption_Key_and_Certificate[JBoss Enterprise Application Platform Security Guide] for more information on how to create a keystore with self-signed or purchased SSL certificates.
 ====
 
 [[create-https-keystore]]

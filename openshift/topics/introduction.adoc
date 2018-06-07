@@ -1,3 +1,5 @@
+== Introduction
+
 === What Is Red Hat Single Sign-On?
 Red Hat Single Sign-On (RH-SSO) is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {xpaasproduct} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
 

@@ -1,5 +1,5 @@
 === Using the {xpaasproduct-shortname} Image Streams and Application Templates
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:http://registry.access.redhat.com[registry.access.redhat.com]. To update to the latest {xpaasproduct-shortname} images, run the following commands:
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {xpaasproduct-shortname} images, run the following commands:
 
 . On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
 +

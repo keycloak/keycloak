@@ -31,6 +31,9 @@
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/getting_started_guide/
+:xpaasproduct: Red Hat Single Sign-On for OpenShift
+:xpaasproduct_link: {project_doc_base_url}/openshift/
+:xpaasproduct-shortname: RH-SSO for OpenShift
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_link: {project_doc_base_url}/upgrading_guide/
 :installguide_name: Server Installation and Configuration Guide
@@ -78,6 +81,7 @@
 :appserver_loadbalancer_link: {appserver_doc_base_url}/html-single/configuration_guide/#configuring_high_availability
 :appserver_managementcli_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_cli_overview
 :appserver_managementconsole_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_console_overview
+
 
 :jdgserver_name: JDG
 :jdgserver_version: 7.1.0

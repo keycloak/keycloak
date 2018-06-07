@@ -4,9 +4,4 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]
-
-:openshift:
-
-= Red Hat Single Sign-On for OpenShift
-
 include::topics.adoc[]
