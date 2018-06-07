@@ -12,13 +12,13 @@ The *rh-sso-{project_version}.GA.zip* file is the server-only distribution. It c
 Place the file in a directory you choose and use the `unzip` utility to unpack it, like this:
 
 .Linux/Unix
-[source]
+[source,bash,subs=+attributes]
 ----
 $ unzip rh-sso-{project_version}.GA.zip
 ----
 
 .Windows
-[source]
+[source,bash,subs=+attributes]
 ----
 > unzip rh-sso-{project_version}.GA.zip
 ----

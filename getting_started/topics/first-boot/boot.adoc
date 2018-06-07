@@ -4,13 +4,13 @@
 To boot the {project_name} server, go to the `bin` directory of the server distribution and run the `standalone` boot script:
 
 .Linux/Unix
-[source]
+[source,bash,subs=+attributes]
 ----
 $ .../bin/standalone.sh
 ----
 
 .Windows
-[source]
+[source,bash,subs=+attributes]
 ----
 > ...\bin\standalone.bat
 ----

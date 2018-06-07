@@ -10,13 +10,13 @@ To adjust the port used, change the value of the `jboss.socket.binding.port-offs
 To start the {project_name} server while also adjusting the port:
 
 .Linux/Unix
-[source]
+[source,bash,subs=+attributes]
 ----
 $ .../bin/standalone.sh -Djboss.socket.binding.port-offset=100
 ----
 
 .Windows
-[source]
+[source,bash,subs=+attributes]
 ----
 > ...\bin\standalone.bat -Djboss.socket.binding.port-offset=100
 ----

@@ -22,7 +22,7 @@ $ tar -xvzf keycloak-{project_version}.tar.gz
 ----
 
 .Windows
-[source]
+[source,bash,subs=+attributes]
 ----
 > unzip keycloak-{project_version}.zip
 ----
