@@ -1,10 +1,10 @@
 <productname>{project_name_full}</productname>
 <productnumber>{project_versionDoc}</productnumber>
 <subtitle>For Use with {project_name_full} {project_versionDoc}</subtitle>
-<title>{adapterguide_name}</title>
-<release>{doc_info_version_url}</release>
+<title>{releasenotes_name}</title>
+<release>{project_versionDoc}</release>
 <abstract>
-	    <para>This guide consists of information for securing applications and services using {project_name_full} {project_versionDoc}</para>
+	    <para>This guide consists of release notes for {project_name_full}</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>

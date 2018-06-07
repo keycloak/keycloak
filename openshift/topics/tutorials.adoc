@@ -4,7 +4,7 @@
 == Tutorials
 
 [[Example-Deploying-SSO]]
-=== Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image
+=== Example Workflow: Preparing and Deploying the {productname} image
 [[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
 ==== Preparing RH-SSO Authentication for OpenShift Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
@@ -19,7 +19,7 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 
 [IMPORTANT]
 ====
-This guide assumes the {xpaasproduct-shortname} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
+This guide assumes the {productname} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
 
 * *_sso72-mysql_*
 * *_sso72-mysql-persistent_*
@@ -31,7 +31,7 @@ This guide assumes the {xpaasproduct-shortname} image has been previously link:h
 
 ===== Create RH-SSO Realm, Roles, and User for the EAP 6.4 / 7.0 JSP Application
 
-The EAP 6.4 / 7.0 JSP service application requires dedicated RH-SSO realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {xpaasproduct-shortname} image has been deployed:
+The EAP 6.4 / 7.0 JSP service application requires dedicated RH-SSO realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {productname} image has been deployed:
 
 *Create the RH-SSO Realm*
 
@@ -46,11 +46,11 @@ Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the RH-SSO a
 
 
 [[upgrading-sso-db-from-70-to-71]]
-=== Example Workflow: Updating Existing Database when Migrating {xpaasproduct-shortname} Image to a new version
+=== Example Workflow: Updating Existing Database when Migrating {productname} Image to a new version
 [IMPORTANT]
 ====
-* Rolling updates from {xpaasproduct-shortname} 7.0 / 7.1 to 7.2 are not supported as databases and caches are not backward compatible.
-* Stop all {xpaasproduct-shortname} 7.0 / 7.1 instances before upgrading, they cannot run concurrently against the same database.
+* Rolling updates from {productname} 7.0 / 7.1 to 7.2 are not supported as databases and caches are not backward compatible.
+* Stop all {productname} 7.0 / 7.1 instances before upgrading, they cannot run concurrently against the same database.
 * Pre-generated scripts are not available, they are generated dynamically depending on the database.
 ====
 
@@ -541,7 +541,7 @@ Export and import of Red Hat Single Sign-On 7.2 database link:https://access.red
 +
 [WARNING]
 ====
-When the *_SSO_REALM_* configuration variable is set on the {xpaasproduct-shortname} image, a database import is performed in order to create the RH-SSO server realm requested in the variable. For the database export to be performed correctly, the *_SSO_REALM_* configuration variable cannot be simultaneously defined on such image.
+When the *_SSO_REALM_* configuration variable is set on the {productname} image, a database import is performed in order to create the RH-SSO server realm requested in the variable. For the database export to be performed correctly, the *_SSO_REALM_* configuration variable cannot be simultaneously defined on such image.
 ====
 +
 . Click *Create* to deploy the application template and start pod deployment. This may take a couple of minutes.
@@ -576,7 +576,7 @@ deploymentconfig/sso-mysql
 $ oc scale --replicas=0 dc sso
 deploymentconfig "sso" scaled
 ----
-. Instruct the RH-SSO 7.2 server deployed on {xpaasproduct-shortname} image to perform database export at RH-SSO server boot time.
+. Instruct the RH-SSO 7.2 server deployed on {productname} image to perform database export at RH-SSO server boot time.
 +
 ----
 oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/tmp/demorealm-export.json"
@@ -661,7 +661,7 @@ The administration console import allows you to *overwrite* resources if you cho
 
 [[OSE-SSO-AUTH-TUTE]]
 === Example Workflow: Configuring OpenShift to use RH-SSO for Authentication
-Configure OpenShift to use the RH-SSO deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift.
+Configure OpenShift to use the RH-SSO deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {productname} image], in which RH-SSO was deployed on OpenShift.
 
 This example adds RH-SSO as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
 
@@ -770,7 +770,7 @@ $ oadm policy add-role-to-user view testuser -n sso-app-demo
 
 [[Example-EAP-Auto]]
 === Example Workflow: Automatically Registering EAP Application in RH-SSO with OpenID-Connect Client
-This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift. This example prepares RH-SSO realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic RH-SSO client registration. Once deployed, the RH-SSO user can be used to authenticate and access JBoss EAP.
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {productname} image], in which RH-SSO was deployed on OpenShift. This example prepares RH-SSO realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic RH-SSO client registration. Once deployed, the RH-SSO user can be used to authenticate and access JBoss EAP.
 
 [NOTE]
 ====
@@ -928,7 +928,7 @@ It may take several minutes for the JBoss EAP image to deploy.
 
 [[Example-EAP-Manual]]
 === Example Workflow: Manually Registering EAP Application in RH-SSO with SAML Client
-This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {xpaasproduct-shortname} image], in which RH-SSO was deployed on OpenShift.
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {productname} image], in which RH-SSO was deployed on OpenShift.
 
 This example prepares RH-SSO realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the RH-SSO user can be used to authenticate and access JBoss EAP.
 

@@ -1,12 +1,12 @@
 :toc:
-:toclevels: 3
+:toclevels: 1
 :numbered:
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]
 
-:openshift:
+:release_notes:
 
-= {openshift_name}
+= {releasenotes_name}
 
 include::topics.adoc[]

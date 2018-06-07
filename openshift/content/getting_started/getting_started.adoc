@@ -1,5 +1,5 @@
-=== Using the {xpaasproduct-shortname} Image Streams and Application Templates
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {xpaasproduct-shortname} images, run the following commands:
+=== Using the {productname} Image Streams and Application Templates
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {productname} images, run the following commands:
 
 . On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
 +
@@ -30,7 +30,7 @@ $ oc -n openshift import-image redhat-sso72-openshift:1.1
 ----
 
 [[Example-Deploying-SSO]]
-=== Deploying the {xpaasproduct-shortname} Image
+=== Deploying the {productname} Image
 [[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
 ==== Preparing the Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
@@ -46,7 +46,7 @@ $ oc new-project sso-app-demo
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 
-==== Deploying the {xpaasproduct-shortname} Image using Application Template
+==== Deploying the {productname} Image using Application Template
 
 ===== Deploying the Template via OpenShift CLI
 

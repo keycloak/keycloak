@@ -1,4 +1,5 @@
 :project_name: Keycloak
+:project_name_full: Keycloak
 :project_community: true
 :project_product: false
 :project_version: 4.0.0.Final
@@ -33,6 +34,9 @@
 :gettingstarted_link: {project_doc_base_url}/getting_started/
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_link: {project_doc_base_url}/upgrading/
+:releasenotes_name: Release Notes
+:releasenotes_link: {project_doc_base_url}/release_notes/
+
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation/
 :installguide_clustering_name: Clustering

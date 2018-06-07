@@ -1,10 +1,10 @@
-<productname>{project_name}</productname>
+<productname>{project_name_full}</productname>
 <productnumber>{project_versionDoc}</productnumber>
-<subtitle>For Use with {project_name} {project_versionDoc}</subtitle>
+<subtitle>For Use with {project_name_full} {project_versionDoc}</subtitle>
 <title>{apidocs_name}</title>
 <release>{project_versionDoc}</release>
 <abstract>
-	    <para>Javadocs for {project_name} {project_versionDoc}</para>
+	    <para>Javadocs for {project_name_full} {project_versionDoc}</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>

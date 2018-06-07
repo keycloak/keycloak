@@ -1,12 +1,24 @@
-:project_name: Red Hat Single Sign-On
 :project_community: false
 :project_product: true
-:project_version: 7.3.0.GA
+:project_product_cd: true
+:project_name: Red Hat Single Sign-On
+:project_version: 7.3.0.CD1
 :project_versionMvn: 4.0.0.Final-redhat1
 :project_versionNpm: 4.0.0.Final-redhat1
-:project_versionDoc: 7.3
 :project_images: rhsso-images
+
+ifeval::[{project_product_cd}==false]
+:project_name_full: Red Hat Single Sign-On
+:project_versionDoc: 7.3
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
+endif::[]
+
+ifeval::[{project_product_cd}==true]
+:project_name_full: Red Hat Single Sign-On Continuous Delivery
+:project_versionDoc: 1
+:project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
+endif::[]
+
 :project_dirref: RHSSO_HOME
 
 :quickstartRepo_name: {project_name} Quickstarts Repository
@@ -31,11 +43,12 @@
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/getting_started_guide/
-:xpaasproduct: Red Hat Single Sign-On for OpenShift
-:xpaasproduct_link: {project_doc_base_url}/openshift/
-:xpaasproduct-shortname: RH-SSO for OpenShift
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_link: {project_doc_base_url}/upgrading_guide/
+:releasenotes_name: Release Notes
+:releasenotes_link: {project_doc_base_url}/release_notes/
+:openshift_name: Red Hat Single Sign-On for OpenShift
+:openshift_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
 :installguide_clustering_name: Clustering

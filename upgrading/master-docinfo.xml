@@ -1,10 +1,10 @@
-<productname>{project_name}</productname>
+<productname>{project_name_full}</productname>
 <productnumber>{project_versionDoc}</productnumber>
-<subtitle>For Use with {project_name} {project_versionDoc}</subtitle>
+<subtitle>For Use with {project_name_full} {project_versionDoc}</subtitle>
 <title>{upgradingguide_name}</title>
 <release>{book_project_doc_info_version_url}</release>
 <abstract>
-    <para>This book is a guide to upgrading your application from a previous version of {project_name} {project_versionDoc}. </para>
+    <para>This book is a guide to upgrading your application from a previous version of {project_name_full} {project_versionDoc}. </para>
 </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services </orgname>
