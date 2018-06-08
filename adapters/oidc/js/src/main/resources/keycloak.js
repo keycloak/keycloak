@@ -255,21 +255,32 @@
             return adapter.login(options);
         }
 
-        function generateCodeVerifier(len) {
-            var validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            var array = new Uint8Array(len);
+        function generateRandomData(len) {
+            // use web crypto APIs if possible
+            var array = null;
             var crypto = window.crypto || window.msCrypto;
-            if (crypto && crypto.getRandomValues) {
+            if (crypto && crypto.getRandomValues && window.Uint8Array) {
+                array = new Uint8Array(len);
                 crypto.getRandomValues(array);
-            } else {
-                for (var j = 0; j < array.length; j++) {
-                    array[j] = Math.floor(256 * Math.random());
-                }
+                return array;
             }
-            for (var i = 0; i < array.length; i++) {
-                array[i] = validChars.charCodeAt(array[i] % validChars.length);
+
+            // fallback to Math random
+            array = new Array(len);
+            for (var j = 0; j < array.length; j++) {
+                array[j] = Math.floor(256 * Math.random());
             }
-            return String.fromCharCode.apply(null, array);
+            return array;
+        }
+
+        function generateCodeVerifier(len) {
+            var alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            var randomData = generateRandomData(len);
+            var chars = new Array(len)
+            for (var i = 0; i < len; i++) {
+                chars[i] = alphabet.charCodeAt(randomData[i] % alphabet.length);
+            }
+            return String.fromCharCode.apply(null, chars);
         }
 
         function generatePkceChallenge(pkceMethod, codeVerifier) {
