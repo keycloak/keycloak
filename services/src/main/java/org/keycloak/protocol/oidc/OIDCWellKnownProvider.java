@@ -21,6 +21,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
@@ -66,9 +67,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     public static final List<String> DEFAULT_CLAIM_TYPES_SUPPORTED= list("normal");
 
-    // TODO: Add more of OIDC scopes
-    public static final List<String> SCOPES_SUPPORTED= list(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
-
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
 
@@ -111,7 +109,15 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(false);
 
-        config.setScopesSupported(SCOPES_SUPPORTED);
+        List<ClientScopeModel> scopes = realm.getClientScopes();
+        List<String> scopeNames = new LinkedList<>();
+        for (ClientScopeModel clientScope : scopes) {
+            if (clientScope.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+                scopeNames.add(clientScope.getName());
+            }
+        }
+        scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
+        config.setScopesSupported(scopeNames);
 
         config.setRequestParameterSupported(true);
         config.setRequestUriParameterSupported(true);

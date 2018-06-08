@@ -169,11 +169,9 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
   public static ProtocolMapperModel create(String name,
                                            String userAttribute,
                                            String tokenClaimName, String claimType,
-                                           boolean consentRequired, String consentText,
                                            boolean accessToken, boolean idToken, String script, boolean multiValued) {
     ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
       tokenClaimName, claimType,
-      consentRequired, consentText,
       accessToken, idToken,
       PROVIDER_ID);
 

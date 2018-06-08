@@ -1287,15 +1287,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<ClientTemplateModel> getClientTemplates() {
-        if (isUpdated()) return updated.getClientTemplates();
-        List<String> clientTemplates = cached.getClientTemplates();
-        if (clientTemplates.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientTemplateModel> apps = new LinkedList<ClientTemplateModel>();
-        for (String id : clientTemplates) {
-            ClientTemplateModel model = cacheSession.getClientTemplateById(id, this);
+    public List<ClientScopeModel> getClientScopes() {
+        if (isUpdated()) return updated.getClientScopes();
+        List<String> clientScopes = cached.getClientScopes();
+        if (clientScopes.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientScopeModel> apps = new LinkedList<ClientScopeModel>();
+        for (String id : clientScopes) {
+            ClientScopeModel model = cacheSession.getClientScopeById(id, this);
             if (model == null) {
-                throw new IllegalStateException("Cached clientemplate not found: " + id);
+                throw new IllegalStateException("Cached clientScope not found: " + id);
             }
             apps.add(model);
         }
@@ -1304,32 +1304,60 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public ClientTemplateModel addClientTemplate(String name) {
+    public ClientScopeModel addClientScope(String name) {
         getDelegateForUpdate();
-        ClientTemplateModel app = updated.addClientTemplate(name);
-        cacheSession.registerClientTemplateInvalidation(app.getId());
+        ClientScopeModel app = updated.addClientScope(name);
+        cacheSession.registerClientScopeInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public ClientTemplateModel addClientTemplate(String id, String name) {
+    public ClientScopeModel addClientScope(String id, String name) {
         getDelegateForUpdate();
-        ClientTemplateModel app =  updated.addClientTemplate(id, name);
-        cacheSession.registerClientTemplateInvalidation(app.getId());
+        ClientScopeModel app =  updated.addClientScope(id, name);
+        cacheSession.registerClientScopeInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public boolean removeClientTemplate(String id) {
-        cacheSession.registerClientTemplateInvalidation(id);
+    public boolean removeClientScope(String id) {
+        cacheSession.registerClientScopeInvalidation(id);
         getDelegateForUpdate();
-        return updated.removeClientTemplate(id);
+        return updated.removeClientScope(id);
     }
 
     @Override
-    public ClientTemplateModel getClientTemplateById(String id) {
-        if (isUpdated()) return updated.getClientTemplateById(id);
-        return cacheSession.getClientTemplateById(id, this);
+    public ClientScopeModel getClientScopeById(String id) {
+        if (isUpdated()) return updated.getClientScopeById(id);
+        return cacheSession.getClientScopeById(id, this);
+    }
+
+    @Override
+    public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        getDelegateForUpdate();
+        updated.addDefaultClientScope(clientScope, defaultScope);
+    }
+
+    @Override
+    public void removeDefaultClientScope(ClientScopeModel clientScope) {
+        getDelegateForUpdate();
+        updated.removeDefaultClientScope(clientScope);
+    }
+
+    @Override
+    public List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
+        if (isUpdated()) return updated.getDefaultClientScopes(defaultScope);
+
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+
+        List<ClientScopeModel> clientScopes = new LinkedList<>();
+        for (String scopeId : clientScopeIds) {
+            ClientScopeModel clientScope = cacheSession.getClientScopeById(scopeId, this);
+            if (clientScope != null) {
+                clientScopes.add(clientScope);
+            }
+        }
+        return clientScopes;
     }
 
     @Override

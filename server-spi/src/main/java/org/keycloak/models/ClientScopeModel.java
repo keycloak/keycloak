@@ -23,7 +23,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientTemplateModel extends ProtocolMapperContainerModel, ScopeContainerModel {
+public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel {
     String getId();
 
     String getName();
@@ -43,30 +43,33 @@ public interface ClientTemplateModel extends ProtocolMapperContainerModel, Scope
     String getAttribute(String name);
     Map<String, String> getAttributes();
 
-    boolean isFrontchannelLogout();
-    void setFrontchannelLogout(boolean flag);
 
-    boolean isBearerOnly();
-    void setBearerOnly(boolean only);
+    // CONFIGS
 
-    boolean isPublicClient();
-    void setPublicClient(boolean flag);
+    String DISPLAY_ON_CONSENT_SCREEN = "display.on.consent.screen";
+    String CONSENT_SCREEN_TEXT = "consent.screen.text";
 
-    boolean isConsentRequired();
-    void setConsentRequired(boolean consentRequired);
+    default boolean isDisplayOnConsentScreen() {
+        String displayVal = getAttribute(DISPLAY_ON_CONSENT_SCREEN);
+        return displayVal==null ? true : Boolean.parseBoolean(displayVal);
+    }
 
-    boolean isStandardFlowEnabled();
-    void setStandardFlowEnabled(boolean standardFlowEnabled);
+    default void setDisplayOnConsentScreen(boolean displayOnConsentScreen) {
+        setAttribute(DISPLAY_ON_CONSENT_SCREEN, String.valueOf(displayOnConsentScreen));
+    }
 
-    boolean isImplicitFlowEnabled();
-    void setImplicitFlowEnabled(boolean implicitFlowEnabled);
+    // Fallback to name if consentScreenText attribute is null
+    default String getConsentScreenText() {
+        String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
+        if (consentScreenText == null) {
+            consentScreenText = getName();
+        }
+        return consentScreenText;
+    }
 
-    boolean isDirectAccessGrantsEnabled();
-    void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled);
-
-    boolean isServiceAccountsEnabled();
-    void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
-
+    default void setConsentScreenText(String consentScreenText) {
+        setAttribute(CONSENT_SCREEN_TEXT, consentScreenText);
+    }
 
 
 }

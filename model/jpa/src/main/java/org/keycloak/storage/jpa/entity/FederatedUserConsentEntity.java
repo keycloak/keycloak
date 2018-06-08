@@ -83,10 +83,7 @@ public class FederatedUserConsentEntity {
 
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<FederatedUserConsentRoleEntity> grantedRoles = new ArrayList<FederatedUserConsentRoleEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMappers = new ArrayList<FederatedUserConsentProtocolMapperEntity>();
+    Collection<FederatedUserConsentClientScopeEntity> grantedClientScopes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -144,20 +141,12 @@ public class FederatedUserConsentEntity {
         this.externalClientId = externalClientId;
     }
 
-    public Collection<FederatedUserConsentRoleEntity> getGrantedRoles() {
-        return grantedRoles;
+    public Collection<FederatedUserConsentClientScopeEntity> getGrantedClientScopes() {
+        return grantedClientScopes;
     }
 
-    public void setGrantedRoles(Collection<FederatedUserConsentRoleEntity> grantedRoles) {
-        this.grantedRoles = grantedRoles;
-    }
-
-    public Collection<FederatedUserConsentProtocolMapperEntity> getGrantedProtocolMappers() {
-        return grantedProtocolMappers;
-    }
-
-    public void setGrantedProtocolMappers(Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMappers) {
-        this.grantedProtocolMappers = grantedProtocolMappers;
+    public void setGrantedClientScopes(Collection<FederatedUserConsentClientScopeEntity> grantedClientScopes) {
+        this.grantedClientScopes = grantedClientScopes;
     }
 
     public Long getCreatedDate() {

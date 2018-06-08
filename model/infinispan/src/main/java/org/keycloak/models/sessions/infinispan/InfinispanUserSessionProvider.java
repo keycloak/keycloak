@@ -925,9 +925,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setAuthMethod(clientSession.getProtocol());
 
         entity.setNotes(clientSession.getNotes() == null ? new ConcurrentHashMap<>() : clientSession.getNotes());
-        entity.setProtocolMappers(clientSession.getProtocolMappers());
         entity.setRedirectUri(clientSession.getRedirectUri());
-        entity.setRoles(clientSession.getRoles());
         entity.setTimestamp(clientSession.getTimestamp());
 
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();

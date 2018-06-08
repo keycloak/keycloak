@@ -27,8 +27,6 @@
           "protocolMapper" : "oidc-usermodel-property-mapper",
           "protocol" : "openid-connect",
           "name" : "username",
-          "consentText" : "${username}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "username",
@@ -41,8 +39,6 @@
           "protocolMapper" : "oidc-full-name-mapper",
           "protocol" : "openid-connect",
           "name" : "full name",
-          "consentText" : "${fullName}",
-          "consentRequired" : true,
           "config" : {
             "id.token.claim" : "true",
             "access.token.claim" : "true"
@@ -52,8 +48,6 @@
           "protocolMapper" : "oidc-usermodel-property-mapper",
           "protocol" : "openid-connect",
           "name" : "given name",
-          "consentText" : "${givenName}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "firstName",
@@ -66,8 +60,6 @@
           "protocolMapper" : "oidc-usermodel-property-mapper",
           "protocol" : "openid-connect",
           "name" : "family name",
-          "consentText" : "${familyName}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "lastName",
@@ -80,8 +72,6 @@
           "protocolMapper" : "oidc-usermodel-property-mapper",
           "protocol" : "openid-connect",
           "name" : "email",
-          "consentText" : "${email}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "email",
@@ -94,8 +84,6 @@
           "protocolMapper" : "oidc-usermodel-attribute-mapper",
           "protocol" : "openid-connect",
           "name" : "postal code",
-          "consentText" : "${postal_code}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "postal_code",
@@ -109,8 +97,6 @@
           "protocolMapper" : "oidc-usermodel-attribute-mapper",
           "protocol" : "openid-connect",
           "name" : "street",
-          "consentText" : "${street}",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "street",
@@ -124,8 +110,6 @@
           "protocolMapper" : "oidc-usermodel-attribute-mapper",
           "protocol" : "openid-connect",
           "name" : "picture",
-          "consentText" : "Picture",
-          "consentRequired" : true,
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "picture",

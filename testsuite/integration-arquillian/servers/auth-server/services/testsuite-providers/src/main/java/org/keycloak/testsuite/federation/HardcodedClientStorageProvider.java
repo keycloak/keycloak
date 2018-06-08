@@ -17,11 +17,13 @@
 package org.keycloak.testsuite.federation;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
 import org.keycloak.storage.client.ClientLookupProvider;
@@ -215,23 +217,13 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public ClientTemplateModel getClientTemplate() {
-            return null;
-        }
-
-        @Override
-        public boolean useTemplateScope() {
-            return false;
-        }
-
-        @Override
-        public boolean useTemplateMappers() {
-            return false;
-        }
-
-        @Override
-        public boolean useTemplateConfig() {
-            return false;
+        public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
+            if (defaultScope) {
+                return Collections.emptyMap();
+            } else {
+                ClientScopeModel offlineScope = KeycloakModelUtils.getClientScopeByName(realm, "offline_access");
+                return Collections.singletonMap("offline_access", offlineScope);
+            }
         }
 
         @Override

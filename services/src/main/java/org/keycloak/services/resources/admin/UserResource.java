@@ -447,9 +447,7 @@ public class UserResource {
 
             Map<String, Object> currentRep = new HashMap<>();
             currentRep.put("clientId", client.getClientId());
-            currentRep.put("grantedProtocolMappers", (rep==null ? Collections.emptyMap() : rep.getGrantedProtocolMappers()));
-            currentRep.put("grantedRealmRoles", (rep==null ? Collections.emptyList() : rep.getGrantedRealmRoles()));
-            currentRep.put("grantedClientRoles", (rep==null ? Collections.emptyMap() : rep.getGrantedClientRoles()));
+            currentRep.put("grantedClientScopes", (rep==null ? Collections.emptyList() : rep.getGrantedClientScopes()));
             currentRep.put("createdDate", (rep==null ? null : rep.getCreatedDate()));
             currentRep.put("lastUpdatedDate", (rep==null ? null : rep.getLastUpdatedDate()));
 

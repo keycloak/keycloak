@@ -267,10 +267,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         ClientModel accountService = this.realmModel.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (!accountService.getId().equals(client.getId())) {
             RoleModel manageAccountRole = accountService.getRole(AccountRoles.MANAGE_ACCOUNT);
+            Set<RoleModel> userAccountRoles = cookieResult.getUser().getClientRoleMappings(accountService);
 
-            if (!clientSession.getRoles().contains(manageAccountRole.getId())) {
+            if (!userAccountRoles.contains(manageAccountRole)) {
                 RoleModel linkRole = accountService.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
-                if (!clientSession.getRoles().contains(linkRole.getId())) {
+                if (!userAccountRoles.contains(linkRole)) {
                     event.error(Errors.NOT_ALLOWED);
                     UriBuilder builder = UriBuilder.fromUri(redirectUri)
                             .queryParam(errorParam, Errors.NOT_ALLOWED)
@@ -806,7 +807,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
         }
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
 
         String nextRequiredAction = AuthenticationManager.nextRequiredAction(session, authSession, clientConnection, request, uriInfo, event);
         if (nextRequiredAction != null) {
@@ -913,7 +914,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
         context.getIdp().authenticationFinished(authSession, context);
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
         TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         if (isDebugEnabled()) {

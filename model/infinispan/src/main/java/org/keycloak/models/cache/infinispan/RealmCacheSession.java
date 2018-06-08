@@ -27,7 +27,6 @@ import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.*;
 import org.keycloak.models.cache.infinispan.events.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
@@ -105,7 +104,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     protected Map<String, RealmAdapter> managedRealms = new HashMap<>();
     protected Map<String, ClientModel> managedApplications = new HashMap<>();
-    protected Map<String, ClientTemplateAdapter> managedClientTemplates = new HashMap<>();
+    protected Map<String, ClientScopeAdapter> managedClientScopes = new HashMap<>();
     protected Map<String, RoleAdapter> managedRoles = new HashMap<>();
     protected Map<String, GroupAdapter> managedGroups = new HashMap<>();
     protected Set<String> listInvalidations = new HashSet<>();
@@ -182,16 +181,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public void registerClientTemplateInvalidation(String id) {
-        invalidateClientTemplate(id);
-        // Note: Adding/Removing client template is supposed to invalidate CachedRealm as well, so the list of clientTemplates is invalidated.
+    public void registerClientScopeInvalidation(String id) {
+        invalidateClientScope(id);
+        // Note: Adding/Removing client template is supposed to invalidate CachedRealm as well, so the list of clientScopes is invalidated.
         // But separate RealmUpdatedEvent will be sent for it. So ClientTemplateEvent don't need to take care of it.
         invalidationEvents.add(ClientTemplateEvent.create(id));
     }
 
-    private void invalidateClientTemplate(String id) {
+    private void invalidateClientScope(String id) {
         invalidations.add(id);
-        ClientTemplateAdapter adapter = managedClientTemplates.get(id);
+        ClientScopeAdapter adapter = managedClientScopes.get(id);
         if (adapter != null) adapter.invalidate();
     }
 
@@ -218,9 +217,9 @@ public class RealmCacheSession implements CacheRealmProvider {
                 group.invalidate();
                 continue;
             }
-            ClientTemplateAdapter clientTemplate = managedClientTemplates.get(id);
-            if (clientTemplate != null) {
-                clientTemplate.invalidate();
+            ClientScopeAdapter clientScope = managedClientScopes.get(id);
+            if (clientScope != null) {
+                clientScope.invalidate();
                 continue;
             }
             RoleAdapter role = managedRoles.get(id);
@@ -1134,26 +1133,26 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
-        CachedClientTemplate cached = cache.get(id, CachedClientTemplate.class);
+    public ClientScopeModel getClientScopeById(String id, RealmModel realm) {
+        CachedClientScope cached = cache.get(id, CachedClientScope.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
-            ClientTemplateModel model = getRealmDelegate().getClientTemplateById(id, realm);
+            ClientScopeModel model = getRealmDelegate().getClientScopeById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            cached = new CachedClientTemplate(loaded, realm, model);
+            cached = new CachedClientScope(loaded, realm, model);
             cache.addRevisioned(cached, startupRevision);
         } else if (invalidations.contains(id)) {
-            return getRealmDelegate().getClientTemplateById(id, realm);
-        } else if (managedClientTemplates.containsKey(id)) {
-            return managedClientTemplates.get(id);
+            return getRealmDelegate().getClientScopeById(id, realm);
+        } else if (managedClientScopes.containsKey(id)) {
+            return managedClientScopes.get(id);
         }
-        ClientTemplateAdapter adapter = new ClientTemplateAdapter(realm, cached, this);
-        managedClientTemplates.put(id, adapter);
+        ClientScopeAdapter adapter = new ClientScopeAdapter(realm, cached, this);
+        managedClientScopes.put(id, adapter);
         return adapter;
     }
 

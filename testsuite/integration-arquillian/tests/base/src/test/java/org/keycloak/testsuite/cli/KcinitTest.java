@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticatorFactory;
@@ -34,6 +35,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -110,6 +112,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             kcinit.setEnabled(true);
             kcinit.addRedirectUri("http://localhost:*");
             kcinit.setPublicClient(true);
+            kcinit.removeRole(realm.getRole(OAuth2Constants.OFFLINE_ACCESS));
 
             ClientModel app = realm.addClient(APP);
             app.setSecret("password");

@@ -121,7 +121,7 @@ public abstract class AuthorizationEndpointBase {
                     return response;
                 }
 
-                AuthenticationManager.setRolesAndMappersInSession(authSession);
+                AuthenticationManager.setClientScopesInSession(authSession);
 
                 if (processor.nextRequiredAction() != null) {
                     Response response = protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);

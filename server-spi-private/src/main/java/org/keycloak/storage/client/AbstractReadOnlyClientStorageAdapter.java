@@ -16,7 +16,7 @@
  */
 package org.keycloak.storage.client;
 
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -214,27 +214,13 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
     }
 
     @Override
-    public void setClientTemplate(ClientTemplateModel template) {
-        throw new ReadOnlyException("client is read only for this update");
-
-    }
-
-    @Override
-    public void setUseTemplateScope(boolean flag) {
-
+    public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         throw new ReadOnlyException("client is read only for this update");
     }
 
     @Override
-    public void setUseTemplateMappers(boolean flag) {
+    public void removeClientScope(ClientScopeModel clientScope) {
         throw new ReadOnlyException("client is read only for this update");
-
-    }
-
-    @Override
-    public void setUseTemplateConfig(boolean flag) {
-        throw new ReadOnlyException("client is read only for this update");
-
     }
 
     @Override

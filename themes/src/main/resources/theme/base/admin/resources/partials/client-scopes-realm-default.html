@@ -1,0 +1,91 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>
+        <span>{{:: 'default-client-scopes' | translate}}</span>
+        <kc-tooltip>{{:: 'default-client-scopes.tooltip' | translate}}</kc-tooltip>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li>
+            <a href="#/realms/{{realm.realm}}/client-scopes">{{:: 'client-scopes' | translate}}</a>
+            <kc-tooltip>{{:: 'client-scopes.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li class="active">
+            <a href="#/realms/{{realm.realm}}/default-client-scopes">{{:: 'default-client-scopes' | translate}}</a>
+            <kc-tooltip>{{:: 'default-client-scopes.tooltip' | translate}}</kc-tooltip>
+        </li>
+    </ul>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
+        <div class="form-group">
+            <label class="col-md-2 control-label" class="control-label">{{:: 'default-client-scopes.default' | translate}}</label>
+            <kc-tooltip>{{:: 'default-client-scopes.default.tooltip' | translate}}</kc-tooltip>
+
+            <div class="col-md-10">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="control-label" for="available">{{:: 'default-client-scopes.default.available' | translate}}</label>
+                        <kc-tooltip>{{:: 'default-client-scopes.default.available.tooltip' | translate}}</kc-tooltip>
+                        <select id="available" class="form-control" multiple size="5"
+                                ng-multiple="true"
+                                ng-model="selectedDefaultClientScopes"
+                                ng-options="r.name for r in availableClientScopes | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedDefaultClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="addDefaultClientScope()">
+                            {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="control-label" for="assigned">{{:: 'default-client-scopes.default.assigned' | translate}}</label>
+                        <kc-tooltip>{{:: 'default-client-scopes.default.assigned.tooltip' | translate}}</kc-tooltip>
+                        <select id="assigned" class="form-control" multiple size=5
+                                ng-multiple="true"
+                                ng-model="selectedDefDefaultClientScopes"
+                                ng-options="r.name for r in realmDefaultClientScopes | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedDefDefaultClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="deleteDefaultClientScope()">
+                            <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" class="control-label">{{:: 'default-client-scopes.optional' | translate}}</label>
+            <kc-tooltip>{{:: 'default-client-scopes.optional.tooltip' | translate}}</kc-tooltip>
+
+            <div class="col-md-10">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="control-label" for="available-opt">{{:: 'default-client-scopes.optional.available' | translate}}</label>
+                        <kc-tooltip>{{:: 'default-client-scopes.optional.available.tooltip' | translate}}</kc-tooltip>
+                        <select id="available-opt" class="form-control" multiple size="5"
+                                ng-multiple="true"
+                                ng-model="selectedOptionalClientScopes"
+                                ng-options="r.name for r in availableClientScopes | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedOptionalClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="addOptionalClientScope()">
+                            {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="control-label" for="assigned-opt">{{:: 'default-client-scopes.optional.assigned' | translate}}</label>
+                        <kc-tooltip>{{:: 'default-client-scopes.optional.assigned.tooltip' | translate}}</kc-tooltip>
+                        <select id="assigned-opt" class="form-control" multiple size=5
+                                ng-multiple="true"
+                                ng-model="selectedDefOptionalClientScopes"
+                                ng-options="r.name for r in realmOptionalClientScopes | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedDefOptionalClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="deleteOptionalClientScope()">
+                            <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+
+<kc-menu></kc-menu>

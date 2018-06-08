@@ -36,6 +36,7 @@ public class TestCleanup {
     private static final String USER_IDS = "USER_IDS";
     private static final String COMPONENT_IDS = "COMPONENT_IDS";
     private static final String CLIENT_UUIDS = "CLIENT_UUIDS";
+    private static final String CLIENT_SCOPE_IDS = "CLIENT_SCOPE_IDS";
     private static final String ROLE_IDS = "ROLE_IDS";
     private static final String GROUP_IDS = "GROUP_IDS";
     private static final String AUTH_FLOW_IDS = "AUTH_FLOW_IDS";
@@ -71,6 +72,11 @@ public class TestCleanup {
 
     public void addClientUuid(String clientUuid) {
         entities.add(CLIENT_UUIDS, clientUuid);
+    }
+
+
+    public void addClientScopeId(String clientScopeId) {
+        entities.add(CLIENT_SCOPE_IDS, clientScopeId);
     }
 
 
@@ -135,6 +141,18 @@ public class TestCleanup {
             for (String clientUuId : clientUuids) {
                 try {
                     realm.clients().get(clientUuId).remove();
+                } catch (NotFoundException nfe) {
+                    // Idp might be already deleted in the test
+                }
+            }
+        }
+
+        // Client scopes should be after clients
+        List<String> clientScopeIds = entities.get(CLIENT_SCOPE_IDS);
+        if (clientScopeIds != null) {
+            for (String clientScopeId : clientScopeIds) {
+                try {
+                    realm.clientScopes().get(clientScopeId).remove();
                 } catch (NotFoundException nfe) {
                     // Idp might be already deleted in the test
                 }

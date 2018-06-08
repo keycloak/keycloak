@@ -23,6 +23,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Various common utils needed for migration from older version to newer
@@ -37,7 +38,7 @@ public interface MigrationProvider extends Provider {
      */
     List<ProtocolMapperRepresentation> getMappersForClaimMask(Long claimMask);
 
-    List<ProtocolMapperModel> getBuiltinMappers(String protocol);
+    Map<String, ProtocolMapperModel> getBuiltinMappers(String protocol);
 
     void setupAdminCli(RealmModel realm);
 

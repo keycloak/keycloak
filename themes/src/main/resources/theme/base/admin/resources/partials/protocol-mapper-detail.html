@@ -25,21 +25,6 @@
                 </div>
                 <kc-tooltip>{{:: 'mapper.name.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
-                <label for="consentRequired" class="col-md-2 control-label">{{:: 'consent-required' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="model.mapper.consentRequired" name="consentRequired" id="consentRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                </div>
-                <kc-tooltip>{{:: 'mapper.consent-required.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group" data-ng-show="model.mapper.consentRequired">
-                <label class="col-md-2 control-label" for="consentText">{{:: 'consent-text' | translate}} </label>
-
-                <div class="col-md-6">
-                    <textarea class="form-control" rows="5" cols="50" id="consentText" name="consentText" data-ng-model="model.mapper.consentText"></textarea>
-                </div>
-                <kc-tooltip>{{:: 'consent-text.tooltip' | translate}}</kc-tooltip>
-            </div>
             <div class="form-group" data-ng-show="model.create">
                 <label class="col-md-2 control-label" for="mapperTypeCreate">{{:: 'mapper-type' | translate}}</label>
                 <div class="col-md-6">

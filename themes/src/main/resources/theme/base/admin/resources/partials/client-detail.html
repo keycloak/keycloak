@@ -44,6 +44,7 @@
                 </div>
                 <kc-tooltip>{{:: 'client-origin.tooltip' | translate}}</kc-tooltip>
             </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="consentRequired">{{:: 'consent-required' | translate}}</label>
                 <div class="col-sm-6">
@@ -51,6 +52,21 @@
                 </div>
                 <kc-tooltip>{{:: 'consent-required.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="clientEdit.consentRequired && protocol != 'docker-v2'">
+                <label class="col-md-2 control-label" for="displayOnConsentScreen">{{:: 'client.display-on-consent-screen' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="displayOnConsentScreen" ng-click="switchChange()" name="displayOnConsentScreen" id="displayOnConsentScreen" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'client.display-on-consent-screen.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="clientEdit.consentRequired && protocol != 'docker-v2' && displayOnConsentScreen">
+                <label class="col-md-2 control-label" for="consentScreenText">{{:: 'client.consent-screen-text' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="consentScreenText" name="consentScreenText" data-ng-model="clientEdit.attributes['consent.screen.text']">
+                </div>
+                <kc-tooltip>{{:: 'client.consent-screen-text.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group">
                 <label class="col-md-2 control-label" for="loginTheme">{{:: 'login-theme' | translate}}</label>
                 <div class="col-sm-6">
@@ -74,18 +90,6 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group"  kc-read-only="!client.access.manage">
-                <label class="col-md-2 control-label" for="protocol">{{:: 'client-template' | translate}}</label>
-                <div class="col-sm-6">
-                    <div>
-                        <select class="form-control" id="template"
-                                ng-model="clientEdit.clientTemplate"
-                                ng-options="template.name as template.name for template in templates">
-                        </select>
-                    </div>
-                </div>
-                <kc-tooltip>{{:: 'client-template.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="accessType">{{:: 'access-type' | translate}}</label>

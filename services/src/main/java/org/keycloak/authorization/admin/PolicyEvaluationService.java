@@ -54,6 +54,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -213,7 +214,6 @@ public class PolicyEvaluationService {
 
         String subject = representation.getUserId();
 
-        AuthenticatedClientSessionModel clientSession = null;
         UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(subject, realm);
@@ -234,17 +234,10 @@ public class PolicyEvaluationService {
                     authSession.setAuthenticatedUser(userModel);
                     userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
 
-                    AuthenticationManager.setRolesAndMappersInSession(authSession);
-                    clientSession = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
+                    AuthenticationManager.setClientScopesInSession(authSession);
+                    ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
 
-                    Set<RoleModel> requestedRoles = new HashSet<>();
-                    for (String roleId : clientSession.getRoles()) {
-                        RoleModel role = realm.getRoleById(roleId);
-                        if (role != null) {
-                            requestedRoles.add(role);
-                        }
-                    }
-                    accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, clientModel, userModel, userSession, clientSession);
+                    accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, clientModel, userModel, userSession, clientSessionCtx);
                 }
             }
         }

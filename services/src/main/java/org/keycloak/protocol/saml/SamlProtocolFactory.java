@@ -18,9 +18,10 @@
 package org.keycloak.protocol.saml;
 
 import org.keycloak.Config;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -32,7 +33,7 @@ import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
@@ -53,6 +54,9 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     private static final Pattern PROTOCOL_MAP_PATTERN = Pattern.compile("\\s*([a-zA-Z][a-zA-Z\\d+-.]*)\\s*=\\s*(\\d+)\\s*");
     private static final String[] DEFAULT_PROTOCOL_TO_PORT_MAP = new String[] { "http=80", "https=443" };
+
+    public static final String SCOPE_ROLE_LIST = "role_list";
+    private static final String ROLE_LIST_CONSENT_TEXT = "${samlRoleListScopeConsentText}";
 
     private final Map<Integer, String> knownPorts = new HashMap<>();
     private final Map<String, Integer> knownProtocols = new HashMap<>();
@@ -99,16 +103,11 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    public List<ProtocolMapperModel> getBuiltinMappers() {
+    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
         return builtins;
     }
 
-    @Override
-    public List<ProtocolMapperModel> getDefaultBuiltinMappers() {
-        return defaultBuiltins;
-    }
-
-    static List<ProtocolMapperModel> builtins = new ArrayList<>();
+    static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
     static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
 
     static {
@@ -119,34 +118,41 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.EMAIL.getFriendlyName(),
                 true, "${email}");
-        builtins.add(model);
+        builtins.put("X500 email", model);
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 givenName",
                 "firstName",
                 X500SAMLProfileConstants.GIVEN_NAME.get(),
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(),
                 true, "${givenName}");
-        builtins.add(model);
+        builtins.put("X500 givenName", model);
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 surname",
                 "lastName",
                 X500SAMLProfileConstants.SURNAME.get(),
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.SURNAME.getFriendlyName(),
                 true, "${familyName}");
-        builtins.add(model);
+        builtins.put("X500 surname", model);
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
-        builtins.add(model);
+        builtins.put("role list", model);
         defaultBuiltins.add(model);
 
     }
 
 
     @Override
+    protected void createDefaultClientScopesImpl(RealmModel newRealm) {
+        ClientScopeModel roleListScope = newRealm.addClientScope(SCOPE_ROLE_LIST);
+        roleListScope.setDescription("SAML role list");
+        roleListScope.setDisplayOnConsentScreen(true);
+        roleListScope.setConsentScreenText(ROLE_LIST_CONSENT_TEXT);
+        roleListScope.setProtocol(getId());
+        roleListScope.addProtocolMapper(builtins.get("role list"));
+        newRealm.addDefaultClientScope(roleListScope, true);
+    }
+
+    @Override
     protected void addDefaults(ClientModel client) {
-        for (ProtocolMapperModel model : defaultBuiltins) {
-            model.setProtocol(getId());
-            client.addProtocolMapper(model);
-        }
     }
 
     @Override
@@ -196,43 +202,4 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         }
     }
 
-    @Override
-    public void setupTemplateDefaults(ClientTemplateRepresentation clientRep, ClientTemplateModel newClient) {
-        SamlRepresentationAttributes rep = new SamlRepresentationAttributes(clientRep.getAttributes());
-        SamlClientTemplate client = new SamlClientTemplate(newClient);
-        if (clientRep.isStandardFlowEnabled() == null) newClient.setStandardFlowEnabled(true);
-        if (rep.getCanonicalizationMethod() == null) {
-            client.setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
-        }
-        if (rep.getSignatureAlgorithm() == null) {
-            client.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
-        }
-
-        if (rep.getNameIDFormat() == null) {
-            client.setNameIDFormat("username");
-        }
-
-        if (rep.getIncludeAuthnStatement() == null) {
-            client.setIncludeAuthnStatement(true);
-        }
-
-        if (rep.getForceNameIDFormat() == null) {
-            client.setForceNameIDFormat(false);
-        }
-
-        if (rep.getSamlServerSignature() == null) {
-            client.setRequiresRealmSignature(true);
-        }
-        if (rep.getForcePostBinding() == null) {
-            client.setForcePostBinding(true);
-        }
-
-        if (rep.getClientSignature() == null) {
-            client.setRequiresClientSignature(true);
-        }
-
-        if (clientRep.isFrontchannelLogout() == null) {
-            newClient.setFrontchannelLogout(true);
-        }
-    }
 }

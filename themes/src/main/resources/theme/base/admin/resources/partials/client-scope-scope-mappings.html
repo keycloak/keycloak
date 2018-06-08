@@ -1,27 +1,16 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/client-templates">{{:: 'client-templates' | translate}}</a></li>
-        <li>{{template.name}}</li>
+        <li><a href="#/realms/{{realm.realm}}/client-scopes">{{:: 'client-scopes' | translate}}</a></li>
+        <li>{{clientScope.name}}</li>
     </ol>
 
-    <kc-tabs-client-template></kc-tabs-client-template>
+    <kc-tabs-client-scope></kc-tabs-client-scope>
 
-        <h2><span>{{template.name}}</span> {{:: 'scope-mappings' | translate}} </h2>
+        <h2><span>{{clientScope.name}}</span> {{:: 'scope-mappings' | translate}} </h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
-            <fieldset class="border-top">
-                <div class="form-group">
-                    <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
-                    <kc-tooltip>{{:: 'full-scope-allowed.tooltip' | translate}}</kc-tooltip>
-                    <div class="col-md-6">
-                        <input ng-model="template.fullScopeAllowed" ng-click="changeFullScopeAllowed()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                    </div>
-                </div>
-            </fieldset>
-        </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-show="!template.fullScopeAllowed">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
                 <div class="col-md-10">

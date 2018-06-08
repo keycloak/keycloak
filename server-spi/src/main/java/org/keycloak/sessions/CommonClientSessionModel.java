@@ -17,9 +17,6 @@
 
 package org.keycloak.sessions;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
@@ -41,14 +38,6 @@ public interface CommonClientSessionModel {
 
     public String getProtocol();
     public void setProtocol(String method);
-
-    // TODO: Not needed here...?
-    public Set<String> getRoles();
-    public void setRoles(Set<String> roles);
-
-    // TODO: Not needed here...?
-    public Set<String> getProtocolMappers();
-    public void setProtocolMappers(Set<String> protocolMappers);
 
     public static enum Action {
         OAUTH_GRANT,

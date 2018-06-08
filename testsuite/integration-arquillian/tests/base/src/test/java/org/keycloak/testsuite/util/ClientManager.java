@@ -88,10 +88,27 @@ public class ClientManager {
             return this;
         }
 
-        public void fullScopeAllowed(boolean enable) {
+        public ClientManagerBuilder fullScopeAllowed(boolean enable) {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setFullScopeAllowed(enable);
             clientResource.update(app);
+            return this;
+        }
+
+        public void addClientScope(String clientScopeId, boolean defaultScope) {
+            if (defaultScope) {
+                clientResource.addDefaultClientScope(clientScopeId);
+            } else {
+                clientResource.addOptionalClientScope(clientScopeId);
+            }
+        }
+
+        public void removeClientScope(String clientScopeId, boolean defaultScope) {
+            if (defaultScope) {
+                clientResource.removeDefaultClientScope(clientScopeId);
+            } else {
+                clientResource.removeOptionalClientScope(clientScopeId);
+            }
         }
 
         public void consentRequired(boolean enable) {

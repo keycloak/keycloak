@@ -41,8 +41,6 @@ public class ProtocolMappersClientRegistrationPolicyFactory extends AbstractClie
 
     public static final String ALLOWED_PROTOCOL_MAPPER_TYPES = "allowed-protocol-mapper-types";
 
-    public static final String CONSENT_REQUIRED_FOR_ALL_MAPPERS = "consent-required-for-all-mappers";
-
     @Override
     public ClientRegistrationPolicy create(KeycloakSession session, ComponentModel model) {
         return new ProtocolMappersClientRegistrationPolicy(session, model);
@@ -59,14 +57,6 @@ public class ProtocolMappersClientRegistrationPolicyFactory extends AbstractClie
         property.setHelpText("allowed-protocol-mappers.tooltip");
         property.setType(ProviderConfigProperty.MULTIVALUED_LIST_TYPE);
         property.setOptions(getProtocolMapperFactoryIds());
-        configProperties.add(property);
-
-        property = new ProviderConfigProperty();
-        property.setName(CONSENT_REQUIRED_FOR_ALL_MAPPERS);
-        property.setLabel("consent-required-for-all-mappers.label");
-        property.setHelpText("consent-required-for-all-mappers.tooltip");
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("true");
         configProperties.add(property);
     }
 

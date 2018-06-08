@@ -14,6 +14,10 @@
         </li>
         <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'saml-keys' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'roles'}" data-ng-show="!client.origin"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'client-scopes'}" data-ng-show="!client.bearerOnly">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/client-scopes/setup-scopes">{{:: 'client-scopes' | translate}}</a>
+            <kc-tooltip>{{:: 'client-scopes.tooltip' | translate}}</kc-tooltip>
+        </li>
         <li ng-class="{active: path[4] == 'mappers'}" data-ng-show="!client.bearerOnly">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">{{:: 'mappers' | translate}}</a>
             <kc-tooltip>{{:: 'mappers.tooltip' | translate}}</kc-tooltip>

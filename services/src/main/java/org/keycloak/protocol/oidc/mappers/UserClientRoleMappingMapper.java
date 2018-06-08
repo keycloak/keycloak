@@ -17,13 +17,16 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
@@ -116,10 +119,7 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
             return RoleModel::isClientRole;
         }
 
-        ClientTemplateModel template = client.getClientTemplate();
-        boolean useTemplateScope = template != null && client.useTemplateScope();
-        boolean fullScopeAllowed = (useTemplateScope && template.isFullScopeAllowed()) || client.isFullScopeAllowed();
-
+        boolean fullScopeAllowed = client.isFullScopeAllowed();
         Set<RoleModel> clientRoleMappings = client.getRoles();
         if (fullScopeAllowed) {
             return clientRoleMappings::contains;
@@ -127,16 +127,16 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
         Set<RoleModel> scopeMappings = new HashSet<>();
 
-        if (useTemplateScope) {
-            Set<RoleModel> templateScopeMappings = template.getScopeMappings();
-            if (templateScopeMappings != null) {
-                scopeMappings.addAll(templateScopeMappings);
-            }
+        // Add scope mappings of current client + all clientScopes of this client (including optional scopes if scope parameter matches)
+        String scopeParam = null;
+        AuthenticatedClientSessionModel authClientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (authClientSession != null) {
+            scopeParam = authClientSession.getNote(OAuth2Constants.SCOPE);
         }
 
-        Set<RoleModel> clientScopeMappings = client.getScopeMappings();
-        if (clientScopeMappings != null) {
-            scopeMappings.addAll(clientScopeMappings);
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
+        for (ClientScopeModel clientScope : clientScopes) {
+            scopeMappings.addAll(clientScope.getScopeMappings());
         }
 
         return role -> clientRoleMappings.contains(role) && scopeMappings.contains(role);
@@ -155,10 +155,9 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
                                              String tokenClaimName,
                                              boolean accessToken, boolean idToken, boolean multiValued) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-          tokenClaimName, "String",
-          true, name,
-          accessToken, idToken,
-          PROVIDER_ID);
+                tokenClaimName, "String",
+                accessToken, idToken,
+                PROVIDER_ID);
 
         mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
         mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, clientId);

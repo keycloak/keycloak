@@ -75,8 +75,6 @@ public class DistributedCacheConcurrentWritesTest {
         clientSession.setAuthMethod("saml");
         clientSession.setAction("something");
         clientSession.setTimestamp(1234);
-        clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
-        clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
         session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         cache1.put("123", session);

@@ -327,8 +327,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
                                 .addColumnValue("ID", mapperId)
                                 .addColumnValue("PROTOCOL", protocolMapper.getProtocol())
                                 .addColumnValue("NAME", protocolMapper.getName())
-                                .addColumnValue("CONSENT_REQUIRED", protocolMapper.isConsentRequired())
-                                .addColumnValue("CONSENT_TEXT", protocolMapper.getConsentText())
+                                .addColumnValue("CONSENT_REQUIRED", false)
                                 .addColumnValue("PROTOCOL_MAPPER_NAME", protocolMapper.getProtocolMapper())
                                 .addColumnValue("CLIENT_ID", resultSet.getString("ID"));
                         statements.add(insert);

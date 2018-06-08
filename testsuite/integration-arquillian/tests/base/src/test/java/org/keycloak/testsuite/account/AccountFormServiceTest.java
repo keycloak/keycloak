@@ -990,46 +990,43 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
-        Assert.assertEquals(3, accountEntry.getRolesAvailable().size());
+        Assert.assertEquals(4, accountEntry.getRolesAvailable().size());
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account links in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
-        Assert.assertEquals(1, accountEntry.getRolesGranted().size());
-        Assert.assertTrue(accountEntry.getRolesGranted().contains("Full Access"));
-        Assert.assertEquals(1, accountEntry.getProtocolMappersGranted().size());
-        Assert.assertTrue(accountEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Offline access"));
+        Assert.assertEquals(1, accountEntry.getClientScopesGranted().size());
+        Assert.assertTrue(accountEntry.getClientScopesGranted().contains("Full Access"));
         Assert.assertEquals("http://localhost:8180/auth/realms/test/account", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
         Assert.assertEquals(5, testAppEntry.getRolesAvailable().size());
         Assert.assertTrue(testAppEntry.getRolesAvailable().contains("Offline access"));
-        Assert.assertTrue(testAppEntry.getRolesGranted().contains("Full Access"));
-        Assert.assertTrue(testAppEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertTrue(testAppEntry.getClientScopesGranted().contains("Full Access"));
         Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", testAppEntry.getHref());
 
         AccountApplicationsPage.AppEntry thirdPartyEntry = apps.get("third-party");
-        Assert.assertEquals(2, thirdPartyEntry.getRolesAvailable().size());
+        Assert.assertEquals(3, thirdPartyEntry.getRolesAvailable().size());
         Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have User privileges"));
         Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have Customer User privileges in test-app"));
-        Assert.assertEquals(0, thirdPartyEntry.getRolesGranted().size());
-        Assert.assertEquals(0, thirdPartyEntry.getProtocolMappersGranted().size());
+        Assert.assertEquals(0, thirdPartyEntry.getClientScopesGranted().size());
         Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", thirdPartyEntry.getHref());
-        
+
         AccountApplicationsPage.AppEntry testAppNamed = apps.get("Test App Named - ${client_account}");
         Assert.assertEquals("http://localhost:8180/varnamedapp/base", testAppNamed.getHref());
-        
+
         AccountApplicationsPage.AppEntry rootUrlClient = apps.get("root-url-client");
         Assert.assertEquals("http://localhost:8180/foo/bar/baz", rootUrlClient.getHref());
-        
+
         AccountApplicationsPage.AppEntry authzApp = apps.get("test-app-authz");
         Assert.assertEquals("http://localhost:8180/test-app-authz", authzApp.getHref());
-        
+
         AccountApplicationsPage.AppEntry namedApp = apps.get("My Named Test App");
         Assert.assertEquals("http://localhost:8180/namedapp/base", namedApp.getHref());
-        
+
         AccountApplicationsPage.AppEntry testAppScope = apps.get("test-app-scope");
         Assert.assertNull(testAppScope.getHref());
     }

@@ -22,13 +22,13 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -46,14 +46,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base resource class for managing a realm's client templates.
+ * Base resource class for managing a realm's client scopes.
  *
- * @resource Client Templates
+ * @resource Client Scopes
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientTemplatesResource {
-    protected static final Logger logger = Logger.getLogger(ClientTemplatesResource.class);
+public class ClientScopesResource {
+    protected static final Logger logger = Logger.getLogger(ClientScopesResource.class);
     protected RealmModel realm;
     private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
@@ -61,31 +61,34 @@ public class ClientTemplatesResource {
     @Context
     protected KeycloakSession session;
 
-    public ClientTemplatesResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    @Context
+    protected UriInfo uriInfo;
+
+    public ClientScopesResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_TEMPLATE);
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_SCOPE);
     }
 
     /**
-     * Get client templates belonging to the realm
+     * Get client scopes belonging to the realm
      *
-     * Returns a list of client templates belonging to the realm
+     * Returns a list of client scopes belonging to the realm
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientTemplateRepresentation> getClientTemplates() {
-        auth.clients().requireListTemplates();
+    public List<ClientScopeRepresentation> getClientScopes() {
+        auth.clients().requireListClientScopes();
 
-        List<ClientTemplateRepresentation> rep = new ArrayList<>();
-        List<ClientTemplateModel> clientModels = realm.getClientTemplates();
+        List<ClientScopeRepresentation> rep = new ArrayList<>();
+        List<ClientScopeModel> clientModels = realm.getClientScopes();
 
-        boolean viewable = auth.clients().canViewTemplates();
-        for (ClientTemplateModel clientModel : clientModels) {
+        boolean viewable = auth.clients().canViewClientScopes();
+        for (ClientScopeModel clientModel : clientModels) {
             if (viewable) rep.add(ModelToRepresentation.toRepresentation(clientModel));
             else {
-                ClientTemplateRepresentation tempRep = new ClientTemplateRepresentation();
+                ClientScopeRepresentation tempRep = new ClientScopeRepresentation();
                 tempRep.setName(clientModel.getName());
                 tempRep.setId(clientModel.getId());
                 tempRep.setProtocol(clientModel.getProtocol());
@@ -95,44 +98,45 @@ public class ClientTemplatesResource {
     }
 
     /**
-     * Create a new client template
+     * Create a new client scope
      *
-     * Client Template's name must be unique!
+     * Client Scope's name must be unique!
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createClientTemplate(final @Context UriInfo uriInfo, final ClientTemplateRepresentation rep) {
-        auth.clients().requireManageTemplates();
+    @NoCache
+    public Response createClientScope(ClientScopeRepresentation rep) {
+        auth.clients().requireManageClientScopes();
 
         try {
-            ClientTemplateModel clientModel = RepresentationToModel.createClientTemplate(session, realm, rep);
+            ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client Template " + rep.getName() + " already exists");
+            return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
         }
     }
 
     /**
-     * Base path for managing a specific client template.
+     * Base path for managing a specific client scope.
      *
-     * @param id id of client template (not name)
+     * @param id id of client scope (not name)
      * @return
      */
     @Path("{id}")
-    public ClientTemplateResource getClient(final @PathParam("id") String id) {
-        auth.clients().requireListTemplates();
-        ClientTemplateModel clientModel = realm.getClientTemplateById(id);
+    @NoCache
+    public ClientScopeResource getClientScope(final @PathParam("id") String id) {
+        auth.clients().requireListClientScopes();
+        ClientScopeModel clientModel = realm.getClientScopeById(id);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find client template");
+            throw new NotFoundException("Could not find client scope");
         }
-        ClientTemplateResource clientResource = new ClientTemplateResource(realm, auth, clientModel, session, adminEvent);
+        ClientScopeResource clientResource = new ClientScopeResource(realm, auth, clientModel, session, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;
     }

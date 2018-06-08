@@ -55,8 +55,6 @@ public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
         rep.setName(name);
         rep.setProtocolMapper(mapperType);
         rep.setConfig(config);
-        rep.setConsentRequired(true);
-        rep.setConsentText("Test Consent Text");
         return rep;
     }
 
@@ -77,8 +75,6 @@ public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
         assertNotNull(created);
         assertEquals(original.getName(), created.getName());
         assertEquals(original.getConfig(), created.getConfig());
-        assertEquals(original.getConsentText(), created.getConsentText());
-        assertEquals(original.isConsentRequired(), created.isConsentRequired());
         assertEquals(original.getProtocol(), created.getProtocol());
         assertEquals(original.getProtocolMapper(), created.getProtocolMapper());
     }

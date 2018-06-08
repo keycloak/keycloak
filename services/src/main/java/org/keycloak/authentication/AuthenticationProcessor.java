@@ -19,7 +19,6 @@ package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.common.ClientConnection;
@@ -33,6 +32,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -48,7 +48,6 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -57,7 +56,6 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -918,18 +916,18 @@ public class AuthenticationProcessor {
     }
 
     // May create userSession too
-    public AuthenticatedClientSessionModel attachSession() {
-        AuthenticatedClientSessionModel clientSession = attachSession(authenticationSession, userSession, session, realm, connection, event);
+    public ClientSessionContext attachSession() {
+        ClientSessionContext clientSessionCtx = attachSession(authenticationSession, userSession, session, realm, connection, event);
 
         if (userSession == null) {
-            userSession = clientSession.getUserSession();
+            userSession = clientSessionCtx.getClientSession().getUserSession();
         }
 
-        return clientSession;
+        return clientSessionCtx;
     }
 
     // May create new userSession too (if userSession argument is null)
-    public static AuthenticatedClientSessionModel attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
+    public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
         String username = authSession.getAuthenticatedUser().getUsername();
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
@@ -964,13 +962,13 @@ public class AuthenticationProcessor {
             event.detail(Details.REMEMBER_ME, "true");
         }
 
-        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)
                 .session(userSession);
 
-        return clientSession;
+        return clientSessionCtx;
     }
 
     public void evaluateRequiredActionTriggers() {
@@ -980,8 +978,8 @@ public class AuthenticationProcessor {
     public Response finishAuthentication(LoginProtocol protocol) {
         event.success();
         RealmModel realm = authenticationSession.getRealm();
-        AuthenticatedClientSessionModel clientSession = attachSession();
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession,clientSession, request, uriInfo, connection, event, protocol);
+        ClientSessionContext clientSessionCtx = attachSession();
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, connection, event, protocol);
 
     }
 
@@ -998,7 +996,7 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
-        AuthenticationManager.setRolesAndMappersInSession(authenticationSession);
+        AuthenticationManager.setClientScopesInSession(authenticationSession);
 
         String nextRequiredAction = nextRequiredAction();
         if (nextRequiredAction != null) {

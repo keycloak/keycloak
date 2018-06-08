@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -29,6 +30,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.storage.client.ClientStorageProviderModel;
@@ -50,33 +52,21 @@ public class UserConsentModelTest extends AbstractModelTest {
         ClientModel fooClient = realm.addClient("foo-client");
         ClientModel barClient = realm.addClient("bar-client");
 
-        RoleModel realmRole = realm.addRole("realm-role");
-        RoleModel barClientRole = barClient.addRole("bar-client-role");
+        ClientScopeModel fooScope = realm.addClientScope("foo");
+        fooScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-        ProtocolMapperModel fooMapper = new ProtocolMapperModel();
-        fooMapper.setName("foo");
-        fooMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        fooMapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
-        fooMapper = fooClient.addProtocolMapper(fooMapper);
-
-        ProtocolMapperModel barMapper = new ProtocolMapperModel();
-        barMapper.setName("bar");
-        barMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        barMapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
-        barMapper = barClient.addProtocolMapper(barMapper);
+        ClientScopeModel barScope = realm.addClientScope("bar");
+        fooScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         UserModel john = session.users().addUser(realm, "john");
         UserModel mary = session.users().addUser(realm, "mary");
 
         UserConsentModel johnFooGrant = new UserConsentModel(fooClient);
-        johnFooGrant.addGrantedRole(realmRole);
-        johnFooGrant.addGrantedRole(barClientRole);
-        johnFooGrant.addGrantedProtocolMapper(fooMapper);
+        johnFooGrant.addGrantedClientScope(fooScope);
         realmManager.getSession().users().addConsent(realm, john.getId(), johnFooGrant);
 
         UserConsentModel johnBarGrant = new UserConsentModel(barClient);
-        johnBarGrant.addGrantedProtocolMapper(barMapper);
-        johnBarGrant.addGrantedRole(realmRole);
+        johnBarGrant.addGrantedClientScope(barScope);
 
         // Update should fail as grant doesn't yet exists
         try {
@@ -88,8 +78,7 @@ public class UserConsentModelTest extends AbstractModelTest {
         realmManager.getSession().users().addConsent(realm, john.getId(), johnBarGrant);
 
         UserConsentModel maryFooGrant = new UserConsentModel(fooClient);
-        maryFooGrant.addGrantedRole(realmRole);
-        maryFooGrant.addGrantedProtocolMapper(fooMapper);
+        maryFooGrant.addGrantedClientScope(fooScope);
         realmManager.getSession().users().addConsent(realm, mary.getId(), maryFooGrant);
 
         ClientStorageProviderModel clientStorage = new ClientStorageProviderModel();
@@ -121,35 +110,26 @@ public class UserConsentModelTest extends AbstractModelTest {
         UserModel mary = session.users().getUserByUsername("mary", realm);
 
         UserConsentModel johnFooConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
-        Assert.assertEquals(johnFooConsent.getGrantedRoles().size(), 2);
-        Assert.assertEquals(johnFooConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertTrue(isRoleGranted(realm, "realm-role", johnFooConsent));
-        Assert.assertTrue(isRoleGranted(barClient, "bar-client-role", johnFooConsent));
-        Assert.assertTrue(isMapperGranted(fooClient, "foo", johnFooConsent));
+        Assert.assertEquals(johnFooConsent.getGrantedClientScopes().size(), 1);
+        Assert.assertTrue(isClientScopeGranted(realm, "foo", johnFooConsent));
         Assert.assertNotNull("Created Date should be set", johnFooConsent.getCreatedDate());
         Assert.assertNotNull("Last Updated Date should be set", johnFooConsent.getLastUpdatedDate());
 
         UserConsentModel johnBarConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), barClient.getId());
-        Assert.assertEquals(johnBarConsent.getGrantedRoles().size(), 1);
-        Assert.assertEquals(johnBarConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertTrue(isRoleGranted(realm, "realm-role", johnBarConsent));
-        Assert.assertTrue(isMapperGranted(barClient, "bar", johnBarConsent));
+        Assert.assertEquals(johnBarConsent.getGrantedClientScopes().size(), 1);
+        Assert.assertTrue(isClientScopeGranted(realm, "bar", johnBarConsent));
         Assert.assertNotNull("Created Date should be set", johnBarConsent.getCreatedDate());
         Assert.assertNotNull("Last Updated Date should be set", johnBarConsent.getLastUpdatedDate());
 
         UserConsentModel maryConsent = realmManager.getSession().users().getConsentByClient(realm, mary.getId(), fooClient.getId());
-        Assert.assertEquals(maryConsent.getGrantedRoles().size(), 1);
-        Assert.assertEquals(maryConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertTrue(isRoleGranted(realm, "realm-role", maryConsent));
-        Assert.assertFalse(isRoleGranted(barClient, "bar-client-role", maryConsent));
-        Assert.assertTrue(isMapperGranted(fooClient, "foo", maryConsent));
+        Assert.assertEquals(maryConsent.getGrantedClientScopes().size(), 1);
+        Assert.assertTrue(isClientScopeGranted(realm, "foo", maryConsent));
         Assert.assertNotNull("Created Date should be set", maryConsent.getCreatedDate());
         Assert.assertNotNull("Last Updated Date should be set", maryConsent.getLastUpdatedDate());
 
         ClientModel hardcodedClient = session.realms().getClientByClientId("hardcoded-client", realm);
         UserConsentModel maryHardcodedConsent = realmManager.getSession().users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId());
-        Assert.assertEquals(maryHardcodedConsent.getGrantedRoles().size(), 0);
-        Assert.assertEquals(maryHardcodedConsent.getGrantedProtocolMappers().size(), 0);
+        Assert.assertEquals(maryHardcodedConsent.getGrantedClientScopes().size(), 0);
         Assert.assertNotNull("Created Date should be set", maryHardcodedConsent.getCreatedDate());
         Assert.assertNotNull("Last Updated Date should be set", maryHardcodedConsent.getLastUpdatedDate());
 
@@ -180,34 +160,25 @@ public class UserConsentModelTest extends AbstractModelTest {
 
         }
         Assert.assertEquals(maryConsent.getClient().getId(), fooClient.getId());
-        Assert.assertEquals(maryConsent.getGrantedRoles().size(), 1);
-        Assert.assertEquals(maryConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertTrue(isRoleGranted(realm, "realm-role", maryConsent));
-        Assert.assertTrue(isMapperGranted(fooClient, "foo", maryConsent));
+        Assert.assertEquals(maryConsent.getGrantedClientScopes().size(), 1);
+        Assert.assertTrue(isClientScopeGranted(realm, "foo", maryConsent));
 
         Assert.assertEquals(maryHardcodedConsent.getClient().getId(), hardcodedClient.getId());
-        Assert.assertEquals(maryHardcodedConsent.getGrantedRoles().size(), 0);
-        Assert.assertEquals(maryHardcodedConsent.getGrantedProtocolMappers().size(), 0);
+        Assert.assertEquals(maryHardcodedConsent.getGrantedClientScopes().size(), 0);
     }
 
     @Test
-    public void updateWithRoleRemovalTest() {
+    public void updateWithClientScopeRemovalTest() {
         RealmModel realm = realmManager.getRealm("original");
         ClientModel fooClient = realm.getClientByClientId("foo-client");
         UserModel john = session.users().getUserByUsername("john", realm);
 
         UserConsentModel johnConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
+        Assert.assertEquals(1, johnConsent.getGrantedClientScopes().size());
 
         // Remove foo protocol mapper from johnConsent
-        ProtocolMapperModel protMapperModel = fooClient.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "foo");
-        johnConsent.getGrantedProtocolMappers().remove(protMapperModel);
-
-        // Remove realm-role and add new-realm-role to johnConsent
-        RoleModel realmRole = realm.getRole("realm-role");
-        johnConsent.getGrantedRoles().remove(realmRole);
-
-        RoleModel newRealmRole = realm.addRole("new-realm-role");
-        johnConsent.addGrantedRole(newRealmRole);
+        ClientScopeModel fooScope = KeycloakModelUtils.getClientScopeByName(realm, "foo");
+        johnConsent.getGrantedClientScopes().remove(fooScope);
 
         realmManager.getSession().users().updateConsent(realm, john.getId(), johnConsent);
 
@@ -218,11 +189,7 @@ public class UserConsentModelTest extends AbstractModelTest {
         john = session.users().getUserByUsername("john", realm);
         johnConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
 
-        Assert.assertEquals(johnConsent.getGrantedRoles().size(), 2);
-        Assert.assertEquals(johnConsent.getGrantedProtocolMappers().size(), 0);
-        Assert.assertFalse(isRoleGranted(realm, "realm-role", johnConsent));
-        Assert.assertTrue(isRoleGranted(realm, "new-realm-role", johnConsent));
-        Assert.assertFalse(isMapperGranted(fooClient, "foo", johnConsent));
+        Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
         Assert.assertTrue("Created date should be less than last updated date", johnConsent.getCreatedDate() < johnConsent.getLastUpdatedDate());
     }
 
@@ -257,11 +224,11 @@ public class UserConsentModelTest extends AbstractModelTest {
     }
 
     @Test
-    public void deleteProtocolMapperTest() {
+    public void deleteClientScopeTest() {
         RealmModel realm = realmManager.getRealm("original");
         ClientModel fooClient = realm.getClientByClientId("foo-client");
-        ProtocolMapperModel fooMapper = fooClient.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "foo");
-        fooClient.removeProtocolMapper(fooMapper);
+        ClientScopeModel fooScope = KeycloakModelUtils.getClientScopeByName(realm, "foo");
+        realm.removeClientScope(fooScope.getId());
 
         commit();
 
@@ -270,29 +237,7 @@ public class UserConsentModelTest extends AbstractModelTest {
         UserModel john = session.users().getUserByUsername("john", realm);
         UserConsentModel johnConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
 
-        Assert.assertEquals(johnConsent.getGrantedRoles().size(), 2);
-        Assert.assertEquals(johnConsent.getGrantedProtocolMappers().size(), 0);
-        Assert.assertFalse(johnConsent.isProtocolMapperGranted(fooMapper));
-    }
-
-    @Test
-    public void deleteRoleTest() {
-        RealmModel realm = realmManager.getRealm("original");
-        RoleModel realmRole = realm.getRole("realm-role");
-        realm.removeRole(realmRole);
-
-        commit();
-
-        realm = realmManager.getRealm("original");
-        ClientModel fooClient = realm.getClientByClientId("foo-client");
-        ClientModel barClient = realm.getClientByClientId("bar-client");
-        UserModel john = session.users().getUserByUsername("john", realm);
-        UserConsentModel johnConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
-
-        Assert.assertEquals(johnConsent.getGrantedRoles().size(), 1);
-        Assert.assertEquals(johnConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertFalse(johnConsent.isRoleGranted(realmRole));
-        Assert.assertTrue(isRoleGranted(barClient, "bar-client-role", johnConsent));
+        Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
     }
 
     @Test
@@ -310,10 +255,8 @@ public class UserConsentModelTest extends AbstractModelTest {
         UserModel john = session.users().getUserByUsername("john", realm);
 
         UserConsentModel johnFooConsent = realmManager.getSession().users().getConsentByClient(realm, john.getId(), fooClient.getId());
-        Assert.assertEquals(johnFooConsent.getGrantedRoles().size(), 1);
-        Assert.assertEquals(johnFooConsent.getGrantedProtocolMappers().size(), 1);
-        Assert.assertTrue(isRoleGranted(realm, "realm-role", johnFooConsent));
-        Assert.assertTrue(isMapperGranted(fooClient, "foo", johnFooConsent));
+        Assert.assertEquals(johnFooConsent.getGrantedClientScopes().size(), 1);
+        Assert.assertTrue(isClientScopeGranted(realm, "foo", johnFooConsent));
 
         Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, john.getId(), barClient.getId()));
     }
@@ -336,13 +279,8 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertEquals(1, maryConsents.size());
     }
 
-    private boolean isRoleGranted(RoleContainerModel roleContainer, String roleName, UserConsentModel consentModel) {
-        RoleModel role = roleContainer.getRole(roleName);
-        return consentModel.isRoleGranted(role);
-    }
-
-    private boolean isMapperGranted(ClientModel client, String protocolMapperName, UserConsentModel consentModel) {
-        ProtocolMapperModel protocolMapper = client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, protocolMapperName);
-        return consentModel.isProtocolMapperGranted(protocolMapper);
+    private boolean isClientScopeGranted(RealmModel realm, String scopeName, UserConsentModel consentModel) {
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, scopeName);
+        return consentModel.isClientScopeGranted(clientScope);
     }
 }

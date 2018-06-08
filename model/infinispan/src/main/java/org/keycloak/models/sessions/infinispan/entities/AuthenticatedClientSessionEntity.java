@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.infinispan.commons.marshall.Externalizer;
@@ -49,8 +48,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     private volatile int timestamp;
     private String action;
 
-    private Set<String> roles;
-    private Set<String> protocolMappers;
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
     private String currentRefreshToken;
@@ -92,22 +89,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     public void setAction(String action) {
         this.action = action;
-    }
-
-    public Set<String> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<String> roles) {
-        this.roles = roles;
-    }
-
-    public Set<String> getProtocolMappers() {
-        return protocolMappers;
-    }
-
-    public void setProtocolMappers(Set<String> protocolMappers) {
-        this.protocolMappers = protocolMappers;
     }
 
     public Map<String, String> getNotes() {
@@ -199,9 +180,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = session.getNotes();
             KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
 
-            KeycloakMarshallUtil.writeCollection(session.getProtocolMappers(), KeycloakMarshallUtil.STRING_EXT, output);
-            KeycloakMarshallUtil.writeCollection(session.getRoles(), KeycloakMarshallUtil.STRING_EXT, output);
-
             MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
             MarshallUtil.marshallInt(output, session.getCurrentRefreshTokenUseCount());
         }
@@ -221,12 +199,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
                     new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
             sessionEntity.setNotes(notes);
-
-            Set<String> protocolMappers = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, new KeycloakMarshallUtil.HashSetBuilder<>());
-            sessionEntity.setProtocolMappers(protocolMappers);
-
-            Set<String> roles = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, new KeycloakMarshallUtil.HashSetBuilder<>());
-            sessionEntity.setRoles(roles);
 
             sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
             sessionEntity.setCurrentRefreshTokenUseCount(MarshallUtil.unmarshallInt(input));

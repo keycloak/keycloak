@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -28,11 +29,13 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -43,9 +46,12 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -186,6 +192,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testCliConsoleScopeSize(this.migrationRealm);
     }
 
+    protected void testMigrationTo4_0_0() {
+        testRealmDefaultClientScopes(this.masterRealm);
+        testRealmDefaultClientScopes(this.migrationRealm);
+        testOfflineScopeAddedToClient();
+    }
+
     private void testCliConsoleScopeSize(RealmResource realm) {
         ClientRepresentation cli = realm.clients().findByClientId(Constants.ADMIN_CLI_CLIENT_ID).get(0);
         ClientRepresentation console = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
@@ -324,7 +336,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
                 RoleResource role = realm.roles().get(roleName); //throws javax.ws.rs.NotFoundException if not found
 
-                assertFalse("Role's scopeParamRequired should be false.", role.toRepresentation().isScopeParamRequired());
                 assertFalse("Role shouldn't be composite should be false.", role.toRepresentation().isComposite());
 
                 assertTrue("role should be added to default roles for new users", realm.toRepresentation().getDefaultRoles().contains(roleName));
@@ -380,21 +391,26 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         log.info("testing updated protocol mappers");
         for (RealmResource realm : realms) {
             for (ClientRepresentation client : realm.clients().findAll()) {
-                for (ProtocolMapperRepresentation protocolMapper : client.getProtocolMappers()) {
-                    testUpdateProtocolMapper(protocolMapper);
+                if (client.getProtocolMappers() != null) {
+                    for (ProtocolMapperRepresentation protocolMapper : client.getProtocolMappers()) {
+                        testUpdateProtocolMapper(protocolMapper, client.getClientId());
+                    }
                 }
             }
-            for (ClientTemplateRepresentation clientTemlate : realm.clientTemplates().findAll()) {
-                for (ProtocolMapperRepresentation protocolMapper : clientTemlate.getProtocolMappers()) {
-                    testUpdateProtocolMapper(protocolMapper);
+            for (ClientScopeRepresentation clientScope : realm.clientScopes().findAll()) {
+                if (clientScope.getProtocolMappers() != null) {
+                    for (ProtocolMapperRepresentation protocolMapper : clientScope.getProtocolMappers()) {
+                        testUpdateProtocolMapper(protocolMapper, clientScope.getName());
+                    }
                 }
             }
         }
     }
 
-    protected void testUpdateProtocolMapper(ProtocolMapperRepresentation protocolMapper) {
+    protected void testUpdateProtocolMapper(ProtocolMapperRepresentation protocolMapper, String clientId) {
         if (protocolMapper.getConfig().get("id.token.claim") != null) {
-            assertEquals("ProtocolMapper's config should contain key 'userinfo.token.claim'.",
+            assertEquals("ProtocolMapper's config should contain key 'userinfo.token.claim'. But it doesn't for protocolMapper '"
+                    + protocolMapper.getName() + "' of client/clientScope '" + clientId + "'",
                     protocolMapper.getConfig().get("id.token.claim"), protocolMapper.getConfig().get("userinfo.token.claim"));
         }
     }
@@ -424,6 +440,28 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
     }
 
+    private void testRealmDefaultClientScopes(RealmResource realm) {
+        log.info("Testing default client scopes created in realm: " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testRealmDefaultClientScopes(realm);
+    }
+
+    private void testOfflineScopeAddedToClient() {
+        log.infof("Testing offline_access optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
+
+        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+
+        boolean found = optionalClientScopes.stream().filter((ClientScopeRepresentation clientScope) -> {
+
+            return "offline_access".equals(clientScope.getName());
+
+        }).findFirst().isPresent();
+
+        if (!found) {
+            Assert.fail("Offline_access not found as optional scope of client migration-test-client");
+        }
+
+    }
+
     protected String getMigrationMode() {
         return System.getProperty("migration.mode");
     }
@@ -441,9 +479,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo3_4_2();
     }
 
+    protected void testMigrationTo4_x() {
+        testMigrationTo4_0_0();
+    }
+
 
     protected void testMigrationTo3_x_and_higher() {
         // NOTE: add future methods
         testMigrationTo3_x();
+        testMigrationTo4_x();
     }
 }

@@ -1,7 +1,7 @@
 package org.keycloak.models.cache.infinispan.stream;
 
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
-import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
@@ -55,9 +55,9 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>
             if (cachedClient.getScope().contains(role)) return true;
 
         }
-        if (value instanceof CachedClientTemplate) {
-            CachedClientTemplate cachedClientTemplate = (CachedClientTemplate)value;
-            if (cachedClientTemplate.getScope().contains(role)) return true;
+        if (value instanceof CachedClientScope) {
+            CachedClientScope cachedClientScope = (CachedClientScope)value;
+            if (cachedClientScope.getScope().contains(role)) return true;
 
         }
         return false;

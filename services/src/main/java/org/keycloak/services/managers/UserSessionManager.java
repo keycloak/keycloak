@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -122,14 +123,21 @@ public class UserSessionManager {
         persister.removeUserSession(userSession.getId(), true);
     }
 
-    public boolean isOfflineTokenAllowed(AuthenticatedClientSessionModel clientSession) {
-        RoleModel offlineAccessRole = clientSession.getRealm().getRole(Constants.OFFLINE_ACCESS_ROLE);
+    public boolean isOfflineTokenAllowed(ClientSessionContext clientSessionCtx) {
+        RoleModel offlineAccessRole = clientSessionCtx.getClientSession().getRealm().getRole(Constants.OFFLINE_ACCESS_ROLE);
         if (offlineAccessRole == null) {
             ServicesLogger.LOGGER.roleNotInRealm(Constants.OFFLINE_ACCESS_ROLE);
             return false;
         }
 
-        return clientSession.getRoles().contains(offlineAccessRole.getId());
+        // Check if offline_access is allowed here. Even through composite roles
+        for (RoleModel role : clientSessionCtx.getRoles()) {
+            if (role.hasRole(offlineAccessRole)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private UserSessionModel createOfflineUserSession(UserModel user, UserSessionModel userSession) {

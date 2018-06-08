@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,9 +104,8 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         RealmModel realm = session.realms().getRealmByName("demo");
         ClientModel product = session.realms().getClientByClientId("product-portal", realm);
         product.setConsentRequired(true);
-        ClientTemplateModel clientTemplate = realm.addClientTemplate("template");
-        clientTemplate.setFullScopeAllowed(true);
-        System.err.println("client template protocol mappers size: " + clientTemplate.getProtocolMappers().size());
+        ClientScopeModel clientScope = realm.addClientScope("clientScope");
+        System.err.println("client scope protocol mappers size: " + clientScope.getProtocolMappers().size());
 
         for (ProtocolMapperModel mapper : product.getProtocolMappers()) {
             if (mapper.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
@@ -120,16 +120,12 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
                     config.putAll(mapper.getConfig());
                     copy.setConfig(config);
                     copy.setProtocolMapper(mapper.getProtocolMapper());
-                    copy.setConsentText(mapper.getConsentText());
-                    clientTemplate.addProtocolMapper(copy);
+                    clientScope.addProtocolMapper(copy);
                 }
             }
             product.removeProtocolMapper(mapper);
         }
-        product.setClientTemplate(clientTemplate);
-        product.setUseTemplateMappers(true);
-        product.setUseTemplateScope(true);
-        product.setUseTemplateConfig(false);
+        product.addClientScope(clientScope, true);
     }
 
     /**

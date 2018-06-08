@@ -30,7 +30,7 @@ public interface CacheRealmProvider extends RealmProvider {
     void registerRealmInvalidation(String id, String name);
 
     void registerClientInvalidation(String id, String clientId, String realmId);
-    void registerClientTemplateInvalidation(String id);
+    void registerClientScopeInvalidation(String id);
 
     void registerRoleInvalidation(String id, String roleName, String roleContainerId);
 

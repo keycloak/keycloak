@@ -46,7 +46,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -57,7 +57,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -101,14 +101,24 @@ public class ExportUtils {
         // Project/product version
         rep.setKeycloakVersion(Version.VERSION);
 
-        // Client Templates
-        List<ClientTemplateModel> templates = realm.getClientTemplates();
-        List<ClientTemplateRepresentation> templateReps = new ArrayList<>();
-        for (ClientTemplateModel app : templates) {
-            ClientTemplateRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
-            templateReps.add(clientRep);
+        // Client Scopes
+        List<ClientScopeModel> clientScopeModels = realm.getClientScopes();
+        List<ClientScopeRepresentation> clientScopesReps = new ArrayList<>();
+        for (ClientScopeModel app : clientScopeModels) {
+            ClientScopeRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
+            clientScopesReps.add(clientRep);
         }
-        rep.setClientTemplates(templateReps);
+        rep.setClientScopes(clientScopesReps);
+
+        List<String> defaultClientScopeNames = realm.getDefaultClientScopes(true).stream().map((ClientScopeModel clientScope) -> {
+            return clientScope.getName();
+        }).collect(Collectors.toList());
+        rep.setDefaultDefaultClientScopes(defaultClientScopeNames);
+
+        List<String> optionalClientScopeNames = realm.getDefaultClientScopes(false).stream().map((ClientScopeModel clientScope) -> {
+            return clientScope.getName();
+        }).collect(Collectors.toList());
+        rep.setDefaultOptionalClientScopes(optionalClientScopeNames);
 
         // Clients
         List<ClientModel> clients = Collections.emptyList();
@@ -196,14 +206,14 @@ public class ExportUtils {
             }
         }
 
-        // Scopes of client templates
-        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-            Set<RoleModel> clientScopes = clientTemplate.getScopeMappings();
+        // Scopes of client scopes
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            Set<RoleModel> clientScopes = clientScope.getScopeMappings();
             ScopeMappingRepresentation scopeMappingRep = null;
             for (RoleModel scope : clientScopes) {
                 if (scope.getContainer() instanceof RealmModel) {
                     if (scopeMappingRep == null) {
-                        scopeMappingRep = rep.clientTemplateScopeMapping(clientTemplate.getName());
+                        scopeMappingRep = rep.clientScopeScopeMapping(clientScope.getName());
                     }
                     scopeMappingRep.role(scope.getName());
                 } else {
@@ -217,14 +227,14 @@ public class ExportUtils {
 
                     ScopeMappingRepresentation currentClientTemplateScope = null;
                     for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
-                        if (clientTemplate.getName().equals(scopeMapping.getClientTemplate())) {
+                        if (clientScope.getName().equals(scopeMapping.getClientScope())) {
                             currentClientTemplateScope = scopeMapping;
                             break;
                         }
                     }
                     if (currentClientTemplateScope == null) {
                         currentClientTemplateScope = new ScopeMappingRepresentation();
-                        currentClientTemplateScope.setClientTemplate(clientTemplate.getName());
+                        currentClientTemplateScope.setClientScope(clientScope.getName());
                         currentAppScopes.add(currentClientTemplateScope);
                     }
                     currentClientTemplateScope.role(scope.getName());
