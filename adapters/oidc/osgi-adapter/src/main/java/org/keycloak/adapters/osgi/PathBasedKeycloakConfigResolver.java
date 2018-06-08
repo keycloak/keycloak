@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,13 +35,35 @@ public class PathBasedKeycloakConfigResolver implements KeycloakConfigResolver {
 
     @Override
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
-        String path = request.getURI();
-        String[] urlTokens = path.split("/");
-        if (urlTokens.length <  4) {
-            throw new IllegalStateException("Not able to determine the web-context to load the correspondent keycloak.json file");
-        }
+        String uri = request.getURI();
+        String relativePath = request.getRelativePath();
+        String webContext = null;
+        if (relativePath == null || !uri.contains(relativePath)) {
+            String[] urlTokens = uri.split("/");
+            if (urlTokens.length <  4) {
+                throw new IllegalStateException("Not able to determine the web-context to load the correspondent keycloak.json file");
+            }
 
-        String webContext = urlTokens[3];
+            webContext = urlTokens[3];
+        } else {
+            URI parsedURI = URI.create(uri);
+            String path = parsedURI.getPath();
+            path = path.substring(0, path.indexOf(relativePath));
+            while (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            webContext = path;
+            if ("".equals(webContext)) {
+                path = relativePath;
+                while (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                if (path.contains("/")) {
+                    path = path.substring(0, path.indexOf("/"));
+                }
+                webContext = path;
+            }
+        }
 
         KeycloakDeployment deployment = cache.get(webContext);
         if (null == deployment) {
@@ -54,7 +77,8 @@ public class PathBasedKeycloakConfigResolver implements KeycloakConfigResolver {
                 keycloakConfig = karafEtc;
             }
 
-            String absolutePath = keycloakConfig + File.separator + webContext + "-keycloak.json";
+            String absolutePath = keycloakConfig + File.separator + webContext + ("".equals(webContext) ? "" : "-")
+                    + "keycloak.json";
             InputStream is = null;
             try {
                 is = new FileInputStream(absolutePath);
