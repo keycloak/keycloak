@@ -1,0 +1,164 @@
+[[_client_scopes]]
+=== Client Scopes
+
+If you have many applications you need to secure and register within your organization, it can become tedious to configure the
+<<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for each of these clients. {project_name} allows
+you to define a shared client configuration in an entity called a _client scope_.
+
+Client scopes also provide support for the OAuth 2 `scope` parameter, which allows a client application to request more or fewer
+claims or roles in the access token, according to the application needs.
+
+To create a client scope, follow these steps:
+
+* Go to the `Client Scopes` left menu item. This initial screen shows you a list of currently defined client scopes.
+
+.Client Scopes List
+image:{project_images}/client-scopes-list.png[]
+
+* Click the `Create` button. Name the client scope and save. A _client scope_ will have similar tabs to a regular clients. You can
+define <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>>, which can be inherited by other clients,
+and which are configured to inherit from this client scope.
+
+==== Protocol
+
+When you are creating the client scope, you must choose the `Protocol`. Only the clients which use same protocol can then be linked
+with this client scope.
+
+Once you have created new realm, you can see that there is a list of pre-defined (builtin) client scopes in the menu.
+
+* For the SAML protocol, there is one builtin client scope, `roles_list`, which contains one protocol mapper for showing the roles
+list in the SAML assertion.
+* For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone` and `offline_access` .
+
+The client scope, `offline_access`, is useful when client wants to obtain offline tokens. Learn about offline tokens in the
+<<_offline-access, Offline Access section>> or in the http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification],
+where scope parameter is defined with the value `offline_access`.
+
+The client scopes `profile`, `email`, `address` and `phone` are also defined in the http://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[OpenID Connect specification].
+These client scopes do not have any role scope mappings defined, but they have some protocol mappers defined, and these mappers correspond
+to the claims defined in the OpenID Connect specification.
+
+For example, when you click to open the `phone` client scope and open the `Mappers` tab, you will see the protocol mappers, which
+correspond to the claims defined in the specification for the scope `phone`.
+
+.Client Scope Mappers
+image:{project_images}/client-scopes-phone.png[]
+
+When the `phone` client scope is linked to a client, that client automatically inherits all the protocol mappers defined in the
+`phone` client scope. Access tokens issued for this client will contain the phone number information about the user, assuming that
+the user has a defined phone number.
+
+Builtin client scopes contain exactly the protocol mappers as defined per the specification,
+however you are free to edit client scopes and create/update/remove any protocol mappers (or role scope mappings).
+
+==== Consent related settings
+
+Client scope contains options related to the consent screen. Those options are useful only if the linked client is configured to
+require consent (if the `Consent Required` switch is enabled on the client).
+
+Display On Consent Screen::
+  If on, and if this client scope is added to a client with consent required, then the text specified by `Consent Screen Text` will
+  be displayed on the consent screen, which is shown once the user is authenticated and right before he is redirected from {project_name}
+  to the client. If the switch is off, then this client scope will not be displayed on the consent screen.
+
+Consent Screen Text::
+  The text shown on the consent screen when this client scope is added to some client with consent required defaults to
+  the name of client scope. The value for this text is localizable by specifying a substitution variable
+  with `${var-name}` strings. The localized value is then configured within property files in your theme. See the
+  link:{developerguide_link}[{developerguide_name}] for more information on localization.
+
+[[_client_scopes_linking]]
+==== Link Client Scope with the Client
+
+Linking between client scope and client is configured in the `Client Scopes` tab of the particular client. There are 2 ways of
+linking between client scope and client.
+
+Default Client Scopes::
+  This is applicable for both OpenID Connect and SAML clients. Default client scopes are always applied when issuing OpenID Connect tokens
+  or SAML assertions for this client. The client will inherit Protocol mappers and Role Scope Mappings defined on the client
+  scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of value of used for the scope
+  parameter in the OpenID Connect authorization request.
+
+Optional Client Scopes::
+  This is applicable only for OpenID Connect clients. Optional client scopes are applied when issuing tokens for this client,
+  but only when they are requested by the `scope` parameter in the OpenID Connect authorization request.
+
+===== Example
+
+For this example, we assume that the client has `profile` and `email` linked as default client scopes, and `phone` and `address`
+are linked as optional client scopes. The client will use the value of the scope parameter when sending a request to the OpenID Connect authorization
+endpoint:
+
+```
+scope=openid phone
+```
+
+The scope parameter contains the string, with the scope values divided by space (which is also the reason why a client scope name
+cannot contain a space character in it). The value `openid` is the meta-value used for all OpenID Connect requests, so we will ignore
+it for this example. The token will contain mappers and role scope mappings from the client scopes `profile`, `email` (which are
+default scopes) and `phone` (an optional client scope requested by the scope parameter).
+
+==== Evaluating Client Scopes
+
+The tabs `Mappers` and `Scope` of the client contain the protocol mappers and role scope mappings declared solely for this client.
+They do not contain the mappers and scope mappings inherited from client scopes. However, it may be useful to see what the
+effective protocol mappers will be (protocol mappers defined on the client itself as well as inherited from the linked client scopes)
+and the effective role scope mappings used when you generate the token for the particular client.
+
+You can see all of these when you click the `Client Scopes` tab for the client and then open the sub-tab `Evaluate`. From here you
+can select the optional client scopes that you want to apply. This will also show you the value of the `scope` parameter, which needs to
+be sent from the application to the {project_name} OpenID Connect authorization endpoint.
+
+.Evaluating Client Scopes
+image:{project_images}/client-scopes-evaluate.png[]
+
+NOTE: If you want to see how you can send a custom value for a `scope` parameter from your application, see the
+link:{adapterguide_link}#_params_forwarding[parameters forwarding section], if your application uses the servlet adapter, or the
+link:{adapterguide_link}#_javascript_adapter[javascript adapter section], if your application uses the javascript adapter.
+
+===== Generating Example Tokens
+
+To see an example of a real access token, generated for the particular user and issued for the particular client, with the specified
+value of `scope` parameter, select the user from the `Evaluate` screen. This will generate an example token that includes all of the
+claims and role mappings used.
+
+==== Realm Default Client Scopes
+
+The `Realm Default Client Scopes` allow you to define set of client scopes, which will be automatically linked to newly created clients.
+
+Open the left menu item `Client Scopes` and then select `Default Client Scopes`.
+
+From here, select the client scopes that you want to add as `Default Client Scopes` to newly created clients and `Optional Client Scopes`
+to newly created clients.
+
+.Default Client Scopes
+image:{project_images}/client-scopes-default.png[]
+
+Once the client is created, you can unlink the default client scopes, if needed. This is similar to how you
+remove <<_default_roles, Default Roles>>.
+
+==== Scopes explained
+
+The term `scope` is used in {project_name} on few places. Various occurences of scopes are related to each other, but may have
+a different context and meaning. To clarify, here we explain the various `scopes` used in {project_name}.
+
+Client scope::
+  Referenced in this chapter. Client scopes are entities in {project_name}, which are configured at the realm level and they can be
+  linked to clients. The client scopes are referenced by their name when a request is sent to the {project_name} authorization endpoint
+  with a corresponding value of the `scope` parameter. The details are described in the <<_client_scopes_linking, section about
+  client scopes linking>>.
+
+Role scope mapping::
+  This can be seen when you open tab `Scope` of a client or client scope. Role scope mapping allows you to limit the roles which can
+  be used in the access tokens. The details are described in the <<_role_scope_mappings, Role Scope Mappings section>>.
+
+ifeval::[{project_community}==true]
+
+Authorization scopes::
+  This is used by the Authorization feature. The `Authorization Scope` is the action which can be done in the application.
+  More details in the link:{authorizationguide_link}[Authorization Services Guide].
+
+endif::[]
+
+
+

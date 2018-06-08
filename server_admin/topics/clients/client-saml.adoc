@@ -18,8 +18,6 @@ image:{project_images}/add-client-saml.png[]
 
 Enter in the `Client ID` of the client.  This is often a URL and will be the expected `issuer` value in SAML requests sent
 by the application.  Next select `saml` in the `Client Protocol` drop down box.
-Ignore the `Client Template` listbox for now,
-we'll go over that later in this chapter.
 Finally enter in the `Client SAML Endpoint` URL.  Enter the
 URL you want the {project_name} server to send SAML requests and responses to.  Usually applications have only one URL for processing SAML requests.
 If your application has different URLs for its bindings, don't worry, you can fix this in the `Settings` tab of the client.

@@ -10,9 +10,8 @@ To create a role, click *Add Role* on this page, enter in the name and descripti
 .Add Role
 image:{project_images}/role.png[]
 
-The value for the `description` field is localizable by specifying a substitution variable with `$\{var-name}` strings. The localized value is then configured within property files in your theme. See the link:{developerguide_link}[{developerguide_name}] for more information on localization. If a client requires user _consent_, this description string is displayed on the consent page for the user.
+The value for the `description` field is localizable by specifying a substitution variable with `$\{var-name}` strings. The localized
+value is then configured within property files in your theme. See the link:{developerguide_link}[{developerguide_name}] for more information
+on localization.
 
-If the client has to explicitly request for a realm role, set `Scope Param Required` to true. The role then has to be specified using the `scope` parameter when requesting a token. Multiple realm roles are separated by space:
-
-`scope=admin user`
 

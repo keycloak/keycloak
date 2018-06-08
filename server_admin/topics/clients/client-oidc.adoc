@@ -18,8 +18,6 @@ image:{project_images}/add-client-oidc.png[]
 Enter in the `Client ID` of the client.  This should be a simple
 alpha-numeric string that will be used in requests and in the {project_name} database to identify the client.
 Next select `openid-connect` in the `Client Protocol` drop down box.
-Ignore the `Client Template` listbox for now,
-we'll go over that later in this chapter.
 Finally enter in the base URL of your
 application in the `Root URL` field and click `Save`.  This will create the client and bring you to the client `Settings`
 tab.

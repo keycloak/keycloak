@@ -1,5 +1,40 @@
 == Migration Changes
 
+=== Migrating to 4.0.0
+
+==== Client Templates changed to Client Scopes
+
+We added support for Client Scopes, which requires some attention during migration.
+
+Client Templates changed to Client Scopes::
+  Client Templates were changed to Client Scopes. If you had any Client Templates, their protocol mappers and role scope mappings
+  will be preserved.
+
+Spaces replaced in the names::
+  Client templates with the space character in the name were renamed by replacing spaces with an underscore, because spaces are
+  not allowed in the name of client scopes. For example, a client template `my template` will be changed to client scope `my_template`.
+
+Linking Client Scopes to Clients::
+  For clients which had the client template, the corresponding client scope
+  is now added as `Default Client Scope` to the client. So protocol mappers and role scope mappings will be preserved on the client.
+
+Realm Default Client Scopes not linked with existing clients::
+  During the migration, the list of built-in client scopes is added to each realm as well as list of `Realm Default Client Scopes`. However,
+  existing clients are NOT upgraded and new client scopes are NOT automatically added to them. Also all the protocol mappers and role
+  scope mappings are kept on existing clients. In the new version, when you create a new client, it automatically has Realm Default Client Scopes
+  attached to it and it does not have any protocol mappers attached to it. We did not change existing clients during migration as it
+  would be impossible to properly detect customizations, which you will have for protocol mappers of the clients, for example. If you want to
+  update existing clients (remove protocol mappers from them and link them with client scopes), you will need to do it manually.
+
+Consents need to be confirmed again::
+  The client scopes change required the refactoring of consents. Consents now point to client scopes, not to roles or protocol mappers.
+  Because of this change, the previously confirmed persistent consents by users are not valid anymore and users need to confirm
+  the consent page again after the migration.
+
+Some configuration switches removed::
+  The switch `Scope Param Required` was removed from Role Detail. The switches `Consent Required` and `Consent Text` were removed
+  from the Protocol Mapper details. Those switches were replaced by the Client Scope feature.
+
 === Migrating to 3.4.2
 
 ==== Added session_state parameter to OpenID Connect Authentication Response

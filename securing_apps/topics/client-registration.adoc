@@ -190,15 +190,15 @@ Request sent from some untrusted IP will be rejected. URLs of newly registered c
 to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled.
 
 * Consent Required Policy - Newly registered clients will have `Consent Allowed` switch enabled. So after successful authentication, user will always
-see consent screen when he needs to approve personal info and permissions (protocol mappers and roles). It means that client won't have access to any personal
+see consent screen when he needs to approve permissions (client scopes). It means that client won't have access to any personal
 info or permission of user unless user approves it.
 
 * Protocol Mappers Policy - Allows to configure list of whitelisted protocol mapper implementations. New client can't be registered
 or updated if it contains some non-whitelisted protocol mapper. Note that this policy is used for authenticated requests as well, so
 even for authenticated request there are some limitations which protocol mappers can be used.
 
-* Client Template Policy - Allow to whitelist `Client Templates`, which can be used with newly registered or updated clients.
-There are no whitelisted templates by default.
+* Client Scope Policy - Allow to whitelist `Client Scopes`, which can be used with newly registered or updated clients.
+There are no whitelisted scopes by default; only the client scopes, which are defined as `Realm Default Client Scopes` are whitelisted by default.
 
 * Full Scope Policy - Newly registered clients will have `Full Scope Allowed` switch disabled. This means they won't have any scoped
 realm roles or client roles of other clients.

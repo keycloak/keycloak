@@ -42,9 +42,10 @@ consent::
   Consent is when you as an admin want a user to give permission to a client before that client can participate in the authentication process.
   After a user provides their credentials, {project_name} will pop up a screen identifying the client requesting a login and what identity
   information is requested of the user.  User can decide whether or not to grant the request.
-client templates::
-  When a client is registered you need to enter configuration information about that client.  It is often useful to store a template
-  to make create new clients easier.  {project_name} provides the concept of a client template for this.
+client scopes::
+  When a client is registered, you must define protocol mappers and role scope mappings for that client. It is often useful to store
+  a client scope, to make creating new clients easier by sharing some common settings. This is also useful for requesting some
+  claims or roles to be conditionally based on the value of `scope` parameter. {project_name} provides the concept of a client scope for this.
 client role::
   Clients can define roles that are specific to them.  This is basically a role namespace dedicated to the client.
 identity token::
