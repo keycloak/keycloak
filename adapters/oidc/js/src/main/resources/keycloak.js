@@ -46,11 +46,10 @@
             kc.authenticated = false;
 
             callbackStorage = createCallbackStorage();
+            var adapters = ['default', 'cordova', 'cordova-native'];
 
-            if (initOptions && initOptions.adapter === 'cordova') {
-                adapter = loadAdapter('cordova');
-            } else if (initOptions && initOptions.adapter === 'default') {
-                adapter = loadAdapter();
+            if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
+                adapter = loadAdapter(initOptions.adapter);
             } else if (initOptions && typeof initOptions.adapter === "object") {
                 adapter = initOptions.adapter;
             } else {
@@ -105,6 +104,10 @@
 
                 if (initOptions.timeSkew != null) {
                     kc.timeSkew = initOptions.timeSkew;
+                }
+
+                if(initOptions.redirectUri) {
+                    kc.redirectUri = initOptions.redirectUri;
                 }
             }
 
@@ -1335,6 +1338,75 @@
 
                     redirectUri: function(options) {
                         return 'http://localhost';
+                    }
+                }
+            }
+
+            if (type == 'cordova-native') {
+                loginIframe.enable = false;
+
+                return {
+                    login: function(options) {
+                        var promise = createPromise();
+                        var loginUrl = kc.createLoginUrl(options);
+
+                        universalLinks.subscribe('keycloak', function(event) {
+                            universalLinks.unsubscribe('keycloak');
+                            window.cordova.plugins.browsertab.close();
+                            var oauth = parseCallback(event.url);
+                            processCallback(oauth, promise);
+                        });
+
+                        window.cordova.plugins.browsertab.openUrl(loginUrl);
+                        return promise.promise;
+                    },
+
+                    logout: function(options) {
+                        var promise = createPromise();
+                        var logoutUrl = kc.createLogoutUrl(options);
+
+                        universalLinks.subscribe('keycloak', function(event) {
+                            universalLinks.unsubscribe('keycloak');
+                            window.cordova.plugins.browsertab.close();
+                            kc.clearToken();
+                            promise.setSuccess();
+                        });
+
+                        window.cordova.plugins.browsertab.openUrl(logoutUrl);
+                        return promise.promise;
+                    },
+
+                    register : function(options) {
+                        var promise = createPromise();
+                        var registerUrl = kc.createRegisterUrl(options);
+                        universalLinks.subscribe('keycloak' , function(event) {
+                            universalLinks.unsubscribe('keycloak');
+                            window.cordova.plugins.browsertab.close();
+                            var oauth = parseCallback(event.url);
+                            processCallback(oauth, promise);
+                        });
+                        window.cordova.plugins.browsertab.openUrl(registerUrl);
+                        return promise.promise;
+
+                    },
+
+                    accountManagement : function() {
+                        var accountUrl = kc.createAccountUrl();
+                        if (typeof accountUrl !== 'undefined') {
+                            window.cordova.plugins.browsertab.openUrl(accountUrl);
+                        } else {
+                            throw "Not supported by the OIDC server";
+                        }
+                    },
+
+                    redirectUri: function(options) {
+                        if (options && options.redirectUri) {
+                            return options.redirectUri;
+                        } else if (kc.redirectUri) {
+                            return kc.redirectUri;
+                        } else {
+                            return "http://localhost";
+                        }
                     }
                 }
             }
