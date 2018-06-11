@@ -47,6 +47,9 @@ public class OIDCAdvancedConfigWrapper {
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
     private static final String USE_MTLS_HOK_TOKEN = "tls.client.certificate.bound.access.tokens";
 
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    private static final String ID_TOKEN_SIGNED_RESPONSE_ALG = "id.token.signed.response.alg";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -135,6 +138,14 @@ public class OIDCAdvancedConfigWrapper {
     public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
         String val = String.valueOf(useUtlsHokToken);
         setAttribute(USE_MTLS_HOK_TOKEN, val);
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    public String getIdTokenSignedResponseAlg() {
+        return getAttribute(ID_TOKEN_SIGNED_RESPONSE_ALG);
+    }
+    public void setIdTokenSignedResponseAlg(String algName) {
+        setAttribute(ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
     }
 
     private String getAttribute(String attrKey) {

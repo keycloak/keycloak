@@ -25,6 +25,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.Key;
 import java.security.PrivateKey;
 
 /**
@@ -36,7 +37,7 @@ public class JWSBuilder {
     String kid;
     String contentType;
     byte[] contentBytes;
-
+    
     public JWSBuilder type(String type) {
         this.type = type;
         return this;
@@ -66,10 +67,34 @@ public class JWSBuilder {
         return new EncodingBuilder();
     }
 
+    protected String encodeAll(StringBuffer encoding, byte[] signature) {
+        encoding.append('.');
+        if (signature != null) {
+            encoding.append(Base64Url.encode(signature));
+        }
+        return encoding.toString();
+    }
 
-    protected String encodeHeader(Algorithm alg) {
+    protected void encode(Algorithm alg, byte[] data, StringBuffer encoding) {
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+        encode(alg.name(), data, encoding);
+    }
+
+    protected byte[] marshalContent() {
+        return contentBytes;
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    protected void encode(String sigAlgName, byte[] data, StringBuffer encoding) {
+        encoding.append(encodeHeader(sigAlgName));
+        encoding.append('.');
+        encoding.append(Base64Url.encode(data));
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    protected String encodeHeader(String sigAlgName) {
         StringBuilder builder = new StringBuilder("{");
-        builder.append("\"alg\":\"").append(alg.toString()).append("\"");
+        builder.append("\"alg\":\"").append(sigAlgName).append("\"");
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
@@ -82,30 +107,26 @@ public class JWSBuilder {
         }
     }
 
-    protected String encodeAll(StringBuffer encoding, byte[] signature) {
-        encoding.append('.');
-        if (signature != null) {
-            encoding.append(Base64Url.encode(signature));
-        }
-        return encoding.toString();
-    }
-
-    protected void encode(Algorithm alg, byte[] data, StringBuffer encoding) {
-        encoding.append(encodeHeader(alg));
-        encoding.append('.');
-        encoding.append(Base64Url.encode(data));
-    }
-
-    protected byte[] marshalContent() {
-        return contentBytes;
-    }
-
     public class EncodingBuilder {
         public String none() {
             StringBuffer buffer = new StringBuffer();
             byte[] data = marshalContent();
             encode(Algorithm.none, data, buffer);
             return encodeAll(buffer, null);
+        }
+
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI        
+        public String sign(JWSSignatureProvider signatureProvider, String sigAlgName, Key key) {
+            StringBuffer buffer = new StringBuffer();
+            byte[] data = marshalContent();
+            encode(sigAlgName, data, buffer);
+            byte[] signature = null;
+            try {
+                signature = signatureProvider.sign(buffer.toString().getBytes("UTF-8"), sigAlgName, key);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            return encodeAll(buffer, signature);
         }
 
         public String sign(Algorithm algorithm, PrivateKey privateKey) {
@@ -132,7 +153,6 @@ public class JWSBuilder {
         public String rsa512(PrivateKey privateKey) {
             return sign(Algorithm.RS512, privateKey);
         }
-
 
         public String hmac256(byte[] sharedSecret) {
             StringBuffer buffer = new StringBuffer();

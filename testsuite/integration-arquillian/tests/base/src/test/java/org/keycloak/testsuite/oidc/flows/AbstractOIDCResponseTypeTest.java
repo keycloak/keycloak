@@ -24,6 +24,8 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,10 +33,12 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -42,6 +46,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Abstract test for various values of response_type
@@ -213,5 +219,55 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    private void oidcFlow(String sigAlgName) throws Exception {
+        EventRepresentation loginEvent = loginUser("abcdef123456");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        JWSHeader header = null;
+        String idToken = authzResponse.getIdToken();
+        String accessToken = authzResponse.getAccessToken();
+        if (idToken != null) {
+            header = new JWSInput(idToken).getHeader();
+            assertEquals(sigAlgName, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+        if (accessToken != null) {
+            header = new JWSInput(accessToken).getHeader();
+            assertEquals(sigAlgName, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idt : idTokens) {
+            Assert.assertEquals("abcdef123456", idt.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
+        }
+    }
+    @Test
+    public void oidcFlow_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
+        try {
+            setSignatureAlgorithm("RS384");
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
+            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, "RS384");
+            oidcFlow("RS384");
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, "RS256");
+        }
+    }
+    private String sigAlgName = "RS256";
+    private void setSignatureAlgorithm(String sigAlgName) {
+        this.sigAlgName = sigAlgName;
+    }
+    protected String getSignatureAlgorithm() {
+        return this.sigAlgName;
     }
 }

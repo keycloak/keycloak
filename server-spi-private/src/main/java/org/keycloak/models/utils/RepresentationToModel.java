@@ -53,6 +53,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.jose.jws.TokenSignatureProvider;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
@@ -420,6 +421,12 @@ public class RepresentationToModel {
                 DefaultKeyProviders.createProviders(newRealm);
             }
         }
+
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+        if (newRealm.getComponents(newRealm.getId(), TokenSignatureProvider.class.getName()).isEmpty()) {
+            DefaultTokenSignatureProviders.createProviders(newRealm);
+        }
+
     }
 
     public static void importUserFederationProvidersAndMappers(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {

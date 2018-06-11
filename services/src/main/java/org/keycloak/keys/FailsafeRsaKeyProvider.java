@@ -77,5 +77,4 @@ public class FailsafeRsaKeyProvider implements KeyProvider {
         return key;
     }
 
-
 }
