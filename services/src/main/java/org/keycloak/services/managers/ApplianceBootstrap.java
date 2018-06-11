@@ -27,6 +27,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultKeyProviders;
+import org.keycloak.models.utils.DefaultTokenSignatureProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
@@ -88,6 +89,9 @@ public class ApplianceBootstrap {
 
         session.getContext().setRealm(realm);
         DefaultKeyProviders.createProviders(realm);
+
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+        DefaultTokenSignatureProviders.createProviders(realm);
 
         return true;
     }

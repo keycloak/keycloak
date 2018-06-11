@@ -23,9 +23,13 @@ import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.*;
 
@@ -173,6 +177,54 @@ public class LogoutTest extends AbstractKeycloakTest {
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
             assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+        }
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    private void backchannelLogoutRequest(String sigAlgName) throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.clientSessionState("client-session");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String idTokenString = tokenResponse.getIdToken();
+
+        JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
+        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getIdToken()).getHeader();
+        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
+        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        String logoutUrl = oauth.getLogoutUrl()
+          .idTokenHint(idTokenString)
+          .postLogoutRedirectUri(AppPage.baseUrl)
+          .build();
+        
+        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+          CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+        }
+    }
+    @Test
+    public void backchannelLogoutRequest_RealmRS384_ClientRS512_EffectiveRS512() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS384");
+            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, "RS512");
+            backchannelLogoutRequest("RS512");
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
+            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, "RS256");
         }
     }
 
