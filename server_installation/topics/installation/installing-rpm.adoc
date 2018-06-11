@@ -21,7 +21,7 @@ Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver
 
 [source,bash,subs="attributes+"]
 ----
-subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-<RHEL_VERSION>-server-rpms
+subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-<RHEL_VERSION>-server-rpms --enable=rhel-<RHEL_VERSION>-server-rpms
 ----
 
 ==== Subscribing to the RH-SSO {project_versionDoc} Repository and Installing RH-SSO {project_versionDoc}
