@@ -2780,7 +2780,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     }
     
     $scope.nothingToImport = function() {
-        Notifications.error('No resouces specified to import.');
+        Notifications.error('No resources specified to import.');
     }
     
     $scope.$watch('fileContent', function() {
