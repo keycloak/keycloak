@@ -71,3 +71,6 @@ org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.client.ClientStorageProviderSpi
+# KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+org.keycloak.jose.jws.TokenSignatureSpi
+
