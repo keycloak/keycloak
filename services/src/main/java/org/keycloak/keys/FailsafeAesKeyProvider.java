@@ -48,4 +48,5 @@ public class FailsafeAesKeyProvider extends FailsafeSecretKeyProvider {
     protected Logger logger() {
         return logger;
     }
+
 }

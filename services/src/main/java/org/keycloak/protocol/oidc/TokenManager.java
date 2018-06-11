@@ -30,8 +30,9 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.TokenSignature;
+import org.keycloak.jose.jws.TokenSignatureUtil;
 import org.keycloak.jose.jws.crypto.HashProvider;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -74,7 +75,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -376,21 +376,11 @@ public class TokenManager {
 
     public RefreshToken toRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws JWSInputException, OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
-
-        PublicKey publicKey;
-
-        // Backwards compatibility. Old offline tokens didn't have KID in the header
-        if (jws.getHeader().getKeyId() == null && TokenUtil.isOfflineToken(encodedRefreshToken)) {
-            logger.debugf("KID is null in offline token. Using the realm active key to verify token signature.");
-            publicKey = session.keys().getActiveRsaKey(realm).getPublicKey();
-        } else {
-            publicKey = session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
-        }
-
-        if (!RSAProvider.verify(jws, publicKey)) {
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+        TokenSignature ts = TokenSignature.getInstance(session, realm, jws.getHeader().getAlgorithm().name());
+        if (!ts.verify(jws)) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
         }
-
         return jws.readJsonContent(RefreshToken.class);
     }
 
@@ -398,15 +388,15 @@ public class TokenManager {
         try {
             JWSInput jws = new JWSInput(encodedIDToken);
             IDToken idToken;
-            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+            // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+            TokenSignature ts = TokenSignature.getInstance(session, realm, jws.getHeader().getAlgorithm().name());
+            if (!ts.verify(jws)) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
-
             if (idToken.isExpired()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
             }
-
             if (idToken.getIssuedAt() < realm.getNotBefore()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
             }
@@ -420,11 +410,12 @@ public class TokenManager {
         try {
             JWSInput jws = new JWSInput(encodedIDToken);
             IDToken idToken;
-            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+            // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+            TokenSignature ts = TokenSignature.getInstance(session, realm, jws.getHeader().getAlgorithm().name());
+            if (!ts.verify(jws)) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
-
             return idToken;
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
@@ -862,20 +853,20 @@ public class TokenManager {
         }
 
         public AccessTokenResponseBuilder generateCodeHash(String code) {
-            codeHash = HashProvider.oidcHash(jwsAlgorithm, code);
+            // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+            codeHash = HashProvider.oidcHash(TokenSignatureUtil.getTokenSignatureAlgorithm(session, realm, client), code);
             return this;
         }
 
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         public AccessTokenResponseBuilder generateStateHash(String state) {
-            stateHash = HashProvider.oidcHash(jwsAlgorithm, state);
+            // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+            stateHash = HashProvider.oidcHash(TokenSignatureUtil.getTokenSignatureAlgorithm(session, realm, client), state);
             return this;
         }
 
         public AccessTokenResponse build() {
-            KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
-
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
             }
@@ -890,8 +881,13 @@ public class TokenManager {
             }
 
             AccessTokenResponse res = new AccessTokenResponse();
+
+            // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+            TokenSignature ts = TokenSignature.getInstance(session, realm, TokenSignatureUtil.getTokenSignatureAlgorithm(session, realm, client));
+
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(accessToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+                String encodedToken = ts.sign(accessToken);
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -901,7 +897,8 @@ public class TokenManager {
             }
 
             if (generateAccessTokenHash) {
-                String atHash = HashProvider.oidcHash(jwsAlgorithm, res.getToken());
+                // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+                String atHash = HashProvider.oidcHash(TokenSignatureUtil.getTokenSignatureAlgorithm(session, realm, client), res.getToken());
                 idToken.setAccessTokenHash(atHash);
             }
             if (codeHash != null) {
@@ -913,11 +910,13 @@ public class TokenManager {
                 idToken.setStateHash(stateHash);
             }
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+                String encodedToken = ts.sign(idToken);
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(refreshToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
+                // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+                String encodedToken = ts.sign(refreshToken);
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

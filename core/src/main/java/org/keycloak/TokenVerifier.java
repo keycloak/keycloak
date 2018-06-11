@@ -24,12 +24,15 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.JWSSignatureProvider;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
+
+import java.security.Key;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.logging.Level;
@@ -143,6 +146,18 @@ public class TokenVerifier<T extends JsonWebToken> {
 
     private JWSInput jws;
     private T token;
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    private Key verifyKey = null;
+    private JWSSignatureProvider signatureProvider = null;
+    public TokenVerifier<T> verifyKey(Key verifyKey) {
+        this.verifyKey = verifyKey;
+        return this;
+    }
+    public TokenVerifier<T> signatureProvider(JWSSignatureProvider signatureProvider) {
+        this.signatureProvider = signatureProvider;
+        return this;
+    }
 
     protected TokenVerifier(String tokenString, Class<T> clazz) {
         this.tokenString = tokenString;
@@ -337,6 +352,12 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     public void verifySignature() throws VerificationException {
+        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+        if (this.signatureProvider != null && this.verify() != null) {
+            verifySignatureByProvider();
+            return;
+        }
+
         AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
 
         if (null == algorithmType) {
@@ -358,6 +379,13 @@ public class TokenVerifier<T extends JsonWebToken> {
                 }   break;
             default:
                 throw new VerificationException("Unknown or unsupported token algorithm");
+        }
+    }
+
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    private void verifySignatureByProvider() throws VerificationException {
+        if (!signatureProvider.verify(jws, verifyKey)) {
+            throw new TokenSignatureInvalidException(token, "Invalid token signature");
         }
     }
 

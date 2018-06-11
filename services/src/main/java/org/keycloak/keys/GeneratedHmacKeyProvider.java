@@ -17,6 +17,8 @@
 
 package org.keycloak.keys;
 
+import java.security.Key;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;

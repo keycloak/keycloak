@@ -20,3 +20,5 @@ org.keycloak.keys.GeneratedAesKeyProviderFactory
 org.keycloak.keys.GeneratedRsaKeyProviderFactory
 org.keycloak.keys.JavaKeystoreKeyProviderFactory
 org.keycloak.keys.ImportedRsaKeyProviderFactory
+# KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+org.keycloak.keys.GeneratedEcdsaKeyProviderFactory
