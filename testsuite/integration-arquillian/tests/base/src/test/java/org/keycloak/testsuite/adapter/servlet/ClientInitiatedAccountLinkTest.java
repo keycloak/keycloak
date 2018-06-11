@@ -23,6 +23,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -203,6 +204,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
 
     @Test
+    @Ignore("KEYCLOAK-7562")
     public void testErrorConditions() throws Exception {
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
