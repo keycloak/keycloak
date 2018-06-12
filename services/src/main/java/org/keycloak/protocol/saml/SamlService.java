@@ -179,7 +179,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             session.getContext().setClient(client);
             logger.debug("logout response");
-            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers, null);
             event.success();
             return response;
         }
@@ -412,7 +412,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                 }
                 logger.debug("browser Logout");
-                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers, null);
             } else if (logoutRequest.getSessionIndex() != null) {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
 
