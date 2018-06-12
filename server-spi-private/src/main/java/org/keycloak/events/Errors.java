@@ -91,5 +91,5 @@ public interface Errors {
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";
     String DISPLAY_UNSUPPORTED = "display_unsupported";
-
+    String INVALID_SCOPE = "invalid_scope";
 }

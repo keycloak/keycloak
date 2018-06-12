@@ -263,4 +263,16 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
         throw new ReadOnlyException("client is read only for this update");
 
     }
+
+    @Override
+    public void setDisplayOnConsentScreen(boolean displayOnConsentScreen) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
+
+    @Override
+    public void setConsentScreenText(String consentScreenText) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
 }

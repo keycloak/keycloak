@@ -50,6 +50,8 @@ public class DefaultAuthenticationFlows {
 
     public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
     public static final String IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS = "create unique user config";
+    public static final String OPENSHIFT_CHALLENGE_FLOW = "openshift challenge flow";
+    public static final String OPENSHIFT_CHALLENGE_FLOW_DESCRIPTION = "openshift flow for clients requiring challenge mode";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
@@ -60,6 +62,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, false);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
+        if (realm.getFlowByAlias(OPENSHIFT_CHALLENGE_FLOW) == null) openshiftChallengeFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
@@ -70,6 +73,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
+        if (realm.getFlowByAlias(OPENSHIFT_CHALLENGE_FLOW) == null) openshiftChallengeFlow(realm);
     }
 
     public static void registrationFlow(RealmModel realm) {
@@ -562,4 +566,47 @@ public class DefaultAuthenticationFlows {
 
         realm.addAuthenticatorExecution(execution);
     }
+
+    public static void openshiftChallengeFlow(RealmModel realm) {
+        AuthenticationFlowModel challengeFlow = new AuthenticationFlowModel();
+        challengeFlow.setAlias(OPENSHIFT_CHALLENGE_FLOW);
+        challengeFlow.setDescription(OPENSHIFT_CHALLENGE_FLOW_DESCRIPTION);
+        challengeFlow.setProviderId("basic-flow");
+        challengeFlow.setTopLevel(true);
+        challengeFlow.setBuiltIn(true);
+        challengeFlow = realm.addAuthenticationFlow(challengeFlow);
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(challengeFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("no-cookie-redirect");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(challengeFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("basic-auth");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(challengeFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("basic-auth-otp");
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(challengeFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("auth-spnego");
+        execution.setPriority(40);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
 }
