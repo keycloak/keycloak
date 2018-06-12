@@ -72,6 +72,19 @@ public class JSObjectBuilder {
        return arguments.containsKey(key) && arguments.get(key).equals(value);
     }
 
+    public JSObjectBuilder pkceS256() {
+        return pkceMethod("S256");
+    }
+
+    public JSObjectBuilder pkcePlain() {
+        return pkceMethod("plain");
+    }
+
+    private JSObjectBuilder pkceMethod(String method) {
+        arguments.put("pkceMethod", method);
+        return this;
+    }
+
     public JSObjectBuilder add(String key, Object value) {
         arguments.put(key, value);
         return this;
