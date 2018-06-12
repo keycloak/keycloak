@@ -25,7 +25,8 @@ As a result, you should get a response as follows:
     "token_endpoint": "http://${host}:${post}/auth/realms/${realm}/protocol/openid-connect/token",
     "token_introspection_endpoint": "http://${host}:${post}/auth/realms/${realm}/protocol/openid-connect/token/introspect",
     "resource_registration_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/resource_set",
-    "permission_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/permission"
+    "permission_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/permission",
+    "policy_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy"
 }
 ```
 

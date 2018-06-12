@@ -90,9 +90,11 @@ include::topics/service-protection-protection-api.adoc[leveloffset=+2]
 
 include::topics/service-protection-whatis-obtain-pat.adoc[leveloffset=+3]
 
-include::topics/service-protection-resources-api-papi.adoc[leveloffset=+2]
+include::topics/service-protection-resources-api-papi.adoc[leveloffset=+3]
 
-include::topics/service-protection-permission-api-papi.adoc[leveloffset=+2]
+include::topics/service-protection-permission-api-papi.adoc[leveloffset=+3]
+
+include::topics/service-protection-policy-api.adoc[leveloffset=+3]
 
 include::topics/service-rpt-overview.adoc[leveloffset=+2]
 
