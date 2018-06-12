@@ -62,27 +62,28 @@
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
-:appserver_doc_base_url: https://docs.jboss.org/author/display/WFLY10
-:appserver_version: 10
-:appserver_socket_link: {appserver_doc_base_url}/Interfaces+and+ports
+:appserver_doc_base_url: http://docs.wildfly.org/13
+:appserver_version: 13
+:appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
 :appserver_socket_name: {appserver_name} {appserver_version} Documentation
-:appserver_jgroups_link: {appserver_doc_base_url}/JGroups+Subsystem
+:appserver_jgroups_link: {appserver_doc_base_url}/High_Availability_Guide.html#JGroups_Subsystem
 :appserver_jgroups_name: {appserver_name} {appserver_version} Documentation
-:appserver_jpa_link: {appserver_doc_base_url}/JPA+Reference+Guide#JPAReferenceGuide-Hibernateproperties
-:appserver_jpa_name: JBoss EAP Development Guide
-:appserver_network_link: {appserver_doc_base_url}/Interfaces+and+ports
+:appserver_jpa_link: {appserver_doc_base_url}/Developer_Guide.html#hibernate-properties
+:appserver_jpa_name: {appserver_name} {appserver_version} Development Guide
+:appserver_network_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
 :appserver_network_name: {appserver_name} {appserver_version} Documentation
-:appserver_datasource_link: {appserver_doc_base_url}/DataSource+configuration
+:appserver_datasource_link: {appserver_doc_base_url}/Admin_Guide.html#DataSource
 :appserver_datasource_name: {appserver_name} {appserver_version} Documentation
-:appserver_caching_link: {appserver_doc_base_url}/Infinispan+Subsystem
+:appserver_caching_link: {appserver_doc_base_url}/High_Availability_Guide.html#Infinispan_Subsystem
 :appserver_caching_name: {appserver_name} {appserver_version} Documentation
-:appserver_admindoc_link: {appserver_doc_base_url}/Documentation
+:appserver_admindoc_link: {appserver_doc_base_url}/Admin_Guide.html
 :appserver_admindoc_name: {appserver_name} {appserver_version} Documentation
-:appserver_loadbalancer_link: {appserver_doc_base_url}/High+Availability+Guide
+:appserver_loadbalancer_link: {appserver_doc_base_url}/High_Availability_Guide.html
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :jdgserver_name: Infinispan
 :jdgserver_version: 8.2.8
+:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
 :fuseHawtioEAPVersion: JBoss EAP 6.4
@@ -90,5 +91,7 @@
 
 :fuse7Version: JBoss Fuse 7.0.1
 
-:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:4.0
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:6.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:6.0
+:subsystem_datasources_xml_urn: urn:jboss:domain:datasources:5.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

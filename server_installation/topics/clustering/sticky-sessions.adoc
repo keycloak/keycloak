@@ -87,9 +87,9 @@ Unzip the {appserver_name} {appserver_version} server somewhere. Assumption is l
 
 Edit `EAP_LB/standalone/configuration/standalone.xml` file. In the undertow subsystem add the mod_cluster configuration under filters like this:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
-<subsystem xmlns="urn:jboss:domain:undertow:4.0">
+<subsystem xmlns="{subsystem_undertow_xml_urn}">
  ...
  <filters>
   ...

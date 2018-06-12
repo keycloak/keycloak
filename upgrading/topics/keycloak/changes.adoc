@@ -1,5 +1,25 @@
 == Migration Changes
 
+=== Migrating to 4.4.0
+
+==== Upgrade to Wildfly 13
+
+The {project_name} server was upgraded to use Wildfly 13 as the underlying container. This doesn't directly involve any {project_name}
+server functionality, but there are few changes related to the migration, which worth mentioning:
+
+Some dependencies updated::
+  The dependencies were updated to the versions used by Wildfly 13 server. For example Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
+
+Configuration changes::
+  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow section <<_install_new_version>>
+  to handle the migration of configuration files automatically. Just in case you want more details (For example if you did some configuration
+  changes on your own), here is the list of the most important changes in the configuration:
+  * Element `eviction` on infinispan caches is now deprecated (unused) and was replaced by element `object-memory`
+  * There is no `jndi-attribute` on `cache-container` element in infinispan subsystem.
+  * If you use cross-dc integration, there is a need to add property `protocolVersion` with value `2.6` on `remote-store` . This is because
+  hotrod client ({project_name} server) is using infinispan 9 based on newer version of hotrod protocol than {jdgserver_name} server, which
+  is still using infinispan 8.
+
 === Migration to 4.3.0
 
 ==== Hostname configuration

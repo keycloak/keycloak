@@ -36,9 +36,9 @@ The next thing you have to do is declare your newly packaged JDBC driver into yo
 Within the profile, search for the `drivers` XML block within the `datasources` subsystem. You should see a pre-defined driver declared for the H2 JDBC driver. This is where you'll declare the JDBC driver for your external database.
 
 .JDBC Drivers
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
-  <subsystem xmlns="urn:jboss:domain:datasources:4.0">
+  <subsystem xmlns="{subsystem_datasources_xml_urn}">
      <datasources>
        ...
        <drivers>
@@ -54,9 +54,9 @@ Within the `drivers` XML block you'll need to declare an additional JDBC driver.
 
 
 .Declare Your JDBC Drivers
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
-  <subsystem xmlns="urn:jboss:domain:datasources:4.0">
+  <subsystem xmlns="{subsystem_datasources_xml_urn}">
      <datasources>
        ...
        <drivers>

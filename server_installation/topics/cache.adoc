@@ -1,4 +1,5 @@
 
+[[cache-configuration]]
 == Server Cache Configuration
 
 {project_name} has two types of caches.  One type of cache sits in front of the database to decrease load on the DB

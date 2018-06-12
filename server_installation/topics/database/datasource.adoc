@@ -7,9 +7,9 @@ this within the same configuration file and XML block that you registered your J
 that sets up the connection to your new database:
 
 .Declare Your JDBC Drivers
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
-  <subsystem xmlns="urn:jboss:domain:datasources:4.0">
+  <subsystem xmlns="{subsystem_datasources_xml_urn}">
      <datasources>
        ...
        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
