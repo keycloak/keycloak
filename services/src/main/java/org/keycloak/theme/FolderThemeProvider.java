@@ -42,33 +42,38 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
-        File themeDir = getThemeDir(name, type);
-        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
+        if (themesDir != null) {
+            File themeDir = getThemeDir(name, type);
+            return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
+        } else {
+            return null;
+        } 
     }
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
-        final String typeName = type.name().toLowerCase();
-        File[] themeDirs = themesDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
+        if (themesDir != null) {
+            final String typeName = type.name().toLowerCase();
+            File[] themeDirs = themesDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
+                }
+            });
+            if (themeDirs != null) {
+                Set<String> names = new HashSet<String>();
+                for (File themeDir : themeDirs) {
+                    names.add(themeDir.getName());
+                }
+                return names;
             }
-        });
-        if (themeDirs != null) {
-            Set<String> names = new HashSet<String>();
-            for (File themeDir : themeDirs) {
-                names.add(themeDir.getName());
-            }
-            return names;
-        } else {
-            return Collections.emptySet();
         }
+        return Collections.emptySet();
     }
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        return getThemeDir(name, type).isDirectory();
+        return themesDir != null ? getThemeDir(name, type).isDirectory() : false;
     }
 
     @Override
