@@ -35,6 +35,41 @@ Some configuration switches removed::
   The switch `Scope Param Required` was removed from Role Detail. The switches `Consent Required` and `Consent Text` were removed
   from the Protocol Mapper details. Those switches were replaced by the Client Scope feature.
 
+==== Changes to Authorization Services
+
+We added support for UMA 2.0. This version of the UMA specification introduced some important changes on how permissions are obtained from the server.
+
+Here are the main changes introduced by UMA 2.0 support. See link:{authorizationguide_link}[{authorizationguide_name}] for details.
+
+Authorization API was removed::
+  Prior to UMA 2.0 (UMA 1.0), client applications were using the Authorization API to obtain permissions from the server in the format of a RPT. The new version
+  of UMA specification has removed the Authorization API which was also removed from {project_name}. In UMA 2.0, RPTs can now be obtained from the token endpoint by using a specific grant type.
+  See link:{authorizationguide_link}#_service_obtaining_permissions[{authorizationguide_name}] for details.
+
+Entitlement API was removed::
+  With the introduction of UMA 2.0, we decided to leverage the token endpoint and UMA grant type to allow obtaining RPTs from {project_name} and
+  avoid having different APIs. The functionality provided by the Entitlement API was kept the same and is still possible to obtain permissions for a set
+  of one or more resources and scopes or all permissions from the server in case no resource or scope is provided.
+  See link:{authorizationguide_link}#_service_obtaining_permissions[{authorizationguide_name}] for details.
+
+Changes to UMA Discovery Endpoint::
+  UMA Discovery document changed, see link:{authorizationguide_link}#_service_authorization_api[{authorizationguide_name}] for details.
+
+Changes to {project_name} Authorization JavaScript Adapter::
+  The {project_name} Authorization JavaScript Adapter (keycloak-authz.js) changed in order to comply with the changes introduced by UMA 2.0 while keeping
+  the same behavior as before. The main change is on how you invoke both `authorization` and `entitlement` methods which now
+  expect a specific object type representing an authorization request. This new object type provides more flexibility on how
+  permissions can be obtained from the server by supporting the different parameters supported by the UMA grant type.
+  See link:{authorizationguide_link}#_enforcer_js_adapter[{authorizationguide_name}] for details.
+
+  One of the main changes introduced by this release is that you are no longer required to exchange access tokens with RPTs in
+  order to access resources protected by a resource server (when not using UMA). Depending on how the policy enforcer is configured on the resource server side, you can just send regular
+  access tokens as a bearer token and permissions will still be enforced.
+
+Changes to {project_name} Authorization Client Java API::
+  When upgrading to the new version of {project_name} Authorization Client Java API, you'll notice that some representation classes
+  were moved to a different package in `org.keycloak:keycloak-core`.
+
 === Migrating to 3.4.2
 
 ==== Added session_state parameter to OpenID Connect Authentication Response
