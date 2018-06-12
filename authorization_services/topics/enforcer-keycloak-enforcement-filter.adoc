@@ -61,7 +61,8 @@ for all resources associated with the resource server being protected. In this c
 +
 ** *user-managed-access*
 +
-Specifies that the adapter uses the UMA protocol. If specified, the adapter queries the server for permission tickets and return them to clients according to the UMA specification. If not specified, the adapter relies on the requesting party token (RPT) sent to the server to enforce permissions.
+Specifies that the adapter uses the UMA protocol. If specified, the adapter queries the server for permission tickets and returns them to clients according to the UMA specification. If not specified, the policy enforcer will be able to enforce permissions based on regular access tokens or RPTs. In this case,
+before denying access to the resource when the token lacks permission, the policy enforcer will try to obtain permissions directly from the server.
 +
 ** *enforcement-mode*
 +

@@ -30,6 +30,7 @@ The <<_policy_logic, Logic>> of this policy to apply after the other conditions 
 
 == Examples
 
+=== Checking for attributes from the evaluation context
 Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
 obtained from the execution context:
 
@@ -42,6 +43,24 @@ if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')
 }
 ```
 
+=== Checking for attributes from the current identity
+Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
+obtained associated with the current identity:
+
+```javascript
+var context = $evaluation.getContext();
+var identity = context.getIdentity();
+var attributes = identity.getAttributes();
+var email = attributes.getValue('email').asString(0);
+
+if (email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+```
+
+Where these attributes are mapped from whatever claim is defined in the token that was used in the authorization request.
+
+=== Checking for roles granted to the current identity
 You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if a user is granted with a `keycloak_user` *realm* role:
 
 ```javascript
@@ -64,6 +83,66 @@ if (identity.hasClientRole('my-client', 'my-client-role')) {
 }
 ```
 
+=== Checking for roles granted to an user
+To check for realm roles granted to an user:
+
+```javascript
+var realm = $evaluation.getRealm();
+
+if (realm.isUserInRealmRole('marta', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+Or for client roles granted to an user:
+
+```javascript
+var realm = $evaluation.getRealm();
+
+if (realm.isUserInClientRole('marta', 'my-client', 'some-client-role')) {
+    $evaluation.grant();
+}
+```
+
+=== Checking for roles granted to a group
+To check for realm roles granted to a group:
+
+```javascript
+var realm = $evaluation.getRealm();
+
+if (realm.isGroupInRole('/Group A/Group D', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+=== Pushing arbitrary claims to the resource server
+To push arbitrary claims to the resource server in order to provide additional information on how permissions should be
+enforced:
+
+```javascript
+var permission = $evaluation.getPermission();
+
+// decide if permission should be granted
+
+if (granted) {
+    permission.addClaim('claim-a', 'claim-a');
+    permission.addClaim('claim-a', 'claim-a1');
+    permission.addClaim('claim-b', 'claim-b');
+}
+
+```
+
+=== Checking for group membership
+
+```javascript
+var realm = $evaluation.getRealm();
+
+if (realm.isUserInGroup('marta', '/Group A/Group B')) {
+    $evaluation.grant();
+}
+```
+
+=== Mixing different access control mechanisms
 You can also use a combination of several access control mechanisms. The example below shows how roles(RBAC) and
 claims/attributes(ABAC) checks can be used within the same policy. In this case we check if user is granted with `admin` role
 or has an e-mail from `keycloak.org` domain:
@@ -78,4 +157,5 @@ if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
     $evaluation.grant();
 }
 ```
+
 NOTE: When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.
