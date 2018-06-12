@@ -1,0 +1,69 @@
+
+[[_fuse7_adapter_cxf_separate]]
+===== Securing an Apache CXF Endpoint on a Separate Undertow Engine
+
+To run your CXF endpoints secured by {project_name} on a separate Undertow engine, complete the following steps:
+
+. Add `OSGI-INF/blueprint/blueprint.xml` to your application, and in it, add the proper configuration resolver bean similarly to <<_fuse7_adapter_camel,Camel configuration>>.
+In the `httpu:engine-factory` declare `org.keycloak.adapters.osgi.undertow.CxfKeycloakAuthHandler` handler using that camel configuration. The configuration for a CFX JAX-WS application might resemble this one:
++
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:jaxws="http://cxf.apache.org/blueprint/jaxws"
+           xmlns:cxf="http://cxf.apache.org/blueprint/core"
+           xmlns:httpu="http://cxf.apache.org/transports/http-undertow/configuration".
+           xsi:schemaLocation="
+      http://cxf.apache.org/transports/http-undertow/configuration http://cxf.apache.org/schemas/configuration/http-undertow.xsd
+      http://cxf.apache.org/blueprint/core http://cxf.apache.org/schemas/blueprint/core.xsd
+      http://cxf.apache.org/blueprint/jaxws http://cxf.apache.org/schemas/blueprint/jaxws.xsd">
+
+    <bean id="keycloakConfigResolver" class="org.keycloak.adapters.osgi.BundleBasedKeycloakConfigResolver" >
+        <property name="bundleContext" ref="blueprintBundleContext" />
+    </bean>
+
+    <httpu:engine-factory bus="cxf" id="kc-cxf-endpoint">
+        <httpu:engine port="8282">
+            <httpu:handlers>
+                <bean class="org.keycloak.adapters.osgi.undertow.CxfKeycloakAuthHandler">
+                    <property name="configResolver" ref="keycloakConfigResolver" />
+                </bean>
+            </httpu:handlers>
+        </httpu:engine>
+    </httpu:engine-factory>
+
+    <jaxws:endpoint implementor="org.keycloak.example.ws.ProductImpl"
+                    address="http://localhost:8282/ProductServiceCF" depends-on="kc-cxf-endpoint"/>
+
+</blueprint>
+----
++
+For the CXF JAX-RS application, the only difference might be in the configuration of the endpoint dependent on engine-factory:
++
+[source,xml]
+----
+<jaxrs:server serviceClass="org.keycloak.example.rs.CustomerService" address="http://localhost:8282/rest"
+    depends-on="kc-cxf-endpoint">
+    <jaxrs:providers>
+        <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
+    </jaxrs:providers>
+</jaxrs:server>
+----
+
+
+. The `Import-Package` in `META-INF/MANIFEST.MF` must contain those imports:
+
+[source, subs="attributes"]
+----
+META-INF.cxf;version="[2.7,3.3)",
+META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
+org.apache.cxf.bus;version="[2.7,3.3)",
+org.apache.cxf.bus.spring;version="[2.7,3.3)",
+org.apache.cxf.bus.resource;version="[2.7,3.3)",
+org.apache.cxf.transport.http;version="[2.7,3.3)",
+org.apache.cxf.*;version="[2.7,3.3)",
+org.springframework.beans.factory.config,
+org.keycloak.*;version="{project_versionMvn}"
+----

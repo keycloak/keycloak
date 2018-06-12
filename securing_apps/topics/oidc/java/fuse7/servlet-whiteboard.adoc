@@ -1,0 +1,55 @@
+
+[[_fuse7_adapter_servlet_whiteboard]]
+===== Securing a Servlet Deployed as an OSGI Service
+
+You can use this method if you have a servlet class inside your OSGI bundled project that is not deployed as a classic WAR application. Fuse uses Pax Web Whiteboard Extender to deploy such servlets as web applications.
+
+To secure your servlet with {project_name}, complete the following steps:
+
+. {project_name} provides `org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService`, which allows configuring authentication method and security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
+An example configuration:
++
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <bean id="servletConstraintMapping" class="org.keycloak.adapters.osgi.PaxWebSecurityConstraintMapping">
+        <property name="roles">
+            <list>
+                <value>user</value>
+            </list>
+        </property>
+        <property name="authentication" value="true"/>
+        <property name="url" value="/product-portal/*"/>
+    </bean>
+
+    <!-- This handles the integration and setting the login-config and security-constraints parameters -->
+    <bean id="keycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="servletConstraintMapping" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="productServlet" class="org.keycloak.example.ProductPortalServlet" depends-on="keycloakPaxWebIntegration" />
+
+    <service ref="productServlet" interface="javax.servlet.Servlet">
+        <service-properties>
+            <entry key="alias" value="/product-portal" />
+            <entry key="servlet-name" value="ProductServlet" />
+            <entry key="keycloak.config.file" value="/keycloak.json" />
+        </service-properties>
+    </service>
+</blueprint>
+----
+
+* You might need to have the `WEB-INF` directory inside your project (even if your project is not a web application) and create the `/WEB-INF/keycloak.json` file as  described in the <<_fuse7_adapter_classic_war,Classic WAR application>> section.
+Note you don't need the `web.xml` file as the security-constraints are declared in the blueprint configuration file.
+
+. Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF.

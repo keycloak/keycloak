@@ -87,5 +87,7 @@
 :fuseHawtioEAPVersion: JBoss EAP 6.4
 :fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
+:fuse7Version: JBoss Fuse 7.0.1
+
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:4.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

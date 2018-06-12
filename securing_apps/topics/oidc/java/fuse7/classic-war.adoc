@@ -1,0 +1,90 @@
+
+[[_fuse7_adapter_classic_war]]
+===== Securing a Classic WAR Application
+
+The needed steps to secure your WAR application are:
+
+. In the `/WEB-INF/web.xml` file, declare the necessary:
+* security constraints in the <security-constraint> element
+* login configuration in the <login-config> element. Make sure that the `<auth-method>` is `KEYCLOAK`.
+* security roles in the <security-role> element
++
+For example:
++
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <module-name>customer-portal</module-name>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Customers</web-resource-name>
+            <url-pattern>/customers/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>does-not-matter</realm-name>
+    </login-config>
+
+    <security-role>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>
+----
+
+. Within the `/WEB-INF/` directory of your WAR, create a new file, keycloak.json. The format of this configuration file is described in the <<_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described in xref:config_external_adapter[Configuring the External Adapter].
++
+For example:
++
+[source,json]
+----
+{
+    "realm": "demo",
+    "resource": "customer-portal",
+    "auth-server-url": "http://localhost:8080/auth",
+    "ssl-required" : "external",
+    "credentials": {
+        "secret": "password"
+    }
+}
+----
+
+. Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF. 
+
+[[_fuse7_config_external_adapter]]
+====== Configuring the External Adapter
+
+If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead made available externally and loaded based on naming conventions, use this configuration method.
+
+To enable the functionality, add this section to your `/WEB_INF/web.xml` file:
+
+[source,xml]
+----
+<context-param>
+    <param-name>keycloak.config.resolver</param-name>
+    <param-value>org.keycloak.adapters.osgi.PathBasedKeycloakConfigResolver</param-value>
+</context-param>
+----
+
+That component uses `keycloak.config` or `karaf.etc` java properties to search for a base folder to locate the configuration.
+Then inside one of those folders it searches for a file called `<your_web_context>-keycloak.json`.
+
+So, for example, if your web application has context `my-portal`, then your adapter configuration is loaded from the  `$FUSE_HOME/etc/my-portal-keycloak.json` file.
+

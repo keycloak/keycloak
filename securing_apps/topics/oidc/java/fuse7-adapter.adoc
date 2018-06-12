@@ -1,0 +1,36 @@
+
+[[_fuse7_adapter]]
+==== JBoss Fuse 7 Adapter
+
+{project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview/[JBoss Fuse 7].
+
+JBoss Fuse 7 leverages Undertow adapter which is essentially the same as 
+ifeval::[{project_community}==true]
+<<_jboss_adapter,EAP 7 / WildFly 10 Adapter>>
+endif::[]
+ifeval::[{project_product}==true]
+<<_jboss_adapter,JBoss EAP 7 Adapter>>
+endif::[]
+as {fuse7Version} is bundled with http://undertow.io/[Undertow HTTP engine] under the covers and Undertow is used for running various kinds of web applications.
+
+WARNING: The only supported versions of Fuse 7 is {fuse7Version}. If you use earlier versions of Fuse 7, it is possible that some functions will not work correctly. In particular, integration will not work at all for earlier versions of Fuse 7 than 7.0.1.
+
+Security for the following items is supported for Fuse:
+
+* Classic WAR applications deployed on Fuse with Pax Web War Extender
+* Servlets deployed on Fuse as OSGI services with Pax Web Whiteboard Extender and additionally servlets registered through
+  org.osgi.service.http.HttpService#registerServlet() which is standard OSGi Enterprise HTTP Service
+* http://camel.apache.org/[Apache Camel] Undertow endpoints running with the http://camel.apache.org/undertow.html[Camel Undertow] component
+* http://cxf.apache.org/[Apache CXF] endpoints running on their own separate Undertow engine
+* http://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
+* SSH and JMX admin access
+* http://hawt.io[Hawtio administration console]
+
+===== Securing Your Web Applications Inside Fuse 7
+
+You must first install the {project_name} Karaf feature. Next you will need to perform the steps according to the type of application you want to secure.
+All referenced web applications require injecting the {project_name} Undertow authentication mechanism into the underlying web server. The steps to achieve this depend on the application type. The details are described below.
+
+ifeval::[{project_community}==true]
+The best place to start is look at Fuse demo bundled as part of {project_name} examples in directory `fuse` . Most of the steps should be understandable from testing and understanding the demo.
+endif::[]

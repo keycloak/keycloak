@@ -1,0 +1,82 @@
+
+[[_fuse7_adapter_cxf_builtin]]
+===== Securing an Apache CXF Endpoint on the Default Jetty Engine
+
+Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Securing such endpoints can be complicated. One approach, which {project_name} is currently using, is `ServletReregistrationService` which undeploys a built-in servlet at startup, enabling you to redeploy it on a context secured by {project_name}.
+
+The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application might resemble the one below. Note that it adds the JAX-RS `customerservice` endpoint, which is endpoint-specific to your application, but more importantly, secures the entire `/cxf` context.
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+           xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd">
+
+    <!-- JAXRS Application -->
+
+    <bean id="customerBean" class="org.keycloak.example.rs.CxfCustomerService" />
+
+    <jaxrs:server id="cxfJaxrsServer" address="/customerservice">
+        <jaxrs:providers>
+            <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
+        </jaxrs:providers>
+        <jaxrs:serviceBeans>
+            <ref component-id="customerBean" />
+        </jaxrs:serviceBeans>
+    </jaxrs:server>
+
+
+    <!-- Securing of whole /cxf context by unregister default cxf servlet from paxweb and re-register with applied security constraints -->
+    <bean id="cxfConstraintMapping" class="org.keycloak.adapters.osgi.PaxWebSecurityConstraintMapping">
+        <!-- user accessing the servise has to have at least one of the following roles -->
+        <property name="roles">
+            <list>
+                <value>user</value>
+            </list>
+        </property>
+        <property name="url" value="/cxf/*" />
+        <property name="authentication" value="true"/>
+    </bean>
+
+    <bean id="cxfKeycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="cxfConstraintMapping" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="defaultCxfReregistration" class="org.keycloak.adapters.osgi.ServletReregistrationService" depends-on="cxfKeycloakPaxWebIntegration"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="managedServiceReference">
+            <reference interface="org.osgi.service.cm.ManagedService" filter="(service.pid=org.apache.cxf.osgi)" timeout="5000"  />
+        </property>
+    </bean>
+
+</blueprint>
+----
+
+As a result, all other CXF services running on the default CXF HTTP destination are also secured. Similarly, when the application is undeployed, the entire `/cxf` context becomes unsecured as well. For this reason, use your own undertow engine for your applications as described in <<_fuse7_adapter_cxf_separate,Secure CXF Application on separate Undertow Engine>> since that gives you more control over security for each individual application.
+
+* The `WEB-INF` directory might need to be inside your project (even if your project is not a web application). You might also need to edit the `/WEB-INF/keycloak.json` file similarly to <<_fuse7_adapter_classic_war,Classic WAR application>>.
+Note that you do not need the `web.xml` file as the security constraints are declared in the blueprint configuration file.
+
+* The `Import-Package` in `META-INF/MANIFEST.MF` must contain at least these imports:
+
+[source, subs="attributes"]
+----
+javax.ws.rs;version="[2,3)",
+META-INF.cxf;version="[2.7,3.3)",
+META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
+org.apache.cxf.transport.http;version="[2.7,3.3)",
+org.apache.cxf.*;version="[2.7,3.3)",
+com.fasterxml.jackson.jaxrs.json;version="${jackson.version}",
+org.keycloak.*;version="${project.version}",
+----
