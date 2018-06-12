@@ -86,7 +86,8 @@ public class WildflyAppServerProvider implements AppServerContainerProvider {
         createChild("javaHome", appServerJavaHome);
         createChild("jbossArguments", 
                 "-Djboss.socket.binding.port-offset=" + appServerPortOffset + " " +
-                System.getProperty("adapter.test.props", "")
+                System.getProperty("adapter.test.props", " ") +
+                System.getProperty("kie.maven.settings", " ")
         );
         createChild("javaVmArguments", 
                 System.getProperty("app.server.jboss.jvm.debug.args", "") + " " +
@@ -132,7 +133,8 @@ public class WildflyAppServerProvider implements AppServerContainerProvider {
                 "-Djboss.socket.binding.port-offset=" + portOffset + " " +
                 "-Djboss.node.name=ha-node-" + number + " " +
                 getCrossDCProperties(number, portOffset) +
-                System.getProperty("adapter.test.props", "")
+                System.getProperty("adapter.test.props", " ") +
+                System.getProperty("kie.maven.settings", " ")
         );
         createChild("javaVmArguments", 
                 "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=790" + number + " " +

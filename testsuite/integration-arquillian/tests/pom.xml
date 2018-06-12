@@ -113,12 +113,29 @@
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
         <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
+        <!--KEYCLOAK-4793-->
+        <maven.repo.local>${user.home}/.m2/repository</maven.repo.local>
+        <settings.path>${user.home}/.m2/settings.xml</settings.path>
+        <repo.url/>
+        <kie.maven.settings>
+            -Dkie.maven.settings.custom=${settings.path}
+            -Dkie.maven.repo.local=${maven.repo.local}
+            -Drepo.url=${repo.url}
+        </kie.maven.settings>
+
         <adapter.test.props>
             -Dkeycloak.x509cert.lookup.provider=${keycloak.x509cert.lookup.provider}
+            -Dapp.server.base.url=http://localhost:${app.server.http.port}
+            -Dauth.server.base.url=http://localhost:${auth.server.http.port}
+            -Dapp.server.ssl.base.url=https://localhost:${app.server.https.port}
+            -Dapp.server.ssl.required=${app.server.ssl.required}
+            -Dauth.server.ssl.base.url=https://localhost:${auth.server.https.port}
+            -Dauth.server.ssl.required=${auth.server.ssl.required}
+            -Dmy.host.name=localhost
+            -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>
-        <migration.import.properties/>
-        <kie.maven.settings/>
 
+        <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
         <examples.version.suffix>${project.version}</examples.version.suffix>
@@ -408,6 +425,7 @@
                             <app.server>${app.server}</app.server>
                             <app.server.home>${app.server.home}</app.server.home>
                             <app.server.java.home>${app.server.java.home}</app.server.java.home>
+                            <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
                             <app.server.https.port>${app.server.https.port}</app.server.https.port>
