@@ -372,7 +372,7 @@ public final class KeycloakModelUtils {
 
     public static List<String> resolveAttribute(UserModel user, String name) {
         List<String> values = user.getAttribute(name);
-        if (!values.isEmpty()) return values;
+        if (values != null && !values.isEmpty()) return values;
         for (GroupModel group : user.getGroups()) {
             values = resolveAttribute(group, name);
             if (values != null) return values;
