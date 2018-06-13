@@ -19,7 +19,7 @@ For users with more advanced docker registry configurations, it is generally rec
 	    service: docker-test
 	    issuer: http://localhost:8080/auth/auth/realms/master
 
-This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with href:https://github.com/docker/distribution/blob/master/cmd/registry/config-example.yml[a basic example].
+This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with link:https://github.com/docker/distribution/blob/master/cmd/registry/config-example.yml[a basic example].
 
 WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's pulic certificate.  The auth configuration will not work without this argument.
 
