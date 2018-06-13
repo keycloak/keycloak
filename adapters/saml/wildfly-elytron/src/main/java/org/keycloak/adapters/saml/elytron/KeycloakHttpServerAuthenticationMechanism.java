@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.elytron;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -142,14 +143,23 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
         exchange.getResponse().setStatus(302);
     }
 
+    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
+    
     static void sendRedirect(final ElytronHttpFacade exchange, final String location) {
-        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better
-        // handle this.
-        URI uri = exchange.getURI();
-        String path = uri.getPath();
-        String relativePath = exchange.getRequest().getRelativePath();
-        String contextPath = path.substring(0, path.indexOf(relativePath));
-        String loc = exchange.getURI().getScheme() + "://" + exchange.getURI().getHost() + ":" + exchange.getURI().getPort() + contextPath + location;
-        exchange.getResponse().setHeader("Location", loc);
+        if (location == null) {
+            LOGGER.warn("Logout page not set.");
+            exchange.getResponse().setStatus(302);
+            return;
+        }
+        if (PROTOCOL_PATTERN.matcher(location).find()) {
+            exchange.getResponse().setHeader("Location", location);
+        } else {
+            URI uri = exchange.getURI();
+            String path = uri.getPath();
+            String relativePath = exchange.getRequest().getRelativePath();
+            String contextPath = path.substring(0, path.indexOf(relativePath));
+            String loc = exchange.getURI().getScheme() + "://" + exchange.getURI().getHost() + ":" + exchange.getURI().getPort() + contextPath + location;
+            exchange.getResponse().setHeader("Location", loc);
+        }
     }
 }
