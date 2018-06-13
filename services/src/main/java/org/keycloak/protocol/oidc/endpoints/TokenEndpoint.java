@@ -115,9 +115,9 @@ import java.security.MessageDigest;
 public class TokenEndpoint {
 
     private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
-    private MultivaluedMap<String, String> formParams;
-    private ClientModel client;
-    private Map<String, String> clientAuthAttributes;
+    protected MultivaluedMap<String, String> formParams;
+    protected ClientModel client;
+    protected Map<String, String> clientAuthAttributes;
 
     private enum Action {
         AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION
@@ -127,32 +127,32 @@ public class TokenEndpoint {
     private static final Pattern VALID_CODE_VERIFIER_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
     @Context
-    private KeycloakSession session;
+    protected KeycloakSession session;
 
     @Context
-    private HttpRequest request;
+    protected HttpRequest request;
 
     @Context
-    private HttpResponse httpResponse;
+    protected HttpResponse httpResponse;
 
     @Context
-    private HttpHeaders headers;
+    protected HttpHeaders headers;
 
     @Context
-    private UriInfo uriInfo;
+    protected UriInfo uriInfo;
 
     @Context
-    private ClientConnection clientConnection;
+    protected ClientConnection clientConnection;
 
-    private final TokenManager tokenManager;
-    private final RealmModel realm;
-    private final EventBuilder event;
+    protected final TokenManager tokenManager;
+    protected final RealmModel realm;
+    protected final EventBuilder event;
 
-    private Action action;
+    protected Action action;
 
-    private String grantType;
+    protected String grantType;
 
-    private Cors cors;
+    protected Cors cors;
 
     public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
@@ -210,19 +210,19 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
 
-    private void checkSsl() {
+    protected void checkSsl() {
         if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required", Response.Status.FORBIDDEN);
         }
     }
 
-    private void checkRealm() {
+    protected void checkRealm() {
         if (!realm.isEnabled()) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), "access_denied", "Realm not enabled", Response.Status.FORBIDDEN);
         }
     }
 
-    private void checkClient() {
+    protected void checkClient() {
         AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
         client = clientAuth.getClient();
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
@@ -236,7 +236,7 @@ public class TokenEndpoint {
 
     }
 
-    private void checkGrantType() {
+    protected void checkGrantType() {
         if (grantType == null) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
