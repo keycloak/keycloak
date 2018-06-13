@@ -103,6 +103,22 @@ public class IOUtil {
         }
     }
 
+    /**
+     * Modifies attribute value according to the given regex (first occurrence) iff 
+     * there are following conditions accomplished:
+     * 
+     *  - exactly one node is found within the document
+     *  - the attribute of the node exists
+     *  - the regex is found in the value of the attribute
+     * 
+     * Otherwise there is nothing changed.
+     * 
+     * @param doc
+     * @param tagName
+     * @param attributeName
+     * @param regex
+     * @param replacement
+     */
     public static void modifyDocElementAttribute(Document doc, String tagName, String attributeName, String regex, String replacement) {
         NodeList nodes = doc.getElementsByTagName(tagName);
         if (nodes.getLength() != 1) {
@@ -115,7 +131,7 @@ public class IOUtil {
             log.warn("Not able to find attribute " + attributeName + " within element: " + tagName);
             return;
         }
-        node.setTextContent(node.getTextContent().replace(regex, replacement));
+        node.setTextContent(node.getTextContent().replaceFirst(regex, replacement));
     }
 
     public static void removeNodeByAttributeValue(Document doc, String parentTag, String tagName, String attributeName, String value){
@@ -141,6 +157,20 @@ public class IOUtil {
         }
     }
 
+    /**
+     * Modifies element text value according to the given regex (first occurrence) iff 
+     * there are following conditions accomplished:
+     * 
+     *  - exactly one node is found within the document
+     *  - the regex is found in the text content of the element
+     * 
+     * Otherwise there is nothing changed.
+     * 
+     * @param doc
+     * @param tagName
+     * @param regex
+     * @param replacement 
+     */
     public static void modifyDocElementValue(Document doc, String tagName, String regex, String replacement) {
         NodeList nodes = doc.getElementsByTagName(tagName);
         if (nodes.getLength() != 1) {
@@ -154,7 +184,7 @@ public class IOUtil {
             return;
         }
 
-        node.setTextContent(node.getTextContent().replace(regex, replacement));
+        node.setTextContent(node.getTextContent().replaceFirst(regex, replacement));
     }
 
     public static void setDocElementAttributeValue(Document doc, String tagName, String attributeName, String value) {
