@@ -1334,7 +1334,13 @@
                     },
 
                     redirectUri: function(options) {
-                        return 'http://localhost';
+                        if (options && options.redirectUri) {
+                            return options.redirectUri;
+                        } else if (kc.redirectUri) {
+                            return kc.redirectUri;
+                        } else {
+                            return 'http://localhost';
+                        }
                     }
                 }
             }
