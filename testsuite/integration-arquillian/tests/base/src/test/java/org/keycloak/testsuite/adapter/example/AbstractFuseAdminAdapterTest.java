@@ -31,7 +31,6 @@ import javax.management.remote.JMXServiceURL;
 
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
-import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.session.ClientSession.ClientSessionEvent;
@@ -41,6 +40,14 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
+import org.apache.sshd.client.channel.ChannelExec;
+import org.apache.sshd.client.channel.ClientChannel.Streaming;
+import org.apache.sshd.client.channel.ClientChannelEvent;
+import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapterTest {
     
@@ -49,11 +56,7 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
     
     private SshClient client;
     
-    private ClientChannel channel;
-    
-    private ClientSession session;
-    
-    enum Result { OK, NOT_FOUND, NO_CREDENTIALS, NO_ROLES };
+    protected enum Result { OK, NOT_FOUND, NO_CREDENTIALS, NO_ROLES };
     
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -70,6 +73,7 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         
     @Test
     public void hawtioLoginTest() throws Exception {
+        // Note that this does works only in Fuse 6 with Hawtio 1 since Fuse 7 contains Hawtio 2, and is thus overriden in Fuse 7 test classes
         hawtioPage.navigateTo();
         testRealmLoginPage.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(hawtioPage);
@@ -84,14 +88,15 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         
         hawtioPage.navigateTo();
         testRealmLoginPage.form().login("mary", "password");
-        assertTrue(!driver.getPageSource().contains("welcome"));
+        assertThat(driver.getPageSource(), not(containsString("welcome")));
     }
     
     
     
     @Test
     public void sshLoginTest() throws Exception {
-        assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
+        // Note that this does not work for Fuse 7 since the error codes have changed, and is thus overriden for Fuse 7 test classes
+        assertCommand("mary", "password", "shell:date", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:info", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:date", Result.OK);
         assertCommand("root", "password", "shell:info", Result.OK);
@@ -121,47 +126,58 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         setJMXAuthentication("karaf", "admin");
     }
 
-    private String assertCommand(String user, String password,  String command, Result result) throws Exception, IOException {
+    protected String assertCommand(String user, String password,  String command, Result result) throws Exception, IOException {
         if (!command.endsWith("\n"))
             command += "\n";
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        OutputStream pipe = openSshChannel(user, password, out, out);
-        pipe.write(command.getBytes());
-        pipe.flush();
-
-        closeSshChannel(pipe);
-        String output = new String(out.toByteArray());
+        String output = getCommandOutput(user, password, command);
 
         switch(result) {
         case OK:
-            Assert.assertFalse("Should not contain 'Insufficient credentials' or 'Command not found': " + output,
-                    output.contains("Insufficient credentials") || output.contains("Command not found"));
+            Assert.assertThat(output,
+                    not(anyOf(containsString("Insufficient credentials"), Matchers.containsString("Command not found"))));
             break;
         case NOT_FOUND:
-            Assert.assertTrue("Should contain 'Command not found': " + output,
-                    output.contains("Command not found"));
+            Assert.assertThat(output,
+                    containsString("Command not found"));
             break;
         case NO_CREDENTIALS:
-            Assert.assertTrue("Should contain 'Insufficient credentials': " + output,
-                    output.contains("Insufficient credentials"));
+            Assert.assertThat(output,
+                    containsString("Insufficient credentials"));
             break;
         case NO_ROLES:
-            Assert.assertTrue("Should contain 'Current user has no associated roles': " + output,
-                    output.contains("Current user has no associated roles"));
+            Assert.assertThat(output,
+                    containsString("Current user has no associated roles"));
             break;
         default:
             Assert.fail("Unexpected enum value: " + result);
         }
+
         return output;
     }
     
-    private OutputStream openSshChannel(String username, String password, OutputStream ... outputs) throws Exception {
+    protected String getCommandOutput(String user, String password, String command) throws Exception, IOException {
+        if (!command.endsWith("\n"))
+            command += "\n";
+
+        try (ClientSession session = openSshChannel(user, password);
+          ChannelExec channel = session.createExecChannel(command);
+          ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            channel.setOut(out);
+            channel.setErr(out);
+            channel.open();
+            channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED, ClientChannelEvent.EOF), 0);
+
+            return new String(out.toByteArray());
+        }
+    }
+
+    protected ClientSession openSshChannel(String username, String password) throws Exception {
         client = SshClient.setUpDefaultClient();
         client.start();
         ConnectFuture future = client.connect(username, "localhost", 8101);
         future.await();
-        session = future.getSession();
+        ClientSession session = future.getSession();
 
         Set<ClientSessionEvent> ret = EnumSet.of(ClientSessionEvent.WAIT_AUTH);
         while (ret.contains(ClientSessionEvent.WAIT_AUTH)) {
@@ -172,46 +188,13 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         if (ret.contains(ClientSessionEvent.CLOSED)) {
             throw new Exception("Could not open SSH channel");
         }
-        channel = session.createChannel("shell");
-        PipedOutputStream pipe = new PipedOutputStream();
-        channel.setIn(new PipedInputStream(pipe));
 
-        OutputStream out;
-        if (outputs.length >= 1) {
-            out = outputs[0];
-        } else {
-            out = new ByteArrayOutputStream();
-        }
-        channel.setOut(out);
-
-        OutputStream err;
-        if (outputs.length >= 2) {
-            err = outputs[1];
-        } else {
-            err = new ByteArrayOutputStream();
-        }
-        channel.setErr(err);
-        channel.open();
-
-        return pipe;
+        return session;
     }
-    
-    private void setJMXAuthentication(String realm, String password) throws Exception {
+
+    protected void setJMXAuthentication(String realm, String password) throws Exception {
        assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
        getMBeanServerConnection(10000, TimeUnit.MILLISECONDS, "admin", password);
-    }
-    
-    private void closeSshChannel(OutputStream pipe) throws IOException {
-        pipe.write("logout\n".getBytes());
-        pipe.flush();
-
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), TimeUnit.SECONDS.toMillis(15L));
-        session.close(true);
-        client.stop();
-
-        client = null;
-        channel = null;
-        session = null;
     }
     
     private Object assertJmxInvoke(boolean expectSuccess, MBeanServerConnection connection, ObjectName mbean, String method,

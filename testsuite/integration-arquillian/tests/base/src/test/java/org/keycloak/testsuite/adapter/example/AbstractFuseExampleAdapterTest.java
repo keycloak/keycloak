@@ -27,16 +27,19 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.auth.page.account.Account;
 
+import org.keycloak.testsuite.util.WaitUtils;
 import java.io.File;
 import java.util.List;
 
+import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -111,30 +114,36 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
+        WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         testRealmLoginPage.form().login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
-        assertTrue(driver.getPageSource().contains("Hello admin!"));
-        assertTrue(driver.getPageSource().contains("This second sentence is returned from a Camel RestDSL endpoint"));
+        assertThat(driver.getPageSource(), containsString("Hello admin!"));
+        assertThat(driver.getPageSource(), containsString("This second sentence is returned from a Camel RestDSL endpoint"));
 
         customerListing.navigateTo();
+        WaitUtils.waitForPageToLoad();
         customerListing.clickLogOut();
-        pause(500);
-        assertCurrentUrlStartsWith(customerPortal);
+        WaitUtils.waitForPageToLoad();
 
+        WaitUtils.pause(2500);
         customerPortal.navigateTo();//needed for phantomjs
+        WaitUtils.waitForPageToLoad();
         customerPortal.clickAdminInterfaceLink();
+        WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
-        assertTrue(driver.getPageSource().contains("Status code is 403"));
+        assertThat(driver.getPageSource(), containsString("Status code is 403"));
     }
 
     @Test
     public void testProductPortal() {
         productPortal.navigateTo();
+        WaitUtils.waitForPageToLoad();
+
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
@@ -145,6 +154,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
 
         productPortal.clickLogOutLink();
+        WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 

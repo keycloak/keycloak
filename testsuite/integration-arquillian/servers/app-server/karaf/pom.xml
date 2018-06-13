@@ -138,6 +138,7 @@
                                             <directory>src/main/resources</directory>
                                             <includes>
                                                 <include>users.properties</include>
+                                                <include>keycloak-bearer.json</include>
                                                 <include>keycloak-direct-access.json</include>
                                                 <include>keycloak-hawtio-client.json</include>
                                                 <include>keycloak-hawtio.json</include>

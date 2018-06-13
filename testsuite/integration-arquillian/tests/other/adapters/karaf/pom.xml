@@ -43,6 +43,7 @@
         <!--fuse examples expect default karaf http port 8181-->
         <app.server.http.port>8181</app.server.http.port>
                 
+        <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=${app.server.host}:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
     </properties>
     
     <profiles>
@@ -53,6 +54,7 @@
                     <exists>src</exists>
                 </file>
             </activation>
+            <!--
             <build>
                 <plugins>
                     <plugin>
@@ -76,6 +78,7 @@
                     </plugin>
                 </plugins>
             </build>
+            -->
         </profile>
         
 

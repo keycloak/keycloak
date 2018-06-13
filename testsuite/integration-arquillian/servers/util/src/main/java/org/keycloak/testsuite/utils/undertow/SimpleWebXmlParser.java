@@ -68,13 +68,17 @@ class SimpleWebXmlParser {
             List<ElementWrapper> servlets = document.getElementsByTagName("servlet");
             for (ElementWrapper servlet : servlets) {
                 String servletName = servlet.getElementByTagName("servlet-name").getText();
-                String servletClass = servlet.getElementByTagName("servlet-class").getText();
+                ElementWrapper servletClassEw = servlet.getElementByTagName("servlet-class");
+                String servletClass = servletClassEw == null ? servletName : servletClassEw.getText();
+                ElementWrapper loadOnStartupEw = servlet.getElementByTagName("load-on-startup");
+                Integer loadOnStartup = loadOnStartupEw == null ? null : Integer.valueOf(loadOnStartupEw.getText());
 
                 Class<? extends Servlet> servletClazz = (Class<? extends Servlet>) Class.forName(servletClass);
                 ServletInfo undertowServlet = new ServletInfo(servletName, servletClazz);
 
                 if (servletMappings.containsKey(servletName)) {
                     undertowServlet.addMapping(servletMappings.get(servletName));
+                    undertowServlet.setLoadOnStartup(loadOnStartup);
                     di.addServlet(undertowServlet);
                 } else {
                     log.warnf("Missing servlet-mapping for '%s'", servletName);

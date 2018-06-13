@@ -127,7 +127,7 @@ public class IOUtil {
         }
 
         Node node = nodes.item(0).getAttributes().getNamedItem(attributeName);
-        if (node == null) {
+        if (node == null || node.getTextContent() == null) {
             log.warn("Not able to find attribute " + attributeName + " within element: " + tagName);
             return;
         }
