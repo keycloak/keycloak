@@ -109,14 +109,14 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 
     # Prepare Fuse server
-    mvn -f testsuite/integration-arquillian/servers \
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://download.eng.bos.redhat.com/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
       -Dmaven.repo.local=$HOME/.m2/repository
  
     # Run the Fuse adapter tests
@@ -125,6 +125,42 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229
+
+
+### JBoss Fuse 7.0
+
+1) Download JBoss Fuse 7.0 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
+Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
+
+2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
+
+
+    mvn install:install-file \
+      -DgroupId=org.jboss.fuse \
+      -DartifactId=fuse-karaf \
+      -Dversion=7.0.0.fuse-000202 \
+      -Dpackaging=zip \
+      -Dfile=/mydownloads/fuse-karaf-7.0.0.fuse-000202.zip
+
+
+3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
+
+
+    # Prepare Fuse server
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+      clean install \
+      -Papp-server-fuse70 \
+      -Dfuse70.version=7.0.0.fuse-000202 \
+      -Dapp.server.karaf.update.config=true \
+      -Dmaven.local.settings=$HOME/.m2/settings.xml \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Dmaven.repo.local=$HOME/.m2/repository
+ 
+    # Run the Fuse adapter tests
+    mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse70/pom.xml \
+      clean test \
+      -Dbrowser=phantomjs \
+      -Papp-server-fuse70
 
 
 ### EAP6 with Hawtio
