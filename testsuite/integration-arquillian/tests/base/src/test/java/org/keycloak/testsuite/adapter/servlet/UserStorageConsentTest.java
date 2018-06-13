@@ -117,6 +117,7 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         ClientModel product = session.realms().getClientByClientId("product-portal", realm);
         product.setConsentRequired(true);
         ClientScopeModel clientScope = realm.addClientScope("clientScope");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         System.err.println("client scope protocol mappers size: " + clientScope.getProtocolMappers().size());
 
         for (ProtocolMapperModel mapper : product.getProtocolMappers()) {
@@ -163,7 +164,7 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("memuser", "password");
-        org.keycloak.testsuite.Assert.assertTrue(consentPage.isCurrent());
+        Assert.assertTrue(consentPage.isCurrent());
         consentPage.confirm();
         assertCurrentUrlEquals(productPortal.toString());
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
