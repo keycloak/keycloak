@@ -271,7 +271,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     "org.keycloak.adapters.saml.jbossweb.infinispan.InfinispanSessionCacheIdMapperUpdater");
         }
 
-        if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
+        if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class) && archive.contains(JBOSS_DEPLOYMENT_XML_PATH)) {
 
             addFilterDependencies(archive, testClass);
 
