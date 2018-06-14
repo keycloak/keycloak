@@ -264,6 +264,12 @@
                 <module>fuse70</module>
             </modules>
         </profile>
+        <profile>
+            <id>app-server-fuse71</id>
+            <modules>
+                <module>fuse71</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>
