@@ -56,6 +56,12 @@
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.documentation</groupId>
+            <artifactId>release-notes</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -172,6 +178,22 @@
                             <resources>
                                 <resource>
                                     <directory>../server_installation/target/generated-docs</directory>
+                                    <include>**/**</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-release_notes</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/release_notes/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../release_notes/target/generated-docs</directory>
                                     <include>**/**</include>
                                 </resource>
                             </resources>
