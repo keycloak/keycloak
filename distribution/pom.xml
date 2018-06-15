@@ -36,16 +36,27 @@
     </properties>
 
     <modules>
-        <module>adapters</module>
-        <module>saml-adapters</module>
         <module>feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
         <module>server-dist</module>
-        <module>server-overlay</module>
     </modules>
 
     <profiles>
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>adapters</module>
+                <module>saml-adapters</module>
+                <module>server-overlay</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>jboss-release</id>
             <modules>

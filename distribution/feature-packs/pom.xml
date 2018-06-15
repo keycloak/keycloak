@@ -31,7 +31,20 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-feature-pack</module>
         <module>server-feature-pack</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>adapter-feature-pack</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
