@@ -19,6 +19,19 @@
 
     <modules>
         <module>policy</module>
-        <module>client</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>client</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

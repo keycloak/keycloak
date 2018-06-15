@@ -31,8 +31,21 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>spi</module>
-        <module>saml</module>
         <module>oidc</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>spi</module>
+                <module>saml</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

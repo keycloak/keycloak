@@ -31,8 +31,21 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>admin-client</module>
-        <module>client-registration</module>
         <module>client-cli</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>admin-client</module>
+                <module>client-registration</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

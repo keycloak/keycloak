@@ -197,13 +197,10 @@
         <module>services</module>
         <module>themes</module>
         <module>model</module>
-        <module>util</module>
         <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
-        <module>examples</module>
-        <module>misc</module>
     </modules>
 
     <dependencyManagement>
@@ -1605,9 +1602,6 @@
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
             </properties>
-            <modules>
-                <module>proxy</module>
-            </modules>
         </profile>
 
         <profile>
@@ -1638,6 +1632,20 @@
             </activation>
             <modules>
                 <module>testsuite</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>examples</module>
+                <module>misc</module>
+                <module>util</module>
             </modules>
         </profile>
 
