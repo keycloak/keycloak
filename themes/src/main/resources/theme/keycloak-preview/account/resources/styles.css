@@ -9,6 +9,9 @@ body {
 .cards-pf {
   background: #f5f5f5;
 }
+.card-pf {
+  margin: 0 0 20px;
+}
 .card-pf .row-cards-pf:first-child {
   padding-top: 0px;
 }
@@ -54,7 +57,10 @@ p.description {
   background: #ffffff;
   margin-bottom: 10px;
 }
-
+.row {
+  margin-left: -20px;
+  margin-right: -20px;
+}
 
 /*Responsive Design*/
 @media (max-width: 767px) {

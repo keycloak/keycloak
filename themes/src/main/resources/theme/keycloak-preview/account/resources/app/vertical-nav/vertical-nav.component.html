@@ -1,4 +1,4 @@
-<div id="verticalNavLayout" class="layout-pf layout-pf-fixed faux-layout" style="background-color: white;">
+<div id="verticalNavLayout" class="layout-pf layout-pf-fixed faux-layout">
     <pfng-vertical-navigation
         #pfVerticalNav
         [brandSrc]="resourceUrl + '/app/assets/img/keycloak-logo-min.png'"
@@ -37,8 +37,7 @@
 
 
     <div #contentContainer
-        class="container-fluid container-cards-pf container-pf-nav-pf-vertical example-page-container"
-        style="background-color: white;">
+        class="container-fluid container-cards-pf container-pf-nav-pf-vertical example-page-container">
         <div class="row">
             <div class="col-sm-12">
                 <router-outlet></router-outlet>
