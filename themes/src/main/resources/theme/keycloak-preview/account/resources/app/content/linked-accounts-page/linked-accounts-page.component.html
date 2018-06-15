@@ -1,1 +1,126 @@
-<h1>Placeholder for Linked Accounts Page (formerly known as Federated Identity)</h1>
+<!--content-->
+<div class="page-header">
+  <h1>Linked Accounts</h1>
+</div>
+<div class="col-sm-12 card-pf card-linked-account">
+  <div class="card-pf-body row">
+    <div class="col-md-3">
+      <div class="card-pf-subtitle">
+        Authorized Provider
+      </div>
+      <div class="introMessage">
+        <p>Authorized Providers linked with your account.</p>
+      </div>
+    </div>
+    <div class="col-md-9 linked-account-list">
+      <div class="list-group list-view-pf list-view-pf-view">
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#" data-toggle="modal" data-target="#myModal">Remove</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-google list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Google
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">Social login</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+                <span class="fa fa-user"> </span>  zhutaoredhat
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="col-sm-12 card-pf card-linked-account">
+  <div class="card-pf-body row">
+    <div class="col-md-3">
+      <div class="card-pf-subtitle">
+        Identity Provider
+      </div>
+      <div class="introMessage">
+        <p>To link your account with identity providers you have configured.</p>
+      </div>
+    </div>
+    <div class="col-md-9 linked-account-list">
+      <div class="list-group list-view-pf list-view-pf-view ">
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#">Link</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-facebook list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Facebook
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">Social login</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#">Link</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-github list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Github
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">Social login</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Remove Access</h4>
+      </div>
+      <div class="modal-body">
+        KeyCloak will no longer have permission to your account. Are you sure to remove access?<br>
+        You will need to grant access again, if you want to use this app account.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Modal -->
