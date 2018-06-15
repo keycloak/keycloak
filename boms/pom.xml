@@ -44,7 +44,6 @@
     </licenses>
 
     <modules>
-        <module>adapter</module>
         <module>spi</module>
     </modules>
     
@@ -77,5 +76,18 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>nonServer</id>
+            <activation>
+                <property>
+                    <name>!serverOnly</name>
+                </property>
+            </activation>
+            <modules>
+                <module>adapter</module>
+            </modules>
+        </profile>
+
     </profiles>
 </project>
