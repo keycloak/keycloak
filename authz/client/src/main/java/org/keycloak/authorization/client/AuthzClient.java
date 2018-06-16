@@ -17,6 +17,11 @@
  */
 package org.keycloak.authorization.client;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.function.Supplier;
+
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.EntitlementResource;
@@ -25,12 +30,11 @@ import org.keycloak.authorization.client.util.Http;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.common.util.Time;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -39,6 +43,7 @@ import java.util.function.Supplier;
  */
 public class AuthzClient {
 
+    private Logger log = Logger.getLogger(AuthzClient.class);
     private final Http http;
     private Supplier<String> patSupplier;
 
@@ -146,15 +151,34 @@ public class AuthzClient {
             patSupplier = new Supplier<String>() {
                 AccessTokenResponse clientToken = obtainAccessToken();
 
+                public boolean isTokenTimeToLiveSufficient(AccessToken token) {
+                    return token != null && (token.getExpiration() - getConfiguration().getTokenMinimumTimeToLive()) > Time.currentTime();
+                }
+
                 @Override
                 public String get() {
+                    String refreshTokenValue = clientToken.getRefreshToken();
+                    try {
+                        RefreshToken refreshToken = JsonSerialization.readValue(new JWSInput(refreshTokenValue).getContent(), RefreshToken.class);
+                        if (!refreshToken.isActive() || !isTokenTimeToLiveSufficient(refreshToken)) {
+                            log.debug("Refresh token is expired.");                            
+                            clientToken = obtainAccessToken();
+                        }
+                    } catch (Exception e) {                        
+                        clientToken = null;
+                        patSupplier = null;
+                        throw new RuntimeException(e);
+                    }
+
                     String token = clientToken.getToken();
 
                     try {
                         AccessToken accessToken = JsonSerialization.readValue(new JWSInput(token).getContent(), AccessToken.class);
 
-                        if (accessToken.isActive()) {
+                        if (accessToken.isActive() && this.isTokenTimeToLiveSufficient(accessToken)) {
                             return token;
+                        } else {
+                            log.debug("Access token is expired.");
                         }
 
                         clientToken = http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
@@ -166,6 +190,7 @@ public class AuthzClient {
                                 .json(AccessTokenResponse.class)
                                 .execute();
                     } catch (Exception e) {
+                        clientToken = null;
                         patSupplier = null;
                         throw new RuntimeException(e);
                     }
