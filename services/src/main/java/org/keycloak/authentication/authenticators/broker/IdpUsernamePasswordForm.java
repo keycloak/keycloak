@@ -24,6 +24,7 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
@@ -63,7 +64,10 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
-        formData.add(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
+	Realm realm = context.getRealm();
+	String username = (realm.isRegistrationEmailAsUsername() ? existingUser.getEmail() : existingUser.getUsername())
+
+        formData.add(AuthenticationManager.FORM_USERNAME, username);
         return context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)
