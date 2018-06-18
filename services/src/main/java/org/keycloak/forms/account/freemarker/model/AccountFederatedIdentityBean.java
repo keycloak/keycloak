@@ -54,6 +54,9 @@ public class AccountFederatedIdentityBean {
         int availableIdentities = 0;
         if (identityProviders != null && !identityProviders.isEmpty()) {
             for (IdentityProviderModel provider : identityProviders) {
+                if (!provider.isEnabled()) {
+                    continue;
+                }
                 String providerId = provider.getAlias();
 
                 FederatedIdentityModel identity = getIdentity(identities, providerId);

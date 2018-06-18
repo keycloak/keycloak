@@ -17,11 +17,14 @@
 package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.AbstractBaseBrokerTest;
@@ -116,6 +119,15 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
         ApiUtil.resetUserPassword(adminClient.realm(KcOidcBrokerConfiguration.INSTANCE.consumerRealmName()).users().get(userId), "password", false);
     }
 
+    @After
+    public void after() {
+        RealmResource consumerRealm = adminClient.realm(KcOidcBrokerConfiguration.INSTANCE.consumerRealmName());
+        UserRepresentation userRep = ApiUtil.findUserByUsername(consumerRealm, "accountbrokertest");
+        if (userRep != null) {
+            consumerRealm.users().get(userRep.getId()).remove();
+        }
+    }
+
     @Test
     public void add() {
         identityPage.realm(KcOidcBrokerConfiguration.INSTANCE.consumerRealmName());
@@ -152,6 +164,31 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
         Assert.assertEquals("kc-oidc-idp", identities.get(0).getProvider());
         Assert.assertEquals("", identities.get(0).getSubject());
         Assert.assertEquals("add-link-kc-oidc-idp", identities.get(0).getAction().getAttribute("id"));
+    }
+
+    @Test
+    public void displayEnabledIdentityProviders() {
+        identityPage.realm(KcOidcBrokerConfiguration.INSTANCE.consumerRealmName());
+        identityPage.open();
+        loginPage.login("accountbrokertest", "password");
+        Assert.assertTrue(identityPage.isCurrent());
+
+        List<AccountFederatedIdentityPage.FederatedIdentity> identities = identityPage.getIdentities();
+        Assert.assertEquals(1, identities.size());
+
+        // Disable the identity provider
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource providerResource = realm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation provider = providerResource.toRepresentation();
+        provider.setEnabled(false);
+        providerResource.update(provider);
+
+        // Reload federated identities page
+        identityPage.open();
+        Assert.assertTrue(identityPage.isCurrent());
+
+        identities = identityPage.getIdentities();
+        Assert.assertEquals(0, identities.size());
     }
 
 }
