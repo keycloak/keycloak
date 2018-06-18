@@ -1101,7 +1101,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.changed = false;
     
     var refresh = function() {
-        Realm.get($scope.realm, function () {
+        Realm.get($scope.realm.realm, function () {
             $scope.changed = false;
         });
     };
