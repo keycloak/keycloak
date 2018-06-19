@@ -20,12 +20,19 @@ import { FormsModule } from '@angular/forms';
 
 import { TranslateModule } from '@ngx-translate/core';
 
-import { MyResourcesPageComponent } from './my-resources-page.component';
 import { MyResourcesRoutingModule } from './my-resources-routing.module';
+import { MyResourcesPageComponent } from './my-resources-page.component';
+import { MyResourcesDetailPageComponent } from './my-resources-detail-page.component';
+import { SharedWithMePageComponent } from './shared-with-me-page.component';
+import { SharedWithMeDetailPageComponent } from './shared-with-me-detail-page.component';
+
 
 @NgModule({
   imports:      [ CommonModule, FormsModule, TranslateModule, MyResourcesRoutingModule ],
-  declarations: [ MyResourcesPageComponent ],
+  declarations: [ MyResourcesPageComponent,
+                  MyResourcesDetailPageComponent,
+                  SharedWithMePageComponent,
+                  SharedWithMeDetailPageComponent ],
   providers:    [ ]
 })
 export class MyResourcesModule {}
