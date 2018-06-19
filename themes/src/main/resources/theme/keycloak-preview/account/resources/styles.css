@@ -305,7 +305,7 @@ p.description {
 .list-view-pf-additional-info .fa-user {
   margin-right: 5px;
 }
-.card-linked-account.list-view-pf .list-group-item-heading {
+.card-linked-account .list-view-pf .list-group-item-heading {
     flex: 1 0 calc(40% - 20px);
 }
 .card-linked-account .list-view-pf-additional-info {
