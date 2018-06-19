@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.util;
+package org.keycloak.testsuite.utils.io;
 
 import org.jboss.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -69,7 +69,7 @@ public class IOUtil {
         try {
             return loadRealm(new FileInputStream(realmFile));
         } catch (FileNotFoundException ex) {
-            throw new IllegalStateException("Test realm file not found: " + realmFile);
+            throw new IllegalStateException("Test realm file not found: " + realmFile, ex);
         }
     }
 

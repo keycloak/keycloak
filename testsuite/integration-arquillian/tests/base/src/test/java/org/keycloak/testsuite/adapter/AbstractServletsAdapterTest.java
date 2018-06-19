@@ -24,6 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.io.IOUtil;
 import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
@@ -34,7 +35,6 @@ import java.util.List;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
@@ -112,7 +112,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/demorealm.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/demorealm.json"));
     }
 
     @Override

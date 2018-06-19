@@ -19,7 +19,7 @@ package org.keycloak.testsuite.adapter.servlet;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
+import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)

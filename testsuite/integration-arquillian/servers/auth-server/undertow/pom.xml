@@ -36,7 +36,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-servers-util</artifactId>
+            <artifactId>integration-arquillian-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

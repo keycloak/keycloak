@@ -123,6 +123,11 @@
                 <version>${arquillian-wls-container.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>undertow-embedded</artifactId>
+                <version>${undertow-embedded.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
@@ -158,6 +163,7 @@
         <module>test-apps</module>
         <module>servers</module>
         <module>tests</module>
+        <module>util</module>
     </modules>
     
     <profiles>
