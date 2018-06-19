@@ -18,8 +18,15 @@ import { NgModule }             from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 import { MyResourcesPageComponent } from './my-resources-page.component';
+import { MyResourcesDetailPageComponent } from './my-resources-detail-page.component';
+import { SharedWithMePageComponent } from './shared-with-me-page.component';
+import { SharedWithMeDetailPageComponent } from './shared-with-me-detail-page.component';
 
 const routes: Routes = [
+    { path: 'my-resources', component: MyResourcesPageComponent },
+    { path: 'my-resources-detail', component: MyResourcesDetailPageComponent },
+    { path: 'shared-with-me', component: SharedWithMePageComponent },
+    { path: 'shared-with-me-detail', component: SharedWithMeDetailPageComponent },
     { path: '**', component: MyResourcesPageComponent },
 ];
 
