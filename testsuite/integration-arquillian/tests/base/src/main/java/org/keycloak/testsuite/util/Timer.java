@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
+import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *

@@ -21,6 +21,7 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -70,38 +71,47 @@ public class AngularCorsProductTestApp extends AbstractPageWithInjectedUrl {
     private WebElement headers;
 
     public void reloadData() {
+        WaitUtils.waitUntilElement(reloadDataButton).is().clickable();
         reloadDataButton.click();
     }
 
     public void loadRoles() {
+        WaitUtils.waitUntilElement(loadRolesButton).is().clickable();
         loadRolesButton.click();
     }
 
     public void addRole() {
+        WaitUtils.waitUntilElement(addRoleButton).is().clickable();
         addRoleButton.click();
     }
 
     public void deleteRole() {
+        WaitUtils.waitUntilElement(deleteRoleButton).is().clickable();
         deleteRoleButton.click();
     }
 
     public void loadAvailableSocialProviders() {
+        WaitUtils.waitUntilElement(loadAvailableSocialProvidersButton).is().clickable();
         loadAvailableSocialProvidersButton.click();
     }
 
     public void loadPublicRealmInfo() {
+        WaitUtils.waitUntilElement(loadPublicRealmInfoButton).is().clickable();
         loadPublicRealmInfoButton.click();
     }
 
     public void loadVersion() {
+        WaitUtils.waitUntilElement(loadVersionButton).is().clickable();
         loadVersionButton.click();
     }
 
     public WebElement getOutput() {
+        WaitUtils.waitUntilElement(outputArea).is().visible();
         return outputArea;
     }
 
     public WebElement getHeaders() {
+        WaitUtils.waitUntilElement(headers).is().visible();
         return headers;
     }
 

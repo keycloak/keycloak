@@ -24,7 +24,6 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -52,9 +51,8 @@ public class AppServerWelcomePage extends AppServerContextRoot {
     }
 
     public void navigateToConsole() {
-        WaitUtils.pause(2000);
         URLUtils.navigateToUri(getInjectedUrl().toString() + "/console", true);
-        waitForPageToLoad();
+        loginPage.form().waitForLoginButtonPresent();
     }
 
     public void login(String username, String password) {

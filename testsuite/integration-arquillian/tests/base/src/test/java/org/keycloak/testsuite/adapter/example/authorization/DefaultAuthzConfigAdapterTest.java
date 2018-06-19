@@ -41,7 +41,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

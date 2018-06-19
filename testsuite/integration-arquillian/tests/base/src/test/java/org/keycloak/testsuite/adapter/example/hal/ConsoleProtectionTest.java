@@ -17,10 +17,11 @@
 package org.keycloak.testsuite.adapter.example.hal;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -43,6 +44,7 @@ import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.Address;
 import org.wildfly.extras.creaper.core.online.operations.OperationException;
 import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 /**
  *
@@ -98,13 +100,15 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
             // Create a secure-server in order to publish the wildfly console configuration via mgmt interface
             clientWorkerNodeClient.execute("/subsystem=keycloak/secure-server=wildfly-console:add(realm=jboss-infra,resource=wildfly-console,public-client=true)");
 
-            // reload
-            clientWorkerNodeClient.execute("reload");
-        } catch (CliException cause) {
+            log.debug("Reloading the server");
+            new Administration(clientWorkerNodeClient).reload();
+            log.debug("Reloaded");
+        } catch (CliException | IOException | InterruptedException | TimeoutException cause) {
             throw new RuntimeException("Failed to configure app server", cause);
         }
 
         DroneUtils.addWebDriver(jsDriver);
+        log.debug("Added jsDriver");
     }
 
     private void testLogin() throws InterruptedException {

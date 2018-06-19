@@ -12,7 +12,7 @@ import javax.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.List;
 
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author mhajas
