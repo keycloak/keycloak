@@ -30,7 +30,7 @@ directly in the user search field.
 
 = Adapters
 
-== Sprint Boot 2
+== Spring Boot 2
 
 We now have support for Spring Boot 2.
 
