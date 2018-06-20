@@ -90,6 +90,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
