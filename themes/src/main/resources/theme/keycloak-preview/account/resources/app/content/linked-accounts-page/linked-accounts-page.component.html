@@ -1,22 +1,22 @@
 <!--content-->
 <div class="page-header">
-  <h1>Linked Accounts</h1>
+  <h1>{{'linkedAccountsHtmlTitle' | translate}}</h1>
 </div>
 <div class="col-sm-12 card-pf card-linked-account">
   <div class="card-pf-body row">
     <div class="col-md-3">
       <div class="card-pf-subtitle">
-        Authorized Provider
+        {{'authorizedProvider' | translate}}
       </div>
       <div class="introMessage">
-        <p>Authorized Providers linked with your account.</p>
+        <p>{{'authorizedProviderMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-md-9">
       <div class="list-group list-view-pf list-view-pf-view">
         <div class="list-group-item">
           <div class="list-view-pf-actions">
-            <a href="#" data-toggle="modal" data-target="#myModal">Remove</a>
+            <a href="#" data-toggle="modal" data-target="#myModal">{{'doRemove' | translate}}</a>
           </div>
           <div class="list-view-pf-main-info">
             <div class="list-view-pf-left">
@@ -28,7 +28,7 @@
                   Google
                 </div>
                 <div class="list-group-item-text">
-                  <span class="label label-primary">Social login</span>
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
                 </div>
               </div>
               <div class="list-view-pf-additional-info">
@@ -45,17 +45,17 @@
   <div class="card-pf-body row">
     <div class="col-md-3">
       <div class="card-pf-subtitle">
-        Identity Provider
+        {{'identityProvider' | translate}}
       </div>
       <div class="introMessage">
-        <p>To link your account with identity providers you have configured.</p>
+        <p>{{'identityProviderMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-md-9">
       <div class="list-group list-view-pf list-view-pf-view ">
         <div class="list-group-item">
           <div class="list-view-pf-actions">
-            <a href="#">Link</a>
+            <a href="#">{{'doLink' | translate}}</a>
           </div>
           <div class="list-view-pf-main-info">
             <div class="list-view-pf-left">
@@ -67,7 +67,7 @@
                   Facebook
                 </div>
                 <div class="list-group-item-text">
-                  <span class="label label-primary">Social login</span>
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
                 </div>
               </div>
               <div class="list-view-pf-additional-info">
@@ -78,7 +78,7 @@
 
         <div class="list-group-item">
           <div class="list-view-pf-actions">
-            <a href="#">Link</a>
+            <a href="#">{{'doLink' | translate}}</a>
           </div>
           <div class="list-view-pf-main-info">
             <div class="list-view-pf-left">
@@ -90,7 +90,7 @@
                   Github
                 </div>
                 <div class="list-group-item-text">
-                  <span class="label label-primary">Social login</span>
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
                 </div>
               </div>
               <div class="list-view-pf-additional-info">
@@ -110,15 +110,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Remove Access</h4>
+        <h4 class="modal-title" id="myModalLabel">{{'removeAccess' | translate}}</h4>
       </div>
       <div class="modal-body">
-        KeyCloak will no longer have permission to your account. Are you sure to remove access?<br>
-        You will need to grant access again, if you want to use this app account.
+        {{'removeAccessMessage' | translate}}
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary">Remove</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">{{'doCancel' | translate}}</button>
+        <button type="button" class="btn btn-primary">{{'doRemove' | translate}}</button>
       </div>
     </div>
   </div>
