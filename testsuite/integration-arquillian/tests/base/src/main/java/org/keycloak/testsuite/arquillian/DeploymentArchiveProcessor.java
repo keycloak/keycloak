@@ -49,6 +49,8 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isUndertow
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWASAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWildflyAppServer;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWildfly10AppServer;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWildfly9AppServer;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.utils.io.IOUtil.appendChildInDocument;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
@@ -96,6 +98,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         if (isEAP6AppServer() || 
             isEAPAppServer() || 
             isWildflyAppServer() || 
+            isWildfly10AppServer() || 
+            isWildfly9AppServer() || 
             isUndertowAppServer()) {
 
             return;

@@ -57,6 +57,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * Created by fkiss.
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {

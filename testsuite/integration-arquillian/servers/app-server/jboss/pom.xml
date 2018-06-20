@@ -413,7 +413,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
@@ -429,7 +429,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>

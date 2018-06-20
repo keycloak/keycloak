@@ -198,6 +198,14 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wildfly");
     }
 
+    public static boolean isWildfly10AppServer() {
+        return CURRENT_APP_SERVER.equals("wildfly10");
+    }
+
+    public static boolean isWildfly9AppServer() {
+        return CURRENT_APP_SERVER.equals("wildfly9");
+    }
+
     public static boolean isTomcatAppServer() {
         return CURRENT_APP_SERVER.equals("tomcat");
     }
