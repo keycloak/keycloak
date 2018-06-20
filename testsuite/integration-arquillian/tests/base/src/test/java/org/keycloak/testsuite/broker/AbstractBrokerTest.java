@@ -65,6 +65,9 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         resetUserPassword(realmResource.users().get(userId), bc.getUserPassword(), false);
 
         if (testContext.isInitialized()) {
+            if (identityProviderResource == null) {
+                identityProviderResource = (IdentityProviderResource) testContext.getCustomValue("identityProviderResource");
+            }
             return;
         }
 
@@ -72,6 +75,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
         identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
+        testContext.setCustomValue("identityProviderResource", identityProviderResource);
 
         // addClients
         List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
