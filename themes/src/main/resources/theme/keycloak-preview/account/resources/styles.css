@@ -307,10 +307,34 @@ p.description {
   position: absolute;
   right: 10px;
 }
+/* Linked  Style */
+.list-view-pf-additional-info .fa-user {
+  margin-right: 5px;
+}
+.card-linked-account .list-view-pf .list-group-item-heading {
+    flex: 1 0 calc(40% - 20px);
+}
+.card-linked-account .list-view-pf-additional-info {
+    width: 10%；
+}
+.card-linked-account .list-view-pf .list-group-item-text {
+    width: calc(45% - 40px);
+}
 
 @media (max-width: 767px) {
   .card-pf-application h2 {
     margin-top: -10px;
+  }
+  .card-linked-account .card-pf-body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .card-linked-account .list-group-item {
+    padding: 10px 0;
+  }
+  .card-linked-account .list-view-pf-additional-info {
+    width: 100%;
+    margin-top: 20px;
   }
   .card-pf-application h2 a {
     text-decoration: none;
