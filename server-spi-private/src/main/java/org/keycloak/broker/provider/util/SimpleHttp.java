@@ -288,6 +288,11 @@ public class SimpleHttp {
             return responseString;
         }
 
+        public String getFirstHeader(String name) throws IOException {
+            readResponse();
+            return response.getHeaders(name)[0].getValue();
+        }
+
         public void close() throws IOException {
             readResponse();
         }
