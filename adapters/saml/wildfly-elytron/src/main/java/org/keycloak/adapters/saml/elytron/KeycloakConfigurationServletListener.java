@@ -49,7 +49,8 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
 
     protected static Logger log = Logger.getLogger(KeycloakConfigurationServletListener.class);
 
-    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = SamlDeploymentContext.class.getName() + ".elytron";
+    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = SamlDeploymentContext.class.getName();
+    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON = SamlDeploymentContext.class.getName() + ".elytron";
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -93,6 +94,7 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
         }
 
         servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE, deploymentContext);
+        servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON, deploymentContext);
     }
 
     @Override

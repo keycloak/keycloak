@@ -126,7 +126,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
     private AdapterDeploymentContext getDeploymentContext(HttpServerRequest request) {
         if (this.deploymentContext == null) {
-            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE);
+            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON);
         }
 
         return this.deploymentContext;
