@@ -34,7 +34,6 @@
     <modules>
         <module>features</module>
         <module>jaas</module>
-        <module>thirdparty</module>
     </modules>
 
 </project>
