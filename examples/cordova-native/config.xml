@@ -12,11 +12,10 @@
     <allow-navigation href="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
-    <preference name="AndroidLaunchMode" value="singleInstance" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
     <universal-links>
         <host name="keycloak-cordova-example.github.io" scheme="https">
-            <path event="login" url="/login" />
-            <path event="logout" url="/logout" />
+            <path event="keycloak" url="/login" />
         </host>
     </universal-links>
     <plugin name="cordova-plugin-browsertab" spec="~0.2.0" />
