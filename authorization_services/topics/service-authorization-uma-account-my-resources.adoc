@@ -1,4 +1,4 @@
-[[_service_authorization_api_aapi]]
+[[_service_authorization_my_resources]]
 = Managing Access to Users Resources
 
 Users can manage access to their resources using the {project_name} User Account Service.

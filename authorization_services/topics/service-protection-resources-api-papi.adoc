@@ -16,3 +16,127 @@ This endpoint provides operations outlined as follows (entire path omitted for c
 * List resource set descriptions: GET /resource_set
 
 For more information about the contract for each of these operations, see https://docs.kantarainitiative.org/uma/wg/oauth-uma-federated-authz-2.0-09.html#reg-api[UMA Resource Registration API].
+
+== Creating a Resource
+
+To create a resource you must send an HTTP POST request as follows:
+
+```bash
+curl -v -X POST \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Tweedl Social Service",
+     "type":"http://www.example.com/rsrcs/socialstream/140-compatible",
+     "icon_uri":"http://www.example.com/icons/sharesocial.png",
+     "resource_scopes":[
+         "read-public",
+         "post-updates",
+         "read-private",
+         "http://www.example.com/scopes/all"
+      ]
+  }'
+```
+
+By default, the owner of a resource is the resource server. If you want to define a different owner, such as an
+specific user, you can send a request as follows:
+
+```bash
+curl -v -X POST \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Alice Resource",
+     "owner": "alice"
+  }'
+```
+
+Where the property `owner` can be set with the username or the identifier of the user.
+
+== Creating User-Managed Resources
+
+By default, resources created via Protection API can not be managed by resource owners through the <<_service_authorization_my_resources, User Account Service>>.
+
+To create resources and allow resource owners to manage these resources, you must set `ownerManagedAccess` property as follows:
+
+```bash
+curl -v -X POST \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Alice Resource",
+     "owner": "alice",
+     "ownerManagedAccess": true
+  }'
+```
+
+== Updating Resources
+
+To update an existing resource, send an HTTP PUT request as follows:
+
+```bash
+curl -v -X PUT \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id} \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "_id": "Alice Resource",
+     "name":"Alice Resource",
+     "resource_scopes": [
+        "read"
+     ]
+  }'
+```
+
+== Deleting Resources
+
+To delete an existing resource, send an HTTP DELETE request as follows:
+
+```bash
+curl -v -X DELETE \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id} \
+  -H 'Authorization: Bearer '$pat
+```
+
+== Querying Resources
+
+To query the resources by `id`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id}
+```
+
+To query resources given a `name`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?name=Alice Resource
+```
+
+To query resources given an `uri`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?uri=/api/alice
+```
+
+To query resources given an `owner`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?owner=alice
+```
+
+To query resources given an `type`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?type=albums
+```
+
+To query resources given an `scope`, send an HTTP GET request as follows:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?scope=read
+```
+
+When querying the server for permissions use parameters `first` and `max` results to limit the result.
