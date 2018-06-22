@@ -14,22 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
 
-package org.keycloak.keys;
+public interface KeyType {
 
-import org.keycloak.jose.jws.AlgorithmType;
-
-import java.util.Collections;
-import java.util.Map;
-
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface HmacKeyProviderFactory extends KeyProviderFactory<HmacKeyProvider> {
-
-    @Override
-    default Map<String, Object> getTypeMetadata() {
-        return Collections.singletonMap("algorithmType", AlgorithmType.HMAC);
-    }
+    String EC = "EC";
+    String RSA = "RSA";
+    String OCT = "OCT";
 
 }

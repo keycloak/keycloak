@@ -14,22 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
 
-package org.keycloak.keys;
+public enum KeyStatus {
 
-import org.keycloak.jose.jws.AlgorithmType;
+    ACTIVE, PASSIVE, DISABLED;
 
-import java.util.Collections;
-import java.util.Map;
+    public static KeyStatus from(boolean active, boolean enabled) {
+        if (!enabled) {
+            return KeyStatus.DISABLED;
+        } else {
+            return active ? KeyStatus.ACTIVE : KeyStatus.PASSIVE;
+        }
+    }
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface RsaKeyProviderFactory extends KeyProviderFactory {
+    public boolean isActive() {
+        return this.equals(ACTIVE);
+    }
 
-    @Override
-    default Map<String, Object> getTypeMetadata() {
-        return Collections.singletonMap("algorithmType", AlgorithmType.RSA);
+    public boolean isEnabled() {
+        return this.equals(ACTIVE) || this.equals(PASSIVE);
     }
 
 }

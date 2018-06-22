@@ -17,86 +17,67 @@
 
 package org.keycloak.keys;
 
-import java.util.Collections;
-import java.util.List;
-
-import javax.crypto.SecretKey;
-
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.utils.KeycloakModelUtils;
+
+import javax.crypto.SecretKey;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class GeneratedSecretKeyProvider implements SecretKeyProvider {
+public abstract class GeneratedSecretKeyProvider implements KeyProvider {
 
-    private final boolean enabled;
-
-    private final boolean active;
-
+    private final KeyStatus status;
     private final ComponentModel model;
     private final String kid;
     private final SecretKey secretKey;
+    private final KeyUse use;
+    private String type;
+    private final String algorithm;
 
-    public GeneratedSecretKeyProvider(ComponentModel model) {
-        this.enabled = model.get(Attributes.ENABLED_KEY, true);
-        this.active = model.get(Attributes.ACTIVE_KEY, true);
+    public GeneratedSecretKeyProvider(ComponentModel model, KeyUse use, String type, String algorithm) {
+        this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
         this.kid = model.get(Attributes.KID_KEY);
         this.model = model;
+        this.use = use;
+        this.type = type;
+        this.algorithm = algorithm;
 
         if (model.hasNote(SecretKey.class.getName())) {
             secretKey = model.getNote(SecretKey.class.getName());
         } else {
-            secretKey = KeyUtils.loadSecretKey(Base64Url.decode(model.get(Attributes.SECRET_KEY)), getJavaAlgorithmName());
+            secretKey = KeyUtils.loadSecretKey(Base64Url.decode(model.get(Attributes.SECRET_KEY)), JavaAlgorithm.getJavaAlgorithm(algorithm));
             model.setNote(SecretKey.class.getName(), secretKey);
         }
     }
 
     @Override
-    public SecretKey getSecretKey() {
-        return isActive() ? secretKey : null;
-    }
+    public List<KeyWrapper> getKeys() {
+        KeyWrapper key = new KeyWrapper();
 
-    @Override
-    public SecretKey getSecretKey(String kid) {
-        return isEnabled() && kid.equals(this.kid) ? secretKey : null;
-    }
+        key.setProviderId(model.getId());
+        key.setProviderPriority(model.get("priority", 0l));
 
-    @Override
-    public String getKid() {
-        return isActive() ? kid : null;
-    }
+        key.setKid(kid);
+        key.setUse(use);
+        key.setType(type);
+        key.setAlgorithms(algorithm);
+        key.setStatus(status);
+        key.setSecretKey(secretKey);
 
-    @Override
-    public List<SecretKeyMetadata> getKeyMetadata() {
-        if (kid != null && secretKey != null) {
-            SecretKeyMetadata k = new SecretKeyMetadata();
-            k.setProviderId(model.getId());
-            k.setProviderPriority(model.get(Attributes.PRIORITY_KEY, 0l));
-            k.setKid(kid);
-            if (isActive()) {
-                k.setStatus(KeyMetadata.Status.ACTIVE);
-            } else if (isEnabled()) {
-                k.setStatus(KeyMetadata.Status.PASSIVE);
-            } else {
-                k.setStatus(KeyMetadata.Status.DISABLED);
-            }
-            return Collections.singletonList(k);
-        } else {
-            return Collections.emptyList();
-        }
+        return Collections.singletonList(key);
     }
 
     @Override
     public void close() {
     }
 
-    private boolean isEnabled() {
-        return secretKey != null && enabled;
-    }
-
-    private boolean isActive() {
-        return isEnabled() && active;
-    }
 }

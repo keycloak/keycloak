@@ -23,6 +23,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -255,7 +256,7 @@ public class ApiUtil {
 
     public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
         KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get("RSA");
+        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
             if (rep.getKid().equals(activeKid)) {
                 return rep;

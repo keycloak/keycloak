@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -29,7 +30,7 @@ import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFactory<AesKeyProvider> implements AesKeyProviderFactory {
+public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFactory<GeneratedSecretKeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedAesKeyProviderFactory.class);
 
@@ -52,7 +53,7 @@ public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFa
             .build();
 
     @Override
-    public AesKeyProvider create(KeycloakSession session, ComponentModel model) {
+    public GeneratedAesKeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedAesKeyProvider(model);
     }
 

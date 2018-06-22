@@ -24,6 +24,7 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
@@ -90,7 +91,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
-        assertEquals(kid, keys.getActive().get(AlgorithmType.RSA.name()));
+        assertEquals(kid, keys.getActive().get(Algorithm.RS256));
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 

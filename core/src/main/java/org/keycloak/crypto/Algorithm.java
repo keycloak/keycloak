@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
 
-package org.keycloak.keys;
+public interface Algorithm {
 
-import java.util.Collections;
-import java.util.Map;
+    String HS256 = "HS256";
+    String HS384 = "HS384";
+    String HS512 = "HS512";
+    String RS256 = "RS256";
+    String RS384 = "RS384";
+    String RS512 = "RS512";
+    String ES256 = "ES256";
+    String ES384 = "ES384";
+    String ES512 = "ES512";
 
-import org.keycloak.jose.jws.AlgorithmType;
-
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public interface AesKeyProviderFactory extends KeyProviderFactory<AesKeyProvider> {
-
-    @Override
-    default Map<String, Object> getTypeMetadata() {
-        return Collections.singletonMap("algorithmType", AlgorithmType.AES);
-    }
+    String AES = "AES";
 }

@@ -30,6 +30,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
@@ -218,7 +219,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         PublicKey keys2 = createKeys2();
 
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
-        assertEquals(PemUtils.encodeKey(keys2), keyMetadata.getKeys().get(0).getPublicKey());
+        assertEquals(PemUtils.encodeKey(keys2), org.keycloak.testsuite.util.KeyUtils.getActiveKey(keyMetadata, Algorithm.RS256).getPublicKey());
 
         dropKeys1();
         dropKeys2();
@@ -227,7 +228,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     @Test
     public void rotateKeys() throws InterruptedException {
         for (int i = 0; i < 10; i++) {
-            String activeKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get("RSA");
+            String activeKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
 
             // Rotate public keys on the parent broker
             String realmId = adminClient.realm("test").toRepresentation().getId();
@@ -244,7 +245,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
             getCleanup().addComponentId(newId);
             response.close();
 
-            String updatedActiveKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get("RSA");
+            String updatedActiveKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
             assertNotEquals(activeKid, updatedActiveKid);
         }
     }

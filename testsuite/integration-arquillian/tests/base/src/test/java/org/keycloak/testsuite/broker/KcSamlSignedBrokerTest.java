@@ -2,10 +2,12 @@ package org.keycloak.testsuite.broker;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
@@ -16,6 +18,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -66,7 +69,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
             List<ClientRepresentation> clientRepresentationList = super.createProviderClients(suiteContext);
 
-            String consumerCert = adminClient.realm(consumerRealmName()).keys().getKeyMetadata().getKeys().get(0).getCertificate();
+            String consumerCert = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
             Assert.assertThat(consumerCert, Matchers.notNullValue());
 
             for (ClientRepresentation client : clientRepresentationList) {
@@ -93,7 +96,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
             IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext);
 
-            String providerCert = adminClient.realm(providerRealmName()).keys().getKeyMetadata().getKeys().get(0).getCertificate();
+            String providerCert = KeyUtils.getActiveKey(adminClient.realm(providerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
             Assert.assertThat(providerCert, Matchers.notNullValue());
 
             Map<String, String> config = result.getConfig();
@@ -121,10 +124,10 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         final ClientResource clientResource = realmsResouce().realm(bc.providerRealmName()).clients().get(client.getId());
         Assert.assertThat(clientResource, Matchers.notNullValue());
 
-        String providerCert = adminClient.realm(bc.providerRealmName()).keys().getKeyMetadata().getKeys().get(0).getCertificate();
+        String providerCert = KeyUtils.getActiveKey(adminClient.realm(bc.providerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
         Assert.assertThat(providerCert, Matchers.notNullValue());
 
-        String consumerCert = adminClient.realm(bc.consumerRealmName()).keys().getKeyMetadata().getKeys().get(0).getCertificate();
+        String consumerCert = KeyUtils.getActiveKey(adminClient.realm(bc.consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
         Assert.assertThat(consumerCert, Matchers.notNullValue());
 
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
