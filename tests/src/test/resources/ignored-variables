@@ -18,3 +18,4 @@ keycloak.access_token
 keycloak.access_token['/sub']
 keycloak.access_token['/preferred_username']
 keycloak.access_token['/custom_claim']
+resource_id

@@ -78,6 +78,8 @@ include::topics/service-authorization-obtaining-permission.adoc[leveloffset=+2]
 
 include::topics/service-authorization-obtaining-permission-authentication.adoc[leveloffset=+3]
 
+include::topics/service-authorization-pushing-claims.adoc[leveloffset=+3]
+
 include::topics/service-authorization-obtaining-permission-uma.adoc[leveloffset=+2]
 
 include::topics/service-authorization-uma-authz-process.adoc[leveloffset=+3]

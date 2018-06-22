@@ -29,3 +29,45 @@ Client wise, a permission ticket has also important aspects that its worthy to h
 
 These are just some of the benefits brought by UMA where other aspects of UMA are strongly based on permission tickets, specially regarding
 privacy and user controlled access to their resources.
+
+== Creating Permission Ticket
+
+To create a permission ticket, send an HTTP POST request as follows:
+
+```bash
+curl -X POST \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '[
+  {
+    "resource_id": "{resource_id}",
+    "resource_scopes": [
+      "view"
+    ]
+  }
+]'
+```
+
+When creating tickets you can also push arbitrary claims and associate these claims with the ticket:
+
+```bash
+curl -X POST \
+  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '[
+  {
+    "resource_id": "{resource_id}",
+    "resource_scopes": [
+      "view"
+    ],
+    "claims": {
+        "organization": ["acme"]
+    }
+  }
+]'
+```
+
+Where these claims will be available to your policies when evaluating permissions for the resource and scope(s) associated
+with the permission ticket.
