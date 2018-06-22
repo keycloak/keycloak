@@ -18,14 +18,17 @@
 package org.keycloak.keys;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GeneratedAesKeyProvider extends GeneratedSecretKeyProvider implements AesKeyProvider {
+public class GeneratedAesKeyProvider extends GeneratedSecretKeyProvider implements KeyProvider {
 
     public GeneratedAesKeyProvider(ComponentModel model) {
-        super(model);
+        super(model, KeyUse.ENC, KeyType.OCT, Algorithm.AES);
     }
 
 }

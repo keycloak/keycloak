@@ -38,6 +38,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -1099,7 +1100,7 @@ public class OAuthClient {
     public PublicKey getRealmPublicKey(String realm) {
         if (!publicKeys.containsKey(realm)) {
             KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
-            String activeKid = keyMetadata.getActive().get("RSA");
+            String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
             PublicKey publicKey = null;
             for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
                 if (rep.getKid().equals(activeKid)) {

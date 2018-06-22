@@ -17,74 +17,72 @@
 
 package org.keycloak.keys;
 
-import java.util.Collections;
-import java.util.List;
-
-import javax.crypto.SecretKey;
-
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import javax.crypto.SecretKey;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class FailsafeSecretKeyProvider implements SecretKeyProvider {
+public abstract class FailsafeSecretKeyProvider implements KeyProvider {
 
-
-    private static String KID;
-
-    private static SecretKey KEY;
+    private static KeyWrapper KEY;
 
     private static long EXPIRES;
 
-    private SecretKey key;
-
-    private String kid;
+    private KeyWrapper key;
 
     public FailsafeSecretKeyProvider() {
         logger().errorv("No active keys found, using failsafe provider, please login to admin console to add keys. Clustering is not supported.");
 
         synchronized (FailsafeHmacKeyProvider.class) {
             if (EXPIRES < Time.currentTime()) {
-                KEY = KeyUtils.loadSecretKey(KeycloakModelUtils.generateSecret(32), getJavaAlgorithmName());
-                KID = KeycloakModelUtils.generateId();
+                KEY = createKeyWrapper();
                 EXPIRES = Time.currentTime() + 60 * 10;
 
                 if (EXPIRES > 0) {
-                    logger().warnv("Keys expired, re-generated kid={0}", KID);
+                    logger().warnv("Keys expired, re-generated kid={0}", KEY.getKid());
                 }
             }
 
-            kid = KID;
             key = KEY;
         }
     }
 
     @Override
-    public String getKid() {
-        return kid;
+    public List<KeyWrapper> getKeys() {
+        return Collections.singletonList(key);
     }
 
-    @Override
-    public SecretKey getSecretKey() {
+    private KeyWrapper createKeyWrapper() {
+        SecretKey secretKey = KeyUtils.loadSecretKey(KeycloakModelUtils.generateSecret(32), JavaAlgorithm.getJavaAlgorithm(getAlgorithm()));
+
+        KeyWrapper key = new KeyWrapper();
+
+        key.setKid(KeycloakModelUtils.generateId());
+        key.setUse(getUse());
+        key.setType(getType());
+        key.setAlgorithms(getAlgorithm());
+        key.setStatus(KeyStatus.ACTIVE);
+        key.setSecretKey(secretKey);
+
         return key;
     }
 
-    @Override
-    public SecretKey getSecretKey(String kid) {
-        return kid.equals(this.kid) ? key : null;
-    }
+    protected abstract KeyUse getUse();
 
-    @Override
-    public List<SecretKeyMetadata> getKeyMetadata() {
-        return Collections.emptyList();
-    }
+    protected abstract String getType();
 
-    @Override
-    public void close() {
-    }
+    protected abstract String getAlgorithm();
 
     protected abstract Logger logger();
 }

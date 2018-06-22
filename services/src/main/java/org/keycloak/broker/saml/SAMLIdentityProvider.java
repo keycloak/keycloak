@@ -17,33 +17,25 @@
 package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
-import org.keycloak.broker.provider.AbstractIdentityProvider;
-import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
+import org.keycloak.broker.provider.*;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyStatus;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.keys.RsaKeyMetadata;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
-import org.keycloak.saml.SAML2AuthnRequestBuilder;
-import org.keycloak.saml.SAML2LogoutRequestBuilder;
-import org.keycloak.saml.SAML2NameIDPolicyBuilder;
-import org.keycloak.saml.SPMetadataDescriptor;
-import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.*;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -52,11 +44,6 @@ import javax.ws.rs.core.UriInfo;
 import java.security.KeyPair;
 import java.util.Set;
 import java.util.TreeSet;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.keys.KeyMetadata;
-import org.keycloak.keys.KeyMetadata.Status;
-import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
-import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author Pedro Igor
@@ -246,12 +233,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         StringBuilder encryptionKeysString = new StringBuilder();
         Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getRsaKeys(realm, false));
+          : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getRsaKeys(realm));
         for (RsaKeyMetadata key : keys) {
             addKeyInfo(signingKeysString, key, KeyTypes.SIGNING.value());
 
-            if (key.getStatus() == Status.ACTIVE) {
+            if (key.getStatus() == KeyStatus.ACTIVE) {
                 addKeyInfo(encryptionKeysString, key, KeyTypes.ENCRYPTION.value());
             }
         }

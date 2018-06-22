@@ -19,6 +19,8 @@ package org.keycloak.protocol.saml.installation;
 
 import org.keycloak.Config;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.core.MediaType;
@@ -35,9 +38,6 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Set;
 import java.util.TreeSet;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.keys.KeyMetadata;
-import org.keycloak.saml.SPMetadataDescriptor;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,8 +90,8 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
         // keys
         Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getRsaKeys(realm, false));
+          : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getRsaKeys(realm));
         for (RsaKeyMetadata key : keys) {
             addKeyInfo(sb, key, KeyTypes.SIGNING.value());
         }

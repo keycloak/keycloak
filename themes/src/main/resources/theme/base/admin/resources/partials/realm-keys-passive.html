@@ -20,15 +20,30 @@
 
     <ul class="nav nav-tabs nav-tabs-pf">
         <li><a href="#/realms/{{realm.realm}}/keys">{{:: 'active' | translate}}</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/keys/list">{{:: 'all' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/keys/passive">{{:: 'passive' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys/disabled">{{:: 'disabled' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/keys/providers">{{:: 'providers' | translate}}</a></li>
     </ul>
 
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
+            <th class="kc-table-actions" colspan="7">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search" class="form-control search"">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr>
+            <th>{{:: 'algorithms' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
-            <th>{{:: 'status' | translate}}</th>
             <th>{{:: 'kid' | translate}}</th>
             <th>{{:: 'priority' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
@@ -36,9 +51,9 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="key in keys">
+        <tr ng-repeat="key in keys | filter:search | filter:{status:'PASSIVE'}">
+            <td>{{key.algorithm.sort().join(', ')}}</td>
             <td>{{key.type}}</td>
-            <td>{{key.status}}</td>
             <td>{{key.kid}}</td>
             <td>{{key.providerPriority}}</td>
             <td><a href="#/realms/{{realm.realm}}/keys/providers/{{key.provider.providerId}}/{{key.provider.id}}">{{key.provider.name}}</a></td>

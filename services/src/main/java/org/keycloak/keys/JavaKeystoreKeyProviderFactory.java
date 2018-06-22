@@ -77,7 +77,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
         try {
             new JavaKeystoreKeyProvider(session.getContext().getRealm(), model)
-                    .loadKeys(session.getContext().getRealm(), model);
+                    .loadKey(session.getContext().getRealm(), model);
         } catch (Throwable t) {
             logger.error("Failed to load keys.", t);
             throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
@@ -92,18 +92,6 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return CONFIG_PROPERTIES;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override

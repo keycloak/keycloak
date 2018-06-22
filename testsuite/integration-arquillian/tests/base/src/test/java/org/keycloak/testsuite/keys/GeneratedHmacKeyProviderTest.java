@@ -24,6 +24,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
@@ -90,14 +92,14 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getType().equals(AlgorithmType.HMAC.name())) {
+            if (k.getAlgorithms().contains(Algorithm.HS256)) {
                 key = k;
                 break;
             }
         }
 
         assertEquals(id, key.getProviderId());
-        assertEquals(AlgorithmType.HMAC.name(), key.getType());
+        assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
@@ -125,14 +127,14 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getType().equals(AlgorithmType.HMAC.name())) {
+            if (k.getAlgorithms().contains(Algorithm.HS256)) {
                 key = k;
                 break;
             }
         }
 
         assertEquals(id, key.getProviderId());
-        assertEquals(AlgorithmType.HMAC.name(), key.getType());
+        assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));

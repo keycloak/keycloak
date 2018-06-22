@@ -66,17 +66,5 @@ public abstract class GeneratedSecretKeyProviderFactory<T extends KeyProvider> i
 
     protected abstract Logger logger();
 
-    @Override
-    public void init(Config.Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
-    }
-
     protected abstract int getDefaultKeySize();
 }

@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite;
 
-import org.jboss.logging.Logger;
-
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -28,8 +26,6 @@ import java.net.URI;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ApiUtil {
-
-    private static final Logger log = Logger.getLogger(ApiUtil.class);
 
     public static String getCreatedId(Response response) {
         URI location = response.getLocation();

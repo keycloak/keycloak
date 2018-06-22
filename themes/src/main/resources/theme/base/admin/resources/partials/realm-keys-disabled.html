@@ -19,9 +19,9 @@
     <kc-tabs-realm></kc-tabs-realm>
 
     <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active"><a href="#/realms/{{realm.realm}}/keys">{{:: 'active' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys">{{:: 'active' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/keys/passive">{{:: 'passive' | translate}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/keys/disabled">{{:: 'disabled' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/keys/disabled">{{:: 'disabled' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/keys/providers">{{:: 'providers' | translate}}</a></li>
     </ul>
 
@@ -51,7 +51,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="key in keys | filter:search | filter:{status:'ACTIVE'}">
+        <tr ng-repeat="key in keys | filter:search | filter:{status:'DISABLED'}">
             <td>{{key.algorithm.sort().join(', ')}}</td>
             <td>{{key.type}}</td>
             <td>{{key.kid}}</td>
