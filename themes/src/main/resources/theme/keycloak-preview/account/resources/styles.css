@@ -357,3 +357,41 @@ p.description {
     display: none;
   }
 }
+
+
+/* authenticator style */
+.list-pf {
+    border-bottom: 0;
+}
+.list-authenticator {
+    margin: 0 0 30px 0;
+}
+.list-authenticator-item {
+    border-color: #ededed;
+    border-left-color: #fff;
+    border-right-color: #fff;
+    border-style: solid;
+    border-width: 1px;
+    border-top: none;
+}
+.list-authenticator .list-pf-icon {
+  font-size: 1.8em;
+  height: 20px;
+  line-height: 30px;
+  width: 10px;
+  align-items: normal;
+}
+.list-authenticator .list-pf-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.top-margin-m {
+    margin-top: 16px;
+}
+.authenticator-entry {
+    font-size: 14px;
+}
+.authenticator-label {
+    font-size: 75%;
+    margin-left: 4px;
+}
