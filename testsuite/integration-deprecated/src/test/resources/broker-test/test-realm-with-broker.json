@@ -314,6 +314,15 @@
 
         },
         {
+            "name": "hardcoded-user-session",
+            "identityProviderAlias": "kc-oidc-idp",
+            "identityProviderMapper": "hardcoded-user-session-attribute-idp-mapper",
+            "config": {
+                "attribute.value": "sessionvalue",
+                "attribute": "user-session-attr"
+            }
+        },
+        {
             "name": "mobile-mapper",
             "identityProviderAlias": "kc-oidc-idp",
             "identityProviderMapper": "oidc-user-attribute-idp-mapper",
@@ -340,6 +349,15 @@
             "config": {
                 "user.attribute": "mobile",
                 "attribute.name": "mobile"
+            }
+        },
+        {
+            "name": "hardcoded-user-session",
+            "identityProviderAlias": "kc-saml-idp-basic",
+            "identityProviderMapper": "hardcoded-user-session-attribute-idp-mapper",
+            "config": {
+                "attribute.value": "sessionvalue",
+                "attribute": "user-session-attr"
             }
         },
         {
