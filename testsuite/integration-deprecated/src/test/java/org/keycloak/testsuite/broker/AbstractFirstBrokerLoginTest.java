@@ -28,6 +28,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -752,6 +753,31 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
             }
 
+        }, APP_REALM_ID);
+    }
+
+    // KEYCLOAK-7696
+    @Test
+    public void testHardcodedUserSessionNoteIsSetAfterFristBrokerLogin() {
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_ON);
+            }
+        }, APP_REALM_ID);
+
+        loginIDP("pedroigor");
+        this.updateProfileWithUsernamePage.assertCurrent();
+
+        this.updateProfileWithUsernamePage.update("Test", "User", "some-user@redhat.com", "some-new-user");
+
+        UserSessionModel userSession = session.sessions().getUserSessions(getRealm(), getFederatedUser()).get(0);
+        assertEquals("sessionvalue", userSession.getNote("user-session-attr"));
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_MISSING);
+            }
         }, APP_REALM_ID);
     }
 
