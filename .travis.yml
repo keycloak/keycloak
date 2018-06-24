@@ -38,10 +38,10 @@ script:
 sudo: false
 
     
-deploy:
-  provider: releases
-  skip-cleanup: true
-  github-token: d95de34a254496084c85a6cf0e5f5e7829bf77c4  # Set in the settings page of your repository, as a secure variable
-  keep-history: true
-  on:
-    branch: master    
+#deploy:
+#  provider: releases
+#  skip-cleanup: true
+#  github-token: d95de34a254496084c85a6cf0e5f5e7829bf77c4  # Set in the settings page of your repository, as a secure variable
+#  keep-history: true
+#  on:
+#    branch: master    
