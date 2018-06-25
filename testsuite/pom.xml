@@ -71,7 +71,6 @@
             <modules>
                 <module>jetty</module>
                 <module>proxy</module>
-                <module>tomcat6</module>
                 <module>tomcat7</module>
             </modules>
         </profile>
