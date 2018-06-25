@@ -50,7 +50,6 @@ if [ $1 == "old" ]; then
     mvn test -B -nsu -f integration-deprecated
     mvn test -B -nsu -f jetty
     mvn test -B -nsu -f proxy
-    mvn test -B -nsu -f tomcat6
     mvn test -B -nsu -f tomcat7
     mvn test -B -nsu -f tomcat8
 fi
