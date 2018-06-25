@@ -405,7 +405,7 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             return ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
 
         try {
@@ -598,10 +598,17 @@ public class RealmAdminResource {
         auth.users().requireManage();
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-        if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+        UserSessionModel offlineSession = session.sessions().getOfflineUserSession(realm, sessionId);
+        if (userSession == null && offlineSession == null) {
+            throw new NotFoundException("Session not found");
+        }
+        if (offlineSession != null) {
+            AuthenticationManager.backchannelLogout(session, realm, offlineSession, uriInfo, connection, headers, true, true);
+        } else if (userSession != null) {
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true, false);
+        }
 
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(uriInfo).success();
     }
 
     /**
