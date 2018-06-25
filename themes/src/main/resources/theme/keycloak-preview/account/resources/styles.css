@@ -9,6 +9,9 @@ body {
 .cards-pf {
   background: #f5f5f5;
 }
+.card-pf {
+  margin: 0 0 20px;
+}
 .card-pf .row-cards-pf:first-child {
   padding-top: 0px;
 }
@@ -54,7 +57,10 @@ p.description {
   background: #ffffff;
   margin-bottom: 10px;
 }
-
+.row {
+  margin-left: -20px;
+  margin-right: -20px;
+}
 
 /*Responsive Design*/
 @media (max-width: 767px) {
@@ -301,10 +307,34 @@ p.description {
   position: absolute;
   right: 10px;
 }
+/* Linked  Style */
+.list-view-pf-additional-info .fa-user {
+  margin-right: 5px;
+}
+.card-linked-account .list-view-pf .list-group-item-heading {
+    flex: 1 0 calc(40% - 20px);
+}
+.card-linked-account .list-view-pf-additional-info {
+    width: 10%；
+}
+.card-linked-account .list-view-pf .list-group-item-text {
+    width: calc(45% - 40px);
+}
 
 @media (max-width: 767px) {
   .card-pf-application h2 {
     margin-top: -10px;
+  }
+  .card-linked-account .card-pf-body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .card-linked-account .list-group-item {
+    padding: 10px 0;
+  }
+  .card-linked-account .list-view-pf-additional-info {
+    width: 100%;
+    margin-top: 20px;
   }
   .card-pf-application h2 a {
     text-decoration: none;
@@ -326,4 +356,42 @@ p.description {
   .non-display {
     display: none;
   }
+}
+
+
+/* authenticator style */
+.list-pf {
+    border-bottom: 0;
+}
+.list-authenticator {
+    margin: 0 0 30px 0;
+}
+.list-authenticator-item {
+    border-color: #ededed;
+    border-left-color: #fff;
+    border-right-color: #fff;
+    border-style: solid;
+    border-width: 1px;
+    border-top: none;
+}
+.list-authenticator .list-pf-icon {
+  font-size: 1.8em;
+  height: 20px;
+  line-height: 30px;
+  width: 10px;
+  align-items: normal;
+}
+.list-authenticator .list-pf-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.top-margin-m {
+    margin-top: 16px;
+}
+.authenticator-entry {
+    font-size: 14px;
+}
+.authenticator-label {
+    font-size: 75%;
+    margin-left: 4px;
 }

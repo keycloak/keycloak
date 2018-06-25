@@ -32,6 +32,10 @@ To build the distribution run:
     
 Once completed you will find distribution archives in `distribution`.
 
+To build only the server run:
+
+    mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
+
 
 Starting Keycloak
 -----------------

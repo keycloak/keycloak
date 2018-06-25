@@ -206,6 +206,10 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("eap6");
     }
 
+    public static boolean isEAPAppServer() {
+        return CURRENT_APP_SERVER.equals("eap");
+    }
+
     public static boolean isWASAppServer() {
         return CURRENT_APP_SERVER.equals("was");
     }

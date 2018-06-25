@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>4.0.0.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -138,6 +138,7 @@
                                             <directory>src/main/resources</directory>
                                             <includes>
                                                 <include>users.properties</include>
+                                                <include>keycloak-bearer.json</include>
                                                 <include>keycloak-direct-access.json</include>
                                                 <include>keycloak-hawtio-client.json</include>
                                                 <include>keycloak-hawtio.json</include>

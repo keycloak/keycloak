@@ -17,8 +17,11 @@
   -->
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet author="sthorger@redhat.com" id="1.0.0.Final">
-        <preConditions onSqlOutput="TEST" onFail="MARK_RAN"> 
+    <changeSet author="sthorger@redhat.com" id="1.0.0.Final-KEYCLOAK-5461">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted id="1.0.0.Final" author="sthorger@redhat.com" changeLogFile="META-INF/jpa-changelog-1.0.0.Final.xml"/>
+            </not>
             <not>
                 <dbms type="db2" />
             </not>
@@ -98,7 +101,7 @@
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
             <column name="HASH_ITERATIONS" type="INT"/>
-            <column name="SALT" type="BLOB(16)"/>
+            <column name="SALT" type="TINYBLOB(16)"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(36)"/>

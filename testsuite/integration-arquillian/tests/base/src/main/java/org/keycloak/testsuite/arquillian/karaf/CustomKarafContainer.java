@@ -148,7 +148,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
 
             // Get the MBeanServerConnection
             try {
-                mbeanServer = getMBeanServerConnection(30, TimeUnit.SECONDS);
+                mbeanServer = getMBeanServerConnection(60, TimeUnit.SECONDS);
             } catch (Exception ex) {
                 destroyKarafProcess();
                 throw new LifecycleException("Cannot obtain MBean server connection", ex);

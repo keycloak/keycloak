@@ -366,7 +366,7 @@ public class SAMLEndpoint {
 
                 if (assertionIsEncrypted) {
                     // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
+                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */

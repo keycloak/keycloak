@@ -18,8 +18,15 @@ import { NgModule }             from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 import { AuthenticatorPageComponent } from './authenticator-page.component';
+import { MobileAuthenticatorSetupPageComponent } from './mobile-authenticator-setup-page.component';
+import { BackupCodeSetupPageComponent } from './backup-code-setup-page.component';
+import { SMSCodeSetupPageComponent } from './sms-code-setup-page.component';
 
 const routes: Routes = [
+    { path: 'authenticator', component: AuthenticatorPageComponent },
+    { path: 'mobile-authenticator-setup', component: MobileAuthenticatorSetupPageComponent },
+    { path: 'backup-code-setup', component: BackupCodeSetupPageComponent },
+    { path: 'sms-code-setup', component: SMSCodeSetupPageComponent },
     { path: '**', component: AuthenticatorPageComponent },
 ];
 

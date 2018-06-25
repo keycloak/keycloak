@@ -282,5 +282,13 @@
             "client": "hawtio-client",
             "roles": [ "viewer", "jmxAdmin" ]
         }
-    ]
+    ],
+    "clientScopeMappings": {
+        "account": [
+            {
+                "client": "hawtio-client",
+                "roles": [ "view-profile", "manage-account" ]
+            }
+        ]
+    }
 }
