@@ -74,6 +74,32 @@
             <kc-tooltip>{{:: 'offline-session-idle.tooltip' | translate}}</kc-tooltip>
         </div>
 
+        <!-- KEYCLOAK-7688 Offline Session Max for Offline Token -->
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="offlineSessionMaxLifespanEnabled">{{:: 'offline-session-max-limited' | translate}}</label>
+            <div class="col-md-3">
+                <input ng-change="" ng-model="realm.offlineSessionMaxLifespanEnabled"
+                       name="offlineSessionMaxLifespanEnabled"
+                       id="offlineSessionMaxLifespanEnabled"
+                       onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+            </div>
+            <kc-tooltip>{{:: 'offline-session-max-limited.tooltip' | translate}}</kc-tooltip>
+        </div>
+        <div class="form-group" data-ng-show="realm.offlineSessionMaxLifespanEnabled">
+            <label class="col-md-2 control-label" for="offlineSessionMaxLifespan">{{:: 'offline-session-max' | translate}}</label>
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.offlineSessionMaxLifespan.time"
+                       id="offlineSessionMaxLifespan" name="offlineSessionMaxLifespan"/>
+                <select class="form-control" name="offlineSessionMaxLifespanUnit" data-ng-model="realm.offlineSessionMaxLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'offline-session-max.tooltip' | translate}}</kc-tooltip>
+        </div>
+
         <div class="form-group">
             <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
 

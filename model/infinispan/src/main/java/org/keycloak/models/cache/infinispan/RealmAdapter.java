@@ -418,6 +418,31 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setOfflineSessionIdleTimeout(seconds);
     }
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    @Override
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+        if (isUpdated()) return updated.isOfflineSessionMaxLifespanEnabled();
+        return cached.isOfflineSessionMaxLifespanEnabled();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+    }
+
+    @Override
+    public int getOfflineSessionMaxLifespan() {
+        if (isUpdated()) return updated.getOfflineSessionMaxLifespan();
+        return cached.getOfflineSessionMaxLifespan();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespan(seconds);
+    }
+
     @Override
     public int getAccessTokenLifespan() {
         if (isUpdated()) return updated.getAccessTokenLifespan();

@@ -118,11 +118,16 @@ public class AuthenticationManager {
             return false;
         }
         int currentTime = Time.currentTime();
-
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
 
-        return userSession.getLastSessionRefresh() + maxIdle > currentTime;
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (realm.isOfflineSessionMaxLifespanEnabled()) {
+            int max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+            return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
+        } else {
+            return userSession.getLastSessionRefresh() + maxIdle > currentTime;
+        }
     }
 
     public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
