@@ -466,6 +466,27 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         realm.setOfflineSessionIdleTimeout(seconds);
     }
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    @Override
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+    	return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, false);
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+    	setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, offlineSessionMaxLifespanEnabled);
+    }
+
+    @Override
+    public int getOfflineSessionMaxLifespan() {
+        return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN, Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespan(int seconds) {
+        setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN, seconds);
+    }
+
     @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
