@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.realm;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -659,6 +660,34 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     @Test
+    public void deleteOfflineSession() {
+        setupTestOfflineAppAndUser();
+
+        String scopes = String.join(" ", OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
+
+        oauth.scope(scopes).doLogin("testuser", "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        EventRepresentation event = events.poll();
+        assertNotNull(event);
+
+        realm.deleteSession(event.getSessionId());
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()), ResourceType.USER_SESSION);
+        try {
+            realm.deleteSession(event.getSessionId());
+            fail("Expected 404");
+        } catch (NotFoundException e) {
+            // Expected
+            assertAdminEvents.assertEmpty();
+        }
+
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("Session not active", tokenResponse.getErrorDescription());
+    }
+
+    @Test
     public void clientSessionStats() {
         setupTestAppAndUser();
 
@@ -678,6 +707,41 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals("1", sessionStats.get(0).get("active"));
     }
 
+    private void setupTestOfflineAppAndUser() {
+        testingClient.testApp().clearAdminActions();
+
+        String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-app");
+        client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
+        client.setRedirectUris(Collections.singletonList(redirectUri));
+        client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        client.setSecret("secret");
+        client.setDefaultRoles(new String[]{OAuth2Constants.OFFLINE_ACCESS});
+        client.setDefaultClientScopes(Lists.newArrayList(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS));
+        Response resp = realm.clients().create(client);
+        String clientDbId = ApiUtil.getCreatedId(resp);
+        getCleanup().addClientUuid(clientDbId);
+        resp.close();
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
+
+        oauth.realm(REALM_NAME);
+        oauth.redirectUri(redirectUri);
+
+        UserRepresentation userRep = UserBuilder.create().username("testuser").build();
+        Response response = realm.users().create(userRep);
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+        getCleanup().addUserId(userId);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), userRep, ResourceType.USER);
+
+        realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
+
+        testingClient.testApp().clearAdminActions();
+    }
+
     private void setupTestAppAndUser() {
         testingClient.testApp().clearAdminActions();
 
@@ -689,6 +753,7 @@ public class RealmTest extends AbstractAdminTest {
         client.setRedirectUris(Collections.singletonList(redirectUri));
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         client.setSecret("secret");
+        client.setDefaultRoles(new String[]{"offline_access"});
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
         getCleanup().addClientUuid(clientDbId);
