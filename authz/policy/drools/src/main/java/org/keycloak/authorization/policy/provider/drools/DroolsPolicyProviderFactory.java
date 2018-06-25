@@ -51,7 +51,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
     }
 
     @Override
-    public RulePolicyRepresentation toRepresentation(Policy policy) {
+    public RulePolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         RulePolicyRepresentation representation = new RulePolicyRepresentation();
 
         representation.setArtifactGroupId(policy.getConfig().get("mavenArtifactGroupId"));

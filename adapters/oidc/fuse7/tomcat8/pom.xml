@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-fuse7-integration-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.0.0.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -36,6 +36,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             !org.keycloak.adapters.osgi.tomcat,
+            org.ops4j.pax.web.*;version="[7.1,9)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>

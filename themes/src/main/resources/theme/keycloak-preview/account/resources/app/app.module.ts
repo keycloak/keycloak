@@ -39,6 +39,9 @@ import { TopNavComponent } from './top-nav/top-nav.component';
 import { NotificationComponent } from './top-nav/notification.component';
 import { ToastNotifier } from './top-nav/toast.notifier';
 import { SideNavComponent } from './side-nav/side-nav.component';
+import {VerticalNavComponent} from './vertical-nav/vertical-nav.component';
+
+import { NavigationModule } from 'patternfly-ng/navigation';
 
 /* Routing Module */
 import { AppRoutingModule } from './app-routing.module';
@@ -48,6 +51,7 @@ const decs = [
     TopNavComponent,
     NotificationComponent,
     SideNavComponent,
+    VerticalNavComponent,
 ];
 
 export const ORIGINAL_INCOMING_URL: Location = window.location;
@@ -58,6 +62,7 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
     BrowserModule,
     FormsModule,
     HttpModule,
+    NavigationModule,
     TranslateModule.forRoot({
         loader: {provide: TranslateLoader, useClass: DeclaredVarTranslateLoader}
     }),

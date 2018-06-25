@@ -59,6 +59,7 @@ public class RequiredConsentBuilder implements Step {
         assertThat(currentResponse, statusCodeIsHC(Response.Status.OK));
         String consentPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
         assertThat(consentPageText, containsString("consent"));
+        assertThat(consentPageText, containsString("My Roles")); // Corresponding to role_list default SAML client scope
 
         return handleConsentPage(consentPageText, currentURI);
     }

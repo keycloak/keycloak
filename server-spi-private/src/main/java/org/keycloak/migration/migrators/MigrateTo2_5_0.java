@@ -19,8 +19,6 @@ package org.keycloak.migration.migrators;
 
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultKeyProviders;

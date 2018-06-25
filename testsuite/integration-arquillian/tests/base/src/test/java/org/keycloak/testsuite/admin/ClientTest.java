@@ -474,8 +474,10 @@ public class ClientTest extends AbstractAdminTest {
             }
         }
 
-        assertNotNull(emailMapperId);
-        assertNotNull(usernameMapperId);
+        // Builtin mappers are not here
+        assertNull(emailMapperId);
+        assertNull(usernameMapperId);
+
         assertNull(fooMapperId);
 
         // Create foo mapper
@@ -483,7 +485,6 @@ public class ClientTest extends AbstractAdminTest {
         fooMapper.setName("foo");
         fooMapper.setProtocol("openid-connect");
         fooMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
-        fooMapper.setConsentRequired(true);
         Response response = mappersResource.createMapper(fooMapper);
         String location = response.getLocation().toString();
         fooMapperId = location.substring(location.lastIndexOf("/") + 1);
@@ -495,13 +496,11 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals(fooMapper.getName(), "foo");
 
         // Update foo mapper
-        fooMapper.setConsentRequired(false);
         mappersResource.update(fooMapperId, fooMapper);
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(clientDbId, fooMapperId), fooMapper, ResourceType.PROTOCOL_MAPPER);
 
         fooMapper = mappersResource.getMapperById(fooMapperId);
-        assertFalse(fooMapper.isConsentRequired());
 
         // Remove foo mapper
         mappersResource.delete(fooMapperId);

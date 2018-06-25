@@ -16,8 +16,8 @@
  */
 package org.keycloak.authorization.policy.evaluation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -58,50 +59,47 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
     }
 
     @Override
-    protected void onDeny(Result result) {
-        ResourcePermission permission = result.getPermission();
-        Resource resource = permission.getResource();
+    public void onDecision(DefaultEvaluation evaluation) {
+        super.onDecision(evaluation);
+        removePermissionsIfGranted(evaluation);
+    }
 
-        if (resource != null && resource.isOwnerManagedAccess()) {
-            if (!resource.getOwner().equals(identity.getId())) {
-                Map<String, String> filters = new HashMap<>();
+    /**
+     * Removes permissions (represented by {@code ticket}) granted by any user-managed policy so we don't create unnecessary permission tickets.
+     *
+     * @param evaluation the evaluation
+     */
+    private void removePermissionsIfGranted(DefaultEvaluation evaluation) {
+        if (Effect.PERMIT.equals(evaluation.getEffect())) {
+            Policy policy = evaluation.getParentPolicy();
 
-                filters.put(PermissionTicket.RESOURCE, resource.getId());
-                filters.put(PermissionTicket.REQUESTER, identity.getId());
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+            if ("uma".equals(policy.getType())) {
+                ResourcePermission grantedPermission = evaluation.getPermission();
+                List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
 
-                List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                Iterator<PermissionTicketToken.ResourcePermission> itPermissions = permissions.iterator();
 
-                if (!permissions.isEmpty()) {
-                    List<Scope> grantedScopes = new ArrayList<>();
+                while (itPermissions.hasNext()) {
+                    PermissionTicketToken.ResourcePermission permission = itPermissions.next();
 
-                    for (PolicyResult policyResult : result.getResults()) {
-                        for (PermissionTicket ticket : permissions) {
-                            Scope grantedScope = ticket.getScope();
+                    if (permission.getResourceId().equals(grantedPermission.getResource().getId())) {
+                        Set<String> scopes = permission.getScopes();
+                        Iterator<String> itScopes = scopes.iterator();
 
-                            if ("resource".equals(policyResult.getPolicy().getType())) {
-                                policyResult.setStatus(Effect.PERMIT);
-                            }
-
-                            if (grantedScope != null) {
-                                grantedScopes.add(grantedScope);
-
-                                for (Scope policyScope : policyResult.getPolicy().getScopes()) {
-                                    if (policyScope.equals(grantedScope)) {
-                                        policyResult.setStatus(Effect.PERMIT);
-                                    }
-                                }
+                        while (itScopes.hasNext()) {
+                            Scope scope = authorization.getStoreFactory().getScopeStore().findByName(itScopes.next(), resourceServer.getId());
+                            if (policy.getScopes().contains(scope)) {
+                                itScopes.remove();
                             }
                         }
-                    }
 
-                    permission.getScopes().clear();
-                    permission.getScopes().addAll(grantedScopes);
+                        if (scopes.isEmpty()) {
+                            itPermissions.remove();
+                        }
+                    }
                 }
             }
         }
-
-        super.onDeny(result);
     }
 
     @Override
@@ -111,16 +109,17 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
         if (request.isSubmitRequest()) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
+            List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
 
-            if (ticket.getResources() != null) {
-                for (PermissionTicketToken.ResourcePermission permission : ticket.getResources()) {
+            if (permissions != null) {
+                for (PermissionTicketToken.ResourcePermission permission : permissions) {
                     Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
 
                     if (resource == null) {
                         resource = resourceStore.findByName(permission.getResourceId(), identity.getId(), resourceServer.getId());
                     }
 
-                    if (!resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getId())) {
+                    if (resource == null || !resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getId())) {
                         continue;
                     }
 
@@ -137,9 +136,9 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
                         filters.put(PermissionTicket.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
 
-                        if (permissions.isEmpty()) {
+                        if (tickets.isEmpty()) {
                             authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resource.getResourceServer());
                         }
                     } else {
@@ -158,9 +157,9 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
                             filters.put(PermissionTicket.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.SCOPE, scope.getId());
 
-                            List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
 
-                            if (permissions.isEmpty()) {
+                            if (tickets.isEmpty()) {
                                 authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resource.getResourceServer());
                             }
                         }

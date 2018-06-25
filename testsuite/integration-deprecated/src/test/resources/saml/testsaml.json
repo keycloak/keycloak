@@ -232,7 +232,6 @@
                     "name": "email",
                     "protocol": "saml",
                     "protocolMapper": "saml-user-property-mapper",
-                    "consentRequired": false,
                     "config": {
                         "user.attribute": "email",
                         "friendly.name": "email",
@@ -244,7 +243,6 @@
                     "name": "phone",
                     "protocol": "saml",
                     "protocolMapper": "saml-user-attribute-mapper",
-                    "consentRequired": false,
                     "config": {
                         "user.attribute": "phone",
                         "attribute.name": "phone",
@@ -255,7 +253,6 @@
                     "name": "role-list",
                     "protocol": "saml",
                     "protocolMapper": "saml-role-list-mapper",
-                    "consentRequired": false,
                     "config": {
                         "attribute.name": "Role",
                         "attribute.nameformat": "Basic",

@@ -181,7 +181,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
         Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
-        assertEquals(1, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
 
         assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());

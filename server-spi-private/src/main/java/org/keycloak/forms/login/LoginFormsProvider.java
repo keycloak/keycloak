@@ -17,6 +17,7 @@
 
 package org.keycloak.forms.login;
 
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -84,8 +85,7 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider setClientSessionCode(String accessCode);
 
-    LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
-    LoginFormsProvider setAccessRequest(String message);
+    LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested);
 
     /**
      * Set one global error message.

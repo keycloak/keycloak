@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -69,8 +70,9 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     public void testGetMappersList() {
-        assertFalse(oidcMappersRsc.getMappers().isEmpty());
-        assertFalse(samlMappersRsc.getMappers().isEmpty());
+        // Built-in protocol mappers are empty by default
+        assertTrue(oidcMappersRsc.getMappers().isEmpty());
+        assertTrue(samlMappersRsc.getMappers().isEmpty());
     }
 
     @Test
@@ -144,7 +146,6 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
 
         rep.getConfig().put("role", "account.manage-account");
         rep.setId(createdId);
-        rep.setConsentRequired(false);
         samlMappersRsc.update(createdId, rep);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
@@ -163,7 +164,6 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
 
         rep.getConfig().put("role", "myotherrole");
         rep.setId(createdId);
-        rep.setConsentRequired(false);
         oidcMappersRsc.update(createdId, rep);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 

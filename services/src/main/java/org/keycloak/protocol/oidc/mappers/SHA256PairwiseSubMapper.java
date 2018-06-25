@@ -36,7 +36,6 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
         pairwise.setName("pairwise subject identifier");
         pairwise.setProtocolMapper(new SHA256PairwiseSubMapper().getId());
         pairwise.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        pairwise.setConsentRequired(false);
         config = new HashMap<>();
         config.put(PairwiseSubMapperHelper.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
         if (salt == null) {

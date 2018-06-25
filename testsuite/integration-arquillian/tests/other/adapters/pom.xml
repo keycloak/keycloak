@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>4.0.0.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -50,9 +50,8 @@
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <app.server.startup.timeout>60</app.server.startup.timeout>
-        <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
-        <app.server.cluster.tests.memory.settings>-Xmx384m</app.server.cluster.tests.memory.settings>
+        <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
 
         <!--debug properties-->
         <app.server.debug.port>5006</app.server.debug.port>
@@ -93,7 +92,7 @@
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
         <adapter.config.bundled>true</adapter.config.bundled>
-        <examples.basedir>${main.basedir}/examples</examples.basedir>
+        <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir>
         <exclude.test>-</exclude.test>
         <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
@@ -120,16 +119,15 @@
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
-                        <version>0.1</version>
                         <executions>
                             <execution>
-                                <id>directories</id>
+                                <id>keycloak-parent-basedir</id>
                                 <goals>
                                     <goal>directory-of</goal>
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <property>main.basedir</property>
+                                    <property>keycloak-parent.basedir</property>
                                     <project>
                                         <groupId>org.keycloak</groupId>
                                         <artifactId>keycloak-parent</artifactId>
@@ -216,8 +214,8 @@
 
                                 <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                                 <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
-                                <app.server.cluster.tests.memory.settings>${app.server.cluster.tests.memory.settings}</app.server.cluster.tests.memory.settings>
                                 <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
                                 
                                 <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
 
@@ -233,10 +231,9 @@
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
-                    <plugin>
+<!--                    <plugin>
                         <groupId>org.jboss.shrinkwrap.resolver</groupId>
                         <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
-                        <version>${version.shrinkwrap.resolvers}</version>
                         <executions>
                             <execution>
                                 <goals>
@@ -244,7 +241,7 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
+                    </plugin>-->
                 </plugins>
             </build>
         </profile>

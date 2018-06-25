@@ -69,20 +69,19 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     public static final String PROVIDER_ID = "oidc-address-mapper";
 
     public static ProtocolMapperModel createAddressMapper() {
-        return createAddressMapper(true, true);
+        return createAddressMapper(true, true, true);
     }
 
-    public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken) {
+    public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken, boolean userInfo) {
         Map<String, String> config;
         ProtocolMapperModel address = new ProtocolMapperModel();
         address.setName("address");
         address.setProtocolMapper(PROVIDER_ID);
         address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        address.setConsentRequired(true);
-        address.setConsentText("${address}");
         config = new HashMap<String, String>();
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(idToken));
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(accessToken));
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(accessToken));
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(idToken));
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, Boolean.toString(userInfo));
 
         config.put(getModelPropertyName(STREET), STREET);
         config.put(getModelPropertyName(AddressClaimSet.LOCALITY), AddressClaimSet.LOCALITY);

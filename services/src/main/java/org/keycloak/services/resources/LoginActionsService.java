@@ -41,6 +41,8 @@ import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -50,6 +52,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -322,7 +325,7 @@ public class LoginActionsService {
                                          @QueryParam(Constants.TAB_ID) String tabId,
                                          @QueryParam(Constants.KEY) String key) {
         if (key != null) {
-            return handleActionToken(authSessionId, key, execution, clientId, tabId);
+            return handleActionToken(key, execution, clientId, tabId);
         }
 
         event.event(EventType.RESET_PASSWORD);
@@ -422,10 +425,10 @@ public class LoginActionsService {
                                        @QueryParam("execution") String execution,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
-        return handleActionToken(authSessionId, key, execution, clientId, tabId);
+        return handleActionToken(key, execution, clientId, tabId);
     }
 
-    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String authSessionId, String tokenString, String execution, String clientId, String tabId) {
+    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -442,7 +445,6 @@ public class LoginActionsService {
         AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
         if (client != null) {
             session.getContext().setClient(client);
-            authSessionId = authSessionId == null ? authenticationSessionManager.getAuthSessionCookieDecoded(realm) : authSessionId;
             authSession = authenticationSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         }
 
@@ -827,21 +829,23 @@ public class LoginActionsService {
             grantedConsent = new UserConsentModel(client);
             session.users().addConsent(realm, user.getId(), grantedConsent);
         }
-        for (RoleModel role : ClientSessionCode.getRequestedRoles(authSession, realm)) {
-            grantedConsent.addGrantedRole(role);
-        }
-        for (ProtocolMapperModel protocolMapper : ClientSessionCode.getRequestedProtocolMappers(authSession.getProtocolMappers(), client)) {
-            if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
-                grantedConsent.addGrantedProtocolMapper(protocolMapper);
+
+        for (String clientScopeId : authSession.getClientScopes()) {
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
+            if (clientScope != null) {
+                grantedConsent.addGrantedClientScope(clientScope);
+            } else {
+                logger.warn("Client scope with ID '%s' not found");
             }
         }
+
         session.users().updateConsent(realm, user.getId(), grantedConsent);
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
-        AuthenticatedClientSessionModel clientSession = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSession.getUserSession(), clientSession, request, uriInfo, clientConnection, event, authSession.getProtocol());
+        ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, uriInfo, clientConnection, event, authSession.getProtocol());
     }
 
     private void initLoginEvent(AuthenticationSessionModel authSession) {

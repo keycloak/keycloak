@@ -20,9 +20,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Base64Url;
@@ -726,45 +728,90 @@ public class AccountFormService extends AbstractSecuredLocalService {
         boolean isGrant = "grant".equals(action);
         boolean isDeny = "deny".equals(action);
         boolean isRevoke = "revoke".equals(action);
+        boolean isRevokePolicy = "revokePolicy".equals(action);
+        boolean isRevokePolicyAll = "revokePolicyAll".equals(action);
 
-        Map<String, String> filters = new HashMap<>();
+        if (isRevokePolicy || isRevokePolicyAll) {
+            List<String> ids = new ArrayList(Arrays.asList(permissionId));
+            Iterator<String> iterator = ids.iterator();
+            PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+            Policy policy = null;
 
-        filters.put(PermissionTicket.RESOURCE, resource.getId());
-        filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
+            while (iterator.hasNext()) {
+                String id = iterator.next();
 
-        if (isRevoke) {
-            filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-        } else {
-            filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
-        }
-
-        List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
-        Iterator<PermissionTicket> iterator = tickets.iterator();
-
-        while (iterator.hasNext()) {
-            PermissionTicket ticket = iterator.next();
-
-            if (isGrant) {
-                if (permissionId != null && permissionId.length > 0 && !Arrays.asList(permissionId).contains(ticket.getId())) {
-                    continue;
-                }
-            }
-
-            if (isGrant && !ticket.isGranted()) {
-                ticket.setGrantedTimestamp(System.currentTimeMillis());
-                iterator.remove();
-            } else if (isDeny || isRevoke) {
-                if (permissionId != null && permissionId.length > 0 && Arrays.asList(permissionId).contains(ticket.getId())) {
+                if (!id.contains(":")) {
+                    policy = policyStore.findById(id, client.getId());
                     iterator.remove();
+                    break;
                 }
+            }
+
+            Set<Scope> scopesToKeep = new HashSet<>();
+
+            if (isRevokePolicyAll) {
+                for (Scope scope : policy.getScopes()) {
+                    policy.removeScope(scope);
+                }
+            } else {
+                for (String id : ids) {
+                    scopesToKeep.add(authorization.getStoreFactory().getScopeStore().findById(id.split(":")[1], client.getId()));
+                }
+
+                for (Scope scope : policy.getScopes()) {
+                    if (!scopesToKeep.contains(scope)) {
+                        policy.removeScope(scope);
+                    }
+                }
+            }
+
+            if (policy.getScopes().isEmpty()) {
+                for (Policy associated : policy.getAssociatedPolicies()) {
+                    policyStore.delete(associated.getId());
+                }
+
+                policyStore.delete(policy.getId());
+            }
+        } else {
+            Map<String, String> filters = new HashMap<>();
+
+            filters.put(PermissionTicket.RESOURCE, resource.getId());
+            filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
+
+            if (isRevoke) {
+                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+            } else {
+                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+            }
+
+            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+            Iterator<PermissionTicket> iterator = tickets.iterator();
+
+            while (iterator.hasNext()) {
+                PermissionTicket ticket = iterator.next();
+
+                if (isGrant) {
+                    if (permissionId != null && permissionId.length > 0 && !Arrays.asList(permissionId).contains(ticket.getId())) {
+                        continue;
+                    }
+                }
+
+                if (isGrant && !ticket.isGranted()) {
+                    ticket.setGrantedTimestamp(System.currentTimeMillis());
+                    iterator.remove();
+                } else if (isDeny || isRevoke) {
+                    if (permissionId != null && permissionId.length > 0 && Arrays.asList(permissionId).contains(ticket.getId())) {
+                        iterator.remove();
+                    }
+                }
+            }
+
+            for (PermissionTicket ticket : tickets) {
+                ticketStore.delete(ticket.getId());
             }
         }
 
-        for (PermissionTicket ticket : tickets) {
-            ticketStore.delete(ticket.getId());
-        }
-
-        if (isRevoke) {
+        if (isRevoke || isRevokePolicy || isRevokePolicyAll) {
             return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
         }
 

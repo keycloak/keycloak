@@ -3,7 +3,6 @@ package org.keycloak.theme;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 
 public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
@@ -28,16 +27,9 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
                 ClientModel client = session.getContext().getClient();
                 if (client != null) {
                     name = client.getAttribute(LOGIN_THEME_KEY);
-
-                    if (name == null || name.isEmpty()) {
-                        ClientTemplateModel clientTemplate = client.getClientTemplate();
-                        if (clientTemplate != null) {
-                            name = clientTemplate.getAttribute(LOGIN_THEME_KEY);
-                        }
-                    }
                 }
 
-                if (name == null) {
+                if (name == null || name.isEmpty()) {
                     name = session.getContext().getRealm().getLoginTheme();
                 }
                 

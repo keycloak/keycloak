@@ -54,11 +54,6 @@ public class RoleBuilder {
         return this;
     }
 
-    public RoleBuilder scopeParamRequired(Boolean required) {
-        rep.setScopeParamRequired(required);
-        return this;
-    }
-
     public RoleBuilder composite() {
         rep.setComposite(true);
         return this;

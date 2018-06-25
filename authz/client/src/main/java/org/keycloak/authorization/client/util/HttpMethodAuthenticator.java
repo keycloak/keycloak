@@ -83,6 +83,7 @@ public class HttpMethodAuthenticator<R> {
         method.param("rpt", request.getRpt());
         method.param("scope", request.getScope());
         method.param("audience", request.getAudience());
+        method.param("subject_token", request.getSubjectToken());
 
         if (permissions != null) {
             for (ResourcePermission permission : permissions.getResources()) {

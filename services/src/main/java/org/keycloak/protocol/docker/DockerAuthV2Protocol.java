@@ -7,6 +7,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -89,9 +90,11 @@ public class DockerAuthV2Protocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(final UserSessionModel userSession, final AuthenticatedClientSessionModel clientSession) {
+    public Response authenticated(final UserSessionModel userSession, final ClientSessionContext clientSessionCtx) {
         // First, create a base response token with realm + user values populated
+        final AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         final ClientModel client = clientSession.getClient();
+
         DockerResponseToken responseToken = new DockerResponseToken()
                 .id(KeycloakModelUtils.generateId())
                 .type(TokenUtil.TOKEN_TYPE_BEARER)
@@ -107,8 +110,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
                 .expiration(responseToken.getIssuedAt() + accessTokenLifespan);
 
         // Next, allow mappers to decorate the token to add/remove scopes as appropriate
-        final ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
-        final Set<ProtocolMapperModel> mappings = accessCode.getRequestedProtocolMappers();
+        final Set<ProtocolMapperModel> mappings = clientSessionCtx.getProtocolMappers();
         for (final ProtocolMapperModel mapping : mappings) {
             final ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper instanceof DockerAuthV2AttributeMapper) {

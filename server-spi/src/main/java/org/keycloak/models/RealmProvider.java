@@ -19,7 +19,6 @@ package org.keycloak.models;
 
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.storage.client.ClientLookupProvider;
 
 import java.util.List;
 import java.util.Set;
@@ -72,7 +71,7 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     RoleModel getRoleById(String id, RealmModel realm);
 
-    ClientTemplateModel getClientTemplateById(String id, RealmModel realm);
+    ClientScopeModel getClientScopeById(String id, RealmModel realm);
     GroupModel getGroupById(String id, RealmModel realm);
 
 

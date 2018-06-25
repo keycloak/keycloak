@@ -17,9 +17,13 @@
   -->
 
 <databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.0.0.Final.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet author="sthorger@redhat.com" id="1.0.0.Final">
+    <changeSet author="sthorger@redhat.com" id="1.0.0.Final-KEYCLOAK-5461">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="db2" />
+
+            <not>
+                <changeSetExecuted id="1.0.0.Final" author="sthorger@redhat.com" changeLogFile="META-INF/db2-jpa-changelog-1.0.0.Final.xml"/>
+            </not>
         </preConditions>
 
         <createTable tableName="APPLICATION_DEFAULT_ROLES">
@@ -100,7 +104,7 @@
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
             <column name="HASH_ITERATIONS" type="INT"/>
-            <column name="SALT" type="BLOB(16)"/>
+            <column name="SALT" type="TINYBLOB(16)"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(36)"/>

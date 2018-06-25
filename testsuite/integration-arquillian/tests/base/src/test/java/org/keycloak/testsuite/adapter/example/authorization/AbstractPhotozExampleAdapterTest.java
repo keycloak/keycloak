@@ -25,17 +25,27 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -45,10 +55,13 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
@@ -56,6 +69,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,10 +83,12 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -182,6 +198,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice-Family-Album");
 
@@ -233,6 +251,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminOnlyFromSpecificAddress() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("admin", "admin");
         clientPage.navigateToAdminAlbum(false);
 
@@ -251,6 +271,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminWithoutPermissionsToTypedResource() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
         
@@ -300,6 +322,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testAdminWithoutPermissionsToDeleteAlbum() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
 
@@ -343,11 +367,14 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         clientPage.createAlbum("Alice Family Album");
         clientPage.viewAlbum("Alice Family Album", false);
 
-        UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
+        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
+        UsersResource usersResource = realmResource.users();
         List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
 
         assertFalse(users.isEmpty());
@@ -356,21 +383,16 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         UserResource userResource = usersResource.get(userRepresentation.getId());
 
         ClientResource html5ClientApp = getClientResource("photoz-html5-client");
+        ClientRepresentation clientRepresentation = html5ClientApp.toRepresentation();
 
-        userResource.revokeConsent(html5ClientApp.toRepresentation().getClientId());
+        userResource.revokeConsent(clientRepresentation.getClientId());
 
-        ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
-        RoleResource roleResource = resourceServerClient.roles().get("manage-albums");
-        RoleRepresentation roleRepresentation = roleResource.toRepresentation();
-
-        roleRepresentation.setScopeParamRequired(true);
-
-        roleResource.update(roleRepresentation);
+        setManageAlbumScopeRequired();
 
         loginToClientPage("alice", "alice");
         clientPage.viewAlbum("Alice Family Album", true);
 
-        loginToClientPage("alice", "alice", RESOURCE_SERVER_ID + "/manage-albums");
+        loginToClientPage("alice", "alice", "manage-albums");
         clientPage.viewAlbum("Alice Family Album", false);
     }
 
@@ -397,7 +419,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");
         RoleRepresentation roleRepresentation = manageAlbumRole.toRepresentation();
 
-        roleRepresentation.setScopeParamRequired(true);
+        setManageAlbumScopeRequired();
 
         manageAlbumRole.update(roleRepresentation);
 
@@ -427,6 +449,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testOverridePermissionFromResourceParent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
         String resourceName = "My Resource Instance";
         clientPage.createAlbum(resourceName);
@@ -487,6 +511,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Test
     public void testInheritPermissionFromResourceParent() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         loginToClientPage("alice", "alice");
 
         String resourceName = "My Resource Instance";
@@ -567,10 +593,13 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             }
         });
     }
-    
+
     //KEYCLOAK-3777
+
     @Test
     public void testEntitlementRequest() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         clientPage.navigateTo();
         loginToClientPage("admin", "admin");
 
@@ -582,7 +611,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         assertTrue(pageSource.contains("album:view"));
         assertTrue(pageSource.contains("album:delete"));
     }
-
     @Test
     public void testResourceProtectedWithAnyScope() throws Exception {
         loginToClientPage("alice", "alice");
@@ -720,5 +748,44 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         clientPage.navigateTo();
         waitForPageToLoad();
         clientPage.login(username, password, scopes);
+        waitUntilElement(By.linkText("Sign Out")).is().clickable();
+    }
+
+    private void setManageAlbumScopeRequired() {
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+
+        clientScope.setName("manage-albums");
+        clientScope.setProtocol("openid-connect");
+
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+
+        mapper.setName("manage-albums");
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper(UserClientRoleMappingMapper.PROVIDER_ID);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("access.token.claim", "true");
+        config.put("id.token.claim", "true");
+        config.put("userinfo.token.claim", "true");
+        config.put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, "photoz-restful-api");
+
+        mapper.setConfig(config);
+
+        clientScope.setProtocolMappers(Arrays.asList(mapper));
+
+        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
+        ClientScopesResource clientScopes = realmResource.clientScopes();
+        Response resp = clientScopes.create(clientScope);
+        Assert.assertEquals(201, resp.getStatus());
+        resp.close();
+        String clientScopeId = ApiUtil.getCreatedId(resp);
+        ClientResource resourceServer = getClientResource(RESOURCE_SERVER_ID);
+        clientScopes.get(clientScopeId).getScopeMappings().clientLevel(resourceServer.toRepresentation().getId()).add(Arrays.asList(resourceServer.roles().get("manage-albums").toRepresentation()));
+        ClientResource html5ClientApp = getClientResource("photoz-html5-client");
+        html5ClientApp.addOptionalClientScope(clientScopeId);
+        html5ClientApp.getScopeMappings().realmLevel().add(Arrays.asList(realmResource.roles().get("user").toRepresentation(), realmResource.roles().get("admin").toRepresentation()));
+        ClientRepresentation clientRep = html5ClientApp.toRepresentation();
+        clientRep.setFullScopeAllowed(false);
+        html5ClientApp.update(clientRep);
     }
 }

@@ -17,8 +17,10 @@
  */
 package org.keycloak.authorization.policy.provider.user;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
@@ -30,16 +32,16 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
  */
 public class UserPolicyProvider implements PolicyProvider {
 
-    private final Function<Policy, UserPolicyRepresentation> representationFunction;
+    private final BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction;
 
-    public UserPolicyProvider(Function<Policy, UserPolicyRepresentation> representationFunction) {
+    public UserPolicyProvider(BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction) {
         this.representationFunction = representationFunction;
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
         EvaluationContext context = evaluation.getContext();
-        UserPolicyRepresentation representation = representationFunction.apply(evaluation.getPolicy());
+        UserPolicyRepresentation representation = representationFunction.apply(evaluation.getPolicy(), evaluation.getAuthorizationProvider());
 
         for (String userId : representation.getUsers()) {
             if (context.getIdentity().getId().equals(userId)) {

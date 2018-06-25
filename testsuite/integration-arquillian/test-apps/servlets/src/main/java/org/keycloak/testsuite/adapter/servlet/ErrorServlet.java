@@ -29,7 +29,7 @@ import org.keycloak.adapters.spi.AuthenticationError;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ErrorServlet extends HttpServlet {
-    public static AuthenticationError authError;
+    private AuthenticationError authError;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -44,7 +44,7 @@ public class ErrorServlet extends HttpServlet {
         if (statusCode != null)
             pw.print("<br/>HTTP status code: " + statusCode);
         if (authError != null) 
-            pw.print("<br/>Error info: " + authError.toString());
+            pw.print("<br/>Error info: <span id=\"error\">" + authError.toString() + "</span>");
         pw.print("</body></html>");
         pw.flush();
     }

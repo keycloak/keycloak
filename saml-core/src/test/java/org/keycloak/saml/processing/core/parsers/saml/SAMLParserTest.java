@@ -67,7 +67,9 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
@@ -96,12 +98,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.assertFalse;
 /**
  * Test class for SAML parser.
  *
@@ -136,6 +139,8 @@ public class SAMLParserTest {
             Object parsedObject;
             if (SAML2Object.class.isAssignableFrom(expectedType)) {
                 parsedObject = new SAML2Response().getSAML2ObjectFromStream(st);
+            } else if (SAMLDocumentHolder.class.isAssignableFrom(expectedType)) {
+                parsedObject = SAML2Request.getSAML2ObjectFromStream(st);
             } else {
                 parsedObject = parser.parse(st);
             }
@@ -184,7 +189,9 @@ public class SAMLParserTest {
 
     @Test
     public void testSaml20EncryptedAssertionWithNewlines() throws Exception {
-        ResponseType resp = assertParsed("KEYCLOAK-4489-encrypted-assertion-with-newlines.xml", ResponseType.class);
+        SAMLDocumentHolder holder = assertParsed("KEYCLOAK-4489-encrypted-assertion-with-newlines.xml", SAMLDocumentHolder.class);
+        assertThat(holder.getSamlObject(), instanceOf(ResponseType.class));
+        ResponseType resp = (ResponseType) holder.getSamlObject();
         assertThat(resp.getAssertions().size(), is(1));
 
         ResponseType.RTChoiceType rtChoiceType = resp.getAssertions().get(0);
@@ -192,7 +199,7 @@ public class SAMLParserTest {
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
         PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.decode(PRIVATE_KEY));
-        AssertionUtil.decryptAssertion(resp, privateKey);
+        AssertionUtil.decryptAssertion(holder, resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);
         assertNotNull(rtChoiceType.getAssertion());
@@ -680,6 +687,28 @@ public class SAMLParserTest {
         assertThat(req.getRequestedAuthnContext().getAuthnContextDeclRef(), hasItem(is("urn:kc:SAML:2.0:ac:ref:demo:decl")));
     }
 
+    @Test //https://issues.jboss.org/browse/KEYCLOAK-7316
+    public void testAuthnRequestOptionalIsPassive() throws Exception {
+        AuthnRequestType req = assertParsed("KEYCLOAK-7316-noAtrributes.xml", AuthnRequestType.class);
+
+        assertThat("Not null!", req.isIsPassive(), nullValue());
+        assertThat("Not null!", req.isForceAuthn(), nullValue());
+
+        req = assertParsed("KEYCLOAK-7316-withTrueAttributes.xml", AuthnRequestType.class);
+
+        assertThat(req.isIsPassive(), notNullValue());
+        assertTrue("Wrong value!", req.isIsPassive().booleanValue());
+        assertThat(req.isForceAuthn(), notNullValue());
+        assertTrue("Wrong value!", req.isForceAuthn().booleanValue());
+
+        req = assertParsed("KEYCLOAK-7316-withFalseAttributes.xml", AuthnRequestType.class);
+
+        assertThat(req.isIsPassive(), notNullValue());
+        assertFalse("Wrong value!", req.isIsPassive().booleanValue());
+        assertThat(req.isForceAuthn(), notNullValue());
+        assertFalse("Wrong value!", req.isForceAuthn().booleanValue());
+    }
+
     @Test
     public void testAuthnRequestInvalidPerXsdWithValidationDisabled() throws Exception {
         AuthnRequestType req = assertParsed("saml20-authnrequest-invalid-per-xsd.xml", AuthnRequestType.class);
@@ -708,7 +737,8 @@ public class SAMLParserTest {
     @Test
     public void testInvalidEndElement() throws Exception {
         thrown.expect(ParsingException.class);
-        thrown.expectMessage(containsString("The element type \"NameIDFormat\" must be terminated by the matching end-tag \"</NameIDFormat>\"."));
+        // see KEYCLOAK-7444 
+        thrown.expectMessage(containsString("NameIDFormat"));
 
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
     }

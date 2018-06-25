@@ -201,7 +201,8 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             RequestAbstractType requestAbstractType = (RequestAbstractType) samlObject;
-            String issuer = requestAbstractType.getIssuer().getValue();
+            final NameIDType issuerNameId = requestAbstractType.getIssuer();
+            String issuer = requestAbstractType.getIssuer() == null ? null : issuerNameId.getValue();
             ClientModel client = realm.getClientByClientId(issuer);
 
             if (client == null) {
@@ -337,8 +338,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 }
             }
-
-            return newBrowserAuthentication(authSession, requestAbstractType.isIsPassive(), redirectToAuthentication);
+            //If unset we fall back to default "false"
+            final boolean isPassive = (null == requestAbstractType.isIsPassive() ?
+                    false : requestAbstractType.isIsPassive().booleanValue());
+            return newBrowserAuthentication(authSession, isPassive, redirectToAuthentication);
         }
 
         protected String getBindingType(AuthnRequestType requestAbstractType) {

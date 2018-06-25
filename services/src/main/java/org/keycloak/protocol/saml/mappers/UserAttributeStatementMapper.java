@@ -86,11 +86,10 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
     }
 
     public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute,
-                                                            String samlAttributeName, String nameFormat, String friendlyName,
-                                                            boolean consentRequired, String consentText) {
+                                                            String samlAttributeName, String nameFormat, String friendlyName) {
         String mapperId = PROVIDER_ID;
         return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, nameFormat, friendlyName,
-                consentRequired, consentText, mapperId);
+                mapperId);
 
     }
 

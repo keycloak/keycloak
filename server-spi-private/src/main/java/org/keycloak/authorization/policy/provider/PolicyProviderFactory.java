@@ -34,9 +34,13 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
 
     String getGroup();
 
+    default boolean isInternal() {
+        return false;
+    }
+
     PolicyProvider create(AuthorizationProvider authorization);
 
-    R toRepresentation(Policy policy);
+    R toRepresentation(Policy policy, AuthorizationProvider authorization);
 
     Class<R> getRepresentationType();
 

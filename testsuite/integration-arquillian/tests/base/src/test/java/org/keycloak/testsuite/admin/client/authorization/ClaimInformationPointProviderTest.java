@@ -19,7 +19,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;

@@ -19,6 +19,7 @@ package org.keycloak.testsuite;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -81,8 +82,10 @@ public class Assert extends org.junit.Assert {
             return ((UserFederationProviderFactoryRepresentation) o1).getId();
         } else if (o1 instanceof GroupRepresentation) {
             return ((GroupRepresentation) o1).getName();
-        }else if (o1 instanceof ComponentRepresentation) {
+        } else if (o1 instanceof ComponentRepresentation) {
             return ((ComponentRepresentation) o1).getName();
+        } else if (o1 instanceof ClientScopeRepresentation) {
+            return ((ClientScopeRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();

@@ -2,11 +2,11 @@ package org.keycloak.testsuite.adapter;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.adapter.servlet.AbstractSAMLFilterServletAdapterTest;
+import org.keycloak.testsuite.adapter.servlet.SAMLFilterServletAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 @AppServerContainer("app-server-was")
-public class WASSAMLFilterAdapterTest extends AbstractSAMLFilterServletAdapterTest {
+public class WASSAMLFilterAdapterTest extends SAMLFilterServletAdapterTest {
     @Override
     @Ignore // KEYCLOAK-6152
     @Test

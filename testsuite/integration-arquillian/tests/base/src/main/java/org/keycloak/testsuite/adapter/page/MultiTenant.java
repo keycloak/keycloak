@@ -44,14 +44,14 @@ public class MultiTenant extends AbstractPageWithInjectedUrl {
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("/").queryParam("realm", "{tenantRealm}");
+        return super.createUriBuilder().path("{tenantRealm}");
     }
 
     public URL getTenantRealmUrl(String realm) {
         try {
             return getUriBuilder().build(realm).toURL();
         } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Page URL is malformed.");
+            throw new IllegalStateException("Page URL is malformed.", ex);
         }
     }
 

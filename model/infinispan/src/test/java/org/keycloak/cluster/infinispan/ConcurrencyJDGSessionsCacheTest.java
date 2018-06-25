@@ -18,8 +18,6 @@
 package org.keycloak.cluster.infinispan;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,8 +95,6 @@ public class ConcurrencyJDGSessionsCacheTest {
         clientSession.setAuthMethod("saml");
         clientSession.setAction("something");
         clientSession.setTimestamp(1234);
-        clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
-        clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
         session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         SessionEntityWrapper<UserSessionEntity> wrappedSession = new SessionEntityWrapper<>(session);

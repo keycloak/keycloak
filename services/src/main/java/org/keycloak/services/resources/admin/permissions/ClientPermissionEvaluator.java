@@ -17,7 +17,7 @@
 package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 
 import java.util.Map;
 
@@ -30,29 +30,29 @@ public interface ClientPermissionEvaluator {
 
     void setPermissionsEnabled(ClientModel client, boolean enable);
 
-    void requireListTemplates();
+    void requireListClientScopes();
 
     boolean canManage();
 
     void requireManage();
 
-    boolean canManageTemplates();
+    boolean canManageClientScopes();
 
-    void requireManageTemplates();
+    void requireManageClientScopes();
 
     boolean canView();
 
     boolean canList();
 
-    boolean canViewTemplates();
+    boolean canViewClientScopes();
 
     void requireList();
 
-    boolean canListTemplates();
+    boolean canListClientScopes();
 
     void requireView();
 
-    void requireViewTemplates();
+    void requireViewClientScopes();
 
     boolean canManage(ClientModel client);
 
@@ -66,13 +66,13 @@ public interface ClientPermissionEvaluator {
 
     void requireView(ClientModel client);
 
-    boolean canManage(ClientTemplateModel template);
+    boolean canManage(ClientScopeModel clientScope);
 
-    void requireManage(ClientTemplateModel template);
+    void requireManage(ClientScopeModel clientScope);
 
-    boolean canView(ClientTemplateModel template);
+    boolean canView(ClientScopeModel clientScope);
 
-    void requireView(ClientTemplateModel template);
+    void requireView(ClientScopeModel clientScope);
 
     boolean canMapRoles(ClientModel client);
 

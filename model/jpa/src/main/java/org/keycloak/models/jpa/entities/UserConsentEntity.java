@@ -73,10 +73,7 @@ public class UserConsentEntity {
     protected String externalClientId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<UserConsentRoleEntity> grantedRoles = new ArrayList<UserConsentRoleEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<UserConsentProtocolMapperEntity> grantedProtocolMappers = new ArrayList<UserConsentProtocolMapperEntity>();
+    Collection<UserConsentClientScopeEntity> grantedClientScopes = new ArrayList<>();
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
@@ -100,20 +97,12 @@ public class UserConsentEntity {
         this.user = user;
     }
 
-    public Collection<UserConsentRoleEntity> getGrantedRoles() {
-        return grantedRoles;
+    public Collection<UserConsentClientScopeEntity> getGrantedClientScopes() {
+        return grantedClientScopes;
     }
 
-    public void setGrantedRoles(Collection<UserConsentRoleEntity> grantedRoles) {
-        this.grantedRoles = grantedRoles;
-    }
-
-    public Collection<UserConsentProtocolMapperEntity> getGrantedProtocolMappers() {
-        return grantedProtocolMappers;
-    }
-
-    public void setGrantedProtocolMappers(Collection<UserConsentProtocolMapperEntity> grantedProtocolMappers) {
-        this.grantedProtocolMappers = grantedProtocolMappers;
+    public void setGrantedClientScopes(Collection<UserConsentClientScopeEntity> grantedClientScopes) {
+        this.grantedClientScopes = grantedClientScopes;
     }
 
     public Long getCreatedDate() {

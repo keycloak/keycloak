@@ -53,7 +53,6 @@ public class MigrateTo1_2_0 implements Migration {
                 if (roleModel != null) continue;
                 roleModel = client.addRole(role);
                 roleModel.setDescription("${role_" + role.toLowerCase().replaceAll("_", "-") + "}");
-                roleModel.setScopeParamRequired(false);
             }
         }
     }

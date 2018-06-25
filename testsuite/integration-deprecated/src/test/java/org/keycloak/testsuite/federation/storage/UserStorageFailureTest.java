@@ -40,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.UserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -89,6 +90,7 @@ public class UserStorageFailureTest {
             realmName = appRealm.getName();
 
             ClientModel offlineClient = appRealm.addClient("offline-client");
+            offlineClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             offlineClient.setEnabled(true);
             offlineClient.setDirectAccessGrantsEnabled(true);
             offlineClient.setSecret("secret");

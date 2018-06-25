@@ -23,7 +23,10 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -122,6 +125,8 @@ public class PermissionTicketService {
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
         
         PermissionTicket ticket = ticketStore.create(resource.getId(), scope.getId(), user.getId(), resourceServer);
+        if(representation.isGranted())
+                ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
         representation = ModelToRepresentation.toRepresentation(ticket, authorization);
         return Response.ok(representation).build();
     }
@@ -182,7 +187,8 @@ public class PermissionTicketService {
                          @QueryParam("returnNames") Boolean returnNames,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        PermissionTicketStore permissionTicketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
 
         Map<String, String> filters = new HashMap<>();
 
@@ -191,15 +197,22 @@ public class PermissionTicketService {
         }
 
         if (scopeId != null) {
-            filters.put(PermissionTicket.SCOPE, scopeId);
+            ScopeStore scopeStore = storeFactory.getScopeStore();
+            Scope scope = scopeStore.findById(scopeId, resourceServer.getId());
+
+            if (scope == null) {
+                scope = scopeStore.findByName(scopeId, resourceServer.getId());
+            }
+
+            filters.put(PermissionTicket.SCOPE, scope != null ? scope.getId() : scopeId);
         }
 
         if (owner != null) {
-            filters.put(PermissionTicket.OWNER, owner);
+            filters.put(PermissionTicket.OWNER, getUserId(owner));
         }
 
         if (requester != null) {
-            filters.put(PermissionTicket.REQUESTER, requester);
+            filters.put(PermissionTicket.REQUESTER, getUserId(requester));
         }
 
         if (granted != null) {
@@ -211,5 +224,23 @@ public class PermissionTicketService {
                         .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
                         .collect(Collectors.toList()))
                 .build();
+    }
+
+    private String getUserId(String userIdOrName) {
+        UserProvider userProvider = authorization.getKeycloakSession().users();
+        RealmModel realm = authorization.getRealm();
+        UserModel userModel = userProvider.getUserById(userIdOrName, realm);
+
+        if (userModel != null) {
+            return userModel.getId();
+        }
+
+        userModel = userProvider.getUserByUsername(userIdOrName, realm);
+
+        if (userModel != null) {
+            return userModel.getId();
+        }
+
+        return userIdOrName;
     }
 }

@@ -99,26 +99,14 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     }
 
     @Override
-    public Set<String> getRoles() {
-        if (entity.getRoles() == null || entity.getRoles().isEmpty()) return Collections.emptySet();
-        return new HashSet<>(entity.getRoles());
+    public Set<String> getClientScopes() {
+        if (entity.getClientScopes() == null || entity.getClientScopes().isEmpty()) return Collections.emptySet();
+        return new HashSet<>(entity.getClientScopes());
     }
 
     @Override
-    public void setRoles(Set<String> roles) {
-        entity.setRoles(roles);
-        update();
-    }
-
-    @Override
-    public Set<String> getProtocolMappers() {
-        if (entity.getProtocolMappers() == null || entity.getProtocolMappers().isEmpty()) return Collections.emptySet();
-        return new HashSet<>(entity.getProtocolMappers());
-    }
-
-    @Override
-    public void setProtocolMappers(Set<String> protocolMappers) {
-        entity.setProtocolMappers(protocolMappers);
+    public void setClientScopes(Set<String> clientScopes) {
+        entity.setClientScopes(clientScopes);
         update();
     }
 

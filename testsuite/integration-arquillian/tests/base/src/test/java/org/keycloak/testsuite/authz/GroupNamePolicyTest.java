@@ -71,7 +71,6 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         groupProtocolMapper.setName("groups");
         groupProtocolMapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
         groupProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        groupProtocolMapper.setConsentRequired(false);
         Map<String, String> config = new HashMap<>();
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");

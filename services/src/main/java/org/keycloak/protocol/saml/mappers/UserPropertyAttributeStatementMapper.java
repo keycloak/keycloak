@@ -90,7 +90,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
                                                             boolean consentRequired, String consentText) {
         String mapperId = PROVIDER_ID;
         return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, nameFormat, friendlyName,
-                consentRequired, consentText, mapperId);
+                mapperId);
 
     }
 }

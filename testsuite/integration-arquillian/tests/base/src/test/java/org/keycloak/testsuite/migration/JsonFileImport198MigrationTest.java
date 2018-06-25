@@ -24,7 +24,7 @@ import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
-        //testMigrationTo2_5_1(); // todo do not know how to fix
+        //testMigrationTo2_5_1(); // Offline tokens migration is skipped for JSON
         testMigrationTo3_x_and_higher();
     }
 

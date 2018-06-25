@@ -40,7 +40,6 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     private final PersistentUserSessionModel model;
     private UserModel user;
     private String userId;
-    private String username;
     private final RealmModel realm;
     private KeycloakSession session;
     private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;

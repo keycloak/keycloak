@@ -44,19 +44,6 @@
                 </div>
                 <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="protocol">{{:: 'client-template' | translate}}</label>
-                <div class="col-sm-6">
-                    <div>
-                        <select class="form-control" id="template"
-                                ng-change="changeTemplate()"
-                                ng-model="client.clientTemplate"
-                                ng-options="template.name as template.name for template in templates">
-                        </select>
-                    </div>
-                </div>
-                <kc-tooltip>{{:: 'client-template.tooltip' | translate}}</kc-tooltip>
-            </div>
             <div class="form-group" data-ng-hide="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}}</label>
                 <div class="col-sm-6">

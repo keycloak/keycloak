@@ -22,6 +22,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -40,7 +41,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -53,6 +54,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 @AppServerContainer(AUTH_SERVER_CONTAINER_DEFAULT)
+@Ignore(value = "Need to resolve default relative scenario when running on non-undertow")
 public class UndertowRelaviteUriAdapterTest extends AbstractServletsAdapterTest {
     
     @Page

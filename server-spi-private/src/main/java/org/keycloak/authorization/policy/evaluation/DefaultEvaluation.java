@@ -48,11 +48,20 @@ public class DefaultEvaluation implements Evaluation {
     private final ResourcePermission permission;
     private final EvaluationContext executionContext;
     private final Decision decision;
-    private final Policy policy;
+    private Policy policy;
     private final Policy parentPolicy;
     private final AuthorizationProvider authorizationProvider;
     private final Realm realm;
     private Effect effect;
+
+    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Decision decision, AuthorizationProvider authorizationProvider) {
+        this.permission = permission;
+        this.executionContext = executionContext;
+        this.parentPolicy = parentPolicy;
+        this.decision = decision;
+        this.authorizationProvider = authorizationProvider;
+        this.realm = createRealm();
+    }
 
     public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision, AuthorizationProvider authorizationProvider) {
         this.permission = permission;
@@ -98,6 +107,9 @@ public class DefaultEvaluation implements Evaluation {
 
     @Override
     public Policy getPolicy() {
+        if (policy == null) {
+            return parentPolicy;
+        }
         return this.policy;
     }
 
@@ -119,7 +131,8 @@ public class DefaultEvaluation implements Evaluation {
         return effect;
     }
 
-    void denyIfNoEffect() {
+    @Override
+    public void denyIfNoEffect() {
         if (this.effect == null) {
             deny();
         }
@@ -247,5 +260,9 @@ public class DefaultEvaluation implements Evaluation {
                 return attributes;
             }
         };
+    }
+
+    public void setPolicy(Policy policy) {
+        this.policy = policy;
     }
 }

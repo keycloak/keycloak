@@ -132,19 +132,19 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            ProtocolMapperRepresentation mapper = createAddressMapper(true, true);
+            ProtocolMapperRepresentation mapper = createAddressMapper(true, true, true);
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.REGION), "region_some");
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.COUNTRY), "country_some");
             mapper.getConfig().remove(AddressMapper.getModelPropertyName(AddressClaimSet.POSTAL_CODE)); // Even if we remove protocolMapper config property, it should still default to postal_code
             app.getProtocolMappers().createMapper(mapper).close();
 
-            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
+            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", true, true);
             app.getProtocolMappers().createMapper(hard).close();
-            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
@@ -264,8 +264,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, true, false)).close();
         }
 
         {
@@ -542,8 +542,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         rep.setName(name);
         rep.setProtocolMapper(mapperType);
         rep.setConfig(config);
-        rep.setConsentRequired(true);
-        rep.setConsentText("Test Consent Text");
         return rep;
     }
 

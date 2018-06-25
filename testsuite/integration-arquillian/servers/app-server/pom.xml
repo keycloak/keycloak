@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers</artifactId>
-        <version>4.0.0.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -36,9 +36,11 @@
     </properties>
 
     <modules>
+        <module>app-server-spi</module>
         <module>jboss</module>
         <module>karaf</module>
         <module>tomcat</module>
+        <module>undertow</module>
     </modules>
 
 </project>

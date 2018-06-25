@@ -86,6 +86,9 @@ public class PaxWebIntegrationService {
         return httpContext;
     }
 
+    public void setHttpContext(HttpContext httpContext) {
+        this.httpContext = httpContext;
+    }
 
     public void start() {
         ServiceTrackerCustomizer trackerCustomizer = new ServiceTrackerCustomizer() {
@@ -115,7 +118,9 @@ public class PaxWebIntegrationService {
 
     protected WebContainer addingWebContainerCallback(ServiceReference webContainerServiceReference) {
         WebContainer service = (WebContainer) bundleContext.getService(webContainerServiceReference);
-        httpContext = service.createDefaultHttpContext();
+        if (httpContext == null) {
+            httpContext = service.createDefaultHttpContext();
+        }
 
         addJettyWebXml(service);
 

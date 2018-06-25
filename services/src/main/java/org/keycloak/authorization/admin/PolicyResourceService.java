@@ -73,8 +73,10 @@ public class PolicyResourceService {
     @Consumes("application/json")
     @Produces("application/json")
     @NoCache
-    public Response update(@Context UriInfo uriInfo,String payload) {
-        this.auth.realm().requireManageAuthorization();
+    public Response update(@Context UriInfo uriInfo, String payload) {
+        if (auth != null) {
+            this.auth.realm().requireManageAuthorization();
+        }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
 
@@ -94,7 +96,9 @@ public class PolicyResourceService {
 
     @DELETE
     public Response delete(@Context UriInfo uriInfo) {
-        this.auth.realm().requireManageAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireManageAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -119,7 +123,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response findById() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -137,7 +143,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getDependentPolicies() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -161,7 +169,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getScopes() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -182,7 +192,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getResources() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -203,7 +215,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getAssociatedPolicies() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();

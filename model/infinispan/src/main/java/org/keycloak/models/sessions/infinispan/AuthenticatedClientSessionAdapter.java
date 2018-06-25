@@ -239,44 +239,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     }
 
     @Override
-    public Set<String> getRoles() {
-        return entity.getRoles();
-    }
-
-    @Override
-    public void setRoles(Set<String> roles) {
-        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
-
-            @Override
-            public void runUpdate(AuthenticatedClientSessionEntity entity) {
-                entity.setRoles(roles); // TODO not thread-safe. But we will remove setRoles anyway...?
-            }
-
-        };
-
-        update(task);
-    }
-
-    @Override
-    public Set<String> getProtocolMappers() {
-        return entity.getProtocolMappers();
-    }
-
-    @Override
-    public void setProtocolMappers(Set<String> protocolMappers) {
-        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
-
-            @Override
-            public void runUpdate(AuthenticatedClientSessionEntity entity) {
-                entity.setProtocolMappers(protocolMappers); // TODO not thread-safe. But we will remove setProtocolMappers anyway...?
-            }
-
-        };
-
-        update(task);
-    }
-
-    @Override
     public String getNote(String name) {
         return entity.getNotes().get(name);
     }

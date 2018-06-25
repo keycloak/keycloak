@@ -23,7 +23,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -40,12 +42,16 @@ import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
+import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -390,6 +396,108 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 PAIRWISE_AUTHZ_CLIENT_CONFIG);
     }
 
+    @Test
+    public void testObtainAllEntitlements() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName("Only Owner Policy");
+        policy.setCode("if ($evaluation.getContext().getIdentity().getId() == $evaluation.getPermission().getResource().getOwner()) {$evaluation.grant();}");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Marta Resource");
+        resource.setOwner("marta");
+        resource.setOwnerManagedAccess(true);
+
+        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Marta Resource Permission");
+        permission.addResource(resource.getId());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission);
+
+        assertTrue(hasPermission("marta", "password", resource.getId()));
+        assertFalse(hasPermission("kolo", "password", resource.getId()));
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        PermissionResponse permissionResponse = authzClient.protection().permission().create(new PermissionRequest(resource.getId()));
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.setTicket(permissionResponse.getTicket());
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+        } catch (Exception ignore) {
+
+        }
+
+        List<PermissionTicketRepresentation> tickets = authzClient.protection().permission().findByResource(resource.getId());
+
+        assertEquals(1, tickets.size());
+
+        PermissionTicketRepresentation ticket = tickets.get(0);
+
+        ticket.setGranted(true);
+
+        authzClient.protection().permission().update(ticket);
+
+        assertTrue(hasPermission("kolo", "password", resource.getId()));
+
+        resource.addScope("Scope A");
+
+        authorization.resources().resource(resource.getId()).update(resource);
+
+        // the addition of a new scope invalidates the permission previously grante to the resource
+        assertFalse(hasPermission("kolo", "password", resource.getId()));
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        permissionResponse = authzClient.protection().permission().create(new PermissionRequest(resource.getId(), "Scope A"));
+        request = new AuthorizationRequest();
+
+        request.setTicket(permissionResponse.getTicket());
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+        } catch (Exception ignore) {
+
+        }
+
+        tickets = authzClient.protection().permission().find(resource.getId(), "Scope A", null, null, false, false, null, null);
+
+        assertEquals(1, tickets.size());
+
+        ticket = tickets.get(0);
+
+        ticket.setGranted(true);
+
+        authzClient.protection().permission().update(ticket);
+
+        assertTrue(hasPermission("kolo", "password", resource.getId(), "Scope A"));
+
+        resource.addScope("Scope B");
+
+        authorization.resources().resource(resource.getId()).update(resource);
+
+        assertTrue(hasPermission("kolo", "password", resource.getId()));
+        assertFalse(hasPermission("kolo", "password", resource.getId(), "Scope B"));
+
+        resource.setScopes(new HashSet<>());
+
+        authorization.resources().resource(resource.getId()).update(resource);
+
+        assertTrue(hasPermission("kolo", "password", resource.getId()));
+        assertFalse(hasPermission("kolo", "password", resource.getId(), "Scope A"));
+    }
+
     public void testResourceServerAsAudience(String testClientId, String resourceServerClientId, String configFile) throws Exception {
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -400,6 +508,29 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AccessToken rpt = toAccessToken(response.getToken());
 
         assertEquals(resourceServerClientId, rpt.getAudience()[0]);
+    }
+
+    private boolean hasPermission(String userName, String password, String resourceId, String... scopeIds) throws Exception {
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", userName, password).getAccessToken();
+        AuthorizationResponse response = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(accessToken).authorize(new AuthorizationRequest());
+        AccessToken rpt = toAccessToken(response.getToken());
+        Authorization authz = rpt.getAuthorization();
+        List<Permission> permissions = authz.getPermissions();
+
+        assertNotNull(permissions);
+        assertFalse(permissions.isEmpty());
+
+        for (Permission grantedPermission : permissions) {
+            if (grantedPermission.getResourceId().equals(resourceId)) {
+                return scopeIds == null || scopeIds.length == 0 || grantedPermission.getScopes().containsAll(Arrays.asList(scopeIds));
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasPermission(String userName, String password, String resourceId) throws Exception {
+        return hasPermission(userName, password, resourceId, null);
     }
 
     private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {

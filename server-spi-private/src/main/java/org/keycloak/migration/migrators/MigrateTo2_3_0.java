@@ -20,7 +20,7 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -44,8 +44,8 @@ public class MigrateTo2_3_0 implements Migration {
             MigrationUtils.updateProtocolMappers(client);
         }
 
-        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-            MigrationUtils.updateProtocolMappers(clientTemplate);
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            MigrationUtils.updateProtocolMappers(clientScope);
         }
     }
 

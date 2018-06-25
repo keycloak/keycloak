@@ -98,13 +98,11 @@ public class AttributeStatementHelper {
         configProperties.add(property);
 
     }
-    public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute, String samlAttributeName, String nameFormat,  String friendlyName, boolean consentRequired, String consentText, String mapperId) {
+    public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute, String samlAttributeName, String nameFormat,  String friendlyName, String mapperId) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(consentRequired);
-        mapper.setConsentText(consentText);
         Map<String, String> config = new HashMap<String, String>();
         if (userAttribute != null) config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(SAML_ATTRIBUTE_NAME, samlAttributeName);

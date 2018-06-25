@@ -101,9 +101,20 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
 
     @Test
     public void testDeleteResourceAndPermissionTicket() throws Exception {
-        ResourceRepresentation resource = addResource("Resource A", true);
-        PermissionResponse response = getAuthzClient().protection().permission().create(new PermissionRequest(resource.getName()));
-        assertNotNull(response.getTicket());
+        ResourceRepresentation resource = addResource("Resource A", "kolo", true, "ScopeA", "ScopeB", "ScopeC");
+        AuthzClient authzClient = getAuthzClient();
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), "ScopeA", "ScopeB", "ScopeC"));
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+
+        }
+
+        assertPersistence(response, resource, "ScopeA", "ScopeB", "ScopeC");
 
         getAuthzClient().protection().resource().delete(resource.getId());
         assertTrue(getAuthzClient().protection().permission().findByResource(resource.getId()).isEmpty());

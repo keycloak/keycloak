@@ -20,15 +20,10 @@ package org.keycloak.services.managers;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -197,42 +192,6 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         parser.removeExpiredSession(session, commonLoginSession);
     }
 
-
-    public Set<RoleModel> getRequestedRoles() {
-        return getRequestedRoles(commonLoginSession, realm);
-    }
-
-    public static Set<RoleModel> getRequestedRoles(CommonClientSessionModel clientSession, RealmModel realm) {
-        Set<RoleModel> requestedRoles = new HashSet<>();
-        for (String roleId : clientSession.getRoles()) {
-            RoleModel role = realm.getRoleById(roleId);
-            if (role != null) {
-                requestedRoles.add(role);
-            }
-        }
-        return requestedRoles;
-    }
-
-    public Set<ProtocolMapperModel> getRequestedProtocolMappers() {
-        return getRequestedProtocolMappers(commonLoginSession.getProtocolMappers(), commonLoginSession.getClient());
-    }
-
-    public static Set<ProtocolMapperModel> getRequestedProtocolMappers(Set<String> protocolMappers, ClientModel client) {
-        Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<>();
-        ClientTemplateModel template = client.getClientTemplate();
-        if (protocolMappers != null) {
-            for (String protocolMapperId : protocolMappers) {
-                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protocolMapperId);
-                if (protocolMapper == null && template != null) {
-                    protocolMapper = template.getProtocolMapperById(protocolMapperId);
-                }
-                if (protocolMapper != null) {
-                    requestedProtocolMappers.add(protocolMapper);
-                }
-            }
-        }
-        return requestedProtocolMappers;
-    }
 
     public void setAction(String action) {
         commonLoginSession.setAction(action);

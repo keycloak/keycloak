@@ -39,7 +39,7 @@ public class AuthorizationRequest {
     private PermissionTicketToken permissions = new PermissionTicketToken();
     private Metadata metadata;
     private String audience;
-    private String accessToken;
+    private String subjectToken;
     private boolean submitRequest;
     private Map<String, List<String>> claims;
 
@@ -123,12 +123,12 @@ public class AuthorizationRequest {
         return audience;
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    public void setSubjectToken(String subjectToken) {
+        this.subjectToken = subjectToken;
     }
 
-    public String getAccessToken() {
-        return accessToken;
+    public String getSubjectToken() {
+        return subjectToken;
     }
 
     public Map<String, List<String>> getClaims() {

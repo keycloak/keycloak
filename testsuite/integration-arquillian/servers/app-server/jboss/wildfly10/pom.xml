@@ -21,13 +21,13 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
-        <version>4.0.0.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-wildfly10</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - JBoss - Wildfly 10</name>
+    <packaging>jar</packaging>
+    <name>App Server - Wildfly 10</name>
     
     <properties>
         <app.server.jboss>wildfly10</app.server.jboss>
@@ -39,6 +39,24 @@
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
+
+        <skip.adapter.offline.installation>false</skip.adapter.offline.installation>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

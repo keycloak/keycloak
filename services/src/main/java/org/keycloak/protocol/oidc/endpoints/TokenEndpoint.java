@@ -49,6 +49,8 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -58,6 +60,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -79,10 +82,11 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
@@ -315,7 +319,7 @@ public class TokenEndpoint {
         String redirectUriParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
 
         // KEYCLOAK-4478 Backwards compatibility with the adapters earlier than KC 3.4.2
-        if (redirectUriParam != null && redirectUriParam.contains("session_state=")) {
+        if (redirectUriParam != null && redirectUriParam.contains("session_state=") && !redirectUri.contains("session_state=")) {
             redirectUriParam = KeycloakUriBuilder.fromUri(redirectUriParam)
                     .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
                     .build().toString();
@@ -361,7 +365,7 @@ public class TokenEndpoint {
 
         if (codeChallenge != null) {
             // based on whether code_challenge has been stored at corresponding authorization code request previously
-        	// decide whether this client(RP) supports PKCE
+            // decide whether this client(RP) supports PKCE
             if (!isValidPkceCodeVerifier(codeVerifier)) {
                 logger.infof("PKCE invalid code verifier");
                 event.error(Errors.INVALID_CODE_VERIFIER);
@@ -371,8 +375,8 @@ public class TokenEndpoint {
             logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
             String codeVerifierEncoded = codeVerifier;
             try {
-            	// https://tools.ietf.org/html/rfc7636#section-4.2
-            	// plain or S256
+                // https://tools.ietf.org/html/rfc7636#section-4.2
+                // plain or S256
                 if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
                     logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
                     codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
@@ -398,13 +402,36 @@ public class TokenEndpoint {
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
-        AccessToken token = tokenManager.createClientAccessToken(session, parseResult.getCode().getRequestedRoles(), realm, client, user, userSession, clientSession);
+        // Compute client scopes again from scope parameter. Check if user still has them granted
+        // (but in code-to-token request, it could just theoretically happen that they are not available)
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopes)) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        }
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes);
+
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .accessToken(token)
                 .generateRefreshToken();
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request);
+            if (certConf != null) {
+                responseBuilder.getAccessToken().setCertConf(certConf);
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+            }
+        }
+
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -424,7 +451,8 @@ public class TokenEndpoint {
 
         AccessTokenResponse res;
         try {
-            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+            // KEYCLOAK-6771 Certificate Bound Token
+            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers, request);
             res = result.getResponse();
 
             if (!result.isOfflineToken()) {
@@ -436,8 +464,14 @@ public class TokenEndpoint {
 
         } catch (OAuthErrorException e) {
             logger.trace(e.getMessage(), e);
-            event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            // KEYCLOAK-6771 Certificate Bound Token
+            if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
+            } else {
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+            }
         }
 
         event.success();
@@ -523,17 +557,17 @@ public class TokenEndpoint {
 
         }
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
 
-        AuthenticatedClientSessionModel clientSession = processor.attachSession();
+        ClientSessionContext clientSessionCtx = processor.attachSession();
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -592,8 +626,8 @@ public class TokenEndpoint {
                 clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
-        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
@@ -602,11 +636,11 @@ public class TokenEndpoint {
 
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -809,12 +843,12 @@ public class TokenEndpoint {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setRolesAndMappersInSession(authSession);
-        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+        AuthenticationManager.setClientScopesInSession(authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
         updateUserSessionFromClientAuth(targetUserSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
@@ -823,7 +857,7 @@ public class TokenEndpoint {
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }
 
-        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
@@ -1048,7 +1082,7 @@ public class TokenEndpoint {
         authorizationRequest.setRpt(formParams.getFirst("rpt"));
         authorizationRequest.setScope(formParams.getFirst("scope"));
         authorizationRequest.setAudience(formParams.getFirst("audience"));
-        authorizationRequest.setAccessToken(accessTokenString);
+        authorizationRequest.setSubjectToken(formParams.getFirst("subject_token") != null ? formParams.getFirst("subject_token") : accessTokenString);
 
         String submitRequest = formParams.getFirst("submit_request");
 

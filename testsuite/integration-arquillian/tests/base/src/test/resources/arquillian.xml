@@ -85,7 +85,7 @@
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
     
-    <container qualifier="auth-server-undertow" mode="suite" >
+    <container qualifier="auth-server-undertow" mode="suite" default="true">
         <configuration>
             <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="bindAddress">0.0.0.0</property>
@@ -95,7 +95,7 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-${auth.server}" mode="suite" >
+    <container qualifier="auth-server-${auth.server}" mode="suite" default="true">
         <configuration>
             <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -233,7 +233,7 @@
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered-1.xml</property>
                 <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${cache.server.port.offset}
+                    -Djboss.socket.binding.port-offset=${cache.server.1.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
                     -Djboss.node.name=cache-server-dc-1
                     ${adapter.test.props}

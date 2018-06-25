@@ -41,8 +41,7 @@
         <class>org.keycloak.models.jpa.entities.IdentityProviderMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserConsentRoleEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserConsentClientScopeEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationFlowEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationExecutionEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticatorConfigEntity</class>
@@ -53,8 +52,10 @@
         <class>org.keycloak.models.jpa.entities.GroupAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.UserGroupMembershipEntity</class>
-        <class>org.keycloak.models.jpa.entities.ClientTemplateEntity</class>
-        <class>org.keycloak.models.jpa.entities.TemplateScopeMappingEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientScopeEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity</class>
+        <class>org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientInitialAccessEntity</class>
 
         <!-- JpaAuditProviders -->
@@ -74,8 +75,7 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUser</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserConsentEntity</class>
-        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentRoleEntity</class>
-        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentProtocolMapperEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserCredentialAttributeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>

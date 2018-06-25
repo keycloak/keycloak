@@ -20,6 +20,7 @@ package org.keycloak.authorization.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -33,6 +34,7 @@ import javax.ws.rs.core.Response.Status;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -42,6 +44,7 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ErrorResponseException;
@@ -66,19 +69,31 @@ public final class Permissions {
      * @param authorization
      * @return
      */
-    public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization) {
+    public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<ResourcePermission> permissions = new ArrayList<>();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
+        // obtain all resources where owner is the resource server
+        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
+
+        // obtain all resources where owner is the current user
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
+
+        // obtain all resources granted to the user via permission tickets (uma)
+        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(identity.getId(), resourceServer.getId());
+        Map<String, ResourcePermission> userManagedPermissions = new HashMap<>();
+
+        for (PermissionTicket ticket : tickets) {
+            userManagedPermissions.computeIfAbsent(ticket.getResource().getId(), id -> new ResourcePermission(ticket.getResource(), new ArrayList<>(), resourceServer, request.getClaims()));
+        }
+
+        permissions.addAll(userManagedPermissions.values());
 
         return permissions;
     }
 
-    public static List<ResourcePermission> createResourcePermissions(Resource resource, Set<String> requestedScopes, AuthorizationProvider authorization) {
-        List<ResourcePermission> permissions = new ArrayList<>();
+    public static ResourcePermission createResourcePermissions(Resource resource, Set<String> requestedScopes, AuthorizationProvider authorization, AuthorizationRequest request) {
         String type = resource.getType();
         ResourceServer resourceServer = resource.getResourceServer();
         List<Scope> scopes;
@@ -112,12 +127,11 @@ public final class Permissions {
                 return byName;
             }).collect(Collectors.toList());
         }
-        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
 
-        return permissions;
+        return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());
     }
 
-    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization) {
+    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<ResourcePermission> permissions = new ArrayList<>();
         String type = resource.getType();
         ResourceServer resourceServer = resource.getResourceServer();
@@ -138,7 +152,7 @@ public final class Permissions {
             });
         }
 
-        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
+        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims()));
 
         return permissions;
     }
@@ -156,7 +170,9 @@ public final class Permissions {
             boolean resourceDenied = false;
             ResourcePermission permission = result.getPermission();
             List<Result.PolicyResult> results = result.getResults();
+            List<Result.PolicyResult> userManagedPermissions = new ArrayList<>();
             int deniedCount = results.size();
+            Resource resource = permission.getResource();
 
             for (Result.PolicyResult policyResult : results) {
                 Policy policy = policyResult.getPolicy();
@@ -175,6 +191,8 @@ public final class Permissions {
                         // Later they will be filtered based on any denied scope, if any.
                         // TODO: we could probably provide a configuration option to let users decide whether or not a resource-based permission should grant all scopes associated with the resource.
                         grantedScopes.addAll(permission.getScopes());
+                    } if (resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
+                        userManagedPermissions.add(policyResult);
                     }
                     deniedCount--;
                 } else {
@@ -183,7 +201,7 @@ public final class Permissions {
                         deniedScopes.addAll(policyScopes);
                     } else if (isResourcePermission(policy)) {
                         resourceDenied = true;
-                        deniedScopes.addAll(permission.getResource().getScopes());
+                        deniedScopes.addAll(resource.getScopes());
                     }
                 }
             }
@@ -191,6 +209,14 @@ public final class Permissions {
             // remove any scope denied from the list of granted scopes
             if (!deniedScopes.isEmpty()) {
                 grantedScopes.removeAll(deniedScopes);
+            }
+
+            for (Result.PolicyResult policyResult : userManagedPermissions) {
+                Policy policy = policyResult.getPolicy();
+
+                grantedScopes.addAll(policy.getScopes());
+
+                resourceDenied = false;
             }
 
             // if there are no policy results is because the permission didn't match any policy.

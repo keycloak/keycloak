@@ -268,7 +268,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 true, false);
         ProtocolMapperRepresentation protocolMapperRep = ModelToRepresentation.toRepresentation(protocolMapper);
         ClientResource clientResource = findClientByClientId(testRealmResource(), "kerberos-app");

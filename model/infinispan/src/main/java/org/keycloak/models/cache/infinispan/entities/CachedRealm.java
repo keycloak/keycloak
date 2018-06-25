@@ -24,7 +24,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -135,7 +135,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     protected List<String> defaultGroups = new LinkedList<String>();
-    protected List<String> clientTemplates= new LinkedList<>();
+    protected List<String> clientScopes = new LinkedList<>();
+    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
+    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -227,7 +229,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheClientTemplates(model);
+        cacheClientScopes(model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocales();
@@ -279,9 +281,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     }
 
-    protected void cacheClientTemplates(RealmModel model) {
-        for (ClientTemplateModel template : model.getClientTemplates()) {
-            clientTemplates.add(template.getId());
+    protected void cacheClientScopes(RealmModel model) {
+        for (ClientScopeModel clientScope : model.getClientScopes()) {
+            clientScopes.add(clientScope.getId());
+        }
+        for (ClientScopeModel clientScope : model.getDefaultClientScopes(true)) {
+            defaultDefaultClientScopes.add(clientScope.getId());
+        }
+        for (ClientScopeModel clientScope : model.getDefaultClientScopes(false)) {
+            optionalDefaultClientScopes.add(clientScope.getId());
         }
     }
 
@@ -585,8 +593,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getClientTemplates() {
-        return clientTemplates;
+    public List<String> getClientScopes() {
+        return clientScopes;
+    }
+
+    public List<String> getDefaultDefaultClientScopes() {
+        return defaultDefaultClientScopes;
+    }
+
+    public List<String> getOptionalDefaultClientScopes() {
+        return optionalDefaultClientScopes;
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {

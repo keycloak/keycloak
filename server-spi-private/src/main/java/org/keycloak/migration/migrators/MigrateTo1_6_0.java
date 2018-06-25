@@ -45,13 +45,7 @@ public class MigrateTo1_6_0 implements Migration {
     public void migrate(KeycloakSession session) {
         MigrationProvider provider = session.getProvider(MigrationProvider.class);
 
-        List<ProtocolMapperModel> builtinMappers = provider.getBuiltinMappers("openid-connect");
-        ProtocolMapperModel localeMapper = null;
-        for (ProtocolMapperModel m : builtinMappers) {
-            if (m.getName().equals("locale")) {
-                localeMapper = m;
-            }
-        }
+        ProtocolMapperModel localeMapper = provider.getBuiltinMappers("openid-connect").get("locale");
 
         if (localeMapper == null) {
             throw new RuntimeException("Can't find default locale mapper");
@@ -66,13 +60,8 @@ public class MigrateTo1_6_0 implements Migration {
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         MigrationProvider provider = session.getProvider(MigrationProvider.class);
-        List<ProtocolMapperModel> builtinMappers = provider.getBuiltinMappers("openid-connect");
-        ProtocolMapperModel localeMapper = null;
-        for (ProtocolMapperModel m : builtinMappers) {
-            if (m.getName().equals("locale")) {
-                localeMapper = m;
-            }
-        }
+        ProtocolMapperModel localeMapper = provider.getBuiltinMappers("openid-connect").get("locale");
+
         if (localeMapper == null) {
             throw new RuntimeException("Can't find default locale mapper");
         }
@@ -85,16 +74,7 @@ public class MigrateTo1_6_0 implements Migration {
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
 
         if (realm.getRole(Constants.OFFLINE_ACCESS_ROLE) == null) {
-            for (RoleModel realmRole : realm.getRoles()) {
-                realmRole.setScopeParamRequired(false);
-            }
-            for (ClientModel client : realm.getClients()) {
-                for (RoleModel clientRole : client.getRoles()) {
-                    clientRole.setScopeParamRequired(false);
-                }
-            }
-
-            KeycloakModelUtils.setupOfflineTokens(realm);
+            KeycloakModelUtils.setupOfflineRole(realm);
             RoleModel role = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
             // Bulk grant of offline_access role to all users
@@ -110,7 +90,6 @@ public class MigrateTo1_6_0 implements Migration {
         if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
             RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
             role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
-            role.setScopeParamRequired(false);
 
             client.getRealm().getRole(AdminRoles.ADMIN).addCompositeRole(role);
         }
@@ -120,8 +99,6 @@ public class MigrateTo1_6_0 implements Migration {
             if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
                 RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
                 role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
-                role.setScopeParamRequired(false);
-
                 client.getRole(AdminRoles.REALM_ADMIN).addCompositeRole(role);
             }
         }

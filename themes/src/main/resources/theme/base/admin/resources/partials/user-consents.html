@@ -10,8 +10,7 @@
         <thead>
         <tr>
             <th>{{:: 'client' | translate}}</th>
-            <th>{{:: 'granted-roles' | translate}}</th>
-            <th>{{:: 'granted-protocol-mappers' | translate}}</th>
+            <th>{{:: 'granted-client-scopes' | translate}}</th>
             <th>{{:: 'additional-grants' | translate}}</th>
             <th>{{:: 'consent-created-date' | translate}}</th>
             <th>{{:: 'consent-last-updated-date' | translate}}</th>
@@ -22,20 +21,8 @@
         <tr data-ng-repeat="consent in userConsents">
             <td>{{consent.clientId}}</td>
             <td>
-                <span data-ng-repeat="realmRole in consent.grantedRealmRoles">
-                    <span ng-if="!$first">, </span>{{realmRole}}
-                </span>
-                <span data-ng-repeat="(clientId, clientRoles) in consent.grantedClientRoles">
-                    <span data-ng-repeat="clientRole in clientRoles">
-                        <span ng-if="!$first || consent.grantedRealmRoles.length > 0">, </span>{{clientRole}} in {{clientId}}
-                    </span>
-                </span>
-            </td>
-            <td>
-                <span data-ng-repeat="protocol in consent.grantedProtocolMappers">
-                    <span data-ng-repeat="protocolMapper in protocol">
-                        <span ng-if="!$first">, </span>{{protocolMapper}}
-                    </span>
+                <span data-ng-repeat="clientScope in consent.grantedClientScopes">
+                    <span ng-if="!$first">, </span>{{clientScope}}
                 </span>
             </td>
             <td>

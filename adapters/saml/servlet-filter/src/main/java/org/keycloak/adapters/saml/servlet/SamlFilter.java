@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,6 +62,7 @@ public class SamlFilter implements Filter {
     protected SamlDeploymentContext deploymentContext;
     protected SessionIdMapper idMapper;
     private final static Logger log = Logger.getLogger("" + SamlFilter.class);
+    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
@@ -137,7 +139,7 @@ public class SamlFilter implements Filter {
         }
         FilterSamlSessionStore tokenStore = new FilterSamlSessionStore(request, facade, 100000, idMapper);
         boolean isEndpoint = request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml");
-        SamlAuthenticator authenticator = null;
+        SamlAuthenticator authenticator;
         if (isEndpoint) {
             authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
                 @Override
@@ -176,9 +178,15 @@ public class SamlFilter implements Filter {
         }
         if (outcome == AuthOutcome.LOGGED_OUT) {
             tokenStore.logoutAccount();
-            if (deployment.getLogoutPage() != null) {
-                RequestDispatcher disp = req.getRequestDispatcher(deployment.getLogoutPage());
-                disp.forward(req, res);
+            String logoutPage = deployment.getLogoutPage();
+            if (logoutPage != null) {
+                if (PROTOCOL_PATTERN.matcher(logoutPage).find()) {
+                    response.sendRedirect(logoutPage);
+                    log.log(Level.FINE, "Redirected to logout page {0}", logoutPage);
+                } else {
+                    RequestDispatcher disp = req.getRequestDispatcher(logoutPage);
+                    disp.forward(req, res);
+                }
                 return;
             }
             chain.doFilter(req, res);

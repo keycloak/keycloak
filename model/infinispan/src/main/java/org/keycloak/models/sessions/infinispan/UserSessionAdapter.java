@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

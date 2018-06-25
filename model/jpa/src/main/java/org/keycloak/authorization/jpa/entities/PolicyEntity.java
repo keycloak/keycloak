@@ -113,6 +113,9 @@ public class PolicyEntity {
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     private Set<ScopeEntity> scopes = new HashSet<>();
 
+    @Column(name = "OWNER")
+    private String owner;
+
     public String getId() {
         return this.id;
     }
@@ -199,6 +202,14 @@ public class PolicyEntity {
 
     public void setAssociatedPolicies(Set<PolicyEntity> associatedPolicies) {
         this.associatedPolicies = associatedPolicies;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     @Override

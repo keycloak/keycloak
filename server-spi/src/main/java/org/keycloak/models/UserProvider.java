@@ -92,6 +92,7 @@ public interface UserProvider extends Provider,
 
     void preRemove(RealmModel realm, ClientModel client);
     void preRemove(ProtocolMapperModel protocolMapper);
+    void preRemove(ClientScopeModel clientScope);
 
     void close();
 

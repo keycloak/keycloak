@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.arquillian;
 
+import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
@@ -49,6 +50,7 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 
 /**
  *
@@ -97,7 +99,7 @@ public class AuthServerTestEnricher {
     private SuiteContext suiteContext;
 
     @Inject
-    @ClassScoped
+    @ApplicationScoped // needed in AdapterTestExecutionDecider
     private InstanceProducer<TestContext> testContextProducer;
 
     @Inject
@@ -137,7 +139,7 @@ public class AuthServerTestEnricher {
     }
     
     public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
-        log.info("*****************************************************************"
+        log.info("************************" + event.getContainer().getName()
                 + "*****************************************************************************");
     }
 

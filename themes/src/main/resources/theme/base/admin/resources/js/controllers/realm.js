@@ -1101,7 +1101,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.changed = false;
     
     var refresh = function() {
-        Realm.get($scope.realm, function () {
+        Realm.get($scope.realm.realm, function () {
             $scope.changed = false;
         });
     };
@@ -1666,6 +1666,11 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm, server
         max : 5,
         first : 0
     }
+    
+    $scope.disablePaste = function(e) {
+        e.preventDefault();
+        return false;
+    }
 
     $scope.update = function() {
     	$scope.query.first = 0;
@@ -1740,6 +1745,11 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
         'simple_tags': true,
         'tags': serverInfo.enums['resourceType']
     };
+    
+    $scope.disablePaste = function(e) {
+        e.preventDefault();
+        return false;
+    }
     
     $scope.update = function() {
     	$scope.query.first = 0;
@@ -2770,7 +2780,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     }
     
     $scope.nothingToImport = function() {
-        Notifications.error('No resouces specified to import.');
+        Notifications.error('No resources specified to import.');
     }
     
     $scope.$watch('fileContent', function() {

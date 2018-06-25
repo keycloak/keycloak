@@ -19,10 +19,12 @@ package org.keycloak.testsuite.admin;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
@@ -106,6 +108,15 @@ public class ApiUtil {
         for (ProtocolMapperRepresentation p : client.getProtocolMappers().getMappers()) {
             if (p.getName().equals(name)) {
                 return p;
+            }
+        }
+        return null;
+    }
+
+    public static ClientScopeResource findClientScopeByName(RealmResource realm, String clientScopeName) {
+        for (ClientScopeRepresentation clientScope : realm.clientScopes().findAll()) {
+            if (clientScopeName.equals(clientScope.getName())) {
+                return realm.clientScopes().get(clientScope.getId());
             }
         }
         return null;

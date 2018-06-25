@@ -18,7 +18,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -97,59 +97,36 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public ClientTemplateModel getClientTemplate() {
-        if (isUpdated()) return updated.getClientTemplate();
-        if (cached.getClientTemplate() == null) return null;
-        return cacheSession.getClientTemplateById(cached.getClientTemplate(), cachedRealm);
-    }
-
-    @Override
-    public void setClientTemplate(ClientTemplateModel template) {
+    public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         getDelegateForUpdate();
-        updated.setClientTemplate(template);
-
+        updated.addClientScope(clientScope, defaultScope);
     }
 
     @Override
-    public boolean useTemplateScope() {
-        if (isUpdated()) return updated.useTemplateScope();
-        return cached.isUseTemplateScope();
-    }
-
-    @Override
-    public void setUseTemplateScope(boolean value) {
+    public void removeClientScope(ClientScopeModel clientScope) {
         getDelegateForUpdate();
-        updated.setUseTemplateScope(value);
-
+        updated.removeClientScope(clientScope);
     }
 
     @Override
-    public boolean useTemplateConfig() {
-        if (isUpdated()) return updated.useTemplateConfig();
-        return cached.isUseTemplateConfig();
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
+        if (isUpdated()) return updated.getClientScopes(defaultScope, filterByProtocol);
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultClientScopesIds() : cached.getOptionalClientScopesIds();
+
+        // Defaults to openid-connect
+        String clientProtocol = getProtocol() == null ? "openid-connect" : getProtocol();
+
+        Map<String, ClientScopeModel> clientScopes = new HashMap<>();
+        for (String scopeId : clientScopeIds) {
+            ClientScopeModel clientScope = cacheSession.getClientScopeById(scopeId, cachedRealm);
+            if (clientScope != null) {
+                if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
+                    clientScopes.put(clientScope.getName(), clientScope);
+                }
+            }
+        }
+        return clientScopes;
     }
-
-    @Override
-    public void setUseTemplateConfig(boolean value) {
-        getDelegateForUpdate();
-        updated.setUseTemplateConfig(value);
-
-    }
-
-    @Override
-    public boolean useTemplateMappers() {
-        if (isUpdated()) return updated.useTemplateMappers();
-        return cached.isUseTemplateMappers();
-    }
-
-    @Override
-    public void setUseTemplateMappers(boolean value) {
-        getDelegateForUpdate();
-        updated.setUseTemplateMappers(value);
-
-    }
-
-
 
     public void addWebOrigin(String webOrigin) {
         getDelegateForUpdate();

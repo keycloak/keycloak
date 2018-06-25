@@ -66,6 +66,7 @@
               media="screen, print">
         <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
               media="screen, print">
+        <link rel="stylesheet" href="${resourceUrl}/node_modules/patternfly-ng/dist/css/patternfly-ng.min.css" media="screen, print">
 
         <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js"></script>
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -186,7 +187,7 @@
                               <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
                               <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
                               <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/account">${msg("federatedIdentity")}</a></h3>
+                              <h3><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -214,7 +215,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("myResources")}</h2>
                               <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/account">${msg("myResources")}</a></h3>
+                              <h3><a href="${baseUrl}/#/my-resources">${msg("myResources")}</a></h3>
                             </div>
                         </div>
                     </div>

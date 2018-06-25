@@ -19,6 +19,7 @@ package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -60,27 +61,26 @@ public class ApplicationsBean {
                 if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
 
             } else {
-                availableRoles = TokenManager.getAccess(null, false, client, user);
-                // Don't show applications, which user doesn't have access into (any available roles)
-                if (availableRoles.isEmpty()) {
-                    continue;
-                }
+                // Construct scope parameter with all optional scopes to see all potentially available roles
+                Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
+                allClientScopes.addAll(client.getClientScopes(false, true).values());
+                allClientScopes.add(client);
+
+                availableRoles = TokenManager.getAccess(user, client, allClientScopes);
             }
             List<RoleModel> realmRolesAvailable = new LinkedList<RoleModel>();
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<String, ClientRoleEntry>();
             processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
 
-            List<RoleModel> realmRolesGranted = new LinkedList<RoleModel>();
-            MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted = new MultivaluedHashMap<String, ClientRoleEntry>();
-            List<String> claimsGranted = new LinkedList<String>();
+            List<String> clientScopesGranted = new LinkedList<String>();
             if (client.isConsentRequired()) {
                 UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
                 if (consent != null) {
-                    processRoles(consent.getGrantedRoles(), realmRolesGranted, resourceRolesGranted);
 
-                    for (ProtocolMapperModel protocolMapper : consent.getGrantedProtocolMappers()) {
-                        claimsGranted.add(protocolMapper.getConsentText());
+                    for (ClientScopeModel clientScope : consent.getGrantedClientScopes()) {
+                        String consentText = clientScope.getConsentScreenText();
+                        clientScopesGranted.add(consentText);
                     }
                 }
             }
@@ -90,8 +90,8 @@ public class ApplicationsBean {
                 additionalGrants.add("${offlineToken}");
             }
 
-            ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, realmRolesGranted, resourceRolesGranted, client,
-                    claimsGranted, additionalGrants);
+            ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, client,
+                    clientScopesGranted, additionalGrants);
             applications.add(appEntry);
         }
     }
@@ -117,21 +117,16 @@ public class ApplicationsBean {
 
         private final List<RoleModel> realmRolesAvailable;
         private final MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable;
-        private final List<RoleModel> realmRolesGranted;
-        private final MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted;
         private final ClientModel client;
-        private final List<String> claimsGranted;
+        private final List<String> clientScopesGranted;
         private final List<String> additionalGrants;
 
         public ApplicationEntry(List<RoleModel> realmRolesAvailable, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable,
-                                List<RoleModel> realmRolesGranted, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted,
-                                ClientModel client, List<String> claimsGranted, List<String> additionalGrants) {
+                                ClientModel client, List<String> clientScopesGranted, List<String> additionalGrants) {
             this.realmRolesAvailable = realmRolesAvailable;
             this.resourceRolesAvailable = resourceRolesAvailable;
-            this.realmRolesGranted = realmRolesGranted;
-            this.resourceRolesGranted = resourceRolesGranted;
             this.client = client;
-            this.claimsGranted = claimsGranted;
+            this.clientScopesGranted = clientScopesGranted;
             this.additionalGrants = additionalGrants;
         }
 
@@ -143,14 +138,10 @@ public class ApplicationsBean {
             return resourceRolesAvailable;
         }
 
-        public List<RoleModel> getRealmRolesGranted() {
-            return realmRolesGranted;
+        public List<String> getClientScopesGranted() {
+            return clientScopesGranted;
         }
 
-        public MultivaluedHashMap<String, ClientRoleEntry> getResourceRolesGranted() {
-            return resourceRolesGranted;
-        }
-        
         public String getEffectiveUrl() {
             String rootUrl = getClient().getRootUrl();
             String baseUrl = getClient().getBaseUrl();
@@ -194,10 +185,6 @@ public class ApplicationsBean {
         
         public ClientModel getClient() {
             return client;
-        }
-
-        public List<String> getClaimsGranted() {
-            return claimsGranted;
         }
 
         public List<String> getAdditionalGrants() {

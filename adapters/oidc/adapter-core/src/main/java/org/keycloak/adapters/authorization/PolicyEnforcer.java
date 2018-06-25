@@ -271,7 +271,17 @@ public class PolicyEnforcer {
                         List<ResourceRepresentation> matchingResources = authzClient.protection().resource().findByMatchingUri(targetUri);
 
                         if (!matchingResources.isEmpty()) {
+                            Map<String, Map<String, Object>> cipConfig = null;
+
+                            if (pathConfig != null) {
+                                cipConfig = pathConfig.getClaimInformationPointConfig();
+                            }
+
                             pathConfig = PathConfig.createPathConfig(matchingResources.get(0));
+
+                            if (cipConfig != null) {
+                                pathConfig.setClaimInformationPointConfig(cipConfig);
+                            }
                         }
                     } catch (Exception cause) {
                         LOGGER.errorf(cause, "Could not lazy load resource with path [" + targetUri + "] from server");
@@ -319,6 +329,7 @@ public class PolicyEnforcer {
                     config.setMethods(originalConfig.getMethods());
                     config.setParentConfig(originalConfig);
                     config.setEnforcementMode(originalConfig.getEnforcementMode());
+                    config.setClaimInformationPointConfig(originalConfig.getClaimInformationPointConfig());
 
                     return config;
                 }

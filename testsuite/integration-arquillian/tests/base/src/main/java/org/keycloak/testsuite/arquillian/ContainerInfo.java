@@ -13,11 +13,10 @@ import java.util.Objects;
  *
  * @author tkyjovsk
  */
-public class ContainerInfo {
+public class ContainerInfo implements Comparable<ContainerInfo> {
 
     private URL contextRoot;
     private Container arquillianContainer;
-    private boolean adapterLibsInstalled;
 
     public ContainerInfo(Container arquillianContainer) {
         if (arquillianContainer == null) {
@@ -79,14 +78,6 @@ public class ContainerInfo {
         return getQualifier();
     }
 
-    public boolean isAdapterLibsInstalled() {
-        return adapterLibsInstalled;
-    }
-
-    public void setAdapterLibsInstalled(boolean adapterLibsInstalled) {
-        this.adapterLibsInstalled = adapterLibsInstalled;
-    }
-
     @Override
     public int hashCode() {
         int hash = 7;
@@ -114,6 +105,11 @@ public class ContainerInfo {
 
     public boolean isManual() {
         return Objects.equals(arquillianContainer.getContainerConfiguration().getMode(), "manual");
+    }
+
+    @Override
+    public int compareTo(ContainerInfo o) {
+        return this.getQualifier().compareTo(o.getQualifier());
     }
 
 }

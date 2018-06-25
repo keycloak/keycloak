@@ -19,11 +19,14 @@ package org.keycloak.authorization.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -34,6 +37,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.Response.Status;
@@ -115,14 +119,9 @@ public class KeycloakIdentity implements Identity {
                 UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, token.getSessionState());
                 ClientModel client = realm.getClientByClientId(token.getIssuedFor());
                 AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessions().get(client.getId());
-                Set<RoleModel> requestedRoles = new HashSet<>();
-                for (String roleId : clientSessionModel.getRoles()) {
-                    RoleModel role = realm.getRoleById(roleId);
-                    if (role != null) {
-                        requestedRoles.add(role);
-                    }
-                }
-                this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, client, userSession.getUser(), userSession, clientSessionModel);
+
+                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel);
+                this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
             }
 
             AccessToken.Access realmAccess = this.accessToken.getRealmAccess();

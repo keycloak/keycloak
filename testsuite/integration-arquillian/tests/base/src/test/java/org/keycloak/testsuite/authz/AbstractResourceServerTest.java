@@ -67,13 +67,17 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
                 .user(UserBuilder.create().username("marta").password("password")
                         .addRoles("uma_authorization", "uma_protection")
                         .role("resource-server-test", "uma_protection"))
+                .user(UserBuilder.create().username("alice").password("password")
+                        .addRoles("uma_authorization", "uma_protection")
+                        .role("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants())
+                        .directAccessGrants()
+                        .serviceAccountsEnabled(true))
                 .client(ClientBuilder.create().clientId("test-app")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth")
                         .publicClient())
@@ -155,7 +159,7 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
         return authorization.authorize(authorizationRequest);
     }
 
-    protected RealmResource getRealm() throws Exception {
+    protected RealmResource getRealm() {
         return adminClient.realm("authz-test");
     }
 

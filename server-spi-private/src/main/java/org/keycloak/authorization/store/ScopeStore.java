@@ -43,6 +43,18 @@ public interface ScopeStore {
     Scope create(String name, ResourceServer resourceServer);
 
     /**
+     * Creates a new {@link Scope} instance. The new instance is not necessarily persisted though, which may require
+     * a call to the {#save} method to actually make it persistent.
+     *
+     * @param id the id of the scope
+     * @param name the name of the scope
+     * @param resourceServer the resource server to which this scope belongs
+     *
+     * @return a new instance of {@link Scope}
+     */
+    Scope create(String id, String name, ResourceServer resourceServer);
+
+    /**
      * Deletes a scope from the underlying persistence mechanism.
      *
      * @param id the id of the scope to delete

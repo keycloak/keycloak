@@ -412,8 +412,8 @@ public class SamlAdapterTestStrategy extends ExternalResource {
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 ClientModel app = appRealm.getClientByClientId(APP_SERVER_BASE_URL + "/employee2/");
                 app.addProtocolMapper(GroupMembershipMapper.create("groups", "group", null, null, true));
-                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("topAttribute", "topAttribute", "topAttribute", "Basic", null, false, null));
-                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("level2Attribute", "level2Attribute", "level2Attribute", "Basic", null, false, null));
+                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("topAttribute", "topAttribute", "topAttribute", "Basic", null));
+                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("level2Attribute", "level2Attribute", "level2Attribute", "Basic", null));
             }
         }, "demo");
         {
@@ -477,7 +477,7 @@ public class SamlAdapterTestStrategy extends ExternalResource {
                         app.addProtocolMapper(mapper);
                     }
                 }
-                app.addProtocolMapper(HardcodedAttributeMapper.create("hardcoded-attribute", "hardcoded-attribute", "Basic", null, "hard", false, null));
+                app.addProtocolMapper(HardcodedAttributeMapper.create("hardcoded-attribute", "hardcoded-attribute", "Basic", null, "hard"));
                 app.addProtocolMapper(HardcodedRole.create("hardcoded-role", "hardcoded-role"));
                 app.addProtocolMapper(RoleNameMapper.create("renamed-role", "manager", "el-jefe"));
                 app.addProtocolMapper(RoleNameMapper.create("renamed-employee-role", APP_SERVER_BASE_URL + "/employee/.employee", "pee-on"));

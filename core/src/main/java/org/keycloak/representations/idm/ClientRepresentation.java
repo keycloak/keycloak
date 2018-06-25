@@ -61,10 +61,19 @@ public class ClientRepresentation {
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected List<ProtocolMapperRepresentation> protocolMappers;
+
+    @Deprecated
     protected String clientTemplate;
+    @Deprecated
     private Boolean useTemplateConfig;
+    @Deprecated
     private Boolean useTemplateScope;
+    @Deprecated
     private Boolean useTemplateMappers;
+
+    protected List<String> defaultClientScopes;
+    protected List<String> optionalClientScopes;
+
     private ResourceServerRepresentation authorizationSettings;
     private Map<String, Boolean> access;
     protected String origin;
@@ -338,36 +347,40 @@ public class ClientRepresentation {
         this.protocolMappers = protocolMappers;
     }
 
+    @Deprecated
     public String getClientTemplate() {
         return clientTemplate;
     }
 
-    public void setClientTemplate(String clientTemplate) {
-        this.clientTemplate = clientTemplate;
-    }
-
+    @Deprecated
     public Boolean isUseTemplateConfig() {
         return useTemplateConfig;
     }
 
-    public void setUseTemplateConfig(Boolean useTemplateConfig) {
-        this.useTemplateConfig = useTemplateConfig;
-    }
-
+    @Deprecated
     public Boolean isUseTemplateScope() {
         return useTemplateScope;
     }
 
-    public void setUseTemplateScope(Boolean useTemplateScope) {
-        this.useTemplateScope = useTemplateScope;
-    }
-
+    @Deprecated
     public Boolean isUseTemplateMappers() {
         return useTemplateMappers;
     }
 
-    public void setUseTemplateMappers(Boolean useTemplateMappers) {
-        this.useTemplateMappers = useTemplateMappers;
+    public List<String> getDefaultClientScopes() {
+        return defaultClientScopes;
+    }
+
+    public void setDefaultClientScopes(List<String> defaultClientScopes) {
+        this.defaultClientScopes = defaultClientScopes;
+    }
+
+    public List<String> getOptionalClientScopes() {
+        return optionalClientScopes;
+    }
+
+    public void setOptionalClientScopes(List<String> optionalClientScopes) {
+        this.optionalClientScopes = optionalClientScopes;
     }
 
     public ResourceServerRepresentation getAuthorizationSettings() {

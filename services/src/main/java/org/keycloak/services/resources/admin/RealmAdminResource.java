@@ -24,6 +24,8 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -101,7 +103,6 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -194,15 +195,117 @@ public class RealmAdminResource {
     }
 
     /**
-     * Base path for managing client templates under this realm.
+     * This endpoint is deprecated. It's here just because of backwards compatibility. Use {@link #getClientScopes()} instead
      *
      * @return
      */
+    @Deprecated
     @Path("client-templates")
-    public ClientTemplatesResource getClientTemplates() {
-        ClientTemplatesResource clientsResource = new ClientTemplatesResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        return clientsResource;
+    public ClientScopesResource getClientTemplates() {
+        return getClientScopes();
+    }
+
+    /**
+     * Base path for managing client scopes under this realm.
+     *
+     * @return
+     */
+    @Path("client-scopes")
+    public ClientScopesResource getClientScopes() {
+        ClientScopesResource clientScopesResource = new ClientScopesResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(clientScopesResource);
+        return clientScopesResource;
+    }
+
+
+    /**
+     * Get realm default client scopes.  Only name and ids are returned.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-default-client-scopes")
+    public List<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
+        return getDefaultClientScopes(true);
+    }
+
+    private List<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
+        auth.clients().requireViewClientScopes();
+
+        List<ClientScopeRepresentation> defaults = new LinkedList<>();
+        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(defaultScope)) {
+            ClientScopeRepresentation rep = new ClientScopeRepresentation();
+            rep.setId(clientScope.getId());
+            rep.setName(clientScope.getName());
+            defaults.add(rep);
+        }
+        return defaults;
+    }
+
+
+    @PUT
+    @NoCache
+    @Path("default-default-client-scopes/{clientScopeId}")
+    public void addDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
+        addDefaultClientScope(clientScopeId,true);
+    }
+
+    private void addDefaultClientScope(String clientScopeId, boolean defaultScope) {
+        auth.clients().requireManageClientScopes();
+
+        ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+        if (clientScope == null) {
+            throw new NotFoundException("Client scope not found");
+        }
+        realm.addDefaultClientScope(clientScope, defaultScope);
+
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(uriInfo).success();
+    }
+
+
+    @DELETE
+    @NoCache
+    @Path("default-default-client-scopes/{clientScopeId}")
+    public void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
+        auth.clients().requireManageClientScopes();
+
+        ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+        if (clientScope == null) {
+            throw new NotFoundException("Client scope not found");
+        }
+        realm.removeDefaultClientScope(clientScope);
+
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT_SCOPE).resourcePath(uriInfo).success();
+    }
+
+
+    /**
+     * Get realm optional client scopes.  Only name and ids are returned.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-optional-client-scopes")
+    public List<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
+        return getDefaultClientScopes(false);
+    }
+
+    @PUT
+    @NoCache
+    @Path("default-optional-client-scopes/{clientScopeId}")
+    public void addDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
+        addDefaultClientScope(clientScopeId, false);
+    }
+
+    @DELETE
+    @NoCache
+    @Path("default-optional-client-scopes/{clientScopeId}")
+    public void removeDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
+        removeDefaultDefaultClientScope(clientScopeId);
     }
 
     /**

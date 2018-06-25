@@ -258,7 +258,7 @@ public abstract class AbstractKeycloakTest {
 
     protected void deleteAllCookiesForRealm(String realmName) {
         // masterRealmPage.navigateTo();
-        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        driver.navigate().to(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -319,7 +319,6 @@ public abstract class AbstractKeycloakTest {
         log.debug("importing realm: " + realm.getRealm());
         try { // TODO - figure out a way how to do this without try-catch
             RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
-            RealmRepresentation rRep = realmResource.toRepresentation();
             log.debug("realm already exists on server, re-importing");
             realmResource.remove();
         } catch (NotFoundException nfe) {

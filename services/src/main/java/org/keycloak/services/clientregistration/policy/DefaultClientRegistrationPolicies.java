@@ -31,9 +31,8 @@ import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
-import org.keycloak.services.clientregistration.policy.impl.ClientTemplatesClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.ClientScopesClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ConsentRequiredClientRegistrationPolicyFactory;
-import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory;
@@ -107,11 +106,11 @@ public class DefaultClientRegistrationPolicies {
     private static void addGenericPolicies(RealmModel realm, String policyTypeKey) {
         ComponentModel protMapperModel = createModelInstance("Allowed Protocol Mapper Types", realm, ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
         protMapperModel.getConfig().put(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Arrays.asList(DEFAULT_ALLOWED_PROTOCOL_MAPPERS));
-        protMapperModel.getConfig().putSingle(ProtocolMappersClientRegistrationPolicyFactory.CONSENT_REQUIRED_FOR_ALL_MAPPERS, "true");
         realm.addComponentModel(protMapperModel);
 
-        ComponentModel clientTemplatesModel = createModelInstance("Allowed Client Templates", realm, ClientTemplatesClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
-        clientTemplatesModel.getConfig().put(ClientTemplatesClientRegistrationPolicyFactory.ALLOWED_CLIENT_TEMPLATES, Collections.emptyList());
+        ComponentModel clientTemplatesModel = createModelInstance("Allowed Client Scopes", realm, ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        clientTemplatesModel.getConfig().put(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
+        clientTemplatesModel.put(ClientScopesClientRegistrationPolicyFactory.ALLOW_DEFAULT_SCOPES, true);
         realm.addComponentModel(clientTemplatesModel);
     }
 

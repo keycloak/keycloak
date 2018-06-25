@@ -49,7 +49,7 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNull("Realm and client roles are empty", rep.getRoles());
         Assert.assertNull("Clients are empty", rep.getClients());
 
-        Assert.assertNull("Scope mappings empty", rep.getScopeMappings());
+        checkScopeMappings(rep.getScopeMappings(), true);
         Assert.assertNull("Client scope mappings empty", rep.getClientScopeMappings());
 
 
@@ -69,7 +69,7 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNull("Client roles are empty", rep.getRoles().getClient());
         Assert.assertNull("Clients are empty", rep.getClients());
 
-        Assert.assertNull("Scope mappings empty", rep.getScopeMappings());
+        checkScopeMappings(rep.getScopeMappings(), true);
         Assert.assertNull("Client scope mappings empty", rep.getClientScopeMappings());
 
 
@@ -84,7 +84,7 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNotNull("Clients not empty", rep.getClients());
         checkClients(rep.getClients());
 
-        checkScopeMappings(rep.getScopeMappings());
+        checkScopeMappings(rep.getScopeMappings(), false);
         checkClientScopeMappings(rep.getClientScopeMappings());
 
 
@@ -107,7 +107,7 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNotNull("Clients not empty", rep.getClients());
         checkClients(rep.getClients());
 
-        checkScopeMappings(rep.getScopeMappings());
+        checkScopeMappings(rep.getScopeMappings(), false);
         checkClientScopeMappings(rep.getClientScopeMappings());
 
 
@@ -172,7 +172,18 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertTrue("Client test-app-scope / test-app-scope contains test-app-allowed-by-scope", set.contains("test-app-allowed-by-scope"));
     }
 
-    private void checkScopeMappings(List<ScopeMappingRepresentation> scopeMappings) {
+    private void checkScopeMappings(List<ScopeMappingRepresentation> scopeMappings, boolean expectOnlyOfflineAccess) {
+        ScopeMappingRepresentation offlineAccessScope = scopeMappings.stream().filter((ScopeMappingRepresentation rep) -> {
+
+            return "offline_access".equals(rep.getClientScope());
+        }).findFirst().get();
+        Assert.assertTrue(offlineAccessScope.getRoles().contains("offline_access"));
+
+        if (expectOnlyOfflineAccess) {
+            Assert.assertEquals(1, scopeMappings.size());
+            return;
+        }
+
         Map<String, Set<String>> map = extractScopeMappings(scopeMappings);
 
         Set<String> set = map.get("test-app");

@@ -21,10 +21,16 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { AuthenticatorPageComponent } from './authenticator-page.component';
 import { AuthenticatorRoutingModule } from './authenticator-routing.module';
+import { MobileAuthenticatorSetupPageComponent } from './mobile-authenticator-setup-page.component';
+import { BackupCodeSetupPageComponent } from './backup-code-setup-page.component';
+import { SMSCodeSetupPageComponent } from './sms-code-setup-page.component';
 
 @NgModule({
   imports:      [ CommonModule, TranslateModule, AuthenticatorRoutingModule ],
-  declarations: [ AuthenticatorPageComponent ],
+  declarations: [ AuthenticatorPageComponent, 
+                  MobileAuthenticatorSetupPageComponent,
+                  BackupCodeSetupPageComponent,
+                  SMSCodeSetupPageComponent ],
   providers:    [ ]
 })
 export class AuthenticatorModule {}

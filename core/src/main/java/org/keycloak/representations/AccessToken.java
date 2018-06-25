@@ -88,9 +88,6 @@ public class AccessToken extends IDToken {
         @JsonProperty("permissions")
         private List<Permission> permissions;
 
-        @JsonProperty("claims")
-        private Map<String, List<String>> claims;
-
         public List<Permission> getPermissions() {
             return permissions;
         }
@@ -98,13 +95,20 @@ public class AccessToken extends IDToken {
         public void setPermissions(List<Permission> permissions) {
             this.permissions = permissions;
         }
+    }
 
-        public void setClaims(Map<String, List<String>> claims) {
-            this.claims = claims;
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
+    public static class CertConf {
+        @JsonProperty("x5t#S256")
+        protected String certThumbprint;
+
+        public String getCertThumbprint() {
+            return certThumbprint;
         }
 
-        public Map<String, List<String>> getClaims() {
-            return claims;
+        public void setCertThumbprint(String certThumbprint) {
+            this.certThumbprint = certThumbprint;
         }
     }
 
@@ -122,6 +126,12 @@ public class AccessToken extends IDToken {
 
     @JsonProperty("authorization")
     protected Authorization authorization;
+
+    @JsonProperty("cnf")
+    protected CertConf certConf;
+
+    @JsonProperty("scope")
+    protected String scope;
 
     public Map<String, Access> getResourceAccess() {
         return resourceAccess;
@@ -243,5 +253,21 @@ public class AccessToken extends IDToken {
 
     public void setAuthorization(Authorization authorization) {
         this.authorization = authorization;
+    }
+    
+    public CertConf getCertConf() {
+        return certConf;
+    }
+
+    public void setCertConf(CertConf certConf) {
+        this.certConf = certConf;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

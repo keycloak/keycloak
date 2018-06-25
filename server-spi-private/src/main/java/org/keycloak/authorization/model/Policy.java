@@ -148,6 +148,10 @@ public interface Policy {
      */
     Set<Scope> getScopes();
 
+    String getOwner();
+
+    void setOwner(String owner);
+
     void addScope(Scope scope);
 
     void removeScope(Scope scope);
