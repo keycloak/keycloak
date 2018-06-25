@@ -26,6 +26,7 @@ import liquibase.exception.ValidationErrors;
 import liquibase.resource.ResourceAccessor;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
+import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
@@ -129,6 +130,7 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
 
     // get Table name for sql selects
     protected String getTableName(String tableName) {
-       return LiquibaseJpaUpdaterProvider.getTable(tableName, database.getDefaultSchemaName());
+        String correctedSchemaName = database.escapeObjectName(database.getDefaultSchemaName(), Schema.class);
+        return LiquibaseJpaUpdaterProvider.getTable(tableName, correctedSchemaName);
     }
 }
