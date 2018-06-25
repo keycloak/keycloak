@@ -668,6 +668,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testVersion() {
         jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
+        WaitUtils.waitForPageToLoad();
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();

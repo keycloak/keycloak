@@ -401,6 +401,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     b.queryParam(Constants.EXECUTION, execution);
                 }
 
+                if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
+                    b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
+                }
+
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
