@@ -26,6 +26,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -51,7 +52,7 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
 
             @Override
             public Set<GroupModel> getGroups() {
-                Set<GroupModel> groups = super.getGroups();
+                Set<GroupModel> groups = new HashSet<GroupModel>(super.getGroups());
 
                 GroupModel group = getGroup(realm);
                 if (group != null) {
