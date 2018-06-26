@@ -23,6 +23,7 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.model.AccountBean;
 import org.keycloak.forms.account.freemarker.model.AccountFederatedIdentityBean;
 import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
+import org.keycloak.forms.account.freemarker.model.AuthorizationBean;
 import org.keycloak.forms.account.freemarker.model.FeaturesBean;
 import org.keycloak.forms.account.freemarker.model.LogBean;
 import org.keycloak.forms.account.freemarker.model.PasswordBean;
@@ -52,6 +53,7 @@ import org.keycloak.utils.MediaType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -86,11 +88,13 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected KeycloakSession session;
     protected FreeMarkerUtil freeMarker;
     protected HttpHeaders headers;
+    protected Map<String, Object> attributes;
 
     protected UriInfo uriInfo;
 
     protected List<FormMessage> messages = null;
     protected MessageType messageType = MessageType.ERROR;
+    private boolean authorizationSupported;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -110,7 +114,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     @Override
     public Response createResponse(AccountPages page) {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<>();
+
+        if (this.attributes != null) {
+            attributes.putAll(this.attributes);
+        }
 
         Theme theme;
         try {
@@ -151,12 +159,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
 
-        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
+        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported, authorizationSupported));
         attributes.put("account", new AccountBean(user, profileFormData));
 
         switch (page) {
             case TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user));
+                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
                 break;
             case FEDERATED_IDENTITY:
                 attributes.put("federatedIdentity", new AccountFederatedIdentityBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
@@ -174,7 +182,16 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             case PASSWORD:
                 attributes.put("password", new PasswordBean(passwordSet));
                 break;
-            default:
+            case RESOURCES:
+                if (!realm.isUserManagedAccessAllowed()) {
+                    return Response.status(Status.FORBIDDEN).build();
+                }
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+            case RESOURCE_DETAIL:
+                if (!realm.isUserManagedAccessAllowed()) {
+                    return Response.status(Status.FORBIDDEN).build();
+                }
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
         }
 
         return processTemplate(theme, page, attributes, locale);
@@ -182,18 +199,17 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Get Theme used for page rendering.
-     * 
+     *
      * @return theme for page rendering, never null
      * @throws IOException in case of Theme loading problem
      */
     protected Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
+        return session.theme().getTheme(Theme.Type.ACCOUNT);
     }
 
     /**
      * Load message bundle and place it into <code>msg</code> template attribute. Also load Theme properties and place them into <code>properties</code> template attribute.
-     * 
+     *
      * @param theme actual Theme to load bundle from
      * @param locale to load bundle for
      * @param attributes template attributes to add resources to
@@ -218,7 +234,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Handle messages to be shown on the page - set them to template attributes
-     * 
+     *
      * @param locale to be used for message text loading
      * @param messagesBundle to be used for message text loading
      * @param attributes template attributes to messages related info to
@@ -243,7 +259,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Process FreeMarker template and prepare Response. Some fields are used for rendering also.
-     * 
+     *
      * @param theme to be used (provided by <code>getTheme()</code>)
      * @param page to be rendered
      * @param attributes pushed to the template
@@ -284,7 +300,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setErrors(List<FormMessage> messages) {
+    public AccountProvider setErrors(Response.Status status, List<FormMessage> messages) {
+        this.status = status;
         this.messageType = MessageType.ERROR;
         this.messages = new ArrayList<>(messages);
         return this;
@@ -292,7 +309,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
 
     @Override
-    public AccountProvider setError(String message, Object ... parameters) {
+    public AccountProvider setError(Response.Status status, String message, Object ... parameters) {
+        this.status = status;
         setMessage(MessageType.ERROR, message, parameters);
         return this;
     }
@@ -328,12 +346,6 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setStatus(Response.Status status) {
-        this.status = status;
-        return this;
-    }
-
-    @Override
     public AccountProvider setReferrer(String[] referrer) {
         this.referrer = referrer;
         return this;
@@ -358,10 +370,20 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setFeatures(boolean identityProviderEnabled, boolean eventsEnabled, boolean passwordUpdateSupported) {
+    public AccountProvider setFeatures(boolean identityProviderEnabled, boolean eventsEnabled, boolean passwordUpdateSupported, boolean authorizationSupported) {
         this.identityProviderEnabled = identityProviderEnabled;
         this.eventsEnabled = eventsEnabled;
         this.passwordUpdateSupported = passwordUpdateSupported;
+        this.authorizationSupported = authorizationSupported;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setAttribute(String key, String value) {
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
+        attributes.put(key, value);
         return this;
     }
 

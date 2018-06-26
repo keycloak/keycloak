@@ -24,7 +24,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -79,6 +79,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
     protected int offlineSessionIdleTimeout;
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    protected boolean offlineSessionMaxLifespanEnabled;
+    protected int offlineSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -128,13 +131,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
     protected List<String> defaultRoles;
+    private boolean allowUserManagedAccess;
 
     public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
         return identityProviderMapperSet;
     }
 
     protected List<String> defaultGroups = new LinkedList<String>();
-    protected List<String> clientTemplates= new LinkedList<>();
+    protected List<String> clientScopes = new LinkedList<>();
+    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
+    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -143,12 +149,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected Map<String, String> attributes;
 
+    private Map<String, Integer> userActionTokenLifespans;
+
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
         displayName = model.getDisplayName();
         displayNameHtml = model.getDisplayNameHtml();
         enabled = model.isEnabled();
+        allowUserManagedAccess = model.isUserManagedAccessAllowed();
         sslRequired = model.getSslRequired();
         registrationAllowed = model.isRegistrationAllowed();
         registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
@@ -175,6 +184,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
+        offlineSessionMaxLifespan = model.getOfflineSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -192,6 +204,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentials();
+        userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
 
         this.identityProviders = new ArrayList<>();
 
@@ -222,7 +235,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheClientTemplates(model);
+        cacheClientScopes(model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocales();
@@ -274,9 +287,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     }
 
-    protected void cacheClientTemplates(RealmModel model) {
-        for (ClientTemplateModel template : model.getClientTemplates()) {
-            clientTemplates.add(template.getId());
+    protected void cacheClientScopes(RealmModel model) {
+        for (ClientScopeModel clientScope : model.getClientScopes()) {
+            clientScopes.add(clientScope.getId());
+        }
+        for (ClientScopeModel clientScope : model.getDefaultClientScopes(true)) {
+            defaultDefaultClientScopes.add(clientScope.getId());
+        }
+        for (ClientScopeModel clientScope : model.getDefaultClientScopes(false)) {
+            optionalDefaultClientScopes.add(clientScope.getId());
         }
     }
 
@@ -392,6 +411,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return offlineSessionIdleTimeout;
     }
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+        return offlineSessionMaxLifespanEnabled;
+    }
+
+    public int getOfflineSessionMaxLifespan() {
+        return offlineSessionMaxLifespan;
+    }
+
     public int getAccessTokenLifespan() {
         return accessTokenLifespan;
     }
@@ -407,6 +435,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public int getAccessCodeLifespanUserAction() {
         return accessCodeLifespanUserAction;
     }
+
+    public Map<String, Integer> getUserActionTokenLifespans() {
+        return userActionTokenLifespans;
+    }
+
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
     }
@@ -417,6 +450,18 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getActionTokenGeneratedByUserLifespan() {
         return actionTokenGeneratedByUserLifespan;
+    }
+
+    /**
+     * This method is supposed to return user lifespan based on the action token ID
+     * provided. If nothing is provided, it will return the default lifespan.
+     * @param actionTokenId
+     * @return lifespan
+     */
+    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
+        if (actionTokenId == null || this.userActionTokenLifespans.get(actionTokenId) == null)
+            return getActionTokenGeneratedByUserLifespan();
+        return this.userActionTokenLifespans.get(actionTokenId);
     }
 
     public List<RequiredCredentialModel> getRequiredCredentials() {
@@ -563,8 +608,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getClientTemplates() {
-        return clientTemplates;
+    public List<String> getClientScopes() {
+        return clientScopes;
+    }
+
+    public List<String> getDefaultDefaultClientScopes() {
+        return defaultDefaultClientScopes;
+    }
+
+    public List<String> getOptionalDefaultClientScopes() {
+        return optionalDefaultClientScopes;
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {
@@ -610,4 +663,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return attributes;
     }
 
+    public boolean isAllowUserManagedAccess() {
+        return allowUserManagedAccess;
+    }
 }

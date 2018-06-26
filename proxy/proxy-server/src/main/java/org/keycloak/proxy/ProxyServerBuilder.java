@@ -97,14 +97,14 @@ public class ProxyServerBuilder {
 
     protected Map<String, String> headerNameConfig;
 
-    public ProxyServerBuilder target(String uri) {
+    public ProxyServerBuilder target(ProxyConfig config) {
         SimpleProxyClientProvider provider = null;
         try {
-            provider = new SimpleProxyClientProvider(new URI(uri));
+            provider = new SimpleProxyClientProvider(new URI(config.getTargetUrl()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        final HttpHandler handler = new ProxyHandler(provider, 30000, ResponseCodeHandler.HANDLE_404);
+        final HttpHandler handler = new ProxyHandler(provider, config.getTargetRequestTimeout(), ResponseCodeHandler.HANDLE_404);
         proxyHandler = new HttpHandler() {
             @Override
             public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -385,7 +385,7 @@ public class ProxyServerBuilder {
             log.error("Must set Target URL");
             return null;
         }
-        builder.target(config.getTargetUrl());
+        builder.target(config);
         if (config.getApplications() == null || config.getApplications().size() == 0) {
             log.error("No applications defined");
             return null;

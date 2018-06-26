@@ -19,11 +19,10 @@ package org.keycloak.migration.migrators;
 
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultKeyProviders;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,6 +36,11 @@ public class MigrateTo2_5_0 implements Migration {
         session.realms().getRealms().stream().forEach(
                 r -> DefaultKeyProviders.createSecretProvider(r)
         );
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        DefaultKeyProviders.createSecretProvider(realm);
     }
 
     @Override

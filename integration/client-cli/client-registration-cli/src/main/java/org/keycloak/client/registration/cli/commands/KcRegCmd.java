@@ -94,6 +94,7 @@ public class KcRegCmd extends AbstractGlobalOptionsCmd {
         out.println("  -x            Print full stack trace when exiting with error");
         out.println("  --help        Print help for specific command");
         out.println("  --config      Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("  --no-config   Don't use config file - no authentication info is loaded or saved");
         out.println();
         out.println("Commands: ");
         out.println("  config        Set up credentials, and other configuration settings using the config file");

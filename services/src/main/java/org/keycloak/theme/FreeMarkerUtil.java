@@ -45,6 +45,7 @@ public class FreeMarkerUtil {
     public String processTemplate(Object data, String templateName, Theme theme) throws FreeMarkerException {
         try {
             Template template;
+            cache = null;
             if (cache != null) {
                 String key = theme.getName() + "/" + templateName;
                 template = cache.get(key);

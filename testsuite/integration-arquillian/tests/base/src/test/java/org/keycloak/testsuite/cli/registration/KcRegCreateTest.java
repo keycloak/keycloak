@@ -74,7 +74,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                     "        \"name\": \"My Client App\",\n" +
                     "        \"implicitFlowEnabled\": false,\n" +
                     "        \"publicClient\": true,\n" +
-                    "        \"protocol\": \"leycloak-oidc\",\n" +
+                    "        \"protocol\": \"openid-connect\",\n" +
                     "        \"webOrigins\": [\"http://localhost:8980/myapp\"],\n" +
                     "        \"consentRequired\": false,\n" +
                     "        \"baseUrl\": \"http://localhost:8980/myapp\",\n" +
@@ -99,18 +99,18 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 Assert.assertEquals("implicitFlowEnabled", false, client.isImplicitFlowEnabled());
                 Assert.assertEquals("publicClient", true, client.isPublicClient());
                 // note there is no server-side check if protocol is supported
-                Assert.assertEquals("protocol", "leycloak-oidc", client.getProtocol());
+                Assert.assertEquals("protocol", "openid-connect", client.getProtocol());
                 Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins());
                 Assert.assertEquals("consentRequired", false, client.isConsentRequired());
                 Assert.assertEquals("baseUrl", "http://localhost:8980/myapp", client.getBaseUrl());
                 Assert.assertEquals("rootUrl", "http://localhost:8980/myapp", client.getRootUrl());
                 Assert.assertEquals("bearerOnly", true, client.isStandardFlowEnabled());
-                Assert.assertFalse("mappers not empty", client.getProtocolMappers().isEmpty());
+                Assert.assertNull("mappers are null", client.getProtocolMappers());
 
                 // create configuration from file as a template and override clientId and other attributes ... output an object
                 exe = execute("create --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
                         "' -s clientId=my_client2 -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp2/*\"]'" +
-                        " -s 'name=My Client App II' -s protocol=keycloak-oidc -s 'webOrigins=[\"http://localhost:8980/myapp2\"]'" +
+                        " -s 'name=My Client App II' -s protocol=openid-connect -s 'webOrigins=[\"http://localhost:8980/myapp2\"]'" +
                         " -s baseUrl=http://localhost:8980/myapp2 -s rootUrl=http://localhost:8980/myapp2");
 
                 assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -124,13 +124,13 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 Assert.assertEquals("name", "My Client App II", client2.getName());
                 Assert.assertEquals("implicitFlowEnabled", false, client2.isImplicitFlowEnabled());
                 Assert.assertEquals("publicClient", true, client2.isPublicClient());
-                Assert.assertEquals("protocol", "keycloak-oidc", client2.getProtocol());
+                Assert.assertEquals("protocol", "openid-connect", client2.getProtocol());
                 Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp2"), client2.getWebOrigins());
                 Assert.assertEquals("consentRequired", false, client2.isConsentRequired());
                 Assert.assertEquals("baseUrl", "http://localhost:8980/myapp2", client2.getBaseUrl());
                 Assert.assertEquals("rootUrl", "http://localhost:8980/myapp2", client2.getRootUrl());
                 Assert.assertEquals("bearerOnly", true, client2.isStandardFlowEnabled());
-                Assert.assertFalse("mappers not empty", client2.getProtocolMappers().isEmpty());
+                Assert.assertNull("mappers are null", client2.getProtocolMappers());
 
 
                 // check that using an invalid attribute key is not ignored

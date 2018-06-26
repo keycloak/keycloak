@@ -72,18 +72,18 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
      * @param absoluteExpirationInSecs Absolute expiration time in seconds in timezone of Keycloak.
      * @param actionVerificationNonce
      */
-    protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String authenticationSessionId) {
+    protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String compoundAuthenticationSessionId) {
         super(userId, actionId, absoluteExpirationInSecs, actionVerificationNonce);
-        setAuthenticationSessionId(authenticationSessionId);
+        setCompoundAuthenticationSessionId(compoundAuthenticationSessionId);
     }
 
     @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
-    public String getAuthenticationSessionId() {
+    public String getCompoundAuthenticationSessionId() {
         return (String) getOtherClaims().get(JSON_FIELD_AUTHENTICATION_SESSION_ID);
     }
 
     @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
-    public final void setAuthenticationSessionId(String authenticationSessionId) {
+    public final void setCompoundAuthenticationSessionId(String authenticationSessionId) {
         setOtherClaims(JSON_FIELD_AUTHENTICATION_SESSION_ID, authenticationSessionId);
     }
 
@@ -91,8 +91,8 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
     @Override
     public Map<String, String> getNotes() {
         Map<String, String> res = new HashMap<>();
-        if (getAuthenticationSessionId() != null) {
-            res.put(JSON_FIELD_AUTHENTICATION_SESSION_ID, getAuthenticationSessionId());
+        if (getCompoundAuthenticationSessionId() != null) {
+            res.put(JSON_FIELD_AUTHENTICATION_SESSION_ID, getCompoundAuthenticationSessionId());
         }
         return res;
     }

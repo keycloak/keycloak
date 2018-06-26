@@ -19,6 +19,7 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,7 +63,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         PolicyEnforcementMode enforcementMode = resourceServer.getPolicyEnforcementMode();
 
         if (PolicyEnforcementMode.DISABLED.equals(enforcementMode)) {
-            createEvaluation(permission, executionContext, decision, null, null).grant();
+            createEvaluation(permission, executionContext, decision, null).grant();
             return;
         }
 
@@ -75,21 +76,26 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             evaluatePolicies(() -> policyStore.findByResource(resource.getId(), resourceServer.getId()), consumer);
 
             if (resource.getType() != null) {
-                evaluatePolicies(() -> policyStore.findByResourceType(resource.getType(), resourceServer.getId()), consumer);
-            }
+                evaluatePolicies(() -> {
+                    List<Policy> policies = policyStore.findByResourceType(resource.getType(), resourceServer.getId());
 
-            if (scopes.isEmpty() && !resource.getScopes().isEmpty()) {
-                scopes.removeAll(resource.getScopes());
-                evaluatePolicies(() -> policyStore.findByScopeIds(resource.getScopes().stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
+                    if (!resource.getOwner().equals(resourceServer.getId())) {
+                        for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
+                            policies.addAll(policyStore.findByResource(typedResource.getId(), resourceServer.getId()));
+                        }
+                    }
+
+                    return policies;
+                }, consumer);
             }
         }
 
         if (!scopes.isEmpty()) {
-            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
+            evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId()), consumer);
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && !verified.get()) {
-            createEvaluation(permission, executionContext, decision, null, null).grant();
+            createEvaluation(permission, executionContext, decision, null).grant();
         }
     }
 
@@ -107,25 +113,22 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                 return;
             }
 
-            for (Policy associatedPolicy : parentPolicy.getAssociatedPolicies()) {
-                PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+            PolicyProvider policyProvider = authorization.getProvider(parentPolicy.getType());
 
-                if (policyProvider == null) {
-                    throw new RuntimeException("Unknown parentPolicy provider for type [" + associatedPolicy.getType() + "].");
-                }
-
-                DefaultEvaluation evaluation = createEvaluation(permission, executionContext, decision, parentPolicy, associatedPolicy);
-
-                policyProvider.evaluate(evaluation);
-                evaluation.denyIfNoEffect();
+            if (policyProvider == null) {
+                throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
             }
+
+            DefaultEvaluation evaluation = createEvaluation(permission, executionContext, decision, parentPolicy);
+
+            policyProvider.evaluate(evaluation);
 
             verified.compareAndSet(false, true);
         };
     }
 
-    private DefaultEvaluation createEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, Policy parentPolicy, Policy associatedPolicy) {
-        return new DefaultEvaluation(permission, executionContext, parentPolicy, associatedPolicy, decision, authorization);
+    private DefaultEvaluation createEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, Policy parentPolicy) {
+        return new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorization);
     }
 
     private boolean hasRequestedScopes(final ResourcePermission permission, final Policy policy) {
@@ -137,7 +140,11 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Set<Resource> policyResources = policy.getResources();
 
         if (resourcePermission != null && !policyResources.isEmpty()) {
-                if (!policyResources.stream().filter(resource -> resource.getId().equals(resourcePermission.getId())).findFirst().isPresent()) {
+            if (!policyResources.stream().filter(resource -> {
+                Iterator<Resource> policyResourceType = policy.getResources().iterator();
+                Resource policyResource = policyResourceType.hasNext() ? policyResourceType.next() : null;
+                return resource.getId().equals(resourcePermission.getId()) || (policyResourceType != null && policyResource.getType() != null && policyResource.getType().equals(resourcePermission.getType()));
+            }).findFirst().isPresent()) {
                 return false;
             }
         }
@@ -183,6 +190,16 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                     return true;
                 }
             }
+        }
+
+        if (policyResources.isEmpty() && scopes.isEmpty()) {
+            String defaultResourceType = policy.getConfig().get("defaultResourceType");
+
+            if (defaultResourceType == null) {
+                return false;
+            }
+
+            return defaultResourceType.equals(permission.getResource().getType());
         }
 
         return false;

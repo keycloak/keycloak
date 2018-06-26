@@ -22,12 +22,12 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
+import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.util.JsonSerialization;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -56,6 +56,10 @@ public class KeycloakTestingClient {
         return new KeycloakTestingClient(serverUrl, null);
     }
 
+    public static KeycloakTestingClient getInstance(String serverUrl, ResteasyClient resteasyClient) {
+        return new KeycloakTestingClient(serverUrl, resteasyClient);
+    }
+
     public TestingResource testing() {
         return target.path("/realms/master").proxy(TestingResource.class);
     }
@@ -65,6 +69,8 @@ public class KeycloakTestingClient {
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
+
+    public TestSamlApplicationResource testSamlApp() { return target.proxy(TestSamlApplicationResource.class); }
 
     public TestExampleCompanyResource testExampleCompany() { return target.proxy(TestExampleCompanyResource.class); }
 

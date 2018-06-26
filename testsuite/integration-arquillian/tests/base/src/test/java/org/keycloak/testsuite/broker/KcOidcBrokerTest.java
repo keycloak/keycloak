@@ -18,16 +18,16 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
         attrMapper1.setName("manager-role-mapper");
         attrMapper1.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
         attrMapper1.setConfig(ImmutableMap.<String,String>builder()
-                .put("external.role", "manager")
-                .put("role", "manager")
+                .put("external.role", ROLE_MANAGER)
+                .put("role", ROLE_MANAGER)
                 .build());
 
         IdentityProviderMapperRepresentation attrMapper2 = new IdentityProviderMapperRepresentation();
         attrMapper2.setName("user-role-mapper");
         attrMapper2.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
         attrMapper2.setConfig(ImmutableMap.<String,String>builder()
-                .put("external.role", "user")
-                .put("role", "user")
+                .put("external.role", ROLE_USER)
+                .put("role", ROLE_USER)
                 .build());
 
         return Lists.newArrayList(attrMapper1, attrMapper2);

@@ -37,7 +37,7 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import java.security.PublicKey;
 import java.util.List;
 
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

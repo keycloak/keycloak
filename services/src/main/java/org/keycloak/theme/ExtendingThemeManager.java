@@ -111,31 +111,27 @@ public class ExtendingThemeManager implements ThemeProvider {
 
     private Theme loadTheme(String name, Theme.Type type) throws IOException {
         Theme theme = findTheme(name, type);
-        if (theme != null && (theme.getParentName() != null || theme.getImportName() != null)) {
-            List<Theme> themes = new LinkedList<>();
-            themes.add(theme);
+        List<Theme> themes = new LinkedList<>();
+        themes.add(theme);
 
-            if (theme.getImportName() != null) {
-                String[] s = theme.getImportName().split("/");
-                themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
-            }
+        if (theme.getImportName() != null) {
+            String[] s = theme.getImportName().split("/");
+            themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+        }
 
-            if (theme.getParentName() != null) {
-                for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
-                    theme = findTheme(parentName, type);
-                    themes.add(theme);
+        if (theme.getParentName() != null) {
+            for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
+                theme = findTheme(parentName, type);
+                themes.add(theme);
 
-                    if (theme.getImportName() != null) {
-                        String[] s = theme.getImportName().split("/");
-                        themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
-                    }
+                if (theme.getImportName() != null) {
+                    String[] s = theme.getImportName().split("/");
+                    themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
                 }
             }
-
-            return new ExtendingTheme(themes);
-        } else {
-            return theme;
         }
+
+        return new ExtendingTheme(themes, session.getAllProviders(ThemeResourceProvider.class));
     }
 
     @Override
@@ -178,13 +174,15 @@ public class ExtendingThemeManager implements ThemeProvider {
     public static class ExtendingTheme implements Theme {
 
         private List<Theme> themes;
+        private Set<ThemeResourceProvider> themeResourceProviders;
 
         private Properties properties;
 
         private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Properties>> messages = new ConcurrentHashMap<>();
 
-        public ExtendingTheme(List<Theme> themes) {
+        public ExtendingTheme(List<Theme> themes, Set<ThemeResourceProvider> themeResourceProviders) {
             this.themes = themes;
+            this.themeResourceProviders = themeResourceProviders;
         }
 
         @Override
@@ -215,29 +213,14 @@ public class ExtendingThemeManager implements ThemeProvider {
                     return template;
                 }
             }
-            return null;
-        }
 
-        @Override
-        public InputStream getTemplateAsStream(String name) throws IOException {
-            for (Theme t : themes) {
-                InputStream template = t.getTemplateAsStream(name);
+            for (ThemeResourceProvider t : themeResourceProviders) {
+                URL template = t.getTemplate(name);
                 if (template != null) {
                     return template;
                 }
             }
-            return null;
-        }
 
-
-        @Override
-        public URL getResource(String path) throws IOException {
-            for (Theme t : themes) {
-                URL resource = t.getResource(path);
-                if (resource != null) {
-                    return resource;
-                }
-            }
             return null;
         }
 
@@ -249,6 +232,14 @@ public class ExtendingThemeManager implements ThemeProvider {
                     return resource;
                 }
             }
+
+            for (ThemeResourceProvider t : themeResourceProviders) {
+                InputStream resource = t.getResourceAsStream(path);
+                if (resource != null) {
+                    return resource;
+                }
+            }
+
             return null;
         }
 

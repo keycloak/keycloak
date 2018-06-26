@@ -20,6 +20,7 @@ package org.keycloak.admin.client.resource;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -121,6 +122,42 @@ public interface ClientResource {
 
     @Path("/roles")
     public RolesResource roles();
+
+    /**
+     * Get default client scopes.  Only name and ids are returned.
+     *
+     * @return default client scopes
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-client-scopes")
+    List<ClientScopeRepresentation> getDefaultClientScopes();
+
+    @PUT
+    @Path("default-client-scopes/{clientScopeId}")
+    void addDefaultClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    @DELETE
+    @Path("default-client-scopes/{clientScopeId}")
+    void removeDefaultClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    /**
+     * Get optional client scopes.  Only name and ids are returned.
+     *
+     * @return optional client scopes
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("optional-client-scopes")
+    List<ClientScopeRepresentation> getOptionalClientScopes();
+
+    @PUT
+    @Path("optional-client-scopes/{clientScopeId}")
+    void addOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    @DELETE
+    @Path("optional-client-scopes/{clientScopeId}")
+    void removeOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
 
     @Path("/service-account-user")
     @GET

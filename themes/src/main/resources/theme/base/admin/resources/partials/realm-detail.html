@@ -32,6 +32,14 @@
             </div>
 
             <div class="form-group">
+                <label class="col-md-2 control-label" for="enabled">{{:: 'userManagedAccess' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.userManagedAccessAllowed" name="userManagedAccessAllowed" id="userManagedAccessAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'realm-detail.userManagedAccess.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
                     <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>

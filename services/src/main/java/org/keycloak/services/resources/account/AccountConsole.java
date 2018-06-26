@@ -38,8 +38,10 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.theme.beans.MessageFormatterMethod;
 
 /**
  * Created by st on 29/03/17.
@@ -87,7 +89,7 @@ public class AccountConsole {
 
             map.put("authUrl", session.getContext().getContextPath());
             map.put("baseUrl", session.getContext().getContextPath() + "/realms/" + realm.getName() + "/account");
-            map.put("realm", realm.getName());
+            map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/account/" + theme.getName());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             
@@ -97,16 +99,14 @@ public class AccountConsole {
                 map.put("referrer_uri", referrer[1]);
             }
             
-            try {
-                if (auth != null) {
-                    Locale locale = session.getContext().resolveLocale(auth.getUser());
-                    map.put("locale", locale.toLanguageTag());
-                    map.put("msg", messagesToJsonString(theme.getMessages(locale)));
-                }
-            } catch (Exception e) {
-                logger.warn("Failed to load messages", e);
-            }
-            
+            UserModel user = null;
+            if (auth != null) user = auth.getUser();
+            Locale locale = LocaleHelper.getLocale(session, realm, user);
+            map.put("locale", locale.toLanguageTag());
+            Properties messages = theme.getMessages(locale);
+            map.put("msg", new MessageFormatterMethod(locale, messages));
+            map.put("msgJSON", messagesToJsonString(messages));
+            map.put("supportedLocales", supportedLocales(messages));
             map.put("properties", theme.getProperties());
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
@@ -116,7 +116,16 @@ public class AccountConsole {
             return builder.build();
         }
     }
-
+    
+    private Map<String, String> supportedLocales(Properties messages) throws IOException {
+        Map<String, String> supportedLocales = new HashMap<>();
+        for (String l : realm.getSupportedLocales()) {
+            String label = messages.getProperty("locale_" + l, l);
+            supportedLocales.put(l, label);
+        }
+        return supportedLocales;
+    }
+    
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
         

@@ -165,6 +165,23 @@ public class CredentialsTest extends AbstractClientTest {
         cert = certRsc.getKeyInfo();
         assertEquals("cert properly set", certificate2, cert.getCertificate());
         assertNull("privateKey nullified", cert.getPrivateKey());
+
+        // Upload certificate with header - should be stored without header
+        form = new MultipartFormDataOutput();
+        form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
+
+        String certificate2WithHeaders = "-----BEGIN CERTIFICATE-----\n" + certificate2 + "\n-----END CERTIFICATE-----";
+
+        form.addFormData("file", certificate2WithHeaders.getBytes(Charset.forName("ASCII")), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        cert = certRsc.uploadJks(form);
+        assertNotNull("cert not null", cert);
+        assertEquals("cert properly extracted", certificate2, cert.getCertificate());
+        assertNull("privateKey not included", cert.getPrivateKey());
+
+        // Get the certificate again - to make sure cert is set, and privateKey is null
+        cert = certRsc.getKeyInfo();
+        assertEquals("cert properly set", certificate2, cert.getCertificate());
+        assertNull("privateKey nullified", cert.getPrivateKey());
     }
 
     @Test

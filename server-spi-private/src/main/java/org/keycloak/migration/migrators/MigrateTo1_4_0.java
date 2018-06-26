@@ -28,6 +28,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Arrays;
@@ -46,15 +47,25 @@ public class MigrateTo1_4_0 implements Migration {
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            if (realm.getAuthenticationFlows().size() == 0) {
-                DefaultAuthenticationFlows.migrateFlows(realm);
-                DefaultRequiredActions.addActions(realm);
-            }
-            ImpersonationConstants.setupImpersonationService(session, realm);
-
-            migrateLDAPMappers(session, realm);
-            migrateUsers(session, realm);
+            migrateRealm(session, realm);
         }
+
+    }
+
+    protected void migrateRealm(KeycloakSession session, RealmModel realm) {
+        if (realm.getAuthenticationFlows().size() == 0) {
+            DefaultAuthenticationFlows.migrateFlows(realm);
+            DefaultRequiredActions.addActions(realm);
+        }
+        ImpersonationConstants.setupImpersonationService(session, realm);
+
+        migrateLDAPMappers(session, realm);
+        migrateUsers(session, realm);
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateRealm(session, realm);
 
     }
 

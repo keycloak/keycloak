@@ -13,10 +13,9 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
 
 ### Modules
 
-* __`as7` JBossAS 7__
-* __`wildfly8` Wildfly 8__
 * __`wildfly9` Wildfly 9__
-* __`wildfly` Wildfly 10__
+* __`wildfly10` Wildfly 10__
+* __`wildfly` Wildfly 11__
 * __`eap6` EAP 6__ Requires access to EAP product repo, or setting `-Deap6.version` to public EAP 6 Alpha.
 * __`eap` EAP 7__ Requires access to EAP product repo.
 * __`relative`__ Activate with `-Papp-server-relative`.

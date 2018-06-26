@@ -23,14 +23,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.infinispan.Cache;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
  * NOTE: Calling setter doesn't automatically enlist for update
@@ -39,39 +38,41 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public class AuthenticationSessionAdapter implements AuthenticationSessionModel {
 
-    private KeycloakSession session;
-    private InfinispanAuthenticationSessionProvider provider;
-    private Cache<String, AuthenticationSessionEntity> cache;
-    private RealmModel realm;
+    private final KeycloakSession session;
+    private final RootAuthenticationSessionAdapter parent;
+    private final String tabId;
     private AuthenticationSessionEntity entity;
 
-    public AuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, Cache<String, AuthenticationSessionEntity> cache, RealmModel realm,
-                                        AuthenticationSessionEntity entity) {
+    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
         this.session = session;
-        this.provider = provider;
-        this.cache = cache;
-        this.realm = realm;
+        this.parent = parent;
+        this.tabId = tabId;
         this.entity = entity;
     }
 
-    void update() {
-        provider.tx.replace(cache, entity.getId(), entity);
+    private void update() {
+        parent.update();
     }
-
 
     @Override
-    public String getId() {
-        return entity.getId();
+    public String getTabId() {
+        return tabId;
     }
+
+    @Override
+    public RootAuthenticationSessionModel getParentSession() {
+        return parent;
+    }
+
 
     @Override
     public RealmModel getRealm() {
-        return realm;
+        return parent.getRealm();
     }
 
     @Override
     public ClientModel getClient() {
-        return realm.getClientById(entity.getClientUuid());
+        return getRealm().getClientById(entity.getClientUUID());
     }
 
     @Override
@@ -85,16 +86,6 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         update();
     }
 
-    @Override
-    public int getTimestamp() {
-        return entity.getTimestamp();
-    }
-
-    @Override
-    public void setTimestamp(int timestamp) {
-        entity.setTimestamp(timestamp);
-        update();
-    }
 
     @Override
     public String getAction() {
@@ -108,26 +99,14 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     }
 
     @Override
-    public Set<String> getRoles() {
-        if (entity.getRoles() == null || entity.getRoles().isEmpty()) return Collections.emptySet();
-        return new HashSet<>(entity.getRoles());
+    public Set<String> getClientScopes() {
+        if (entity.getClientScopes() == null || entity.getClientScopes().isEmpty()) return Collections.emptySet();
+        return new HashSet<>(entity.getClientScopes());
     }
 
     @Override
-    public void setRoles(Set<String> roles) {
-        entity.setRoles(roles);
-        update();
-    }
-
-    @Override
-    public Set<String> getProtocolMappers() {
-        if (entity.getProtocolMappers() == null || entity.getProtocolMappers().isEmpty()) return Collections.emptySet();
-        return new HashSet<>(entity.getProtocolMappers());
-    }
-
-    @Override
-    public void setProtocolMappers(Set<String> protocolMappers) {
-        entity.setProtocolMappers(protocolMappers);
+    public void setClientScopes(Set<String> clientScopes) {
+        entity.setClientScopes(clientScopes);
         update();
     }
 
@@ -303,7 +282,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return entity.getAuthUserId() == null ? null : session.users().getUserById(entity.getAuthUserId(), realm);    }
+        return entity.getAuthUserId() == null ? null : session.users().getUserById(entity.getAuthUserId(), getRealm());    }
 
     @Override
     public void setAuthenticatedUser(UserModel user) {
@@ -312,20 +291,4 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         update();
     }
 
-    @Override
-    public void updateClient(ClientModel client) {
-        entity.setClientUuid(client.getId());
-        update();
-    }
-
-    @Override
-    public void restartSession(RealmModel realm, ClientModel client) {
-        String id = entity.getId();
-        entity = new AuthenticationSessionEntity();
-        entity.setId(id);
-        entity.setRealmId(realm.getId());
-        entity.setClientUuid(client.getId());
-        entity.setTimestamp(Time.currentTime());
-        update();
-    }
 }

@@ -41,6 +41,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -57,6 +58,8 @@ import org.keycloak.representations.idm.authorization.Logic;
                 @NamedQuery(name="findPolicyIdByName", query="select p.id from PolicyEntity p where  p.resourceServer.id = :serverId  and p.name = :name"),
                 @NamedQuery(name="findPolicyIdByResource", query="select p.id from PolicyEntity p inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer.id = :serverId and r.id = :resourceId)"),
                 @NamedQuery(name="findPolicyIdByScope", query="select pe.id from PolicyEntity pe where pe.resourceServer.id = :serverId and pe.id IN (select p.id from ScopeEntity s inner join s.policies p where s.resourceServer.id = :serverId and (p.resourceServer.id = :serverId and p.type = 'scope' and s.id in (:scopeIds)))"),
+                @NamedQuery(name="findPolicyIdByResourceScope", query="select pe.id from PolicyEntity pe where pe.resourceServer.id = :serverId and pe.id IN (select p.id from ScopeEntity s inner join s.policies p where s.resourceServer.id = :serverId and (p.resourceServer.id = :serverId and p.type = 'scope' and s.id in (:scopeIds))) and pe.id IN (select p.id from ResourceEntity r inner join r.policies p where r.resourceServer.id = :serverId and (p.resourceServer.id = :serverId and p.type = 'scope' and r.id in (:resourceId))))"),
+                @NamedQuery(name="findPolicyIdByNullResourceScope", query="select pe.id from PolicyEntity pe where pe.resourceServer.id = :serverId and pe.id IN (select p.id from ScopeEntity s inner join s.policies p where s.resourceServer.id = :serverId and (p.resourceServer.id = :serverId and p.type = 'scope' and s.id in (:scopeIds))) and pe.resources is empty"),
                 @NamedQuery(name="findPolicyIdByType", query="select p.id from PolicyEntity p where p.resourceServer.id = :serverId and p.type = :type"),
                 @NamedQuery(name="findPolicyIdByResourceType", query="select p.id from PolicyEntity p inner join p.config c where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
                 @NamedQuery(name="findPolicyIdByDependentPolices", query="select p.id from PolicyEntity p inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (ap.resourceServer.id = :serverId and ap.id = :policyId)"),
@@ -75,6 +78,7 @@ public class PolicyEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
 
@@ -108,6 +112,9 @@ public class PolicyEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     private Set<ScopeEntity> scopes = new HashSet<>();
+
+    @Column(name = "OWNER")
+    private String owner;
 
     public String getId() {
         return this.id;
@@ -195,6 +202,14 @@ public class PolicyEntity {
 
     public void setAssociatedPolicies(Set<PolicyEntity> associatedPolicies) {
         this.associatedPolicies = associatedPolicies;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     @Override

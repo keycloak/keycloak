@@ -259,6 +259,18 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
+    public void testCredentialsWithNoConfig() {
+        /*
+         *  Test with --no-config specified which is not supported
+         */
+        KcAdmExec exe = KcAdmExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
+
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+    }
+
+    @Test
     public void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client
@@ -558,4 +570,20 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 "--client admin-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias admin-cli", "",
                 "Logging into " + serverUrl + " as service-account-admin-cli-jwt of realm test");
     }
+
+    @Test
+    public void testCRUDWithToken() throws Exception {
+        /*
+         *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
+         *  Login is performed by each operation again, and again using username, password, and client secret.
+         */
+        oauth.realm("master");
+        oauth.clientId("admin-cli");
+        String token = oauth.doGrantAccessTokenRequest("", "admin", "admin").getAccessToken();
+        testCRUDWithOnTheFlyAuth(serverUrl, " --token " + token, "",
+                "");
+
+    }
+
+
 }

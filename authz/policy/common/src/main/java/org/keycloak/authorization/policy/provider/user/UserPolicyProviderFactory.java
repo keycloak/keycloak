@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
@@ -52,7 +51,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
-    private UserPolicyProvider provider = new UserPolicyProvider((Function<Policy, UserPolicyRepresentation>) policy -> toRepresentation(policy));
+    private UserPolicyProvider provider = new UserPolicyProvider(this::toRepresentation);
 
     @Override
     public String getName() {
@@ -75,7 +74,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
     }
 
     @Override
-    public UserPolicyRepresentation toRepresentation(Policy policy) {
+    public UserPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
         try {
@@ -113,7 +112,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
-        UserPolicyRepresentation userRep = toRepresentation(policy);
+        UserPolicyRepresentation userRep = toRepresentation(policy, authorizationProvider);
         Map<String, String> config = new HashMap<>();
 
         try {

@@ -31,6 +31,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.core.Response;
@@ -67,7 +69,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             RealmModel realm = session.getContext().getRealm();
-            ClientModel clientModel = RepresentationToModel.createClient(session, realm, client, true);
+            ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
 
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
@@ -153,7 +155,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireDelete(client);
 
-        if (session.getContext().getRealm().removeClient(client.getId())) {
+        if (new ClientManager(new RealmManager(session)).removeClient(session.getContext().getRealm(), client)) {
             event.client(client.getClientId()).success();
         } else {
             throw new ForbiddenException();

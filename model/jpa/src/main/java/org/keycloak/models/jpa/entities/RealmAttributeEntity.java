@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -49,6 +51,7 @@ public class RealmAttributeEntity {
     @Id
     @Column(name = "NAME")
     protected String name;
+    @Nationalized
     @Column(name = "VALUE")
     protected String value;
 

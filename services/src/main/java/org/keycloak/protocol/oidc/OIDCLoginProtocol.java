@@ -19,12 +19,16 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -33,6 +37,7 @@ import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -41,6 +46,8 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
+import java.net.URI;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -169,7 +176,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public Response authenticated(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        AuthenticatedClientSessionModel clientSession= clientSessionCtx.getClientSession();
         ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
 
         String responseTypeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
@@ -183,6 +191,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
 
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
+        if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        }
+
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
@@ -193,7 +206,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
             TokenManager tokenManager = new TokenManager();
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
                     .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
@@ -207,7 +220,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 if (responseType.hasResponseType(OIDCResponseType.CODE)) {
                     responseBuilder.generateCodeHash(code);
                 }
-
+                
+                // Financial API - Part 2: Read and Write API Security Profile
+                // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+                if (state != null && !state.isEmpty())
+                    responseBuilder.generateStateHash(state);
             }
 
             AccessTokenResponse res = responseBuilder.build();
@@ -218,12 +235,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                 redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
-                redirectUri.addParam("token_type", res.getTokenType());
-                redirectUri.addParam("session_state", res.getSessionState());
-                redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
             }
-
-            redirectUri.addParam("not-before-policy", String.valueOf(res.getNotBeforePolicy()));
         }
 
         return redirectUri.build();
@@ -320,6 +332,23 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
+        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
+        logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
+        URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
+        try {
+            int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
+            boolean success = status == 204 || status == 200;
+            logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
+            return success;
+        } catch (IOException e) {
+            ServicesLogger.LOGGER.failedToSendRevocation(e);
+            return false;
+        }
     }
 
     @Override

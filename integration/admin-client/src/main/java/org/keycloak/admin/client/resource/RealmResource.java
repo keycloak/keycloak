@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -29,6 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -38,7 +40,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -58,8 +60,34 @@ public interface RealmResource {
     @Path("clients")
     ClientsResource clients();
 
-    @Path("client-templates")
-    ClientTemplatesResource clientTemplates();
+    @Path("client-scopes")
+    ClientScopesResource clientScopes();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-default-client-scopes")
+    List<ClientScopeRepresentation> getDefaultDefaultClientScopes();
+
+    @PUT
+    @Path("default-default-client-scopes/{clientScopeId}")
+    void addDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    @DELETE
+    @Path("default-default-client-scopes/{clientScopeId}")
+    void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-optional-client-scopes")
+    List<ClientScopeRepresentation> getDefaultOptionalClientScopes();
+
+    @PUT
+    @Path("default-optional-client-scopes/{clientScopeId}")
+    void addDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
+
+    @DELETE
+    @Path("default-optional-client-scopes/{clientScopeId}")
+    void removeDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
 
     @Path("client-description-converter")
     @POST
@@ -179,11 +207,11 @@ public interface RealmResource {
     AttackDetectionResource attackDetection();
 
     @Path("testLDAPConnection")
-    @GET
+    @POST
     @NoCache
-    Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
-                                @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
+    Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
+                                @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
+                                @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout);
 
     @Path("testSMTPConnection/{config}")
     @POST

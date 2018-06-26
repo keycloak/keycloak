@@ -19,7 +19,8 @@ package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -59,7 +60,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     private static String userId2;
 
-    private TimeBasedOTP totp = new TimeBasedOTP();
+    private final TimeBasedOTP totp = new TimeBasedOTP();
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -430,8 +431,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     public void grantAccessTokenMissingGrantType() throws Exception {
         oauth.clientId("resource-owner");
 
-        DefaultHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(oauth.getResourceOwnerPasswordCredentialGrantUrl());
             OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
 
@@ -439,8 +439,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
             assertEquals("invalid_request", response.getError());
             assertEquals("Missing form parameter: grant_type", response.getErrorDescription());
-        } finally {
-            client.close();
         }
     }
 

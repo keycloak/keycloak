@@ -24,6 +24,7 @@ class SimpleExample4 extends Simulation {
     .exec(account)
 
   setUp(
+    // rather than starting all 100 users at once, increase the count over a period of 10 seconds
     scn.inject(rampUsers(100) over 10).protocols(httpConf)
   )
 }

@@ -27,9 +27,13 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -39,6 +43,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
@@ -50,10 +56,13 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.testsuite.ApiUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.federation.storage.ldap.LDAPTestUtils;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -67,9 +76,14 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import javax.ws.rs.core.Response;
+import java.util.LinkedList;
 import java.util.List;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.models.AdminRoles.ADMIN;
+import static org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -702,6 +716,50 @@ public class LDAPProvidersIntegrationNoImportTest {
     }
 
     @Test
+    public void testHardcodedGroupMapper() {
+        KeycloakSession session = keycloakRule.startSession();
+        ComponentModel firstNameMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            GroupModel hardcodedGroup = appRealm.createGroup("hardcoded-group", "hardcoded-group");
+
+            // assert that user "johnkeycloak" doesn't have hardcoded group
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertFalse(john.isMemberOf(hardcodedGroup));
+
+            ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded group", ldapModel.getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
+            appRealm.addComponentModel(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            GroupModel hardcodedGroup = appRealm.getGroupById("hardcoded-group");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertTrue(john.isMemberOf(hardcodedGroup));
+
+            // Can't remove user from hardcoded role
+            try {
+                john.leaveGroup(hardcodedGroup);
+                Assert.fail("Didn't expected to leave group");
+            } catch (ModelException expected) {
+            }
+
+            // Revert mappers
+            ComponentModel hardcodedMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "hardcoded group");
+            appRealm.removeComponent(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
     public void testImportExistingUserFromLDAP() throws Exception {
         // Add LDAP user with same email like existing model user
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
@@ -884,5 +942,48 @@ public class LDAPProvidersIntegrationNoImportTest {
             keycloakRule.stopSession(session, true);
         }
     }
+
+
+    // KEYCLOAK-5383
+    @Test
+    public void addUserThroughAdmin() {
+        Keycloak adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+
+        RealmResource realm = adminClient.realm("test");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("addUserThroughAdmin");
+        user.setEnabled(true);
+        user.setCredentials(new LinkedList<>());
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue("password");
+
+        user.getCredentials().add(cred);
+
+        Response response = realm.users().create(user);
+        String userId = ApiUtil.getCreatedId(response);
+
+        loginPage.open();
+        loginPage.login("addUserThroughAdmin", "password");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        oauth.openLogout();
+
+        cred.setValue("password2");
+        realm.users().get(userId).resetPassword(cred);
+
+        loginPage.open();
+        loginPage.login("addUserThroughAdmin", "password2");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        oauth.openLogout();
+
+        adminClient.close();
+    }
+
 
 }

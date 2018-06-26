@@ -76,6 +76,7 @@
 
             <relay site="{$local.site}">
                 <remote-site name="{$remote.site}" channel="xsite"/>
+                <property name="relay_multicasts">false</property>
             </relay>
         </xsl:copy>
     </xsl:template>

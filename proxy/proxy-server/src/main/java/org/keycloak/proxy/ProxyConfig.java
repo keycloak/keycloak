@@ -56,6 +56,9 @@ public class ProxyConfig {
     protected Boolean directBuffers;
     @JsonProperty("target-url")
     protected String targetUrl;
+    /** Defaults to 30 seconds */
+    @JsonProperty("target-request-timeout")
+    protected Integer targetRequestTimeout = 30000;
     @JsonProperty("send-access-token")
     protected boolean sendAccessToken;
     @JsonProperty("applications")
@@ -157,6 +160,14 @@ public class ProxyConfig {
 
     public void setTargetUrl(String targetUrl) {
         this.targetUrl = targetUrl;
+    }
+
+    public Integer getTargetRequestTimeout() {
+        return targetRequestTimeout;
+    }
+
+    public void setTargetRequestTimeout(Integer targetRequestTimeout) {
+        this.targetRequestTimeout = targetRequestTimeout;
     }
 
     public List<Application> getApplications() {

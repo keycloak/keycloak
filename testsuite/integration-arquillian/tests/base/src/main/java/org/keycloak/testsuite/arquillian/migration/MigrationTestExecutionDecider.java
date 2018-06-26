@@ -57,7 +57,7 @@ public class MigrationTestExecutionDecider implements TestExecutionDecider {
 
     @Override
     public int precedence() {
-        return 1;
+        return 2;
     }
 
 }

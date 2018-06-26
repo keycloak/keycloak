@@ -58,8 +58,6 @@ import java.util.Set;
 public abstract class AbstractSecuredLocalService {
     private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
 
-    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
-
     protected final ClientModel client;
     protected RealmModel realm;
 
@@ -127,54 +125,7 @@ public abstract class AbstractSecuredLocalService {
         }
     }
 
-    protected void updateCsrfChecks() {
-        stateChecker = getStateChecker();
-        if (stateChecker == null) {
-            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(auth.getSession().getId());
-            sb.append("/");
-            sb.append(stateChecker);
-
-            String sessionCookieValue = sb.toString();
-
-            String cookiePath = AuthenticationManager.getAccountCookiePath(realm, uriInfo);
-            boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
-            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, sessionCookieValue, cookiePath, null, null, -1, secureOnly, true);
-        }
-    }
-
     protected abstract Set<String> getValidPaths();
-
-    /**
-     * Check to see if form post has sessionId hidden field and match it against the session id.
-     *
-     * @param formData
-     */
-    protected void csrfCheck(final MultivaluedMap<String, String> formData) {
-        String stateChecker = formData.getFirst("stateChecker");
-        if (stateChecker == null || !stateChecker.equals(getStateChecker())) {
-            throw new ForbiddenException();
-        }
-    }
-
-    protected String getStateChecker() {
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-        if (cookie != null) {
-            stateChecker = cookie.getValue();
-            String[] s = stateChecker.split("/");
-            if (s.length == 2) {
-                String sessionId = s[0];
-                String stateChecker = s[1];
-
-                if (auth.getSession().getId().equals(sessionId)) {
-                    return stateChecker;
-                }
-            }
-        }
-        return null;
-    }
 
     protected abstract URI getBaseRedirectUri();
 

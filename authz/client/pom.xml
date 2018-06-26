@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-authz-parent</artifactId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,14 +18,21 @@
     <description>KeyCloak AuthZ: Client API</description>
 
     <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
         <keycloak.osgi.export>
             org.keycloak.authorization.client.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
-            org.apache.http.*;version=${apache.httpcomponents.version},
+            org.apache.http.auth.*;version=${apache.httpcomponents.version},
+            org.apache.http.client.*;version=${apache.httpcomponents.version},
+            org.apache.http.conn.*;version=${apache.httpcomponents.version},
+            org.apache.http.cookie.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.auth.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.client.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.conn.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.cookie.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.execchain.*;version=${apache.httpcomponents.version},
+            org.apache.http.*;version=${apache.httpcomponents.httpcore.version},
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>

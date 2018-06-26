@@ -21,7 +21,8 @@ import { platformBrowser } from '@angular/platform-browser';
 import { AppModule } from './app/app.module';
 //import { environment } from './environments/environment';
 
-import { KeycloakService } from './app/keycloak-service/keycloak.service';
+import { KeycloakService, KeycloakClient } from './app/keycloak-service/keycloak.service';
+
 
 //if (environment.production) {
 //  enableProdMode();
@@ -30,17 +31,17 @@ import { KeycloakService } from './app/keycloak-service/keycloak.service';
 declare const authUrl: string;
 declare const resourceUrl: string;
 declare const realm: string;
+declare const keycloak: KeycloakClient;
 
-const noLogin: boolean = false; // convenient for development
-if (noLogin) {
-    platformBrowserDynamic().bootstrapModule(AppModule);
-} else {
-    KeycloakService.init(authUrl + '/realms/' + realm + '/account/keycloak.json',
-                         {onLoad: 'login-required'})
-        .then(() => {
-            platformBrowserDynamic().bootstrapModule(AppModule);
-        })
-        .catch((e: any) => {
-            console.log('Error in bootstrap: ' + JSON.stringify(e));
-        });
+KeycloakService.setKeycloakAuth(keycloak);
+
+loadCss('/styles.css');
+platformBrowserDynamic().bootstrapModule(AppModule);
+
+function loadCss(url:string) {
+    const link = document.createElement("link");
+    link.href = resourceUrl + url;
+    link.rel = "stylesheet";
+    link.media = "screen, print";
+    document.head.appendChild(link);
 }

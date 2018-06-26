@@ -113,7 +113,11 @@ public class ServletSamlAuthMech extends AbstractSamlAuthMech {
 
     @Override
     protected void redirectLogout(SamlDeployment deployment, HttpServerExchange exchange) {
-       servePage(exchange, deployment.getLogoutPage());
+        exchange.getResponseHeaders().add(Headers.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+        exchange.getResponseHeaders().add(Headers.PRAGMA, "no-cache");
+        exchange.getResponseHeaders().add(Headers.EXPIRES, "0");
+
+        super.redirectLogout(deployment, exchange);
     }
 
     @Override

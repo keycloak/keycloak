@@ -68,7 +68,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), authSession);
 
         if (!brokerContext.getIdpConfig().isEnabled()) {
-            sendFailureChallenge(context, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
+            sendFailureChallenge(context, Response.Status.BAD_REQUEST, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
         authenticateImpl(context, serializedCtx, brokerContext);
@@ -85,7 +85,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), clientSession);
 
         if (!brokerContext.getIdpConfig().isEnabled()) {
-            sendFailureChallenge(context, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
+            sendFailureChallenge(context, Response.Status.BAD_REQUEST, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
         actionImpl(context, serializedCtx, brokerContext);
@@ -94,12 +94,12 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     protected abstract void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext);
     protected abstract void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext);
 
-    protected void sendFailureChallenge(AuthenticationFlowContext context, String eventError, String errorMessage, AuthenticationFlowError flowError) {
+    protected void sendFailureChallenge(AuthenticationFlowContext context, Response.Status status, String eventError, String errorMessage, AuthenticationFlowError flowError) {
         context.getEvent().user(context.getUser())
                 .error(eventError);
         Response challengeResponse = context.form()
                 .setError(errorMessage)
-                .createErrorPage();
+                .createErrorPage(status);
         context.failureChallenge(flowError, challengeResponse);
     }
 

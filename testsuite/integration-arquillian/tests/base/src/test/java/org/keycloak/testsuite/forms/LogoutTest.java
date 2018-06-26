@@ -19,7 +19,10 @@ package org.keycloak.testsuite.forms;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -30,6 +33,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -37,6 +41,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -233,6 +238,23 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
             loginPage.open();
             loginPage.assertCurrent();
         }, 10, 200);
+    }
+
+
+    // KEYCLOAK-5982
+    @Test
+    public void testLogoutWhenAccountClientRenamed() throws IOException {
+        // Rename client "account"
+        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
+        // Temporarily rename client "account" . Revert it back after the test
+        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
+                .setClientId("account-changed")
+                .update()) {
+
+            // Assert logout works
+            logoutRedirect();
+        }
     }
 
 }

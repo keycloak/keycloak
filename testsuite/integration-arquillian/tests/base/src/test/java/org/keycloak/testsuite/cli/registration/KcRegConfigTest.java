@@ -70,4 +70,19 @@ public class KcRegConfigTest extends AbstractRegCliTest {
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
         }
     }
+
+    @Test
+    public void testNoConfigOption() throws IOException {
+
+        KcRegExec exe = execute("config registration-token --no-config --server http://localhost:8080/auth --realm test --client my_client --delete");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config registration-token' for more information", exe.stderrLines().get(1));
+
+        exe = execute("config initial-token --no-config --server http://localhost:8080/auth --realm test --delete");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config initial-token' for more information", exe.stderrLines().get(1));
+
+    }
 }

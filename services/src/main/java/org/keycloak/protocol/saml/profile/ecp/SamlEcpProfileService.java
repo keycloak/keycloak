@@ -127,7 +127,7 @@ public class SamlEcpProfileService extends SamlService {
             }
 
             private void createEcpResponseHeader(String redirectUri, Soap.SoapMessageBuilder messageBuilder) throws SOAPException {
-                SOAPHeaderElement ecpResponseHeader = messageBuilder.addHeader(JBossSAMLConstants.RESPONSE.get(), NS_PREFIX_PROFILE_ECP);
+                SOAPHeaderElement ecpResponseHeader = messageBuilder.addHeader(JBossSAMLConstants.RESPONSE__ECP.get(), NS_PREFIX_PROFILE_ECP);
 
                 ecpResponseHeader.setMustUnderstand(true);
                 ecpResponseHeader.setActor("http://schemas.xmlsoap.org/soap/actor/next");
@@ -147,7 +147,7 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     @Override
-    protected AuthenticationFlowModel getAuthenticationFlow() {
+    protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
         for (AuthenticationFlowModel flowModel : realm.getAuthenticationFlows()) {
             if (flowModel.getAlias().equals(DefaultAuthenticationFlows.SAML_ECP_FLOW)) {
                 return flowModel;

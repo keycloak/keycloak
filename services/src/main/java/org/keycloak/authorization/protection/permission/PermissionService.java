@@ -20,28 +20,33 @@ package org.keycloak.authorization.protection.permission;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PermissionService extends AbstractPermissionService {
 
+    private final AuthorizationProvider authorization;
+    private final ResourceServer resourceServer;
+
     public PermissionService(KeycloakIdentity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
         super(identity, resourceServer, authorization);
+        this.resourceServer = resourceServer;
+        this.authorization = authorization;
     }
 
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(PermissionRequest request) {
-        return create(Arrays.asList(request));
+    public Response create(List<PermissionRequest> request) {
+        return super.create(request);
     }
 
 }

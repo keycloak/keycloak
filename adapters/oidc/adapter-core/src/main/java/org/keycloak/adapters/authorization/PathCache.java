@@ -24,6 +24,8 @@ import java.util.concurrent.locks.LockSupport;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
 /**
+ * A simple LRU cache implementation supporting expiration and maximum number of entries.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PathCache {
@@ -38,15 +40,7 @@ public class PathCache {
     private final AtomicBoolean writing = new AtomicBoolean(false);
 
     private final long maxAge;
-
-    /**
-     * Creates a new instance.
-     *
-     * @param maxEntries the maximum number of entries to keep in the cache
-     */
-    public PathCache(int maxEntries) {
-        this(maxEntries, -1);
-    }
+    private final boolean enabled;
 
     /**
      * Creates a new instance.
@@ -62,9 +56,14 @@ public class PathCache {
             }
         };
         this.maxAge = maxAge;
+        this.enabled = maxAge > 0;
     }
 
     public void put(String uri, PathConfig newValue) {
+        if (!enabled) {
+            return;
+        }
+
         try {
             if (parkForWriteAndCheckInterrupt()) {
                 return;
@@ -78,6 +77,10 @@ public class PathCache {
         } finally {
             writing.lazySet(false);
         }
+    }
+
+    public boolean containsKey(String uri) {
+        return cache.containsKey(uri);
     }
 
     public PathConfig get(String uri) {

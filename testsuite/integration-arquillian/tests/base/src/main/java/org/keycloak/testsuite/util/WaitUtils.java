@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.time.Duration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
@@ -24,11 +27,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
@@ -102,7 +100,7 @@ public final class WaitUtils {
         // Ensure the URL is "stable", i.e. is not changing anymore; if it'd changing, some redirects are probably still in progress
         for (int maxRedirects = 2; maxRedirects > 0; maxRedirects--) {
             String currentUrl = driver.getCurrentUrl();
-            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(250, TimeUnit.MILLISECONDS);
+            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
             try {
                 wait.until(not(urlToBe(currentUrl)));
             }

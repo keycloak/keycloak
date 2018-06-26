@@ -90,5 +90,6 @@ public interface Errors {
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";
+    String DISPLAY_UNSUPPORTED = "display_unsupported";
 
 }

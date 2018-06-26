@@ -63,7 +63,7 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         List<String> args = new ArrayList<>();
 
         Iterator<String> it = parent.args.iterator();
-        // skip the first argument 'initial-token'
+        // skip the first argument 'registration-token'
         it.next();
 
         while (it.hasNext()) {
@@ -107,7 +107,8 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
                 "--keypass", keyPass,
                 "--alias", alias,
                 "--truststore", trustStore,
-                "--trustpass", keyPass);
+                "--trustpass", keyPass,
+                "--no-config", booleanOptionForCheck(noconfig));
 
 
         if (!delete && token == null) {

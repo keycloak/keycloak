@@ -1,5 +1,5 @@
 <html>
 <body>
-${msg("passwordResetBodyHtml",link, linkExpiration, realmName)?no_esc}
+${msg("passwordResetBodyHtml",link, linkExpiration, realmName, linkExpirationFormatter(linkExpiration))?no_esc}
 </body>
 </html>

@@ -2,31 +2,11 @@ package keycloak
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
-import org.jboss.perf.util.Util
-import org.keycloak.performance.TestConfig
-import org.keycloak.gatling.Utils._
-import SimulationsHelper._
-
 
 /**
   * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
   */
-class AdminConsoleSimulation extends Simulation {
-
-  println()
-  println("Using server: " + TestConfig.serverUrisList.get(0))
-  println()
-  println("Using test parameters:")
-  println("  runUsers: " + TestConfig.runUsers)
-  println("  numOfIterations: " + TestConfig.numOfIterations)
-  println("  rampUpPeriod: " + TestConfig.rampUpPeriod)
-  println("  userThinkTime: " + TestConfig.userThinkTime)
-  //println("  badLoginAttempts: " + TestConfig.badLoginAttempts)
-  //println("  refreshTokenCount: " + TestConfig.refreshTokenCount)
-  //println("  refreshTokenPeriod: " + TestConfig.refreshTokenPeriod)
-  println()
-  println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
-
+class AdminConsoleSimulation extends CommonSimulation {
 
   val httpProtocol = http
     .baseURL("http://localhost:8080")
@@ -37,89 +17,64 @@ class AdminConsoleSimulation extends Simulation {
     .acceptLanguageHeader("en-US,en;q=0.5")
     .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0")
 
-  val adminSession = exec(s => {
-      val realm = TestConfig.randomRealmsIterator().next()
-      val serverUrl = TestConfig.serverUrisList.get(0)
-      s.setAll(
-        "keycloakServer" -> serverUrl,
-        "keycloakServerUrlEncoded" -> urlencode(serverUrl),
-        "keycloakServerRootEncoded" -> urlEncodedRoot(serverUrl),
-        "state" -> Util.randomUUID(),
-        "nonce" -> Util.randomUUID(),
-        "randomClientId" -> ("client_" + Util.randomUUID()),
-        "realm" -> realm,
-        "username" -> "admin",
-        "password" -> "admin",
-        "clientId" -> "security-admin-console"
-      )
-    })
-
-    .exitHereIfFailed
+  val adminSession = new AdminConsoleScenarioBuilder()
     .openAdminConsoleHome()
+    .thinkPause()
+    .loginThroughLoginForm()
+
+    .openRealmSettings()
 
     .thinkPause()
-    .acsim_loginThroughLoginForm()
-    .exitHereIfFailed
+    .openClients()
 
     .thinkPause()
-    .acsim_openClients()
+    .openCreateNewClient()
 
     .thinkPause()
-    .acsim_openCreateNewClient()
+    .submitNewClient()
 
     .thinkPause()
-    .acsim_submitNewClient()
+    .updateClient()
 
     .thinkPause()
-    .acsim_updateClient()
+    .openClients()
 
     .thinkPause()
-    .acsim_openClients()
+    .openClientDetails()
 
     .thinkPause()
-    .acsim_openClientDetails()
+    .openUsers()
 
     .thinkPause()
-    .acsim_openUsers()
+    .viewAllUsers()
 
     .thinkPause()
-    .acsim_viewAllUsers()
+    .viewTenPagesOfUsers()
 
     .thinkPause()
-    .acsim_viewTenPagesOfUsers()
+    .find20Users()
 
     .thinkPause()
-    .acsim_find20Users()
+    .findUnlimitedUsers()
 
     .thinkPause()
-    .acsim_findUnlimitedUsers()
+    .findRandomUser()
+    .openUser()
 
     .thinkPause()
-    .acsim_findRandomUser()
-
-    .acsim_openUser()
+    .openUserCredentials()
 
     .thinkPause()
-    .acsim_openUserCredentials()
+    .setTemporaryPassword()
 
     .thinkPause()
-    .acsim_setTemporaryPassword()
+    .logout()
 
     .thinkPause()
-    .acsim_logOut()
 
 
-  val adminScenario = scenario("AdminConsole")
-    .repeat(TestConfig.numOfIterations) {
-      adminSession
-    }
+  val adminScenario = scenario("AdminConsole").exec(adminSession.chainBuilder)
 
+  setUp(adminScenario.inject(defaultInjectionProfile).protocols(httpProtocol))
 
-  setUp(adminScenario.inject({
-    if (TestConfig.rampUpPeriod > 0) {
-      rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod
-    } else {
-      atOnceUsers(TestConfig.runUsers)
-    }
-  }).protocols(httpProtocol))
 }

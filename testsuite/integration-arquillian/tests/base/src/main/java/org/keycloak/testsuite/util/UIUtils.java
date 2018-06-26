@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.util;
 
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -58,5 +59,25 @@ public final class UIUtils {
      */
     public static void navigateToLink(WebElement element) {
         URLUtils.navigateToUri(element.getAttribute("href"), true);
+    }
+
+    /**
+     * This is meant mainly for file uploads in Admin Console where the input fields are hidden
+     *
+     * @param element
+     * @param keys
+     */
+    public static void sendKeysToInvisibleElement(WebElement element, CharSequence... keys) {
+        if (element.isDisplayed()) {
+            element.sendKeys(keys);
+            return;
+        }
+
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) getCurrentDriver();
+        String styleBckp = element.getAttribute("style");
+
+        jsExecutor.executeScript("arguments[0].setAttribute('style', 'display:block !important');", element);
+        element.sendKeys(keys);
+        jsExecutor.executeScript("arguments[0].setAttribute('style', '" + styleBckp + "');", element);
     }
 }

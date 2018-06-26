@@ -46,14 +46,11 @@ public class BasicAuth extends AbstractPageWithInjectedUrl {
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .userInfo("{user}:{password}")
                 .path("basic-auth")
                 .queryParam("value", "{value}");
     }
 
-    public BasicAuth setTemplateValues(String user, String password, String value) {
-        setUriParameter("user", user);
-        setUriParameter("password", password);
+    public BasicAuth setTemplateValues(String value) {
         setUriParameter("value", value);
         return this;
     }

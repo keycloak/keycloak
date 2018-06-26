@@ -66,7 +66,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.confirm();
 
@@ -87,6 +86,45 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonMatchingRegex() throws Exception {
+        X509AuthenticatorConfigModel config = createLoginIssuerDN_OU2CustomAttributeConfig();
+        config.setRegularExpression("INVALID=(.*?)(?:,|$)");
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        loginConfirmationPage.open();
+
+        events.expectLogin()
+                .user((String) null)
+                .session((String) null)
+                .error("invalid_user_credentials")
+                .removeDetail(Details.CONSENT)
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+    }
+
+    @Test
+    public void loginWithNonSupportedCertKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config",
+                createLoginSubjectEmailWithKeyUsage("dataEncipherment").getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        loginConfirmationPage.open();
+
+        Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
+                "Key Usage bit 'dataEncipherment' is not set."));
+    }
+
+    @Test
+    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+        login(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
     public void loginIgnoreX509IdentityContinueToFormLogin() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
@@ -97,7 +135,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.ignore();
         loginPage.login("test-user@localhost", "password");
@@ -263,7 +300,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.confirm();
 
@@ -431,4 +467,20 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
+
+
+    // KEYCLOAK-5466
+    @Test
+    public void loginWithCertificateAddedLater() throws Exception {
+        // Start with normal login form
+        loginConfirmationPage.open();
+        loginPage.assertCurrent();
+
+        Assert.assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
+        loginPage.assertCurrent();
+
+        // Now setup certificate and login with certificate in existing authenticationSession (Not 100% same scenario as KEYCLOAK-5466, but very similar)
+        loginAsUserFromCertSubjectEmail();
+    }
+
 }

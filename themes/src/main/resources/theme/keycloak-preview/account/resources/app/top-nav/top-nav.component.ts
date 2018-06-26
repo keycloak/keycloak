@@ -14,15 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, Input} from '@angular/core';
 import {TranslateUtil} from '../ngx-translate/translate.util';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import {ResponsivenessService} from "../responsiveness-service/responsiveness.service";
 import {Referrer} from "../page/referrer";
 
 declare const resourceUrl: string;
+declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
+declare const isInternationalizationEnabled: boolean;
+declare const availableLocales: Array<Object>;
 
 @Component({
     selector: 'app-top-nav',
@@ -30,12 +33,16 @@ declare const referrer_uri: string;
     styleUrls: ['./top-nav.component.css']
 })
 export class TopNavComponent implements OnInit {
+    @Input() showSideNav: String;
 
     public resourceUrl: string = resourceUrl;
+    public availableLocales: Array<Object> = availableLocales;
     
     private referrer: Referrer;
     
-    constructor(private keycloakService: KeycloakService, translateUtil: TranslateUtil, private respSvc: ResponsivenessService) {
+    constructor(private keycloakService: KeycloakService, 
+                translateUtil: TranslateUtil, 
+                private respSvc: ResponsivenessService) {
         this.referrer = new Referrer(translateUtil);
     }
     
@@ -47,7 +54,15 @@ export class TopNavComponent implements OnInit {
     }
 
     private logout() {
-        this.keycloakService.logout();
+        this.keycloakService.logout(baseUrl);
+    }
+    
+    private showLocales(): boolean {
+        return isInternationalizationEnabled && (this.availableLocales.length > 1); 
+    }
+    
+    private changeLocale(newLocale: string) {
+        this.keycloakService.login({kcLocale: newLocale });
     }
 
 }

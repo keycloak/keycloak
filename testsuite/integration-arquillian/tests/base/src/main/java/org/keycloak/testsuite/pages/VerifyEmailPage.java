@@ -38,7 +38,7 @@ public class VerifyEmailPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Email verification");
+        return PageUtils.getPageTitle(driver).equals("Email verification");
     }
 
     public void clickResendEmail() {

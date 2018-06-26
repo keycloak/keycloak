@@ -32,7 +32,6 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
-import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -47,7 +46,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
@@ -157,11 +155,6 @@ public class AddUser {
         user.setEnabled(true);
         user.setUsername(userName);
         user.setCredentials(new LinkedList<CredentialRepresentation>());
-
-        Map<String, Object> config = new HashMap<>();
-        if (iterations > 0) {
-            config.put("hashIterations", iterations);
-        }
 
         PasswordHashProviderFactory hashProviderFactory = getHashProviderFactory(DEFAULT_HASH_ALGORITH);
         PasswordHashProvider hashProvider = hashProviderFactory.create(null);

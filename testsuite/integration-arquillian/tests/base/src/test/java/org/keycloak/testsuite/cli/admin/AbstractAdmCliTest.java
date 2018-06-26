@@ -320,7 +320,8 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         exe = execute("delete clients/" + client.getId() + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
-        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+        int linecountOffset = loginMessage.equals("") ? 1 : 0; // if there is no login, then there is one less stdErrLinecount
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1 - linecountOffset);
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
@@ -331,9 +332,9 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         // subsequent delete should fail
         exe = execute("delete clients/" + client.getId() + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2 - linecountOffset);
         String resourceUri = serverUrl + "/admin/realms/test/clients/" + client.getId();
-        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(1 - linecountOffset));
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);

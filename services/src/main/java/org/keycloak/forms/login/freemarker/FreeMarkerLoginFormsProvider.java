@@ -39,12 +39,12 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
@@ -62,6 +62,8 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
 
+import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -71,11 +73,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected String accessCode;
     protected Response.Status status;
-    protected List<RoleModel> realmRolesRequested;
-    protected MultivaluedMap<String, RoleModel> resourceRolesRequested;
-    protected List<ProtocolMapperModel> protocolMappersRequested;
+    protected javax.ws.rs.core.MediaType contentType;
+    protected List<ClientScopeModel> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<String, String>();
-    protected String accessRequestMessage;
     protected URI actionUri;
     protected String execution;
 
@@ -132,7 +132,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
-                actionMessage = Messages.UPDATE_PASSWORD;
+                boolean isRequestedByAdmin = user.getRequiredActions().stream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
+                actionMessage = isRequestedByAdmin ? Messages.UPDATE_PASSWORD : Messages.RESET_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
@@ -152,11 +153,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
-
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         Theme theme;
         try {
             theme = getTheme();
@@ -176,9 +172,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         attributes.put("login", new LoginBean(formData));
 
+        if (status != null) {
+            attributes.put("statusCode", status.getStatusCode());
+        }
+
         switch (page) {
             case LOGIN_CONFIG_TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user));
+                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
                 break;
             case LOGIN_UPDATE_PROFILE:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -198,7 +198,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth",
-                        new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
+                        new OAuthGrantBean(accessCode, client, clientScopesRequested));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
@@ -206,20 +206,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
         }
 
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
 
     @Override
     public Response createForm(String form) {
-
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         Theme theme;
         try {
             theme = getTheme();
@@ -255,6 +246,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (client != null) {
             uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
         }
+        if (authenticationSession != null) {
+            uriBuilder.queryParam(Constants.TAB_ID, authenticationSession.getTabId());
+        }
         return uriBuilder;
     }
 
@@ -265,8 +259,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @throws IOException in case of Theme loading problem
      */
     protected Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+        return session.theme().getTheme(Theme.Type.LOGIN);
     }
 
     /**
@@ -320,7 +313,40 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         attributes.put("messagesPerField", messagesPerField);
     }
-    
+
+    @Override
+    public String getMessage(String message) {
+        Theme theme;
+        try {
+            theme = getTheme();
+        } catch (IOException e) {
+            logger.error("Failed to create theme", e);
+            throw new RuntimeException("Failed to create theme");
+        }
+
+        Locale locale = session.getContext().resolveLocale(user);
+        Properties messagesBundle = handleThemeResources(theme, locale);
+        FormMessage msg = new FormMessage(null, message);
+        return formatMessage(msg, messagesBundle, locale);
+    }
+
+    @Override
+    public String getMessage(String message, String... parameters) {
+        Theme theme;
+        try {
+            theme = getTheme();
+        } catch (IOException e) {
+            logger.error("Failed to create theme", e);
+            throw new RuntimeException("Failed to create theme");
+        }
+
+        Locale locale = session.getContext().resolveLocale(user);
+        Properties messagesBundle = handleThemeResources(theme, locale);
+        FormMessage msg = new FormMessage(message, parameters);
+        return formatMessage(msg, messagesBundle, locale);
+    }
+
+
     /**
      * Create common attributes used in all templates.
      * 
@@ -334,7 +360,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected void createCommonAttributes(Theme theme, Locale locale, Properties messagesBundle, UriBuilder baseUriBuilder, LoginFormsPages page) {
         URI baseUri = baseUriBuilder.build();
         if (accessCode != null) {
-            baseUriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+            baseUriBuilder.queryParam(LoginActionsService.SESSION_CODE, accessCode);
         }
         URI baseUriWithCodeAndClientId = baseUriBuilder.build();
 
@@ -375,6 +401,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     b.queryParam(Constants.EXECUTION, execution);
                 }
 
+                if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
+                    b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
+                }
+
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
@@ -394,7 +424,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
-            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
+            javax.ws.rs.core.MediaType mediaType = contentType == null ? MediaType.TEXT_HTML_UTF_8_TYPE : contentType;
+            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(mediaType).language(locale).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
@@ -462,10 +493,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createErrorPage() {
-        if (status == null) {
-            status = Response.Status.INTERNAL_SERVER_ERROR;
-        }
+    public Response createErrorPage(Response.Status status) {
+        this.status = status;
         return createResponse(LoginFormsPages.ERROR);
     }
 
@@ -584,17 +613,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
-            List<ProtocolMapperModel> protocolMappersRequested) {
-        this.realmRolesRequested = realmRolesRequested;
-        this.resourceRolesRequested = resourceRolesRequested;
-        this.protocolMappersRequested = protocolMappersRequested;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setAccessRequest(String accessRequestMessage) {
-        this.accessRequestMessage = accessRequestMessage;
+    public LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested) {
+        this.clientScopesRequested = clientScopesRequested;
         return this;
     }
 
@@ -609,6 +629,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.status = status;
         return this;
     }
+    @Override
+    public LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type) {
+        this.contentType = type;
+        return this;
+    }
+
+
+
 
     @Override
     public LoginFormsProvider setActionUri(URI actionUri) {

@@ -47,7 +47,18 @@
 
         <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
             <saml:SubjectConfirmationData NotOnOrAfter="2009-06-17T18:50:10.738Z"
-                                          Recipient="https://login.salesforce.com"/>
+                                          Recipient="https://login.salesforce.com">
+                <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                    <dsig:KeyValue>
+                        <dsig:RSAKeyValue>
+                            <dsig:Modulus>
+                                2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEik=
+                            </dsig:Modulus>
+                            <dsig:Exponent>AQAB</dsig:Exponent>
+                        </dsig:RSAKeyValue>
+                    </dsig:KeyValue>
+                </dsig:KeyInfo>
+            </saml:SubjectConfirmationData>
         </saml:SubjectConfirmation>
     </saml:Subject>
 
@@ -59,7 +70,7 @@
         </saml:AudienceRestriction>
     </saml:Conditions>
 
-    <saml:AuthnStatement AuthnInstant="2009-06-17T18:45:10.738Z">
+    <saml:AuthnStatement AuthnInstant="2009-06-17T18:45:10.738Z" NotOnOrAfter="2009-06-17T18:55:10.738Z">
         <saml:AuthnContext>
             <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified
             </saml:AuthnContextClassRef>

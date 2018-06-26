@@ -27,6 +27,7 @@ import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicat
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -68,6 +69,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getScopeByNameCacheKey(name, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByScopeCacheKey(id, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(id, serverId));
     }
 
     public void scopeRemoval(String id, String name, String serverId, Set<String> invalidations) {
@@ -77,8 +79,10 @@ public class StoreFactoryCacheManager extends CacheManager {
 
     public void resourceUpdated(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner, Set<String> invalidations) {
         invalidations.add(id);
-        invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, serverId));
+        invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
+        invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, null));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(id, serverId));
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
@@ -109,6 +113,11 @@ public class StoreFactoryCacheManager extends CacheManager {
         if (resources != null) {
             for (String resource : resources) {
                 invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId));
+                if (Objects.nonNull(scopes)) {
+                    for (String scope : scopes) {
+                        invalidations.add(StoreFactoryCacheSession.getPolicyByResourceScope(scope, resource, serverId));
+                    }
+                }
             }
         }
 
@@ -121,7 +130,18 @@ public class StoreFactoryCacheManager extends CacheManager {
         if (scopes != null) {
             for (String scope : scopes) {
                 invalidations.add(StoreFactoryCacheSession.getPolicyByScope(scope, serverId));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceScope(scope, null, serverId));
             }
+        }
+    }
+
+    public void permissionTicketUpdated(String id, String owner, String requester, String resource, String scope, String serverId, Set<String> invalidations) {
+        invalidations.add(id);
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByOwner(owner, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(resource, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, serverId));
+        if (scope != null) {
+            invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(scope, serverId));
         }
     }
 
@@ -129,5 +149,8 @@ public class StoreFactoryCacheManager extends CacheManager {
         policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 
+    public void permissionTicketRemoval(String id, String owner, String requester, String resource, String scope, String serverId, Set<String> invalidations) {
+        permissionTicketUpdated(id, owner, requester, resource, scope, serverId, invalidations);
+    }
 
 }

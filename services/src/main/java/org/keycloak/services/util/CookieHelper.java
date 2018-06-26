@@ -17,25 +17,28 @@
 
 package org.keycloak.services.util;
 
-import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.util.ServerCookie;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CookieHelper {
+
+    private static final Logger logger = Logger.getLogger(CookieHelper.class);
 
     /**
      * Set a response cookie.  This solely exists because JAX-RS 1.1 does not support setting HttpOnly cookies
@@ -58,10 +61,36 @@ public class CookieHelper {
     }
 
 
-    public static String getCookieValue(String name) {
+    public static Set<String> getCookieValue(String name) {
         HttpHeaders headers = ResteasyProviderFactory.getContextData(HttpHeaders.class);
+
+        Set<String> cookiesVal = new HashSet<>();
+
+        // check for cookies in the request headers
+        List<String> cookieHeader = headers.getRequestHeaders().get(HttpHeaders.COOKIE);
+        if (cookieHeader != null) {
+            logger.debugv("{1} cookie found in the request's header", name);
+            cookieHeader.stream().map(s -> parseCookie(s, name)).forEach(cookiesVal::addAll);
+        }
+
+        // get cookies from the cookie field
         Cookie cookie = headers.getCookies().get(name);
-        return cookie != null ? cookie.getValue() : null;
+        if (cookie != null) {
+            logger.debugv("{1} cookie found in the cookie's field", name);
+            cookiesVal.add(cookie.getValue());
+        }
+
+
+        return cookiesVal;
     }
 
+
+    public static Set<String> parseCookie(String cookieHeader, String name) {
+        String parts[] = cookieHeader.split("[;,]");
+
+        Set<String> cookies = Arrays.stream(parts).filter(part -> part.startsWith(name + "=")).map(part ->
+                part.substring(part.indexOf('=') + 1)).collect(Collectors.toSet());
+
+        return cookies;
+    }
 }

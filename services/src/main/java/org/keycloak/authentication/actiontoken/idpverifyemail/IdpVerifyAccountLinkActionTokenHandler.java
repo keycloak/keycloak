@@ -23,6 +23,7 @@ import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
 import org.keycloak.events.*;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,8 +31,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.AuthenticationSessionProvider;
+
 import java.util.Collections;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -75,9 +77,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         if (tokenContext.isAuthenticationSessionFresh()) {
-            token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
-            token.setAuthenticationSessionId(authSession.getId());
-            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+            token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
+
+            String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
+            token.setCompoundAuthenticationSessionId(authSessionEncodedId);
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                    authSession.getClient().getClientId(), authSession.getTabId());
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)
@@ -90,18 +95,20 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
 
-        if (token.getOriginalAuthenticationSessionId() != null) {
+        if (token.getOriginalCompoundAuthenticationSessionId() != null) {
             AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(realm, authSession, true);
 
-            AuthenticationSessionProvider authSessProvider = session.authenticationSessions();
-            authSession = authSessProvider.getAuthenticationSession(realm, token.getOriginalAuthenticationSessionId());
+            AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getOriginalCompoundAuthenticationSessionId());
+            ClientModel originalClient = realm.getClientById(compoundId.getClientUUID());
+            authSession = asm.getAuthenticationSessionByIdAndClient(realm, compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
             } else {
-                authSessProvider.updateNonlocalSessionAuthNotes(
-                  token.getAuthenticationSessionId(),
+
+                session.authenticationSessions().updateNonlocalSessionAuthNotes(
+                        compoundId,
                   Collections.singletonMap(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername())
                 );
             }
@@ -115,7 +122,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
 
-        return tokenContext.brokerFlow(null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
+        return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
 
 }

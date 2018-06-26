@@ -54,19 +54,6 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
     private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "rules", "js", "time", "aggregate", "scope", "resource"};
 
-    @Before
-    @Override
-    public void onBeforeAuthzTests() {
-        super.onBeforeAuthzTests();
-        enableAuthorizationServices();
-    }
-
-    @After
-    @Override
-    public void onAfterAuthzTests() {
-        super.onAfterAuthzTests();
-    }
-
     @Test
     public void testCreate() {
         PolicyRepresentation newPolicy = createTestingPolicy().toRepresentation();

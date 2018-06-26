@@ -25,7 +25,11 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.keycloak.services.ServicesLogger;
 
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,6 +96,52 @@ public abstract class UserIdentityExtractor {
         }
     }
 
+    /**
+     * Extracts the subject identifier from the subjectAltName extension.
+     */
+    static class SubjectAltNameExtractor extends UserIdentityExtractor {
+
+        private final int generalName;
+
+        /**
+         * Creates a new instance
+         *
+         * @param generalName an integer representing the general name. See {@link X509Certificate#getSubjectAlternativeNames()}
+         */
+        SubjectAltNameExtractor(int generalName) {
+            this.generalName = generalName;
+        }
+
+        @Override
+        public Object extractUserIdentity(X509Certificate[] certs) {
+            if (certs == null || certs.length == 0) {
+                throw new IllegalArgumentException();
+            }
+
+            try {
+                Collection<List<?>> subjectAlternativeNames = certs[0].getSubjectAlternativeNames();
+
+                if (subjectAlternativeNames == null) {
+                    return null;
+                }
+
+                Iterator<List<?>> iterator = subjectAlternativeNames.iterator();
+
+                while (iterator.hasNext()) {
+                    List<?> next = iterator.next();
+
+                    if (Integer.class.cast(next.get(0)) == generalName) {
+                        return next.get(1);
+                    }
+                }
+            } catch (CertificateParsingException cause) {
+                logger.errorf(cause, "Failed to obtain identity from subjectAltName extension");
+            }
+
+            return null;
+        }
+    }
+
     static class PatternMatcher extends UserIdentityExtractor {
         private final String _pattern;
         private final Function<X509Certificate[],String> _f;
@@ -141,6 +191,16 @@ public abstract class UserIdentityExtractor {
 
     public static UserIdentityExtractor getX500NameExtractor(ASN1ObjectIdentifier identifier, Function<X509Certificate[],X500Name> x500Name) {
         return new X500NameRDNExtractor(identifier, x500Name);
+    }
+
+    /**
+     * Obtains the subjectAltName given a <code>generalName</code>.
+     *
+     * @param generalName an integer representing the general name. See {@link X509Certificate#getSubjectAlternativeNames()}
+     * @return the value from the subjectAltName extension
+     */
+    public static SubjectAltNameExtractor getSubjectAltNameExtractor(int generalName) {
+        return new SubjectAltNameExtractor(generalName);
     }
 
     public static OrBuilder either(UserIdentityExtractor extractor) {

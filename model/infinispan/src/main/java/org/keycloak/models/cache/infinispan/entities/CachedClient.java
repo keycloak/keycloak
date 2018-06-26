@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -46,6 +47,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String registrationToken;
     protected String protocol;
     protected Map<String, String> attributes = new HashMap<String, String>();
+    protected Map<String, String> authFlowBindings = new HashMap<String, String>();
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean frontchannelLogout;
@@ -66,10 +68,8 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
-    protected String clientTemplate;
-    protected boolean useTemplateScope;
-    protected boolean useTemplateConfig;
-    protected boolean useTemplateMappers;
+    protected List<String> defaultClientScopesIds;
+    protected List<String> optionalClientScopesIds;
 
     public CachedClient(Long revision, RealmModel realm, ClientModel model) {
         super(revision, model.getId());
@@ -83,6 +83,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         enabled = model.isEnabled();
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
+        authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
         notBefore = model.getNotBefore();
         frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
@@ -109,12 +110,15 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
-        if (model.getClientTemplate() != null) {
-            clientTemplate = model.getClientTemplate().getId();
+
+        defaultClientScopesIds = new LinkedList<>();
+        for (ClientScopeModel clientScope : model.getClientScopes(true, false).values()) {
+            defaultClientScopesIds.add(clientScope.getId());
         }
-        useTemplateConfig = model.useTemplateConfig();
-        useTemplateMappers = model.useTemplateMappers();
-        useTemplateScope = model.useTemplateScope();
+        optionalClientScopesIds = new LinkedList<>();
+        for (ClientScopeModel clientScope : model.getClientScopes(false, false).values()) {
+            optionalClientScopesIds.add(clientScope.getId());
+        }
     }
 
     public String getClientId() {
@@ -241,19 +245,15 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return registeredNodes;
     }
 
-    public String getClientTemplate() {
-        return clientTemplate;
+    public List<String> getDefaultClientScopesIds() {
+        return defaultClientScopesIds;
     }
 
-    public boolean isUseTemplateScope() {
-        return useTemplateScope;
+    public List<String> getOptionalClientScopesIds() {
+        return optionalClientScopesIds;
     }
 
-    public boolean isUseTemplateConfig() {
-        return useTemplateConfig;
-    }
-
-    public boolean isUseTemplateMappers() {
-        return useTemplateMappers;
+    public Map<String, String> getAuthFlowBindings() {
+        return authFlowBindings;
     }
 }

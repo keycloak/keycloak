@@ -102,7 +102,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             Response challengeResponse = context.form()
                     .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
-                    .createErrorPage();
+                    .createErrorPage(Response.Status.CONFLICT);
             context.challenge(challengeResponse);
 
             if (context.getExecution().isRequired()) {

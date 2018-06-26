@@ -75,12 +75,32 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
 
     @Test
-    public void nonceMatches() {
+    public void nonceAndSessionStateMatches() {
         EventRepresentation loginEvent = loginUser("abcdef123456");
-        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idToken : idTokens) {
             Assert.assertEquals("abcdef123456", idToken.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
+        }
+    }
+
+
+    @Test
+    public void initialSessionStateUsedInRedirect() {
+        EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idToken : idTokens) {
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
 
@@ -169,7 +189,27 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
-    protected abstract List<IDToken> retrieveIDTokens(EventRepresentation loginEvent);
+    protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
+        if (nonce != null) {
+            oauth.nonce(nonce);
+        }
+
+        if (redirectUri != null) {
+            oauth.redirectUri(redirectUri);
+        }
+
+        driver.navigate().to(oauth.getLoginFormUrl());
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    protected abstract boolean isFragment();
+
+    protected abstract List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent);
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");

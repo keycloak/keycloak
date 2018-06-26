@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -36,7 +36,7 @@
             org.keycloak.adapters.osgi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.ops4j.pax.web.*;version="[3.0,5)",
+            org.ops4j.pax.web.*;version="[3.0,8)",
             javax.servlet.*;version="[2.5,4)";resolution:=optional,
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
@@ -79,11 +79,6 @@
         </dependency>
         <dependency>
             <groupId>org.ops4j.pax.web</groupId>
-            <artifactId>pax-web-runtime</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.web</groupId>
             <artifactId>pax-web-api</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -98,6 +93,12 @@
             <artifactId>cxf-rt-transports-http</artifactId>
             <version>${cxf.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

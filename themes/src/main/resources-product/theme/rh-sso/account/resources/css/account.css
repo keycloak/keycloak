@@ -55,6 +55,10 @@ header .navbar {
     padding: 0 30px;
 }
 
+.margin-bottom {
+    margin-bottom: 10px;
+}
+
 /* Sidebar */
 
 .bs-sidebar {
@@ -264,4 +268,12 @@ hr + .form-horizontal {
 }
 .kc-dropdown:hover ul{
     display:block;
+}
+
+
+#kc-totp-secret-key {
+    border: 1px solid #eee;
+    font-size: 16px;
+    padding: 10px;
+    margin: 50px 0;
 }

@@ -21,6 +21,7 @@ package org.keycloak.services.messages;
  */
 public class Messages {
 
+    public static final String DISPLAY_UNSUPPORTED = "displayUnsupported";
     public static final String LOGIN_TIMEOUT = "loginTimeout";
 
     public static final String INVALID_USER = "invalidUserMessage";
@@ -76,6 +77,8 @@ public class Messages {
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
     public static final String UPDATE_PROFILE = "updateProfileMessage";
+
+    public static final String RESET_PASSWORD = "resetPasswordMessage";
 
     public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
@@ -217,4 +220,14 @@ public class Messages {
     public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";
 
     public static final String BROKER_LINKING_SESSION_EXPIRED = "brokerLinkingSessionExpired";
+
+    public static final String PAGE_NOT_FOUND = "pageNotFound";
+
+    public static final String INTERNAL_SERVER_ERROR = "internalServerError";
+
+    public static final String DELEGATION_COMPLETE = "delegationCompleteMessage";
+    public static final String DELEGATION_COMPLETE_HEADER = "delegationCompleteHeader";
+    public static final String DELEGATION_FAILED = "delegationFailedMessage";
+    public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
+
 }

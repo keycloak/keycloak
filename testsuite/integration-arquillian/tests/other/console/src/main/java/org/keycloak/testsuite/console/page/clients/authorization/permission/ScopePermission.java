@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 
@@ -38,6 +38,14 @@ public class ScopePermission implements PolicyTypeUI {
     }
 
     public void update(ScopePermissionRepresentation expected) {
-        form().populate(expected);
+        update(expected, true);
+    }
+
+    public void update(ScopePermissionRepresentation expected, boolean save) {
+        form().populate(expected, save);
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        form().createPolicy(expected);
     }
 }

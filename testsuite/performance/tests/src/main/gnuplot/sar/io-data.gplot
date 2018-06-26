@@ -1,0 +1,5 @@
+set title "IO Data - Blocks Read/Written Per Second"
+plot for [i=7:8:1] \
+    datafile using 3:i \
+    title columnheader(i) \
+    with lines

@@ -24,6 +24,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated // Use ClientScopeRepresentation instead
 public class ClientTemplateRepresentation {
     /**
      * Use this value in ClientRepresentation.setClientTemplate when you want to clear this value
@@ -167,3 +168,4 @@ public class ClientTemplateRepresentation {
         this.attributes = attributes;
     }
 }
+

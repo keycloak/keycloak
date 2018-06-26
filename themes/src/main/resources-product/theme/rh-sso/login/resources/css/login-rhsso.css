@@ -1,0 +1,22 @@
+.login-pf body {
+  background: url("../node_modules/rcue/dist/img/bg-login.png") no-repeat left top fixed;
+  background-size: auto;
+}
+
+@media (max-width: 767px) {
+    .login-pf body {
+      background-image: none;
+    }
+    .login-pf {
+      background-color: white;
+    }
+}
+@media (min-width: 767px) {
+  .login-pf {
+    background-attachment: fixed;
+  }
+}
+#kc-header-wrapper sup {
+  font-size: 35%;
+  top: -1.4em;
+}

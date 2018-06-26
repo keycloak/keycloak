@@ -115,6 +115,62 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonSupportedCertKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithKeyUsage("dataEncipherment").getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("Key Usage bit 'dataEncipherment' is not set."));
+        events.clear();
+    }
+
+    @Test
+    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithExtendedKeyUsage("serverAuth").getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginWithNonMatchingRegex() throws Exception {
+        X509AuthenticatorConfigModel config = createLoginIssuerDN_OU2CustomAttributeConfig();
+        config.setRegularExpression("INVALID=(.*?)(?:,|$)");
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+
+        events.expectLogin()
+                .user((String) null)
+                .session((String) null)
+                .error("invalid_user_credentials")
+                .client("resource-owner")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.CONSENT)
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+    }
+
+    @Test
     public void loginFailedDisabledUser() throws Exception {
         setUserEnabled("test-user@localhost", false);
 
@@ -144,6 +200,28 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         } finally {
             setUserEnabled("test-user@localhost", true);
         }
+    }
+
+    @Test
+    public void loginCertificateRevoked() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CLIENT_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("Certificate has been revoked, certificate's subject:"));
+
     }
 
     private void loginForceTemporaryAccountLock() throws Exception {

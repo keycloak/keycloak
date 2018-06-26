@@ -1,0 +1,29 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "policy-enforcer": {
+    "paths": [
+      {
+        "path": "/api/bank/account/{id}/withdrawal",
+        "methods": [
+          {
+            "method": "POST",
+            "scopes": [
+              "withdrawal"
+            ]
+          }
+        ],
+        "claim-information-point": {
+          "claims": {
+            "withdrawal.amount": "{request.parameter['withdrawal.amount']}"
+          }
+        }
+      }
+    ]
+  }
+}

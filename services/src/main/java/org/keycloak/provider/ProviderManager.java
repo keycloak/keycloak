@@ -21,11 +21,13 @@ import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,7 +40,7 @@ public class ProviderManager {
     private MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> cache = new MultivaluedHashMap<>();
 
 
-    public ProviderManager(ClassLoader baseClassLoader, String... resources) {
+    public ProviderManager(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String... resources) {
         List<ProviderLoaderFactory> factories = new LinkedList<ProviderLoaderFactory>();
         for (ProviderLoaderFactory f : ServiceLoader.load(ProviderLoaderFactory.class, getClass().getClassLoader())) {
             factories.add(f);
@@ -46,7 +48,7 @@ public class ProviderManager {
 
         logger.debugv("Provider loaders {0}", factories);
 
-        loaders.add(new DefaultProviderLoader(baseClassLoader));
+        loaders.add(new DefaultProviderLoader(info, baseClassLoader));
 
         if (resources != null) {
             for (String r : resources) {
@@ -56,7 +58,8 @@ public class ProviderManager {
                 boolean found = false;
                 for (ProviderLoaderFactory f : factories) {
                     if (f.supports(type)) {
-                        loaders.add(f.create(baseClassLoader, resource));
+                        KeycloakDeploymentInfo resourceInfo = KeycloakDeploymentInfo.create().services();
+                        loaders.add(f.create(resourceInfo, baseClassLoader, resource));
                         found = true;
                         break;
                     }
@@ -67,11 +70,6 @@ public class ProviderManager {
             }
         }
     }
-
-    public ProviderManager(ClassLoader baseClassLoader) {
-        loaders.add(new DefaultProviderLoader(baseClassLoader));
-    }
-
     public synchronized List<Spi> loadSpis() {
         // Use a map to prevent duplicates, since the loaders may have overlapping classpaths.
         Map<String, Spi> spiMap = new HashMap<>();
@@ -88,15 +86,16 @@ public class ProviderManager {
 
     public synchronized List<ProviderFactory> load(Spi spi) {
         if (!cache.containsKey(spi.getProviderClass())) {
-            IdentityHashMap factoryClasses = new IdentityHashMap();
+
+            Set<String> loaded = new HashSet<>();
             for (ProviderLoader loader : loaders) {
                 List<ProviderFactory> f = loader.load(spi);
                 if (f != null) {
                     for (ProviderFactory pf: f) {
-                        // make sure there are no duplicates
-                        if (!factoryClasses.containsKey(pf.getClass())) {
+                        String uniqueId = spi.getName() + "-" + pf.getId();
+                        if (!loaded.contains(uniqueId)) {
                             cache.add(spi.getProviderClass(), pf);
-                            factoryClasses.put(pf.getClass(), pf);
+                            loaded.add(uniqueId);
                         }
                     }
                 }

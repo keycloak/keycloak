@@ -30,7 +30,6 @@ import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Document;
 
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
@@ -67,32 +66,38 @@ public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBu
         return this;
     }
 
+    public StatusResponseType buildModel() throws ConfigurationException {
+        StatusResponseType statusResponse = new StatusResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
+
+        // Status
+        StatusType statusType = new StatusType();
+        StatusCodeType statusCodeType = new StatusCodeType();
+        statusCodeType.setValue(JBossSAMLURIConstants.STATUS_SUCCESS.getUri());
+        statusType.setStatusCode(statusCodeType);
+
+        statusResponse.setStatus(statusType);
+        statusResponse.setInResponseTo(logoutRequestID);
+        NameIDType issuer = new NameIDType();
+        issuer.setValue(this.issuer);
+
+        statusResponse.setIssuer(issuer);
+        statusResponse.setDestination(destination);
+
+        if (! this.extensions.isEmpty()) {
+            ExtensionsType extensionsType = new ExtensionsType();
+            for (NodeGenerator extension : this.extensions) {
+                extensionsType.addExtension(extension);
+            }
+            statusResponse.setExtensions(extensionsType);
+        }
+
+        return statusResponse;
+    }
+
     public Document buildDocument() throws ProcessingException {
         Document samlResponse = null;
         try {
-            StatusResponseType statusResponse = new StatusResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
-
-            // Status
-            StatusType statusType = new StatusType();
-            StatusCodeType statusCodeType = new StatusCodeType();
-            statusCodeType.setValue(URI.create(JBossSAMLURIConstants.STATUS_SUCCESS.get()));
-            statusType.setStatusCode(statusCodeType);
-
-            statusResponse.setStatus(statusType);
-            statusResponse.setInResponseTo(logoutRequestID);
-            NameIDType issuer = new NameIDType();
-            issuer.setValue(this.issuer);
-
-            statusResponse.setIssuer(issuer);
-            statusResponse.setDestination(destination);
-
-            if (! this.extensions.isEmpty()) {
-                ExtensionsType extensionsType = new ExtensionsType();
-                for (NodeGenerator extension : this.extensions) {
-                    extensionsType.addExtension(extension);
-                }
-                statusResponse.setExtensions(extensionsType);
-            }
+            StatusResponseType statusResponse = buildModel();
 
             SAML2Response saml2Response = new SAML2Response();
             samlResponse = saml2Response.convert(statusResponse);

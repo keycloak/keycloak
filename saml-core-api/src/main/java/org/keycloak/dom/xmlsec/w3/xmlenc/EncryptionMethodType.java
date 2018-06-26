@@ -56,12 +56,25 @@ public class EncryptionMethodType {
             OAEPparams = oAEPparams;
         }
 
+        public EncryptionMethod() {
+            this.keySize = null;
+            this.OAEPparams = null;
+        }
+
         public BigInteger getKeySize() {
             return keySize;
         }
 
         public byte[] getOAEPparams() {
             return OAEPparams;
+        }
+
+        public void setKeySize(BigInteger keySize) {
+            this.keySize = keySize;
+        }
+
+        public void setOAEPparams(byte[] OAEPparams) {
+            this.OAEPparams = OAEPparams;
         }
     }
 

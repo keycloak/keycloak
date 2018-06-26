@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -109,13 +110,15 @@ public class GroupTreeResolver {
         }
 
         for (Group group : groups) {
-            for (String child : group.getChildrenNames()) {
+            Iterator<String> iterator = group.getChildrenNames().iterator();
+            while (iterator.hasNext()) {
+                String child = iterator.next();
                 List<String> list = result.get(child);
                 if (list != null) {
                     list.add(group.getGroupName());
-                } else if(ignoreMissingGroups){
+                } else if (ignoreMissingGroups) {
                     // Need to remove the missing group
-                    group.getChildrenNames().remove(child);
+                    iterator.remove();
                     logger.debug("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists. Ignoring.");
                 } else {
                     throw new GroupTreeResolveException("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists");

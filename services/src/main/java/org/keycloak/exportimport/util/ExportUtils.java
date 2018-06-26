@@ -46,7 +46,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -57,7 +57,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -68,6 +68,7 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -84,30 +85,40 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  */
 public class ExportUtils {
 
-    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
+    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers, boolean internal) {
         ExportOptions opts = new ExportOptions(false, true, true);
         if (includeUsers) {
             opts.setUsersIncluded(true);
         }
-        return exportRealm(session, realm, opts);
+        return exportRealm(session, realm, opts, internal);
     }
 
-    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
+    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options, boolean internal) {
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, internal);
         ModelToRepresentation.exportAuthenticationFlows(realm, rep);
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
         // Project/product version
         rep.setKeycloakVersion(Version.VERSION);
 
-        // Client Templates
-        List<ClientTemplateModel> templates = realm.getClientTemplates();
-        List<ClientTemplateRepresentation> templateReps = new ArrayList<>();
-        for (ClientTemplateModel app : templates) {
-            ClientTemplateRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
-            templateReps.add(clientRep);
+        // Client Scopes
+        List<ClientScopeModel> clientScopeModels = realm.getClientScopes();
+        List<ClientScopeRepresentation> clientScopesReps = new ArrayList<>();
+        for (ClientScopeModel app : clientScopeModels) {
+            ClientScopeRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
+            clientScopesReps.add(clientRep);
         }
-        rep.setClientTemplates(templateReps);
+        rep.setClientScopes(clientScopesReps);
+
+        List<String> defaultClientScopeNames = realm.getDefaultClientScopes(true).stream().map((ClientScopeModel clientScope) -> {
+            return clientScope.getName();
+        }).collect(Collectors.toList());
+        rep.setDefaultDefaultClientScopes(defaultClientScopeNames);
+
+        List<String> optionalClientScopeNames = realm.getDefaultClientScopes(false).stream().map((ClientScopeModel clientScope) -> {
+            return clientScope.getName();
+        }).collect(Collectors.toList());
+        rep.setDefaultOptionalClientScopes(optionalClientScopeNames);
 
         // Clients
         List<ClientModel> clients = Collections.emptyList();
@@ -195,14 +206,14 @@ public class ExportUtils {
             }
         }
 
-        // Scopes of client templates
-        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-            Set<RoleModel> clientScopes = clientTemplate.getScopeMappings();
+        // Scopes of client scopes
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            Set<RoleModel> clientScopes = clientScope.getScopeMappings();
             ScopeMappingRepresentation scopeMappingRep = null;
             for (RoleModel scope : clientScopes) {
                 if (scope.getContainer() instanceof RealmModel) {
                     if (scopeMappingRep == null) {
-                        scopeMappingRep = rep.clientTemplateScopeMapping(clientTemplate.getName());
+                        scopeMappingRep = rep.clientScopeScopeMapping(clientScope.getName());
                     }
                     scopeMappingRep.role(scope.getName());
                 } else {
@@ -216,14 +227,14 @@ public class ExportUtils {
 
                     ScopeMappingRepresentation currentClientTemplateScope = null;
                     for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
-                        if (clientTemplate.getName().equals(scopeMapping.getClientTemplate())) {
+                        if (clientScope.getName().equals(scopeMapping.getClientScope())) {
                             currentClientTemplateScope = scopeMapping;
                             break;
                         }
                     }
                     if (currentClientTemplateScope == null) {
                         currentClientTemplateScope = new ScopeMappingRepresentation();
-                        currentClientTemplateScope.setClientTemplate(clientTemplate.getName());
+                        currentClientTemplateScope.setClientScope(clientScope.getName());
                         currentAppScopes.add(currentClientTemplateScope);
                     }
                     currentClientTemplateScope.role(scope.getName());
@@ -315,11 +326,10 @@ public class ExportUtils {
                     ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
                     if (rep.getOwner().getId().equals(settingsModel.getId())) {
-                        rep.setOwner(null);
+                        rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
                         rep.getOwner().setId(null);
                     }
-                    rep.setId(null);
                     rep.getScopes().forEach(scopeRepresentation -> {
                         scopeRepresentation.setId(null);
                         scopeRepresentation.setIconUri(null);
@@ -334,10 +344,10 @@ public class ExportUtils {
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
         policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
-                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope"))
+                .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
         policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
-                .stream().filter(policy -> policy.getType().equals("resource") || policy.getType().equals("scope"))
+                .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
 
         representation.setPolicies(policies);
@@ -345,7 +355,6 @@ public class ExportUtils {
         List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
             ScopeRepresentation rep = toRepresentation(scope);
 
-            rep.setId(null);
             rep.setPolicies(null);
             rep.setResources(null);
 
@@ -360,8 +369,6 @@ public class ExportUtils {
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
         try {
             PolicyRepresentation rep = toRepresentation(policy, authorizationProvider, true, true);
-
-            rep.setId(null);
 
             Map<String, String> config = new HashMap<>(rep.getConfig());
 

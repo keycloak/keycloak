@@ -53,9 +53,19 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource create(String name, ResourceServer resourceServer, String owner) {
+        return create(null, name, resourceServer, owner);
+    }
+
+    @Override
+    public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
         ResourceEntity entity = new ResourceEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
+        if (id == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(id);
+        }
+
         entity.setName(name);
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
         entity.setOwner(owner);
@@ -88,18 +98,31 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByOwner", String.class);
+        String queryName = "findResourceIdByOwner";
+
+        if (resourceServerId == null) {
+            queryName = "findAnyResourceIdByOwner";
+        }
+
+        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
-        query.setParameter("serverId", resourceServerId);
+
+        if (resourceServerId != null) {
+            query.setParameter("serverId", resourceServerId);
+        }
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -118,7 +141,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -135,7 +162,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -149,13 +180,23 @@ public class JPAResourceStore implements ResourceStore {
         querybuilder.select(root.get("id"));
         List<Predicate> predicates = new ArrayList();
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        if (resourceServerId != null) {
+            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        }
 
         attributes.forEach((name, value) -> {
             if ("id".equals(name)) {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
+            } else if ("ownerManagedAccess".equals(name)) {
+                predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
+            } else if ("uri".equals(name)) {
+                predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+            } else if ("uri_not_null".equals(name)) {
+                predicates.add(builder.isNotNull(root.get("uri")));
+            } else if ("owner".equals(name)) {
+                predicates.add(root.get(name).in(value));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }
@@ -177,7 +218,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -196,7 +241,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;
@@ -204,11 +253,17 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource findByName(String name, String resourceServerId) {
+        return findByName(name, resourceServerId, resourceServerId);
+    }
+
+    @Override
+    public Resource findByName(String name, String ownerId, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByName", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
+        query.setParameter("ownerId", ownerId);
 
         try {
             String id = query.getSingleResult();
@@ -224,6 +279,7 @@ public class JPAResourceStore implements ResourceStore {
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
+        query.setParameter("ownerId", resourceServerId);
         query.setParameter("serverId", resourceServerId);
 
         List<String> result = query.getResultList();
@@ -231,7 +287,11 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            list.add(resourceStore.findById(id, resourceServerId));
+            Resource resource = resourceStore.findById(id, resourceServerId);
+
+            if (resource != null) {
+                list.add(resource);
+            }
         }
 
         return list;

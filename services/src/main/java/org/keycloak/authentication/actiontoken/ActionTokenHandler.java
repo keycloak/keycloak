@@ -22,6 +22,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.Response;
 
@@ -61,11 +62,14 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
     }
 
     /**
-     * Returns an authentication session ID requested from within the given token
+     * Returns a compound authentication session ID requested from within the given token that the handler should attempt to join.
      * @param token Token. Can be {@code null}
-     * @return authentication session ID
+     * @param tokenContext
+     * @param currentAuthSession Authentication session that is currently in progress, {@code null} if no authentication session is not set
+     * @see AuthenticationSessionCompoundId
+     * @return Authentication session ID (can be {@code null} if the token does not contain authentication session ID)
      */
-    String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext);
+    String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext, AuthenticationSessionModel currentAuthSession);
 
     /**
      * Returns a event type logged with {@link EventBuilder} class.

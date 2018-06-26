@@ -1,0 +1,79 @@
+#version: '3'
+version: '2.2'
+
+networks:
+    monitoring:
+        ipam:
+            config:
+            - subnet: 10.0.5.0/24
+            
+services:
+    
+    monitoring_influxdb:
+        image: influxdb
+        cpuset: ${MONITORING_CPUSET:-0}
+        volumes:
+        - influx:/var/lib/influxdb
+        networks:
+            - monitoring
+        ports:
+        - "8086:8086"
+#        deploy:
+#            replicas: 1
+#            placement:
+#                constraints:
+#                - node.role == manager
+
+    monitoring_cadvisor:
+        build: monitoring/cadvisor
+        image: monitoring_cadvisor
+        cpuset: ${MONITORING_CPUSET:-0}
+        hostname: '{{.Node.ID}}'
+        volumes:
+        - /:/rootfs:ro
+        - /var/run:/var/run:rw
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        networks:
+            - monitoring
+        environment:
+            INFLUX_HOST: monitoring_influxdb
+            INFLUX_DATABASE: cadvisor
+        privileged: true
+        depends_on:
+        - monitoring_influxdb
+        command: --storage_driver_buffer_duration="5s"
+        ports:
+        - "8087:8080"
+#        deploy:
+#            mode: global
+
+  
+    monitoring_grafana:
+        build: monitoring/grafana
+        image: monitoring_grafana
+        cpuset: ${MONITORING_CPUSET:-0}
+        depends_on:
+        - monitoring_influxdb
+        volumes:
+        - grafana:/var/lib/grafana
+        networks:
+            - monitoring
+        environment:
+            INFLUX_DATASOURCE_NAME: influxdb_cadvisor
+            INFLUX_HOST: monitoring_influxdb
+            INFLUX_DATABASE: cadvisor
+        ports:
+        - "3000:3000"
+#        deploy:
+#            replicas: 1
+#            placement:
+#                constraints:
+#                - node.role == manager
+
+
+volumes:
+    influx:
+        driver: local
+    grafana:
+        driver: local

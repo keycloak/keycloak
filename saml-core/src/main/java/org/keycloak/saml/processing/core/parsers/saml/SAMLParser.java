@@ -16,113 +16,116 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAttributeQueryParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloRequestParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResolveParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAuthNRequestParser;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntitiesDescriptorParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import org.keycloak.saml.common.parsers.StaxParser;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAuthnStatementParser;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLEncryptedAssertionParser;
+import java.io.InputStream;
 
 /**
  * Parse SAML payload
  *
- * @author Anil.Saldhana@redhat.com
  * @since Oct 12, 2010
  */
 public class SAMLParser extends AbstractParser {
 
+    private static final SAML11ResponseParser SAML_11_RESPONSE_PARSER = new SAML11ResponseParser();
+    private static final SAML11RequestParser SAML_11_REQUEST_PARSER = new SAML11RequestParser();
+
+    private static final QName SAML_11_ASSERTION = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.ASSERTION.get());
+    private static final QName SAML_11_ENCRYPTED_ASSERTION = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.ENCRYPTED_ASSERTION.get());
+    private static final QName SAML_11_RESPONSE = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.RESPONSE__PROTOCOL.get());
+    private static final QName SAML_11_REQUEST = new QName(SAML11Constants.ASSERTION_11_NSURI, JBossSAMLConstants.REQUEST.get());
+
+    // Since we have to support JDK 7, no lambdas are available
+    private interface ParserFactory {
+        public StaxParser create();
+    }
+    private static final Map<QName, ParserFactory> PARSERS = new HashMap<QName, ParserFactory>();
+
+    static {
+        PARSERS.put(SAML_11_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
+        PARSERS.put(SAML_11_ENCRYPTED_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
+        PARSERS.put(SAML_11_RESPONSE, new ParserFactory() { @Override public StaxParser create() { return SAML_11_RESPONSE_PARSER; }});
+        PARSERS.put(SAML_11_REQUEST, new ParserFactory() { @Override public StaxParser create() { return SAML_11_REQUEST_PARSER; }});
+
+        PARSERS.put(SAMLProtocolQNames.AUTHN_REQUEST.getQName(),      new ParserFactory() { @Override public StaxParser create() { return SAMLAuthNRequestParser.getInstance(); }});
+        PARSERS.put(SAMLProtocolQNames.RESPONSE.getQName(),           new ParserFactory() { @Override public StaxParser create() { return SAMLResponseParser.getInstance(); }});
+        PARSERS.put(SAMLProtocolQNames.LOGOUT_REQUEST.getQName(),     new ParserFactory() { @Override public StaxParser create() { return SAMLSloRequestParser.getInstance(); }});
+        PARSERS.put(SAMLProtocolQNames.LOGOUT_RESPONSE.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLSloResponseParser.getInstance(); }});
+
+        PARSERS.put(SAMLProtocolQNames.ARTIFACT_RESOLVE.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResolveParser.getInstance(); }});
+        PARSERS.put(SAMLProtocolQNames.ARTIFACT_RESPONSE.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResponseParser.getInstance(); }});
+
+        PARSERS.put(SAMLProtocolQNames.ASSERTION.getQName(),          new ParserFactory() { @Override public StaxParser create() { return SAMLAssertionParser.getInstance(); }});
+        PARSERS.put(SAMLProtocolQNames.ENCRYPTED_ASSERTION.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEncryptedAssertionParser.getInstance(); }});
+
+        PARSERS.put(SAMLAssertionQNames.AUTHN_STATEMENT.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLAuthnStatementParser.getInstance(); }});
+
+        PARSERS.put(SAMLMetadataQNames.ENTITY_DESCRIPTOR.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLEntityDescriptorParser.getInstance(); }});
+        PARSERS.put(SAMLMetadataQNames.ENTITIES_DESCRIPTOR.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEntitiesDescriptorParser.getInstance(); }});
+
+        PARSERS.put(SAMLProtocolQNames.ATTRIBUTE_QUERY.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLAttributeQueryParser.getInstance(); }});
+    }
+
+    private static final SAMLParser INSTANCE = new SAMLParser();
+
+    public static SAMLParser getInstance() {
+        return INSTANCE;
+    }
+
+    protected SAMLParser() {
+    }
+
     /**
      * @see {@link org.keycloak.saml.common.parsers.ParserNamespaceSupport#parse(XMLEventReader)}
      */
+    @Override
     public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
 
             if (xmlEvent instanceof StartElement) {
                 StartElement startElement = (StartElement) xmlEvent;
-                QName startElementName = startElement.getName();
-                String nsURI = startElementName.getNamespaceURI();
+                final QName name = startElement.getName();
 
-                String localPart = startElementName.getLocalPart();
+                ParserFactory pf = PARSERS.get(name);
+                if (pf == null) {
+                    throw logger.parserException(new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + name + "::location="
+                            + startElement.getLocation()));
+                }
 
-                String elementName = StaxParserUtil.getStartElementName(startElement);
-
-                if (elementName.equalsIgnoreCase(JBossSAMLConstants.ASSERTION.get())
-                        || elementName.equals(JBossSAMLConstants.ENCRYPTED_ASSERTION.get())) {
-                    if (nsURI.equals(SAML11Constants.ASSERTION_11_NSURI)) {
-                        SAML11AssertionParser saml11AssertionParser = new SAML11AssertionParser();
-                        return saml11AssertionParser.parse(xmlEventReader);
-                    }
-                    SAMLAssertionParser assertionParser = new SAMLAssertionParser();
-                    return assertionParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.AUTHN_REQUEST.get().equals(startElementName.getLocalPart())) {
-                    SAMLAuthNRequestParser authNRequestParser = new SAMLAuthNRequestParser();
-                    return authNRequestParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.LOGOUT_REQUEST.get().equals(startElementName.getLocalPart())) {
-                    SAMLSloRequestParser sloParser = new SAMLSloRequestParser();
-                    return sloParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.LOGOUT_RESPONSE.get().equals(startElementName.getLocalPart())) {
-                    SAMLSloResponseParser sloParser = new SAMLSloResponseParser();
-                    return sloParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.RESPONSE.get().equals(startElementName.getLocalPart())) {
-                    SAMLResponseParser responseParser = new SAMLResponseParser();
-                    return responseParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.REQUEST_ABSTRACT.get().equals(startElementName.getLocalPart())) {
-                    String xsiTypeValue = StaxParserUtil.getXSITypeValue(startElement);
-                    throw new RuntimeException(ErrorCodes.UNKNOWN_XSI + xsiTypeValue);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.ARTIFACT_RESOLVE.get().equals(startElementName.getLocalPart())) {
-                    SAMLArtifactResolveParser artifactResolverParser = new SAMLArtifactResolveParser();
-                    return artifactResolverParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.ARTIFACT_RESPONSE.get().equals(startElementName.getLocalPart())) {
-                    SAMLArtifactResponseParser responseParser = new SAMLArtifactResponseParser();
-                    return responseParser.parse(xmlEventReader);
-                } else if (JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(nsURI)
-                        && JBossSAMLConstants.ATTRIBUTE_QUERY.get().equals(startElementName.getLocalPart())) {
-                    SAMLAttributeQueryParser responseParser = new SAMLAttributeQueryParser();
-                    return responseParser.parse(xmlEventReader);
-                } else if (JBossSAMLConstants.ENTITY_DESCRIPTOR.get().equals(localPart)) {
-                    SAMLEntityDescriptorParser entityDescriptorParser = new SAMLEntityDescriptorParser();
-                    return entityDescriptorParser.parse(xmlEventReader);
-                } else if (JBossSAMLConstants.ENTITIES_DESCRIPTOR.get().equals(localPart)) {
-                    SAMLEntitiesDescriptorParser entityDescriptorParser = new SAMLEntitiesDescriptorParser();
-                    return entityDescriptorParser.parse(xmlEventReader);
-                } else if (SAML11Constants.PROTOCOL_11_NSURI.equals(nsURI)
-                        && JBossSAMLConstants.RESPONSE.get().equals(startElementName.getLocalPart())) {
-                    SAML11ResponseParser responseParser = new SAML11ResponseParser();
-                    return responseParser.parse(xmlEventReader);
-                } else if (SAML11Constants.PROTOCOL_11_NSURI.equals(nsURI)
-                        && SAML11Constants.REQUEST.equals(startElementName.getLocalPart())) {
-                    SAML11RequestParser reqParser = new SAML11RequestParser();
-                    return reqParser.parse(xmlEventReader);
-                } else
-                    throw new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + elementName + "::location="
-                            + startElement.getLocation());
-            } else {
-                StaxParserUtil.getNextEvent(xmlEventReader);
+                return pf.create().parse(xmlEventReader);
             }
-        }
-        throw new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed");
-    }
 
-    /**
-     * @see {@link org.keycloak.saml.common.parsers.ParserNamespaceSupport#supports(QName)}
-     */
-    public boolean supports(QName qname) {
-        return JBossSAMLURIConstants.ASSERTION_NSURI.get().equals(qname.getNamespaceURI());
+            StaxParserUtil.getNextEvent(xmlEventReader);
+        }
+
+        throw new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed");
     }
 }

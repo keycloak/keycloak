@@ -74,7 +74,7 @@ public class ParseUtil {
     }
 
     public static <T> CmdStdinContext<JsonNode> mergeAttributes(CmdStdinContext<JsonNode> ctx, ObjectNode newObject, List<AttributeOperation> attrs) {
-        String content = ctx.getContent();
+
         JsonNode node = ctx.getResult();
         if (node != null && !node.isObject()) {
             throw new RuntimeException("Not a JSON object: " + node);
@@ -83,28 +83,24 @@ public class ParseUtil {
         try {
 
             if (result == null) {
-                try {
-                    result = newObject;
-                } catch (Throwable e) {
-                    throw new RuntimeException("Failed to instantiate object: " + e.getMessage(), e);
-                }
+                result = newObject;
             }
 
-            if (result != null) {
-                try {
-                    setAttributes(result, attrs);
-                } catch (AttributeException e) {
-                    throw new RuntimeException("Failed to set attribute '" + e.getAttributeName() + "' on document type '" + result.getClass().getName() + "'", e);
-                }
-                content = JsonSerialization.writeValueAsString(result);
-            } else {
-                throw new RuntimeException("Setting attributes is not supported for type: " + result.getClass().getName());
+            if (result == null) {
+                throw new RuntimeException("Failed to set attribute(s) - no target object");
             }
+
+            try {
+                setAttributes(result, attrs);
+            } catch (AttributeException e) {
+                throw new RuntimeException("Failed to set attribute '" + e.getAttributeName() + "' on document type '" + result.getClass().getName() + "'", e);
+            }
+            ctx.setContent(JsonSerialization.writeValueAsString(result));
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to merge set attributes with configuration from file", e);
+            throw new RuntimeException("Failed to merge attributes with configuration from file", e);
         }
 
-        ctx.setContent(content);
         ctx.setResult(result);
         return ctx;
     }

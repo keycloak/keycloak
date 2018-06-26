@@ -40,6 +40,8 @@ import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.cert.X509Certificate;
+
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -158,6 +160,8 @@ class ElytronHttpFacade implements OIDCHttpFacade {
     @Override
     public Request getRequest() {
         return new Request() {
+            private InputStream inputStream;
+
             @Override
             public String getMethod() {
                 return request.getRequestMethod();
@@ -184,7 +188,7 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public String getFirstParam(String param) {
-                throw new RuntimeException("Not implemented.");
+                return request.getFirstParameterValue(param);
             }
 
             @Override
@@ -230,6 +234,19 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public InputStream getInputStream() {
+                return getInputStream(false);
+            }
+
+            @Override
+            public InputStream getInputStream(boolean buffered) {
+                if (inputStream != null) {
+                    return inputStream;
+                }
+
+                if (buffered) {
+                    return inputStream = new BufferedInputStream(request.getInputStream());
+                }
+
                 return request.getInputStream();
             }
 
@@ -267,7 +284,9 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public void setStatus(final int status) {
-                responseConsumer = responseConsumer.andThen(response -> response.setStatusCode(status));
+                if (status < 200 || status > 300) {
+                    responseConsumer = responseConsumer.andThen(response -> response.setStatusCode(status));
+                }
             }
 
             @Override

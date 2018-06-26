@@ -28,8 +28,6 @@
 		        	"protocolMapper" : "oidc-usermodel-property-mapper",
 			        "protocol" : "openid-connect",
 			        "name" : "username",
-			        "consentText" : "username",
-			        "consentRequired" : true,
 			        "config" : {
 				        "Claim JSON Type" : "String",
 				        "user.attribute" : "username",
@@ -42,8 +40,6 @@
 			        "protocolMapper" : "oidc-usersessionmodel-note-mapper",
 			        "protocol" : "openid-connect",
 			        "name" : "gss delegation credential",
-			        "consentText" : "gss delegation credential",
-			        "consentRequired" : true,
 			        "config" : {
 				        "user.session.note" : "gss_delegation_credential",
 				        "claim.name" : "gss_delegation_credential",

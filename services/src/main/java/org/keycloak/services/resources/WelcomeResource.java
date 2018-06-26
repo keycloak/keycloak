@@ -105,6 +105,7 @@ public class WelcomeResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response createUser(final MultivaluedMap<String, String> formData) {
         checkBootstrap();
 
@@ -207,10 +208,8 @@ public class WelcomeResource {
     }
 
     private Theme getTheme() {
-        Config.Scope config = Config.scope("theme");
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         try {
-            return themeProvider.getTheme(config.get("welcomeTheme"), Theme.Type.WELCOME);
+            return session.theme().getTheme(Theme.Type.WELCOME);
         } catch (IOException e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }

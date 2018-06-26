@@ -50,7 +50,7 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public AbstractPolicyRepresentation toRepresentation(Policy policy) {
+    public AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         return new PolicyRepresentation();
     }
 

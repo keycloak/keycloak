@@ -96,6 +96,10 @@ public class OIDCClientRepresentation {
 
     private List<String> request_uris;
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+    private Boolean tls_client_certificate_bound_access_tokens;
+
     // OIDC Session Management
     private List<String> post_logout_redirect_uris;
 
@@ -433,4 +437,13 @@ public class OIDCClientRepresentation {
         this.registration_access_token = registrationAccessToken;
     }
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+    public Boolean getTlsClientCertificateBoundAccessTokens() {
+        return tls_client_certificate_bound_access_tokens;
+    }
+
+    public void setTlsClientCertificateBoundAccessTokens(Boolean tls_client_certificate_bound_access_tokens) {
+        this.tls_client_certificate_bound_access_tokens = tls_client_certificate_bound_access_tokens;
+    }
 }

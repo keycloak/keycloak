@@ -40,16 +40,8 @@
                                     <option value="" selected ng-click="query.type = ''">{{:: 'authz-all-types' | translate}}</option>
                                 </select>
                             </div>
-                            <div class="input-group">
-                                <select class="form-control search" data-ng-model="detailsFilter" data-ng-change="searchQuery();">
-                                    <option value="" selected>Hide Details</option>
-                                    <option value="true">Show Details</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="pull-right">
-                            <a id="hideDetails" data-ng-show="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-hide-details' | translate}}</a>
-                            <a id="showDetails" data-ng-hide="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-show-details' | translate}}</a>
                             <select id="create-policy" class="form-control" ng-model="policyType"
                                     ng-options="p.name for p in policyProviders track by p.type"
                                     data-ng-change="addPolicy(policyType);">
@@ -60,15 +52,16 @@
                 </th>
             </tr>
             <tr data-ng-hide="policies.length == 0">
+                <th width="1%"></th>
                 <th>{{:: 'name' | translate}}</th>
                 <th>{{:: 'description' | translate}}</th>
-                <th>{{:: 'type' | translate}}</th>
-                <th colspan="3">{{:: 'actions' | translate}}</th>
+                <th width="7%">{{:: 'type' | translate}}</th>
+                <th width="6%" style="text-align: center;">{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tfoot data-ng-show="policies && (policies.length >= query.max || query.first > 0)">
         <tr>
-            <td colspan="8">
+            <td colspan="5">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
@@ -78,42 +71,38 @@
         </tr>
         </tfoot>
         <tbody>
-            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
+            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'" data-ng-click="showDetails(policy, $event);" style="cursor: pointer">
+                <td>
+                    <span ng-if="!policy.details || !policy.details.loaded" class="fa fa-angle-right"></span>
+                    <span ng-if="policy.details && policy.details.loaded" class="fa fa-angle-right fa-angle-down"></span>
+                </td>
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
                 <td>{{policy.description}}</td>
                 <td>{{policy.type}}</td>
-                <td ng-if="!policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
-                    {{:: 'authz-show-details' | translate}}
-                </td>
-                <td ng-if="policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
-                    {{:: 'authz-hide-details' | translate}}
-                </td>
-                <td class="kc-action-cell" ng-click="delete(policy);">
-                    {{:: 'delete' | translate}}
+                <td align="center">
+                    <div class="dropdown dropdown-kebab-pf">
+                        <button class="btn btn-default" ng-click="delete(policy);">{{:: 'delete' | translate}}
+                        </button>
+                    </div>
                 </td>
             </tr>
             <tr ng-if="policy.details && policy.details.loaded" ng-repeat-end="">
-                <td colspan="5">
-                    <div id="details">
-                        <table class="table kc-authz-table-expanded table-striped">
-                            <thead>
-                            <tr>
-                                <th>Dependent Permissions and Policies</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>
-                                    <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
-                                    <ul ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0">
-                                        <li>
-                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
+                <td colspan="5" style="background-color: #ffffff">
+                    <div class="list-group-item-container container-fluid">
+                        <div class="close" data-ng-click="showDetails(policy, $event);" style="padding-top: 10px">
+                            <span class="pficon pficon-close"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <dl class="dl-horizontal">
+                                    <dt>Dependent Policies</dt>
+                                    <dd>
+                                        <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-policies-available' | translate}}</span>
+                                        <span ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>{{$last ? '' : ', '}}</span>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>

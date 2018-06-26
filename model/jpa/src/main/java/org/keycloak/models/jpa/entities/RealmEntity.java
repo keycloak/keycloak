@@ -145,7 +145,7 @@ public class RealmEntity {
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
+    Collection<ClientScopeEntity> clientScopes = new ArrayList<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -236,6 +236,9 @@ public class RealmEntity {
 
     @Column(name="DEFAULT_LOCALE")
     protected String defaultLocale;
+
+    @Column(name="ALLOW_USER_MANAGED_ACCESS")
+    private boolean allowUserManagedAccess;
 
 
     public String getId() {
@@ -754,12 +757,20 @@ public class RealmEntity {
         return this;
     }
 
-    public Collection<ClientTemplateEntity> getClientTemplates() {
-        return clientTemplates;
+    public Collection<ClientScopeEntity> getClientScopes() {
+        return clientScopes;
     }
 
-    public void setClientTemplates(Collection<ClientTemplateEntity> clientTemplates) {
-        this.clientTemplates = clientTemplates;
+    public void setClientScopes(Collection<ClientScopeEntity> clientScopes) {
+        this.clientScopes = clientScopes;
+    }
+
+    public void setAllowUserManagedAccess(boolean allowUserManagedAccess) {
+        this.allowUserManagedAccess = allowUserManagedAccess;
+    }
+
+    public boolean isAllowUserManagedAccess() {
+        return allowUserManagedAccess;
     }
 
     @Override
@@ -779,6 +790,5 @@ public class RealmEntity {
     public int hashCode() {
         return id.hashCode();
     }
-
 }
 

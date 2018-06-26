@@ -31,7 +31,7 @@ public class TermsAndConditionsPage extends AbstractPage {
     private WebElement cancelButton;
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Terms and Conditions");
+        return PageUtils.getPageTitle(driver).equals("Terms and Conditions");
     }
 
     public void acceptTerms() {

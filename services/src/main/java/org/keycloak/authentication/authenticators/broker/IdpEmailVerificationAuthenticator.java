@@ -39,6 +39,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.net.URI;
@@ -116,31 +117,33 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         UriInfo uriInfo = session.getContext().getUri();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan();
+        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(IdpVerifyAccountLinkActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
         EventBuilder event = context.getEvent().clone().event(EventType.SEND_IDENTITY_PROVIDER_LINK)
                 .user(existingUser)
                 .detail(Details.USERNAME, existingUser.getUsername())
                 .detail(Details.EMAIL, existingUser.getEmail())
-                .detail(Details.CODE_ID, authSession.getId())
+                .detail(Details.CODE_ID, authSession.getParentSession().getId())
                 .removeDetail(Details.AUTH_METHOD)
                 .removeDetail(Details.AUTH_TYPE);
 
+        String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
-          existingUser.getId(), absoluteExpirationInSecs, authSession.getId(),
+          existingUser.getId(), absoluteExpirationInSecs, authSessionEncodedId,
           brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
         );
-        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                authSession.getClient().getClientId(), authSession.getTabId());
         String link = builder
                 .queryParam(Constants.EXECUTION, context.getExecution().getId())
-                .queryParam(Constants.CLIENT_ID, context.getExecution().getId())
                 .build(realm.getName()).toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 
         try {
             context.getSession().getProvider(EmailTemplateProvider.class)
                     .setRealm(realm)
+                    .setAuthenticationSession(authSession)
                     .setUser(existingUser)
                     .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                     .sendConfirmIdentityBrokerLink(link, expirationInMinutes);
@@ -152,7 +155,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             ServicesLogger.LOGGER.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
-                    .createErrorPage();
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
             return;
         }

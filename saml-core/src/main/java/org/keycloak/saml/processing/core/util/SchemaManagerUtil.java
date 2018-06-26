@@ -51,8 +51,8 @@ public class SchemaManagerUtil {
     public static List<String> getXACMLSchemas() {
         List<String> list = new ArrayList<String>();
 
-        list.add("schema/access_control-xacml-2.0-policy-schema-os.xsd");
-        list.add("schema/access_control-xacml-2.0-context-schema-os.xsd");
+        list.add("schema/xacml/access_control-xacml-2.0-policy-schema-os.xsd");
+        list.add("schema/xacml/access_control-xacml-2.0-context-schema-os.xsd");
         return list;
     }
 

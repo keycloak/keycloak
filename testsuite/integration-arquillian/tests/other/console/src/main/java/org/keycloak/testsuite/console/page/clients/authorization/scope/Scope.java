@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -28,5 +29,9 @@ public class Scope {
 
     public ScopeForm form() {
         return form;
+    }
+
+    public ScopeRepresentation toRepresentation() {
+        return form.toRepresentation();
     }
 }

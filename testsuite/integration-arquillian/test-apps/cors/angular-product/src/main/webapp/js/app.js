@@ -113,7 +113,7 @@ module.controller('GlobalCtrl', function($scope, $http) {
     };
 
     $scope.loadVersion = function() {
-        $http.get(getAuthServerUrl() + "/auth/version").success(function(data) {
+        $http.get(getAppServerUrl("localhost-db") + "/cors-database/products/k_version").success(function(data) {
             $scope.version = angular.fromJson(data);
         });
     };

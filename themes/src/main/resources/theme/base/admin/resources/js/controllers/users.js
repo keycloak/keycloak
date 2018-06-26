@@ -548,6 +548,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
+                $route.reload();
             });
         }, function() {
             $scope.password = null;
@@ -647,6 +648,10 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
         return instance.providerId;
     }
 
+    $scope.isProviderEnabled = function(instance) {
+        return !instance.config['enabled'] || instance.config['enabled'][0] == 'true';
+    }
+
     $scope.getInstancePriority = function(instance) {
         if (!instance.config['priority']) {
             console.log('getInstancePriority is undefined');
@@ -710,6 +715,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
             };
             instance.config['priority'] = ["0"];
+            instance.config['enabled'] = ["true"];
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
@@ -751,6 +757,9 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                     instance.config['changedSyncPeriod'] = ['-1'];
 
                 }
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['cachePolicy']) {
                 instance.config['cachePolicy'] = ['DEFAULT'];
@@ -1133,6 +1142,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             instance.config = {
 
             };
+            instance.config['enabled'] = ["true"];
             instance.config['priority'] = ["0"];
 
             $scope.fullSyncEnabled = false;
@@ -1169,6 +1179,9 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
                 console.log('setting to -1');
                 instance.config['fullSyncPeriod'] = ['-1'];
 
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['changedSyncPeriod']) {
                 console.log('setting to -1');
@@ -1382,7 +1395,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.get(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.post(initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
@@ -1391,7 +1404,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.post(initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");

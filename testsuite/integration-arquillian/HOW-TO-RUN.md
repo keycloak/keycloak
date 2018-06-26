@@ -77,18 +77,15 @@ TODO: Add info about Wildfly logging
 
 ## Run adapter tests
 
+### Undertow
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
-
     
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml clean install \
-       -Pauth-server-wildfly \
-       -Papp-server-wildfly
-
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/wildfly/pom.xml \
+    mvn -f testsuite/integration-arquillian/pom.xml \
        clean install \
-       -Pauth-server-wildfly \
        -Papp-server-wildfly
     
 
@@ -112,14 +109,14 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 
     # Prepare Fuse server
-    mvn -f testsuite/integration-arquillian/servers \
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://download.eng.bos.redhat.com/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
       -Dmaven.repo.local=$HOME/.m2/repository
  
     # Run the Fuse adapter tests
@@ -128,6 +125,42 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229
+
+
+### JBoss Fuse 7.0
+
+1) Download JBoss Fuse 7.0 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
+Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
+
+2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
+
+
+    mvn install:install-file \
+      -DgroupId=org.jboss.fuse \
+      -DartifactId=fuse-karaf \
+      -Dversion=7.0.0.fuse-000202 \
+      -Dpackaging=zip \
+      -Dfile=/mydownloads/fuse-karaf-7.0.0.fuse-000202.zip
+
+
+3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
+
+
+    # Prepare Fuse server
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+      clean install \
+      -Papp-server-fuse70 \
+      -Dfuse70.version=7.0.0.fuse-000202 \
+      -Dapp.server.karaf.update.config=true \
+      -Dmaven.local.settings=$HOME/.m2/settings.xml \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Dmaven.repo.local=$HOME/.m2/repository
+ 
+    # Run the Fuse adapter tests
+    mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse70/pom.xml \
+      clean test \
+      -Dbrowser=phantomjs \
+      -Papp-server-fuse70
 
 
 ### EAP6 with Hawtio
@@ -273,20 +306,17 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
 ```
 
 ## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.json` switch. So that they are disabled by default and are meant to be run separately.
+The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
 
 
     # Prepare servers
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly \
-        -Papp-server-wildfly
+        -Pauth-server-wildfly
 
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
         clean test \
-        -Dtest=WelcomePageTest \
-        -Dskip.add.user.json \
         -Pauth-server-wildfly
 
 
@@ -295,8 +325,10 @@ The social login tests require setup of all social networks including an example
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
    
 To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft, PayPal and 
-StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
-sample user that can login to the social network.
+StackOverflow. See the server administration guide for details on how to do that. You have to use URLs like 
+`http://localhost:8180/auth/realms/social/broker/google/endpoint` (with `google` replaced by the name 
+of given provider) as an authorized redirect URL when configuring the client. Further, you also need to create a sample user 
+that can login to the social network.
  
 The details should be added to a standard properties file. For some properties you can use shared common properties and
 override when needed. Or you can specify these for all providers. All providers require at least clientId and 
@@ -318,7 +350,8 @@ An example social.properties file looks like:
     facebook.profile.lastName=Test
 
 In the example above the common username, password and profile are shared for all providers, but Facebook has a 
-different last name.
+different last name. Profile informations are used for assertion after login, so you have to set them to be same as 
+user profile information returned by given social login provider for used sample user. 
 
 Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.
 
@@ -331,6 +364,7 @@ To run the tests run:
           -Dbrowser=chrome \
           -Dsocial.config=/path/to/social.properties
 
+To run individual social provider test only you can use option like `-Dtest=SocialLoginTest#linkedinLogin`
 
 ## Different Browsers
  
@@ -368,7 +402,18 @@ To run the X.509 client certificate authentication tests:
 	  -Dauth.server.ssl.required \
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
-	  
+
+## Run Mutual TLS Client Certificate Bound Access Tokens tests
+
+To run the Mutual TLS Client Certificate Bound Access Tokens tests:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+      -Pauth-server-wildfly \
+      -Dauth.server.ssl.required \
+      -Dbrowser=phantomjs \
+      -Dtest=org.keycloak.testsuite.hok.HoKTest
+
 ## Cluster tests
 
 Cluster tests use 2 backend servers (Keycloak on Wildfly/EAP) and 1 frontend loadbalancer server node. Invalidation tests don't use loadbalancer. 
@@ -536,11 +581,21 @@ First we will manually download, configure and run infinispan servers. Then we c
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
 1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [../../misc/CrossDataCenter.md](../../misc/CrossDataCenter.md) and the `Infinispan Server Setup` part.
+from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
-Assume you have both Infinispan/JDG servers up and running.
+The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 
-**TODO:** Change this once CrossDataCenter.md is removed and converted to the proper docs.
+* The TCPPING hosts should be like this:
+
+```xml
+<property name="initial_hosts">localhost[8610],localhost[9610]"</property>
+``` 
+
+* The port offset when starting node `jdg1` should be like: `-Djboss.socket.binding.port-offset=1010` and when 
+starting the `jdg2` server, then `-Djboss.socket.binding.port-offset=2010` . In both cases, the bind address should be just
+default `localhost` (In other words, the `-b` switch can be omitted).   
+
+So assume you have both Infinispan/JDG servers up and running.
 
 2) Setup MySQL database or some other shared database.  
 

@@ -47,6 +47,7 @@ public interface Details {
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
     String AUDIENCE = "audience";
+    String SCOPE = "scope";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String CLIENT_SESSION_STATE = "client_session_state";

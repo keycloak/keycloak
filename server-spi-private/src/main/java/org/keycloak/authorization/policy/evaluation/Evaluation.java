@@ -51,6 +51,13 @@ public interface Evaluation {
      */
     Policy getPolicy();
 
+    /**
+     * Returns a {@link Realm} that can be used by policies to query information.
+     *
+     * @return a {@link Realm} instance
+     */
+    Realm getRealm();
+
     AuthorizationProvider getAuthorizationProvider();
 
     /**
@@ -62,4 +69,9 @@ public interface Evaluation {
      * Denies the requested permission.
      */
     void deny();
+
+    /**
+     * Denies the requested permission if a decision was not made yet.
+     */
+    void denyIfNoEffect();
 }

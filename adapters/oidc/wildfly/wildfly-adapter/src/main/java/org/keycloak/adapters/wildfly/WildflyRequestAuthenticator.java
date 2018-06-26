@@ -17,21 +17,6 @@
 
 package org.keycloak.adapters.wildfly;
 
-import io.undertow.security.api.SecurityContext;
-import io.undertow.server.HttpServerExchange;
-import org.jboss.logging.Logger;
-import org.jboss.security.NestableGroup;
-import org.jboss.security.SecurityConstants;
-import org.jboss.security.SecurityContextAssociation;
-import org.jboss.security.SimpleGroup;
-import org.jboss.security.SimplePrincipal;
-import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
-import org.keycloak.adapters.undertow.ServletRequestAuthenticator;
-
-import javax.security.auth.Subject;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.Collection;
@@ -39,11 +24,33 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
 
+import javax.security.auth.Subject;
+
+import org.jboss.logging.Logger;
+import org.jboss.security.NestableGroup;
+import org.jboss.security.SecurityConstants;
+import org.jboss.security.SecurityContextAssociation;
+import org.jboss.security.SimpleGroup;
+import org.jboss.security.SimplePrincipal;
+import org.jboss.security.SubjectInfo;
+import org.jboss.security.identity.RoleGroup;
+import org.jboss.security.identity.plugins.SimpleRole;
+import org.jboss.security.identity.plugins.SimpleRoleGroup;
+import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
+import org.keycloak.adapters.undertow.ServletRequestAuthenticator;
+
+import io.undertow.security.api.SecurityContext;
+import io.undertow.server.HttpServerExchange;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
+public class WildflyRequestAuthenticator extends ServletRequestAuthenticator
+{
     protected static Logger log = Logger.getLogger(WildflyRequestAuthenticator.class);
 
     public WildflyRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
@@ -87,6 +94,13 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
         org.jboss.security.SecurityContext sc = SecurityContextAssociation.getSecurityContext();
         Principal userPrincipal = getPrincipal(subject);
         sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
+
+        // Roles of subjectInfo are null, because is was constructed by
+        // org.jboss.security.identity.extensions.CredentialIdentityFactory
+        //   .createIdentity(Principal [=userPrincipal], Object [=account], Role [=null]).
+        // Therefore the roles are only contained in the authenticatedSubject (member of subjectInfo)
+        // and subsequent logics do only access subjectInfo#roles instead of authenticatedSubject#roles.
+        mapGroupMembersOfAuthenticatedSubjectIntoSecurityContext(sc);
     }
 
     /**
@@ -150,4 +164,35 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
         return roleSets;
     }
 
+    private static void mapGroupMembersOfAuthenticatedSubjectIntoSecurityContext(org.jboss.security.SecurityContext sc) {
+        SubjectInfo subjectInfo = sc.getSubjectInfo();
+        if (subjectInfo == null) {
+            return;
+        }
+
+        Subject authenticatedSubject = subjectInfo.getAuthenticatedSubject();
+        if (authenticatedSubject == null) {
+            return;
+        }
+
+        // Get role group of security context in order to add roles of authenticatedSubject.
+        RoleGroup scRoles = sc.getUtil().getRoles();
+        if (scRoles == null) {
+            scRoles = new SimpleRoleGroup("Roles");
+            sc.getUtil().setRoles(scRoles);
+        }
+
+        // Get group roles of authenticatedSubject and add each role of the group into security context
+        Iterator<Principal> principalItr = authenticatedSubject.getPrincipals().iterator();
+        while (principalItr.hasNext()) {
+            Principal principal = principalItr.next();
+            if (principal instanceof Group) {
+                Enumeration<? extends Principal> members = ((Group) principal).members();
+                while (members.hasMoreElements()) {
+                    Principal role = members.nextElement();
+                    scRoles.addRole(new SimpleRole(role.getName()));
+                }
+            }
+        }
+    }
 }

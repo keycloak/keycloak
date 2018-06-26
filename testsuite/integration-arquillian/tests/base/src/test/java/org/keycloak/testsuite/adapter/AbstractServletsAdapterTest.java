@@ -24,19 +24,25 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.io.IOUtil;
 import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
+    protected static WebArchive servletDeploymentMultiTenant(String name, Class... servletClasses) {
+        WebArchive servletDeployment = servletDeployment(name, null, servletClasses);
+        return servletDeployment;
+    }
+    
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
     }
@@ -87,7 +93,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream())
+            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
                     .replace("%CONTEXT_PATH%", name);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -106,7 +112,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/demorealm.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/demorealm.json"));
     }
 
     @Override
@@ -125,6 +131,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
             driver.navigate().to(timeOffsetUri);
             WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+            String pageSource = driver.getPageSource();
+            System.out.println(pageSource);
         }
     }
 

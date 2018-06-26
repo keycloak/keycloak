@@ -33,18 +33,16 @@ public class AuthorizationContext {
 
     private final AccessToken authzToken;
     private final PathConfig current;
-    private final Map<String, PathConfig> paths;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, PathConfig current, Map<String, PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, PathConfig current) {
         this.authzToken = authzToken;
         this.current = current;
-        this.paths = paths;
         this.granted = true;
     }
 
     public AuthorizationContext() {
-        this(null, null, null);
+        this(null, null);
         this.granted = false;
     }
 
@@ -59,21 +57,21 @@ public class AuthorizationContext {
             return false;
         }
 
-        if (current != null) {
-            if (current.getName().equals(resourceName)) {
-                return true;
+        for (Permission permission : authorization.getPermissions()) {
+            if (resourceName.equalsIgnoreCase(permission.getResourceName()) || resourceName.equalsIgnoreCase(permission.getResourceId())) {
+                if (scopeName == null) {
+                    return true;
+                }
+
+                if (permission.getScopes().contains(scopeName)) {
+                    return true;
+                }
             }
         }
 
-        if (hasResourcePermission(resourceName)) {
-            for (Permission permission : authorization.getPermissions()) {
-                for (PathConfig pathHolder : paths.values()) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
-                        if (permission.getScopes().contains(scopeName)) {
-                            return true;
-                        }
-                    }
-                }
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
             }
         }
 
@@ -81,29 +79,7 @@ public class AuthorizationContext {
     }
 
     public boolean hasResourcePermission(String resourceName) {
-        if (this.authzToken == null) {
-            return false;
-        }
-
-        Authorization authorization = this.authzToken.getAuthorization();
-
-        if (authorization == null) {
-            return false;
-        }
-
-        if (current != null) {
-            if (current.getName().equals(resourceName)) {
-                return true;
-            }
-        }
-
-        for (Permission permission : authorization.getPermissions()) {
-            if (permission.getResourceSetName().equals(resourceName) || permission.getResourceSetId().equals(resourceName)) {
-                return true;
-            }
-        }
-
-        return false;
+        return hasPermission(resourceName, null);
     }
 
     public boolean hasScopePermission(String scopeName) {

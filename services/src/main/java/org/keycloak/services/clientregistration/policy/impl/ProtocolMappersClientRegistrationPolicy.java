@@ -70,25 +70,6 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
         }
     }
 
-
-    protected void enableConsentRequiredForAll(ClientModel clientModel) {
-        if (isConsentRequiredForMappers()) {
-            logger.debugf("Enable consentRequired for all protocol mappers of client %s", clientModel.getClientId());
-
-            Set<ProtocolMapperModel> mappers = clientModel.getProtocolMappers();
-
-            for (ProtocolMapperModel mapper : mappers) {
-                mapper.setConsentRequired(true);
-
-                if (mapper.getConsentText() == null) {
-                    mapper.setConsentText(mapper.getName());
-                }
-
-                clientModel.updateProtocolMapper(mapper);
-            }
-        }
-    }
-
     // Remove builtin mappers of unsupported types too
     @Override
     public void afterRegister(ClientRegistrationContext context, ClientModel clientModel) {
@@ -107,9 +88,6 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
         });
 
-        // Enable consentRequired for all protocolMappers
-        enableConsentRequiredForAll(clientModel);
-
     }
 
     // We don't take already existing protocolMappers into consideration for now
@@ -120,8 +98,6 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
     @Override
     public void afterUpdate(ClientRegistrationContext context, ClientModel clientModel) {
-        // Enable consentRequired for all protocolMappers
-        enableConsentRequiredForAll(clientModel);
     }
 
     @Override
@@ -138,8 +114,4 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
         return componentModel.getConfig().getList(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES);
     }
 
-    private boolean isConsentRequiredForMappers() {
-        String s = componentModel.getConfig().getFirst(ProtocolMappersClientRegistrationPolicyFactory.CONSENT_REQUIRED_FOR_ALL_MAPPERS);
-        return s==null || Boolean.parseBoolean(s);
-    }
 }

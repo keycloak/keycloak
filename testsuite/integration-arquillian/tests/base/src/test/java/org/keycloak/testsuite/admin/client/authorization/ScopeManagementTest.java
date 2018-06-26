@@ -33,13 +33,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class ScopeManagementTest extends AbstractAuthorizationTest {
 
-    @Before
-    @Override
-    public void onBeforeAuthzTests() {
-        super.onBeforeAuthzTests();
-        enableAuthorizationServices();
-    }
-
     @Test
     public void testCreate() {
         ScopeRepresentation newScope = createDefaultScope().toRepresentation();

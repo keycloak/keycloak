@@ -26,7 +26,6 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -94,7 +93,7 @@ public class SAML2Request {
 
         AuthnRequestType authnRequest = new AuthnRequestType(id, issueInstant);
         authnRequest.setAssertionConsumerServiceURL(URI.create(assertionConsumerURL));
-        authnRequest.setProtocolBinding(URI.create(JBossSAMLConstants.HTTP_POST_BINDING.get()));
+        authnRequest.setProtocolBinding(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri());
         if (destination != null) {
             authnRequest.setDestination(URI.create(destination));
         }
@@ -163,7 +162,7 @@ public class SAML2Request {
 
         Document samlDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
         SAML2Object requestType = (SAML2Object) samlParser.parse(samlDocument);
 
@@ -189,7 +188,7 @@ public class SAML2Request {
 
         Document samlDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
         RequestAbstractType requestType = (RequestAbstractType) samlParser.parse(samlDocument);
 
@@ -216,7 +215,7 @@ public class SAML2Request {
 
         Document samlDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
         AuthnRequestType requestType = (AuthnRequestType) samlParser.parse(samlDocument);

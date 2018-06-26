@@ -18,12 +18,14 @@ package org.keycloak.authorization.policy.provider.drools;
 
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.kie.api.runtime.KieContainer;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -55,9 +57,14 @@ public class DroolsPolicyAdminResource implements PolicyProviderAdminService {
     }
 
     private KieContainer getContainer(RulePolicyRepresentation policy) {
-        String groupId = policy.getArtifactGroupId();
-        String artifactId = policy.getArtifactId();
-        String version = policy.getArtifactVersion();
-        return this.factory.getKieContainer(groupId, artifactId, version);
+        final String groupId = policy.getArtifactGroupId();
+        final String artifactId = policy.getArtifactId();
+        final String version = policy.getArtifactVersion();
+        try {
+            return this.factory.getKieContainer(groupId, artifactId, version);
+        } catch (RuntimeException re) {
+            throw new WebApplicationException(ErrorResponse.error(
+                    "Unable to locate artifact " + groupId + ":" + artifactId + ":" + version, Response.Status.BAD_REQUEST));
+        }
     }
 }

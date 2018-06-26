@@ -76,7 +76,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     @Override
     public LDAPQuery createLDAPGroupQuery() {
-        return createGroupQuery();
+        return createGroupQuery(false);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     // LDAP Group CRUD operations
 
-    public LDAPQuery createGroupQuery() {
+    public LDAPQuery createGroupQuery(boolean includeMemberAttribute) {
         LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
 
         // For now, use same search scope, which is configured "globally" and used for user's search.
@@ -107,7 +107,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
         ldapQuery.addReturningLdapAttribute(config.getGroupNameLdapAttribute());
-        ldapQuery.addReturningLdapAttribute(config.getMembershipLdapAttribute());
+
+        // Performance improvement
+        if (includeMemberAttribute) {
+            ldapQuery.addReturningLdapAttribute(config.getMembershipLdapAttribute());
+        }
 
         for (String groupAttr : config.getGroupAttributes()) {
             ldapQuery.addReturningLdapAttribute(groupAttr);
@@ -125,7 +129,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     public LDAPObject loadLDAPGroupByName(String groupName) {
-        LDAPQuery ldapQuery = createGroupQuery();
+        LDAPQuery ldapQuery = createGroupQuery(true);
         Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getGroupNameLdapAttribute(), groupName);
         ldapQuery.addWhereCondition(roleNameCondition);
         return ldapQuery.getFirstResult();
@@ -153,7 +157,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Get all LDAP groups
-        List<LDAPObject> ldapGroups = getAllLDAPGroups();
+        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
 
         // Convert to internal format
         Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
@@ -163,12 +167,15 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         for (LDAPObject ldapGroup : ldapGroups) {
             String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
 
-            Set<String> subgroupNames = new HashSet<>();
-            for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
-                subgroupNames.add(groupDn.getFirstRdnAttrValue());
+            if (config.isPreserveGroupsInheritance()) {
+                Set<String> subgroupNames = new HashSet<>();
+                for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
+                    subgroupNames.add(groupDn.getFirstRdnAttrValue());
+                }
+
+                ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
             }
 
-            ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
             ldapGroupsMap.put(groupName, ldapGroup);
         }
 
@@ -342,8 +349,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     // Send LDAP query to retrieve all groups
-    protected List<LDAPObject> getAllLDAPGroups() {
-        LDAPQuery ldapGroupQuery = createGroupQuery();
+    protected List<LDAPObject> getAllLDAPGroups(boolean includeMemberAttribute) {
+        LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute);
         return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
     }
 
@@ -368,7 +375,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Query existing LDAP groups
-        LDAPQuery ldapQuery = createGroupQuery();
+        LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance());
         List<LDAPObject> ldapGroups = ldapQuery.getResultList();
 
         // Convert them to Map<String, LDAPObject>
@@ -384,7 +391,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         // Create or update KC groups to LDAP including their attributes
         for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-            processLdapGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
+            processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
         }
 
         // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
@@ -402,7 +409,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         // Finally process memberships,
         if (config.isPreserveGroupsInheritance()) {
             for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                processLdapGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
+                processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
             }
         }
 
@@ -412,7 +419,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     // For given kcGroup check if it exists in LDAP (map) by name
     // If not, create it in LDAP including attributes. Otherwise update attributes in LDAP.
     // Process this recursively for all subgroups of KC group
-    private void processLdapGroupSyncToLDAP(GroupModel kcGroup, Map<String, LDAPObject> ldapGroupsMap, Set<String> ldapGroupNames, SynchronizationResult syncResult) {
+    private void processKeycloakGroupSyncToLDAP(GroupModel kcGroup, Map<String, LDAPObject> ldapGroupsMap, Set<String> ldapGroupNames, SynchronizationResult syncResult) {
         String groupName = kcGroup.getName();
 
         // extract group attributes to be updated to LDAP
@@ -442,12 +449,12 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         // process KC subgroups
         for (GroupModel kcSubgroup : kcGroup.getSubGroups()) {
-            processLdapGroupSyncToLDAP(kcSubgroup, ldapGroupsMap, ldapGroupNames, syncResult);
+            processKeycloakGroupSyncToLDAP(kcSubgroup, ldapGroupsMap, ldapGroupNames, syncResult);
         }
     }
 
-    // Sync memberships update. Update memberships of group in LDAP based on subgroups from KC. Do it recursively
-    private void processLdapGroupMembershipsSyncToLDAP(GroupModel kcGroup, Map<String, LDAPObject> ldapGroupsMap) {
+    // Update memberships of group in LDAP based on subgroups from KC. Do it recursively
+    private void processKeycloakGroupMembershipsSyncToLDAP(GroupModel kcGroup, Map<String, LDAPObject> ldapGroupsMap) {
         LDAPObject ldapGroup = ldapGroupsMap.get(kcGroup.getName());
         Set<LDAPDn> toRemoveSubgroupsDNs = getLDAPSubgroups(ldapGroup);
 
@@ -474,7 +481,25 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
         for (GroupModel kcSubgroup : kcGroup.getSubGroups()) {
-            processLdapGroupMembershipsSyncToLDAP(kcSubgroup, ldapGroupsMap);
+            processKeycloakGroupMembershipsSyncToLDAP(kcSubgroup, ldapGroupsMap);
+        }
+    }
+
+    // Recursively check if parent group exists in LDAP. If yes, then return current group. If not, then recursively call this method
+    // for the predecessor. Result is the highest group, which doesn't yet exists in LDAP (and hence requires sync to LDAP)
+    private GroupModel getHighestPredecessorNotExistentInLdap(GroupModel group) {
+        GroupModel parentGroup = group.getParent();
+        if (parentGroup == null) {
+            return group;
+        }
+
+        LDAPObject ldapGroup = loadLDAPGroupByName(parentGroup.getName());
+        if (ldapGroup != null) {
+            // Parent exists in LDAP. Let's return current group
+            return group;
+        } else {
+            // Parent doesn't exists in LDAP. Let's recursively go up.
+            return getHighestPredecessorNotExistentInLdap(parentGroup);
         }
     }
 
@@ -493,11 +518,34 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 
-    public void addGroupMappingInLDAP(RealmModel realm, String groupName, LDAPObject ldapUser) {
+    public void addGroupMappingInLDAP(RealmModel realm, GroupModel kcGroup, LDAPObject ldapUser) {
+        String groupName = kcGroup.getName();
         LDAPObject ldapGroup = loadLDAPGroupByName(groupName);
+
         if (ldapGroup == null) {
-            syncDataFromKeycloakToFederationProvider(realm);
-            ldapGroup = loadLDAPGroupByName(groupName);
+            // Needs to partially sync Keycloak groups to LDAP
+            if (config.isPreserveGroupsInheritance()) {
+                GroupModel highestGroupToSync = getHighestPredecessorNotExistentInLdap(kcGroup);
+
+                logger.debugf("Will sync group '%s' and it's subgroups from DB to LDAP", highestGroupToSync.getName());
+
+                Map<String, LDAPObject> syncedLDAPGroups = new HashMap<>();
+                processKeycloakGroupSyncToLDAP(highestGroupToSync, syncedLDAPGroups, new HashSet<>(), new SynchronizationResult());
+                processKeycloakGroupMembershipsSyncToLDAP(highestGroupToSync, syncedLDAPGroups);
+
+                ldapGroup = loadLDAPGroupByName(groupName);
+
+                // Finally update LDAP membership in the parent group
+                if (highestGroupToSync.getParent() != null) {
+                    LDAPObject ldapParentGroup = loadLDAPGroupByName(highestGroupToSync.getParent().getName());
+                    LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), getMembershipUserLdapAttribute(), ldapParentGroup, ldapGroup, true);
+                }
+            } else {
+                // No care about group inheritance. Let's just sync current group
+                logger.debugf("Will sync group '%s' from DB to LDAP", groupName);
+                processKeycloakGroupSyncToLDAP(kcGroup, new HashMap<>(), new HashSet<>(), new SynchronizationResult());
+                ldapGroup = loadLDAPGroupByName(groupName);
+            }
         }
 
         String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
@@ -522,7 +570,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     public void beforeLDAPQuery(LDAPQuery query) {
         String strategyKey = config.getUserGroupsRetrieveStrategy();
         UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
-        strategy.beforeUserLDAPQuery(query);
+        strategy.beforeUserLDAPQuery(this, query);
     }
 
     @Override
@@ -607,7 +655,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                 // We need to create new role mappings in LDAP
                 cachedLDAPGroupMappings = null;
-                addGroupMappingInLDAP(realm, group.getName(), ldapUser);
+                addGroupMappingInLDAP(realm, group, ldapUser);
             } else {
                 super.joinGroup(group);
             }
@@ -615,7 +663,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public void leaveGroup(GroupModel group) {
-            LDAPQuery ldapQuery = createGroupQuery();
+            LDAPQuery ldapQuery = createGroupQuery(true);
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
             Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
 

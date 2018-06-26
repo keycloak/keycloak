@@ -58,6 +58,7 @@
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="confidential-port" type="xs:integer" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="cors-exposed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
@@ -100,6 +101,7 @@
             <xs:element name="connection-pool-size" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="confidential-port" type="xs:integer" minOccurs="0" maxOccurs="1" />
             <xs:element name="realm-public-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="credential" type="credential-type" minOccurs="0" maxOccurs="1"/>
             <xs:element name="redirect-rewrite-rule" type="redirect-rewrite-rule-type" minOccurs="0" maxOccurs="1"/>

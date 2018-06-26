@@ -54,9 +54,19 @@ public class JPAScopeStore implements ScopeStore {
 
     @Override
     public Scope create(final String name, final ResourceServer resourceServer) {
+        return create(null, name, resourceServer);
+    }
+
+    @Override
+    public Scope create(String id, final String name, final ResourceServer resourceServer) {
         ScopeEntity entity = new ScopeEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
+        if (id == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(id);
+        }
+
         entity.setName(name);
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
 

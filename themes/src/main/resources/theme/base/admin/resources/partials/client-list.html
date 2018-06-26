@@ -1,8 +1,5 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1>
-        <span>{{:: 'clients' | translate}}</span>
-        <kc-tooltip>{{:: 'clients.tooltip' | translate}}</kc-tooltip>
-    </h1>
+    <kc-tabs-clients></kc-tabs-clients>
 
     <table class="datatable table table-striped table-bordered dataTable no-footer">
         <thead>
@@ -11,9 +8,9 @@
                     <div class="form-inline">
                         <div class="form-group">
                             <div class="input-group">
-                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.clientId" class="form-control search" onkeyup="if(event.keyCode === 13){$(this).next('I').click();}">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.clientId" class="form-control search" onkeydown="if(event.keyCode === 13) document.getElementById('clientSearch').click()">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" type="submit"></i>
+                                    <i class="fa fa-search" id="clientSearch" data-ng-click="searchClient()"></i>
                                 </div>
                             </div>
                         </div>

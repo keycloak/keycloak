@@ -17,6 +17,9 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.Access;
@@ -49,6 +52,7 @@ import java.util.Collection;
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByServiceAccount", query="select u from UserEntity u where u.serviceAccountClientLink = :clientInternalId and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserCountExcludeServiceAccount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null)"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndValue", query="select u from UserEntity u join u.attributes attr " +
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
@@ -66,12 +70,15 @@ public class UserEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
+    @Nationalized
     @Column(name = "USERNAME")
     protected String username;
+    @Nationalized
     @Column(name = "FIRST_NAME")
     protected String firstName;
     @Column(name = "CREATED_TIMESTAMP")
     protected Long createdTimestamp;
+    @Nationalized
     @Column(name = "LAST_NAME")
     protected String lastName;
     @Column(name = "EMAIL")
@@ -89,12 +96,15 @@ public class UserEntity {
     protected String realmId;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    @Fetch(FetchMode.SUBSELECT)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
     @Column(name="FEDERATION_LINK")

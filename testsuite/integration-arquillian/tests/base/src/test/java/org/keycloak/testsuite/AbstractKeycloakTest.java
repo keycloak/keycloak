@@ -18,23 +18,6 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.junit.BeforeClass;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.Time;
-import org.keycloak.testsuite.arquillian.KcArquillian;
-import org.keycloak.testsuite.arquillian.TestContext;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-
-import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -42,6 +25,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -49,12 +33,16 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -71,6 +59,7 @@ import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.online.CliException;
@@ -79,6 +68,18 @@ import org.wildfly.extras.creaper.core.online.operations.Address;
 import org.wildfly.extras.creaper.core.online.operations.OperationException;
 import org.wildfly.extras.creaper.core.online.operations.Operations;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
+
+import javax.ws.rs.NotFoundException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
@@ -257,7 +258,7 @@ public abstract class AbstractKeycloakTest {
 
     protected void deleteAllCookiesForRealm(String realmName) {
         // masterRealmPage.navigateTo();
-        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        driver.navigate().to(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -318,7 +319,6 @@ public abstract class AbstractKeycloakTest {
         log.debug("importing realm: " + realm.getRealm());
         try { // TODO - figure out a way how to do this without try-catch
             RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
-            RealmRepresentation rRep = realmResource.toRepresentation();
             log.debug("realm already exists on server, re-importing");
             realmResource.remove();
         } catch (NotFoundException nfe) {
@@ -386,6 +386,35 @@ public abstract class AbstractKeycloakTest {
     }
 
     /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     */
+    public void setTimeOfDay(int hour, int minute, int second) {
+        setTimeOfDay(hour, minute, second, 0);
+    }
+
+    /**
+     * Sets time of day by calculating time offset and using setTimeOffset() to set it.
+     *
+     * @param hour hour of day
+     * @param minute minute
+     * @param second second
+     * @param addSeconds additional seconds to add to offset time
+     */
+    public void setTimeOfDay(int hour, int minute, int second, int addSeconds) {
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.HOUR_OF_DAY, hour);
+        now.set(Calendar.MINUTE, minute);
+        now.set(Calendar.SECOND, second);
+        int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
+
+        setTimeOffset(offset + addSeconds);
+    }
+
+    /**
      * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
      *
      * @param offset
@@ -445,6 +474,7 @@ public abstract class AbstractKeycloakTest {
         if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
             client.execute("/core-service=management/security-realm=UndertowRealm:add()");
             client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
+            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
         }
 
         client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
@@ -454,6 +484,7 @@ public abstract class AbstractKeycloakTest {
 
         client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
                 .securityRealm("UndertowRealm")
+                .verifyClient(SslVerifyClient.REQUESTED)
                 .build());
 
         administration.reloadIfRequired();

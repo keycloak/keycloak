@@ -47,7 +47,7 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             final JsonNode profile = fetchProfile(accessToken);
-            final BrokeredIdentityContext user = extractUserContext(profile.get("metadata"));
+            final BrokeredIdentityContext user = extractUserContext(profile);
             AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
             return user;
         } catch (Exception e) {
@@ -55,10 +55,12 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
         }
     }
 
-    private BrokeredIdentityContext extractUserContext(JsonNode metadata) {
+    private BrokeredIdentityContext extractUserContext(JsonNode profile) {
+        JsonNode metadata = profile.get("metadata");
+
         final BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(metadata, "uid"));
         user.setUsername(getJsonProperty(metadata, "name"));
-        user.setName(getJsonProperty(metadata, "fullName"));
+        user.setName(getJsonProperty(profile, "fullName"));
         user.setIdpConfig(getConfig());
         user.setIdp(this);
         return user;

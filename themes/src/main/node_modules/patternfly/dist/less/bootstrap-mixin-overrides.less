@@ -1,0 +1,35 @@
+// Mixins - Bootstrap overrides
+// -------------------
+
+// Form control outline
+.form-control-outline(@color: @input-border-focus) {
+  @color-rgba: rgba(red(@color), green(@color), blue(@color), .6);
+  &:focus {
+    border-color: @color;
+    outline: 0 !important;
+    .box-shadow(~"inset 0 1px 1px rgba(3, 3, 3, 0.075), 0 0 8px @{color-rgba}");
+  }
+}
+
+// Gradients
+#gradient {
+  .striped(@color: fade(@color-pf-black, 15%); @angle: -45deg) {
+    background-image: linear-gradient(@angle, @color 25%, @color 26%, transparent 27%, transparent 49%, @color 50%, @color 51%, transparent 52%, transparent 74%, @color 75%, @color 76%, transparent 77%);
+  }
+}
+
+// Horizontal dividers
+.nav-divider(@color: @color-pf-black-200, @margin: 4px 1px) {
+  background-color: @color;
+  height: 1px;
+  margin: @margin;
+  overflow: hidden;
+}
+
+// Placeholder text
+.placeholder(@color: @input-color-placeholder) {
+  &:-moz-placeholder            { color: @color; font-style: italic; } // Firefox 4-18
+  &::-moz-placeholder           { color: @color; font-style: italic; opacity: 1; } // Firefox 19+
+  &:-ms-input-placeholder       { color: @color; font-style: italic; } // Internet Explorer 10+
+  &::-webkit-input-placeholder  { color: @color; font-style: italic; } // Safari and Chrome
+}

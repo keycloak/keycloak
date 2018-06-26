@@ -17,20 +17,29 @@
 
 package org.keycloak.testsuite.rest;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TestingResourceProviderFactory implements RealmResourceProviderFactory {
 
+    private Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks = new ConcurrentHashMap<>();
+
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestingResourceProvider(session);
+        TestingResourceProvider testProvider = new TestingResourceProvider(session, suspendedTimerTasks);
+        ResteasyProviderFactory.getInstance().injectProperties(testProvider);
+        return testProvider;
     }
 
     @Override

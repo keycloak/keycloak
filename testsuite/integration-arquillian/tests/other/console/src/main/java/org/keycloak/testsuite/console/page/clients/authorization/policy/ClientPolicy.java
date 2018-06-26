@@ -36,6 +36,6 @@ public class ClientPolicy implements PolicyTypeUI {
     }
 
     public void update(ClientPolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

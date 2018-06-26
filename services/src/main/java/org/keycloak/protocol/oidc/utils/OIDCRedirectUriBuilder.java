@@ -87,6 +87,11 @@ public abstract class OIDCRedirectUriBuilder {
 
         protected FragmentRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
             super(uriBuilder);
+
+            String fragment = uriBuilder.getFragment();
+            if (fragment != null) {
+                this.fragment = new StringBuilder(fragment);
+            }
         }
 
         @Override

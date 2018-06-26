@@ -32,6 +32,7 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -219,6 +220,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
         assertEquals(loginEvent.getUserId(), rep.getSubject());
+
+        // Assert expected scope
+        OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
     @Test

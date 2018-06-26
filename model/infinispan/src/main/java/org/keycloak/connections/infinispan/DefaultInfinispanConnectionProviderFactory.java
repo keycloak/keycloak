@@ -56,6 +56,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     protected EmbeddedCacheManager cacheManager;
 
+    protected RemoteCacheProvider remoteCacheProvider;
+
     protected boolean containerManaged;
 
     private String nodeName;
@@ -66,13 +68,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public InfinispanConnectionProvider create(KeycloakSession session) {
         lazyInit();
 
-        return new DefaultInfinispanConnectionProvider(cacheManager, nodeName, siteName);
+        return new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, nodeName, siteName);
     }
 
     @Override
     public void close() {
         if (cacheManager != null && !containerManaged) {
             cacheManager.stop();
+        }
+        if (remoteCacheProvider != null) {
+            remoteCacheProvider.stop();
         }
         cacheManager = null;
     }
@@ -104,6 +109,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
 
                     logger.infof("Node name: %s, Site name: %s", nodeName, siteName);
+
+                    remoteCacheProvider = new RemoteCacheProvider(config, cacheManager);
                 }
             }
         }
@@ -303,12 +310,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationEvictionCacheConfiguration);
-
-        ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
-        counterConfigBuilder.invocationBatching().enable()
-                .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-        counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
-        counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
 
         long realmRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
         realmRevisionsMaxEntries = realmRevisionsMaxEntries > 0

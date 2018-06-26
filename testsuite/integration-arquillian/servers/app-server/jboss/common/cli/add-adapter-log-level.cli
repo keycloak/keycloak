@@ -1,0 +1,4 @@
+embed-server --server-config=${server.config:standalone.xml}
+
+/subsystem=logging/logger=org.keycloak.adapters:add(level=DEBUG)
+/subsystem=logging/console-handler=CONSOLE:change-log-level(level=DEBUG)

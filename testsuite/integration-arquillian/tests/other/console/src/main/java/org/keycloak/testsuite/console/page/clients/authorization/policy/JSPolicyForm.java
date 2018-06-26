@@ -45,7 +45,7 @@ public class JSPolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(JSPolicyRepresentation expected) {
+    public void populate(JSPolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
@@ -54,7 +54,9 @@ public class JSPolicyForm extends Form {
 
         scriptExecutor.executeScript("angular.element(document.getElementById('code')).scope().policy.code = '" + expected.getCode() + "'");
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {

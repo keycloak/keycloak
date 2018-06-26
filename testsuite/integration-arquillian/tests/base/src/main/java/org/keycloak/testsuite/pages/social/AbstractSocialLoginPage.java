@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.logging.Logger;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -26,6 +27,12 @@ import org.openqa.selenium.WebDriver;
 public abstract class AbstractSocialLoginPage {
     @Drone
     protected WebDriver driver;
+    protected Logger log = Logger.getLogger(this.getClass());
 
     public abstract void login(String user, String password);
+
+    // Override only when you need to perform logout at the end of the test
+    public void logout() {
+        log.infof("no logout necessary for %s", this.getClass().getName());
+    }
 }

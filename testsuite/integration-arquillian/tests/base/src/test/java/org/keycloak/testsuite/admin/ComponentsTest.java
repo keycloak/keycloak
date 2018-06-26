@@ -338,7 +338,7 @@ public class ComponentsTest extends AbstractAdminTest {
         rep.setProviderType(TestProvider.class.getName());
         rep.setSubType("foo");
 
-        MultivaluedHashMap config = new MultivaluedHashMap();
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         rep.setConfig(config);
         return rep;
     }

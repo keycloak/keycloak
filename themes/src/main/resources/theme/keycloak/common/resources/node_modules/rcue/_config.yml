@@ -1,0 +1,17 @@
+# Site settings
+alert-message: ' and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.'
+category-list: [Widgets, Charts, Layouts, Alternate Layouts]
+company: 'Red Hat&reg;'
+title: 'Red Hat&reg; Common User Experience'
+title-product: 'Red Hat&reg; Common User Experience'
+url-css-additions: '../dist/css/rcue-additions.min.css'
+url-css-extra: 'tests.css'
+url-css-main: '../dist/css/rcue.min.css'
+url-img: 'img/'
+url-js: '../components/patternfly/dist/js/patternfly.min.js'
+navbar-pf-navbar-brand-icon: true
+navbar-pf-alt-navbar-brand-icon: true
+navbar-logo-icon: 'dist/img/logo.svg'
+navbar-logo-alt-icon: 'dist/img/logo.svg'
+navbar-brand-icon: 'dist/img/brand.svg'
+navbar-brand-alt-icon: 'dist/img/brand-alt.svg'

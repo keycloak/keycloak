@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -105,7 +106,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), Algorithm.none.toString(), Algorithm.RS256.toString());
 
             // Client authentication
-            Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt");
+            Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt");
             Assert.assertNames(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported(), Algorithm.RS256.toString());
 
             // Claims
@@ -114,11 +115,21 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertFalse(oidcConfig.getClaimsParameterSupported());
 
             // Scopes supported
-            Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
+            Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
+                    OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS);
 
             // Request and Request_Uri
             Assert.assertTrue(oidcConfig.getRequestParameterSupported());
             Assert.assertTrue(oidcConfig.getRequestUriParameterSupported());
+
+            // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
+            // PKCE support
+            Assert.assertNames(oidcConfig.getCodeChallengeMethodsSupported(), OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
+
+            // KEYCLOAK-6771 Certificate Bound Token
+            // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
+            Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
+
         } finally {
             client.close();
         }
@@ -154,7 +165,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         request.header(Cors.ORIGIN_HEADER, "http://somehost");
         Response response = request.get();
 
-        assertEquals("*", response.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertEquals("http://somehost", response.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     private OIDCConfigurationRepresentation getOIDCDiscoveryConfiguration(Client client) {

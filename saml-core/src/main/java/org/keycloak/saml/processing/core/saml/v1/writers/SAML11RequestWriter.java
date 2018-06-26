@@ -86,9 +86,6 @@ public class SAML11RequestWriter extends BaseSAML11Writer {
         } else if (query instanceof SAML11AttributeQueryType) {
             SAML11AttributeQueryType attQuery = (SAML11AttributeQueryType) query;
             write(attQuery);
-        } else if (query instanceof SAML11AuthenticationQueryType) {
-            SAML11AuthenticationQueryType attQuery = (SAML11AuthenticationQueryType) query;
-            write(attQuery);
         } else if (query instanceof SAML11AuthorizationDecisionQueryType) {
             SAML11AuthorizationDecisionQueryType attQuery = (SAML11AuthorizationDecisionQueryType) query;
             write(attQuery);

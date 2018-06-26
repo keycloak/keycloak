@@ -33,7 +33,9 @@ import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -56,6 +58,23 @@ public class URLProvider extends URLResourceProvider {
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
         URL url = (URL) super.doLookup(resource, qualifiers);
 
+        if (url == null) {
+            String port = appServerSslRequired ? 
+                                System.getProperty("app.server.https.port", "8643") : 
+                                System.getProperty("app.server.http.port", "8280");
+            String protocol = appServerSslRequired ? "https" : "http";
+
+            try {
+                for (Annotation a : qualifiers) {
+                    if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
+                        return new URL(protocol + "://localhost:" + port + "/" + ((OperateOnDeployment) a).value());
+                    }
+                }
+            } catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        
         // fix injected URL
         if (url != null) {
             try {
@@ -75,38 +94,19 @@ public class URLProvider extends URLResourceProvider {
             }
         }
 
-        try {
-            if (System.getProperty("app.server.management.protocol","").equals("remote")) {
-                if (url == null) {
-                    url = new URL("http://localhost:8080/");
-                }
-                URL fixedUrl = url;
-                if (url.getPort() == 8080) {
-                    for (Annotation a : qualifiers) {
-                        if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
-                            String port = appServerSslRequired ?  System.getProperty("app.server.https.port", "8643"):System.getProperty("app.server.http.port", "8280");
-                            String protocol = appServerSslRequired ? "https" : "http";
-                            url = new URL(fixedUrl.toExternalForm().replace("8080", port).replace("http", protocol) + ((OperateOnDeployment) a).value());
-                        }
-                    }
-
-                }
-
-                if (url.getPort() == 8080) {
-                    url = null;
-                }
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
         // inject context roots if annotation present
         for (Annotation a : qualifiers) {
             if (AuthServerContext.class.isAssignableFrom(a.annotationType())) {
                 return suiteContext.get().getAuthServerInfo().getContextRoot();
             }
             if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
-                return testContext.get().getAppServerInfo().getContextRoot();
+                ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
+                if (appServerInfo != null) return appServerInfo.getContextRoot();
+                
+                List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
+                if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
+                
+                return appServerBackendsInfo.get(0).getContextRoot();
             }
         }
 

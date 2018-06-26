@@ -30,6 +30,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  */
 public class LoginActions extends AuthRealm {
 
+    @FindBy(id = "kc-page-title")
+    protected WebElement heading;
+
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()

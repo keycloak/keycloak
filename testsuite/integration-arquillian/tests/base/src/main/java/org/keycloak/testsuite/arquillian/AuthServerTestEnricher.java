@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.arquillian;
 
+import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
@@ -49,6 +50,7 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 
 /**
  *
@@ -67,7 +69,7 @@ public class AuthServerTestEnricher {
     @Inject
     private Event<StopContainer> stopContainerEvent;
 
-    private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
+    public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
     public static final String AUTH_SERVER_CONTAINER = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
 
@@ -97,7 +99,7 @@ public class AuthServerTestEnricher {
     private SuiteContext suiteContext;
 
     @Inject
-    @ClassScoped
+    @ApplicationScoped // needed in AdapterTestExecutionDecider
     private InstanceProducer<TestContext> testContextProducer;
 
     @Inject
@@ -137,7 +139,7 @@ public class AuthServerTestEnricher {
     }
     
     public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
-        log.info("*****************************************************************"
+        log.info("************************" + event.getContainer().getName()
                 + "*****************************************************************************");
     }
 
@@ -216,12 +218,13 @@ public class AuthServerTestEnricher {
             suiteContext.setAuthServerInfo(container);
 
             containers.stream()
-              .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BACKEND))
-              .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                suiteContext.addAuthServerBackendsInfo(0, c);
-              });
+                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BACKEND))
+                .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier())) // ordering is expected by the cluster tests
+                .forEach(c -> {
+                    int portOffset = Integer.parseInt(c.getQualifier().substring(AUTH_SERVER_BACKEND.length()));
+                    updateWithAuthServerInfo(c, portOffset);
+                    suiteContext.addAuthServerBackendsInfo(0, c);
+                });
 
             if (suiteContext.getAuthServerBackendsInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));

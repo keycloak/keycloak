@@ -253,7 +253,7 @@ public class BaseWriter {
             return;
         }
 
-        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.EXTENSIONS.get(), PROTOCOL_NSURI.get());
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.EXTENSIONS__PROTOCOL.get(), PROTOCOL_NSURI.get());
 
         for (Object o : extensions.getAny()) {
             if (o instanceof Node) {

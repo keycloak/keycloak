@@ -1,6 +1,9 @@
 package org.keycloak.testsuite.console.page.roles;
 
-import org.jboss.arquillian.graphene.page.Page;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  *
@@ -23,11 +26,34 @@ public class Role extends RealmRoles {
         return getUriParameter(ROLE_ID).toString();
     }
 
-    @Page
-    private RoleForm form;
+    @FindBy(css = "ul.nav-tabs")
+    private RoleTabs tabs;
 
-    public RoleForm form() {
-        return form;
+    public RoleTabs roleTabs() {
+        return tabs;
+    }
+
+    public class RoleTabs {
+        @FindBy(linkText = "Details")
+        private WebElement detailsTab;
+
+        @FindBy(linkText = "Permissions")
+        private WebElement permissionsTab;
+
+        @FindBy(linkText = "Users in Role")
+        private WebElement usersInRoleTab;
+
+        public void details() {
+            clickLink(detailsTab);
+        }
+
+        public void permissions() {
+            clickLink(permissionsTab);
+        }
+
+        public void usersInRole() {
+            clickLink(usersInRoleTab);
+        }
     }
 
 }

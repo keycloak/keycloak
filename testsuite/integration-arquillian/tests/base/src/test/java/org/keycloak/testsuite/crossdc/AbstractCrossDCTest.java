@@ -101,6 +101,23 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     }
 
+    // Disable periodic tasks in cross-dc tests. It's needed to have some scenarios more stable.
+    @Before
+    public void suspendPeriodicTasks() {
+        backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
+            testingClient.testing().suspendPeriodicTasks();
+        });
+
+    }
+
+    @After
+    public void restorePeriodicTasks() {
+        backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
+            testingClient.testing().restorePeriodicTasks();
+        });
+    }
+
+
     @Override
     public void importTestRealms() {
         enableOnlyFirstNodeInFirstDc();
@@ -360,10 +377,10 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
             File dir = new File(cleanServerBaseDir);
             if (dir.exists()) {
                 try {
-                    FileUtils.cleanDirectory(dir);
+                    dir.renameTo(new File(dir.getParentFile(), dir.getName() + "--" + System.currentTimeMillis()));
 
                     File deploymentsDir = new File(dir, "deployments");
-                    deploymentsDir.mkdir();
+                    FileUtils.forceMkdir(deploymentsDir);
                 } catch (IOException ioe) {
                     throw new RuntimeException("Failed to clean directory: " + cleanServerBaseDir, ioe);
                 }

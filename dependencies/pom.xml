@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -31,6 +31,7 @@
     <description/>
 
     <modules>
+        <module>drools-bom</module>
         <module>server-min</module>
         <module>server-all</module>
     </modules>

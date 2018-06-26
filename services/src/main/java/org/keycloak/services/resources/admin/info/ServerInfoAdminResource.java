@@ -163,11 +163,10 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         info.setThemes(new HashMap<String, List<ThemeInfoRepresentation>>());
 
         for (Theme.Type type : Theme.Type.values()) {
-            List<String> themeNames = new LinkedList<>(themeProvider.nameSet(type));
+            List<String> themeNames = new LinkedList<>(session.theme().nameSet(type));
             Collections.sort(themeNames);
 
             if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
@@ -179,7 +178,7 @@ public class ServerInfoAdminResource {
 
             for (String name : themeNames) {
                 try {
-                    Theme theme = themeProvider.getTheme(name, type);
+                    Theme theme = session.theme().getTheme(name, type);
                     ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
                     ti.setName(name);
 
@@ -270,7 +269,7 @@ public class ServerInfoAdminResource {
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
             LoginProtocolFactory factory = (LoginProtocolFactory)p;
             List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
-            for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
+            for (ProtocolMapperModel mapper : factory.getBuiltinMappers().values()) {
                 mappers.add(ModelToRepresentation.toRepresentation(mapper));
             }
             info.getBuiltinProtocolMappers().put(p.getId(), mappers);

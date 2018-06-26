@@ -8,7 +8,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.utils.io.IOUtil;
 
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -17,7 +17,6 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 /**
  * @author mhajas
@@ -26,7 +25,7 @@ public class SamlConsentTest extends AbstractSamlTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
     }
 
     @Test

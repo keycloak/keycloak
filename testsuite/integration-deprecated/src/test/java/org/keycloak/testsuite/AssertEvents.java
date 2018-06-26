@@ -349,6 +349,13 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 throw new AssertionError("No type received within timeout");
             }
         }
+        public Event event() {
+            try {
+                return events.poll(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new AssertionError("No type received within timeout");
+            }
+        }
 
         public Event assertEvent(Event actual) {
             if (expected.getError() != null && !expected.getType().toString().endsWith("_ERROR")) {

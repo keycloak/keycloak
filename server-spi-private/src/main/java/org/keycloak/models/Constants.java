@@ -50,10 +50,15 @@ public interface Constants {
     int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
     // 30 days
     int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    // 60 days
+    int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
 
     String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
+    String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     String EXECUTION = "execution";
     String CLIENT_ID = "client_id";
+    String TAB_ID = "tab_id";
     String KEY = "key";
 
     String SKIP_LINK = "skipLink";
@@ -67,4 +72,6 @@ public interface Constants {
     String GENERATE = "GENERATE";
 
     int DEFAULT_MAX_RESULTS = 100;
+
+    String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
 }

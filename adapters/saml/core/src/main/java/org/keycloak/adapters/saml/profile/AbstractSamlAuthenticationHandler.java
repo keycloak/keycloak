@@ -339,7 +339,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             return AuthOutcome.FAILED;
         }
         try {
-            assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
+            assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
             if (AssertionUtil.hasExpired(assertion)) {
                 return initiateLogin();
             }

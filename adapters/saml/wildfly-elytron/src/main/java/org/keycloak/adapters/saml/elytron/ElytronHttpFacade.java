@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.saml.elytron;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -146,6 +147,8 @@ class ElytronHttpFacade implements HttpFacade {
     @Override
     public Request getRequest() {
         return new Request() {
+            private InputStream inputStream;
+
             @Override
             public String getMethod() {
                 return request.getRequestMethod();
@@ -207,6 +210,19 @@ class ElytronHttpFacade implements HttpFacade {
 
             @Override
             public InputStream getInputStream() {
+                return getInputStream(false);
+            }
+
+            @Override
+            public InputStream getInputStream(boolean buffered) {
+                if (inputStream != null) {
+                    return inputStream;
+                }
+
+                if (buffered) {
+                    return inputStream = new BufferedInputStream(request.getInputStream());
+                }
+
                 return request.getInputStream();
             }
 

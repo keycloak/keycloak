@@ -219,7 +219,7 @@ public class UserSessionEntity extends SessionEntity {
 
         entityWrapper.putLocalMetadataNoteInt(LAST_SESSION_REFRESH_REMOTE, lsrRemote);
 
-        logger.debugf("Updating session entity. lastSessionRefresh=%d, lastSessionRefreshRemote=%d", getLastSessionRefresh(), lsrRemote);
+        logger.debugf("Updating session entity '%s'. lastSessionRefresh=%d, lastSessionRefreshRemote=%d", getId(), getLastSessionRefresh(), lsrRemote);
 
         return entityWrapper;
     }

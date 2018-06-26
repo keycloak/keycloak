@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -40,7 +41,7 @@ public class LoginRecoverUsernamePage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Forgot Your Username?");
+        return PageUtils.getPageTitle(driver).equals("Forgot Your Username?");
     }
 
     public void open() {

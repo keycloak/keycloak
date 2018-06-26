@@ -17,25 +17,27 @@
 
 package org.keycloak.adapters.springsecurity.authentication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.apache.http.HttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.spi.HttpFacade;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import org.mockito.Mock;
-import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * Keycloak authentication entry point tests.
@@ -47,12 +49,15 @@ public class KeycloakAuthenticationEntryPointTest {
     private MockHttpServletResponse response;
     @Mock
     private ApplicationContext applicationContext;
-   
+
     @Mock
     private AdapterDeploymentContext adapterDeploymentContext;
-    
+
     @Mock
     private KeycloakDeployment keycloakDeployment;
+
+    @Mock
+    private RequestMatcher requestMatcher;
 
     @Before
     public void setUp() throws Exception {
@@ -99,6 +104,14 @@ public class KeycloakAuthenticationEntryPointTest {
         authenticationEntryPoint.commence(request, response, null);
         assertEquals(HttpStatus.FOUND.value(), response.getStatus());
         assertEquals(logoutUri, response.getHeader("Location"));
+    }
+
+    @Test
+    public void testCommenceWithCustomRequestMatcher() throws Exception {
+        new KeycloakAuthenticationEntryPoint(adapterDeploymentContext, requestMatcher)
+            .commence(request, response, null);
+
+        verify(requestMatcher).matches(request);
     }
 
     private void configureBrowserRequest() {

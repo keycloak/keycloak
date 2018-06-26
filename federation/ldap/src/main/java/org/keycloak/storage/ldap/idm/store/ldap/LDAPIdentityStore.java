@@ -447,9 +447,10 @@ public class LDAPIdentityStore implements IdentityStore {
             for (String objectClassValue : ldapObject.getObjectClasses()) {
                 objectClassAttribute.add(objectClassValue);
 
-                if (objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
+                if ((objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
                         || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
-                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) {
+                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) &&
+                        (entryAttributes.get(LDAPConstants.MEMBER) == null)) {
                     entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
                 }
             }

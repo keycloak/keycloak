@@ -1,0 +1,134 @@
+//
+// Panels
+// --------------------------------------------------
+
+.panel-title {
+  font-weight: 700;
+}
+
+//
+// Collapsable panels (aka, accordion)
+// --------------------------------------------------
+
+.panel-group {
+  .panel {
+    color: $gray-pf;
+    + .panel {
+      margin-top: -1px;
+    }
+  }
+  .panel-default {
+    border-color: $panel-default-border-color;
+    border-top-color: $panel-default-border-color;
+    .panel-heading {
+      @include gradient-vertical($btn-default-bg-img-start, $btn-default-bg-img-stop);
+      + .panel-collapse .panel-body {
+        border-top: 1px solid $panel-inner-border;
+      }
+    }
+  }
+
+  .panel-info {
+    border-color: $panel-info-border;
+    .panel-heading {
+      background-color: $panel-group-pf-info-heading-bg;
+    }
+    + .panel-default {
+      border-top-color: $panel-info-border;
+    }
+  }
+  .panel-primary {
+    border-color: $panel-primary-border;
+    .panel-heading {
+      background-color: $panel-group-pf-primary-heading-bg;
+    }
+    + .panel-default {
+      border-top-color: $panel-primary-border;
+    }
+    + .panel-info {
+      border-top-color: $panel-primary-border;
+    }
+  }
+  .panel-success {
+    border-color: $panel-success-border;
+    .panel-heading {
+      background-color: $panel-group-pf-success-heading-bg;
+    }
+    + .panel-default {
+      border-top-color: $panel-success-border;
+    }
+    + .panel-info {
+      border-top-color: $panel-success-border;
+    }
+    + .panel-primary {
+      border-top-color: $panel-success-border;
+    }
+  }
+  .panel-warning {
+    border-color: $panel-warning-border;
+    .panel-heading {
+      background-color: $panel-group-pf-warning-heading-bg;
+    }
+    + .panel-default {
+      border-top-color: $panel-warning-border;
+    }
+    + .panel-info {
+      border-top-color: $panel-warning-border;
+    }
+    + .panel-primary {
+      border-top-color: $panel-warning-border;
+    }
+    + .panel-success {
+      border-top-color: $panel-warning-border;
+    }
+  }
+  .panel-danger {
+    border-color: $panel-danger-border;
+    .panel-heading {
+      background-color: $panel-group-pf-danger-heading-bg;
+    }
+    + .panel-default {
+      border-top-color: $panel-danger-border;
+    }
+    + .panel-info {
+      border-top-color: $panel-danger-border;
+    }
+    + .panel-primary {
+      border-top-color: $panel-danger-border;
+    }
+    + .panel-success {
+      border-top-color: $panel-danger-border;
+    }
+    + .panel-warning {
+      border-top-color: $panel-danger-border;
+    }
+  }
+  .panel-title {
+    font-weight: 500;
+    line-height: 1;
+    > a {
+      color: $gray-pf;
+      font-weight: $btn-font-weight;
+      &:before {
+        content: "\f107";
+        display: inline-block;
+        font-family: $icon-font-name-fa;
+        font-size: 13px;
+        margin-right: 5px;
+        text-align: center;
+        vertical-align: 0;
+        width: 8px;
+      }
+      &:focus {
+        outline: none;
+        text-decoration: none;
+      }
+      &:hover {
+        text-decoration: none;
+      }
+      &.collapsed:before {
+        content: "\f105";
+      }
+    }
+  }
+}

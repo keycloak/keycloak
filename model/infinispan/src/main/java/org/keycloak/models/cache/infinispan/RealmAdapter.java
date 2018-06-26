@@ -24,6 +24,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,6 @@ public class RealmAdapter implements CachedRealmModel {
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
     protected volatile RealmModel updated;
-    protected RealmCache cache;
     protected KeycloakSession session;
 
     public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
@@ -49,7 +49,7 @@ public class RealmAdapter implements CachedRealmModel {
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getDelegate().getRealm(cached.getId());
+            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -81,7 +81,7 @@ public class RealmAdapter implements CachedRealmModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getRealm(cached.getId());
+        updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -139,6 +139,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setEnabled(boolean enabled) {
         getDelegateForUpdate();
         updated.setEnabled(enabled);
+    }
+
+    @Override
+    public boolean isUserManagedAccessAllowed() {
+        if (isUpdated()) return updated.isEnabled();
+        return cached.isAllowUserManagedAccess();
+    }
+
+    @Override
+    public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
+        getDelegateForUpdate();
+        updated.setUserManagedAccessAllowed(userManagedAccessAllowed);
     }
 
     @Override
@@ -406,6 +418,31 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setOfflineSessionIdleTimeout(seconds);
     }
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    @Override
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+        if (isUpdated()) return updated.isOfflineSessionMaxLifespanEnabled();
+        return cached.isOfflineSessionMaxLifespanEnabled();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+    }
+
+    @Override
+    public int getOfflineSessionMaxLifespan() {
+        if (isUpdated()) return updated.getOfflineSessionMaxLifespan();
+        return cached.getOfflineSessionMaxLifespan();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespan(seconds);
+    }
+
     @Override
     public int getAccessTokenLifespan() {
         if (isUpdated()) return updated.getAccessTokenLifespan();
@@ -455,6 +492,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Map<String, Integer> getUserActionTokenLifespans() {
+        if (isUpdated()) return updated.getUserActionTokenLifespans();
+        return cached.getUserActionTokenLifespans();
+    }
+
+    @Override
     public int getAccessCodeLifespanLogin() {
         if (isUpdated()) return updated.getAccessCodeLifespanLogin();
         return cached.getAccessCodeLifespanLogin();
@@ -488,6 +531,20 @@ public class RealmAdapter implements CachedRealmModel {
     public void setActionTokenGeneratedByUserLifespan(int seconds) {
         getDelegateForUpdate();
         updated.setActionTokenGeneratedByUserLifespan(seconds);
+    }
+
+    @Override
+    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
+        if (isUpdated()) return updated.getActionTokenGeneratedByUserLifespan(actionTokenId);
+        return cached.getActionTokenGeneratedByUserLifespan(actionTokenId);
+    }
+
+    @Override
+    public void setActionTokenGeneratedByUserLifespan(String actionTokenId, Integer seconds) {
+        if (seconds != null) {
+            getDelegateForUpdate();
+            updated.setActionTokenGeneratedByUserLifespan(actionTokenId, seconds);
+        }
     }
 
     @Override
@@ -1255,15 +1312,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<ClientTemplateModel> getClientTemplates() {
-        if (isUpdated()) return updated.getClientTemplates();
-        List<String> clientTemplates = cached.getClientTemplates();
-        if (clientTemplates.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientTemplateModel> apps = new LinkedList<ClientTemplateModel>();
-        for (String id : clientTemplates) {
-            ClientTemplateModel model = cacheSession.getClientTemplateById(id, this);
+    public List<ClientScopeModel> getClientScopes() {
+        if (isUpdated()) return updated.getClientScopes();
+        List<String> clientScopes = cached.getClientScopes();
+        if (clientScopes.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientScopeModel> apps = new LinkedList<ClientScopeModel>();
+        for (String id : clientScopes) {
+            ClientScopeModel model = cacheSession.getClientScopeById(id, this);
             if (model == null) {
-                throw new IllegalStateException("Cached clientemplate not found: " + id);
+                throw new IllegalStateException("Cached clientScope not found: " + id);
             }
             apps.add(model);
         }
@@ -1272,66 +1329,102 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public ClientTemplateModel addClientTemplate(String name) {
+    public ClientScopeModel addClientScope(String name) {
         getDelegateForUpdate();
-        ClientTemplateModel app = updated.addClientTemplate(name);
-        cacheSession.registerClientTemplateInvalidation(app.getId());
+        ClientScopeModel app = updated.addClientScope(name);
+        cacheSession.registerClientScopeInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public ClientTemplateModel addClientTemplate(String id, String name) {
+    public ClientScopeModel addClientScope(String id, String name) {
         getDelegateForUpdate();
-        ClientTemplateModel app =  updated.addClientTemplate(id, name);
-        cacheSession.registerClientTemplateInvalidation(app.getId());
+        ClientScopeModel app =  updated.addClientScope(id, name);
+        cacheSession.registerClientScopeInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public boolean removeClientTemplate(String id) {
-        cacheSession.registerClientTemplateInvalidation(id);
+    public boolean removeClientScope(String id) {
+        cacheSession.registerClientScopeInvalidation(id);
         getDelegateForUpdate();
-        return updated.removeClientTemplate(id);
+        return updated.removeClientScope(id);
     }
 
     @Override
-    public ClientTemplateModel getClientTemplateById(String id) {
-        if (isUpdated()) return updated.getClientTemplateById(id);
-        return cacheSession.getClientTemplateById(id, this);
+    public ClientScopeModel getClientScopeById(String id) {
+        if (isUpdated()) return updated.getClientScopeById(id);
+        return cacheSession.getClientScopeById(id, this);
+    }
+
+    @Override
+    public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        getDelegateForUpdate();
+        updated.addDefaultClientScope(clientScope, defaultScope);
+    }
+
+    @Override
+    public void removeDefaultClientScope(ClientScopeModel clientScope) {
+        getDelegateForUpdate();
+        updated.removeDefaultClientScope(clientScope);
+    }
+
+    @Override
+    public List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
+        if (isUpdated()) return updated.getDefaultClientScopes(defaultScope);
+
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+
+        List<ClientScopeModel> clientScopes = new LinkedList<>();
+        for (String scopeId : clientScopeIds) {
+            ClientScopeModel clientScope = cacheSession.getClientScopeById(scopeId, this);
+            if (clientScope != null) {
+                clientScopes.add(clientScope);
+            }
+        }
+        return clientScopes;
     }
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
         getDelegateForUpdate();
-        evictUsers(model);
+        executeEvictions(model);
         return updated.addComponentModel(model);
     }
 
     @Override
     public ComponentModel importComponentModel(ComponentModel model) {
         getDelegateForUpdate();
-        evictUsers(model);
+        executeEvictions(model);
         return updated.importComponentModel(model);
     }
 
-    public void evictUsers(ComponentModel model) {
-        String parentId = model.getParentId();
-        evictUsers(parentId);
-    }
-
-    public void evictUsers(String parentId) {
-        if (parentId != null && !parentId.equals(getId())) {
-            ComponentModel parent = getComponent(parentId);
+    public void executeEvictions(ComponentModel model) {
+        if (model == null) return;
+        // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
+        if (model.getParentId() != null && !model.getParentId().equals(getId())) {
+            ComponentModel parent = getComponent(model.getParentId());
             if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
                 session.userCache().evict(this);
             }
+            return;
+        }
+
+        // invalidate entire user cache if we're dealing with user storage SPI
+        if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
+            session.userCache().evict(this);
+        }
+        // invalidate entire realm if we're dealing with client storage SPI
+        // entire realm because of client roles, client lists, and clients
+        if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
+            cacheSession.evictRealmOnRemoval(this);
         }
     }
 
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
-        evictUsers(component);
+        executeEvictions(component);
         updated.updateComponent(component);
 
     }
@@ -1339,7 +1432,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponent(ComponentModel component) {
         getDelegateForUpdate();
-        evictUsers(component);
+        executeEvictions(component);
         updated.removeComponent(component);
 
     }
@@ -1347,7 +1440,6 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponents(String parentId) {
         getDelegateForUpdate();
-        evictUsers(parentId);
         updated.removeComponents(parentId);
 
     }

@@ -27,13 +27,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
@@ -41,6 +40,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -50,6 +50,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -67,7 +68,13 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -197,11 +204,20 @@ public class OAuthClient {
         origin = null;
     }
 
+    public void setDriver(WebDriver driver) {
+        this.driver = driver;
+    }
+
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);
 
         return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doLogin(UserRepresentation user) {
+
+        return doLogin(user.getUsername(), getPasswordOf(user));
     }
 
     public void fillLoginForm(String username, String password) {
@@ -243,13 +259,13 @@ public class OAuthClient {
             } catch(Exception e) {
                 e.printStackTrace();
             }
-            return (DefaultHttpClient)new HttpClientBuilder()
+            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
                     .keyStore(keystore, keyStorePassword)
                     .trustStore(truststore)
-                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
                     .build();
         }
-        return new DefaultHttpClient();
+        return HttpClientBuilder.create().build();
     }
 
     public CloseableHttpResponse doPreflightRequest() {
@@ -263,52 +279,99 @@ public class OAuthClient {
         }
     }
 
+    // KEYCLOAK-6771 Certificate Bound Token
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
         try (CloseableHttpClient client = newCloseableHttpClient()) {
-            HttpPost post = new HttpPost(getAccessTokenUrl());
-
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-
-            if (origin != null) {
-                post.addHeader("Origin", origin);
-            }
-            if (code != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            }
-            if (redirectUri != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
-            }
-            if (clientId != null && password != null) {
-                String authorization = BasicAuthHelper.createHeader(clientId, password);
-                post.setHeader("Authorization", authorization);
-            } else if (clientId != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-            }
-
-            if (clientSessionState != null) {
-                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-            }
-
-            if (clientSessionHost != null) {
-                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-            }
-
-            // https://tools.ietf.org/html/rfc7636#section-4.5
-            if (codeVerifier != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
-            }
-
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
-            post.setEntity(formEntity);
-
-            try {
-                return new AccessTokenResponse(client.execute(post));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to retrieve access token", e);
-            }
-        } catch (IOException ioe) {
+            return doAccessTokenRequest(code, password, client);
+        }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        }
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    public AccessTokenResponse doAccessTokenRequest(String code, String password, CloseableHttpClient client) {
+        HttpPost post = new HttpPost(getAccessTokenUrl());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
+        if (code != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+        }
+        if (redirectUri != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
+        }
+        if (clientId != null && password != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, password);
+            post.setHeader("Authorization", authorization);
+        } else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        if (clientSessionState != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+        }
+
+        if (clientSessionHost != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
+        // https://tools.ietf.org/html/rfc7636#section-4.5
+        if (codeVerifier != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+        }
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try {
+            return new AccessTokenResponse(client.execute(post));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
+        }
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return introspectTokenWithClientCredential(clientId, clientSecret, tokenType, tokenToIntrospect, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect, CloseableHttpClient client) {
+        HttpPost post = new HttpPost(getTokenIntrospectionUrl());
+
+        String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+        post.setHeader("Authorization", authorization);
+
+        List<NameValuePair> parameters = new LinkedList<>();
+
+        parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
+        parameters.add(new BasicNameValuePair("token_type_hint", tokenType));
+
+        UrlEncodedFormEntity formEntity;
+
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = client.execute(post)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            response.getEntity().writeTo(out);
+            return new String(out.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
         }
     }
 
@@ -318,41 +381,6 @@ public class OAuthClient {
 
     public String introspectRefreshTokenWithClientCredential(String clientId, String clientSecret, String tokenToIntrospect) {
         return introspectTokenWithClientCredential(clientId, clientSecret, "refresh_token", tokenToIntrospect);
-    }
-
-    public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
-        try (CloseableHttpClient client = new DefaultHttpClient()) {
-            HttpPost post = new HttpPost(getTokenIntrospectionUrl());
-
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.setHeader("Authorization", authorization);
-
-            List<NameValuePair> parameters = new LinkedList<>();
-
-            parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
-            parameters.add(new BasicNameValuePair("token_type_hint", tokenType));
-
-            UrlEncodedFormEntity formEntity;
-
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-
-            post.setEntity(formEntity);
-
-            try (CloseableHttpResponse response = client.execute(post)) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-                response.getEntity().writeTo(out);
-                return new String(out.toByteArray());
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to retrieve access token", e);
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
@@ -365,11 +393,10 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
@@ -382,7 +409,10 @@ public class OAuthClient {
                 post.setHeader("Authorization", authorization);
             } else {
                 parameters.add(new BasicNameValuePair("client_id", clientId));
+            }
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
             }
 
             if (clientSessionState != null) {
@@ -404,18 +434,15 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
@@ -448,17 +475,14 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -482,32 +506,26 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
         }
     }
 
 
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(getCertsUrl(realm));
             CloseableHttpResponse response = client.execute(get);
             return JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
-        } finally {
-            closeClient(client);
         }
     }
 
     public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
             if (scope != null) {
@@ -523,85 +541,92 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } finally {
-            closeClient(client);
+        } 
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return doLogout(refreshToken, clientSecret, client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    public CloseableHttpResponse doLogout(String refreshToken, String clientSecret, CloseableHttpClient client) throws IOException {
+        HttpPost post = new HttpPost(getLogoutUrl().build());
 
-    public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
-        CloseableHttpClient client = new DefaultHttpClient();
+        List<NameValuePair> parameters = new LinkedList<>();
+        if (refreshToken != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
+        }
+        if (clientId != null && clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+        } else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        UrlEncodedFormEntity formEntity;
         try {
-            HttpPost post = new HttpPost(getLogoutUrl().build());
-
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-            if (refreshToken != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
-            }
-            if (clientId != null && clientSecret != null) {
-                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-                post.setHeader("Authorization", authorization);
-            } else if (clientId != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-            }
-
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-            post.setEntity(formEntity);
-
-            return client.execute(post);
-        } finally {
-            closeClient(client);
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
+        post.setEntity(formEntity);
+
+        return client.execute(post);
     }
 
+    // KEYCLOAK-6771 Certificate Bound Token
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
-        CloseableHttpClient client = new DefaultHttpClient();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return doRefreshTokenRequest(refreshToken, password, client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    // KEYCLOAK-6771 Certificate Bound Token
+    public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password, CloseableHttpClient client) {
+        HttpPost post = new HttpPost(getRefreshTokenUrl());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
+
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
+        if (refreshToken != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
+        }
+        if (clientId != null && password != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, password);
+            post.setHeader("Authorization", authorization);
+        } else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        if (clientSessionState != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+        }
+        if (clientSessionHost != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
+        UrlEncodedFormEntity formEntity;
         try {
-            HttpPost post = new HttpPost(getRefreshTokenUrl());
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
-
-            if (origin != null) {
-                post.addHeader("Origin", origin);
-            }
-            if (refreshToken != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
-            }
-            if (clientId != null && password != null) {
-                String authorization = BasicAuthHelper.createHeader(clientId, password);
-                post.setHeader("Authorization", authorization);
-            } else if (clientId != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-            }
-
-            if (clientSessionState != null) {
-                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-            }
-            if (clientSessionHost != null) {
-                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-            }
-
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-            post.setEntity(formEntity);
-
-            try {
-                return new AccessTokenResponse(client.execute(post));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to retrieve access token", e);
-            }
-        } finally {
-            closeClient(client);
+        try {
+            return new AccessTokenResponse(client.execute(post));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
         }
     }
 
@@ -638,7 +663,7 @@ public class OAuthClient {
                 throw new RuntimeException("Invalid refresh token");
             }
             return jws.readJsonContent(RefreshToken.class);
-        } catch (Exception e) {
+        } catch (RuntimeException | JWSInputException e) {
             throw new RuntimeException("Invalid refresh token", e);
         }
     }
@@ -664,8 +689,8 @@ public class OAuthClient {
     }
 
     public Map<String, String> getCurrentQuery() {
-        Map<String, String> m = new HashMap<String, String>();
-        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), "UTF-8");
+        Map<String, String> m = new HashMap<>();
+        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), Charset.forName("UTF-8"));
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
         }
@@ -673,7 +698,7 @@ public class OAuthClient {
     }
 
     public Map<String, String> getCurrentFragment() {
-        Map<String, String> m = new HashMap<String, String>();
+        Map<String, String> m = new HashMap<>();
 
         String fragment = getCurrentUri().getRawFragment();
         List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, Charset.forName("UTF-8"));
@@ -870,16 +895,16 @@ public class OAuthClient {
 
     // https://tools.ietf.org/html/rfc7636#section-4
     public OAuthClient codeVerifier(String codeVerifier) {
-    	this.codeVerifier = codeVerifier;
-    	return this;
+        this.codeVerifier = codeVerifier;
+        return this;
     }
     public OAuthClient codeChallenge(String codeChallenge) {
-    	this.codeChallenge = codeChallenge;
-    	return this;
+        this.codeChallenge = codeChallenge;
+        return this;
     }
     public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
-    	this.codeChallengeMethod = codeChallengeMethod;
-    	return this;
+        this.codeChallengeMethod = codeChallengeMethod;
+        return this;
     }
     public OAuthClient origin(String origin) {
         this.origin = origin;
@@ -894,6 +919,8 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
+        private String sessionState;
+
         // Just during OIDC implicit or hybrid flow
         private String accessToken;
         private String idToken;
@@ -905,6 +932,11 @@ public class OAuthClient {
             } catch (IllegalArgumentException iae) {
                 fragment = false;
             }
+
+            if ("fragment".equals(client.responseMode)) {
+                fragment = true;
+            }
+
             init (client, fragment);
         }
 
@@ -920,6 +952,7 @@ public class OAuthClient {
             state = params.get(OAuth2Constants.STATE);
             error = params.get(OAuth2Constants.ERROR);
             errorDescription = params.get(OAuth2Constants.ERROR_DESCRIPTION);
+            sessionState = params.get(OAuth2Constants.SESSION_STATE);
             accessToken = params.get(OAuth2Constants.ACCESS_TOKEN);
             idToken = params.get(OAuth2Constants.ID_TOKEN);
         }
@@ -942,6 +975,10 @@ public class OAuthClient {
 
         public String getErrorDescription() {
             return errorDescription;
+        }
+
+        public String getSessionState() {
+            return sessionState;
         }
 
         public String getAccessToken() {
@@ -986,7 +1023,7 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent());
+                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
                 Map responseJson = JsonSerialization.readValue(s, Map.class);
 
                 if (statusCode == 200) {
@@ -1075,12 +1112,15 @@ public class OAuthClient {
         return publicKeys.get(realm);
     }
 
+    public void removeCachedPublicKeys() {
+        publicKeys.clear();
+    }
+
 
     private interface StateParamProvider {
 
         String getState();
 
     }
-
 
 }

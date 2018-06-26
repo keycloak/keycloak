@@ -30,30 +30,36 @@
         </addColumn>
     </changeSet>
 
-    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part2">
-        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+    <changeSet author="hmlnarik@redhat.com" id="authz-3.4.0.CR1-resource-server-pk-change-part2-KEYCLOAK-6095">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <dbms type="mssql" />
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
             </not>
         </preConditions>
-        <sql>
-            UPDATE RESOURCE_SERVER_POLICY p SET RESOURCE_SERVER_CLIENT_ID = (SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
-            UPDATE RESOURCE_SERVER_RESOURCE p SET RESOURCE_SERVER_CLIENT_ID = (SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
-            UPDATE RESOURCE_SERVER_SCOPE p SET RESOURCE_SERVER_CLIENT_ID = (SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
-        </sql>
-    </changeSet>
-    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part2-mssql">
-        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <dbms type="mssql" />
-        </preConditions>
-        <sql>
-            UPDATE RESOURCE_SERVER_POLICY SET RESOURCE_SERVER_CLIENT_ID = s.CLIENT_ID FROM (SELECT ID, CLIENT_ID FROM RESOURCE_SERVER) s WHERE s.ID = RESOURCE_SERVER_POLICY.RESOURCE_SERVER_ID;
-            UPDATE RESOURCE_SERVER_RESOURCE SET RESOURCE_SERVER_CLIENT_ID = s.CLIENT_ID FROM (SELECT ID, CLIENT_ID FROM RESOURCE_SERVER) s WHERE s.ID = RESOURCE_SERVER_RESOURCE.RESOURCE_SERVER_ID;
-            UPDATE RESOURCE_SERVER_SCOPE SET RESOURCE_SERVER_CLIENT_ID = s.CLIENT_ID FROM (SELECT ID, CLIENT_ID FROM RESOURCE_SERVER) s WHERE s.ID = RESOURCE_SERVER_SCOPE.RESOURCE_SERVER_ID;
-        </sql>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdateAuthz_3_4_0_CR1" />
     </changeSet>
 
-    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3">
+    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="mssql" />
+            <not>
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
+            </not>
+        </preConditions>
+        
+        <dropIndex tableName="RESOURCE_SERVER_POLICY" indexName="IDX_RES_SERV_POL_RES_SERV"/>
+        <dropIndex tableName="RESOURCE_SERVER_RESOURCE" indexName="IDX_RES_SRV_RES_RES_SRV"/>
+        <dropIndex tableName="RESOURCE_SERVER_SCOPE" indexName="IDX_RES_SRV_SCOPE_RES_SRV"/>
+    </changeSet>
+        
+    <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed-nodropindex">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
+            </not>
+        </preConditions>
+
         <addNotNullConstraint tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
         <addNotNullConstraint tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
         <addNotNullConstraint tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
@@ -63,15 +69,12 @@
         <dropUniqueConstraint tableName="RESOURCE_SERVER_SCOPE" constraintName="UK_FRSRST700S9V50BU18WS5HA6"/>
 
         <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_POLICY" constraintName="FK_FRSRPO213XCX4WNKOG82SSRFY"/>
-        <dropIndex tableName="RESOURCE_SERVER_POLICY" indexName="IDX_RES_SERV_POL_RES_SERV"/>
         <dropColumn tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_ID"/>
 
         <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_RESOURCE" constraintName="FK_FRSRHO213XCX4WNKOG82SSRFY"/>
-        <dropIndex tableName="RESOURCE_SERVER_RESOURCE" indexName="IDX_RES_SRV_RES_RES_SRV"/>
         <dropColumn tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_ID"/>
 
         <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_SCOPE" constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY"/>
-        <dropIndex tableName="RESOURCE_SERVER_SCOPE" indexName="IDX_RES_SRV_SCOPE_RES_SRV"/>
         <dropColumn tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_ID"/>
 
         <dropPrimaryKey tableName="RESOURCE_SERVER" constraintName="CONSTRAINT_FARS"/>

@@ -81,21 +81,26 @@ public class LDAPIdentityStoreRegistry {
      * Create LDAPIdentityStore to be cached in the local registry
      */
     public static LDAPIdentityStore createLdapIdentityStore(LDAPConfig cfg) {
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", "none simple");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", "1");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", "1000");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", "5");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", "300000");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", cfg.getConnectionPoolingAuthentication(), "none simple");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", cfg.getConnectionPoolingInitSize(), "1");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", cfg.getConnectionPoolingMaxSize(), "1000");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", cfg.getConnectionPoolingPrefSize(), "5");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", cfg.getConnectionPoolingTimeout(), "300000");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", cfg.getConnectionPoolingProtocol(), "plain");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", cfg.getConnectionPoolingDebug(), "off");
 
         return new LDAPIdentityStore(cfg);
     }
 
-    private static void checkSystemProperty(String name, String defaultValue) {
-        if (System.getProperty(name) == null) {
-            System.setProperty(name, defaultValue);
+    private static void checkSystemProperty(String name, String cfgValue, String defaultValue) {
+        String value = System.getProperty(name);
+        if(cfgValue != null) {
+            value = cfgValue;
         }
+        if(value == null) {
+            value = defaultValue;
+        }
+        System.setProperty(name, value);
     }
 
 

@@ -25,6 +25,12 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.id;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -69,15 +75,15 @@ public class RulePolicyForm extends Form {
     @FindBy(id = "resolveModule")
     private WebElement resolveModuleButton;
 
-    public void populate(RulePolicyRepresentation expected) {
+    public void populate(RulePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         setInputValue(artifactGroupId, expected.getArtifactGroupId());
         setInputValue(artifactId, expected.getArtifactId());
         setInputValue(artifactVersion, expected.getArtifactVersion());
 
-        resolveModuleButton.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(resolveModuleButton);
+        waitGui().withTimeout(150, TimeUnit.SECONDS).until().element(id("moduleName")).is().enabled(); // The module load time could be long at some conditions
 
         moduleName.selectByVisibleText(expected.getModuleName());
         WaitUtils.pause(1000);
@@ -88,7 +94,9 @@ public class RulePolicyForm extends Form {
         scannerPeriodUnit.selectByVisibleText(expected.getScannerPeriodUnit());
         logic.selectByValue(expected.getLogic().name());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {

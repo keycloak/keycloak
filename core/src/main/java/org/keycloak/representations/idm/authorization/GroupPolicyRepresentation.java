@@ -17,6 +17,7 @@
 package org.keycloak.representations.idm.authorization;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -76,12 +77,12 @@ public class GroupPolicyRepresentation extends AbstractPolicyRepresentation {
 
     public void removeGroup(String... ids) {
         if (groups != null) {
-            for (final String id : ids) {
-                if (!groups.remove(id)) {
-                    for (GroupDefinition group : new HashSet<>(groups)) {
-                        if (group.getPath().startsWith(id)) {
-                            groups.remove(group);
-                        }
+            for (String id : ids) {
+                Iterator<GroupDefinition> iterator = groups.iterator();
+                while (iterator.hasNext()) {
+                    GroupDefinition group = iterator.next();
+                    if (id.equals(group.getId()) || (group.getPath() != null && group.getPath().equals(id))) {
+                        iterator.remove();
                     }
                 }
             }

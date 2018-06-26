@@ -5,6 +5,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -52,6 +53,12 @@ public class ClientManager {
             clientResource.update(app);
         }
 
+        public void setServiceAccountsEnabled(Boolean enabled) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setServiceAccountsEnabled(enabled);
+            clientResource.update(app);
+        }
+
         public void updateAttribute(String attribute, String value) {
             ClientRepresentation app = clientResource.toRepresentation();
             if (app.getAttributes() == null) {
@@ -81,10 +88,27 @@ public class ClientManager {
             return this;
         }
 
-        public void fullScopeAllowed(boolean enable) {
+        public ClientManagerBuilder fullScopeAllowed(boolean enable) {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setFullScopeAllowed(enable);
             clientResource.update(app);
+            return this;
+        }
+
+        public void addClientScope(String clientScopeId, boolean defaultScope) {
+            if (defaultScope) {
+                clientResource.addDefaultClientScope(clientScopeId);
+            } else {
+                clientResource.addOptionalClientScope(clientScopeId);
+            }
+        }
+
+        public void removeClientScope(String clientScopeId, boolean defaultScope) {
+            if (defaultScope) {
+                clientResource.removeDefaultClientScope(clientScopeId);
+            } else {
+                clientResource.removeOptionalClientScope(clientScopeId);
+            }
         }
 
         public void consentRequired(boolean enable) {
@@ -131,6 +155,10 @@ public class ClientManager {
                 }
             }
             clientResource.update(app);
+        }
+
+        public UserRepresentation getServiceAccountUser() {
+            return clientResource.getServiceAccountUser();
         }
     }
 }

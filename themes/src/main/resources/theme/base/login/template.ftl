@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayWide=false>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" class="${properties.kcHtmlClass!}">
 
@@ -12,7 +12,7 @@
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
         </#list>
     </#if>
-    <title><#nested "title"></title>
+    <title>${msg("loginTitle",(realm.displayName!''))}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
@@ -32,62 +32,55 @@
 </head>
 
 <body class="${properties.kcBodyClass!}">
-    <div id="kc-logo"><a href="${properties.kcLogoLink!'#'}"><div id="kc-logo-wrapper"></div></a></div>
-
-    <div id="kc-container" class="${properties.kcContainerClass!}">
-        <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
-
-            <div id="kc-header" class="${properties.kcHeaderClass!}">
-                <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}"><#nested "header"></div>
-            </div>
-
-            <#if realm.internationalizationEnabled>
-                <div id="kc-locale" class="${properties.kcLocaleClass!}">
-                    <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
-                        <div class="kc-dropdown" id="kc-locale-dropdown">
-                            <a href="#" id="kc-current-locale-link">${locale.current}</a>
-                            <ul>
-                                <#list locale.supported as l>
-                                    <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
-                                </#list>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </#if>
-
-            <div id="kc-content" class="${properties.kcContentClass!}">
-                <div id="kc-content-wrapper" class="${properties.kcContentWrapperClass!}">
-
-                    <#if displayMessage && message?has_content>
-                        <div class="${properties.kcFeedbackAreaClass!}">
-                            <div class="alert alert-${message.type}">
-                                <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
-                                <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
-                                <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
-                                <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
-                                <span class="kc-feedback-text">${message.summary?no_esc}</span>
-                            </div>
-                        </div>
-                    </#if>
-
-                    <div id="kc-form" class="${properties.kcFormAreaClass!}">
-                        <div id="kc-form-wrapper" class="${properties.kcFormAreaWrapperClass!}">
-                            <#nested "form">
-                        </div>
-                    </div>
-
-                    <#if displayInfo>
-                        <div id="kc-info" class="${properties.kcInfoAreaClass!}">
-                            <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                                <#nested "info">
-                            </div>
-                        </div>
-                    </#if>
-                </div>
-            </div>
-        </div>
+  <div class="${properties.kcLoginClass!}">
+    <div id="kc-header" class="${properties.kcHeaderClass!}">
+      <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">${msg("loginTitleHtml",(realm.displayNameHtml!''))?no_esc}</div>
     </div>
+    <div class="${properties.kcFormCardClass!} <#if displayWide>${properties.kcFormCardAccountClass!}</#if>">
+      <header class="${properties.kcFormHeaderClass!}">
+        <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
+            <div id="kc-locale">
+                <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
+                    <div class="kc-dropdown" id="kc-locale-dropdown">
+                        <a href="#" id="kc-current-locale-link">${locale.current}</a>
+                        <ul>
+                            <#list locale.supported as l>
+                                <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
+                            </#list>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </#if>
+        <h1 id="kc-page-title"><#nested "header"></h1>
+      </header>
+      <div id="kc-content">
+        <div id="kc-content-wrapper">
+
+          <#if displayMessage && message?has_content>
+              <div class="alert alert-${message.type}">
+                  <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
+                  <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
+                  <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
+                  <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
+                  <span class="kc-feedback-text">${message.summary?no_esc}</span>
+              </div>
+          </#if>
+
+          <#nested "form">
+
+          <#if displayInfo>
+              <div id="kc-info" class="${properties.kcSignUpClass!}">
+                  <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                      <#nested "info">
+                  </div>
+              </div>
+          </#if>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>
 </#macro>

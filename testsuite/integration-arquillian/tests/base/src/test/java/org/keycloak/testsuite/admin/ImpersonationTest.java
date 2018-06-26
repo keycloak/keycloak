@@ -17,13 +17,18 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -34,12 +39,17 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -50,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.openqa.selenium.Cookie;
 
 /**
  * Tests Undertow Adapter
@@ -60,6 +71,12 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected AppPage appPage;
+
+    @Page
+    protected LoginPage loginPage;
 
     private String impersonatedUserId;
 
@@ -147,23 +164,64 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     }
 
 
-    protected void testSuccessfulImpersonation(String admin, String adminRealm) {
+    // KEYCLOAK-5981
+    @Test
+    public void testImpersonationWorksWhenAuthenticationSessionExists() throws Exception {
+        // Create test client
+        RealmResource realm = adminClient.realms().realm("test");
+        Response resp = realm.clients().create(ClientBuilder.create().clientId("test-app").addRedirectUri(OAuthClient.APP_ROOT + "/*").build());
+        resp.close();
 
-        Keycloak client = login(admin, adminRealm);
+        // Open the URL for the client (will redirect to Keycloak server AuthorizationEndpoint and create authenticationSession)
+        String loginFormUrl = oauth.getLoginFormUrl();
+        driver.navigate().to(loginFormUrl);
+        loginPage.assertCurrent();
+
+        // Impersonate and get SSO cookie. Setup that cookie for webDriver
+        String ssoCookie = testSuccessfulImpersonation("realm-admin", "test");
+        driver.manage().addCookie(new Cookie(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE, ssoCookie));
+
+        // Open the URL again - should be directly redirected to the app due the SSO login
+        driver.navigate().to(loginFormUrl);
+        appPage.assertCurrent();
+
+        // Remove test client
+        ApiUtil.findClientByClientId(realm, "test-app").remove();
+    }
+
+
+    // Return the SSO cookie from the impersonated session
+    protected String testSuccessfulImpersonation(String admin, String adminRealm) {
+        ResteasyClient resteasyClient = new ResteasyClientBuilder().connectionPoolSize(10).build();
+
+        // Login adminClient
+        Keycloak client = login(admin, adminRealm, resteasyClient);
         try {
-            Map data = client.realms().realm("test").users().get(impersonatedUserId).impersonate();
-            Assert.assertNotNull(data);
-            Assert.assertNotNull(data.get("redirect"));
+            // Impersonate
+            impersonate(client, admin, adminRealm);
 
-            events.expect(EventType.IMPERSONATE)
-                    .session(AssertEvents.isUUID())
-                    .user(impersonatedUserId)
-                    .detail(Details.IMPERSONATOR, admin)
-                    .detail(Details.IMPERSONATOR_REALM, adminRealm)
-                    .client((String) null).assertEvent();
+            // Get the SSO cookie. Needs to use same RestEasyClient used by adminClient to be able to see the cookies
+            KeycloakTestingClient testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", resteasyClient);
+            String kcIdentity = testingClient.testing("test").getSSOCookieValue();
+            Assert.assertNotNull(kcIdentity);
+
+            return kcIdentity;
         } finally {
-            client.close();
+            resteasyClient.close();
         }
+    }
+
+    private void impersonate(Keycloak adminClient, String admin, String adminRealm) {
+        Map data = adminClient.realms().realm("test").users().get(impersonatedUserId).impersonate();
+        Assert.assertNotNull(data);
+        Assert.assertNotNull(data.get("redirect"));
+
+        events.expect(EventType.IMPERSONATE)
+                .session(AssertEvents.isUUID())
+                .user(impersonatedUserId)
+                .detail(Details.IMPERSONATOR, admin)
+                .detail(Details.IMPERSONATOR_REALM, adminRealm)
+                .client((String) null).assertEvent();
     }
 
     protected void testForbiddenImpersonation(String admin, String adminRealm) {
@@ -178,24 +236,30 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     }
 
     Keycloak createAdminClient(String realm, String clientId, String username) {
-        return createAdminClient(realm, clientId, username, null);
+        return createAdminClient(realm, clientId, username, null, null);
     }
 
     String establishClientId(String realm) {
         return realm.equals("master") ? Constants.ADMIN_CLI_CLIENT_ID : "myclient";
     }
 
-    Keycloak createAdminClient(String realm, String clientId, String username, String password) {
+    Keycloak createAdminClient(String realm, String clientId, String username, String password, ResteasyClient resteasyClient) {
         if (password == null) {
             password = username.equals("admin") ? "admin" : "password";
         }
-        return Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                realm, username, password, clientId);
+
+        return KeycloakBuilder.builder().serverUrl(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
+                .realm(realm)
+                .username(username)
+                .password(password)
+                .clientId(clientId)
+                .resteasyClient(resteasyClient)
+                .build();
     }
 
-    private Keycloak login(String username, String realm) {
+    private Keycloak login(String username, String realm, ResteasyClient resteasyClient) {
         String clientId = establishClientId(realm);
-        Keycloak client = createAdminClient(realm, clientId, username);
+        Keycloak client = createAdminClient(realm, clientId, username, null, resteasyClient);
 
         client.tokenManager().grantToken();
         // only poll for LOGIN event if realm is not master

@@ -149,7 +149,7 @@ public final class PemUtils {
         return Base64.decode(pem);
     }
 
-    private static String removeBeginEnd(String pem) {
+    public static String removeBeginEnd(String pem) {
         pem = pem.replaceAll("-----BEGIN (.*)-----", "");
         pem = pem.replaceAll("-----END (.*)----", "");
         pem = pem.replaceAll("\r\n", "");

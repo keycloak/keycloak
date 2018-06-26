@@ -26,6 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
@@ -187,6 +188,36 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         assertEquals(credentialId, credential.getId());
         assertArrayEquals(salt, credential.getSalt());
     }
+
+    @Test
+    public void testPasswordRehashedWhenCredentialImportedWithDifferentKeySize() throws Exception {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha512PasswordHashProviderFactory.ID + ") and hashIterations("+ Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
+
+        String username = "testPasswordRehashedWhenCredentialImportedWithDifferentKeySize";
+        String password = "password";
+
+        // Encode with a specific key size ( 256 instead of default: 512)
+        Pbkdf2PasswordHashProvider specificKeySizeHashProvider = new Pbkdf2PasswordHashProvider(Pbkdf2Sha512PasswordHashProviderFactory.ID,
+                Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM,
+                Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
+                256);
+        String encodedPassword = specificKeySizeHashProvider.encode(password, -1);
+
+        // Create a user with the encoded password, simulating a user import from a different system using a specific key size
+        CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
+        credentialRepresentation.setAlgorithm(Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM);
+        credentialRepresentation.setHashedSaltedValue(encodedPassword);
+        UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
+        ApiUtil.createUserWithAdminClient(adminClient.realm("test"),user);
+
+        loginPage.open();
+        loginPage.login(username, password);
+
+        CredentialModel postLoginCredentials = fetchCredentials(username);
+        assertEquals(encodedPassword.length() * 2, postLoginCredentials.getValue().length());
+
+    }
+
 
     @Test
     public void testPbkdf2Sha1() throws Exception {

@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples</name>
@@ -66,6 +66,5 @@
         <module>themes</module>
         <module>saml</module>
         <module>ldap</module>
-        <module>authz</module>
     </modules>
 </project>

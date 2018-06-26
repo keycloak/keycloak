@@ -36,7 +36,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
 public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
@@ -113,8 +112,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         return new KcSamlSignedBrokerConfiguration();
     }
 
-    @Test
-    public void testSignedEncryptedAssertions() throws Exception {
+    public void withSignedEncryptedAssertions(Runnable testBody, boolean signedAssertion, boolean encryptedAssertion) throws Exception {
         ClientRepresentation client = adminClient.realm(bc.providerRealmName())
           .clients()
           .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
@@ -130,31 +128,44 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         Assert.assertThat(consumerCert, Matchers.notNullValue());
 
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
-            .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
-            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true")
-            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+            .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(signedAssertion))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(signedAssertion))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(encryptedAssertion))
             .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "false")
             .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerCert)
             .update();
           Closeable clientUpdater = new ClientAttributeUpdater(clientResource)
-            .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, "true")
+            .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(encryptedAssertion))
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, consumerCert)
             .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")      // only sign assertions
-            .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
+            .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(signedAssertion))
             .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
             .update())
         {
-            // Login should pass because assertion is signed.
-            loginUser();
-
-            // Logout should fail because logout response is not signed.
-            driver.navigate().to(BrokerTestTools.getAuthRoot(suiteContext)
-                    + "/auth/realms/" + bc.providerRealmName()
-                    + "/protocol/" + "openid-connect"
-                    + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(bc.providerRealmName())));
-
-            errorPage.assertCurrent();
+            testBody.run();
         }
+    }
+
+    @Test
+    public void testSignedEncryptedAssertions() throws Exception {
+        withSignedEncryptedAssertions(this::testAssertionSignatureRespected, true, true);
+    }
+
+    @Test
+    public void testSignedAssertion() throws Exception {
+        withSignedEncryptedAssertions(this::testAssertionSignatureRespected, true, false);
+    }
+
+    private void testAssertionSignatureRespected() {
+        // Login should pass because assertion is signed.
+        loginUser();
+
+        // Logout should fail because logout response is not signed.
+        final String redirectUri = getAccountUrl(bc.providerRealmName());
+        final String logoutUri = oauth.realm(bc.providerRealmName()).getLogoutUrl().redirectUri(redirectUri).build();
+        driver.navigate().to(logoutUri);
+
+        errorPage.assertCurrent();
     }
 
     private Document extractNamespacesToTopLevelElement(Document original) {
@@ -202,10 +213,15 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
 
     // KEYCLOAK-5581
     @Test
-    public void loginUserAllNamespacesInTopElement() throws Exception {
+    public void loginUserAllNamespacesInTopElement() {
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
 
-        Document doc = extractNamespacesToTopLevelElement(SAML2Request.convert(loginRep));
+        Document doc;
+        try {
+            doc = extractNamespacesToTopLevelElement(SAML2Request.convert(loginRep));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
 
         SAMLDocumentHolder samlResponse = new SamlClientBuilder()
           .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
@@ -232,4 +248,18 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
         Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
+    @Test
+    public void loginUserAllNamespacesInTopElementSignedEncryptedAssertion() throws Exception {
+        withSignedEncryptedAssertions(this::loginUserAllNamespacesInTopElement, true, true);
+    }
+
+    @Test
+    public void loginUserAllNamespacesInTopElementSignedAssertion() throws Exception {
+        withSignedEncryptedAssertions(this::loginUserAllNamespacesInTopElement, true, false);
+    }
+
+    @Test
+    public void loginUserAllNamespacesInTopElementEncryptedAssertion() throws Exception {
+        withSignedEncryptedAssertions(this::loginUserAllNamespacesInTopElement, false, true);
+    }
 }

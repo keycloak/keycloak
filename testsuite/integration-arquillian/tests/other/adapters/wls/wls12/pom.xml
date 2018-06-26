@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-wls</artifactId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-wls12</artifactId>
@@ -41,7 +41,8 @@
     <dependencies>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-wls-remote-12.1.x</artifactId>
+            <artifactId>arquillian-wls-custom-remote-12.1.x</artifactId>
+            <version>1.0.2.Final-SNAPSHOT</version>
         </dependency>
     </dependencies>
     

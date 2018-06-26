@@ -21,6 +21,8 @@ import org.keycloak.Config;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType.EDTDescriptorChoiceType;
+import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
@@ -37,7 +39,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
-import org.keycloak.saml.processing.core.util.CoreConfigUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -66,10 +68,45 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         return loadEntityDescriptors(new ByteArrayInputStream(description.getBytes()));
     }
 
+    /**
+     * Get the SP Descriptor from an entity descriptor
+     *
+     * @param entityDescriptor
+     *
+     * @return
+     */
+    public static SPSSODescriptorType getSPDescriptor(EntityDescriptorType entityDescriptor) {
+        return entityDescriptor.getChoiceType().stream()
+          .flatMap(d -> d.getDescriptors().stream())
+          .map(EDTDescriptorChoiceType::getSpDescriptor)
+          .filter(Objects::nonNull)
+          .findFirst()
+          .orElse(null);
+    }
+
+    /**
+     * Get the service url for the SP
+     *
+     * @param sp
+     * @param bindingURI
+     *
+     * @return
+     */
+    public static String getServiceURL(SPSSODescriptorType sp, String bindingURI) {
+        List<IndexedEndpointType> endpoints = sp.getAssertionConsumerService();
+        for (IndexedEndpointType endpoint : endpoints) {
+            if (Objects.equals(endpoint.getBinding().toString(), bindingURI)) {
+                return endpoint.getLocation().toString();
+            }
+
+        }
+        return null;
+    }
+
     private static ClientRepresentation loadEntityDescriptors(InputStream is) {
         Object metadata;
         try {
-            metadata = new SAMLParser().parse(is);
+            metadata = SAMLParser.getInstance().parse(is);
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }
@@ -104,7 +141,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, SamlProtocol.ATTRIBUTE_FALSE_VALUE); // default to false
         attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
-        SPSSODescriptorType spDescriptorType = CoreConfigUtil.getSPDescriptor(entity);
+        SPSSODescriptorType spDescriptorType = getSPDescriptor(entity);
         if (spDescriptorType.isWantAssertionsSigned()) {
             attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         }
@@ -113,21 +150,21 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         String logoutRedirect = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
         if (logoutRedirect != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, logoutRedirect);
 
-        String assertionConsumerServicePostBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+        String assertionConsumerServicePostBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
         if (assertionConsumerServicePostBinding != null) {
             attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, assertionConsumerServicePostBinding);
             redirectUris.add(assertionConsumerServicePostBinding);
         }
-        String assertionConsumerServiceRedirectBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+        String assertionConsumerServiceRedirectBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
         if (assertionConsumerServiceRedirectBinding != null) {
             attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, assertionConsumerServiceRedirectBinding);
             redirectUris.add(assertionConsumerServiceRedirectBinding);
         }
-        String assertionConsumerServiceSoapBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_SOAP_BINDING.get());
+        String assertionConsumerServiceSoapBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_SOAP_BINDING.get());
         if (assertionConsumerServiceSoapBinding != null) {
             redirectUris.add(assertionConsumerServiceSoapBinding);
         }
-        String assertionConsumerServicePaosBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_PAOS_BINDING.get());
+        String assertionConsumerServicePaosBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_PAOS_BINDING.get());
         if (assertionConsumerServicePaosBinding != null) {
             redirectUris.add(assertionConsumerServicePaosBinding);
         }

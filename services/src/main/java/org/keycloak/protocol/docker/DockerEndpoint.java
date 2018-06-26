@@ -65,12 +65,8 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         checkRealm();
 
         final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
-        AuthorizationEndpointChecks checks = getOrCreateAuthenticationSession(client, authRequest.getState());
-        if (checks.response != null) {
-            return checks.response;
-        }
+        authenticationSession = createAuthenticationSession(client, authRequest.getState());
 
-        authenticationSession = checks.authSession;
         updateAuthenticationSession();
 
         // So back button doesn't work
@@ -92,12 +88,8 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     }
 
     @Override
-    protected AuthenticationFlowModel getAuthenticationFlow() {
+    protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
         return realm.getDockerAuthenticationFlow();
     }
 
-    @Override
-    protected boolean isNewRequest(final AuthenticationSessionModel authSession, final ClientModel clientFromRequest, final String requestState) {
-        return true;
-    }
 }

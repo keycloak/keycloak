@@ -26,9 +26,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
+import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -46,7 +48,9 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
-    private volatile Cache<String, AuthenticationSessionEntity> authSessionsCache;
+    private InfinispanKeyGenerator keyGenerator;
+
+    private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -104,7 +108,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public AuthenticationSessionProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanAuthenticationSessionProvider(session, authSessionsCache);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
@@ -113,11 +117,18 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         }
 
         AuthenticationSessionAuthNoteUpdateEvent event = (AuthenticationSessionAuthNoteUpdateEvent) clEvent;
-        AuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
-        updateAuthSession(authSession, event.getAuthNotesFragment());
+        RootAuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
+        updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
     }
 
-    private static void updateAuthSession(AuthenticationSessionEntity authSession, Map<String, String> authNotesFragment) {
+
+    private static void updateAuthSession(RootAuthenticationSessionEntity rootAuthSession, String tabId, Map<String, String> authNotesFragment) {
+        if (rootAuthSession == null) {
+            return;
+        }
+
+        AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(tabId);
+
         if (authSession != null) {
             if (authSession.getAuthNotes() == null) {
                 authSession.setAuthNotes(new ConcurrentHashMap<>());
@@ -140,6 +151,8 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 if (authSessionsCache == null) {
                     InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                     authSessionsCache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+
+                    keyGenerator = new InfinispanKeyGenerator();
 
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
                     cluster.registerListener(AUTHENTICATION_SESSION_EVENTS, this::updateAuthNotes);

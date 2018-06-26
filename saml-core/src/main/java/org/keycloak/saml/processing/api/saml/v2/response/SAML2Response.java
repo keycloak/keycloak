@@ -85,9 +85,9 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class SAML2Response {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
-    private long ASSERTION_VALIDITY = 5000; // 5secs in milis
+    private final long ASSERTION_VALIDITY = 5000; // 5secs in milis
 
-    private long CLOCK_SKEW = 2000; // 2secs
+    private final long CLOCK_SKEW = 2000; // 2secs
 
     private SAMLDocumentHolder samlDocumentHolder = null;
 
@@ -118,7 +118,7 @@ public class SAML2Response {
         act.addAuthenticatingAuthority(URI.create(authContextDeclRef));
 
         AuthnContextType.AuthnContextTypeSequence sequence = act.new AuthnContextTypeSequence();
-        sequence.setClassRef(new AuthnContextClassRefType(URI.create(JBossSAMLURIConstants.AC_PASSWORD.get())));
+        sequence.setClassRef(new AuthnContextClassRefType(JBossSAMLURIConstants.AC_PASSWORD.getUri()));
         act.setSequence(sequence);
 
         authnStatement.setAuthnContext(act);
@@ -264,7 +264,7 @@ public class SAML2Response {
 
         subjectType.addConfirmation(subjectConfirmation);
 
-        AssertionType assertionType = null;
+        AssertionType assertionType;
         NameIDType issuerID = issuerInfo.getIssuer();
         try {
             issueInstant = XMLTimeUtil.getIssueInstant();
@@ -373,7 +373,7 @@ public class SAML2Response {
             throw logger.nullArgumentError("InputStream");
 
         Document samlDocument = DocumentUtil.getDocument(is);
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
         return (EncryptedAssertionType) samlParser.parse(samlDocument);
@@ -396,7 +396,7 @@ public class SAML2Response {
             throw logger.nullArgumentError("InputStream");
         Document samlDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
         return (AssertionType) samlParser.parse(samlDocument);
     }
@@ -426,7 +426,7 @@ public class SAML2Response {
 
         Document samlResponseDocument = DocumentUtil.getDocument(is);
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
         ResponseType responseType = (ResponseType) samlParser.parse(samlResponseDocument);
@@ -457,7 +457,7 @@ public class SAML2Response {
             logger.trace("SAML Response Document: " + DocumentUtil.asString(samlResponseDocument));
         }
 
-        SAMLParser samlParser = new SAMLParser();
+        SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
         SAML2Object responseType = (SAML2Object) samlParser.parse(samlResponseDocument);

@@ -86,17 +86,13 @@ public class ProtocolMapperUtils {
      * @return The builtin locale mapper.
      */
     public static ProtocolMapperModel findLocaleMapper(KeycloakSession session) {
-        ProtocolMapperModel found = null;
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
             LoginProtocolFactory factory = (LoginProtocolFactory) p;
-            for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
-                if (mapper.getName().equals(OIDCLoginProtocolFactory.LOCALE) && mapper.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
-                    found = mapper;
-                    break;
-                }
+            ProtocolMapperModel found = factory.getBuiltinMappers().get(OIDCLoginProtocolFactory.LOCALE);
+            if (found != null && found.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+                return found;
             }
-            if (found != null) break;
         }
-        return found;
+        return null;
     }
 }

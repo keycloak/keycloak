@@ -19,6 +19,7 @@ package org.keycloak.testsuite;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -33,6 +34,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -77,8 +82,10 @@ public class Assert extends org.junit.Assert {
             return ((UserFederationProviderFactoryRepresentation) o1).getId();
         } else if (o1 instanceof GroupRepresentation) {
             return ((GroupRepresentation) o1).getName();
-        }else if (o1 instanceof ComponentRepresentation) {
+        } else if (o1 instanceof ComponentRepresentation) {
             return ((ComponentRepresentation) o1).getName();
+        } else if (o1 instanceof ClientScopeRepresentation) {
+            return ((ClientScopeRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();
@@ -133,4 +140,9 @@ public class Assert extends org.junit.Assert {
         Assert.assertEquals(helpText, property.getHelpText());
         Assert.assertEquals(type, property.getType());
     }
+
+    public static void assertExpiration(int actual, int expected) {
+        org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+    }
+
 }

@@ -20,17 +20,23 @@ package org.keycloak.protocol.oidc.mappers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
+import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.util.List;
 
 /**
@@ -73,6 +79,13 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
         " * keycloakSession - the current userSession\n" + //
         " */\n\n\n//insert your code here..." //
       )
+      .add()
+      .property()
+      .name(ProtocolMapperUtils.MULTIVALUED)
+      .label(ProtocolMapperUtils.MULTIVALUED_LABEL)
+      .helpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT)
+      .type(ProviderConfigProperty.BOOLEAN_TYPE)
+      .defaultValue(false)
       .add()
       .build();
 
@@ -135,15 +148,36 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
     OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
   }
 
-  public static ProtocolMapperModel createClaimMapper(String name,
-                                                      String userAttribute,
-                                                      String tokenClaimName, String claimType,
-                                                      boolean consentRequired, String consentText,
-                                                      boolean accessToken, boolean idToken) {
-    return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
+  @Override
+  public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+
+    String scriptCode = mapperModel.getConfig().get(SCRIPT);
+    if (scriptCode == null) {
+      return;
+    }
+
+    ScriptingProvider scripting = session.getProvider(ScriptingProvider.class);
+    ScriptModel scriptModel = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, mapperModel.getName() + "-script", scriptCode, "");
+
+    try {
+      scripting.prepareEvaluatableScript(scriptModel);
+    } catch (ScriptCompilationException  ex) {
+      throw new ProtocolMapperConfigException("error", "{0}", ex.getMessage());
+    }
+  }
+
+  public static ProtocolMapperModel create(String name,
+                                           String userAttribute,
+                                           String tokenClaimName, String claimType,
+                                           boolean accessToken, boolean idToken, String script, boolean multiValued) {
+    ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
       tokenClaimName, claimType,
-      consentRequired, consentText,
       accessToken, idToken,
       PROVIDER_ID);
+
+    mapper.getConfig().put(SCRIPT, script);
+    mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
+
+    return mapper;
   }
 }

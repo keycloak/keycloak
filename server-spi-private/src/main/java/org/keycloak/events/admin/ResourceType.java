@@ -141,7 +141,7 @@ public enum ResourceType {
     /**
      *
      */
-    , CLIENT_TEMPLATE
+    , CLIENT_SCOPE
 
     /**
      *

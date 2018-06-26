@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -61,12 +63,12 @@ public class RoleEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
 
+    @Nationalized
     @Column(name = "NAME")
     private String name;
+    @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
-    @Column(name = "SCOPE_PARAM_REQUIRED")
-    private boolean scopeParamRequired;
 
     // hax! couldn't get constraint to work properly
     @Column(name = "REALM_ID")
@@ -123,14 +125,6 @@ public class RoleEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public boolean isScopeParamRequired() {
-        return scopeParamRequired;
-    }
-
-    public void setScopeParamRequired(boolean scopeParamRequired) {
-        this.scopeParamRequired = scopeParamRequired;
     }
 
     public Set<RoleEntity> getCompositeRoles() {

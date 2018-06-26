@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,9 +31,17 @@
     <name>Keycloak Performance TestSuite</name>
     <packaging>pom</packaging>
     
+    <properties>
+        <server.version>${product.version}</server.version>
+        <management.user/>
+        <management.user.password/>
+    </properties>
+            
     <modules>
         <module>keycloak</module>
+        <module>load-balancer/wildfly-modcluster</module>
+        <module>infinispan</module>
         <module>tests</module>
     </modules>
-
+    
 </project>

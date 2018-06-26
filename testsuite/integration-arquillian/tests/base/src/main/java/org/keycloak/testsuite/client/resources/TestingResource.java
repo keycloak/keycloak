@@ -34,6 +34,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+
 import java.util.List;
 import java.util.Map;
 
@@ -169,6 +171,11 @@ public interface TestingResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
 
+    @GET
+    @Path("/get-sso-cookie")
+    @Produces(MediaType.APPLICATION_JSON)
+    String getSSOCookieValue();
+
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
@@ -180,9 +187,9 @@ public interface TestingResource {
     void removeUserSessions(@QueryParam("realm") final String realm);
 
     @GET
-    @Path("/get-user-session")
+    @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
+    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline);
 
     @POST
     @Path("/remove-expired")
@@ -255,9 +262,38 @@ public interface TestingResource {
     void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
 
     @POST
+    @Path("/suspend-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response suspendPeriodicTasks();
+
+    @POST
+    @Path("/restore-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response restorePeriodicTasks();
+
+    @GET
+    @Path("/uncaught-error")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    Response uncaughtError();
+
+    @GET
+    @Path("/uncaught-error")
+    Response uncaughtErrorJson();
+
+    @POST
     @Path("/run-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     String runOnServer(String runOnServer);
+
+    @GET
+    @Path("js/keycloak.js")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    String getJavascriptAdapter();
+
+    @GET
+    @Path("/get-javascript-testing-environment")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    String getJavascriptTestingEnvironment();
 
 }

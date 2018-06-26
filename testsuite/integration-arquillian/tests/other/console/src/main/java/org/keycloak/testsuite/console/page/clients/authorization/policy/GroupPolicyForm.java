@@ -16,27 +16,23 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.openqa.selenium.By.tagName;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import java.util.HashSet;
+import java.util.List;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -58,16 +54,16 @@ public class GroupPolicyForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
-
     @FindBy(id = "selectGroup")
     private WebElement selectGroupButton;
+
+    @Page
+    private ModalDialog modalDialog;
 
     @Drone
     private WebDriver driver;
 
-    public void populate(GroupPolicyRepresentation expected) {
+    public void populate(GroupPolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         setInputValue(groupsClaim, expected.getGroupsClaim());
@@ -113,7 +109,9 @@ public class GroupPolicyForm extends Form {
                     });
         }
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     private void unselect(String path) {
@@ -131,7 +129,7 @@ public class GroupPolicyForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public GroupPolicyRepresentation toRepresentation() {

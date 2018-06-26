@@ -5,9 +5,9 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -16,18 +16,18 @@ public class Dropdown {
     @Root
     private WebElement dropDownRoot; // MUST be .kc-dropdown
 
+    @FindBy(id = "kc-current-locale-link")
+    private WebElement localeLink;
+
     @ArquillianResource
     private WebDriver driver;
 
     public String getSelected() {
-        waitUntilElement(dropDownRoot).is().present();
-        WebElement element = dropDownRoot.findElement(By.xpath("./a"));
-        return element.getText();
+        return localeLink.getText();
     }
 
     public void selectByText(String text) {
-        waitUntilElement(dropDownRoot).is().present();
-        WebElement element = dropDownRoot.findElement(By.xpath("./ul/li/a[text()='" + text + "']"));
-        navigateToUri(element.getAttribute("href"), true); // TODO: move cursor to show the menu and then click the menu item
+        localeLink.click();
+        clickLink(dropDownRoot.findElement(By.xpath("./ul/li/a[text()='" + text + "']")));
     }
 }

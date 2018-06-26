@@ -141,7 +141,8 @@
             "redirectUris": [
                 "/customer-portal/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "directAccessGrantsEnabled": true
         },
         {
             "clientId": "customer-portal-subsystem",
@@ -182,6 +183,12 @@
             ]
         },
         {
+            "clientId": "customer-portal-public",
+            "enabled": true,
+            "publicClient": true,
+            "directAccessGrantsEnabled": true
+        },
+        {
             "clientId": "product-portal",
             "enabled": true,
             "adminUrl": "/product-portal",
@@ -198,6 +205,16 @@
             "baseUrl": "/product-portal-subsystem",
             "redirectUris": [
                 "/product-portal-subsystem/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "product-portal-autodetect-bearer-only",
+            "enabled": true,
+            "adminUrl": "/product-portal-autodetect-bearer-only",
+            "baseUrl": "/product-portal-autodetect-bearer-only",
+            "redirectUris": [
+                "/product-portal-autodetect-bearer-only/*"
             ],
             "secret": "password"
         },
@@ -248,6 +265,16 @@
             "secret": "password"
         },
         {
+            "clientId": "input-portal-no-access-token",
+            "enabled": true,
+            "adminUrl": "/input-portal-no-access-token",
+            "baseUrl": "/input-portal-no-access-token",
+            "redirectUris": [
+                "/input-portal-no-access-token/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "token-min-ttl",
             "enabled": true,
             "adminUrl": "/token-min-ttl",
@@ -274,6 +301,17 @@
             "adminUrl": "/basic-auth",
             "baseUrl": "/basic-auth",
             "secret": "password"
+        },
+        {
+            "clientId": "client-secret-jwt-secure-portal",
+            "enabled": true,
+            "adminUrl": "/client-secret-jwt-secure-portal",
+            "baseUrl": "/client-secret-jwt-secure-portal",
+            "clientAuthenticatorType": "client-secret-jwt",
+            "redirectUris": [
+                "/client-secret-jwt-secure-portal/*"
+            ],
+            "secret": "234234-234234-234234"
         }
     ]
 }

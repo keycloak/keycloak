@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -40,7 +41,7 @@ public class OAuthGrantPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("Grant Access");
+        return PageUtils.getPageTitle(driver).startsWith("Grant Access to ");
     }
 
     @Override

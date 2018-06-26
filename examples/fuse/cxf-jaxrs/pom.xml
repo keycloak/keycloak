@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -34,6 +34,7 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            javax.ws.rs;version="[2,3)",
             META-INF.cxf;version="[2.7,3.2)",
             META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
             org.apache.cxf.transport.http;version="[2.7,3.2)",
