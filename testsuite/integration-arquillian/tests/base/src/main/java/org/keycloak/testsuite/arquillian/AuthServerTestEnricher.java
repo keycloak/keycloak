@@ -70,28 +70,28 @@ public class AuthServerTestEnricher {
     private Event<StopContainer> stopContainerEvent;
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
-    private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
+    public static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
     public static final String AUTH_SERVER_CONTAINER = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
 
-    private static final String AUTH_SERVER_BACKEND_DEFAULT = AUTH_SERVER_CONTAINER + "-backend";
-    private static final String AUTH_SERVER_BACKEND_PROPERTY = "auth.server.backend";
+    public static final String AUTH_SERVER_BACKEND_DEFAULT = AUTH_SERVER_CONTAINER + "-backend";
+    public static final String AUTH_SERVER_BACKEND_PROPERTY = "auth.server.backend";
     public static final String AUTH_SERVER_BACKEND = System.getProperty(AUTH_SERVER_BACKEND_PROPERTY, AUTH_SERVER_BACKEND_DEFAULT);
 
-    private static final String AUTH_SERVER_BALANCER_DEFAULT = "auth-server-balancer";
-    private static final String AUTH_SERVER_BALANCER_PROPERTY = "auth.server.balancer";
+    public static final String AUTH_SERVER_BALANCER_DEFAULT = "auth-server-balancer";
+    public static final String AUTH_SERVER_BALANCER_PROPERTY = "auth.server.balancer";
     public static final String AUTH_SERVER_BALANCER = System.getProperty(AUTH_SERVER_BALANCER_PROPERTY, AUTH_SERVER_BALANCER_DEFAULT);
 
-    private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
+    public static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
-    private static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
+    public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
-    private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
+    public static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) ||
             "manual".equals(System.getProperty("migration.mode"));
 
     // In manual mode are all containers despite loadbalancers started in mode "manual" and nothing is managed through "suite".
     // Useful for tests, which require restart servers etc.
-    private static final String MANUAL_MODE = "manual.mode";
+    public static final String MANUAL_MODE = "manual.mode";
 
     @Inject
     @SuiteScoped
