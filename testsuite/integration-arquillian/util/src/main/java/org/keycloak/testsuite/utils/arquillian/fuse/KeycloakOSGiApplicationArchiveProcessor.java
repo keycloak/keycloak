@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.utils.arquillian.fuse;
 
 import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;

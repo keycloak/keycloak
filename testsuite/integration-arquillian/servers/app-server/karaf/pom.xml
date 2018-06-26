@@ -68,7 +68,7 @@
                                         </requireProperty>
                                         <requireOS>
                                             <family>!windows</family>
-                                            <message>Automated Kara/Fuse adapter configuration currently doesn't work on Windows.</message>
+                                            <message>Automated Karaf/Fuse adapter configuration currently doesn't work on Windows.</message>
                                         </requireOS>
                                     </rules>
                                 </configuration>

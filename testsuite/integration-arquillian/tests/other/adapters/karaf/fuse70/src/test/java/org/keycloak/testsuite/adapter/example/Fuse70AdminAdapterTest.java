@@ -27,11 +27,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.openqa.selenium.By;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.adapter.example.fuse.FuseAdminAdapterTest;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 @AppServerContainer("app-server-fuse70")
-public class Fuse70AdminAdapterTest extends AbstractFuseAdminAdapterTest {
+public class Fuse70AdminAdapterTest extends FuseAdminAdapterTest {
 
     @Page
     protected Hawtio2Page hawtioPage;

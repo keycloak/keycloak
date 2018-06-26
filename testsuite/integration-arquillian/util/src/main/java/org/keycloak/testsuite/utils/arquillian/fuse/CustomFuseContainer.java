@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.arquillian.karaf;
+package org.keycloak.testsuite.utils.arquillian.fuse;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,20 +16,19 @@ import org.jboss.arquillian.container.osgi.jmx.JMXDeployableContainer;
 import org.jboss.arquillian.container.osgi.jmx.ObjectNameFactory;
 import org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedContainerConfiguration;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.logging.Logger;
 import org.osgi.jmx.framework.BundleStateMBean;
 import org.osgi.jmx.framework.FrameworkMBean;
 import org.osgi.jmx.framework.ServiceStateMBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * KarafManagedDeployableContainer
  * 
  * @author thomas.diesler@jboss.com
  */
-public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> extends JMXDeployableContainer<T> {
+public class CustomFuseContainer<T extends KarafManagedContainerConfiguration> extends JMXDeployableContainer<T> {
 
-    static final Logger _logger = LoggerFactory.getLogger(CustomKarafContainer.class.getPackage().getName());
+    private static final Logger log = Logger.getLogger(CustomFuseContainer.class);
 
     private KarafManagedContainerConfiguration config;
     private Process process;
@@ -54,8 +53,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
         MBeanServerConnection mbeanServer = null;
         try {
             mbeanServer = getMBeanServerConnection(500, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException ex) {
-            // ignore
+        } catch (TimeoutException ignore) {
         }
 
         if (mbeanServer != null && !config.isAllowConnectingToRunningServer()) {
@@ -76,7 +74,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
                 throw new IllegalStateException("Not a valid Karaf home dir: " + karafHomeDir);
 
             String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
-            _logger.info(String.format("Using java: %s", java));
+            log.infof("Using java: %s", java);
 
             List<String> cmd = new ArrayList<>();
             cmd.add(java);
@@ -107,7 +105,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
             StringBuilder classPath = new StringBuilder();
             boolean fuse7 = new File(karafHomeDir, "lib/boot/").exists();
             if (fuse7) {
-                _logger.info("Adding karaf4 libraries to classpath.");
+                log.info("Adding karaf4 libraries to classpath.");
                 File karafLibBootDir = new File(karafHomeDir, "lib/boot/");
                 String[] libs = karafLibBootDir.list((File dir, String name) -> name.endsWith(".jar"));
                 for (String lib : libs) {
@@ -115,7 +113,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
                     classPath.append(separator).append(new File(karafLibBootDir, lib));
                 }
             } else { //fuse6
-                _logger.info("Adding karaf3 libraries to classpath.");
+                log.info("Adding karaf3 libraries to classpath.");
                 File karafLibDir = new File(karafHomeDir, "lib");
                 String[] libs = karafLibDir.list((File dir, String name) -> name.startsWith("karaf"));
                 for (String lib : libs) {
@@ -134,7 +132,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
             for (String tok : cmd) {
                 cmdstr.append(tok).append(" ");
             }
-            _logger.debug("Starting Karaf with: {}", cmdstr);
+            log.debugv("Starting Karaf with: {0}", cmdstr);
 
             try {
                 ProcessBuilder processBuilder = new ProcessBuilder(cmd);
@@ -142,14 +140,15 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
                 processBuilder.redirectErrorStream(true);
                 process = processBuilder.start();
                 new Thread(new ConsoleConsumer()).start();
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 throw new LifecycleException("Cannot start managed Karaf container", ex);
             }
 
             // Get the MBeanServerConnection
             try {
-                mbeanServer = getMBeanServerConnection(60, TimeUnit.SECONDS);
-            } catch (Exception ex) {
+                log.debug("Geting the MBeanServerConnection");
+                mbeanServer = getMBeanServerConnection(120, TimeUnit.SECONDS);
+            } catch (TimeoutException ex) {
                 destroyKarafProcess();
                 throw new LifecycleException("Cannot obtain MBean server connection", ex);
             }
@@ -187,7 +186,7 @@ public class CustomKarafContainer<T extends KarafManagedContainerConfiguration> 
         } catch (RuntimeException rte) {
             destroyKarafProcess();
             throw rte;
-        } catch (Exception ex) {
+        } catch (IOException | InterruptedException | TimeoutException | LifecycleException ex) {
             destroyKarafProcess();
             throw new LifecycleException("Cannot start Karaf container", ex);
         }
