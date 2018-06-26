@@ -104,7 +104,7 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
         boolean active = account.checkActive();
 
         if (!active) {
-            active = account.tryRefresh(this.callbackHandler);
+            active = account.tryRefresh();
         }
 
         if (active) {
