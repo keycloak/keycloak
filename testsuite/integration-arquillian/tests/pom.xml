@@ -573,35 +573,6 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-karaf-managed</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-osgi</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.enterprise</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
     <profiles>
 
         <profile>

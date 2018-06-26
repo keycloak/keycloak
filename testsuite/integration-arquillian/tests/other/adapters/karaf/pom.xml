@@ -48,41 +48,6 @@
     
     <profiles>
         <profile>
-            <id>adapter-test-karaf-submodules</id>
-            <activation>
-                <file>
-                    <exists>src</exists>
-                </file>
-            </activation>
-            <!--
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>auth.server</property>
-                                            <regex>(wildfly)|(eap)</regex>
-                                            <regexMessage>Karaf/Fuse adapter tests require activation of profile "auth-server-wildfly" or "auth-server-eap".</regexMessage>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            -->
-        </profile>
-        
-
-        <profile>
             <id>app-server-karaf3</id>
             <modules>
                 <module>karaf3</module>
@@ -98,12 +63,6 @@
             <id>app-server-fuse62</id>
             <modules>
                 <module>fuse62</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-fuse63</id>
-            <modules>
-                <module>fuse63</module>
             </modules>
         </profile>
         <profile>

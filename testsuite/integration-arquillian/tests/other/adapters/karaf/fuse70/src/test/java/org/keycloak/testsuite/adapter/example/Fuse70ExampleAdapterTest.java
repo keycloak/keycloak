@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.adapter.example;
 
+import org.keycloak.testsuite.adapter.example.fuse.FuseExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 @AppServerContainer("app-server-fuse70")
-public class Fuse70ExampleAdapterTest extends AbstractFuseExampleAdapterTest {
+public class Fuse70ExampleAdapterTest extends FuseExampleAdapterTest {
 
 }

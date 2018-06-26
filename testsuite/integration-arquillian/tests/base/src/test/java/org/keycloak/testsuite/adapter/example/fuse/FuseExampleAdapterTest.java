@@ -15,23 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter.example;
+package org.keycloak.testsuite.adapter.example.fuse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
-import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
-import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
-import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
-import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
-import org.keycloak.testsuite.auth.page.account.Account;
-
-import org.keycloak.testsuite.util.WaitUtils;
-import java.io.File;
-import java.util.List;
-
-import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -41,11 +26,27 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
+import java.io.File;
+import java.util.List;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
+import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.auth.page.account.Account;
+import org.keycloak.testsuite.util.WaitUtils;
+
 /**
  *
  * @author tkyjovsk
  */
-public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdapterTest {
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
+public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page
     protected CustomerPortalFuseExample customerPortal;
