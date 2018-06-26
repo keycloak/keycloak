@@ -564,6 +564,60 @@
             </build>
         </profile>
         <profile>
+            <id>app-server-fuse70</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse70</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>fuse70</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <!--fuse examples expect auth server on 8080-->
+                <auth.server.port.offset>0</auth.server.port.offset>
+                <auth.server.http.port>8080</auth.server.http.port>
+                <auth.server.management.port>9990</auth.server.management.port>
+                <!--fuse examples expect default karaf http port 8181-->
+                <app.server.http.port>8181</app.server.http.port>
+
+                <app.server.management.user>admin</app.server.management.user>
+                <app.server.management.password>admin</app.server.management.password>
+                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-container-karaf-managed</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
+                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
+                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>

@@ -26,8 +26,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - Karaf - JBoss Fuse 7.0</name>
+    <packaging>jar</packaging>
+    <name>App Server - Fuse 7.0</name>
 
     <properties>
         <app.server.karaf>fuse70</app.server.karaf>
@@ -37,6 +37,29 @@
         <app.server.karaf.unpacked.folder.name>fuse-karaf-${fuse70.version}</app.server.karaf.unpacked.folder.name>
         <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-osgi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>

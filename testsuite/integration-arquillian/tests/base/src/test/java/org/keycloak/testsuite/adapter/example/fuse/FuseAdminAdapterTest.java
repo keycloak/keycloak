@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.adapter.example.fuse;
 
 import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
@@ -29,6 +30,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -53,25 +55,49 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.session.ClientSession.ClientSessionEvent;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+import org.keycloak.testsuite.adapter.page.Hawtio2Page;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE70)
 public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
-    
+
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
     @Page
+    @JavascriptBrowser
     private HawtioPage hawtioPage;
-    
+
+    @Page
+    @JavascriptBrowser
+    private Hawtio2Page hawtio2Page;
+
+    @Page
+    @JavascriptBrowser
+    private OIDCLogin testRealmLoginPageFuse;
+
     private SshClient client;
-    
+
     protected enum Result { OK, NOT_FOUND, NO_CREDENTIALS, NO_ROLES };
-    
+
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/demorealm.json"));
@@ -81,39 +107,120 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(DEMO);
-        testRealmLoginPage.setAuthRealm(DEMO);
+        testRealmLoginPageFuse.setAuthRealm(DEMO);
     }
-        
+
+    @Before
+    public void addJsDriver() {
+        DroneUtils.addWebDriver(jsDriver);
+    }
+
     @Test
-    public void hawtioLoginTest() throws Exception {
-        // Note that this does works only in Fuse 6 with Hawtio 1 since Fuse 7 contains Hawtio 2, and is thus overriden in Fuse 7 test classes
+    public void hawtio1LoginTest() throws Exception {
+        // Note that this does work only in Fuse 6 with Hawtio 1, Fuse 7 contains Hawtio 2
+        ContainerAssume.assumeNotAppServerFuse7();
+
         hawtioPage.navigateTo();
-        testRealmLoginPage.form().login("user", "invalid-password");
+        testRealmLoginPageFuse.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(hawtioPage);
 
-        testRealmLoginPage.form().login("invalid-user", "password");
+        testRealmLoginPageFuse.form().login("invalid-user", "password");
         assertCurrentUrlDoesntStartWith(hawtioPage);
 
-        testRealmLoginPage.form().login("root", "password");
-        assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome", hawtioPage.getDriver());
+        testRealmLoginPageFuse.form().login("root", "password");
+        assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome");
         hawtioPage.logout();
-        assertCurrentUrlStartsWith(testRealmLoginPage);
-        
+        assertCurrentUrlStartsWith(testRealmLoginPageFuse);
+
         hawtioPage.navigateTo();
-        testRealmLoginPage.form().login("mary", "password");
-        assertThat(driver.getPageSource(), not(containsString("welcome")));
+        log.debug("logging in as mary");
+        testRealmLoginPageFuse.form().login("mary", "password");
+        log.debug("Previous WARN waitForPageToLoad time exceeded! is expected");
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), 
+                allOf(
+                    containsString("Unauthorized User"),
+                    not(containsString("welcome"))
+                )
+        );
     }
-    
-    
-    
+
     @Test
-    public void sshLoginTest() throws Exception {
-        // Note that this does not work for Fuse 7 since the error codes have changed, and is thus overriden for Fuse 7 test classes
+    public void hawtio2LoginTest() throws Exception {
+        // Note that this does work only in Fuse 7 with Hawtio 2, Fuse 6 contains Hawtio 1
+        ContainerAssume.assumeNotAppServerFuse6();
+
+        hawtio2Page.navigateTo();
+        WaitUtils.waitForPageToLoad();
+
+        testRealmLoginPageFuse.form().login("user", "invalid-password");
+        assertCurrentUrlDoesntStartWith(hawtio2Page);
+
+        testRealmLoginPageFuse.form().login("invalid-user", "password");
+        assertCurrentUrlDoesntStartWith(hawtio2Page);
+
+        testRealmLoginPageFuse.form().login("root", "password");
+        assertCurrentUrlStartsWith(hawtio2Page.toString());
+        WaitUtils.waitForPageToLoad();
+        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console']")).is().present();
+        hawtio2Page.logout();
+        WaitUtils.waitForPageToLoad();
+
+        assertCurrentUrlStartsWith(testRealmLoginPageFuse);
+
+        hawtio2Page.navigateTo();
+        WaitUtils.waitForPageToLoad();
+
+        log.debug("logging in as mary");
+        testRealmLoginPageFuse.form().login("mary", "password");
+        log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
+        assertCurrentUrlStartsWith(hawtio2Page.toString());
+        WaitUtils.waitForPageToLoad();
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), 
+                allOf(
+                    containsString("keycloak-session-iframe"),//todo check this if it's correct
+                    not(containsString("Camel"))
+                )
+        );
+    }    
+
+    @Test
+    public void sshLoginTestFuse6() throws Exception {
+        // Note that this does not work for Fuse 7 since the error codes have changed
+        ContainerAssume.assumeNotAppServerFuse7();
+
         assertCommand("mary", "password", "shell:date", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:info", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:date", Result.OK);
         assertCommand("root", "password", "shell:info", Result.OK);
+    }
+
+    @Test
+    public void sshLoginTestFuse7() throws Exception {
+        // Note that this works for Fuse 7 and newer
+        ContainerAssume.assumeNotAppServerFuse6();
+
+        assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
+        assertCommand("john", "password", "shell:info", Result.NOT_FOUND);
+        assertCommand("john", "password", "shell:date", Result.OK);
+        assertRoles("root", 
+          "ssh",
+          "jmxAdmin",
+          "admin",
+          "manager",
+          "viewer",
+          "Administrator",
+          "Auditor",
+          "Deployer",
+          "Maintainer",
+          "Operator",
+          "SuperUser"
+        );
+    }
+
+    private void assertRoles(String username, String... expectedRoles) throws Exception {
+        final String commandOutput = getCommandOutput(username, "password", "jaas:whoami -r --no-format");
+        final List<String> parsedOutput = Arrays.asList(commandOutput.split("\\n+"));
+        assertThat(parsedOutput, Matchers.containsInAnyOrder(expectedRoles));
     }
 
     @Test
