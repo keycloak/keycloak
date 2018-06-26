@@ -65,12 +65,6 @@
                 <module>fuse62</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-fuse70</id>
-            <modules>
-                <module>fuse70</module>
-            </modules>
-        </profile>
     </profiles>
 
 </project>

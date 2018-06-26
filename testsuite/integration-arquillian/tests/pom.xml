@@ -1492,6 +1492,12 @@
                     <version>${project.version}</version>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-util</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
                 <!--                <dependency>
                     <groupId>org.arquillian.extension</groupId>
                     <artifactId>arquillian-recorder-reporter-impl</artifactId>
