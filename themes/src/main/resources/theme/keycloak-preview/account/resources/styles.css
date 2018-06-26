@@ -83,7 +83,7 @@ p.description {
     border-top: 0;
     padding: 0;
   }
-  .card-pf-body  {
+  .card-pf-body {
     padding: 20px 20px 10px;
     margin-top: 0;
   }
@@ -320,6 +320,143 @@ p.description {
 .card-linked-account .list-view-pf .list-group-item-text {
     width: calc(45% - 40px);
 }
+/*resource*/
+.m-t {
+	margin-top: 20px;
+}
+.list-view-pf .list-group-item {
+	border-bottom: 1px solid #ededed;
+}
+.list-view-resources .list-view-pf-additional-info-item {
+	width: 30%;
+}
+.list-view-resources .list-view-pf-additional-info-item .pficon {
+	margin-right: 0;
+	color: #fff;
+	font-size: 12px;
+	margin-left: 5px;
+}
+.list-view-resources .list-view-pf-additional-info-item-lg {
+	width: 45%;
+}
+.pfng-list-heading .list-view-pf-main-info {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	font-weight: bold;
+	font-size: 13px;
+}
+.list-view-resources .list-view-pf-actions {
+	width: 75px;
+	height: 10px;
+}
+.pfng-list-heading .list-view-pf-additional-info {
+	font-size: 12px;
+	font-weight: bold;
+}
+.list-view-resources .list-view-pf-description {
+	width: 35%;
+}
+.list-view-shared .list-view-pf-description {
+	width: 30%;
+}
+.list-view-shared .list-view-pf-actions {
+	width: 20px;
+	height: 10px;
+}
+.list-view-detail .list-view-pf-actions {
+	width: 90px;
+}
+.list-view-detail .list-view-master-actions {
+	width: 105px;
+}
+.list-view-detail .list-view-space{
+  width: 20px;
+}
+.list-view-resources .list-view-pf-status {
+	width: auto;
+}
+.list-view-pf-additional-info-item {
+	text-align: left;
+}
+.list-view-resources .list-view-pf-stacked .list-group-item-heading {
+    font-size: 13px;
+    font-weight: bold;
+}
+.list-view-resources .content-view-pf-pagination {
+	border: none;
+}
+.resources-header {
+	margin-bottom: 20px;
+}
+.resources-header .fa-file {
+	font-size: 60px;
+	float: left;
+	margin-right: 20px;
+}
+.resources-info span {
+	border-right: 1px solid #cccccc;
+	padding-right: 20px;
+	margin-right: 20px;
+}
+.resources-info span:last-child {
+	border-right: 0px solid #cccccc;
+}
+.resources-actions {
+	float: right;
+	margin-top: -35px;
+}
+.resources-actions button {
+	margin-right: 10px;
+}
+.user-list-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 36px;
+	background-color: #1E97D6;
+	color: #fff;
+	float: left;
+	text-align: center;
+	line-height: 36px;
+	margin-right: 10px;
+}
+.list-view-master-actions {
+	margin-top: 6px;
+}
+.permission-requests-labels li {
+	margin-bottom: 5px;
+	margin-top: 5px;
+}
+.permission-requests-labels .label-info {
+	background-color: #4A90E2;
+	padding-left: 15px;
+	padding-right: 15px;
+	border-radius: 20px;
+}
+.my-requests-labels .label-info {
+	background-color: #15B692;
+}
+.modal-title span {
+	font-weight: normal;
+}
+.bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn) {
+  width: 100%;
+}
+.resource-share-content {
+	margin-top: 20px;
+}
+.resources-list .nav-tabs {
+  margin-left: 20px;
+}
+.resources-list .card-pf-body {
+  padding-bottom: 0;
+}
+.resources-list .content-view-pf-pagination {
+  margin-top: 20px;
+  margin-bottom: -20px;
+}
+.breadcrumb {
+    padding: 20px 15px 20px 0;
+}
 
 @media (max-width: 767px) {
   .card-pf-application h2 {
@@ -356,8 +493,35 @@ p.description {
   .non-display {
     display: none;
   }
+  .breadcrumb {
+    padding: 20px 15px 0px 20px;
+  }
+  .resources-header {
+    padding: 20px 20px 0 20px;
+    margin-bottom: 0px;
+  }
+  .resources-header .fa-file {
+    font-size: 50px;
+  }
+  .resources-list .card-pf-body {
+    padding: 0;
+  }
+  .list-view-resources .list-view-pf-additional-info-item {
+  	width: 100%;
+  }
+  .list-view-resources .list-view-pf-additional-info-item-lg {
+  	width: 100%;
+  }
+  .list-view-resources .list-view-pf-description {
+  	width: 100%;
+  }
+  .list-view-shared .list-view-pf-description {
+  	width: 100%;
+  }
+  .resources-list .nav-tabs {
+    margin-top: 10px;
+  }
 }
-
 
 /* authenticator style */
 .list-pf {
