@@ -255,14 +255,38 @@
         </profile>
         <profile>
             <id>app-server-fuse63</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse63</value>
+                </property>
+            </activation>
             <modules>
                 <module>fuse63</module>
             </modules>
         </profile>
         <profile>
             <id>app-server-fuse70</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse70</value>
+                </property>
+            </activation>
             <modules>
                 <module>fuse70</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-fuse71</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse71</value>
+                </property>
+            </activation>
+            <modules>
+                <module>fuse71</module>
             </modules>
         </profile>
     </profiles>
