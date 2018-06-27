@@ -55,3 +55,17 @@ To use this filter, include this maven artifact in your WAR poms:
    <version>{project_versionMvn}</version>
 </dependency>
 ----
+
+In order to use <<_saml_multi_tenancy,Multi Tenancy>> the `keycloak.config.resolver` parameter should be passed as a filter parameter.
+
+[source,xml]
+----
+    <filter>
+        <filter-name>Keycloak Filter</filter-name>
+        <filter-class>org.keycloak.adapters.saml.servlet.SamlFilter</filter-class>
+        <init-param>
+            <param-name>keycloak.config.resolver</param-name>
+            <param-value>example.SamlMultiTenantResolver</param-value>
+        </init-param>
+    </filter>
+----
