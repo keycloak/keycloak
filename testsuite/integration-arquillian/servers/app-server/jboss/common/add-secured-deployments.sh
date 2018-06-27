@@ -8,7 +8,7 @@ fi
 
 cd $JBOSS_HOME/bin
 
-./standalone.sh &
+./standalone.sh -Djboss.server.config.dir=$JBOSS_HOME/standalone-secured-deployments/configuration &
 sleep 3
 
 TIMEOUT=10
@@ -20,19 +20,11 @@ RESULT=0
 until [ $T -gt $TIMEOUT ]
 do
     if ./jboss-cli.sh -c --command=":read-attribute(name=server-state)" | grep -q "running" ; then
-        echo "Server is running. Installing adapter."
+        echo "Server is running. Adding secured deployments"
 
-        ./jboss-cli.sh -c --file="adapter-install.cli"
+        ./jboss-cli.sh -c --file="$CLI_PATH/add-secured-deployments.cli"
         RESULT=$?
-        echo "Return code of adapter-install:"${RESULT}
-
-        if [ "$SAML_SUPPORTED" = true ] && [ ${RESULT} -eq 0 ]; then
-            ./jboss-cli.sh -c --file="adapter-install-saml.cli"
-            RESULT=$?
-            echo "Return code of saml adapter-install:"$RESULT
-        fi
-
-        ./jboss-cli.sh -c --file="$CLI_PATH/add-adapter-log-level.cli"
+        echo "Return code:"${RESULT}
 
         ./jboss-cli.sh -c --command=":shutdown"
         rm -rf $JBOSS_HOME/standalone/data

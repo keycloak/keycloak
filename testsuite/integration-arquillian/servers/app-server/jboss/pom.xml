@@ -205,6 +205,21 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>copy-configs-secured-deployments</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-secured-deployments</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>copy-configs-crossdc</id>
                                 <phase>generate-test-sources</phase>
                                 <goals>
@@ -393,7 +408,7 @@
                             </execution>
                             <execution>
                                 <id>add-secured-deployments</id>
-                                <phase>process-resources</phase>
+                                <phase>generate-test-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -403,6 +418,7 @@
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
+                                        <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-secured-deployments/configuration</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

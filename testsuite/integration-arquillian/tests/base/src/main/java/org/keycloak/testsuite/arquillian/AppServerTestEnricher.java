@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.arquillian;
 
+import java.io.File;
+import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -25,6 +27,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
+import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -33,6 +36,8 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +51,7 @@ import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthSe
  */
 public class AppServerTestEnricher {
 
-    protected final Logger log = Logger.getLogger(this.getClass());
+    private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
     public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
 
@@ -160,13 +165,40 @@ public class AppServerTestEnricher {
     }
 
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {
+        // if testClass implements SelfManagedAppContainerLifecycle we skip starting container and let the test to manage the lifecycle itself
+        if (SelfManagedAppContainerLifecycle.class.isAssignableFrom(event.getTestClass().getJavaClass())) {
+            log.debug("Skipping starting App server. Server should be started by testClass.");
+            return;
+        }
         if (testContext.isAdapterContainerEnabled() && !testContext.isRelativeAdapterTest()) {
+            if (isJBossBased()) {
+                prepareServerDir("standalone");
+            }
             ContainerController controller = containerConrollerInstance.get();
             if (!controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
         }
+    }
+
+    /**
+     * Workaround for WFARQ-44. It cannot be used 'cleanServerBaseDir' property.
+     * 
+     * It copies deployments and configuration into $JBOSS_HOME/standalone-test from where 
+     * the container is started for the test
+     * 
+     * @param baseDir string representing folder name, relative to app.server.home, from which the copy is made
+     * @throws IOException 
+     */
+    public static void prepareServerDir(String baseDir) throws IOException {
+        log.debug("Creating cleanServerBaseDir from: " + baseDir);
+        Path path = Paths.get(System.getProperty("app.server.home"), "standalone-test");
+        File targetSubdirFile = path.toFile();
+        FileUtils.deleteDirectory(targetSubdirFile);
+        FileUtils.forceMkdir(targetSubdirFile);
+        FileUtils.copyDirectory(Paths.get(System.getProperty("app.server.home"), baseDir, "deployments").toFile(), new File(targetSubdirFile, "deployments"));
+        FileUtils.copyDirectory(Paths.get(System.getProperty("app.server.home"), baseDir, "configuration").toFile(), new File(targetSubdirFile, "configuration"));
     }
 
     /**
@@ -230,4 +262,7 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.contains("karaf") || CURRENT_APP_SERVER.contains("fuse");
     }
 
+    private boolean isJBossBased() {
+        return testContext.getAppServerInfo().isJBossBased();
+    }
 }

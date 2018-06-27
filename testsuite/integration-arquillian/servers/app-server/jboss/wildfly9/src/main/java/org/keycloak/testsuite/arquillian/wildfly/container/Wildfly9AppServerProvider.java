@@ -85,6 +85,7 @@ public class Wildfly9AppServerProvider implements AppServerContainerProvider {
         createChild("jbossHome", appServerHome);
         createChild("javaHome", appServerJavaHome);
         createChild("jbossArguments", 
+                "-Djboss.server.base.dir=" + appServerHome + "/standalone-test " +
                 "-Djboss.socket.binding.port-offset=" + appServerPortOffset + " " +
                 System.getProperty("adapter.test.props", " ") +
                 System.getProperty("kie.maven.settings", " ")
