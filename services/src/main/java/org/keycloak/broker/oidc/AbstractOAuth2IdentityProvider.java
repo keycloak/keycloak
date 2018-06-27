@@ -18,6 +18,21 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.ws.rs.GET;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -25,8 +40,8 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
@@ -40,33 +55,18 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * @author Pedro Igor
  */
 public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements ExchangeTokenToIdentityProviderToken, ExchangeExternalToken {
+
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
@@ -78,6 +78,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected static ObjectMapper mapper = new ObjectMapper();
 
     public static final String OAUTH2_PARAMETER_ACCESS_TOKEN = "access_token";
+    public static final String OAUTH2_PARAMETER_REFRESH_TOKEN = "refresh_token";
+    public static final String OAUTH2_PARAMETER_ID_TOKEN = "id_token";
     public static final String OAUTH2_PARAMETER_SCOPE = "scope";
     public static final String OAUTH2_PARAMETER_STATE = "state";
     public static final String OAUTH2_PARAMETER_RESPONSE_TYPE = "response_type";
@@ -86,7 +88,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_CLIENT_ID = "client_id";
     public static final String OAUTH2_PARAMETER_CLIENT_SECRET = "client_secret";
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
-
 
     public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
         super(session, config);
@@ -123,20 +124,22 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String extractTokenFromResponse(String response, String tokenName) {
-    	  if(response == null)
-    	  	return null;
-    	  
+        if (response == null) {
+            return null;
+        }
+
         if (response.startsWith("{")) {
             try {
-            		JsonNode node = mapper.readTree(response);
-            		if(node.has(tokenName)){
-            			String s = node.get(tokenName).textValue();
-            			if(s == null || s.trim().isEmpty())
-            				return null;
-                  return s;
-            		} else {
-            			return null;
-            		}
+                JsonNode node = mapper.readTree(response);
+                if (node.has(tokenName)) {
+                    String s = node.get(tokenName).textValue();
+                    if (s == null || s.trim().isEmpty()) {
+                        return null;
+                    }
+                    return s;
+                } else {
+                    return null;
+                }
             } catch (IOException e) {
                 throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "] due: " + e.getMessage(), e);
             }
@@ -156,7 +159,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         // check to see if we have a token exchange in session
         // in other words check to see if this session was created by an external exchange
         Response tokenResponse = hasExternalExchangeToken(event, tokenUserSession, params);
-        if (tokenResponse != null) return tokenResponse;
+        if (tokenResponse != null) {
+            return tokenResponse;
+        }
 
         // going further we only support access token type?  Why?
         String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
@@ -181,8 +186,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * check to see if we have a token exchange in session
-     * in other words check to see if this session was created by an external exchange
+     * check to see if we have a token exchange in session in other words check
+     * to see if this session was created by an external exchange
+     *
      * @param tokenUserSession
      * @param params
      * @return
@@ -272,7 +278,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-
     public BrokeredIdentityContext getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, getAccessTokenResponseParameter());
 
@@ -289,11 +294,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return OAUTH2_PARAMETER_ACCESS_TOKEN;
     }
 
-
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         return null;
     }
-
 
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         final UriBuilder uriBuilder = UriBuilder.fromUri(getConfig().getAuthorizationUrl())
@@ -331,19 +334,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
-     * 
+     * Get JSON property as text. JSON numbers and booleans are converted to
+     * text. Empty string is converted to null.
+     *
      * @param jsonNode to get property from
      * @param name of property to get
      * @return string value of the property or null.
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
         if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-        	  String s = jsonNode.get(name).asText();
-        	  if(s != null && !s.isEmpty())
-        	  		return s;
-        	  else
-      	  			return null;
+            String s = jsonNode.get(name).asText();
+            if (s != null && !s.isEmpty()) {
+                return s;
+            } else {
+                return null;
+            }
         }
 
         return null;
@@ -358,10 +363,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
         String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
-        if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+        if (token != null) {
+            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+        }
     }
 
     protected class Endpoint {
+
         protected AuthenticationCallback callback;
         protected RealmModel realm;
         protected EventBuilder event;
@@ -386,8 +394,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         @GET
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
-                                     @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
-                                     @QueryParam(OAuth2Constants.ERROR) String error) {
+                @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
+                @QueryParam(OAuth2Constants.ERROR) String error) {
             if (error != null) {
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
                 if (error.equals(ACCESS_DENIED)) {
@@ -402,14 +410,16 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             try {
 
                 if (authorizationCode != null) {
-                    String response = generateTokenRequest(authorizationCode).asString();
+                    String response = generateTokenRequestAsString(authorizationCode);
 
                     BrokeredIdentityContext federatedIdentity = getFederatedIdentity(response);
 
                     if (getConfig().isStoreToken()) {
                         // make sure that token wasn't already set by getFederatedIdentity();
                         // want to be able to allow provider to set the token itself.
-                        if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
+                        if (federatedIdentity.getToken() == null) {
+                            federatedIdentity.setToken(response);
+                        }
                     }
 
                     federatedIdentity.setIdpConfig(getConfig());
@@ -426,6 +436,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
             return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+
+        protected String generateTokenRequestAsString(String authorizationCode) throws IOException {
+            return generateTokenRequest(authorizationCode).asString();
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
@@ -484,9 +498,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
         return SimpleHttp.doGet(userInfoUrl, session)
-                  .header("Authorization", "Bearer " + subjectToken);
+                .header("Authorization", "Bearer " + subjectToken);
     }
-
 
     protected boolean supportsExternalExchange() {
         return false;
@@ -494,15 +507,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
-        if (!supportsExternalExchange()) return false;
+        if (!supportsExternalExchange()) {
+            return false;
+        }
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
-        if (requestedIssuer == null) requestedIssuer = issuer;
+        if (requestedIssuer == null) {
+            requestedIssuer = issuer;
+        }
         return requestedIssuer.equals(getConfig().getAlias());
     }
 
-
     final public BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params) {
-        if (!supportsExternalExchange()) return null;
+        if (!supportsExternalExchange()) {
+            return null;
+        }
         BrokeredIdentityContext context = exchangeExternalImpl(event, params);
         if (context != null) {
             context.setIdp(this);
@@ -537,13 +555,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
+        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
             userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
+        }
+        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
             userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+        }
         userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
 
     }
-
 
 }
