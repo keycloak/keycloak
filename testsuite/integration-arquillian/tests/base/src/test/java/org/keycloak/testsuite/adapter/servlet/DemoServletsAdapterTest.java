@@ -997,7 +997,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         String appServer = System.getProperty("app.server");
         if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
-            serverLogPath = System.getProperty("app.server.home") + "/standalone/log/server.log";
+            serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 
         String appServerUrl;
