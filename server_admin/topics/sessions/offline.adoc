@@ -10,10 +10,12 @@ An example is a periodic backup of some data every night.
 
 Your application is responsible for persisting the offline token in some storage (usually a database) and then using it to manually retrieve new access token from {project_name} server.
 
-The difference between a classic Refresh token and an Offline token is, that an offline token will never expire and is not subject of `SSO Session Idle timeout` .
+The difference between a classic Refresh token and an Offline token is, that an offline token will never expire by default and is not subject of `SSO Session Idle timeout` and `SSO Session Max lifespan` .
 The offline token is valid even after a user logout or server restart.
-However by default you do need to use the offline token for a refresh token action at least once per 30 days (this value, `Offline Session Idle timeout`, can be changed in the administration console in the `Tokens` tab under `Realm Settings`). Also if you enable the option `Revoke refresh tokens`, then each offline token can be used just once.
-So after refresh, you always need to store the new offline token from refresh response into your DB instead of the previous one.
+However by default you do need to use the offline token for a refresh token action at least once per 30 days (this value, `Offline Session Idle timeout`, can be changed in the administration console in the `Tokens` tab under `Realm Settings`).
+Moreover, if you enable the option `Offline Session Max Limited`, then the offline token expires after 60 days regardless of using the offline token for a refresh token action (this value, `Offline Session Max lifespan`, can also be changed in the administration console in the Tokens tab under Realm Settings).
+Also if you enable the option `Revoke refresh tokens`, then each offline token can be used just once. So after refresh, you always need to store the new offline token from refresh response into your DB instead of the previous one.
+
 
 Users can view and revoke offline tokens that have been granted by them in the <<_account-service, User Account Service>>.
 The admin user can revoke offline tokens for individual users in admin console in the `Consents` tab of a particular user.

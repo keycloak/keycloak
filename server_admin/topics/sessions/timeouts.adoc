@@ -28,6 +28,12 @@ Let's walk through each of the items on this page.
 |Offline Session Idle
 |For <<_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
 
+|Offline Session Max Limited
+|For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of activity.
+
+|Offline Session Max
+|For <<_offline-access, offline access>>, this is the maximum time before the corresponding offline token is revoked. This is a hard number and time. It controls the maximum time the offline token can remain active, regardless of activity.
+
 |Access Token Lifespan
 |When an OIDC access token is created, this value affects the expiration.
 
