@@ -1,7 +1,9 @@
 [[_service_authorization_my_resources]]
 = Managing Access to Users Resources
 
-Users can manage access to their resources using the {project_name} User Account Service.
+Users can manage access to their resources using the {project_name} User Account Service. To enable
+this functionality, you must first enable User-Managed Access for your realm. To do so,
+open the realm settings page in {project_name} Administration Console and enable the User-Managed Access switch.
 
 image:{project_images}/service/account-my-resource.png[alt="My Resources"]
 
