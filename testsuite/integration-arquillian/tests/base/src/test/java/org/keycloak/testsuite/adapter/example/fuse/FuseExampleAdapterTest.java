@@ -47,6 +47,7 @@ import org.keycloak.testsuite.util.WaitUtils;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE70)
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE71)
 public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page

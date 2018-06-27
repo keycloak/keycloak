@@ -25,7 +25,7 @@ public class ContainerAssume {
 
     private static final Logger log = Logger.getLogger(ContainerAssume.class);
     private static final String fuse6 = "fuse63";
-    private static final String fuse7 = "fuse70";
+    private static final String fuse7 = "fuse7";
 
     public static void assumeNotAuthServerUndertow() {
         Assume.assumeFalse("Doesn't work on auth-server-undertow", 
@@ -47,6 +47,6 @@ public class ContainerAssume {
     }
 
     public static void assumeNotAppServerFuse7() {
-        Assume.assumeFalse("The test doesn't work on " + fuse7, fuse7.equals(System.getProperty("app.server")));
+        Assume.assumeFalse("The test doesn't work on " + fuse7, System.getProperty("app.server").contains(fuse7));
     }
 }

@@ -37,4 +37,5 @@ public interface ContainerConstants {
 
     public static final String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
     public static final String APP_SERVER_FUSE70 = APP_SERVER_PREFIX + "fuse70";
+    public static final String APP_SERVER_FUSE71 = APP_SERVER_PREFIX + "fuse71";
 }
