@@ -380,7 +380,6 @@ p.description {
 }
 .list-view-resources .list-view-pf-stacked .list-group-item-heading {
     font-size: 13px;
-    font-weight: bold;
 }
 .list-view-resources .content-view-pf-pagination {
 	border: none;
@@ -457,8 +456,38 @@ p.description {
 .breadcrumb {
     padding: 20px 15px 20px 0;
 }
-
+.resource-list-label{
+  display: none;
+}
 @media (max-width: 767px) {
+  .resource-list-label{
+    display:block;
+    margin-bottom:0;
+    margin-right: 5px;
+  }
+  .list-view-resources .list-view-pf-stacked .list-group-item-heading {
+      font-size: 16px;
+  }
+  .list-view-pf-stacked .list-group-item-heading{
+    margin-right: 10px;
+  }
+  .resources-info span{
+    border: none;
+    display: block;
+    width: 100%;
+  }
+  .resources-info span:first-child{
+    margin-bottom: 10px;
+  }
+  .resources-info span label{
+    margin-bottom: 0;
+  }
+  .list-view-pf .list-head-labels{
+    display: none;
+  }
+  .list-head-label{
+    display: none;
+  }
   .card-pf-application h2 {
     margin-top: -10px;
   }
