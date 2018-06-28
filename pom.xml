@@ -37,7 +37,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.3-CD2</product.rhsso.version>
+        <product.rhsso.version>7.3.0.CD02</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
