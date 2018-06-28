@@ -16,12 +16,9 @@
  */
 package org.keycloak.testsuite.arquillian.fuse;
 
-import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.keycloak.testsuite.utils.arquillian.fuse.CustomFuseContainer;
-import org.keycloak.testsuite.utils.arquillian.fuse.KeycloakOSGiApplicationArchiveProcessor;
 
 /**
  *
@@ -33,8 +30,6 @@ public class Fuse70AppServerArquillianExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
 
         builder.service(DeployableContainer.class, CustomFuseContainer.class);
-
-        builder.override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class);
 
     }
 
