@@ -67,8 +67,12 @@ public abstract class AbstractPolicyEnforcer {
         KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
 
         if (securityContext == null) {
-            if (pathConfig != null) {
-                challenge(pathConfig, getRequiredScopes(pathConfig, request), httpFacade);
+            if (!isDefaultAccessDeniedUri(request)) {
+                if (pathConfig != null) {
+                    challenge(pathConfig, getRequiredScopes(pathConfig, request), httpFacade);
+                } else {
+                    handleAccessDenied(httpFacade);
+                }
             }
             return createEmptyAuthorizationContext(false);
         }
