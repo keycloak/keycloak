@@ -1,0 +1,12 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "policy-enforcer": {
+    "on-deny-redirect-to": "/accessDenied"
+  }
+}
