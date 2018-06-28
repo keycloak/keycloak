@@ -247,6 +247,32 @@ public class AuthenticationManagementResource {
     }
 
     /**
+     * Update an authentication flow
+     *
+     * @param flow Authentication flow representation
+     * @return
+     */
+    @Path("/flows/{id}")
+    @PUT
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow) {
+        auth.realm().requireManageRealm();
+
+        AuthenticationFlowRepresentation existingFlow = getFlow(id);
+
+        if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
+            return ErrorResponse.exists("Failed to update flow with empty alias name");
+        }
+
+        flow.setId(existingFlow.getId());
+        realm.updateAuthenticationFlow(RepresentationToModel.toModel(flow));
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(flow).success();
+
+        return Response.accepted(flow).build();
+    }
+
+    /**
      * Delete an authentication flow
      *
      * @param id Flow id
