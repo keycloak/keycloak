@@ -1,7 +1,7 @@
 
 === Troubleshooting
 
-* Note that when you run cluster, you should see message similar to this in the log of both cluster nodes:
+* Note that when you run a cluster, you should see message similar to this in the log of both cluster nodes:
 +
 [source]
 ----
@@ -18,5 +18,5 @@ Note that you may need more ports opened if you want to enable additional featur
 {project_name} delegates most of the clustering work to Infinispan/JGroups.
 For more information, see link:{appserver_jgroups_link}[JGroups] in the _{appserver_jgroups_name}_.
 
-* If you are interested about failover support (hight availability), evictions, expiration and cache tunings, you can go to the
+* If you are interested in failover support (high availability), evictions, expiration and cache tuning, see
 <<cache-configuration>>.

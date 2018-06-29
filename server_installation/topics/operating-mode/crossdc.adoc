@@ -213,7 +213,9 @@ Details of this more-detailed setup are out-of-scope of the {project_name} docum
 <cache-container name="clustered" default-cache="default" statistics="true">
         ...
         <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
+ifeval::[{project_product}==true]
             <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+endif::[]
             <locking acquire-timeout="0" />
             <backups>
                 <backup site="site2" failure-policy="FAIL" strategy="SYNC" enabled="true">
@@ -232,12 +234,17 @@ Details of this more-detailed setup are out-of-scope of the {project_name} docum
                 
 </cache-container>
 ```
++
 NOTE: Details about the configuration options inside `replicated-cache-configuration` are explained in <<tuningcache>>, which includes information about tweaking some of those options.
-
-+  
++
+ifeval::[{project_community}==true]
+WARNING: Unlike in previous version, the {jdgserver_name} server `replicated-cache-configuration` needs to be configured without `transaction`
+element. See <<troubleshooting>> for more details.
+endif::[]
++
 . Some {jdgserver_name} server releases require authorization before accessing protected caches over network.
 +
-NOTE: You shouldn't see any issue if you use recommended {jdgserver_name} {jdgserver_version} server and this step can (and should) be ignored.
+NOTE: You should not see any issue if you use recommended {jdgserver_name} {jdgserver_version} server and this step can (and should) be ignored.
 Issues related to authorization may exist just for some other versions of {jdgserver_name} server.
 +
 {project_name} requires updates to
@@ -393,7 +400,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="work" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </replicated-cache>
 ```
@@ -406,7 +412,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="sessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 ```
@@ -419,7 +424,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="offlineSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 
@@ -427,7 +431,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="clientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 
@@ -435,7 +438,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="offlineClientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 
@@ -443,7 +445,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="loginFailures" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 
@@ -453,7 +454,6 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="actionTokens" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="true" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="protocolVersion">2.6</property>
     </remote-store>
 </distributed-cache>
 ```
@@ -850,3 +850,15 @@ which is caused by cache items not being properly expired. In that case, update 
         <expiration />
     </replicated-cache>
 ```
+
+* If you see Warnings in the {jdgserver_name} server log like:
++
+```
+18:06:19,687 WARN  [org.infinispan.server.hotrod.Decoder2x] (HotRod-ServerWorker-7-12) ISPN006011: Operation 'PUT_IF_ABSENT' forced to
+  return previous value should be used on transactional caches, otherwise data inconsistency issues could arise under failure situations
+18:06:19,700 WARN  [org.infinispan.server.hotrod.Decoder2x] (HotRod-ServerWorker-7-10) ISPN006010: Conditional operation 'REPLACE_IF_UNMODIFIED' should
+  be used with transactional caches, otherwise data inconsistency issues could arise under failure situations
+```
++
+you can just ignore them. To avoid the warning, the caches on {jdgserver_name} server side could be changed to transactional caches, but this is not recommended as it can cause some
+other issues caused by the bug https://issues.jboss.org/browse/ISPN-9323. So for now, the warnings just need to be ignored.

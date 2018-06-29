@@ -4,21 +4,27 @@
 
 ==== Upgrade to Wildfly 13
 
-The {project_name} server was upgraded to use Wildfly 13 as the underlying container. This doesn't directly involve any {project_name}
-server functionality, but there are few changes related to the migration, which worth mentioning:
+The {project_name} server was upgraded to use Wildfly 13 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
 
-Some dependencies updated::
-  The dependencies were updated to the versions used by Wildfly 13 server. For example Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
+Dependency updates::
+  The dependencies were updated to the versions used by Wildfly 13 server. For example, Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow section <<_install_new_version>>
-  to handle the migration of configuration files automatically. Just in case you want more details (For example if you did some configuration
-  changes on your own), here is the list of the most important changes in the configuration:
+  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some configuration
+  changes on your own, here is a list of the most important changes:
   * Element `eviction` on infinispan caches is now deprecated (unused) and was replaced by element `object-memory`
   * There is no `jndi-attribute` on `cache-container` element in infinispan subsystem.
-  * If you use cross-dc integration, there is a need to add property `protocolVersion` with value `2.6` on `remote-store` . This is because
-  hotrod client ({project_name} server) is using infinispan 9 based on newer version of hotrod protocol than {jdgserver_name} server, which
-  is still using infinispan 8.
+
+Cross-Datacenter Replication changes::
+  * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
+  not guaranteed as we don't test it anymore.
+  * You don't need to configure security anymore in the {jdgserver_name} server configuration file.
+ifeval::[{project_community}==true]
+  * There is a need to remove `transaction` element from the configuration of replicated caches in the {jdgserver_name} server
+  configuration file. This is needed because of the infinispan bug https://issues.jboss.org/browse/ISPN-9323.
+endif::[]
 
 === Migration to 4.3.0
 

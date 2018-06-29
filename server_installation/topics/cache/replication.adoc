@@ -1,8 +1,9 @@
 
+[[_replication]]
 === Replication and Failover
 
-There are some caches like `sessions`, `authenticationSessions`, `offlineSessions`, `loginFailures` and few others, which are configured
-as distributed caches in case of clustered setup.  Entries are
+There are caches like `sessions`, `authenticationSessions`, `offlineSessions`, `loginFailures` and a few others (See <<_eviction>> for more details),
+which are configured as distributed caches when using a clustered setup. Entries are
 not replicated to every single node, but instead one or more nodes is chosen as an owner of that data.  If a node is not the owner of a specific cache entry it queries
 the cluster to obtain it.  What this means for failover is that if all the nodes that own a piece of data go down, that data
 is lost forever.  By default, {project_name} only specifies one owner for data.  So if that one node goes down
@@ -24,7 +25,7 @@ Here we've changed it so at least two nodes will replicate one specific user log
 TIP:  The number of owners recommended is really dependent on your deployment.  If you do not care if users are logged
       out when a node goes down, then one owner is good enough and you will avoid replication.
 
-TIP:  It is very good if you configure your environment to use loadbalancer with sticky sessions. It is beneficial for performance
-      as {project_name} server, where the particular request is served, will be usually the owner of the data from distributed cache and
-      hence it will be able to lookup the data locally. More details in <<sticky-sessions>>.
+TIP: It is generally wise to configure your environment to use loadbalancer with sticky sessions. It is beneficial for performance
+     as {project_name} server, where the particular request is served, will be usually the owner of the data from the distributed cache
+     and will therefore be able to look up the data locally. See <<sticky-sessions>> for more details.
 

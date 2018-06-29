@@ -36,6 +36,8 @@ endif::[]
 :adminguide_link: {project_doc_base_url}/server_administration_guide/
 :adminguide_bruteforce_name: Password guess: brute force attacks
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
+:adminguide_timeouts_name: Timeouts
+:adminguide_timeouts_link: {adminguide_link}#_timeouts
 :adminguide_clearcache_name: Clearing Server Caches
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
