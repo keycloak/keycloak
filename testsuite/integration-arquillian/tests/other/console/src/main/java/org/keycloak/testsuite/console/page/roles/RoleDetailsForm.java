@@ -47,7 +47,7 @@ public class RoleDetailsForm extends Form {
         RoleRepresentation role = new RoleRepresentation();
         role.setName(getName());
         role.setDescription(getDescription());
-        role.setScopeParamRequired(isScopeParamRequired());
+        //role.setScopeParamRequired(isScopeParamRequired()); // TODO Do we need this param?
         role.setComposite(isComposite());
         log.info(role.getName() + ": " + role.getDescription() + ", comp: " + role.isComposite());
         return role;

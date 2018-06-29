@@ -20,7 +20,6 @@ package org.keycloak.testsuite.adapter.nodejs;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -34,10 +33,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * This test class expects following:

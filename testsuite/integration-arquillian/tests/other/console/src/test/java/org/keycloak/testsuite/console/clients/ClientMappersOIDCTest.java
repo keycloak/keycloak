@@ -280,8 +280,8 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         //prepare data
         ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
         mapper.setName("mapper name");
-        mapper.setConsentRequired(true);
-        mapper.setConsentText("consent text");
+        //mapper.setConsentRequired(true);
+        //mapper.setConsentText("consent text");
         mapper.setProtocol("openid-connect");
         mapper.setProtocolMapper("oidc-usersessionmodel-note-mapper");
         
