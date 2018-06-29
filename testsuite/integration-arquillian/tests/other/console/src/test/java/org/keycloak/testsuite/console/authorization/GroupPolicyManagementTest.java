@@ -58,6 +58,20 @@ public class GroupPolicyManagementTest extends AbstractAuthorizationSettingsTest
     }
 
     @Test
+    public void testCreateWithoutGroupClaims() throws InterruptedException {
+        authorizationPage.navigateTo();
+        GroupPolicyRepresentation expected = new GroupPolicyRepresentation();
+
+        expected.setName("Test Group Policy");
+        expected.setDescription("description");
+        expected.addGroupPath("/Group A", true);
+        expected.addGroupPath("/Group A/Group B/Group D");
+        expected.addGroupPath("Group F");
+
+        createPolicy(expected);
+    }
+
+    @Test
     public void testUpdate() throws InterruptedException {
         authorizationPage.navigateTo();
         GroupPolicyRepresentation expected = new GroupPolicyRepresentation();
@@ -76,6 +90,7 @@ public class GroupPolicyManagementTest extends AbstractAuthorizationSettingsTest
         expected.setName("Changed Test Group Policy");
         expected.setDescription("Changed description");
         expected.setLogic(Logic.NEGATIVE);
+        expected.setGroupsClaim(null);
 
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().policies().update(previousName, expected);
@@ -166,6 +181,7 @@ public class GroupPolicyManagementTest extends AbstractAuthorizationSettingsTest
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getLogic(), actual.getLogic());
+        assertEquals(expected.getGroupsClaim(), actual.getGroupsClaim());
 
         assertNotNull(actual.getGroups());
         assertEquals(expected.getGroups().size(), actual.getGroups().size());

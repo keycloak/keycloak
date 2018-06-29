@@ -137,7 +137,10 @@ public class GroupPolicyForm extends Form {
 
         representation.setName(getInputValue(name));
         representation.setDescription(getInputValue(description));
-        representation.setGroupsClaim(getInputValue(groupsClaim));
+
+        String groupsClaimValue = getInputValue(groupsClaim);
+
+        representation.setGroupsClaim(groupsClaim == null || "".equals(groupsClaimValue.trim()) ? null : groupsClaimValue);
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
         representation.setGroups(new HashSet<>());
 
