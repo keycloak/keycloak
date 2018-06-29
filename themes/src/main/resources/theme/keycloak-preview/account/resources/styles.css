@@ -588,3 +588,73 @@ p.description {
     font-size: 75%;
     margin-left: 4px;
 }
+ol.setup-message li {
+  margin: 10px 0;
+}
+ol.setup-message li ul li {
+  margin: 5px 0;
+}
+.qrcode-code {
+  display: none;
+}
+.link-right {
+    text-align: right;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+@media (max-width: 767px) {
+  .qrcode-img {
+    display: none;
+  }
+  .qrcode-code {
+    display: block;
+    margin-bottom: 20px;
+  }
+}
+
+
+/* backup codes setup style*/
+.backup-codes-box {
+  background-color: #fdf2e5;
+  border: 1px solid #ccc;
+  border-radius: 1px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-top: 8px;
+  max-width: 320px;
+}
+
+.backup-codes-box-body {
+  font-size: 14px;
+  margin-left: 24px;
+  margin-top: 12px;
+}
+.backup-codes-list {
+  columns: 2;
+  -webkit-columns: 2;
+  -moz-columns: 2;
+  counter-reset: list;
+  list-style: none;
+  padding-left: 0px;
+}
+.backup-codes-list > li:before {
+  content: counter(list)". ";
+  color: lightgrey;
+  counter-increment: list;
+  display: inline-block;
+  width: 28px;
+  margin-left: -16px;
+  margin-right: 12px;
+  text-align: right;
+}
+.left-padding-m {
+  padding-left: 16px;
+}
+.generate-annotation {
+  max-width: 320px;
+  margin-top: 12px;
+}
+.header-text {
+  margin-left: 24px;
+  margin-bottom: 8px;
+}
