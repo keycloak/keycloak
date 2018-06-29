@@ -22,8 +22,8 @@ A string containing details about this policy.
 * *Groups Claim*
 +
 Specifies the name of the claim in the token holding the group names and/or paths. Usually, authorization requests are processed based on an ID Token or Access Token
-previously issued to a client acting on behalf of some user. The token must include a claim from where this policy is going to obtain the groups
-the user is a member.
+previously issued to a client acting on behalf of some user. If defined, the token must include a claim from where this policy is going to obtain the groups
+the user is a member of. If not defined, user's groups are obtained from your realm configuration.
 +
 * *Groups*
 +
