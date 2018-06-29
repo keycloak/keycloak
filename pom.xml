@@ -78,6 +78,7 @@
         <log4j.version>1.2.17</log4j.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>        
         <resteasy.version>3.0.26.Final</resteasy.version>
+        <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
