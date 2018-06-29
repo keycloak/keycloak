@@ -327,9 +327,6 @@ p.description {
 .list-view-pf .list-group-item {
 	border-bottom: 1px solid #ededed;
 }
-.list-view-resources .list-view-pf-additional-info-item {
-	width: 30%;
-}
 .list-view-resources .list-view-pf-additional-info-item .pficon {
 	margin-right: 0;
 	color: #fff;
@@ -342,7 +339,7 @@ p.description {
 .pfng-list-heading .list-view-pf-main-info {
 	padding-top: 10px;
 	padding-bottom: 10px;
-	font-weight: bold;
+	font-weight: 600;
 	font-size: 13px;
 }
 .list-view-resources .list-view-pf-actions {
@@ -351,7 +348,7 @@ p.description {
 }
 .pfng-list-heading .list-view-pf-additional-info {
 	font-size: 12px;
-	font-weight: bold;
+	font-weight: 600;
 }
 .list-view-resources .list-view-pf-description {
 	width: 35%;
@@ -369,7 +366,7 @@ p.description {
 .list-view-detail .list-view-master-actions {
 	width: 105px;
 }
-.list-view-detail .list-view-space{
+.list-view-detail .list-view-space {
   width: 20px;
 }
 .list-view-resources .list-view-pf-status {
@@ -383,6 +380,7 @@ p.description {
 }
 .list-view-resources .content-view-pf-pagination {
 	border: none;
+  background-color: #fff;
 }
 .resources-header {
 	margin-bottom: 20px;
@@ -407,19 +405,11 @@ p.description {
 .resources-actions button {
 	margin-right: 10px;
 }
-.user-list-avatar {
-	width: 36px;
-	height: 36px;
-	border-radius: 36px;
-	background-color: #1E97D6;
-	color: #fff;
-	float: left;
-	text-align: center;
-	line-height: 36px;
-	margin-right: 10px;
-}
 .list-view-master-actions {
 	margin-top: 6px;
+}
+.permission-requests-labels ul {
+  margin-bottom: 0;
 }
 .permission-requests-labels li {
 	margin-bottom: 5px;
@@ -431,14 +421,14 @@ p.description {
 	padding-right: 15px;
 	border-radius: 20px;
 }
+.permission-requests-labels .pficon-close {
+  color:#fff;
+}
 .my-requests-labels .label-info {
 	background-color: #15B692;
 }
 .modal-title span {
 	font-weight: normal;
-}
-.bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn) {
-  width: 100%;
 }
 .resource-share-content {
 	margin-top: 20px;
@@ -446,43 +436,59 @@ p.description {
 .resources-list .nav-tabs {
   margin-left: 20px;
 }
-.resources-list .card-pf-body {
-  padding-bottom: 0;
-}
 .resources-list .content-view-pf-pagination {
-  margin-top: 20px;
   margin-bottom: -20px;
 }
 .breadcrumb {
     padding: 20px 15px 20px 0;
 }
-.resource-list-label{
+.resource-list-label {
   display: none;
 }
+.resources-list .card-pf-body {
+  padding: 0;
+}
 @media (max-width: 767px) {
-  .resource-list-label{
-    display:block;
-    margin-bottom:0;
+  .no-paddding-re {
+    padding: 0;
+  }
+  .permission-requests-labels .m-b-s {
+    margin-bottom: 10px;
+  }
+  .no-paddding-re .label-warning {
+    margin-top: 10px;
+  }
+  .resource-list-label {
+    display: inline-block;
+    margin-bottom: 0;
     margin-right: 5px;
+  }
+  .list-responsive-padding {
+    padding-left: 20px;
+    overflow: auto;
+  }
+  .list-view-pf .list-group-item {
+    padding-bottom: 10px;
+  }
+  .pfng-list-heading.list-group-item {
+    padding-bottom: 0px;
   }
   .list-view-resources .list-view-pf-stacked .list-group-item-heading {
       font-size: 16px;
+      margin-bottom: 10px;
   }
-  .list-view-pf-stacked .list-group-item-heading{
+  .list-view-pf-stacked .list-group-item-heading {
     margin-right: 10px;
   }
-  .resources-info span{
+  .resources-info span {
     border: none;
     display: block;
     width: 100%;
   }
-  .resources-info span:first-child{
-    margin-bottom: 10px;
-  }
-  .resources-info span label{
+  .resources-info span label {
     margin-bottom: 0;
   }
-  .list-view-pf .list-head-labels{
+  .list-view-pf .list-head-labels {
     display: none;
   }
   .list-head-label{
@@ -499,7 +505,6 @@ p.description {
     padding: 10px 0;
   }
   .card-linked-account .list-view-pf-additional-info {
-    width: 100%;
     margin-top: 20px;
   }
   .card-pf-application h2 a {
@@ -535,20 +540,11 @@ p.description {
   .resources-list .card-pf-body {
     padding: 0;
   }
-  .list-view-resources .list-view-pf-additional-info-item {
-  	width: 100%;
-  }
-  .list-view-resources .list-view-pf-additional-info-item-lg {
-  	width: 100%;
-  }
-  .list-view-resources .list-view-pf-description {
-  	width: 100%;
-  }
-  .list-view-shared .list-view-pf-description {
-  	width: 100%;
-  }
   .resources-list .nav-tabs {
     margin-top: 10px;
+  }
+  .margin-bottom-none{
+    padding-bottom: 0;
   }
 }
 
