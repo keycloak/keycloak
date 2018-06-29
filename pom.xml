@@ -76,6 +76,7 @@
         <jboss-transaction-api_1.2_spec>1.0.1.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <log4j.version>1.2.17</log4j.version>
+        <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <resteasy.version>3.0.24.Final</resteasy.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
@@ -369,6 +370,11 @@
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
