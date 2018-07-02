@@ -217,7 +217,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
-        URI redir = URI.create("https://localhost:" + System.getProperty("app.server.https.port", "8543") + baseUri.getRawPath());
+        URI redir = URI.create("https://localhost:" + System.getProperty("auth.server.https.port", "8543") + baseUri.getRawPath());
         client.getRedirectUris().add(redir.toString());
 
         testRealm.setBruteForceProtected(true);
