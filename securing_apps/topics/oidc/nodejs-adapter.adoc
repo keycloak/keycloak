@@ -135,7 +135,7 @@ To secure a resource with an application role for the current app:
 To secure a resource with an application role for a *different* app:
 
 [source,javascript]
-    app.get( '/extra-special', keycloak.protect('other-app:special', extraSpecialHandler );
+    app.get( '/extra-special', keycloak.protect('other-app:special'), extraSpecialHandler );
 
 To secure a resource with a realm role:
 
