@@ -92,13 +92,13 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${common.resources}/install-adapters-online.${script.suffix}</executable>
+                            <executable>${basedir}/src/main/resources/config/install-adapters-online.${script.suffix}</executable>
                             <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                 <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                 <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
-                                <CLI_PATH>${common.resources}/cli/eap6/</CLI_PATH>
+                                <CLI_PATH>${basedir}/src/main/resources/config/cli/</CLI_PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
@@ -109,12 +109,12 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${common.resources}/install-adapters-online-ha.${script.suffix}</executable>
+                            <executable>${basedir}/src/main/resources/config/install-adapters-online-ha.${script.suffix}</executable>
                             <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                 <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                <CLI_PATH>${common.resources}/cli/eap6/</CLI_PATH>
+                                <CLI_PATH>${basedir}/src/main/resources/config/cli/</CLI_PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
@@ -125,12 +125,12 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${common.resources}/add-secured-deployments.${script.suffix}</executable>
+                            <executable>${basedir}/src/main/resources/config/add-secured-deployments.${script.suffix}</executable>
                             <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                 <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                <CLI_PATH>${common.resources}/cli/eap6/</CLI_PATH>
+                                <CLI_PATH>${basedir}/src/main/resources/config/cli/</CLI_PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
