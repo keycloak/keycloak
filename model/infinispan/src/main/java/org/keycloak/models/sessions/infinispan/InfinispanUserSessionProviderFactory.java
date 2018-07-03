@@ -23,6 +23,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Environment;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -109,13 +110,19 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             @Override
             public void onEvent(ProviderEvent event) {
                 if (event instanceof PostMigrationEvent) {
-                    KeycloakSession session = ((PostMigrationEvent) event).getSession();
 
-                    keyGenerator = new InfinispanKeyGenerator();
-                    checkRemoteCaches(session);
-                    loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
-                    registerClusterListeners(session);
-                    loadSessionsFromRemoteCaches(session);
+                    int preloadTransactionTimeout = getTimeoutForPreloadingSessionsSeconds();
+                    log.debugf("Will preload sessions with transaction timeout %d seconds", preloadTransactionTimeout);
+
+                    KeycloakModelUtils.runJobInTransactionWithTimeout(factory, (KeycloakSession session) -> {
+
+                        keyGenerator = new InfinispanKeyGenerator();
+                        checkRemoteCaches(session);
+                        loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
+                        registerClusterListeners(session);
+                        loadSessionsFromRemoteCaches(session);
+
+                    }, preloadTransactionTimeout);
 
                 } else if (event instanceof UserModel.UserRemovedEvent) {
                     UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
@@ -135,6 +142,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     // Count of sessions to be computed in each segment
     private int getSessionsPerSegment() {
         return config.getInt("sessionsPerSegment", 100);
+    }
+
+    private int getTimeoutForPreloadingSessionsSeconds() {
+        Integer timeout = config.getInt("sessionsPreloadTimeoutInSeconds", null);
+        return timeout != null ? timeout : Environment.getServerStartupTimeout();
     }
 
 
