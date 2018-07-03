@@ -39,7 +39,7 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private String type;
     private String name;
     private String displayName;
-    private String uri;
+    private Set<String> uris;
     private Set<String> scopesIds;
     private boolean ownerManagedAccess;
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -48,7 +48,7 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         super(revision, resource.getId());
         this.name = resource.getName();
         this.displayName = resource.getDisplayName();
-        this.uri = resource.getUri();
+        this.uris = resource.getUris();
         this.type = resource.getType();
         this.owner = resource.getOwner();
         this.iconUri = resource.getIconUri();
@@ -67,8 +67,8 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.displayName;
     }
 
-    public String getUri() {
-        return this.uri;
+    public Set<String> getUris() {
+        return this.uris;
     }
 
     public String getType() {

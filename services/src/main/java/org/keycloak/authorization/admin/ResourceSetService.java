@@ -21,7 +21,6 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -420,22 +419,28 @@ public class ResourceSetService {
             attributes.put("owner", new String[] {resourceServer.getId()});
 
             List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
-            PathMatcher<Resource> pathMatcher = new PathMatcher<Resource>() {
+
+            PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override
-                protected String getPath(Resource entry) {
-                    return entry.getUri();
+                protected String getPath(Map.Entry<String, Resource> entry) {
+                    return entry.getKey();
                 }
 
                 @Override
-                protected Collection<Resource> getPaths() {
-                    return serverResources;
+                protected Collection<Map.Entry<String, Resource>> getPaths() {
+                    Map<String, Resource> result = new HashMap<>();
+                    serverResources.forEach(resource -> resource.getUris().forEach(uri -> {
+                        result.put(uri, resource);
+                    }));
+
+                    return result.entrySet();
                 }
             };
 
-            Resource matches = pathMatcher.matches(uri);
+            Map.Entry<String, Resource> matches = pathMatcher.matches(uri);
 
             if (matches != null) {
-                resources = Arrays.asList(matches);
+                resources = Collections.singletonList(matches.getValue());
             }
         }
 

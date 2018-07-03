@@ -120,6 +120,10 @@
                         "name": "Pattern 15",
                         "type": "pattern-15",
                         "uri": "/keycloak-7148/{id}"
+                    },
+                    {
+                        "name": "Pattern 16",
+                        "uris": ["/keycloak-7269/sub-resource1", "/keycloak-7269/sub-resource2/*", "/keycloak-7269/sub-resource1/{test-pattern}/specialSuffix"]
                     }
                 ],
                 "policies": [
@@ -300,6 +304,16 @@
                         "config": {
                             "defaultResourceType": "pattern-15",
                             "default": "true",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 16 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 16\"]",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }

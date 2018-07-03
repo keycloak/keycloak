@@ -44,9 +44,21 @@
                 <kc-tooltip>{{:: 'authz-resource-type.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="uri">{{:: 'authz-uri' | translate}} </label>
+                <label class="col-md-2 control-label" for="newUri">{{:: 'authz-uri' | translate}} </label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="uri" name="name" data-ng-model="resource.uri" autofocus>
+                    <div class="input-group" ng-repeat="(i, uri) in resource.uris track by $index">
+                        <input class="form-control" ng-model="resource.uris[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteUri($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newUri" id="newUri">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newUri.length > 0 && addUri()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
                 </div>
                 <kc-tooltip>{{:: 'authz-resource-uri.tooltip' | translate}}</kc-tooltip>
             </div>

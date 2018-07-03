@@ -28,6 +28,7 @@ import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -46,8 +47,11 @@ public class ResourceForm extends Form {
     @FindBy(id = "type")
     private WebElement type;
 
-    @FindBy(id = "uri")
-    private WebElement uri;
+    @FindBy(id = "newUri")
+    private WebElement newUri;
+
+    @FindBy(xpath = "//*[@id=\"view\"]/div[1]/form/fieldset/div[5]/div/div/div/button")
+    private WebElement addUriButton;
 
     @FindBy(id = "iconUri")
     private WebElement iconUri;
@@ -65,10 +69,24 @@ public class ResourceForm extends Form {
     private ScopesInput scopesInput;
 
     public void populate(ResourceRepresentation expected) {
+        while (true) {
+            try {
+                WebElement e = driver.findElement(By.xpath("//button[@data-ng-click='deleteUri($index)']"));
+                e.click();
+            } catch (NoSuchElementException e) {
+                break;
+            }
+        }
+
         setInputValue(name, expected.getName());
         setInputValue(displayName, expected.getDisplayName());
         setInputValue(type, expected.getType());
-        setInputValue(uri, expected.getUri());
+
+        for (String uri : expected.getUris()) {
+            setInputValue(newUri, uri);
+            addUriButton.click();
+        }
+
         setInputValue(iconUri, expected.getIconUri());
 
         Set<ScopeRepresentation> scopes = expected.getScopes();
@@ -108,7 +126,11 @@ public class ResourceForm extends Form {
         representation.setName(getInputValue(name));
         representation.setDisplayName(getInputValue(displayName));
         representation.setType(getInputValue(type));
-        representation.setUri(getInputValue(uri));
+
+        for (WebElement uriInput : driver.findElements(By.xpath("//input[@ng-model='resource.uris[i]']"))) {
+            representation.addUri(getInputValue(uriInput));
+        }
+
         representation.setIconUri(getInputValue(iconUri));
         representation.setScopes(scopesInput.getSelected());
 

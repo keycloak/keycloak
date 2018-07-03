@@ -65,18 +65,19 @@ public interface Resource {
     void setDisplayName(String name);
 
     /**
-     * Returns a {@link java.net.URI} that uniquely identify this resource.
+     * Returns a {@link List} containing all {@link java.net.URI} that uniquely identify this resource.
      *
-     * @return an {@link java.net.URI} for this resource or null if not defined.
+     * @return a {@link List} if {@link java.net.URI} for this resource or empty list if not defined.
      */
-    String getUri();
+    Set<String> getUris();
 
     /**
-     * Sets a {@link java.net.URI} that uniquely identify this resource.
+     * Sets a list of {@link java.net.URI} that uniquely identify this resource.
      *
      * @param uri an {@link java.net.URI} for this resource
      */
-    void setUri(String uri);
+    void updateUris(Set<String> uri);
+
 
     /**
      * Returns a string representing the type of this resource.
