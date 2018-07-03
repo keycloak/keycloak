@@ -15,7 +15,8 @@ env:
     - TESTS=server-group3
     - TESTS=server-group4
     - TESTS=old
-    - TESTS=crossdc
+    - TESTS=crossdc1
+    - TESTS=crossdc2
 
 jdk:
   - oraclejdk8

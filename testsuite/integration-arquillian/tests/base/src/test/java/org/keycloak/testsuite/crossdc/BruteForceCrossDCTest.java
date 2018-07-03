@@ -64,7 +64,9 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
                 AbstractAdminCrossDCTest.class,
                 AbstractCrossDCTest.class,
                 AbstractTestRealmKeycloakTest.class,
-                KeycloakTestingClient.class
+                KeycloakTestingClient.class,
+                Keycloak.class,
+                RealmResource.class
         );
     }
     
@@ -76,12 +78,15 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
                 AbstractAdminCrossDCTest.class,
                 AbstractCrossDCTest.class,
                 AbstractTestRealmKeycloakTest.class,
-                KeycloakTestingClient.class
+                KeycloakTestingClient.class,
+                Keycloak.class,
+                RealmResource.class
         );
     }
     
     @Before
     public void beforeTest() {
+        log.debug("--DC: creating test realm");
         try {
             adminClient.realm(REALM_NAME).remove();
         } catch (NotFoundException ignore) {
@@ -229,13 +234,8 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
         addUserLoginFailure(getTestingClientForStartedNodeInDc(0));
         assertStatistics("After create entry1", 1, 0, 1);
 
-        AbstractConcurrencyTest.KeycloakRunnable runnable = new AbstractConcurrencyTest.KeycloakRunnable() {
-
-            @Override
-            public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
-                createBruteForceFailures(1, "login-test-1");
-            }
-
+        AbstractConcurrencyTest.KeycloakRunnable runnable = (int threadIndex, Keycloak keycloak, RealmResource realm1) -> {
+            createBruteForceFailures(1, "login-test-1");
         };
 
         AbstractConcurrencyTest.run(2, 20, this, runnable);

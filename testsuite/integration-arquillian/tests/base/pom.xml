@@ -670,6 +670,7 @@
             <id>auth-servers-crossdc-undertow</id>
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
+                <exclude.crossdc>-</exclude.crossdc>
             </properties>
         </profile>
         <profile>
@@ -677,6 +678,7 @@
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
+                <exclude.crossdc>-</exclude.crossdc>
             </properties>
         </profile>
         <profile>

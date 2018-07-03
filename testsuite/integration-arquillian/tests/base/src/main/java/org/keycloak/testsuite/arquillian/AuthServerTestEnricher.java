@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
@@ -50,7 +51,6 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
-import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 
 /**
  *
@@ -61,6 +61,8 @@ public class AuthServerTestEnricher {
 
     protected static final Logger log = Logger.getLogger(AuthServerTestEnricher.class);
 
+    @Inject 
+    private Instance<ContainerController> containerConroller;
     @Inject
     private Instance<ContainerRegistry> containerRegistry;
 
@@ -88,10 +90,6 @@ public class AuthServerTestEnricher {
 
     public static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) ||
             "manual".equals(System.getProperty("migration.mode"));
-
-    // In manual mode are all containers despite loadbalancers started in mode "manual" and nothing is managed through "suite".
-    // Useful for tests, which require restart servers etc.
-    public static final String MANUAL_MODE = "manual.mode";
 
     @Inject
     @SuiteScoped
@@ -123,9 +121,8 @@ public class AuthServerTestEnricher {
     }
 
     public static OnlineManagementClient getManagementClient() {
-        OnlineManagementClient managementClient;
         try {
-            managementClient = ManagementClient.online(OnlineOptions
+            return ManagementClient.online(OnlineOptions
                     .standalone()
                     .hostAndPort(System.getProperty("auth.server.host", "localhost"), Integer.parseInt(System.getProperty("auth.server.management.port", "10090")))
                     .build()
@@ -133,11 +130,8 @@ public class AuthServerTestEnricher {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
-        return managementClient;
     }
-    
+
     public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
         log.info("************************" + event.getContainer().getName()
                 + "*****************************************************************************");
@@ -148,21 +142,18 @@ public class AuthServerTestEnricher {
           .map(ContainerInfo::new)
           .collect(Collectors.toSet());
 
-        // A way to specify that containers should be in mode "manual" rather then "suite"
-        checkManualMode(containers);
-
         suiteContext = new SuiteContext(containers);
 
         if (AUTH_SERVER_CROSS_DC) {
             // if cross-dc mode enabled, load-balancer is the frontend of datacenter cluster
             containers.stream()
-              .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER + "-cross-dc"))
-              .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                suiteContext.addAuthServerInfo(Integer.valueOf(dcString), c);
-              });
+                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER + "-cross-dc"))
+                .forEach(c -> {
+                    String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
+                    String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
+                    updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
+                    suiteContext.addAuthServerInfo(Integer.valueOf(dcString), c);
+                });
 
             if (suiteContext.getDcAuthServerInfo().isEmpty()) {
                 throw new IllegalStateException("Not found frontend container (load balancer): " + AUTH_SERVER_BALANCER);
@@ -181,7 +172,7 @@ public class AuthServerTestEnricher {
                         String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
                         suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
                     });
-            
+
             containers.stream()
                     .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
@@ -258,6 +249,7 @@ public class AuthServerTestEnricher {
         }
 
         suiteContextProducer.set(suiteContext);
+        CacheServerTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
     }
 
@@ -295,6 +287,12 @@ public class AuthServerTestEnricher {
         }
     }
 
+    public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
+        //frontend-only (either load-balancer or auth-server)
+        log.debug("Starting auth server before suite");
+        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+    }
+
     public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
         boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
         if (checkLog && suiteContext.getAuthServerInfo().isJBossBased()) {
@@ -316,6 +314,13 @@ public class AuthServerTestEnricher {
     }
 
     public void afterClass(@Observes(precedence = 2) AfterClass event) {
+        //check if a test accidentally left the auth-server not running
+        ContainerController controller = containerConroller.get();
+        if (!controller.isStarted(suiteContext.getAuthServerInfo().getQualifier())) {
+            log.warn("Auth server wasn't running. Starting " + suiteContext.getAuthServerInfo().getQualifier());
+            controller.start(suiteContext.getAuthServerInfo().getQualifier());
+        }
+
         TestContext testContext = testContextProducer.get();
 
         Keycloak adminClient = testContext.getAdminClient();
@@ -335,32 +340,18 @@ public class AuthServerTestEnricher {
 
     public static void removeTestRealms(TestContext testContext, Keycloak adminClient) {
         List<RealmRepresentation> testRealmReps = testContext.getTestRealmReps();
-        if (testRealmReps != null) {
+        if (testRealmReps != null && !testRealmReps.isEmpty()) {
             log.info("removing test realms after test class");
+            StringBuilder realms = new StringBuilder();
             for (RealmRepresentation testRealm : testRealmReps) {
-                String realmName = testRealm.getRealm();
-                log.info("removing realm: " + realmName);
                 try {
-                    adminClient.realms().realm(realmName).remove();
+                    adminClient.realms().realm(testRealm.getRealm()).remove();
+                    realms.append(testRealm.getRealm()).append(", ");
                 } catch (NotFoundException e) {
                     // Ignore
                 }
             }
-        }
-    }
-
-
-    private void checkManualMode(Set<ContainerInfo> containers) {
-        String manualMode = System.getProperty(MANUAL_MODE);
-
-        if (Boolean.parseBoolean(manualMode)) {
-
-            containers.stream()
-                    .filter(containerInfo -> !containerInfo.getQualifier().contains("balancer"))
-                    .forEach(containerInfo -> {
-                        log.infof("Container '%s' will be in manual mode", containerInfo.getQualifier());
-                        containerInfo.getArquillianContainer().getContainerConfiguration().setMode("manual");
-                    });
+            log.info("removed realms: " + realms);
         }
     }
 

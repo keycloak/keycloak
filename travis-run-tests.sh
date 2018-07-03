@@ -74,24 +74,22 @@ if [ $1 == "server-group4" ]; then
     run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test
 fi
 
-if [ $1 == "crossdc" ]; then
+if [ $1 == "crossdc1" ]; then
+    cd testsuite/integration-arquillian
+    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
+
+    cd tests/base
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.* 2>&1 |
+        java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
+    exit ${PIPESTATUS[0]}
+fi
+
+if [ $1 == "crossdc2" ]; then
     cd testsuite/integration-arquillian
     mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
 
     cd tests/base
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=*.crossdc.**.* 2>&1 |
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
-    BASE_TESTS_STATUS=${PIPESTATUS[0]}
-
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.manual.* -Dmanual.mode=true 2>&1 |
-        java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
-    MANUAL_TESTS_STATUS=${PIPESTATUS[0]}
-
-    echo "BASE_TESTS_STATUS=$BASE_TESTS_STATUS, MANUAL_TESTS_STATUS=$MANUAL_TESTS_STATUS";
-    if [ $BASE_TESTS_STATUS -eq 0 -a $MANUAL_TESTS_STATUS -eq 0 ]; then
-        exit 0;
-    else
-        exit 1;
-    fi;
-
+    exit ${PIPESTATUS[0]}
 fi
