@@ -27,7 +27,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -172,6 +174,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
+            AuthenticatedActionsHandler actions = new AuthenticatedActionsHandler(deployment, OIDCHttpFacade.class.cast(facade));
+            if (actions.handledRequest()) {
+                return null;
+            }
             return authenticationManager.authenticate(authentication);
         }
         else {
