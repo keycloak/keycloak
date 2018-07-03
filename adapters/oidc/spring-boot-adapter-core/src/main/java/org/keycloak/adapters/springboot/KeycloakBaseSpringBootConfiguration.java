@@ -223,6 +223,7 @@ public class KeycloakBaseSpringBootConfiguration {
 
             for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
                 SecurityConstraint tomcatConstraint = new SecurityConstraint();
+                tomcatConstraint.setAuthConstraint(true);
 
                 for (String authRole : constraint.getAuthRoles()) {
                     tomcatConstraint.addAuthRole(authRole);
