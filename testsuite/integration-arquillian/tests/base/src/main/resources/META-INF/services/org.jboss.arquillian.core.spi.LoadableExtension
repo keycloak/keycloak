@@ -16,5 +16,9 @@
 #
 
 org.keycloak.testsuite.arquillian.KeycloakArquillianExtension
+
 !org.jboss.arquillian.container.impl.ContainerExtension
 org.keycloak.testsuite.arquillian.containers.MultipleContainersExtension
+
+!org.jboss.arquillian.container.test.impl.ContainerTestExtension
+org.keycloak.testsuite.arquillian.containers.KeycloakContainerTestExtension

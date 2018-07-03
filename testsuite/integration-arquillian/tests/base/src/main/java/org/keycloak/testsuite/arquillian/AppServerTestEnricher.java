@@ -23,6 +23,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -63,9 +64,9 @@ public class AppServerTestEnricher {
         Class<?> annotatedClass = getNearestSuperclassWithAppServerAnnotation(testClass);
 
         if (annotatedClass == null) return null; // no @AppServerContainer annotation --> no adapter test
-        
+
         AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
-        
+
         List<String> appServerQualifiers = new ArrayList<>();
         for (AppServerContainer appServerContainer : appServerContainers) {
             appServerQualifiers.add(appServerContainer.value());
@@ -87,7 +88,7 @@ public class AppServerTestEnricher {
 
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
-    
+
     private static int parsePort(String property) {
         try {
             return Integer.parseInt(System.getProperty(property));
@@ -179,6 +180,19 @@ public class AppServerTestEnricher {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
+        }
+    }
+
+    public void stopAppServer(@Observes(precedence = 1) AfterClass event) {
+        if (testContext.getAppServerInfo() == null) {
+            return; // no adapter test
+        }
+
+        ContainerController controller = containerConrollerInstance.get();
+
+        if (controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
+            log.info("Stopping app server: " + testContext.getAppServerInfo().getQualifier());
+            controller.stop(testContext.getAppServerInfo().getQualifier());
         }
     }
 

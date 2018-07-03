@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
@@ -27,11 +28,11 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
@@ -41,6 +42,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
@@ -64,99 +66,107 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     protected Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
 
+    @Before
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        log.debug("--DC: Starting both cache servers and first node from each DC");
+        startCacheServer(DC.FIRST);
+        startCacheServer(DC.SECOND);
+
+        startBackendNode(DC.FIRST, 0);
+        startBackendNode(DC.SECOND, 0);
+
+        initRESTClientsForStartedNodes();
+        suspendPeriodicTasks();
+
+        enableOnlyFirstNodeInFirstDc();
+
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void deleteCookies() {
+        //Overrides AbstractTestRealmKeycloakTest.deleteCookies 
+        //as it tries to delete cookies in 'test' realm @After test
+        //when backend containers are stopped already.
+    }
+    
     @After
-    @Before
-    public void enableOnlyFirstNodeInFirstDc() {
+    @Override
+    public void afterAbstractKeycloakTest() {
+        log.debug("--DC: after AbstractCrossDCTest");
+        enableOnlyFirstNodeInFirstDc();
+        
+        super.afterAbstractKeycloakTest();
+        
+        restorePeriodicTasks();
+        removeTestRealms();
+        terminateStartedServers();
+        loadBalancerCtrl.disableAllBackendNodes();
+    }
+
+    private void enableOnlyFirstNodeInFirstDc() {
+        log.debug("--DC: Enable only first node in first datacenter");
         this.loadBalancerCtrl.disableAllBackendNodes();
-        loadBalancerCtrl.enableBackendNodeByName(getAutomaticallyStartedBackendNodes(DC.FIRST)
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("No node is started automatically"))
-                        .getQualifier()
-        );
+        if (!getBackendNode(DC.FIRST, 0).isStarted()) {
+            throw new IllegalStateException("--DC: Trying to enable not started node on load-balancer");
+        }
+        loadBalancerCtrl.enableBackendNodeByName(getBackendNode(DC.FIRST, 0).getQualifier());
     }
 
-    @Before
-    public void terminateManuallyStartedServers() {
-        log.debug("Halting all nodes that are started manually");
+    private void removeTestRealms() {
+        testContext.getTestRealmReps().stream().forEach((RealmRepresentation realm) -> deleteAllCookiesForRealm(realm.getRealm()));
+
+        log.debug("--DC: removing rest realms");
+        AuthServerTestEnricher.removeTestRealms(testContext, adminClient);
+        testContext.setTestRealmReps(new ArrayList<>());
+    }
+    
+    protected void terminateStartedServers() {
+        log.debug("--DC: Halting all nodes that are started");
         this.suiteContext.getDcAuthServerBackendsInfo().stream()
-          .flatMap(List::stream)
-          .filter(ContainerInfo::isStarted)
-          .filter(ContainerInfo::isManual)
-          .forEach(containerInfo -> {
-              containerController.stop(containerInfo.getQualifier());
-              removeRESTClientsForNode(containerInfo);
-          });
+            .flatMap(List::stream)
+            .filter(ContainerInfo::isStarted)
+            .forEach((ContainerInfo containerInfo) -> {
+                containerController.stop(containerInfo.getQualifier());
+                removeRESTClientsForNode(containerInfo);
+            });
     }
 
-    @Before
-    public void initRESTClientsForStartedNodes() {
-        log.debug("Init REST clients for automatically started nodes");
+    private void initRESTClientsForStartedNodes() {
+        log.debug("--DC: Init REST clients for started nodes");
         this.suiteContext.getDcAuthServerBackendsInfo().stream()
                 .flatMap(List::stream)
                 .filter(ContainerInfo::isStarted)
-                .filter(containerInfo -> !containerInfo.isManual())
                 .forEach(containerInfo -> {
                     createRESTClientsForNode(containerInfo);
                 });
-
     }
 
     // Disable periodic tasks in cross-dc tests. It's needed to have some scenarios more stable.
-    @Before
-    public void suspendPeriodicTasks() {
+    private void suspendPeriodicTasks() {
+        log.debug("--DC: suspendPeriodicTasks");
         backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
             testingClient.testing().suspendPeriodicTasks();
         });
-
     }
 
-    @After
-    public void restorePeriodicTasks() {
+    private void restorePeriodicTasks() {
+        log.debug("--DC: restorePeriodicTasks");
         backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
             testingClient.testing().restorePeriodicTasks();
         });
     }
 
-
-    @Override
-    public void importTestRealms() {
-        enableOnlyFirstNodeInFirstDc();
-        super.importTestRealms();
-    }
-
-    @Override
-    public void afterAbstractKeycloakTest() {
-        enableOnlyFirstNodeInFirstDc();
-        super.afterAbstractKeycloakTest();
-    }
-
-    @Override
-    public void deleteCookies() {
-        enableOnlyFirstNodeInFirstDc();
-        super.deleteCookies();
-    }
-
-    @Before
-    public void initLoadBalancer() {
-        log.debug("Initializing load balancer - only enabling started nodes in the first DC");
-        this.loadBalancerCtrl.disableAllBackendNodes();
-        // Enable only the started nodes in first datacenter
-        this.suiteContext.getDcAuthServerBackendsInfo().get(0).stream()
-          .filter(ContainerInfo::isStarted)
-          .map(ContainerInfo::getQualifier)
-          .forEach(loadBalancerCtrl::enableBackendNodeByName);
-    }
-
     protected Keycloak createAdminClientFor(ContainerInfo node) {
-        log.info("Initializing admin client for " + node.getContextRoot() + "/auth");
+        log.info("--DC: Initializing admin client for " + node.getContextRoot() + "/auth");
         return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     protected KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
-        log.info("Initializing testing client for " + node.getContextRoot() + "/auth");
+        log.info("--DC: Initializing testing client for " + node.getContextRoot() + "/auth");
         return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
     }
-
 
     protected Keycloak getAdminClientForStartedNodeInDc(int dcIndex) {
         ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
@@ -187,7 +197,6 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
         return getTestingClientFor(firstStartedNode);
     }
-
 
     /**
      * Get testing client directed to the given node.
@@ -224,14 +233,13 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         }
     }
 
-
     /**
      * Disables routing requests to the given data center in the load balancer.
      * @param dc
      */
     public void disableDcOnLoadBalancer(DC dc) {
         int dcIndex = dc.ordinal();
-        log.infof("Disabling load balancer for dc=%d", dcIndex);
+        log.infof("--DC: Disabling load balancer for dc=%d", dcIndex);
         this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(containerInfo -> {
             loadBalancerCtrl.disableBackendNodeByName(containerInfo.getQualifier());
         });
@@ -243,10 +251,10 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      */
     public void enableDcOnLoadBalancer(DC dc) {
         int dcIndex = dc.ordinal();
-        log.infof("Enabling load balancer for dc=%d", dcIndex);
+        log.infof("--DC: Enabling load balancer for dc=%d", dcIndex);
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         if (! dcNodes.stream().anyMatch(ContainerInfo::isStarted)) {
-            log.warnf("No node is started in DC %d", dcIndex);
+            log.warnf("--DC: No node is started in DC %d", dcIndex);
         } else {
             dcNodes.stream()
               .filter(ContainerInfo::isStarted)
@@ -263,7 +271,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      */
     public void disableLoadBalancerNode(DC dc, int nodeIndex) {
         int dcIndex = dc.ordinal();
-        log.infof("Disabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
+        log.infof("--DC: Disabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         loadBalancerCtrl.disableBackendNodeByName(this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex).getQualifier());
     }
 
@@ -274,13 +282,13 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      */
     public void enableLoadBalancerNode(DC dc, int nodeIndex) {
         int dcIndex = dc.ordinal();
-        log.infof("Enabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
+        log.infof("--DC: Enabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         final ContainerInfo backendNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex);
         if (backendNode == null) {
             throw new IllegalArgumentException("Invalid node with index " + nodeIndex + " for DC " + dcIndex);
         }
         if (! backendNode.isStarted()) {
-            log.warnf("Node %s is not started in DC %d", backendNode.getQualifier(), dcIndex);
+            log.warnf("--DC: Node %s is not started in DC %d", backendNode.getQualifier(), dcIndex);
         }
         loadBalancerCtrl.enableBackendNodeByName(backendNode.getQualifier());
     }
@@ -291,19 +299,17 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Started instance descriptor.
      */
-    public ContainerInfo startBackendNode(DC dc, int nodeIndex) {
-        int dcIndex = dc.ordinal();
-        assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
-        final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
-        assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
-        ContainerInfo dcNode = dcNodes.get(nodeIndex);
+    protected ContainerInfo startBackendNode(DC dc, int nodeIndex) {
+        ContainerInfo dcNode = getBackendNode(dc, nodeIndex);
+
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
-        
-        log.infof("Starting backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dcIndex, nodeIndex);
-        containerController.start(dcNode.getQualifier());
 
-        createRESTClientsForNode(dcNode);
+        if (!containerController.isStarted(dcNode.getQualifier())) {
+            log.infof("--DC: Starting backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dc.ordinal(), nodeIndex);
+            containerController.start(dcNode.getQualifier());
 
+            createRESTClientsForNode(dcNode);
+        }
         return dcNode;
     }
 
@@ -313,42 +319,24 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Stopped instance descriptor.
      */
-    public ContainerInfo stopBackendNode(DC dc, int nodeIndex) {
-        int dcIndex = dc.ordinal();
-        assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
-        final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
-        assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
-        ContainerInfo dcNode = dcNodes.get(nodeIndex);
+    protected ContainerInfo stopBackendNode(DC dc, int nodeIndex) {
+        ContainerInfo dcNode = getBackendNode(dc, nodeIndex);
 
         removeRESTClientsForNode(dcNode);
 
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
         
-        log.infof("Stopping backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dcIndex, nodeIndex);
+        log.infof("--DC: Stopping backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dc.ordinal(), nodeIndex);
         containerController.stop(dcNode.getQualifier());
         return dcNode;
     }
 
-    /**
-     * Returns stream of all nodes in the given dc that are started manually.
-     * @param dc
-     * @return
-     */
-    public Stream<ContainerInfo> getManuallyStartedBackendNodes(DC dc) {
+    private ContainerInfo getBackendNode(DC dc, int nodeIndex) {
         int dcIndex = dc.ordinal();
+        assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
-        return dcNodes.stream().filter(ContainerInfo::isManual);
-    }
-
-    /**
-     * Returns stream of all nodes in the given dc that are started automatically.
-     * @param dc
-     * @return
-     */
-    public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(DC dc) {
-        int dcIndex = dc.ordinal();
-        final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
-        return dcNodes.stream().filter(c -> ! c.isManual());
+        assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
+        return dcNodes.get(nodeIndex);
     }
 
     /**
@@ -356,14 +344,20 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dc
      * @return
      */
-    public ContainerInfo getCacheServer(DC dc) {
+    protected ContainerInfo getCacheServer(DC dc) {
         int dcIndex = dc.ordinal();
         return this.suiteContext.getCacheServersInfo().get(dcIndex);
     }
 
+    protected void startCacheServer(DC dc) {
+        if (!containerController.isStarted(getCacheServer(dc).getQualifier())) {
+            log.infof("--DC: Starting %s", getCacheServer(dc).getQualifier());
+            containerController.start(getCacheServer(dc).getQualifier());
+        }
+    }
 
-    public void stopCacheServer(ContainerInfo cacheServer) {
-        log.infof("Stopping %s", cacheServer.getQualifier());
+    protected void stopCacheServer(ContainerInfo cacheServer) {
+        log.infof("--DC: Stopping %s", cacheServer.getQualifier());
 
         containerController.stop(cacheServer.getQualifier());
 
@@ -372,7 +366,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         String cleanServerBaseDir = cacheServer.getArquillianContainer().getContainerConfiguration().getContainerProperties().get("cleanServerBaseDir");
 
         if (Boolean.parseBoolean(setupCleanServerBaseDir)) {
-            log.infof("Going to clean directory: %s", cleanServerBaseDir);
+            log.infof("--DC: Going to clean directory: %s", cleanServerBaseDir);
 
             File dir = new File(cleanServerBaseDir);
             if (dir.exists()) {
@@ -387,9 +381,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
             }
         }
 
-        log.infof("Stopped %s", cacheServer.getQualifier());
+        log.infof("--DC: Stopped %s", cacheServer.getQualifier());
     }
-
 
     /**
      * Sets time offset on all the started containers.

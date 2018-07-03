@@ -29,7 +29,6 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -149,7 +148,7 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
-        if (adminClient == null) {
+        if (adminClient == null || adminClient.isClosed()) {
             String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
             adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
             testContext.setAdminClient(adminClient);
@@ -170,7 +169,7 @@ public abstract class AbstractKeycloakTest {
 
         beforeAbstractKeycloakTestRealmImport();
 
-        if (testContext.getTestRealmReps() == null) {
+        if (testContext.getTestRealmReps().isEmpty()) {
             importTestRealms();
 
             if (!isImportAfterEachMethod()) {
@@ -183,6 +182,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
+    }
+    protected void postAfterAbstractKeycloak() {
     }
 
     @After
@@ -215,6 +216,8 @@ public abstract class AbstractKeycloakTest {
             }
             testContext.getCleanups().clear();
         }
+
+        postAfterAbstractKeycloak();
 
         // Remove all browsers from queue
         DroneUtils.resetQueue();
@@ -316,12 +319,11 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void importRealm(RealmRepresentation realm) {
-        log.debug("importing realm: " + realm.getRealm());
-        try { // TODO - figure out a way how to do this without try-catch
-            RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
-            log.debug("realm already exists on server, re-importing");
-            realmResource.remove();
-        } catch (NotFoundException nfe) {
+        log.debug("--importing realm: " + realm.getRealm());
+        try {
+            adminClient.realms().realm(realm.getRealm()).remove();
+            log.debug("realm already existed on server, re-importing");
+        } catch (NotFoundException ignore) {
             // expected when realm does not exist
         }
         adminClient.realms().create(realm);

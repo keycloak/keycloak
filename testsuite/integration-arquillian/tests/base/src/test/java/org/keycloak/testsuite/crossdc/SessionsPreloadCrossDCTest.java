@@ -15,29 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.crossdc.manual;
+package org.keycloak.testsuite.crossdc;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.crossdc.AbstractAdminCrossDCTest;
-import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.junit.Assume;
 
 /**
  * Tests userSessions and offline sessions preloading at startup
- *
- * This test requires that lifecycle of infinispan/JDG servers is managed by testsuite, so you need to run with:
- *
- * -Dmanual.mode=true
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -45,51 +38,13 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     private static final int SESSIONS_COUNT = 10;
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        // Doublecheck we are in manual mode
-        Assume.assumeTrue("The test requires to be executed with manual.mode=true", suiteContext.getCacheServersInfo().get(0).isManual());
-
-        stopAllCacheServersAndAuthServers();
-
-        // Start DC1 and only the cache container from DC2. All Keycloak nodes on DC2 are stopped
-        containerController.start(getCacheServer(DC.FIRST).getQualifier());
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
-        startBackendNode(DC.FIRST, 0);
-        enableLoadBalancerNode(DC.FIRST, 0);
-
-        super.beforeAbstractKeycloakTest();
+    @Before
+    public void beforeSessionsPreloadCrossDCTest() throws Exception {
+        // Start DC1 and only All Keycloak nodes on DC2 are stopped
+        stopBackendNode(DC.SECOND, 0);
+        disableDcOnLoadBalancer(DC.SECOND);
     }
 
-
-    // Override as we are in manual mode
-    @Override
-    public void enableOnlyFirstNodeInFirstDc() {
-    }
-
-
-    // Override as we are in manual mode
-    @Override
-    public void terminateManuallyStartedServers() {
-    }
-
-
-
-
-    @Override
-    public void afterAbstractKeycloakTest() {
-        super.afterAbstractKeycloakTest();
-
-        // Remove realms now. In @AfterClass servers are already shutdown
-        AuthServerTestEnricher.removeTestRealms(testContext, adminClient);
-        testContext.setTestRealmReps(null);
-
-        adminClient.close();
-        adminClient = null;
-        testContext.setAdminClient(null);
-
-        stopAllCacheServersAndAuthServers();
-    }
 
     private void stopAllCacheServersAndAuthServers() {
         log.infof("Going to stop all auth servers");
@@ -158,8 +113,8 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         stopAllCacheServersAndAuthServers();
 
         // Start cache containers on both DC1 and DC2
-        containerController.start(getCacheServer(DC.FIRST).getQualifier());
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+        startCacheServer(DC.FIRST);
+        startCacheServer(DC.SECOND);
 
         // Start Keycloak on DC1. Sessions should be preloaded from DB
         startBackendNode(DC.FIRST, 0);

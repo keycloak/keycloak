@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.crossdc;
 
-import org.junit.Assert;
+import java.util.ArrayList;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import java.util.List;
@@ -36,7 +36,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -57,16 +56,40 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
 
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
-        log.debug("Initializing load balancer - enabling all started nodes across DCs");
+        log.debug("--DC: Starting cacheServers if not started already");
+        suiteContext.getCacheServersInfo().stream()
+                .filter((containerInfo) -> !containerInfo.isStarted())
+                .map(ContainerInfo::getQualifier)
+                .forEach(containerController::start);
+        
+        log.debug("--DC: Initializing load balancer - enabling all started nodes across DCs");
         this.loadBalancerCtrl.disableAllBackendNodes();
 
         this.suiteContext.getDcAuthServerBackendsInfo().stream()
                 .flatMap(List::stream)
-                .filter(ContainerInfo::isStarted)
+                .filter((containerInfo) -> !containerInfo.getQualifier().contains("manual"))
+                .filter((containerInfo) -> !containerInfo.isStarted())
                 .map(ContainerInfo::getQualifier)
-                .forEach(loadBalancerCtrl::enableBackendNodeByName);
+                .forEach((nodeName) -> {
+                    containerController.start(nodeName);
+                    loadBalancerCtrl.enableBackendNodeByName(nodeName);
+                });
     }
 
+    @Override
+    public void postAfterAbstractKeycloak() {
+        log.debug("--DC: postAfterAbstractKeycloak");
+        suiteContext.getDcAuthServerBackendsInfo().stream()
+                .flatMap(List::stream)
+                .filter(ContainerInfo::isStarted)
+                .map(ContainerInfo::getQualifier)
+                .forEach(containerController::stop);
+
+        loadBalancerCtrl.disableAllBackendNodes();
+        
+        //realms is already removed and this prevents another removal in AuthServerTestEnricher.afterClass
+        testContext.setTestRealmReps(new ArrayList<>());
+    }
 
     @Test
     public void concurrentLoginWithRandomDcFailures() throws Throwable {

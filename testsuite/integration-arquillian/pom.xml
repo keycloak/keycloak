@@ -42,7 +42,12 @@
         <app.server>undertow</app.server>
 
         <!--component versions-->
-        <!--to update arquillian-core to 1.3.0.Final or higher see https://issues.jboss.org/browse/ARQ-2181 -->
+        <!--
+            to update arquillian-core to 1.3.0.Final or higher
+                - see https://issues.jboss.org/browse/ARQ-2181 
+                - update org.keycloak.testsuite.arquillian.containers.KeycloakContainerTestExtension according to 
+                  current version of org.jboss.arquillian.container.test.impl.ContainerTestExtension
+        -->
         <arquillian-core.version>1.2.1.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>2.2.6</shrinkwrap-resolver.version>

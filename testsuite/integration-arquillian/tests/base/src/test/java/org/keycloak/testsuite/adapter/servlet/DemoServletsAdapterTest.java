@@ -648,6 +648,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testVersion() {
+        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth");
+        WaitUtils.waitForPageToLoad();
         jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
         WaitUtils.waitForPageToLoad();
