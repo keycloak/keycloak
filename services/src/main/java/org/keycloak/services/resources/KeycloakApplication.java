@@ -162,11 +162,11 @@ public class KeycloakApplication extends Application {
                 public void run(KeycloakSession session) {
                     boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
                     bootstrapAdminUser.set(shouldBootstrapAdmin);
-
-                    sessionFactory.publish(new PostMigrationEvent(session));
                 }
 
             });
+
+            sessionFactory.publish(new PostMigrationEvent());
 
             singletons.add(new WelcomeResource(bootstrapAdminUser.get()));
 
