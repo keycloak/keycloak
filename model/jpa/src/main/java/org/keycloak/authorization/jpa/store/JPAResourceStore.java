@@ -31,6 +31,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
@@ -192,9 +193,12 @@ public class JPAResourceStore implements ResourceStore {
             } else if ("ownerManagedAccess".equals(name)) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
             } else if ("uri".equals(name)) {
-                predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+                predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
-                predicates.add(builder.isNotNull(root.get("uri")));
+                // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
+                // Workaround
+                Expression<Integer> urisSize = builder.size(root.get("uris"));
+                predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
             } else {

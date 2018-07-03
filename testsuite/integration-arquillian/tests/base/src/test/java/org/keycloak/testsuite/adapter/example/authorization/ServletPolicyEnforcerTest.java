@@ -451,6 +451,43 @@ public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
         });
     }
 
+    @Test
+    public void testMultipleUriForResourceJSONConfig() {
+        performTests(() -> {
+            login("alice", "alice");
+            navigateTo("/keycloak-7269/sub-resource1");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource1/whatever/specialSuffix");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2/w/h/a/t/e/v/e/r");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 16 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/keycloak-7269/sub-resource1");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource1/whatever/specialSuffix");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2/w/h/a/t/e/v/e/r");
+            assertTrue(wasDenied());
+
+            updatePermissionPolicies("Pattern 16 Permission", "Default Policy");
+            navigateTo("/keycloak-7269/sub-resource1");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource1/whatever/specialSuffix");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-7269/sub-resource2/w/h/a/t/e/v/e/r");
+            assertFalse(wasDenied());
+        });
+    }
+
     private void navigateTo(String path) {
         this.driver.navigate().to(getResourceServerUrl() + path);
     }

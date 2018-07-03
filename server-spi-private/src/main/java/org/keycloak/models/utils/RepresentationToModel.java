@@ -2355,7 +2355,7 @@ public class RepresentationToModel {
             existing.setName(resource.getName());
             existing.setDisplayName(resource.getDisplayName());
             existing.setType(resource.getType());
-            existing.setUri(resource.getUri());
+            existing.updateUris(resource.getUris());
             existing.setIconUri(resource.getIconUri());
             existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
             existing.updateScopes(resource.getScopes().stream()
@@ -2387,7 +2387,7 @@ public class RepresentationToModel {
 
         model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
-        model.setUri(resource.getUri());
+        model.updateUris(resource.getUris());
         model.setIconUri(resource.getIconUri());
         model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
 

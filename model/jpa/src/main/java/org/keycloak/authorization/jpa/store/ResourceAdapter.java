@@ -81,19 +81,18 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
     }
 
     @Override
+    public Set<String> getUris() {
+        return entity.getUris();
+    }
+
+    @Override
+    public void updateUris(Set<String> uri) {
+        entity.setUris(uri);
+    }
+
+    @Override
     public void setName(String name) {
         entity.setName(name);
-
-    }
-
-    @Override
-    public String getUri() {
-        return entity.getUri();
-    }
-
-    @Override
-    public void setUri(String uri) {
-        entity.setUri(uri);
 
     }
 

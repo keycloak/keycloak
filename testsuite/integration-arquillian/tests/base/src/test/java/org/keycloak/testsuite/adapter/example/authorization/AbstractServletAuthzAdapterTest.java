@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
@@ -38,7 +39,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.adapter.example.authorization.AbstractBaseServletAuthzAdapterTest.RESOURCE_SERVER_ID;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -307,6 +308,62 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
             driver.navigate().to(getResourceServerUrl() + "/protected/scopes.jsp");
             WaitUtils.waitForPageToLoad();
             assertTrue(hasText("Granted"));
+        });
+    }
+
+    @Test
+    public void testMultipleURLsForResourceRealmConfig() throws Exception {
+        performTests(() -> {
+            login("jdoe", "jdoe");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index1.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource1 index1.jsp");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index2.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource1 index2.jsp");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern1/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource2/pattern1");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern2/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource2/pattern2");
+
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/test");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/sub-resource2/test");
+
+            updatePermissionPolicies("Permission for multiple url resource", "Deny Policy");
+            login("jdoe", "jdoe");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index1.jsp");
+            waitUntilElement(By.tagName("h2")).text().not().contains("sub-resource1 index1.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("You can not access this resource.");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index2.jsp");
+            waitUntilElement(By.tagName("h2")).text().not().contains("sub-resource1 index2.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("You can not access this resource.");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern1/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().not().contains("sub-resource2/pattern1");
+            waitUntilElement(By.tagName("h2")).text().contains("You can not access this resource.");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern2/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().not().contains("sub-resource2/pattern2");
+            waitUntilElement(By.tagName("h2")).text().contains("You can not access this resource.");
+
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/test");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/sub-resource2/test");
+
+            updatePermissionPolicies("Permission for multiple url resource", "All Users Policy");
+            login("jdoe", "jdoe");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index1.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource1 index1.jsp");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource1/index2.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource1 index2.jsp");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern1/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource2/pattern1");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/pattern2/page.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("sub-resource2/pattern2");
+
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/test");
+            driver.navigate().to(getResourceServerUrl() + "/keycloak-7269/sub-resource2/test.jsp");
+            waitUntilElement(By.tagName("h2")).text().contains("keycloak-7269/sub-resource2/test");
         });
     }
 }

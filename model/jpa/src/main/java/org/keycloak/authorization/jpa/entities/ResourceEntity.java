@@ -21,7 +21,9 @@ package org.keycloak.authorization.jpa.entities;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -37,8 +39,10 @@ import javax.persistence.UniqueConstraint;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -54,7 +58,7 @@ import org.hibernate.annotations.FetchMode;
         {
                 @NamedQuery(name="findResourceIdByOwner", query="select r.id from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :owner"),
                 @NamedQuery(name="findAnyResourceIdByOwner", query="select r.id from ResourceEntity r where r.owner = :owner"),
-                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.uri = :uri"),
+                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and :uri in elements(r.uris)"),
                 @NamedQuery(name="findResourceIdByName", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
                 @NamedQuery(name="findResourceIdByType", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
@@ -75,8 +79,10 @@ public class ResourceEntity {
     @Column(name = "DISPLAY_NAME")
     private String displayName;
 
-    @Column(name = "URI")
-    private String uri;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name = "VALUE")
+    @CollectionTable(name = "RESOURCE_URIS", joinColumns = { @JoinColumn(name="RESOURCE_ID") })
+    private Set<String> uris = new HashSet<>();
 
     @Column(name = "TYPE")
     private String type;
@@ -130,12 +136,12 @@ public class ResourceEntity {
         this.displayName = displayName;
     }
 
-    public String getUri() {
-        return uri;
+    public Set<String> getUris() {
+        return uris;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setUris(Set<String> uris) {
+        this.uris = uris;
     }
 
     public String getType() {

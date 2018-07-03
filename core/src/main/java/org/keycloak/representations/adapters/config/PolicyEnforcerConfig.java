@@ -27,6 +27,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -116,30 +119,35 @@ public class PolicyEnforcerConfig {
 
     public static class PathConfig {
 
-        public static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
-            PathConfig pathConfig = new PathConfig();
+        public static Set<PathConfig> createPathConfigs(ResourceRepresentation resourceDescription) {
+            Set<PathConfig> pathConfigs = new HashSet<>();
 
-            pathConfig.setId(resourceDescription.getId());
-            pathConfig.setName(resourceDescription.getName());
+            for (String uri : resourceDescription.getUris()) {
 
-            String uri = resourceDescription.getUri();
+                PathConfig pathConfig = new PathConfig();
 
-            if (uri == null || "".equals(uri.trim())) {
-                throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+                pathConfig.setId(resourceDescription.getId());
+                pathConfig.setName(resourceDescription.getName());
+
+                if (uri == null || "".equals(uri.trim())) {
+                    throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+                }
+
+                pathConfig.setPath(uri);
+
+                List<String> scopeNames = new ArrayList<>();
+
+                for (ScopeRepresentation scope : resourceDescription.getScopes()) {
+                    scopeNames.add(scope.getName());
+                }
+
+                pathConfig.setScopes(scopeNames);
+                pathConfig.setType(resourceDescription.getType());
+
+                pathConfigs.add(pathConfig);
             }
 
-            pathConfig.setPath(uri);
-
-            List<String> scopeNames = new ArrayList<>();
-
-            for (ScopeRepresentation scope : resourceDescription.getScopes()) {
-                scopeNames.add(scope.getName());
-            }
-
-            pathConfig.setScopes(scopeNames);
-            pathConfig.setType(resourceDescription.getType());
-
-            return pathConfig;
+            return pathConfigs;
         }
 
         private String name;
