@@ -72,24 +72,6 @@
         </profile>
 
         <profile>
-            <id>app-server-eap6</id>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly9</id>
-            <modules>
-                <module>wildfly9</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly10</id>
-            <modules>
-                <module>wildfly10</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-relative</id>
             <modules>
                 <module>relative</module>
