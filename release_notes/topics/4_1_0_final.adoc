@@ -1,3 +1,4 @@
-= Test Feature
+= KEYCLOAK-7768 - Making Spring Boot 2 the default starter
 
-Some test feature.
+From release 4.1 , the Spring Boot Starter will be based on the Spring Boot 2 Adapter. For older Spring Boot version, the starter `keycloak-legacy-spring-boot-starter` is available.
+
