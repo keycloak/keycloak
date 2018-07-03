@@ -41,6 +41,7 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -54,6 +55,7 @@ import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -240,25 +242,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         request.addPermission("Resource 13");
 
         assertResponse(new Metadata(), () -> getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request));
-    }
-
-    public void testRptRequestWithResourceName(String configFile) {
-        Metadata metadata = new Metadata();
-
-        metadata.setIncludeResourceName(true);
-
-        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize());
-
-        AuthorizationRequest request = new AuthorizationRequest();
-
-        request.setMetadata(metadata);
-        request.addPermission("Resource 13");
-
-        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
-
-        request.setMetadata(null);
-
-        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
     }
 
     @Test
@@ -498,7 +481,64 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertFalse(hasPermission("kolo", "password", resource.getId(), "Scope A"));
     }
 
-    public void testResourceServerAsAudience(String testClientId, String resourceServerClientId, String configFile) throws Exception {
+    @Test
+    public void testObtainAllEntitlementsInvalidResource() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+        resource.addScope("sensors:view", "sensors:update", "sensors:delete");
+
+        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addScope("sensors:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission);
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensortest", "sensors:view");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+
+        assertNotNull(response);
+    }
+
+    private void testRptRequestWithResourceName(String configFile) {
+        Metadata metadata = new Metadata();
+
+        metadata.setIncludeResourceName(true);
+
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize());
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.setMetadata(metadata);
+        request.addPermission("Resource 13");
+
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
+
+        request.setMetadata(null);
+
+        assertResponse(metadata, () -> getAuthzClient(configFile).authorization("marta", "password").authorize(request));
+    }
+
+    private void testResourceServerAsAudience(String testClientId, String resourceServerClientId, String configFile) throws Exception {
         AuthorizationRequest request = new AuthorizationRequest();
 
         request.addPermission("Resource 1");
