@@ -74,6 +74,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 
@@ -771,6 +773,17 @@ public class OAuthClient {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }  
         return b.build(realm).toString();
+    }
+
+    public Entity getLoginEntityForPOST() {
+        Form form = new Form()
+                .param(OAuth2Constants.SCOPE, TokenUtil.attachOIDCScope(scope))
+                .param(OAuth2Constants.RESPONSE_TYPE, responseType)
+                .param(OAuth2Constants.CLIENT_ID, clientId)
+                .param(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .param(OAuth2Constants.STATE, this.state.getState());
+        
+        return Entity.form(form);
     }
 
     public String getAccessTokenUrl() {
