@@ -8,14 +8,13 @@
         <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
     <groupId>org.keycloak</groupId>
-    <artifactId>keycloak-spring-boot-2-starter-parent</artifactId>
-    <name>Keycloak :: Spring :: Boot ::2</name>
-    <description>Support for using Keycloak in Spring Boot 2 applications.</description>
+    <artifactId>keycloak-legacy-spring-boot-starter-parent</artifactId>
+    <name>Keycloak :: Spring :: Boot</name>
+    <description>Support for using Keycloak in Spring Boot 1.x applications.</description>
     <packaging>pom</packaging>
     <modules>
-        <module>keycloak-spring-boot-2-starter</module>
+        <module>keycloak-legacy-spring-boot-starter</module>
     </modules>
-
     <dependencyManagement>
       <dependencies>
         <dependency>

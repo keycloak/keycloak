@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring-boot-starter</module>
-        <module>spring-boot-2-starter</module>
+        <module>spring-legacy-boot-starter</module>
         <module>keycloak-test-helper</module>
     </modules>
 </project>
