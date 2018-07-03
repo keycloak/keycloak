@@ -223,9 +223,12 @@ public class KeycloakBaseSpringBootConfiguration {
 
             for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
                 SecurityConstraint tomcatConstraint = new SecurityConstraint();
-
                 for (String authRole : constraint.getAuthRoles()) {
                     tomcatConstraint.addAuthRole(authRole);
+                    if(authRole.equals("*") || authRole.equals("**")) {
+                        // For some reasons embed tomcat don't set the auth constraint on true when wildcard is used
+                        tomcatConstraint.setAuthConstraint(true);
+                    }
                 }
 
                 for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
