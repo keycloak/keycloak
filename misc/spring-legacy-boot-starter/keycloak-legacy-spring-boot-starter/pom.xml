@@ -3,21 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-spring-boot-2-starter-parent</artifactId>
+        <artifactId>keycloak-legacy-spring-boot-starter-parent</artifactId>
         <version>4.1.0.Final-SNAPSHOT</version>
     </parent>
-    <artifactId>keycloak-spring-boot-2-starter</artifactId>
-    <name>Keycloak :: Spring :: Boot :: 2 :: Default ::  Starter</name>
-    <description>Spring Boot 2 Default Starter for Keycloak</description>
-
-    <properties>
-      <spring-boot.version>2.0.0.RELEASE</spring-boot.version>
-    </properties>
+    <artifactId>keycloak-legacy-spring-boot-starter</artifactId>
+    <name>Keycloak :: Legacy :: Spring :: Boot :: Default ::  Starter</name>
+    <description>Spring Boot Default Starter for Keycloak</description>
 
     <dependencies>
       <dependency>
           <groupId>org.keycloak</groupId>
-          <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+          <artifactId>keycloak-spring-boot-adapter</artifactId>
       </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -26,8 +22,8 @@
       <dependency>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter</artifactId>
-          <version>${spring-boot.version}</version>
-      </dependency>    
+          <version>1.5.14.RELEASE</version>
+      </dependency>
       <dependency>
           <groupId>org.keycloak</groupId>
           <artifactId>spring-boot-container-bundle</artifactId>

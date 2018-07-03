@@ -15,6 +15,7 @@
     <modules>
         <module>keycloak-spring-boot-starter</module>
     </modules>
+
     <dependencyManagement>
       <dependencies>
         <dependency>
