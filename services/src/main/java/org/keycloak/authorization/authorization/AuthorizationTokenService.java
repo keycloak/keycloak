@@ -385,7 +385,7 @@ public class AuthorizationTokenService {
                     }
                 }
             } else {
-                List<Resource> resources = resourceStore.findByScope(new ArrayList<>(requestedScopes), resourceServer.getId());
+                List<Resource> resources = resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
 
                 for (Resource resource : resources) {
                     permissionsToEvaluate.put(resource.getId(), Permissions.createResourcePermissions(resource, requestedScopes, authorization, request));
