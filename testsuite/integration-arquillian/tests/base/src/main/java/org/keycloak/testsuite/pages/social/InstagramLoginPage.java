@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,14 +31,11 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//input[@type='submit']")
-    private WebElement loginButton;
-
     @Override
     public void login(String user, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
-        loginButton.click();
+        passwordInput.sendKeys(Keys.RETURN);
     }
 }
