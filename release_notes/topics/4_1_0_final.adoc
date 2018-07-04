@@ -1,4 +1,3 @@
 = KEYCLOAK-7768 - Making Spring Boot 2 the default starter
 
-From release 4.1 , the Spring Boot Starter will be based on the Spring Boot 2 Adapter. For older Spring Boot version, the starter `keycloak-legacy-spring-boot-starter` is available.
-
+Starting with release 4.1, the Spring Boot starter will be based on the Spring Boot 2 adapter. If you are using an older Spring Boot version, the keycloak-legacy-spring-boot-starter is available.
