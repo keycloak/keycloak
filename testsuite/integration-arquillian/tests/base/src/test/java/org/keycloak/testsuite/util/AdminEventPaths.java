@@ -437,6 +437,18 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String authRaiseRequiredActionPath(String requiredActionAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "raiseRequiredActionPriority")
+                .build(requiredActionAlias);
+        return uri.toString();
+    }
+
+    public static String authLowerRequiredActionPath(String requiredActionAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "lowerRequiredActionPriority")
+                .build(requiredActionAlias);
+        return uri.toString();
+    }
+
     // ATTACK DETECTION
 
     public static String attackDetectionClearBruteForceForUserPath(String username) {

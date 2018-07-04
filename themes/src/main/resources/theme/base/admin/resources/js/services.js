@@ -323,6 +323,20 @@ module.factory('RequiredActions', function($resource) {
     });
 });
 
+module.factory('RequiredActionRaisePriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias/raise-priority', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('RequiredActionLowerPriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias/lower-priority', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
 module.factory('UnregisteredRequiredActions', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/unregistered-required-actions', {
         realm : '@realm'
