@@ -20,7 +20,6 @@ package org.keycloak.adapters.authentication;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
 
 import java.util.HashMap;
@@ -29,13 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientCredentialsProviderUtils {
 
-    private static Logger logger = Logger.getLogger(ClientCredentialsProviderUtils.class);
+    private static Logger logger = Logger.getLogger(ClientCredentialsProviderUtils.class.toString());
 
     public static ClientCredentialsProvider bootstrapClientAuthenticator(KeycloakDeployment deployment) {
         String clientId = deployment.getResourceName();
@@ -56,7 +57,7 @@ public class ClientCredentialsProviderUtils {
             }
         }
 
-        logger.debugf("Using provider '%s' for authentication of client '%s'", authenticatorId, clientId);
+        logger.log(Level.FINE,"Using provider '%s' for authentication of client '%s'", new Object[]{authenticatorId, clientId});
 
         Map<String, ClientCredentialsProvider> authenticators = new HashMap<>();
         loadAuthenticators(authenticators, ClientCredentialsProviderUtils.class.getClassLoader());
@@ -78,11 +79,11 @@ public class ClientCredentialsProviderUtils {
         while (iterator.hasNext()) {
             try {
                 ClientCredentialsProvider authenticator = iterator.next();
-                logger.debugf("Loaded clientCredentialsProvider %s", authenticator.getId());
+                logger.log(Level.FINE, "Loaded clientCredentialsProvider %s", authenticator.getId());
                 authenticators.put(authenticator.getId(), authenticator);
             } catch (ServiceConfigurationError e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Failed to load clientCredentialsProvider with classloader: " + classLoader, e);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Failed to load clientCredentialsProvider with classloader: " + classLoader, e);
                 }
             }
         }

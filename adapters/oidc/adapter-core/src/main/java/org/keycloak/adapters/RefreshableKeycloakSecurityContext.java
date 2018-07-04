@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
@@ -28,6 +27,8 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,7 +36,7 @@ import java.io.IOException;
  */
 public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext {
 
-    protected static Logger log = Logger.getLogger(RefreshableKeycloakSecurityContext.class);
+    protected static Logger log = Logger.getLogger(RefreshableKeycloakSecurityContext.class.toString());
 
     protected transient KeycloakDeployment deployment;
     protected transient AdapterTokenStore tokenStore;
@@ -71,7 +72,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         try {
             ServerRequest.invokeLogout(deployment, refreshToken);
         } catch (Exception e) {
-            log.error("failed to invoke remote logout", e);
+            log.log(Level.SEVERE, "failed to invoke remote logout", e);
         }
     }
 
@@ -98,9 +99,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
      */
     public boolean refreshExpiredToken(boolean checkActive) {
         if (checkActive) {
-            if (log.isTraceEnabled()) {
-                log.trace("checking whether to refresh.");
-            }
+            log.log(Level.FINEST, "checking whether to refresh.");
             if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
         }
 
@@ -111,35 +110,31 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             return false;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Doing refresh");
-        }
+        log.log(Level.FINEST,"Doing refresh");
         AccessTokenResponse response = null;
         try {
             response = ServerRequest.invokeRefresh(deployment, refreshToken);
         } catch (IOException e) {
-            log.error("Refresh token failure", e);
+            log.log(Level.SEVERE, "Refresh token failure", e);
             return false;
         } catch (ServerRequest.HttpFailure httpFailure) {
-            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+            log.log(Level.SEVERE,"Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
             return false;
         }
-        if (log.isTraceEnabled()) {
-            log.trace("received refresh response");
-        }
+        log.log(Level.FINEST,"received refresh response");
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
-            log.debug("Token Verification succeeded!");
+            log.log(Level.FINE, "Token Verification succeeded!");
         } catch (VerificationException e) {
-            log.error("failed verification of token");
+            log.log(Level.SEVERE,"failed verification of token");
             return false;
         }
 
         // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
         if (!isTokenTimeToLiveSufficient(token)) {
-            log.error("failed to refresh the token with a longer time-to-live than the minimum");
+            log.log(Level.SEVERE,"failed to refresh the token with a longer time-to-live than the minimum");
             return false;
         }
 
@@ -149,9 +144,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
         this.token = token;
         if (response.getRefreshToken() != null) {
-            if (log.isTraceEnabled()) {
-                log.trace("Setup new refresh token to the security context");
-            }
+            log.log(Level.FINEST,"Setup new refresh token to the security context");
             this.refreshToken = response.getRefreshToken();
         }
         this.tokenString = tokenString;

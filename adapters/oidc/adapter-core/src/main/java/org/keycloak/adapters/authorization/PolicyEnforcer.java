@@ -27,8 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -50,7 +51,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
  */
 public class PolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(PolicyEnforcer.class);
+    private static Logger LOGGER = Logger.getLogger(PolicyEnforcer.class.toString());
 
     private final KeycloakDeployment deployment;
     private final AuthzClient authzClient;
@@ -77,10 +78,10 @@ public class PolicyEnforcer {
         paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
         pathMatcher = new PathConfigMatcher(paths, enforcerConfig, authzClient);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Initialization complete. Path configurations:");
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Initialization complete. Path configurations:");
             for (PathConfig pathConfig : this.paths.values()) {
-                LOGGER.debug(pathConfig);
+                LOGGER.log(Level.FINE, pathConfig.toString());
             }
         }
 
@@ -89,17 +90,17 @@ public class PolicyEnforcer {
     }
 
     public AuthorizationContext enforce(OIDCHttpFacade facade) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Policy enforcement is enabled. Enforcing policy decisions for path [{0}].", facade.getRequest().getURI());
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Policy enforcement is enabled. Enforcing policy decisions for path [{0}].", facade.getRequest().getURI());
         }
 
         AuthorizationContext context = new KeycloakAdapterPolicyEnforcer(this).authorize(facade);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Policy enforcement result for path [{0}] is : {1}", facade.getRequest().getURI(), context.isGranted() ? "GRANTED" : "DENIED");
-            LOGGER.debugv("Returning authorization context with permissions:");
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Policy enforcement result for path [{0}] is : {1}", new Object[]{facade.getRequest().getURI(), context.isGranted() ? "GRANTED" : "DENIED"});
+            LOGGER.log(Level.FINE, "Returning authorization context with permissions:");
             for (Permission permission : context.getPermissions()) {
-                LOGGER.debug(permission);
+                LOGGER.log(Level.FINE, permission.toString());
             }
         }
 
@@ -174,10 +175,10 @@ public class PolicyEnforcer {
             String path = pathConfig.getPath();
 
             if (resourceName != null) {
-                LOGGER.debugf("Trying to find resource with name [%s] for path [%s].", resourceName, path);
+                LOGGER.log(Level.FINE, "Trying to find resource with name [%s] for path [%s].", new Object[]{resourceName, path});
                 resource = protectedResource.findByName(resourceName);
             } else {
-                LOGGER.debugf("Trying to find resource with uri [%s] for path [%s].", path, path);
+                LOGGER.log(Level.FINE, "Trying to find resource with uri [%s] for path [%s].", new Object[]{path, path});
                 List<ResourceRepresentation> resources = protectedResource.findByUri(path);
 
                 if (resources.isEmpty()) {
@@ -284,7 +285,7 @@ public class PolicyEnforcer {
                             }
                         }
                     } catch (Exception cause) {
-                        LOGGER.errorf(cause, "Could not lazy load resource with path [" + targetUri + "] from server");
+                        LOGGER.log(Level.SEVERE, "Could not lazy load resource with path [" + targetUri + "] from server", cause);
                         return null;
                     }
                 }

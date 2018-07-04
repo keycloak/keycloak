@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.jboss;
 
-import org.jboss.logging.Logger;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
@@ -32,13 +31,15 @@ import java.io.IOException;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class KeycloakLoginModule extends AbstractServerLoginModule {
-    protected static Logger log = Logger.getLogger(KeycloakLoginModule.class);
+    protected static Logger log = Logger.getLogger(KeycloakLoginModule.class.toString());
     protected Set<String> roleSet;
     protected Principal identity;
 
@@ -46,15 +47,15 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
     @SuppressWarnings("unchecked")
     @Override
     public boolean login() throws LoginException {
-        log.debug("KeycloakLoginModule.login()");
+        log.log(Level.FINE, "KeycloakLoginModule.login()");
         if (super.login()) {
-            log.debug("super.login()==true");
+            log.log(Level.FINE,"super.login()==true");
             return true;
         }
 
         Object credential = getCredential();
         if (credential != null && (credential instanceof KeycloakAccount)) {
-            log.debug("Found Account");
+            log.log(Level.FINE,"Found Account");
             KeycloakAccount account = (KeycloakAccount)credential;
             roleSet = account.getRoles();
             identity = account.getPrincipal();

@@ -19,7 +19,6 @@ package org.keycloak.adapters;
 
 import java.security.PublicKey;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
@@ -43,6 +42,8 @@ import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,7 +51,7 @@ import java.security.PublicKey;
  */
 public class PreAuthActionsHandler {
 
-    private static final Logger log = Logger.getLogger(PreAuthActionsHandler.class);
+    private static final Logger log = Logger.getLogger(PreAuthActionsHandler.class.toString());
 
     protected UserSessionManagement userSessionManagement;
     protected AdapterDeploymentContext deploymentContext;
@@ -66,7 +67,7 @@ public class PreAuthActionsHandler {
     protected boolean resolveDeployment() {
         deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isConfigured()) {
-            log.warn("can't take request, adapter not configured");
+            log.log(Level.WARNING, "can't take request, adapter not configured");
             facade.getResponse().sendError(403, "adapter not configured");
             return false;
         }
@@ -75,7 +76,7 @@ public class PreAuthActionsHandler {
 
     public boolean handleRequest() {
         String requestUri = facade.getRequest().getURI();
-        log.debugv("adminRequest {0}", requestUri);
+        log.log(Level.FINE, "adminRequest {0}", requestUri);
         if (preflightCors()) {
             return true;
         }
@@ -106,15 +107,15 @@ public class PreAuthActionsHandler {
         // don't need to resolve deployment on cors requests.  Just need to know local cors config.
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isCors()) return false;
-        log.debugv("checkCorsPreflight {0}", facade.getRequest().getURI());
+        log.log(Level.FINE, "checkCorsPreflight {0}", facade.getRequest().getURI());
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
             return false;
         }
         if (facade.getRequest().getHeader(CorsHeaders.ORIGIN) == null) {
-            log.debug("checkCorsPreflight: no origin header");
+            log.log(Level.FINE, "checkCorsPreflight: no origin header");
             return false;
         }
-        log.debug("Preflight request returning");
+        log.log(Level.FINE, "Preflight request returning");
         facade.getResponse().setStatus(200);
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
         facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
@@ -140,9 +141,7 @@ public class PreAuthActionsHandler {
     }
 
     protected void handleLogout()  {
-        if (log.isTraceEnabled()) {
-            log.trace("K_LOGOUT sent");
-        }
+        log.log(Level.FINEST,"K_LOGOUT sent");
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) {
@@ -153,7 +152,7 @@ public class PreAuthActionsHandler {
             if (action.getAdapterSessionIds() != null) {
                 userSessionManagement.logoutHttpSessions(action.getAdapterSessionIds());
             } else {
-                log.debugf("logout of all sessions for application '%s'", action.getResource());
+                log.log(Level.FINE, "logout of all sessions for application '%s'", action.getResource());
                 if (action.getNotBefore() > deployment.getNotBefore()) {
                     deployment.updateNotBefore(action.getNotBefore());
                 }
@@ -167,9 +166,7 @@ public class PreAuthActionsHandler {
 
 
     protected void handlePushNotBefore()  {
-        if (log.isTraceEnabled()) {
-            log.trace("K_PUSH_NOT_BEFORE sent");
-        }
+        log.log(Level.FINEST,"K_PUSH_NOT_BEFORE sent");
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) {
@@ -184,9 +181,7 @@ public class PreAuthActionsHandler {
     }
 
     protected void handleTestAvailable()  {
-        if (log.isTraceEnabled()) {
-            log.trace("K_TEST_AVAILABLE sent");
-        }
+        log.log(Level.FINEST,"K_TEST_AVAILABLE sent");
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) {
@@ -201,13 +196,13 @@ public class PreAuthActionsHandler {
 
     protected JWSInput verifyAdminRequest() throws Exception {
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
-            log.warn("SSL is required for adapter admin action");
+            log.log(Level.WARNING, "SSL is required for adapter admin action");
             facade.getResponse().sendError(403, "ssl required");
             return null;
         }
         String token = StreamUtil.readString(facade.getRequest().getInputStream());
         if (token == null) {
-            log.warn("admin request failed, no token");
+            log.log(Level.WARNING, "admin request failed, no token");
             facade.getResponse().sendError(403, "no token");
             return null;
         }
@@ -221,7 +216,7 @@ public class PreAuthActionsHandler {
         } catch (JWSInputException ignore) {
         }
 
-        log.warn("admin request failed, unable to verify token");
+        log.log(Level.WARNING, "admin request failed, unable to verify token");
         facade.getResponse().sendError(403, "no token");
         return null;
     }
@@ -229,17 +224,17 @@ public class PreAuthActionsHandler {
 
     protected boolean validateAction(AdminAction action)  {
         if (!action.validate()) {
-            log.warn("admin request failed, not validated" + action.getAction());
+            log.log(Level.WARNING, "admin request failed, not validated" + action.getAction());
             facade.getResponse().sendError(400, "Not validated");
             return false;
         }
         if (action.isExpired()) {
-            log.warn("admin request failed, expired token");
+            log.log(Level.WARNING, "admin request failed, expired token");
             facade.getResponse().sendError(400, "Expired token");
             return false;
         }
         if (!deployment.getResourceName().equals(action.getResource())) {
-            log.warn("Resource name does not match");
+            log.log(Level.WARNING, "Resource name does not match");
             facade.getResponse().sendError(400, "Resource name does not match");
             return false;
 

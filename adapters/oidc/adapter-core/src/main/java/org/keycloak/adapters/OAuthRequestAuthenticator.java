@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
@@ -39,8 +38,10 @@ import org.keycloak.util.TokenUtil;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -48,7 +49,7 @@ import java.util.logging.Level;
  * @version $Revision: 1 $
  */
 public class OAuthRequestAuthenticator {
-    private static final Logger log = Logger.getLogger(OAuthRequestAuthenticator.class);
+    private static final Logger log = Logger.getLogger(OAuthRequestAuthenticator.class.toString());
     protected KeycloakDeployment deployment;
     protected RequestAuthenticator reqAuthenticator;
     protected int sslRedirectPort;
@@ -142,7 +143,7 @@ public class OAuthRequestAuthenticator {
 
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
-        log.debugf("callback uri: %s", url);
+        log.log(Level.FINE, "callback uri: %s", url);
       
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
@@ -225,7 +226,7 @@ public class OAuthRequestAuthenticator {
             @Override
             public boolean challenge(HttpFacade exchange) {
                 tokenStore.saveRequest();
-                log.debug("Sending redirect to login page: " + redirect);
+                log.log(Level.FINE, "Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
                 exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), true);
                 exchange.getResponse().setHeader("Location", redirect);
@@ -238,23 +239,23 @@ public class OAuthRequestAuthenticator {
         OIDCHttpFacade.Cookie stateCookie = getCookie(deployment.getStateCookieName());
 
         if (stateCookie == null) {
-            log.warn("No state cookie");
+            log.log(Level.WARNING, "No state cookie");
             return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         // reset the cookie
-        log.debug("** reseting application state cookie");
+        log.log(Level.FINE, "** reseting application state cookie");
         facade.getResponse().resetCookie(deployment.getStateCookieName(), stateCookie.getPath());
         String stateCookieValue = getCookieValue(deployment.getStateCookieName());
 
         String state = getQueryParamValue(OAuth2Constants.STATE);
         if (state == null) {
-            log.warn("state parameter was null");
+            log.log(Level.WARNING, "state parameter was null");
             return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         if (!state.equals(stateCookieValue)) {
-            log.warn("state parameter invalid");
-            log.warn("cookie: " + stateCookieValue);
-            log.warn("queryParam: " + state);
+            log.log(Level.WARNING, "state parameter invalid");
+            log.log(Level.WARNING, "cookie: " + stateCookieValue);
+            log.log(Level.WARNING, "queryParam: " + state);
             return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         return null;
@@ -264,20 +265,20 @@ public class OAuthRequestAuthenticator {
     public AuthOutcome authenticate() {
         String code = getCode();
         if (code == null) {
-            log.debug("there was no code");
+            log.log(Level.FINE, "there was no code");
             String error = getError();
             if (error != null) {
                 // todo how do we send a response?
-                log.warn("There was an error: " + error);
+                log.log(Level.WARNING, "There was an error: " + error);
                 challenge = challenge(400, OIDCAuthenticationError.Reason.OAUTH_ERROR, error);
                 return AuthOutcome.FAILED;
             } else {
-                log.debug("redirecting to auth server");
+                log.log(Level.FINE, "redirecting to auth server");
                 challenge = loginRedirect();
                 return AuthOutcome.NOT_ATTEMPTED;
             }
         } else {
-            log.debug("there was a code, resolving");
+            log.log(Level.FINE, "there was a code, resolving");
             challenge = resolveCode(code);
             if (challenge != null) {
                 return AuthOutcome.FAILED;
@@ -319,11 +320,11 @@ public class OAuthRequestAuthenticator {
     protected AuthChallenge resolveCode(String code) {
         // abort if not HTTPS
         if (!isRequestSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
-            log.error("Adapter requires SSL. Request: " + facade.getRequest().getURI());
+            log.log(Level.SEVERE,"Adapter requires SSL. Request: " + facade.getRequest().getURI());
             return challenge(403, OIDCAuthenticationError.Reason.SSL_REQUIRED, null);
         }
 
-        log.debug("checking state cookie for after code");
+        log.log(Level.FINE, "checking state cookie for after code");
         AuthChallenge challenge = checkStateCookie();
         if (challenge != null) return challenge;
 
@@ -335,15 +336,15 @@ public class OAuthRequestAuthenticator {
             String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
             tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, rewrittenRedirectUri(strippedOauthParametersRequestUri), httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
-            log.error("failed to turn code into token");
-            log.error("status from server: " + failure.getStatus());
+            log.log(Level.SEVERE,"failed to turn code into token");
+            log.log(Level.SEVERE,"status from server: " + failure.getStatus());
             if (failure.getError() != null) {
-                log.error("   " + failure.getError());
+                log.log(Level.SEVERE,"   " + failure.getError());
             }
             return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);
 
         } catch (IOException e) {
-            log.error("failed to turn code into token", e);
+            log.log(Level.SEVERE,"failed to turn code into token", e);
             return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);
         }
 
@@ -351,12 +352,10 @@ public class OAuthRequestAuthenticator {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
 
-        log.debug("Verifying tokens");
-        if (log.isTraceEnabled()) {
-            logToken("\taccess_token", tokenString);
-            logToken("\tid_token", idTokenString);
-            logToken("\trefresh_token", refreshToken);
-        }
+        log.log(Level.FINE, "Verifying tokens");
+        logToken("\taccess_token", tokenString);
+        logToken("\tid_token", idTokenString);
+        logToken("\trefresh_token", refreshToken);
 
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
@@ -368,19 +367,19 @@ public class OAuthRequestAuthenticator {
                     throw new VerificationException();
                 }
             }
-            log.debug("Token Verification succeeded!");
+            log.log(Level.FINE, "Token Verification succeeded!");
         } catch (VerificationException e) {
-            log.error("failed verification of token: " + e.getMessage());
+            log.log(Level.SEVERE,"failed verification of token: " + e.getMessage());
             return challenge(403, OIDCAuthenticationError.Reason.INVALID_TOKEN, null);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.updateNotBefore(tokenResponse.getNotBeforePolicy());
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
-            log.error("Stale token");
+            log.log(Level.SEVERE,"Stale token");
             return challenge(403, OIDCAuthenticationError.Reason.STALE_TOKEN, null);
         }
-        log.debug("successful authenticated");
+        log.log(Level.FINE, "successful authenticated");
         return null;
     }
 
@@ -406,7 +405,7 @@ public class OAuthRequestAuthenticator {
                 redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
                 return redirectUriBuilder.toString();
             } catch (MalformedURLException ex) {
-                log.error("Not a valid request url");
+                log.log(Level.SEVERE,"Not a valid request url");
                 throw new RuntimeException(ex);
             }
             }
@@ -417,9 +416,9 @@ public class OAuthRequestAuthenticator {
         try {
             JWSInput jwsInput = new JWSInput(token);
             String wireString = jwsInput.getWireString();
-            log.tracef("\t%s: %s", name, wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+            log.log(Level.FINEST,"\t%s: %s", new Object[]{name, wireString.substring(0, wireString.lastIndexOf(".")) + ".signature"});
         } catch (JWSInputException e) {
-            log.errorf(e, "Failed to parse %s: %s", name, token);
+            log.log(Level.SEVERE, MessageFormat.format("Failed to parse %s: %s", name, token), e);
         }
     }
 }

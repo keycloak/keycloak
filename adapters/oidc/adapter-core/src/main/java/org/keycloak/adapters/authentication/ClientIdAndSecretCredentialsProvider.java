@@ -17,13 +17,14 @@
 
 package org.keycloak.adapters.authentication;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Traditional OAuth2 authentication of clients based on client_id and client_secret
@@ -32,7 +33,7 @@ import java.util.Map;
  */
 public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsProvider {
 
-    private static Logger logger = Logger.getLogger(ClientIdAndSecretCredentialsProvider.class);
+    private static Logger logger = Logger.getLogger(ClientIdAndSecretCredentialsProvider.class.toString());
 
     public static final String PROVIDER_ID = CredentialRepresentation.SECRET;
 
@@ -57,7 +58,7 @@ public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsPr
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
                 requestHeaders.put("Authorization", authorization);
             } else {
-                logger.warnf("Client '%s' doesn't have secret available", clientId);
+                logger.log(Level.WARNING, "Client '%s' doesn't have secret available", clientId);
             }
         } else {
             formParams.put(OAuth2Constants.CLIENT_ID, clientId);

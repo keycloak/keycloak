@@ -24,7 +24,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.common.VerificationException;
@@ -45,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Login module based on Resource Owner password credentials grant from OAuth2 specs. It's supposed to be used in environments. which
@@ -54,7 +55,7 @@ import java.util.Map;
  */
 public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
-    private static final Logger log = Logger.getLogger(DirectAccessGrantsLoginModule.class);
+    private static final Logger log = Logger.getLogger(DirectAccessGrantsLoginModule.class.toString());
 
     private String refreshToken;
 
@@ -107,7 +108,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                         .append(", Error description: " + errorRep.getErrorDescription());
             }
             String error = errorBuilder.toString();
-            log.warn(error);
+            log.warning(error);
             throw new IOException(error);
         }
 
@@ -171,10 +172,10 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                     }
 
                     // Should do something better than warn if logout failed? Perhaps update of refresh tokens on existing subject might be supported too...
-                    log.warn(errorBuilder.toString());
+                    log.warning(errorBuilder.toString());
                 }
             } catch (IOException ioe) {
-                log.warn(ioe);
+                log.log(Level.WARNING, "", ioe);
             }
         }
 

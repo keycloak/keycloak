@@ -19,7 +19,6 @@ package org.keycloak.adapters;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
@@ -34,6 +33,8 @@ import org.keycloak.util.SystemPropertiesJsonParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,7 +44,7 @@ import java.security.PublicKey;
  */
 public class KeycloakDeploymentBuilder {
 
-    private static final Logger log = Logger.getLogger(KeycloakDeploymentBuilder.class);
+    private static final Logger log = Logger.getLogger(KeycloakDeploymentBuilder.class.toString());
 
     protected KeycloakDeployment deployment = new KeycloakDeployment();
 
@@ -143,7 +144,7 @@ public class KeycloakDeploymentBuilder {
             deployment.setPolicyEnforcer(new PolicyEnforcer(deployment, adapterConfig));
         }
 
-        log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
+        log.log(Level.FINE, "Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
         return deployment;
     }
 

@@ -19,7 +19,9 @@ package org.keycloak.adapters;
 
 import java.util.Collections;
 import java.util.List;
-import org.jboss.logging.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -31,7 +33,7 @@ import org.keycloak.common.enums.SslRequired;
  * @version $Revision: 1 $
  */
 public abstract class RequestAuthenticator {
-    protected static Logger log = Logger.getLogger(RequestAuthenticator.class);
+    protected static Logger log = Logger.getLogger(RequestAuthenticator.class.toString());
     protected HttpFacade facade;
     protected AuthChallenge challenge;
 
@@ -56,58 +58,58 @@ public abstract class RequestAuthenticator {
     }
 
     public AuthOutcome authenticate() {
-        if (log.isTraceEnabled()) {
-            log.trace("--> authenticate()");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "--> authenticate()");
         }
 
         BearerTokenRequestAuthenticator bearer = createBearerTokenAuthenticator();
-        if (log.isTraceEnabled()) {
-            log.trace("try bearer");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST,"try bearer");
         }
 
         AuthOutcome outcome = bearer.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = bearer.getChallenge();
-            log.debug("Bearer FAILED");
+            log.log(Level.FINE,"Bearer FAILED");
             return AuthOutcome.FAILED;
         } else if (outcome == AuthOutcome.AUTHENTICATED) {
             if (verifySSL()) return AuthOutcome.FAILED;
             completeAuthentication(bearer, "KEYCLOAK");
-            log.debug("Bearer AUTHENTICATED");
+            log.log(Level.FINE,"Bearer AUTHENTICATED");
             return AuthOutcome.AUTHENTICATED;
         }
 
         QueryParamterTokenRequestAuthenticator queryParamAuth = createQueryParamterTokenRequestAuthenticator();
-        if (log.isTraceEnabled()) {
-            log.trace("try query paramter auth");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST,"try query paramter auth");
         }
 
         outcome = queryParamAuth.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = queryParamAuth.getChallenge();
-            log.debug("QueryParamAuth auth FAILED");
+            log.log(Level.FINE,"QueryParamAuth auth FAILED");
             return AuthOutcome.FAILED;
         } else if (outcome == AuthOutcome.AUTHENTICATED) {
             if (verifySSL()) return AuthOutcome.FAILED;
-            log.debug("QueryParamAuth AUTHENTICATED");
+            log.log(Level.FINE,"QueryParamAuth AUTHENTICATED");
             completeAuthentication(queryParamAuth, "KEYCLOAK");
             return AuthOutcome.AUTHENTICATED;
         }
 
         if (deployment.isEnableBasicAuth()) {
             BasicAuthRequestAuthenticator basicAuth = createBasicAuthAuthenticator();
-            if (log.isTraceEnabled()) {
-                log.trace("try basic auth");
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST,"try basic auth");
             }
 
             outcome = basicAuth.authenticate(facade);
             if (outcome == AuthOutcome.FAILED) {
                 challenge = basicAuth.getChallenge();
-                log.debug("BasicAuth FAILED");
+                log.log(Level.FINE,"BasicAuth FAILED");
                 return AuthOutcome.FAILED;
             } else if (outcome == AuthOutcome.AUTHENTICATED) {
                 if (verifySSL()) return AuthOutcome.FAILED;
-                log.debug("BasicAuth AUTHENTICATED");
+                log.log(Level.FINE,"BasicAuth AUTHENTICATED");
                 completeAuthentication(basicAuth, "BASIC");
                 return AuthOutcome.AUTHENTICATED;
             }
@@ -115,23 +117,23 @@ public abstract class RequestAuthenticator {
 
         if (deployment.isBearerOnly()) {
             challenge = bearer.getChallenge();
-            log.debug("NOT_ATTEMPTED: bearer only");
+            log.log(Level.FINE,"NOT_ATTEMPTED: bearer only");
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
         if (isAutodetectedBearerOnly(facade.getRequest())) {
             challenge = bearer.getChallenge();
-            log.debug("NOT_ATTEMPTED: Treating as bearer only");
+            log.log(Level.FINE,"NOT_ATTEMPTED: Treating as bearer only");
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("try oauth");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST,"try oauth");
         }
 
         if (tokenStore.isCached(this)) {
             if (verifySSL()) return AuthOutcome.FAILED;
-            log.debug("AUTHENTICATED: was cached");
+            log.log(Level.FINE,"AUTHENTICATED: was cached");
             return AuthOutcome.AUTHENTICATED;
         }
 
@@ -155,14 +157,14 @@ public abstract class RequestAuthenticator {
         facade.getResponse().setStatus(302);
         facade.getResponse().end();
 
-        log.debug("AUTHENTICATED");
+        log.log(Level.FINE,"AUTHENTICATED");
         return AuthOutcome.AUTHENTICATED;
     }
 
     protected boolean verifySSL() {
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
-            log.warnf("SSL is required to authenticate. Remote address %s is secure: %s, SSL required for: %s .",
-                    facade.getRequest().getRemoteAddr(), facade.getRequest().isSecure(), deployment.getSslRequired().name());
+            log.log(Level.WARNING, "SSL is required to authenticate. Remote address %s is secure: %s, SSL required for: %s .", new Object[]{
+                    facade.getRequest().getRemoteAddr(), facade.getRequest().isSecure(), deployment.getSslRequired().name()});
             return true;
         }
         return false;
@@ -216,7 +218,7 @@ public abstract class RequestAuthenticator {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
         completeOAuthAuthentication(principal);
-        log.debugv("User ''{0}'' invoking ''{1}'' on client ''{2}''", principal.getName(), facade.getRequest().getURI(), deployment.getResourceName());
+        log.log(Level.FINE,"User ''{0}'' invoking ''{1}'' on client ''{2}''", new Object[]{principal.getName(), facade.getRequest().getURI(), deployment.getResourceName()});
     }
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
@@ -235,7 +237,7 @@ public abstract class RequestAuthenticator {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, bearer.getToken()), session);
         completeBearerAuthentication(principal, method);
-        log.debugv("User ''{0}'' invoking ''{1}'' on client ''{2}''", principal.getName(), facade.getRequest().getURI(), deployment.getResourceName());
+        log.log(Level.FINE, "User ''{0}'' invoking ''{1}'' on client ''{2}''", new Object[]{principal.getName(), facade.getRequest().getURI(), deployment.getResourceName()});
     }
 
 }
