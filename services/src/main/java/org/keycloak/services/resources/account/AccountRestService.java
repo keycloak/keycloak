@@ -155,7 +155,7 @@ public class AccountRestService {
                 }
             }
 
-            if (realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
+            if (emailChanged && realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByUsername(userRep.getEmail(), realm);
                 if (existing != null) {
                     return ErrorResponse.exists(Messages.USERNAME_EXISTS);
