@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -196,6 +197,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(this.masterRealm);
         testRealmDefaultClientScopes(this.migrationRealm);
         testOfflineScopeAddedToClient();
+    }
+
+    protected void testMigrationTo4_2_0() {
+        testRequiredActionsPriority(this.masterRealm, this.migrationRealm);
     }
 
     private void testCliConsoleScopeSize(RealmResource realm) {
@@ -462,6 +467,25 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     }
 
+    private void testRequiredActionsPriority(RealmResource... realms) {
+        log.info("testing required action's priority");
+        for (RealmResource realm : realms) {
+            List<RequiredActionProviderRepresentation> actions = realm.flows().getRequiredActions();
+
+            // Checking if the actions are in alphabetical order
+            List<String> nameList = actions.stream().map(x -> x.getName()).collect(Collectors.toList());
+            List<String> sortedByName = nameList.stream().sorted().collect(Collectors.toList());
+            assertArrayEquals(nameList.toArray(), sortedByName.toArray());
+
+            // Checking the priority
+            int priority = 10;
+            for (RequiredActionProviderRepresentation action : actions) {
+                assertEquals(priority, action.getPriority());
+                priority += 10;
+            }
+        }
+    }
+
     protected String getMigrationMode() {
         return System.getProperty("migration.mode");
     }
@@ -481,6 +505,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo4_x() {
         testMigrationTo4_0_0();
+        testMigrationTo4_2_0();
     }
 
 

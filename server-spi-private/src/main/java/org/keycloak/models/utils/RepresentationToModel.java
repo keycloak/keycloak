@@ -1862,6 +1862,7 @@ public class RepresentationToModel {
     public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setConfig(rep.getConfig());
+        model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
         model.setProviderId(rep.getProviderId());
