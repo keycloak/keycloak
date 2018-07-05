@@ -151,7 +151,7 @@ public class AuthorizationRequest {
         ResourcePermission permission = null;
 
         for (ResourcePermission resourcePermission : permissions.getResources()) {
-            if (resourcePermission.getResourceId().equals(resourceId)) {
+            if (resourcePermission.getResourceId() != null && resourcePermission.getResourceId().equals(resourceId)) {
                 permission = resourcePermission;
                 break;
             }

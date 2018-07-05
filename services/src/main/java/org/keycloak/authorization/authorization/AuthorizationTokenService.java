@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -354,17 +355,21 @@ public class AuthorizationTokenService {
                 }
             }
 
-            if (existingResources.isEmpty() && (requestedScopes == null || requestedScopes.isEmpty())) {
-                throw new CorsErrorResponseException(cors, "invalid_resource", "Resource with id [" + requestedResource.getResourceId() + "] does not exist.", Status.FORBIDDEN);
-            }
-
             String clientAdditionalScopes = request.getScope();
 
             if (clientAdditionalScopes != null) {
                 requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
             }
 
-            List<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).collect(Collectors.toList());
+            List<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(Objects::nonNull).collect(Collectors.toList());
+
+            if (requestedResource.getResourceId() != null && !"".equals(requestedResource.getResourceId().trim()) && existingResources.isEmpty()) {
+                throw new CorsErrorResponseException(cors, "invalid_resource", "Resource with id [" + requestedResource.getResourceId() + "] does not exist.", Status.BAD_REQUEST);
+            }
+
+            if ((requestedResource.getScopes() != null && !requestedResource.getScopes().isEmpty()) && requestedScopesModel.isEmpty()) {
+                throw new CorsErrorResponseException(cors, "invalid_scope", "One of the given scopes " + requestedResource.getScopes() + " are invalid", Status.BAD_REQUEST);
+            }
 
             if (!existingResources.isEmpty()) {
                 for (Resource resource : existingResources) {
