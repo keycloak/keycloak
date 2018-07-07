@@ -29,7 +29,7 @@ export = Keycloak;
 declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
-	type KeycloakAdapterName = 'cordova'|'default' | any;
+	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
 	type KeycloakOnLoad = 'login-required'|'check-sso';
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
@@ -97,6 +97,12 @@ declare namespace Keycloak {
 		 *                   recommended over query.
 		 */
 		responseMode?: KeycloakResponseMode;
+
+		/**
+		 * Specifies a default uri to redirect to after login or logout.
+		 * This is currently supported for adapter 'cordova-native' and 'default'
+		 */
+		redirectUri?: string;
 
 		/**
 		 * Set the OpenID Connect flow.

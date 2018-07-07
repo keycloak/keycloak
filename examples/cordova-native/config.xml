@@ -15,7 +15,8 @@
     <preference name="AndroidLaunchMode" value="singleTask" />
     <universal-links>
         <host name="keycloak-cordova-example.github.io" scheme="https">
-            <path event="keycloak" url="/login" />
+            <path event="login" url="/login" />
+            <path event="logout" url="/logout" />
         </host>
     </universal-links>
     <plugin name="cordova-plugin-browsertab" spec="~0.2.0" />
