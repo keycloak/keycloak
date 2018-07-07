@@ -105,6 +105,10 @@
                 if (initOptions.timeSkew != null) {
                     kc.timeSkew = initOptions.timeSkew;
                 }
+
+                if(initOptions.redirectUri) {
+                    kc.redirectUri = initOptions.redirectUri;
+                }
             }
 
             if (!kc.responseMode) {
@@ -1355,6 +1359,7 @@
                         universalLinks.subscribe('logout', function(event) {
                             universalLinks.unsubscribe('logout');
                             window.cordova.plugins.browsertab.close();
+                            kc.authenticated = false;
                             promise.setSuccess();
                         });
 

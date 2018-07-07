@@ -54,8 +54,15 @@
             document.getElementById('error').innerText = 'Failed to initialize Keycloak adapter';
         }
 
-        document.addEventListener("deviceready", function() {
-            keycloak.init({ adapter: 'cordova-native', responseMode: 'query', redirectUri: 'android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login' }).success(updateState).error(error);
+        var keycloakconf = {
+            adapter: 'cordova-native',
+            responseMode: 'query',
+            onLoad: 'check-sso',
+            redirectUri: 'android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login'
+        };
+
+        document.addEventListener("deviceready", function () {
+            keycloak.init(keycloakconf).success(updateState).error(error);
         }, false);
     </script>
     <style>
@@ -71,7 +78,10 @@
 <body>
 <div id="authenticated" style="display: none;">
     <div>
-        <button onclick="keycloak.logout()">Log out</button>
+        <button onclick="keycloak.logout(Object.assign(keycloakconf, {
+                redirectUri: 'android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/logout'}
+            )).then(updateState)">Log out
+        </button>
         <button onclick="keycloak.updateToken()">Refresh token</button>
         <button onclick="keycloak.updateToken(9999)">Force Refresh token</button>
         <button onclick="keycloak.accountManagement()">Manage account</button>
@@ -107,7 +117,7 @@
 </div>
 <div id="not-authenticated" style="display: none;">
     <div>
-        <button onclick="keycloak.login()">Log in</button>
+        <button onclick="keycloak.login(keycloakconf)">Log in</button>
     </div>
     <div>
         <p id="error">Not authenticated</p>
