@@ -77,7 +77,7 @@
 <div id="authenticated" style="display: none;">
     <div>
         <button onclick="keycloak.logout({ redirectUri: 'android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/logout'
- }).then(updateState)">Log out
+ })">Log out
         </button>
         <button onclick="keycloak.updateToken()">Refresh token</button>
         <button onclick="keycloak.updateToken(9999)">Force Refresh token</button>
