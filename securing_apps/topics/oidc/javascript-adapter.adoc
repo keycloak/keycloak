@@ -193,7 +193,7 @@ This adapter required two additional plugins:
 * https://github.com/e-imaxina/cordova-plugin-deeplinks[cordova-plugin-deeplinks]: allow the browser to redirect back to your app by special URLs
 
 The technical details for linking to an app differ on each plattform and special setup is needed.
-Please refer to the according sections of the deeplinks plugin for further instructions (https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md#android-web-integration[Android] and [iOS https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md#ios-web-integration[iOS]).
+Please refer to the Android and iOS sections of the https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md[deeplinks plugin documentation] for further instructions.
 
 There are different kinds of links for opening apps: custom schemes (i.e. `myapp://login` or `android-app://com.example.myapp/https/example.com/login`) and https://developer.apple.com/ios/universal-links/[Universal Links (iOS)]) / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
 While the former are easier to setup and tend to work more reliably, the later offer extra security as they are unique and only the owner of a domain can register them.
