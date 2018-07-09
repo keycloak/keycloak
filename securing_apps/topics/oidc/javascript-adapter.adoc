@@ -161,6 +161,7 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 keycloak.init({ flow: 'hybrid' })
 ----
 
+[#hybrid-apps-with-cordova]
 ==== Hybrid Apps with Cordova
 
 Keycloak support hybird mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The Javascript adapter has two modes for this: `cordova` and `cordova-native`:
