@@ -230,7 +230,6 @@
 
         <script>
             var winHash = window.location.hash;
-                console.log('winHash=' + winHash);
             if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
                 document.getElementById("welcomeScreen").style.display='none';
             }
