@@ -18,25 +18,40 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class BitbucketLoginPage extends AbstractSocialLoginPage {
-    @FindBy(name = "username")
+    @FindBy(id = "username")
     private WebElement usernameInput;
 
-    @FindBy(name = "password")
+    @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(name = "commit")
-    private WebElement loginButton;
+    @FindBy(xpath = "//div[contains(@class,'additional-auths')]/p/a")
+    private WebElement loginWithAtlassianButton;
 
     @Override
     public void login(String user, String password) {
+        try {
+            clickLink(loginWithAtlassianButton);    // BitBucket no longer has it's own login page yet sometimes it's
+                                                    // displayed even though we need to use the Atlassian login page
+        }
+        catch (NoSuchElementException e) {
+            log.info("Already on Atlassian login page");
+        }
+
         usernameInput.sendKeys(user);
+        usernameInput.sendKeys(Keys.RETURN);
+        pause(1000);
+
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
     }
