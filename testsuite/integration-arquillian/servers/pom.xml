@@ -36,7 +36,7 @@
         <wildfly10.version>10.1.0.Final</wildfly10.version>
         <wildfly9.version>9.0.2.Final</wildfly9.version>
         <wildfly8.version>8.2.1.Final</wildfly8.version>
-        <eap6.version>7.5.14.Final-redhat-2</eap6.version>
+        <eap6.version>7.5.20.Final-redhat-1</eap6.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
         <tomcat7.version>7.0.68</tomcat7.version>
         <tomcat8.version>8.0.32</tomcat8.version>
