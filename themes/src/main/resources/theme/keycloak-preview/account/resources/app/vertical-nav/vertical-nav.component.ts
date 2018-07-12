@@ -2,11 +2,12 @@ import {Component, OnInit, ViewEncapsulation, ViewChild} from '@angular/core';
 import {NavigationItemConfig, VerticalNavigationComponent} from 'patternfly-ng/navigation';
 import {TranslateUtil} from '../ngx-translate/translate.util';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
+import {Features} from '../page/features';
 import {Referrer} from "../page/referrer";
 
 declare const baseUrl: string;
 declare const resourceUrl: string;
-declare const isInternationalizationEnabled: boolean;
+declare const features: Features;
 declare const availableLocales: Array<Object>;
 
 @Component({
@@ -26,7 +27,7 @@ export class VerticalNavComponent implements OnInit {
     navigationItems: NavigationItemConfig[];
 
     constructor(private keycloakService: KeycloakService,
-                private translateUtil: TranslateUtil, ) {
+        private translateUtil: TranslateUtil, ) {
         this.referrer = new Referrer(translateUtil);
     }
 
@@ -41,40 +42,54 @@ export class VerticalNavComponent implements OnInit {
             {
                 title: this.translateUtil.translate('accountSecurityTitle'),
                 iconStyleClass: 'fa fa-shield',
-                children: [
-                    {
-                        title: this.translateUtil.translate('changePasswordHtmlTitle'),
-                        iconStyleClass: 'fa fa-shield',
-                        url: 'password',
-                    },
-                    {
-                        title: this.translateUtil.translate('authenticatorTitle'),
-                        iconStyleClass: 'fa fa-shield',
-                        url: 'authenticator',
-                    },
-                    {
-                        title: this.translateUtil.translate('device-activity'),
-                        iconStyleClass: 'fa fa-shield',
-                        url: 'device-activity',
-                    },
-                    {
-                        title: this.translateUtil.translate('linkedAccountsHtmlTitle'),
-                        iconStyleClass: 'fa fa-shield',
-                        url: 'linked-accounts',
-                    },
-                ],
+                children: this.makeSecurityChildren(),
             },
             {
                 title: this.translateUtil.translate('applicationsHtmlTitle'),
                 iconStyleClass: 'fa fa-th',
                 url: 'applications',
-            },
-            {
-                title: this.translateUtil.translate('myResources'),
-                iconStyleClass: 'fa fa-file-o',
-                url: 'my-resources',
             }
         ];
+
+        if (features.isMyResourcesEnabled) {
+            this.navigationItems.push(
+                {
+                    title: this.translateUtil.translate('myResources'),
+                    iconStyleClass: 'fa fa-file-o',
+                    url: 'my-resources',
+                }
+            );
+        }
+    }
+
+    private makeSecurityChildren(): Array<NavigationItemConfig> {
+        const children: Array<NavigationItemConfig> = [
+            {
+                title: this.translateUtil.translate('changePasswordHtmlTitle'),
+                iconStyleClass: 'fa fa-shield',
+                url: 'password',
+            },
+            {
+                title: this.translateUtil.translate('authenticatorTitle'),
+                iconStyleClass: 'fa fa-shield',
+                url: 'authenticator',
+            },
+            {
+                title: this.translateUtil.translate('device-activity'),
+                iconStyleClass: 'fa fa-shield',
+                url: 'device-activity',
+            }
+        ];
+
+        if (features.isLinkedAccountsEnabled) {
+            children.push({
+                title: this.translateUtil.translate('linkedAccountsHtmlTitle'),
+                iconStyleClass: 'fa fa-shield',
+                url: 'linked-accounts',
+            });
+        };
+
+        return children;
     }
 
     private logout() {
@@ -82,7 +97,7 @@ export class VerticalNavComponent implements OnInit {
     }
 
     private isShowLocales(): boolean {
-        return isInternationalizationEnabled && (this.availableLocales.length > 1);
+        return features.isInternationalizationEnabled && (this.availableLocales.length > 1);
     }
 
     private changeLocale(newLocale: string) {

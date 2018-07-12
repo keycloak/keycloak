@@ -18,13 +18,14 @@ import {Component, OnInit, Input} from '@angular/core';
 import {TranslateUtil} from '../ngx-translate/translate.util';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import {ResponsivenessService} from "../responsiveness-service/responsiveness.service";
+import {Features} from '../page/features';
 import {Referrer} from "../page/referrer";
 
 declare const resourceUrl: string;
 declare const baseUrl: string;
 declare const referrer: string;
 declare const referrer_uri: string;
-declare const isInternationalizationEnabled: boolean;
+declare const features: Features;
 declare const availableLocales: Array<Object>;
 
 @Component({
@@ -58,7 +59,7 @@ export class TopNavComponent implements OnInit {
     }
     
     private showLocales(): boolean {
-        return isInternationalizationEnabled && (this.availableLocales.length > 1); 
+        return features.isInternationalizationEnabled && (this.availableLocales.length > 1); 
     }
     
     private changeLocale(newLocale: string) {
