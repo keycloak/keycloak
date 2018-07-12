@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Available in secured requests under HttpServlerRequest.getAttribute()
@@ -75,7 +78,14 @@ public class KeycloakSecurityContext implements Serializable {
 
     public String getRealm() {
         // Assumption that issuer contains realm name
-        return token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+
+        //trying to URL decode the name since it's derived from URL. See https://issues.jboss.org/browse/KEYCLOAK-7844
+        try {
+            return URLDecoder.decode(realmName, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            return realmName; //if the decoding fails for some reason, return the value
+        }
     }
 
     // SERIALIZATION
