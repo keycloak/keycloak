@@ -32,6 +32,9 @@ import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.forms.account.freemarker.model.FeaturesBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.managers.RealmManager;
@@ -108,6 +111,10 @@ public class AccountConsole {
             map.put("msgJSON", messagesToJsonString(messages));
             map.put("supportedLocales", supportedLocales(messages));
             map.put("properties", theme.getProperties());
+            
+            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
+            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

@@ -18,10 +18,10 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {Response} from '@angular/http';
 import {FormGroup} from '@angular/forms';
 
+import {Features} from '../../page/features';
 import {AccountServiceClient} from '../../account-service/account.service';
 
-declare const isRegistrationEmailAsUsername: boolean;
-declare const isEditUserNameAllowed: boolean;
+declare const features: Features;
 
 @Component({
     selector: 'app-account-page',
@@ -29,8 +29,8 @@ declare const isEditUserNameAllowed: boolean;
     styleUrls: ['./account-page.component.css']
 })
 export class AccountPageComponent implements OnInit {
-    private isRegistrationEmailAsUsername: boolean = isRegistrationEmailAsUsername;
-    private isEditUserNameAllowed: boolean = isEditUserNameAllowed;
+    private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
+    private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     
     @ViewChild('formGroup') private formGroup: FormGroup;
     
