@@ -1079,7 +1079,20 @@ public class TokenEndpoint {
         authorizationRequest.setClaimToken(claimToken);
         authorizationRequest.setClaimTokenFormat(claimTokenFormat);
         authorizationRequest.setPct(formParams.getFirst("pct"));
-        authorizationRequest.setRpt(formParams.getFirst("rpt"));
+        String rpt = formParams.getFirst("rpt");
+
+        if (rpt != null) {
+            if (!Tokens.verifySignature(session, realm, rpt)) {
+                throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
+            }
+
+            try {
+                authorizationRequest.setRpt(new JWSInput(rpt).readJsonContent(AccessToken.class));
+            } catch (JWSInputException e) {
+                throw new CorsErrorResponseException(cors, "invalid_rpt", "Invalid RPT", Status.FORBIDDEN);
+            }
+        }
+
         authorizationRequest.setScope(formParams.getFirst("scope"));
         authorizationRequest.setAudience(formParams.getFirst("audience"));
         authorizationRequest.setSubjectToken(formParams.getFirst("subject_token") != null ? formParams.getFirst("subject_token") : accessTokenString);

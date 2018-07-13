@@ -31,11 +31,11 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 
 /**
@@ -75,12 +75,12 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
 
             if ("uma".equals(policy.getType())) {
                 ResourcePermission grantedPermission = evaluation.getPermission();
-                List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
+                List<Permission> permissions = ticket.getPermissions();
 
-                Iterator<PermissionTicketToken.ResourcePermission> itPermissions = permissions.iterator();
+                Iterator<Permission> itPermissions = permissions.iterator();
 
                 while (itPermissions.hasNext()) {
-                    PermissionTicketToken.ResourcePermission permission = itPermissions.next();
+                    Permission permission = itPermissions.next();
 
                     if (permission.getResourceId().equals(grantedPermission.getResource().getId())) {
                         Set<String> scopes = permission.getScopes();
@@ -109,10 +109,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
         if (request.isSubmitRequest()) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
+            List<Permission> permissions = ticket.getPermissions();
 
             if (permissions != null) {
-                for (PermissionTicketToken.ResourcePermission permission : permissions) {
+                for (Permission permission : permissions) {
                     Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
 
                     if (resource == null) {

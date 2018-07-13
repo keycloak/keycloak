@@ -35,6 +35,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
@@ -63,9 +64,9 @@ public class AbstractPermissionService {
         return Response.status(Response.Status.CREATED).entity(new PermissionResponse(createPermissionTicket(request))).build();
     }
 
-    private List<PermissionTicketToken.ResourcePermission> verifyRequestedResource(List<PermissionRequest> request) {
+    private List<Permission> verifyRequestedResource(List<PermissionRequest> request) {
         ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
-        List<PermissionTicketToken.ResourcePermission> requestedResources = new ArrayList<>();
+        List<Permission> requestedResources = new ArrayList<>();
 
         for (PermissionRequest permissionRequest : request) {
             String resourceSetId = permissionRequest.getResourceId();
@@ -102,10 +103,10 @@ public class AbstractPermissionService {
             }
 
             if (resources.isEmpty()) {
-                requestedResources.add(new PermissionTicketToken.ResourcePermission(null, verifyRequestedScopes(permissionRequest, null)));
+                requestedResources.add(new Permission(null, verifyRequestedScopes(permissionRequest, null)));
             } else {
                 for (Resource resource : resources) {
-                    requestedResources.add(new PermissionTicketToken.ResourcePermission(resource.getId(), verifyRequestedScopes(permissionRequest, resource)));
+                    requestedResources.add(new Permission(resource.getId(), verifyRequestedScopes(permissionRequest, resource)));
                 }
             }
         }
@@ -147,7 +148,7 @@ public class AbstractPermissionService {
     }
 
     private String createPermissionTicket(List<PermissionRequest> request) {
-        List<PermissionTicketToken.ResourcePermission> permissions = verifyRequestedResource(request);
+        List<Permission> permissions = verifyRequestedResource(request);
 
         KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
         ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
