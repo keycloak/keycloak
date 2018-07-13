@@ -28,10 +28,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MediaType;
@@ -70,7 +67,6 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -149,7 +145,7 @@ public class AuthorizationTokenService {
         }
 
         // it is not secure to allow public clients to push arbitrary claims because message can be tampered
-        if (isPublicClientRequestingEntitlemesWithClaims(request)) {
+        if (isPublicClientRequestingEntitlementWithClaims(request)) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Public clients are not allowed to send claims", Status.FORBIDDEN);
         }
 
@@ -163,9 +159,9 @@ public class AuthorizationTokenService {
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
             List<Result> evaluation;
 
-            if (ticket.getResources().isEmpty() && request.getRpt() == null) {
+            if (ticket.getPermissions().isEmpty() && request.getRpt() == null) {
                 evaluation = evaluateAllPermissions(request, resourceServer, evaluationContext, identity);
-            } else if(!request.getPermissions().getResources().isEmpty()) {
+            } else if(!request.getPermissions().getPermissions().isEmpty()) {
                 evaluation = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
             } else {
                 evaluation = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
@@ -173,21 +169,21 @@ public class AuthorizationTokenService {
 
             List<Permission> permissions = Permissions.permits(evaluation, request.getMetadata(), authorization, resourceServer);
 
-            if (permissions.isEmpty()) {
-                if (request.isSubmitRequest()) {
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "request_submitted", Status.FORBIDDEN);
-                } else {
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
-                }
+            if (isGranted(ticket, request, permissions)) {
+                ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
+                AuthorizationResponse response = createAuthorizationResponse(identity, permissions, request, targetClient);
+
+                return Cors.add(httpRequest, Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+                        .allowedOrigins(getKeycloakSession().getContext().getUri(), targetClient)
+                        .allowedMethods(HttpMethod.POST)
+                        .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
             }
 
-            ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
-            AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(identity, permissions, request, targetClient), request.getRpt() != null);
-
-            return Cors.add(httpRequest, Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                    .allowedOrigins(getKeycloakSession().getContext().getUri(), targetClient)
-                    .allowedMethods(HttpMethod.POST)
-                    .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+            if (request.isSubmitRequest()) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "request_submitted", Status.FORBIDDEN);
+            } else {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+            }
         } catch (ErrorResponseException | CorsErrorResponseException cause) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Error while evaluating permissions", cause);
@@ -199,7 +195,7 @@ public class AuthorizationTokenService {
         }
     }
 
-    private boolean isPublicClientRequestingEntitlemesWithClaims(AuthorizationRequest request) {
+    private boolean isPublicClientRequestingEntitlementWithClaims(AuthorizationRequest request) {
         return request.getClaimToken() != null && getKeycloakSession().getContext().getClient().isPublicClient() && request.getTicket() == null;
     }
 
@@ -221,7 +217,7 @@ public class AuthorizationTokenService {
                 .evaluate();
     }
 
-    private AccessTokenResponse createRequestingPartyToken(KeycloakIdentity identity, List<Permission> entitlements, AuthorizationRequest request, ClientModel targetClient) {
+    private AuthorizationResponse createAuthorizationResponse(KeycloakIdentity identity, List<Permission> entitlements, AuthorizationRequest request, ClientModel targetClient) {
         KeycloakSession keycloakSession = getKeycloakSession();
         AccessToken accessToken = identity.getAccessToken();
         UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(getRealm(), accessToken.getSessionState());
@@ -253,7 +249,31 @@ public class AuthorizationTokenService {
             rpt.audience(targetClient.getClientId());
         }
 
-        return responseBuilder.build();
+        return new AuthorizationResponse(responseBuilder.build(), isUpgraded(request, authorization));
+    }
+
+    private boolean isUpgraded(AuthorizationRequest request, Authorization authorization) {
+        AccessToken previousRpt = request.getRpt();
+
+        if (previousRpt == null) {
+            return false;
+        }
+
+        Authorization previousAuthorization = previousRpt.getAuthorization();
+
+        if (previousAuthorization != null) {
+            List<Permission> previousPermissions = previousAuthorization.getPermissions();
+
+            if (previousPermissions != null) {
+                for (Permission previousPermission : previousPermissions) {
+                    if (!authorization.getPermissions().contains(previousPermission)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private PermissionTicketToken getPermissionTicket(AuthorizationRequest request) {
@@ -320,7 +340,7 @@ public class AuthorizationTokenService {
         Metadata metadata = request.getMetadata();
         Integer limit = metadata != null ? metadata.getLimit() : null;
 
-        for (PermissionTicketToken.ResourcePermission requestedResource : ticket.getResources()) {
+        for (Permission requestedResource : ticket.getPermissions()) {
             if (limit != null && limit <= 0) {
                 break;
             }
@@ -339,16 +359,19 @@ public class AuthorizationTokenService {
                 if (resource != null) {
                     existingResources.add(resource);
                 } else {
-                    Resource ownerResource = resourceStore.findByName(requestedResource.getResourceId(), identity.getId(), resourceServer.getId());
+                    String resourceName = requestedResource.getResourceId();
+                    Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());
 
                     if (ownerResource != null) {
+                        requestedResource.setResourceId(ownerResource.getId());
                         existingResources.add(ownerResource);
                     }
 
                     if (!identity.isResourceServer()) {
-                        Resource serverResource = resourceStore.findByName(requestedResource.getResourceId(), resourceServer.getId());
+                        Resource serverResource = resourceStore.findByName(resourceName, resourceServer.getId());
 
                         if (serverResource != null) {
+                            requestedResource.setResourceId(serverResource.getId());
                             existingResources.add(serverResource);
                         }
                     }
@@ -403,63 +426,49 @@ public class AuthorizationTokenService {
             }
         }
 
-        String rpt = request.getRpt();
+        AccessToken rpt = request.getRpt();
 
-        if (rpt != null) {
-            if (!Tokens.verifySignature(getKeycloakSession(), getRealm(), rpt)) {
-                throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
-            }
+        if (rpt != null && rpt.isActive()) {
+            AccessToken.Authorization authorizationData = rpt.getAuthorization();
 
-            AccessToken requestingPartyToken;
+            if (authorizationData != null) {
+                List<Permission> permissions = authorizationData.getPermissions();
 
-            try {
-                requestingPartyToken = new JWSInput(rpt).readJsonContent(AccessToken.class);
-            } catch (JWSInputException e) {
-                throw new CorsErrorResponseException(cors, "invalid_rpt", "Invalid RPT", Status.FORBIDDEN);
-            }
+                if (permissions != null) {
+                    for (Permission grantedPermission : permissions) {
+                        if (limit != null && limit <= 0) {
+                            break;
+                        }
 
-            if (requestingPartyToken.isActive()) {
-                AccessToken.Authorization authorizationData = requestingPartyToken.getAuthorization();
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
 
-                if (authorizationData != null) {
-                    List<Permission> permissions = authorizationData.getPermissions();
+                        if (resource != null) {
+                            ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
 
-                    if (permissions != null) {
-                        for (Permission grantedPermission : permissions) {
-                            if (limit != null && limit <= 0) {
-                                break;
-                            }
+                            if (permission == null) {
+                                permission = new ResourcePermission(resource, new ArrayList<>(), resourceServer, grantedPermission.getClaims());
+                                permissionsToEvaluate.put(resource.getId(), permission);
+                                if (limit != null) {
+                                    limit--;
+                                }
+                            } else {
+                                if (grantedPermission.getClaims() != null) {
+                                    for (Entry<String, Set<String>> entry : grantedPermission.getClaims().entrySet()) {
+                                        Set<String> claims = permission.getClaims().get(entry.getKey());
 
-                            Resource resourcePermission = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
-
-                            if (resourcePermission != null) {
-                                ResourcePermission permission = permissionsToEvaluate.get(resourcePermission.getId());
-
-                                if (permission == null) {
-                                    permission = new ResourcePermission(resourcePermission, new ArrayList<>(), resourceServer, grantedPermission.getClaims());
-                                    permissionsToEvaluate.put(resourcePermission.getId(), permission);
-                                    if (limit != null) {
-                                        limit--;
-                                    }
-                                } else {
-                                    if (grantedPermission.getClaims() != null) {
-                                        for (Entry<String, Set<String>> entry : grantedPermission.getClaims().entrySet()) {
-                                            Set<String> claims = permission.getClaims().get(entry.getKey());
-
-                                            if (claims != null) {
-                                                claims.addAll(entry.getValue());
-                                            }
+                                        if (claims != null) {
+                                            claims.addAll(entry.getValue());
                                         }
                                     }
                                 }
+                            }
 
-                                for (String scopeName : grantedPermission.getScopes()) {
-                                    Scope scope = scopeStore.findByName(scopeName, resourceServer.getId());
+                            for (String scopeName : grantedPermission.getScopes()) {
+                                Scope scope = scopeStore.findByName(scopeName, resourceServer.getId());
 
-                                    if (scope != null) {
-                                        if (!permission.getScopes().contains(scope)) {
-                                            permission.getScopes().add(scope);
-                                        }
+                                if (scope != null) {
+                                    if (!permission.getScopes().contains(scope)) {
+                                        permission.getScopes().add(scope);
                                     }
                                 }
                             }
@@ -490,6 +499,17 @@ public class AuthorizationTokenService {
         } catch (JWSInputException e) {
             throw new CorsErrorResponseException(cors, "invalid_ticket", "Could not parse permission ticket.", Status.FORBIDDEN);
         }
+    }
+
+    private boolean isGranted(PermissionTicketToken ticket, AuthorizationRequest request, List<Permission> permissions) {
+        List<Permission> requestedPermissions = ticket.getPermissions();
+
+        // denies in case a rpt was provided along with the authorization request but any requested permission was not granted
+        if (request.getRpt() != null && !requestedPermissions.isEmpty() && requestedPermissions.stream().anyMatch(permission -> !permissions.contains(permission))) {
+            return false;
+        }
+
+        return !permissions.isEmpty();
     }
 
     private KeycloakSession getKeycloakSession() {

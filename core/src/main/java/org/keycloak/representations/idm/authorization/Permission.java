@@ -33,7 +33,7 @@ public class Permission {
     private String resourceId;
 
     @JsonProperty("rsname")
-    private final String resourceName;
+    private String resourceName;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> scopes;
@@ -45,6 +45,10 @@ public class Permission {
         this(null, null, null, null);
     }
 
+    public Permission(final String resourceId, final Set<String> scopes) {
+        this(resourceId, null, scopes, null);
+    }
+
     public Permission(final String resourceId, String resourceName, final Set<String> scopes, Map<String, Set<String>> claims) {
         this.resourceId = resourceId;
         this.resourceName = resourceName;
@@ -52,8 +56,16 @@ public class Permission {
         this.claims = claims;
     }
 
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
     public String getResourceId() {
         return this.resourceId;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
     }
 
     public String getResourceName() {
@@ -75,11 +87,29 @@ public class Permission {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !getClass().isAssignableFrom(o.getClass())) return false;
 
         Permission that = (Permission) o;
 
-        return getResourceId().equals(that.resourceId);
+        if (getResourceId() != null || getResourceName() != null) {
+            if (!getResourceId().equals(that.resourceId)) {
+                return false;
+            }
+
+            if (getScopes().isEmpty() && that.getScopes().isEmpty()) {
+                return true;
+            }
+        } else if (that.resourceId != null) {
+            return false;
+        }
+
+        for (String scope : that.getScopes()) {
+            if (getScopes().contains(scope)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
