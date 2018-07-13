@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, Renderer2} from '@angular/core';
 import {Response} from '@angular/http';
 import {FormGroup} from '@angular/forms';
 
@@ -28,19 +28,31 @@ import {AccountServiceClient} from '../../account-service/account.service';
 export class PasswordPageComponent implements OnInit {
 
     @ViewChild('formGroup') private formGroup: FormGroup;
+    private lastPasswordUpdate: number;
     
-    constructor(private accountSvc: AccountServiceClient) {
+    constructor(private accountSvc: AccountServiceClient, private renderer: Renderer2) {
+        this.accountSvc.doGetRequest("/credentials/password", (res: Response) => this.handleGetResponse(res));
     }
     
     public changePassword() {
         console.log("posting: " + JSON.stringify(this.formGroup.value));
-        this.accountSvc.doPostRequest("/credentials", (res: Response) => this.handlePostResponse(res), this.formGroup.value);
+        this.accountSvc.doPostRequest("/credentials/password", (res: Response) => this.handlePostResponse(res), this.formGroup.value);
+        this.renderer.selectRootElement('#password').focus();
     }
     
     protected handlePostResponse(res: Response) {
       console.log('**** response from account POST ***');
       console.log(JSON.stringify(res));
       console.log('***************************************');
+      this.formGroup.reset();
+      this.accountSvc.doGetRequest("/credentials/password", (res: Response) => this.handleGetResponse(res));
+    }
+    
+    protected handleGetResponse(res: Response) {
+        console.log('**** response from account POST ***');
+        console.log(JSON.stringify(res));
+        console.log('***************************************');
+        this.lastPasswordUpdate = res.json()['lastUpdate'];
     }
 
     ngOnInit() {
