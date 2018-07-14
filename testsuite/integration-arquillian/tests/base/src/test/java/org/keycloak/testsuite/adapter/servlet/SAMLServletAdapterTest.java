@@ -252,9 +252,6 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     protected SalesPostAutodetectServlet salesPostAutodetectServletPage;
 
     @Page
-    protected AdapterLogoutPage adapterLogoutPage;
-
-    @Page
     protected EcpSP ecpSPPage;
 
     @Page
@@ -396,11 +393,6 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive employeeServlet() {
         return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class, ServletTestUtils.class)
           .add(new StringAsset("<html><body>Logged out</body></html>"), "/logout.jsp");
-    }
-
-    @Deployment(name = AdapterLogoutPage.DEPLOYMENT_NAME)
-    protected static WebArchive logoutWar() {
-        return AdapterLogoutPage.createDeployment();
     }
 
     @Deployment(name = SalesPostAutodetectServlet.DEPLOYMENT_NAME)
@@ -742,7 +734,8 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         WaitUtils.waitForPageToLoad();
 
         employeeServletPage.logout();
-        adapterLogoutPage.assertCurrent();
+
+        checkLoggedOut(employeeServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
