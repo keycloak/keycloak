@@ -103,6 +103,13 @@
     </feature>
  -->
 
+    <feature name="keycloak-servlet-filter-adapter" version="${project.version}" resolver="(obr)">
+        <details>Keycloak servlet filter adapter</details>
+        <feature>keycloak-adapter-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-servlet-filter-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-servlet-adapter-spi/${project.version}</bundle>
+    </feature>
+
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
         <details>The keycloak JAAS configuration</details>
         <feature>keycloak-adapter-core</feature>
