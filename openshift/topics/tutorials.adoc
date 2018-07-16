@@ -719,7 +719,7 @@ Add RH-SSO as a secondary identity provider with content similar to the followin
 - name: rh_sso
   challenge: false
   login: true
-  mappingInfo: add
+  mappingMethod: add
   provider:
     apiVersion: v1
     kind: OpenIDIdentityProvider
