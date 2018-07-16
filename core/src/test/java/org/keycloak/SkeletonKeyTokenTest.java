@@ -114,14 +114,14 @@ public class SkeletonKeyTokenTest {
         Assert.assertTrue(token.getResourceAccess("foo").isUserInRole("admin"));
         Assert.assertTrue(token.getResourceAccess("bar").isUserInRole("user"));
         Assert.assertEquals("joe@email.cz", idToken.getEmail());
-        Assert.assertEquals("acme", ctx.getRealm());
+        Assert.assertEquals("Realm <name>", ctx.getRealm());
         ois.close();
     }
 
     private AccessToken createSimpleToken() {
         AccessToken token = new AccessToken();
         token.id("111");
-        token.issuer("http://localhost:8080/auth/acme");
+        token.issuer("http://localhost:8080/auth/Realm%20%3Cname%3E");
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
         return token;
