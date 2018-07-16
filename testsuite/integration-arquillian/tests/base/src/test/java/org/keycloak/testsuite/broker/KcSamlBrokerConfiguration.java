@@ -97,6 +97,26 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
         emailMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "email");
 
+        ProtocolMapperRepresentation dottedAttrMapper = new ProtocolMapperRepresentation();
+        dottedAttrMapper.setName("email - dotted");
+        dottedAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        dottedAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+
+        Map<String, String> dottedEmailMapperConfig = dottedAttrMapper.getConfig();
+        dottedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "dotted.email");
+        dottedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "dotted.email");
+        dottedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+
+        ProtocolMapperRepresentation nestedAttrMapper = new ProtocolMapperRepresentation();
+        nestedAttrMapper.setName("email - nested");
+        nestedAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        nestedAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+
+        Map<String, String> nestedEmailMapperConfig = nestedAttrMapper.getConfig();
+        nestedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "nested.email");
+        nestedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "nested.email");
+        nestedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+
         ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
         userAttrMapper.setName("attribute - name");
         userAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
@@ -119,7 +139,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userFriendlyAttrMapper));
+        client.setProtocolMappers(Arrays.asList(emailMapper, dottedAttrMapper, nestedAttrMapper, userAttrMapper, userFriendlyAttrMapper));
 
         return client;
     }
