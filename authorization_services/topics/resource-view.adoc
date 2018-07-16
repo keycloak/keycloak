@@ -9,7 +9,7 @@ image:{project_images}/resource/view.png[alt="Resources"]
 The resource list provides information about the protected resources, such as:
 
 * Type
-* URI
+* URIS
 * Owner
 * Associated scopes, if any
 * Associated permissions

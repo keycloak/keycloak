@@ -57,7 +57,7 @@ Here is a description of each configuration option:
 * *policy-enforcer*
 +
 Specifies the configuration options that define how policies are actually enforced and optionally the paths you want to protect. If not specified, the policy enforcer queries the server
-for all resources associated with the resource server being protected. In this case, you need to ensure the resources are properly configured with a <<_resource_create_uri, URI>> property that matches the paths you want to protect.
+for all resources associated with the resource server being protected. In this case, you need to ensure the resources are properly configured with a <<_resource_create_uri, URIS>> property that matches the paths you want to protect.
 +
 ** *user-managed-access*
 +
@@ -101,11 +101,11 @@ Defines the limit of entries that should be kept in the cache. If not provided, 
 +
 ** *paths*
 +
-Specifies the paths to protect. This configuration is optional. If not defined, the policy enforcer will discover all paths by fetching the resources you defined to your application in {project_name}, where these resources are defined with a `URI` representing some path in your application.
+Specifies the paths to protect. This configuration is optional. If not defined, the policy enforcer will discover all paths by fetching the resources you defined to your application in {project_name}, where these resources are defined with `URIS` representing some paths in your application.
 +
 *** *name*
 +
-The name of a resource on the server that is to be associated with a given path. When used in conjunction with a *path*, the policy enforcer ignores the resource's *URI* property and uses the path you provided instead.
+The name of a resource on the server that is to be associated with a given path. When used in conjunction with a *path*, the policy enforcer ignores the resource's *URIS* property and uses the path you provided instead.
 *** *path*
 +
 (required) A URI relative to the application's context path. If this option is specified, the policy enforcer queries the server for a resource with a *URI* with the same value.
