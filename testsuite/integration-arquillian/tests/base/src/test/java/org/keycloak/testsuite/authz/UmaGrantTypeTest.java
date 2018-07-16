@@ -354,7 +354,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testRefreshRpt() throws Exception {
+    public void testRefreshRpt() {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
         AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
         String rpt = response.getToken();
@@ -376,6 +376,10 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(refreshToken);
 
+        AccessToken refreshTokenToken = toAccessToken(refreshToken);
+
+        assertNotNull(refreshTokenToken.getAuthorization());
+
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI uri = OIDCLoginProtocolService.tokenUrl(builder).build(REALM_NAME);
@@ -391,8 +395,33 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
                 .post(Entity.form(parameters)).readEntity(AccessTokenResponse.class);
 
         assertNotNull(refreshTokenResponse.getToken());
+        refreshToken = refreshTokenResponse.getRefreshToken();
+        refreshTokenToken = toAccessToken(refreshToken);
+
+        assertNotNull(refreshTokenToken.getAuthorization());
 
         AccessToken refreshedToken = toAccessToken(rpt);
+        authorization = refreshedToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+
+        refreshTokenResponse = target.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("resource-server-test", "secret"))
+                .post(Entity.form(parameters)).readEntity(AccessTokenResponse.class);
+
+        assertNotNull(refreshTokenResponse.getToken());
+        refreshToken = refreshTokenResponse.getRefreshToken();
+        refreshTokenToken = toAccessToken(refreshToken);
+
+        assertNotNull(refreshTokenToken.getAuthorization());
+
+        refreshedToken = toAccessToken(rpt);
         authorization = refreshedToken.getAuthorization();
 
         assertNotNull(authorization);
