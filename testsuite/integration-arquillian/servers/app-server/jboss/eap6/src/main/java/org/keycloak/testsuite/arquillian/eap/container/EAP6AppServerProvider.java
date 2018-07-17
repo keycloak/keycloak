@@ -86,6 +86,8 @@ public class EAP6AppServerProvider implements AppServerContainerProvider {
         createChild("javaHome", appServerJavaHome);
         createChild("jbossArguments", 
                 "-Djboss.server.base.dir=" + appServerHome + "/standalone-test " +
+                "-Djboss.server.config.dir=" + appServerHome + "/standalone-test/configuration " +
+                "-Djboss.server.log.dir=" + appServerHome + "/standalone-test/log " +
                 "-Djboss.socket.binding.port-offset=" + appServerPortOffset + " " +
                 System.getProperty("adapter.test.props", " ") +
                 System.getProperty("kie.maven.settings", " ")

@@ -646,18 +646,6 @@
                 <module>relative</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-eap6-fuse</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6-fuse</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap6-fuse</module>
-            </modules>
-        </profile>
     </profiles>
 
 </project>

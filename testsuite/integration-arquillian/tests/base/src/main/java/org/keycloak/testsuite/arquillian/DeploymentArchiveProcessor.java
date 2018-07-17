@@ -104,21 +104,12 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
         // Ignore archives modifed in specific DeploymentArchiveProcessors, see e.g. 
         // org.keycloak.testsuite.arquillian.wildfly.container.WildflyDeploymentArchiveProcessor
-        if (isEAP6AppServer() || 
-            isEAPAppServer() || 
-            isWildflyAppServer() || 
-            isWildfly10AppServer() || 
-            isWildfly9AppServer() || 
-            isUndertowAppServer()) {
-
-            return;
-        }
-
-        log.info("Processing archive " + archive.getName());
-        modifyAdapterConfigs(archive, testClass);
-        modifyWebXml(archive, testClass);
-
         if (isWLSAppServer() || isWASAppServer()) {
+
+            log.info("Processing archive " + archive.getName());
+            modifyAdapterConfigs(archive, testClass);
+            modifyWebXml(archive, testClass);
+
             MavenResolverSystem resolver = Maven.resolver();
             MavenFormatStage dependencies = resolver
                     .loadPomFromFile("pom.xml")
