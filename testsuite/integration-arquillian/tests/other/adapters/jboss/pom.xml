@@ -83,12 +83,6 @@
                 <module>remote</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-eap6-fuse</id>
-            <modules>
-                <module>eap6-fuse</module>
-            </modules>
-        </profile>
     </profiles>
     
 </project>

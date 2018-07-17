@@ -28,15 +28,19 @@
     <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
     <packaging>jar</packaging>
     <name>App Server - EAP 6</name>
-    
+
     <properties>
         <app.server.jboss>eap6</app.server.jboss>
-        
+
         <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
         <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${eap6.version}</app.server.jboss.version>
         <app.server.jboss.unpacked.folder.name>jboss-eap-6.4</app.server.jboss.unpacked.folder.name>
-        
+
+        <fuse.installer.groupId>com.redhat.fuse.eap</fuse.installer.groupId>
+        <fuse.installer.artifactId>fuse-eap-installer</fuse.installer.artifactId>
+        <fuse.installer.version>${fuse63.version}</fuse.installer.version>
+
         <app.server.oidc.adapter.artifactId>keycloak-eap6-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-eap6-adapter-dist</app.server.saml.adapter.artifactId>
         
@@ -76,7 +80,73 @@
                                 <requireProperty>
                                     <property>eap6.version</property>
                                 </requireProperty>
+                                <requireProperty>
+                                    <property>fuse63.version</property>
+                                </requireProperty>
                             </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>backup-configs-fuse</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${app.server.jboss.home}/standalone-default</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${app.server.jboss.home}/standalone</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-hawtio-jsons</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${app.server.jboss.home}/standalone-fuse/configuration</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources/config/fuse</directory>
+                                    <includes>
+                                        <include>keycloak-hawtio.json</include>
+                                        <include>keycloak-hawtio-client.json</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-fuse-installer</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${fuse.installer.groupId}</groupId>
+                                    <artifactId>${fuse.installer.artifactId}</artifactId>
+                                    <version>${fuse.installer.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${app.server.jboss.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
@@ -119,6 +189,22 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>install-fuse</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/src/main/resources/config/fuse/install-fuse.${script.suffix}</executable>
+                            <workingDirectory>${app.server.jboss.home}/standalone-fuse</workingDirectory>
+                            <environmentVariables>
+                                <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                <FUSE_INSTALLER_NAME>${fuse.installer.artifactId}-${fuse.installer.version}.jar</FUSE_INSTALLER_NAME>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>add-secured-deployments-eap6</id>
                         <phase>generate-test-sources</phase>
                         <goals>
@@ -132,6 +218,64 @@
                                 <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                 <CLI_PATH>${basedir}/src/main/resources/config/cli/</CLI_PATH>
                             </environmentVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-hawtio-to-standalone-fuse</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${app.server.jboss.home}/standalone-fuse/configuration</dir>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                    <stylesheet>${basedir}/src/main/resources/config/fuse/add-hawtio.xsl</stylesheet>
+                                    <outputDir>${app.server.jboss.home}/standalone-fuse/configuration</outputDir>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>move-configs-fuse</id>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Rename ./standalone to ./standalone-fuse" />
+                                <move file="${app.server.jboss.home}/standalone"
+                                      tofile="${app.server.jboss.home}/standalone-fuse" />
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>restore-configs-after-fuse-installation</id>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Rename ./standalone-default to ./standalone" />
+                                <move file="${app.server.jboss.home}/standalone-default"
+                                      tofile="${app.server.jboss.home}/standalone" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>

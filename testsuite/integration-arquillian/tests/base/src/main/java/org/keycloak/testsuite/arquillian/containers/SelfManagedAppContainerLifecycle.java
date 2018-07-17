@@ -17,11 +17,20 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 /**
- *
+ * The test implementing the interface is expected to maintain container lifecycle 
+ * itself. No app server container will be started.
+ * 
  * @author vramik
  */
 public interface SelfManagedAppContainerLifecycle {
-    
+
+    /**
+     * Should be called @Before
+     */
     void startServer();
+
+    /**
+     * Should be called @After
+     */
     void stopServer();
 }
