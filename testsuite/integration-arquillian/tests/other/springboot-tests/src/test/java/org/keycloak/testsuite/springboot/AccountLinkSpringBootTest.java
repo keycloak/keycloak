@@ -3,6 +3,7 @@ package org.keycloak.testsuite.springboot;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -158,6 +159,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
 
     @Test
+    @Ignore("KEYCLOAK-7868")
     public void testErrorConditions() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
