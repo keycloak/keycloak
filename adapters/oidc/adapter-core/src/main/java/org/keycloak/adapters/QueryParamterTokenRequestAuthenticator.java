@@ -16,9 +16,10 @@
  */
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
+
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:froehlich.ch@gmail.com">Christian Froehlich</a>
@@ -28,7 +29,7 @@ import org.keycloak.adapters.spi.HttpFacade;
  */
 public class QueryParamterTokenRequestAuthenticator extends BearerTokenRequestAuthenticator {
     public static final String ACCESS_TOKEN = "access_token";
-    protected Logger log = Logger.getLogger(QueryParamterTokenRequestAuthenticator.class);
+    protected Logger log = Logger.getLogger(QueryParamterTokenRequestAuthenticator.class.toString());
 
     public QueryParamterTokenRequestAuthenticator(KeycloakDeployment deployment) {
         super(deployment);

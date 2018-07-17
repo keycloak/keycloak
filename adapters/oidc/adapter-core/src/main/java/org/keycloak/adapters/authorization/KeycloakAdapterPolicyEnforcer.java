@@ -22,8 +22,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -48,7 +50,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
-    private static Logger LOGGER = Logger.getLogger(KeycloakAdapterPolicyEnforcer.class);
+    private static Logger LOGGER = Logger.getLogger(KeycloakAdapterPolicyEnforcer.class.toString());
 
     public KeycloakAdapterPolicyEnforcer(PolicyEnforcer policyEnforcer) {
         super(policyEnforcer);
@@ -108,9 +110,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 response.setStatus(403);
             }
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Sending challenge");
-            }
+            LOGGER.log(Level.FINE, "Sending challenge");
 
             return true;
         }
@@ -160,7 +160,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 authzRequest.setRpt(accessTokenString);
             }
 
-            LOGGER.debug("Obtaining authorization for authenticated user.");
+            LOGGER.log(Level.FINE, "Obtaining authorization for authenticated user.");
             AuthorizationResponse authzResponse;
 
             if (isBearerAuthorization(httpFacade)) {
@@ -174,7 +174,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
             }
         } catch (AuthorizationDeniedException ignore) {
-            LOGGER.debug("Authorization denied", ignore);
+            LOGGER.log(Level.FINE, "Authorization denied", ignore);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error during authorization request.", e);
         }

@@ -17,20 +17,21 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.representations.AccessToken;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AdapterUtils {
 
-    private static Logger log = Logger.getLogger(AdapterUtils.class);
+    private static Logger log = Logger.getLogger(AdapterUtils.class.toString());
 
     public static String generateId() {
         return UUID.randomUUID().toString();
@@ -40,23 +41,19 @@ public class AdapterUtils {
         Set<String> roles = null;
         AccessToken accessToken = session.getToken();
         if (session.getDeployment().isUseResourceRoleMappings()) {
-            if (log.isTraceEnabled()) {
-                log.trace("useResourceRoleMappings");
-            }
+            log.log(Level.FINEST,"useResourceRoleMappings");
             AccessToken.Access access = accessToken.getResourceAccess(session.getDeployment().getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
-            if (log.isTraceEnabled()) {
-                log.trace("use realm role mappings");
-            }
+            log.log(Level.FINEST,"use realm role mappings");
             AccessToken.Access access = accessToken.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
         if (roles == null) roles = Collections.emptySet();
-        if (log.isTraceEnabled()) {
-            log.trace("Setting roles: ");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST,"Setting roles: ");
             for (String role : roles) {
-                log.trace("   role: " + role);
+                log.log(Level.FINEST,"   role: " + role);
             }
         }
         return roles;

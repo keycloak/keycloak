@@ -18,7 +18,6 @@
 package org.keycloak.adapters.rotation;
 
 import org.apache.http.client.methods.HttpGet;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.HttpAdapterUtils;
 import org.keycloak.adapters.HttpClientAdapterException;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -30,6 +29,8 @@ import org.keycloak.util.JWKSUtils;
 import java.security.PublicKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * When needed, publicKeys are downloaded by sending request to realm's jwks_url
@@ -38,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JWKPublicKeyLocator implements PublicKeyLocator {
 
-    private static final Logger log = Logger.getLogger(JWKPublicKeyLocator.class);
+    private static final Logger log = Logger.getLogger(JWKPublicKeyLocator.class.toString());
 
     private Map<String, PublicKey> currentKeys = new ConcurrentHashMap<>();
 
@@ -63,7 +64,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
                 sendRequest(deployment);
                 lastRequestTime = currentTime;
             } else {
-                log.debug("Won't send request to realm jwks url. Last request time was " + lastRequestTime);
+                log.log(Level.FINE, "Won't send request to realm jwks url. Last request time was " + lastRequestTime);
             }
 
             return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
@@ -90,8 +91,8 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
 
     private void sendRequest(KeycloakDeployment deployment) {
-        if (log.isTraceEnabled()) {
-            log.trace("Going to send request to retrieve new set of realm public keys for client " + deployment.getResourceName());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Going to send request to retrieve new set of realm public keys for client " + deployment.getResourceName());
         }
 
         HttpGet getMethod = new HttpGet(deployment.getJwksUrl());
@@ -100,8 +101,8 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
             Map<String, PublicKey> publicKeys = JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
 
-            if (log.isDebugEnabled()) {
-                log.debug("Realm public keys successfully retrieved for client " +  deployment.getResourceName() + ". New kids: " + publicKeys.keySet().toString());
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Realm public keys successfully retrieved for client " +  deployment.getResourceName() + ". New kids: " + publicKeys.keySet().toString());
             }
 
             // Update current keys
@@ -109,7 +110,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
             currentKeys.putAll(publicKeys);
 
         } catch (HttpClientAdapterException e) {
-            log.error("Error when sending request to retrieve realm keys", e);
+            log.log(Level.SEVERE, "Error when sending request to retrieve realm keys", e);
         }
     }
 }

@@ -17,21 +17,21 @@
 
 package org.keycloak.adapters.rotation;
 
-import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.VerificationException;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 
 import java.security.PublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AdapterRSATokenVerifier {
 
-    private static final Logger log = Logger.getLogger(AdapterRSATokenVerifier.class);
+    private static final Logger log = Logger.getLogger(AdapterRSATokenVerifier.class.toString());
 
     public static AccessToken verifyToken(String tokenString, KeycloakDeployment deployment) throws VerificationException {
         return verifyToken(tokenString, deployment, true, true);
@@ -43,7 +43,7 @@ public class AdapterRSATokenVerifier {
 
         PublicKey publicKey = pkLocator.getPublicKey(kid, deployment);
         if (publicKey == null) {
-            log.errorf("Didn't find publicKey for kid: %s", kid);
+            log.log(Level.SEVERE, "Didn't find publicKey for kid: %s", kid);
             throw new VerificationException("Didn't find publicKey for specified kid");
         }
 

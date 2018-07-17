@@ -2,17 +2,16 @@ package org.keycloak.adapters.authentication;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.JsonWebToken;
 
 /**
@@ -23,7 +22,7 @@ import org.keycloak.representations.JsonWebToken;
  */
 public class JWTClientSecretCredentialsProvider implements ClientCredentialsProvider {
     
-	private static final Logger logger = Logger.getLogger(JWTClientSecretCredentialsProvider.class);
+	private static final Logger logger = Logger.getLogger(JWTClientSecretCredentialsProvider.class.toString());
 	
     public static final String PROVIDER_ID = "secret-jwt";
     

@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.jaas;
 
-import org.jboss.logging.Logger;
+import java.util.logging.Logger;
 import org.keycloak.common.VerificationException;
 
 /**
@@ -29,7 +29,7 @@ import org.keycloak.common.VerificationException;
  */
 public class BearerTokenLoginModule extends AbstractKeycloakLoginModule {
 
-    private static final Logger log = Logger.getLogger(BearerTokenLoginModule.class);
+    private static final Logger log = Logger.getLogger(BearerTokenLoginModule.class.toString());
 
     @Override
     protected Auth doAuth(String username, String password) throws VerificationException {

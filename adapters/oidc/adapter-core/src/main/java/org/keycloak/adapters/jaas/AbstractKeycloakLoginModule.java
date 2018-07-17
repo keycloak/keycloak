@@ -17,7 +17,8 @@
 
 package org.keycloak.adapters.jaas;
 
-import org.jboss.logging.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -74,7 +75,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
 
         String configFile = (String)options.get(KEYCLOAK_CONFIG_FILE_OPTION);
         rolePrincipalClass = (String)options.get(ROLE_PRINCIPAL_CLASS_OPTION);
-        getLogger().debug("Declared options: " + KEYCLOAK_CONFIG_FILE_OPTION + "=" + configFile + ", " + ROLE_PRINCIPAL_CLASS_OPTION + "=" + rolePrincipalClass);
+        getLogger().log(Level.FINE, "Declared options: " + KEYCLOAK_CONFIG_FILE_OPTION + "=" + configFile + ", " + ROLE_PRINCIPAL_CLASS_OPTION + "=" + rolePrincipalClass);
 
         if (configFile != null) {
             deployment = deployments.get(configFile);
@@ -104,7 +105,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
             return kd;
 
         } catch (RuntimeException e) {
-            getLogger().debug("Unable to find or parse file " + keycloakConfigFile + " due to " + e.getMessage(), e);
+            getLogger().log(Level.FINE, "Unable to find or parse file " + keycloakConfigFile + " due to " + e.getMessage(), e);
             throw e;
         }
     }
@@ -132,7 +133,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
                 return false;
             }
         } catch (UnsupportedCallbackException uce) {
-            getLogger().warn("Error: " + uce.getCallback().toString()
+            getLogger().warning("Error: " + uce.getCallback().toString()
                     + " not available to gather authentication information from the user");
             return false;
         } catch (Exception e) {
@@ -169,7 +170,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
                 Constructor<Principal> constructor = clazz.getDeclaredConstructor(String.class);
                 return constructor.newInstance(roleName);
             } catch (Exception e) {
-                getLogger().warn("Unable to create declared roleClass " + rolePrincipalClass + " due to " + e.getMessage());
+                getLogger().warning("Unable to create declared roleClass " + rolePrincipalClass + " due to " + e.getMessage());
             }
         }
 

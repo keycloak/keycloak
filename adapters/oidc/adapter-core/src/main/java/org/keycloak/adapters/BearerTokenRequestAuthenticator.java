@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -28,13 +27,17 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 
 import javax.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class BearerTokenRequestAuthenticator {
-    protected Logger log = Logger.getLogger(BearerTokenRequestAuthenticator.class);
+    protected Logger log = Logger.getLogger(BearerTokenRequestAuthenticator.class.toString());
     protected String tokenString;
     protected AccessToken token;
     protected String surrogate;
@@ -85,25 +88,25 @@ public class BearerTokenRequestAuthenticator {
     }
     
     protected AuthOutcome authenticateToken(HttpFacade exchange, String tokenString) {
-        log.debug("Verifying access_token");
-        if (log.isTraceEnabled()) {
+        log.log(Level.FINE, "Verifying access_token");
+        if (log.isLoggable(Level.FINEST)) {
             try {
                 JWSInput jwsInput = new JWSInput(tokenString);
                 String wireString = jwsInput.getWireString();
-                log.tracef("\taccess_token: %s", wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+                log.log(Level.FINEST, "\taccess_token: %s", wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
             } catch (JWSInputException e) {
-                log.errorf(e, "Failed to parse access_token: %s", tokenString);
+                log.log(Level.SEVERE, MessageFormat.format("Failed to parse access_token: %s", tokenString), e);
             }
         }
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
-            log.error("Failed to verify token", e);
+            log.log(Level.SEVERE,"Failed to verify token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
-            log.error("Stale token");
+            log.log(Level.SEVERE,"Stale token");
             challenge = challengeResponse(exchange,  OIDCAuthenticationError.Reason.STALE_TOKEN, "invalid_token", "Stale token");
             return AuthOutcome.FAILED;
         }
@@ -116,7 +119,7 @@ public class BearerTokenRequestAuthenticator {
         surrogate = null;
         if (verifyCaller) {
             if (token.getTrustedCertificates() == null || token.getTrustedCertificates().size() == 0) {
-                log.warn("No trusted certificates in token");
+                log.warning("No trusted certificates in token");
                 challenge = clientCertChallenge();
                 return AuthOutcome.FAILED;
             }
@@ -130,13 +133,13 @@ public class BearerTokenRequestAuthenticator {
 
             }
             if (chain == null || chain.length == 0) {
-                log.warn("No certificates provided by undertow to verify the caller");
+                log.warning("No certificates provided by undertow to verify the caller");
                 challenge = clientCertChallenge();
                 return AuthOutcome.FAILED;
             }
             surrogate = chain[0].getSubjectDN().getName();
         }
-        log.debug("successful authorized");
+        log.log(Level.FINE, "successful authorized");
         return AuthOutcome.AUTHENTICATED;
     }
 

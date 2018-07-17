@@ -33,7 +33,6 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.jboss.logging.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,6 +40,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,7 +49,7 @@ import java.util.List;
  */
 public class ServerRequest {
 
-	private static Logger logger = Logger.getLogger(ServerRequest.class);
+	private static Logger logger = Logger.getLogger(ServerRequest.class.toString());
 
     public static class HttpFailure extends Exception {
         private int status;
@@ -153,10 +154,10 @@ public class ServerRequest {
         }
         // https://tools.ietf.org/html/rfc7636#section-4
         if (codeVerifier != null) {
-            logger.debugf("add to POST parameters of Token Request, codeVerifier = %s", codeVerifier);
+            logger.log(Level.FINE, "add to POST parameters of Token Request, codeVerifier = %s", codeVerifier);
             formparams.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
         } else {
-            logger.debug("add to POST parameters of Token Request without codeVerifier");
+            logger.log(Level.FINE, "add to POST parameters of Token Request without codeVerifier");
         }
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());
