@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @resource Identity Providers
@@ -128,7 +129,13 @@ public class IdentityProviderResource {
             throw new javax.ws.rs.NotFoundException();
         }
 
-        this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
+        String alias = this.identityProviderModel.getAlias();
+        this.realm.removeIdentityProviderByAlias(alias);
+
+        Set<IdentityProviderMapperModel> mappers = this.realm.getIdentityProviderMappersByAlias(alias);
+        for (IdentityProviderMapperModel mapper : mappers) {
+            this.realm.removeIdentityProviderMapper(mapper);
+        }
 
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
