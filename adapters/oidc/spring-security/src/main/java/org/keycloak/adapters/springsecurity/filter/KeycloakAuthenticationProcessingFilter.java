@@ -174,10 +174,6 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
-            AuthenticatedActionsHandler actions = new AuthenticatedActionsHandler(deployment, OIDCHttpFacade.class.cast(facade));
-            if (actions.handledRequest()) {
-                return null;
-            }
             return authenticationManager.authenticate(authentication);
         }
         else {

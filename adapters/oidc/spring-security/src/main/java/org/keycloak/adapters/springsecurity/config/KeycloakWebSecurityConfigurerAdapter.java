@@ -23,6 +23,7 @@ import org.keycloak.adapters.springsecurity.AdapterDeploymentContextFactoryBean;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler;
+import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticatedActionsFilter;
 import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter;
 import org.keycloak.adapters.springsecurity.filter.KeycloakCsrfRequestMatcher;
 import org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter;
@@ -120,6 +121,7 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
                 .addFilterBefore(keycloakPreAuthActionsFilter(), LogoutFilter.class)
                 .addFilterBefore(keycloakAuthenticationProcessingFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(keycloakSecurityContextRequestFilter(), SecurityContextHolderAwareRequestFilter.class)
+                .addFilterAfter(keycloakAuthenticatedActionsRequestFilter(), KeycloakSecurityContextRequestFilter.class)
                 .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint())
                 .and()
                 .logout()
@@ -131,5 +133,10 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
     @Bean
     protected KeycloakSecurityContextRequestFilter keycloakSecurityContextRequestFilter() {
         return new KeycloakSecurityContextRequestFilter();
+    }
+
+    @Bean
+    protected KeycloakAuthenticatedActionsFilter keycloakAuthenticatedActionsRequestFilter() {
+        return new KeycloakAuthenticatedActionsFilter();
     }
 }
