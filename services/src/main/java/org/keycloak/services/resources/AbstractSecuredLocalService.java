@@ -21,9 +21,11 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,6 +34,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.TokenUtil;
 
@@ -89,8 +92,14 @@ public abstract class AbstractSecuredLocalService {
                                   @Context HttpHeaders headers) {
         try {
             if (error != null) {
-                logger.debug("error from oauth");
-                throw new ForbiddenException("error");
+                if (OAuthErrorException.ACCESS_DENIED.equals(error)) {
+                    // cased by CANCELLED_BY_USER or CONSENT_DENIED
+                    session.getContext().setClient(client);
+                    return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage(Response.Status.FORBIDDEN);
+                } else {
+                    logger.debug("error from oauth");
+                    throw new ForbiddenException("error");
+                }
             }
             if (path != null && !getValidPaths().contains(path)) {
                 throw new BadRequestException("Invalid path");
@@ -111,7 +120,6 @@ public abstract class AbstractSecuredLocalService {
                 logger.debug("state not specified");
                 throw new BadRequestException("state not specified");
             }
-
             KeycloakUriBuilder redirect = KeycloakUriBuilder.fromUri(getBaseRedirectUri());
             if (path != null) {
                 redirect.path(path);
