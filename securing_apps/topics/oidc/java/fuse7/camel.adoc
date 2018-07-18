@@ -6,9 +6,8 @@ You can secure Apache Camel endpoints implemented with the http://camel.apache.o
 
 Compared to the standard `undertow` component, `undertow-keycloak` component adds two new properties:
 
-- `configResolver` is a bean that supplies {project_name} configuration file to:
-  - `org.keycloak.adapters.osgi.BundleBasedKeycloakConfigResolver`: the {project_name} adapter configuration will be looked up inside the bundle and should be stored in `WEB-INF/keycloak.json` file.
-  - `org.keycloak.adapters.osgi.PathBasedKeycloakConfigResolver`: the {project_name} adapter configuration will be looked up as described in <<_fuse7_config_external_adapter,External adapter configuration>>.
+- `configResolver` is a resolver bean that supplies {project_name} adapter
+  configuration. Available resolvers are listed in <<_fuse7_config_external_adapter,Configuration Resolvers>> section.
 - `allowedRoles` is a comma-separated list of roles. User accessing the service has to have at least one role to be permitted the access.
 
 For example:

@@ -69,11 +69,12 @@ For example:
 . Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF. 
 
 [[_fuse7_config_external_adapter]]
-====== Configuring the External Adapter
+====== Configuration Resolvers
 
-If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead made available externally and loaded based on naming conventions, use this configuration method.
-
-To enable the functionality, add this section to your `/WEB_INF/web.xml` file:
+The `keycloak.json` adapter configuration file can be stored inside a bundle,
+which is default behaviour, or in a directory on a filesystem. To specify the
+actual source of the configuration file, set the `keycloak.config.resolver` deployment parameter to the desired configuration resolver class.
+For example, in a classic WAR application, set the `keycloak.config.resolver` context parameter in `web.xml` file like this:
 
 [source,xml]
 ----
@@ -83,8 +84,28 @@ To enable the functionality, add this section to your `/WEB_INF/web.xml` file:
 </context-param>
 ----
 
-That component uses `keycloak.config` or `karaf.etc` java properties to search for a base folder to locate the configuration.
-Then inside one of those folders it searches for a file called `<your_web_context>-keycloak.json`.
+The following resolvers are available for `keycloak.config.resolver`:
 
-So, for example, if your web application has context `my-portal`, then your adapter configuration is loaded from the  `$FUSE_HOME/etc/my-portal-keycloak.json` file.
+org.keycloak.adapters.osgi.BundleBasedKeycloakConfigResolver::
+  This is the default resolver. The configuration file is expected inside
+  the OSGi bundle that is being secured. By default, it loads file named `WEB-INF/keycloak.json` but this file name can be configured via `configLocation` property.
 
+org.keycloak.adapters.osgi.PathBasedKeycloakConfigResolver::
+  This resolver searches for a file called `<your_web_context>-keycloak.json` inside a folder
+  that is specified by `keycloak.config` system property. If `keycloak.config` is
+  not set, `karaf.etc` system property is used instead.
++
+For example, if your web application is deployed into context `my-portal`, then
+  your adapter configuration would be loaded either from the 
+  `${keycloak.config}/my-portal-keycloak.json` file, or from `${karaf.etc}/my-portal-keycloak.json`.
+
+org.keycloak.adapters.osgi.HierarchicalPathBasedKeycloakConfigResolver::
+  This resolver is similar to `PathBasedKeycloakConfigResolver` above, where
+  for given URI path, configuration locations are checked from most to least specific.
++
+For example, for `/my/web-app/context` URI, the following configuration locations are searched for existence until the first one exists:
+  
+  * `${karaf.etc}/my-web-app-context-keycloak.json`
+  * `${karaf.etc}/my-web-app-keycloak.json`
+  * `${karaf.etc}/my-keycloak.json`
+  * `${karaf.etc}/keycloak.json`
