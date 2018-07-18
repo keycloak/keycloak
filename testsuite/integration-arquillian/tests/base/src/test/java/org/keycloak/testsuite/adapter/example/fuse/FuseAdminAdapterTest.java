@@ -176,12 +176,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         assertCurrentUrlStartsWith(hawtio2Page.toString());
         WaitUtils.waitForPageToLoad();
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), 
-                allOf(
-                    containsString("keycloak-session-iframe"),//todo check this if it's correct
-                    not(containsString("Camel"))
-                )
-        );
+        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console']")).is().present();
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), not(containsString("Camel")));
     }    
 
     @Test
