@@ -494,6 +494,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         String mode = getMigrationMode();
         return "import".equals(mode);
     }
+
+    protected void testMigrationTo2_x() throws Exception {
+        testMigrationTo2_0_0();
+        testMigrationTo2_1_0();
+        testMigrationTo2_2_0();
+        testMigrationTo2_3_0();
+        testMigrationTo2_5_0();
+        testMigrationTo2_5_1();
+    }
+
     protected void testMigrationTo3_x() {
         // NOTE:
         testMigrationTo3_0_0();
@@ -506,12 +516,5 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo4_x() {
         testMigrationTo4_0_0();
         testMigrationTo4_2_0();
-    }
-
-
-    protected void testMigrationTo3_x_and_higher() {
-        // NOTE: add future methods
-        testMigrationTo3_x();
-        testMigrationTo4_x();
     }
 }
