@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
+public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Deployment
     @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
@@ -50,7 +49,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         Map<String, RealmRepresentation> reps = null;
         try {
-            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
+            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-3.4.3.Final.json"));
             masterRep = reps.remove("master");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -63,8 +62,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     }
 
     @Test
-    public void migration2_5_5Test() throws Exception {
-        testMigrationTo3_x();
+    public void migration3_4_3Test() throws Exception {
         testMigrationTo4_x();
     }
 
