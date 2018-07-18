@@ -131,8 +131,8 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-2-starter</artifactId>
-                <version>4.1.0.Final-SNAPSHOT</version>
+                <artifactId>keycloak-legacy-spring-boot-starter</artifactId>
+                <version>4.2.0.Final-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
