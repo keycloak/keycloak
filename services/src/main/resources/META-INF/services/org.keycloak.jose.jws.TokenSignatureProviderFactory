@@ -1,4 +1,4 @@
 # KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
 org.keycloak.jose.jws.RsassaTokenSignatureProviderFactory
 org.keycloak.jose.jws.HmacTokenSignatureProviderFactory
-
+org.keycloak.jose.jws.EcdsaTokenSignatureProviderFactory
