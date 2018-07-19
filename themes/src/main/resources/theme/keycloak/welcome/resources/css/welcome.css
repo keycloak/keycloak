@@ -1,0 +1,140 @@
+body {
+	background: #fff url(../bg.png) no-repeat center bottom fixed;
+	background-size: cover;
+}
+.welcome-header {
+	margin-top: 10px;
+	margin-bottom: 50px;
+	margin-left: -10px;
+}
+.welcome-header img {
+	width: 150px;
+	margin-bottom: 40px;
+}
+.welcome-message {
+	margin-top: 20px;
+}
+.h-l {
+	min-height: 370px;
+	padding: 10px 20px 10px;
+	overflow: hidden;
+}
+.h-l h3 {
+	margin-bottom: 10px;
+}
+.h-m {
+	height: 110px;
+	padding-top: 23px;
+}
+.card-pf img {
+	width: 22px;
+	margin-right: 10px;
+	vertical-align: bottom;
+}
+img.doc-img {
+	width: auto;
+	height: 22px;
+}
+.link {
+	font-size: 16px;
+	vertical-align: baseline;
+	margin-left: 5px;
+}
+h3 {
+	font-weight: 550;
+}
+h3 a:link,
+h3 a:visited {
+	color: #333;
+	font-weight: 550;
+}
+h3 a:hover,
+h3 a:hover .link {
+	text-decoration: none;
+	color: #00659c;
+}
+.h-l h3 a img {
+	height: 30px;
+	width: auto;
+}
+
+.description {
+	margin-top: 30px;
+}
+
+.card-pf {
+	border-top: 1px solid rgba(3, 3, 3, 0.1);
+	box-shadow: 0 1px 1px rgba(3, 3, 3, 0.275);
+}
+
+.welcome-form label,
+.welcome-form input {
+	display: block;
+	width: 100%;
+}
+
+.welcome-form label {
+	color: #828486;
+	font-weight: normal;
+	margin-top: 18px;
+}
+.welcome-form input {
+	border: 0;
+	border-bottom: solid 1px #cbcbcb;
+}
+.welcome-form input:focus {
+	border-bottom: solid 1px #5e99c6;
+	outline-width: 0;
+}
+.welcome-form button {
+	margin-top: 10px;
+}
+.error {
+  color: #c00;
+	border-color: #c00;
+	padding: 5px 10px;
+}
+.success {
+	color: #3f9c35;
+	border-color: #3f9c35;
+	padding: 5px 10px;
+}
+.welcome-form + .welcome-primary-link,
+.welcome-message + .welcome-primary-link {
+	display: none;
+}
+
+.footer img {
+	float: right;
+	width: 150px;
+	margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+	.welcome-header {
+		margin-top: 10px;
+		margin-bottom: 20px;
+	}
+	.welcome-header img {
+		margin-bottom: 20px;
+	}
+	h3 {
+		margin-top: 10px;
+	}
+	.h-l,
+	.h-m {
+		height: auto;
+		min-height: auto;
+		padding: 5px 10px;
+	}
+	.h-l img {
+		display: inline;
+		margin-bottom: auto;
+	}
+	.description {
+		display: none;
+	}
+	.footer img {
+		margin-top: 10px;
+	}
+}
