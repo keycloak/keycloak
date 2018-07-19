@@ -19,7 +19,9 @@ package org.keycloak.testsuite.forms;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.FlowStatus;
 import org.keycloak.authentication.authenticators.client.AbstractClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -35,38 +37,28 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
+public class DummyClientAuthenticator extends AbstractClientAuthenticator {
 
-    public static final String PROVIDER_ID = "testsuite-client-passthrough";
-    public static String clientId = "test-app";
+    public static final String PROVIDER_ID = "testsuite-client-dummy";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
+            AuthenticationExecutionModel.Requirement.ALTERNATIVE
     };
-
-    private static final List<ProviderConfigProperty> clientConfigProperties = new ArrayList<ProviderConfigProperty>();
-
-    static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty();
-        property.setName("passthroughauth.foo");
-        property.setLabel("Foo Property");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Foo Property of this authenticator, which does nothing");
-        clientConfigProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName("passthroughauth.bar");
-        property.setLabel("Bar Property");
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setHelpText("Bar Property of this authenticator, which does nothing");
-        clientConfigProperties.add(property);
-
-    }
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        ClientIdAndSecretAuthenticator authenticator = new ClientIdAndSecretAuthenticator();
+        authenticator.authenticateClient(context);
+        if (context.getStatus().equals(FlowStatus.SUCCESS)) {
+            return;
+        }
+
+        String clientId = context.getUriInfo().getQueryParameters().getFirst("client_id");
+
+        if (clientId == null) {
+            clientId = context.getSession().getAttribute("client_id", String.class);
+        }
+
         ClientModel client = context.getRealm().getClientByClientId(clientId);
         if (client == null) {
             context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
@@ -80,7 +72,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getDisplayType() {
-        return "Testsuite Dummy Client Validation";
+        return "Testsuite ClientId Dummy";
     }
 
     @Override
@@ -95,7 +87,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getHelpText() {
-        return "Testsuite dummy authenticator, which automatically authenticates hardcoded client (like 'test-app' )";
+        return "Dummy client authenticator, which authenticates the client with clientId only";
     }
 
     @Override
@@ -105,18 +97,12 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        return clientConfigProperties;
+        return Collections.emptyList();
     }
 
     @Override
     public Map<String, Object> getAdapterConfiguration(ClientModel client) {
-        Map<String, Object> props = new HashMap<>();
-        props.put("foo", "some foo value");
-        props.put("bar", true);
-
-        Map<String, Object> config = new HashMap<>();
-        config.put("dummy", props);
-        return config;
+        return Collections.emptyMap();
     }
 
     @Override

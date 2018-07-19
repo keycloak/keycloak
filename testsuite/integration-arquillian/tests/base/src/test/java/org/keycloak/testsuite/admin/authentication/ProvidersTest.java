@@ -81,11 +81,12 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header");
         addProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
                 "which automatically authenticates hardcoded client (like 'test-app' )");
+        addProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
+                "Dummy client authenticator, which authenticates the client with clientId only");
         addProviderInfo(expected, "client-x509", "X509 Certificate",
                 "Validates client based on a X509 Certificate");
         addProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
                 "Validates client based on signed JWT issued by client and signed with the Client Secret");
-
 
         compareProviders(expected, result);
     }

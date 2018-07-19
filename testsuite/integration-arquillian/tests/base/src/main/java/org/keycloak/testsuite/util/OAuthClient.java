@@ -148,6 +148,8 @@ public class OAuthClient {
     private String codeChallengeMethod;
     private String origin;
 
+    private boolean openid = true;
+
     private Supplier<CloseableHttpClient> httpClient = OAuthClient::newCloseableHttpClient;
 
     public class LogoutUrlBuilder {
@@ -212,6 +214,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        openid = true;
     }
 
     public void setDriver(WebDriver driver) {
@@ -773,8 +776,10 @@ public class OAuthClient {
             b.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
         }
 
-        String scopeParam = TokenUtil.attachOIDCScope(scope);
-        b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+        String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+        if (scopeParam != null && !scopeParam.isEmpty()) {
+            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+        }
 
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
@@ -880,6 +885,11 @@ public class OAuthClient {
 
     public OAuthClient scope(String scope) {
         this.scope = scope;
+        return this;
+    }
+
+    public OAuthClient openid(boolean openid) {
+        this.openid = openid;
         return this;
     }
 
