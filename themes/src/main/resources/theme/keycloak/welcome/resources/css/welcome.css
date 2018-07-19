@@ -1,0 +1,114 @@
+body {
+	background: #fff url(../bg.png) no-repeat center bottom fixed;
+	background-size: cover;
+}
+.welcome-header {
+	margin-top: 20px;
+	margin-bottom: 50px;
+	margin-left: -10px;
+}
+.welcome-header img {
+	width: 150px;
+	margin-bottom: 50px;
+}
+.welcome-message {
+	margin-top: 20px;
+}
+.h-l {
+	height: 340px;
+	padding: 20px;
+	overflow: hidden;
+}
+.h-m {
+	height: 100px;
+	padding-top: 25px;
+}
+.card-pf img {
+	width: 22px;
+	margin-right: 10px;
+	vertical-align: bottom;
+}
+.h-l img {
+	display: block;
+	margin-bottom: 20px;
+}
+h3 a:link,
+h3 a:visited {
+	color: #333;
+	font-weight: 600;
+}
+h3 a:hover {
+	text-decoration: none;
+}
+
+.description {
+	margin-top: 30px;
+}
+
+.welcome-form label,
+.welcome-form input {
+	display: block;
+	width: 100%;
+}
+
+.welcome-form label {
+	color: #828486;
+	font-weight: normal;
+}
+.welcome-form input {
+	border: 0;
+	border-bottom: solid 1px #cbcbcb;
+}
+.welcome-form input:focus {
+	border-bottom: solid 1px #5e99c6;
+	outline-width: 0;
+}
+.welcome-form button {
+	border-radius: 20px;
+	background-color: #3277b2;
+	color: #fff;
+	padding: 3px 20px;
+	margin-top: 10px;
+}
+.error {
+    color: #c00;
+}
+.success {
+    color: #3f9c35;
+}
+.welcome-form + .welcome-primary-link,
+.welcome-message + .welcome-primary-link {
+	display: none;
+}
+
+.footer img {
+	float: right;
+	width: 150px;
+	margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+	.welcome-header {
+		margin-top: 10px;
+		margin-bottom: 20px;
+	}
+	.welcome-header img {
+		margin-bottom: 20px;
+	}
+
+	.h-l,
+	.h-m {
+		height: auto;
+		padding: 10px;
+	}
+	.h-l img {
+		display: inline;
+		margin-bottom: auto;
+	}
+	.description {
+		display: none;
+	}
+	.footer img {
+		margin-top: 10px;
+	}
+}
