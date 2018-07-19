@@ -1,10 +1,10 @@
 
 [[_fuse7_adapter_cxf_builtin]]
-===== Securing an Apache CXF Endpoint on the Default Jetty Engine
+===== Securing an Apache CXF Endpoint on the Default Undertow Engine
 
-Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Securing such endpoints can be complicated. One approach, which {project_name} is currently using, is `ServletReregistrationService` which undeploys a built-in servlet at startup, enabling you to redeploy it on a context secured by {project_name}.
+Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Fuse's Pax Web supports altering existing contexts via configuration admin. This can be used to secure endpoints by {project_name}.
 
-The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application might resemble the one below. Note that it adds the JAX-RS `customerservice` endpoint, which is endpoint-specific to your application, but more importantly, secures the entire `/cxf` context.
+The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application might resemble the one below. Note that it adds the JAX-RS `customerservice` endpoint, which is endpoint-specific to your application.
 
 [source,xml]
 ----
@@ -17,7 +17,6 @@ The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your applicatio
 		http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd">
 
     <!-- JAXRS Application -->
-
     <bean id="customerBean" class="org.keycloak.example.rs.CxfCustomerService" />
 
     <jaxrs:server id="cxfJaxrsServer" address="/customerservice">
@@ -28,47 +27,41 @@ The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your applicatio
             <ref component-id="customerBean" />
         </jaxrs:serviceBeans>
     </jaxrs:server>
-
-
-    <!-- Securing of whole /cxf context by unregister default cxf servlet from paxweb and re-register with applied security constraints -->
-    <bean id="cxfConstraintMapping" class="org.keycloak.adapters.osgi.PaxWebSecurityConstraintMapping">
-        <!-- user accessing the servise has to have at least one of the following roles -->
-        <property name="roles">
-            <list>
-                <value>user</value>
-            </list>
-        </property>
-        <property name="url" value="/cxf/*" />
-        <property name="authentication" value="true"/>
-    </bean>
-
-    <bean id="cxfKeycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService"
-          init-method="start" destroy-method="stop">
-        <property name="bundleContext" ref="blueprintBundleContext" />
-        <property name="constraintMappings">
-            <list>
-                <ref component-id="cxfConstraintMapping" />
-            </list>
-        </property>
-    </bean>
-
-    <bean id="defaultCxfReregistration" class="org.keycloak.adapters.osgi.ServletReregistrationService" depends-on="cxfKeycloakPaxWebIntegration"
-          init-method="start" destroy-method="stop">
-        <property name="bundleContext" ref="blueprintBundleContext" />
-        <property name="managedServiceReference">
-            <reference interface="org.osgi.service.cm.ManagedService" filter="(service.pid=org.apache.cxf.osgi)" timeout="5000"  />
-        </property>
-    </bean>
-
 </blueprint>
 ----
 
-As a result, all other CXF services running on the default CXF HTTP destination are also secured. Similarly, when the application is undeployed, the entire `/cxf` context becomes unsecured as well. For this reason, use your own undertow engine for your applications as described in <<_fuse7_adapter_cxf_separate,Secure CXF Application on separate Undertow Engine>> since that gives you more control over security for each individual application.
+Furthermore, you have to create `${karaf.etc}/org.ops4j.pax.web.context-_anyName_.cfg file`. It will be treated as factory PID configuration that is tracked by `pax-web-runtime` bundle. Such configuration may contain the following properties that correspond to some of the properties of standard `web.xml`:
 
-* The `WEB-INF` directory might need to be inside your project (even if your project is not a web application). You might also need to edit the `/WEB-INF/keycloak.json` file similarly to <<_fuse7_adapter_classic_war,Classic WAR application>>.
-Note that you do not need the `web.xml` file as the security constraints are declared in the blueprint configuration file.
+[source, subs="attributes"]
+----
+bundle.symbolicName = org.apache.cxf.cxf-rt-transports-http
+context.id = default
 
-* The `Import-Package` in `META-INF/MANIFEST.MF` must contain at least these imports:
+context.param.keycloak.config.resolver = org.keycloak.adapters.osgi.HierarchicalPathBasedKeycloakConfigResolver
+
+login.config.authMethod = KEYCLOAK
+
+security.cxf.url = /cxf/customerservice/*
+security.cxf.roles = admin, user
+----
+
+For full description of available properties in configuration admin file, please refer to Fuse documentation. The properties above have the following meaning:
+
+`bundle.symbolicName` and `context.id`::
+  Identification of the bundle and its deployment context within `org.ops4j.pax.web.service.WebContainer`.
+`context.param.keycloak.config.resolver`::
+  Provides value of `keycloak.config.resolver` context parameter to the bundle just the same as in `web.xml` for classic WARs. Available resolvers are described in <<_fuse7_config_external_adapter,Configuration Resolvers>> section.
+`login.config.authMethod`::
+  Authentication method. Must be `KEYCLOAK`.
+`security._anyName_.url` and `security._anyName_.roles`::
+  Values of properties of individual security constraints just as they would be set in `security-constraint/web-resource-collection/url-pattern` and `security-constraint/auth-constraint/role-name` in `web.xml`, respectively. Roles are separated by comma and whitespace around it. The `_anyName_` identifier can be arbitrary but must match for individual properties of the same security constraint.
++
+[NOTE]
+====
+Some Fuse versions contain a bug that requires roles to be separated by `", "` (comma and single space). Make sure you use precisely this notation for separating the roles.
+====
+
+The `Import-Package` in `META-INF/MANIFEST.MF` must contain at least these imports:
 
 [source, subs="attributes"]
 ----
@@ -77,6 +70,5 @@ META-INF.cxf;version="[2.7,3.3)",
 META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
 org.apache.cxf.transport.http;version="[2.7,3.3)",
 org.apache.cxf.*;version="[2.7,3.3)",
-com.fasterxml.jackson.jaxrs.json;version="${jackson.version}",
-org.keycloak.*;version="${project.version}",
+com.fasterxml.jackson.jaxrs.json;version="${jackson.version}"
 ----
