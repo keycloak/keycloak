@@ -1,3 +1,12 @@
+config:edit --factory --alias cxf org.ops4j.pax.web.context
+config:property-set bundle.symbolicName org.apache.cxf.cxf-rt-transports-http
+config:property-set context.id default
+config:property-set context.param.keycloak.config.resolver org.keycloak.adapters.osgi.HierarchicalPathBasedKeycloakConfigResolver
+config:property-set login.config.authMethod KEYCLOAK
+config:property-set security.cxf.url /cxf/customerservice/*
+config:property-set security.cxf.roles "admin, user"
+config:update
+
 config:edit org.apache.karaf.shell
 config:property-set sshRealm keycloak
 config:update
