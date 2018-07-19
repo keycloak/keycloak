@@ -16,3 +16,4 @@
 #
 
 org.keycloak.testsuite.forms.PassThroughClientAuthenticator
+org.keycloak.testsuite.forms.DummyClientAuthenticator

@@ -89,6 +89,10 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         if (client_id == null) {
+            client_id = context.getSession().getAttribute("client_id", String.class);
+        }
+
+        if (client_id == null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
             context.challenge(challengeResponse);
             return;

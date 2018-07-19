@@ -106,6 +106,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public <T> T getAttribute(String attribute, Class<T> clazz) {
+        Object value = getAttribute(attribute);
+        return value != null && clazz.isInstance(value) ? (T) value : null;
+    }
+
+    @Override
     public Object removeAttribute(String attribute) {
         return attributes.remove(attribute);
     }
