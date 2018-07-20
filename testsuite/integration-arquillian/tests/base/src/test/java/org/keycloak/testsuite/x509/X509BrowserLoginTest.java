@@ -33,11 +33,16 @@ import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 import javax.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.util.DroneUtils;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -483,4 +488,33 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginAsUserFromCertSubjectEmail();
     }
 
+    // KEYCLOAK-6866
+    @Test
+    public void changeLocaleOnX509InfoPage() {
+        ProfileAssume.assumeCommunity();
+        
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        log.debug("Open confirm page");
+        loginConfirmationPage.open();
+        
+        log.debug("check if on confirm page");
+        Assert.assertThat(loginConfirmationPage.getSubjectDistinguishedNameText(), startsWith("EMAILADDRESS=test-user@localhost"));
+        log.debug("check if locale is EN");
+        Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("English")));
+        
+        log.debug("change locale to DE");
+        loginConfirmationPage.openLanguage("Deutsch");
+        log.debug("check if locale is DE");
+        Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
+        Assert.assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
+        
+        log.debug("confirm cert");
+        loginConfirmationPage.confirm();
+        
+        log.debug("check if logged in");
+        Assert.assertThat(appPage.getRequestType(), is(equalTo(AppPage.RequestType.AUTH_RESPONSE)));
+    }
 }

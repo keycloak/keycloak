@@ -35,6 +35,7 @@ import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
@@ -62,6 +63,7 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
 
+
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 
 /**
@@ -75,7 +77,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response.Status status;
     protected javax.ws.rs.core.MediaType contentType;
     protected List<ClientScopeModel> clientScopesRequested;
-    protected Map<String, String> httpResponseHeaders = new HashMap<String, String>();
+    protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
     protected String execution;
 
@@ -95,12 +97,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected UserModel user;
 
-    protected final Map<String, Object> attributes = new HashMap<String, Object>();
+    protected final Map<String, Object> attributes = new HashMap<>();
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
-        this.attributes.put("scripts", new LinkedList<String>());
+        this.attributes.put("scripts", new LinkedList<>());
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
         this.uriInfo = session.getContext().getUri();
@@ -203,6 +205,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
+                break;
+            case X509_CONFIRM:
+                attributes.put("x509", new X509ConfirmBean(formData));
                 break;
         }
 
@@ -342,7 +347,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        FormMessage msg = new FormMessage(message, parameters);
+        FormMessage msg = new FormMessage(message, (Object[]) parameters);
         return formatMessage(msg, messagesBundle, locale);
     }
 
@@ -383,6 +388,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 if (page != null) {
                     switch (page) {
                         case LOGIN:
+                            b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
+                            break;
+                        case X509_CONFIRM:
                             b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
                             break;
                         case REGISTER:
@@ -508,6 +516,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.CODE);
     }
 
+    @Override
+    public Response createX509ConfirmPage() {
+        return createResponse(LoginFormsPages.X509_CONFIRM);
+    }
+
     protected void setMessage(MessageType type, String message, Object... parameters) {
         messageType = type;
         messages = new ArrayList<>();
@@ -629,14 +642,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.status = status;
         return this;
     }
+
     @Override
     public LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type) {
         this.contentType = type;
         return this;
     }
-
-
-
 
     @Override
     public LoginFormsProvider setActionUri(URI actionUri) {
