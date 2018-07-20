@@ -10,13 +10,56 @@ go to the `Brute Force Detection` sub-tab.
 .Brute Force Detection
 image:{project_images}/brute-force.png[]
 
-The way this works is that if there are `Max Login Failures` during a period of `Failure Reset Time`,
-the account is temporarily disabled for the `Wait Increment` multiplied by the number of failures over the max.  After
-`Failure Reset Time` is reached all failures are wiped clean.  The `Max Wait` is the maximum amount of time
-an account can be disabled.  Another preventive measure is that if there are subsequent login failures for one
-account that are too quick for a human to initiate the account will be disabled.  This is controlled by the
-`Quick Login Check Milli Seconds` value.  So, if there are two login failures for the same account within that value,
-the account will be disabled for `Minimum Quick Login Wait`.
+There are 2 different configurations for brute force detection; permanent lockout and temporary lockout. Permanent lockout will disable a user's account after an attack is detected; the account will be disabled until an administrator renables it. Temporary lockout will disable a user's account for a time period after an attack is detected; the time period for which the account is disabled increases the longer the attack continues.
+
+*Common Parameters*
+====
+Max Login Failures::
+  Maximum number of login failures permitted. Default value is 30.
+Quick Login Check Milli Seconds::
+  Minimum time required between login attempts. Default is 1000.
+Minimum Quick Login Wait::
+  Minimum amount of time the user will be temporarily disabled if logins attempts are quicker than _Quick Login Check Milli Seconds_. Default is 1 minute.
+====
+
+*Temporary Lockout Parameters*
+====
+Wait Increment::
+  Amount of time added to the time a user is temporarily disabled after each time _Max Login Failures_ is reached. Default is 1 minute.
+Max Wait::
+  The maximum amount of time for which a user will be temporarily disabled. Default is 15 minutes.
+Failure Reset Time::
+  Time after which the failure count will be reset; timer runs from the last failed login. Default is 12 hours.
+====
+
+*Permanent Lockout Algorithm*
+====
+. On successful login
+.. Reset `count`
+. On failed login
+.. Increment `count`
+.. If `count` greater than _Max Login Failures_
+... Permanently disable user
+.. Else if time between this failure and the last failure is less than _Quick Login Check Milli Seconds_
+... Temporarily disable user for _Minimum Quick Login Wait_
+
+When a user is disabled they can not login until an administrator enables the user; enabling an account resets `count`.
+====
+
+*Temporary Lockout Algorithm*
+====
+. On successful login
+.. Reset `count`
+. On failed login
+.. If time between this failure and the last failure is greater than _Failure Reset Time_
+... Reset `count`
+.. Increment `count`
+.. Calculate `wait` using _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division so will always be rounded down to a whole number
+.. If `wait` equals 0 and time between this failure and the last failure is less than _Quick Login Check Milli Seconds_ then set `wait` to _Minimum Quick Login Wait_ instead
+... Temporarily disable the user for the smaller of `wait` and _Max Wait_ seconds
+
+Login failures when a user is temporarily disabled do not increment `count`.
+====
 
 The downside of {project_name} brute force detection is that the server becomes vulnerable to denial of service attacks.
 An attacker can simply try to guess passwords for any accounts it knows and these account will be disabled.
