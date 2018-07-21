@@ -26,6 +26,7 @@ import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -56,17 +57,21 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -169,6 +174,16 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         response.close();
     }
 
+    // KEYCLOAK-7823
+    @Test
+    public void spnegoLoginWithRequiredKerberosAuthExecutionTest() {
+        AuthenticationExecutionModel.Requirement oldRequirement = updateKerberosAuthExecutionRequirement(
+                AuthenticationExecutionModel.Requirement.REQUIRED);
+        Response response = spnegoLogin("hnelson", "secret");
+        updateKerberosAuthExecutionRequirement(oldRequirement);
+
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    }
 
     protected OAuthClient.AccessTokenResponse spnegoLoginTestImpl() throws Exception {
         Response spnegoResponse = spnegoLogin("hnelson", "secret");
@@ -445,6 +460,28 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString());
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
+    }
+
+    private AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement) {
+        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = testRealmResource()
+                .flows()
+                .getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW)
+                .stream()
+                .filter(e -> e.getProviderId().equals(SpnegoAuthenticatorFactory.PROVIDER_ID))
+                .findFirst();
+
+        Assert.assertTrue(kerberosAuthExecutionOpt.isPresent());
+
+        AuthenticationExecutionInfoRepresentation kerberosAuthExecution = kerberosAuthExecutionOpt.get();
+        String oldRequirementStr = kerberosAuthExecution.getRequirement();
+        AuthenticationExecutionModel.Requirement oldRequirement = AuthenticationExecutionModel.Requirement.valueOf(oldRequirementStr);
+        kerberosAuthExecution.setRequirement(requirement.name());
+
+        testRealmResource()
+                .flows()
+                .updateExecutions(DefaultAuthenticationFlows.BROWSER_FLOW, kerberosAuthExecution);
+
+        return oldRequirement;
     }
     
     @Override
