@@ -41,6 +41,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
+import org.keycloak.services.messages.Messages;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -119,7 +120,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         assertEquals("bobby@localhost", user.getEmail());
 
         user.setEmail("john-doh@localhost");
-        updateError(user, 409, "email_exists");
+        updateError(user, 409, Messages.EMAIL_EXISTS);
 
         user.setEmail("test-user@localhost");
         user = updateAndGet(user);
@@ -131,7 +132,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         assertEquals("updatedusername", user.getUsername());
 
         user.setUsername("john-doh@localhost");
-        updateError(user, 409, "username_exists");
+        updateError(user, 409, Messages.USERNAME_EXISTS);
 
         user.setUsername("test-user@localhost");
         user = updateAndGet(user);
@@ -142,7 +143,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         adminClient.realm("test").update(realmRep);
 
         user.setUsername("updatedUsername2");
-        updateError(user, 400, "username_read_only");
+        updateError(user, 400, Messages.READ_ONLY_USERNAME);
     }
 
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {

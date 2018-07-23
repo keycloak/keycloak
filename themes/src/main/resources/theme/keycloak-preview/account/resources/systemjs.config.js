@@ -31,6 +31,9 @@
       // patternfly-ng
       'patternfly-ng/navigation': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
       'patternfly-ng/utilities': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
+      'patternfly-ng/notification': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
+      'patternfly-ng/notification/inline-notification': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
+      'patternfly-ng/notification/notification-service': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
       
       // unused patternfly-ng dependencies
       'angular-tree-component': '@empty',
@@ -44,10 +47,6 @@
       'ngx-bootstrap/dropdown': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
       'ngx-bootstrap/popover': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
       'ngx-bootstrap/tooltip': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
-    
-      // patternfly-ng currently requires us to install transpiler.  Need to get rid of this.
-      'plugin-babel': 'npm:systemjs-plugin-babel/plugin-babel.js',
-      'systemjs-babel-build': 'npm:systemjs-plugin-babel/systemjs-babel-browser.js'
     },
     
     bundles: {

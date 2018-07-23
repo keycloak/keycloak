@@ -28,30 +28,28 @@ import { KeycloakService } from './keycloak-service/keycloak.service';
 import { KEYCLOAK_HTTP_PROVIDER } from './keycloak-service/keycloak.http';
 import {KeycloakGuard} from './keycloak-service/keycloak.guard';
 
-import {ResponsivenessService} from './responsiveness-service/responsiveness.service'
+import {ResponsivenessService} from './responsiveness-service/responsiveness.service';
+import {KeycloakNotificationService} from './notification/keycloak-notification.service';
 
 import { AccountServiceClient } from './account-service/account.service';
 import {TranslateUtil} from './ngx-translate/translate.util';
 
 import { DeclaredVarTranslateLoader } from './ngx-translate/declared.var.translate.loader';
 import { AppComponent } from './app.component';
-import { TopNavComponent } from './top-nav/top-nav.component';
-import { NotificationComponent } from './top-nav/notification.component';
-import { ToastNotifier } from './top-nav/toast.notifier';
-import { SideNavComponent } from './side-nav/side-nav.component';
 import {VerticalNavComponent} from './vertical-nav/vertical-nav.component';
+import {InlineNotification} from './notification/inline-notification-component';
 
-import { NavigationModule } from 'patternfly-ng/navigation';
+import { VerticalNavigationModule } from 'patternfly-ng/navigation';
+import {InlineNotificationModule} from 'patternfly-ng/notification/inline-notification';
+
 
 /* Routing Module */
 import { AppRoutingModule } from './app-routing.module';
 
 const decs = [
     AppComponent,
-    TopNavComponent,
-    NotificationComponent,
-    SideNavComponent,
     VerticalNavComponent,
+    InlineNotification,
 ];
 
 export const ORIGINAL_INCOMING_URL: Location = window.location;
@@ -62,7 +60,8 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
     BrowserModule,
     FormsModule,
     HttpModule,
-    NavigationModule,
+    VerticalNavigationModule,
+    InlineNotificationModule,
     TranslateModule.forRoot({
         loader: {provide: TranslateLoader, useClass: DeclaredVarTranslateLoader}
     }),
@@ -73,9 +72,9 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
     KeycloakGuard,
     KEYCLOAK_HTTP_PROVIDER,
     ResponsivenessService,
+    KeycloakNotificationService,
     AccountServiceClient,
     TranslateUtil,
-    ToastNotifier,
     { provide: LocationStrategy, useClass: HashLocationStrategy }
   ],
   bootstrap: [AppComponent]

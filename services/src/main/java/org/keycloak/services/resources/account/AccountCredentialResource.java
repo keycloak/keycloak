@@ -20,6 +20,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import org.keycloak.models.ModelException;
+import org.keycloak.services.messages.Messages;
 
 public class AccountCredentialResource {
 
@@ -62,10 +64,14 @@ public class AccountCredentialResource {
         UserCredentialModel cred = UserCredentialModel.password(update.getCurrentPassword());
         if (!session.userCredentialManager().isValid(realm, user, cred)) {
             event.error(org.keycloak.events.Errors.INVALID_USER_CREDENTIALS);
-            return ErrorResponse.error(Errors.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST);
+            return ErrorResponse.error(Messages.INVALID_PASSWORD_EXISTING, Response.Status.BAD_REQUEST);
         }
 
-        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(update.getNewPassword(), false));
+        try {
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(update.getNewPassword(), false));
+        } catch (ModelException e) {
+            return ErrorResponse.error(e.getMessage(), e.getParameters(), Response.Status.BAD_REQUEST);
+        }
 
         return Response.ok().build();
     }

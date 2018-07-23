@@ -22,6 +22,7 @@ package org.keycloak.representations.idm;
  */
 public class ErrorRepresentation {
     private String errorMessage;
+    private Object[] params;
 
     public ErrorRepresentation() {
     }
@@ -32,5 +33,13 @@ public class ErrorRepresentation {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+    
+    public Object[] getParams() {
+        return this.params;
+    }
+    
+    public void setParams(Object[] params) {
+        this.params = params;
     }
 }
