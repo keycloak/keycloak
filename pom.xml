@@ -1631,8 +1631,32 @@
                 <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
                 <product.version>${product.rhsso.version}</product.version>
                 <product.default-profile>product</product.default-profile>
-                <product.filename.version>7.3</product.filename.version>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>set-product-filename-version</id>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <name>product.filename.version</name>
+                                    <value>${product.rhsso.version}</value>
+                                    <regex>^(\d+\.\d+).*$</regex>
+                                    <replacement>$1</replacement>
+                                    <failIfNoMatch>true</failIfNoMatch>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
