@@ -27,13 +27,19 @@ export class TranslateUtil {
     constructor(private translator: TranslateService) {
     }
     
-    public translate(key: string) : string {
+    public translate(key: string, params?: Array<any>): string {
         // remove Freemarker syntax
         if (key.startsWith('${') && key.endsWith('}')) {
             key = key.substring(2, key.length - 1);
         }
         
-        return this.translator.instant(key);
+        const ngTranslateParams = {};
+        for (let i in params) {
+            let paramName: string = 'param_' + i;
+            ngTranslateParams[paramName] = params[i];
+        }
+        
+        return this.translator.instant(key, ngTranslateParams);
     }
 }
 

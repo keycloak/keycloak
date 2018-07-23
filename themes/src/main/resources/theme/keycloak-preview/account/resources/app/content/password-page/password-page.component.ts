@@ -18,7 +18,10 @@ import {Component, OnInit, ViewChild, Renderer2} from '@angular/core';
 import {Response} from '@angular/http';
 import {FormGroup} from '@angular/forms';
 
+import {NotificationType} from 'patternfly-ng/notification';
+
 import {AccountServiceClient} from '../../account-service/account.service';
+import {KeycloakNotificationService} from '../../notification/keycloak-notification.service';
 
 @Component({
     selector: 'app-password-page',
@@ -30,18 +33,34 @@ export class PasswordPageComponent implements OnInit {
     @ViewChild('formGroup') private formGroup: FormGroup;
     private lastPasswordUpdate: number;
     
-    constructor(private accountSvc: AccountServiceClient, private renderer: Renderer2) {
+    constructor(private accountSvc: AccountServiceClient, 
+                private renderer: Renderer2,
+                protected kcNotifySvc: KeycloakNotificationService,) {
         this.accountSvc.doGetRequest("/credentials/password", (res: Response) => this.handleGetResponse(res));
     }
     
     public changePassword() {
         console.log("posting: " + JSON.stringify(this.formGroup.value));
+        if (!this.confirmationMatches()) return;
         this.accountSvc.doPostRequest("/credentials/password", (res: Response) => this.handlePostResponse(res), this.formGroup.value);
         this.renderer.selectRootElement('#password').focus();
     }
     
+    private confirmationMatches(): boolean {
+        const newPassword: string = this.formGroup.value['newPassword'];
+        const confirmation: string = this.formGroup.value['confirmation'];
+        
+        const matches: boolean = newPassword === confirmation;
+        
+        if (!matches) {
+            this.kcNotifySvc.notify('notMatchPasswordMessage', NotificationType.DANGER)
+        }
+        
+        return matches;
+    }
+    
     protected handlePostResponse(res: Response) {
-      console.log('**** response from account POST ***');
+      console.log('**** response from password POST ***');
       console.log(JSON.stringify(res));
       console.log('***************************************');
       this.formGroup.reset();
@@ -49,7 +68,7 @@ export class PasswordPageComponent implements OnInit {
     }
     
     protected handleGetResponse(res: Response) {
-        console.log('**** response from account POST ***');
+        console.log('**** response from password GET ***');
         console.log(JSON.stringify(res));
         console.log('***************************************');
         this.lastPasswordUpdate = res.json()['lastUpdate'];

@@ -25,9 +25,9 @@ export class VerticalNavComponent implements OnInit {
     private referrer: Referrer;
 
     navigationItems: NavigationItemConfig[];
-
+    
     constructor(private keycloakService: KeycloakService,
-        private translateUtil: TranslateUtil, ) {
+                private translateUtil: TranslateUtil ) {
         this.referrer = new Referrer(translateUtil);
     }
 

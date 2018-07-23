@@ -1,0 +1,29 @@
+.faux-layout {
+    position: fixed;
+    top: 37px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f5f5f5;
+    padding-top: 15px;
+    z-index: 1100;
+}
+.example-page-container.container-fluid {
+    position: fixed;
+    top: 37px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f5f5f5;
+    padding-top: 15px;
+}
+
+.hide-vertical-nav {
+    margin-top: 15px;
+    margin-left: 30px;
+}
+
+.navbar-brand-txt {
+    line-height: 34px;
+}
+

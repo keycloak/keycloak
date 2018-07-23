@@ -54,6 +54,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.services.messages.Messages;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -146,27 +147,27 @@ public class AccountRestService {
                 if (usernameChanged) {
                     UserModel existing = session.users().getUserByUsername(userRep.getUsername(), realm);
                     if (existing != null) {
-                        return ErrorResponse.exists(Errors.USERNAME_EXISTS);
+                        return ErrorResponse.exists(Messages.USERNAME_EXISTS);
                     }
 
                     user.setUsername(userRep.getUsername());
                 }
             } else if (usernameChanged) {
-                return ErrorResponse.error(Errors.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
+                return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
             }
 
             boolean emailChanged = userRep.getEmail() != null && !userRep.getEmail().equals(user.getEmail());
             if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByEmail(userRep.getEmail(), realm);
                 if (existing != null) {
-                    return ErrorResponse.exists(Errors.EMAIL_EXISTS);
+                    return ErrorResponse.exists(Messages.EMAIL_EXISTS);
                 }
             }
 
             if (realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByUsername(userRep.getEmail(), realm);
                 if (existing != null) {
-                    return ErrorResponse.exists(Errors.USERNAME_EXISTS);
+                    return ErrorResponse.exists(Messages.USERNAME_EXISTS);
                 }
             }
 
@@ -200,7 +201,7 @@ public class AccountRestService {
 
             return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
         } catch (ReadOnlyException e) {
-            return ErrorResponse.error(Errors.READ_ONLY_USER, Response.Status.BAD_REQUEST);
+            return ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
         }
     }
 
