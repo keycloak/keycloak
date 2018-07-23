@@ -44,6 +44,6 @@ public class AuthzResourceUseMoreURIs extends CustomKeycloakTask {
 
     @Override
     protected String getTaskId() {
-        return "Update 4.2.0.Final-SNAPSHOT";
+        return "Update 4.2.0.Final";
     }
 }
