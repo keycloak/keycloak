@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
@@ -92,6 +93,7 @@ public class AccountCredentialResource {
 
     }
 
+    @JsonIgnoreProperties(ignoreUnknown=true)
     public static class PasswordUpdate {
 
         private String currentPassword;
