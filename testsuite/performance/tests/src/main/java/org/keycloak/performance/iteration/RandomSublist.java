@@ -1,9 +1,12 @@
 package org.keycloak.performance.iteration;
 
 import java.util.AbstractList;
+import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang.Validate;
 import static org.keycloak.performance.iteration.RandomIntegers.getRandomIntegers;
 import static org.keycloak.performance.iteration.UniqueRandomIntegers.getUniqueRandomIntegers;
+import org.keycloak.performance.util.ValidateNumber;
 
 /**
  *
@@ -19,11 +22,15 @@ public class RandomSublist<T> extends AbstractList<T> {
     private final int size;
 
     public RandomSublist(List<T> originalList, int seed, int sublistSize, boolean unique) {
+        Validate.notNull(originalList);
         this.originalList = originalList;
-        this.randomIndexesOfOriginalList = unique
-                ? getUniqueRandomIntegers(seed, originalList.size())
-                : getRandomIntegers(seed, originalList.size());
+        ValidateNumber.isInRange(sublistSize, 0, originalList.size());
         this.size = sublistSize;
+        this.randomIndexesOfOriginalList = originalList.isEmpty()
+                ? Collections.<Integer>emptyList()
+                : (unique
+                        ? getUniqueRandomIntegers(seed, originalList.size())
+                        : getRandomIntegers(seed, originalList.size()));
     }
 
     public RandomSublist(List<T> originalList, int seed, int sublistSize) {
@@ -32,6 +39,9 @@ public class RandomSublist<T> extends AbstractList<T> {
 
     @Override
     public T get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
         return originalList.get(randomIndexesOfOriginalList.get(index));
     }
 
