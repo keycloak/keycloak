@@ -1,0 +1,6 @@
+= Browser tab support for Cordova
+
+We now have support for using browser tab and universal links in the JavaScript adapter for Cordova. This enables SSO
+between multiple applications as well as increases security.
+
+Thanks to https://github.com/gtudan[gtudan] for the contribution.
