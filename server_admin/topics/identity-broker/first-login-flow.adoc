@@ -64,3 +64,16 @@ Verify Existing Account By Re-authentication::
   User can also re-authenticate with some different identity provider, which is already linked to his {project_name} account.
   You can also force users to use OTP. Otherwise it's optional and used only if OTP is already set for the user account.
 
+==== Automatically Link Existing First Login Flow
+WARNING: The AutoLink authenticator would be dangerous in a generic environment where users can register themselves using arbitrary usernames/email addresses. Do not use this authenticator unless registration of users is carefully curated and usernames/email addresses are assigned, not requested.
+
+In order to configure a first login flow in which users are automatically linked without being prompted, create a new flow with the following two authenticators:
+
+Create User If Unique::
+This authenticator ensures unique users are handled. Set the authenticator requirement to "Alternative".
+
+Automatically Link Existing Account::
+Automatically link brokered identities without any validation with this authenticator. This is useful in an intranet environment of multiple user databases each with overlapping usernames/email addresses, but different passwords, and you want to allow users to use any password without having to validate. This is only reasonable if you manage all internal databases, and usernames/email addresses from one database matching those in another database belong to the same person. Set the authenticator requirement to "Alternative".
+
+NOTE: The described setup uses two authenticators, and is the simplest one, but it is possible to use other
+authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want end users to confirm their profile information.
