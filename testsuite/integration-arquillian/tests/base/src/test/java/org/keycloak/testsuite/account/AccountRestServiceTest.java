@@ -225,6 +225,9 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
         
         updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 200);
+        
+        //Change the password back
+        updatePassword("Str0ng3rP4ssw0rd", "password", 200);
     }
 
     private AccountCredentialResource.PasswordDetails getPasswordDetails() throws IOException {
