@@ -394,6 +394,14 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(clients.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("client-x509");
+        execution.setPriority(40);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
     }
 
     public static void firstBrokerLoginFlow(RealmModel realm, boolean migrate) {
