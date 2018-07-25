@@ -544,7 +544,7 @@ public class LoginActionsService {
             
             session.getContext().setClient(authSession.getClient());
 
-            TokenVerifier.create(token)
+            TokenVerifier.createWithoutSignature(token)
               .withChecks(handler.getVerifiers(tokenContext))
               .verify();
 
