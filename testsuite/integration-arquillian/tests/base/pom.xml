@@ -229,6 +229,84 @@
             </plugin>
 
             <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-jks-files</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <macrodef name="keytool">
+                                    <attribute name="command"/>
+                                    <element name="args"/>
+                                    <sequential>
+                                        <condition property="keytool.classname" value="com.ibm.crypto.tools.KeyTool">
+                                            <available classname="com.ibm.crypto.tools.KeyTool"/>
+                                        </condition>
+                                        <condition property="keytool.classname" value="sun.security.tools.keytool.Main">
+                                            <available classname="sun.security.tools.keytool.Main"/>
+                                        </condition>
+                                        <java classname="${keytool.classname}" failonerror="true">
+                                            <arg value="@{command}"/>
+                                            <!-- common arguments -->
+                                            <arg value="-validity"/>
+                                            <arg value="365"/>
+                                            <arg value="-keyalg"/>
+                                            <arg value="RSA"/>
+                                            <arg value="-keysize"/>
+                                            <arg value="2048"/>
+                                            <arg value="-noprompt"/>
+                                            <arg value="-storepass"/>
+                                            <arg value="password"/>
+                                            <arg value="-keypass"/>
+                                            <arg value="password"/>
+                                            <arg value="-storetype"/>
+                                            <arg value="PKCS12"/>
+                                            <!-- additional arguments -->
+                                            <args/>
+                                        </java>
+                                    </sequential>
+                                </macrodef>
+                                <echo message="Deleting old keystores"/>
+                                <delete quiet="true">
+                                    <!-- Later on, when all keystores are replaced, we can use this filter -->
+                                    <!--<fileset dir="${project.build.testOutputDirectory}" includes="**/*.jks,**/*.csr,**/*.cer"/>-->
+                                    <!-- But for the sake of the demo, we need to remove them one by one -->
+                                    <fileset dir="${project.build.testOutputDirectory}/adapter-test/secure-portal/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
+                                    <fileset dir="${project.build.testOutputDirectory}/adapter-test/secure-portal-with-custom-session-config/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
+                                </delete>
+                                <echo message="Generate the secure-portal keystore"/>
+                                <keytool command="-genkeypair">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="secure-portal"/>
+                                        <arg value="-dname"/>
+                                        <arg value="CN=CA,OU=Keycloak,O=JBoss,L=Red Hat"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/secure-portal/WEB-INF/keystore.jks"/>
+                                    </args>
+                                </keytool>
+                                <echo message="Generate the secure-portal-with-custom-session-config keystore"/>
+                                <keytool command="-genkeypair">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="secure-portal-with-custom-session-config"/>
+                                        <arg value="-dname"/>
+                                        <arg value="CN=CA,OU=Keycloak,O=JBoss,L=Red Hat"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/secure-portal-with-custom-session-config/WEB-INF/keystore.jks"/>
+                                    </args>
+                                </keytool>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
