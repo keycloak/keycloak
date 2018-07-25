@@ -18,9 +18,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeystoreUtil;
 
-public class HoKTokenUtils {
-    // KEYCLOAK-6771 Certificate Bound Token
-    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+/**
+ * Utilities for Holder of key mechanism and other Mutual TLS tests.
+ *
+ * @see https://issues.jboss.org/browse/KEYCLOAK-6771
+ * @see https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+ */
+public class MutualTLSUtils {
 
     public static final String DEFAULT_KEYSTOREPATH = System.getProperty("client.certificate.keystore");
     public static final String DEFAULT_KEYSTOREPASSWORD = System.getProperty("client.certificate.keystore.passphrase");
