@@ -1,6 +1,5 @@
 package org.keycloak.services.resources.account;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
@@ -66,6 +65,15 @@ public class AccountCredentialResource {
             event.error(org.keycloak.events.Errors.INVALID_USER_CREDENTIALS);
             return ErrorResponse.error(Messages.INVALID_PASSWORD_EXISTING, Response.Status.BAD_REQUEST);
         }
+        
+        if (update.getNewPassword() == null) {
+            return ErrorResponse.error(Messages.INVALID_PASSWORD_EXISTING, Response.Status.BAD_REQUEST);
+        }
+        
+        String confirmation = update.getConfirmation();
+        if ((confirmation != null) && !update.getNewPassword().equals(confirmation)) {
+            return ErrorResponse.error(Messages.NOTMATCH_PASSWORD, Response.Status.BAD_REQUEST);
+        }
 
         try {
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(update.getNewPassword(), false));
@@ -99,11 +107,11 @@ public class AccountCredentialResource {
 
     }
 
-    @JsonIgnoreProperties(ignoreUnknown=true)
     public static class PasswordUpdate {
 
         private String currentPassword;
         private String newPassword;
+        private String confirmation;
 
         public String getCurrentPassword() {
             return currentPassword;
@@ -119,6 +127,14 @@ public class AccountCredentialResource {
 
         public void setNewPassword(String newPassword) {
             this.newPassword = newPassword;
+        }
+        
+        public String getConfirmation() {
+            return confirmation;
+        }
+
+        public void setConfirmation(String confirmation) {
+            this.confirmation = confirmation;
         }
 
     }
