@@ -97,7 +97,7 @@ public class KeycloakTestingClient {
         public <T> T fetch(FetchOnServer function, Class<T> clazz) throws RunOnServerException {
             try {
                 String s = fetchString(function);
-                return JsonSerialization.readValue(s, clazz);
+                return s==null ? null : JsonSerialization.readValue(s, clazz);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

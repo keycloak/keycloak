@@ -249,12 +249,6 @@
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
 
-        <!-- Apache DS -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-util-embedded-ldap</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-wildfly-common</artifactId>
@@ -346,36 +340,6 @@
                         <artifactId>maven-deploy-plugin</artifactId>
                         <configuration>
                             <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>ldap</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>org.keycloak.util.ldap.LDAPEmbeddedServer</mainClass>
-                            <classpathScope>test</classpathScope>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>kerberos</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>org.keycloak.util.ldap.KerberosEmbeddedServer</mainClass>
-                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>

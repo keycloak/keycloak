@@ -32,6 +32,7 @@
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-model-infinispan"/>
         <module name="org.keycloak.keycloak-model-jpa"/>
+        <module name="org.keycloak.keycloak-ldap-federation"/>
         <module name="org.infinispan"/>
         <module name="org.infinispan.client.hotrod"/>
         <module name="org.jboss.logging"/>
