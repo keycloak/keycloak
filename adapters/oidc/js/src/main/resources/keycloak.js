@@ -147,13 +147,15 @@
                 switch (initOptions.onLoad) {
                     case 'check-sso':
                         if (loginIframe.enable) {
-                            setupCheckLoginIframe().success(function() {
-                                checkLoginIframe().success(function () {
-                                    doLogin(false);
-                                }).error(function () {
-                                    initPromise.setSuccess();
-                                });
-                            });
+                            setupCheckLoginIframe().success(function () {
+                                    checkLoginIframe().success(function () {
+                                        doLogin(false);
+                                    }).error(function () {
+                                        initPromise.setSuccess();
+                                    });
+                                }).error(function() {
+                                    initPromise.setError();
+                                })
                         } else {
                             doLogin(false);
                         }
@@ -1085,6 +1087,20 @@
             }
 
             var src = kc.endpoints.checkSessionIframe();
+
+            var checkAvailableRequest;
+            if(window.XMLHttpRequest)
+                checkAvailableRequest = new XMLHttpRequest();
+            else
+                checkAvailableRequest = new ActiveXObject("Microsoft.XMLHTTP");
+            checkAvailableRequest.open('GET', src, false);
+            checkAvailableRequest.send(); // there will be a 'pause' here until the response to come.
+                                          // the object request will be actually modified
+            if (checkAvailableRequest.status >= 400) {
+                promise.setError();
+                return promise.promise;
+            }
+
             iframe.setAttribute('src', src );
             iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
