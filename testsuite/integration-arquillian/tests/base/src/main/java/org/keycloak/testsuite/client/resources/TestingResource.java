@@ -204,6 +204,9 @@ public interface TestingResource {
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);
 
+    @Path("/ldap/{realm}")
+    TestingLDAPResource ldap(@PathParam("realm") final String realmName);
+
     @POST
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
@@ -250,6 +253,7 @@ public interface TestingResource {
     @Path("/test-component")
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
+
 
     @GET
     @Path("/identity-config")

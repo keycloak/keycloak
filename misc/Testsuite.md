@@ -16,6 +16,10 @@ By default the testsuite uses an embedded H2 database to test with other databas
 Test utils
 ==========
 
+All the utils can be executed from the directory testsuite/utils:
+
+    cd testsuite/utils
+
 Keycloak server
 ---------------
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.federation.storage.ldap;
+package org.keycloak.testsuite.util;
 
-import org.junit.Assert;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -47,8 +43,6 @@ import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
-import org.keycloak.storage.user.SynchronizationResult;
-import org.keycloak.testsuite.rule.LDAPRule;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,21 +55,6 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPTestUtils {
-    public static MultivaluedHashMap<String, String> getLdapRuleConfig(LDAPRule ldapRule) {
-        Map<String,String> ldapConfig = ldapRule.getConfig();
-        return toComponentConfig(ldapConfig);
-
-    }
-
-    public static MultivaluedHashMap<String, String> toComponentConfig(Map<String, String> ldapConfig) {
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
-            config.add(entry.getKey(), entry.getValue());
-
-        }
-        return config;
-    }
-
 
     public static UserModel addLocalUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
         UserModel user = session.userLocalStorage().addUser(realm, username);
@@ -138,26 +117,18 @@ public class LDAPTestUtils {
         }
     }
 
+    public static ComponentModel getLdapProviderModel(KeycloakSession session, RealmModel realm) {
+        List<ComponentModel> components = realm.getComponents(realm.getId(), UserStorageProvider.class.getName());
+        for (ComponentModel component : components) {
+            if ("test-ldap".equals(component.getName())) {
+                return component;
+            }
+        }
+        return null;
+    }
+
     public static LDAPStorageProvider getLdapProvider(KeycloakSession keycloakSession, ComponentModel ldapFedModel) {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
-    }
-
-    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
-        UserModel user = userProvider.getUserByUsername(username, realm);
-        Assert.assertNotNull(user);
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastName, user.getLastName());
-        Assert.assertEquals(expectedEmail, user.getEmail());
-        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
-        return user;
-    }
-
-    public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
-        Assert.assertNotNull(user);
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastName, user.getLastName());
-        Assert.assertEquals(expectedEmail, user.getEmail());
-        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
     }
 
 
@@ -327,16 +298,7 @@ public class LDAPTestUtils {
     }
 
 
-    public static void assertSyncEquals(SynchronizationResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(expectedAdded, syncResult.getAdded());
-        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
-        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
-        Assert.assertEquals(expectedFailed, syncResult.getFailed());
-    }
-    public static void assertSyncEquals(SynchronizationResultRepresentation syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(expectedAdded, syncResult.getAdded());
-        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
-        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
-        Assert.assertEquals(expectedFailed, syncResult.getFailed());
+    public static String getGroupDescriptionLDAPAttrName(LDAPStorageProvider ldapProvider) {
+        return ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory() ? "displayName" : "description";
     }
 }
