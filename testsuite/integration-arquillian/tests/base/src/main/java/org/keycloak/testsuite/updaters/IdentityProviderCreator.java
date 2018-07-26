@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.updaters;
 
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import java.io.Closeable;
 import javax.ws.rs.NotFoundException;
@@ -46,6 +47,10 @@ public class IdentityProviderCreator implements Closeable {
 
     public IdentityProvidersResource resource() {
         return this.resource;
+    }
+
+    public IdentityProviderResource identityProvider() {
+        return this.resource().get(alias);
     }
 
     @Override

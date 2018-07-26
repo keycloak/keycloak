@@ -135,7 +135,7 @@ public class SamlEcpProfileService extends SamlService {
             }
 
             @Override
-            protected Response buildErrorResponse(AuthenticationSessionModel authSession, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
+            protected Response buildErrorResponse(boolean isPostBinding, String uri, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
                 return Soap.createMessage().addToBody(document).build();
             }
 
