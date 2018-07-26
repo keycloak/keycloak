@@ -277,6 +277,8 @@
                                     <!-- But for the sake of the demo, we need to remove them one by one -->
                                     <fileset dir="${project.build.testOutputDirectory}/adapter-test/secure-portal/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
                                     <fileset dir="${project.build.testOutputDirectory}/adapter-test/secure-portal-with-custom-session-config/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
+                                    <fileset dir="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
+                                    <fileset dir="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF" includes="**/*.jks,**/*.csr,**/*.cer"/>
                                 </delete>
                                 <echo message="Generate the secure-portal keystore"/>
                                 <keytool command="-genkeypair">
@@ -298,6 +300,92 @@
                                         <arg value="CN=CA,OU=Keycloak,O=JBoss,L=Red Hat"/>
                                         <arg value="-keystore"/>
                                         <arg value="${project.build.testOutputDirectory}/adapter-test/secure-portal-with-custom-session-config/WEB-INF/keystore.jks"/>
+                                    </args>
+                                </keytool>
+                                <echo message="Generate the bad-assertion-sales-post-sig keystore"/>
+                                <keytool command="-genkeypair">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-realm-sales-post-sig/"/>
+                                        <arg value="-dname"/>
+                                        <arg value="CN=http://localhost:8081/bad-realm-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.jks"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-certreq">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-realm-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-file"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.csr"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-gencert">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-realm-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-infile"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.csr"/>
+                                        <arg value="-outfile"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.cer"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-importcert">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="demo"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-file"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-assertion-sales-post-sig/WEB-INF/keystore.cer"/>
+                                    </args>
+                                </keytool>
+                                <echo message="Generate the bad-client-sales-post-sig keystore"/>
+                                <keytool command="-genkeypair">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-client-sales-post-sig/"/>
+                                        <arg value="-dname"/>
+                                        <arg value="CN=http://localhost:8081/bad-client-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.jks"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-certreq">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-client-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-file"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.csr"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-gencert">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="http://localhost:8081/bad-client-sales-post-sig/"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-infile"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.csr"/>
+                                        <arg value="-outfile"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.cer"/>
+                                    </args>
+                                </keytool>
+                                <keytool command="-importcert">
+                                    <args>
+                                        <arg value="-alias"/>
+                                        <arg value="demo"/>
+                                        <arg value="-keystore"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.jks"/>
+                                        <arg value="-file"/>
+                                        <arg value="${project.build.testOutputDirectory}/adapter-test/keycloak-saml/bad-client-sales-post-sig/WEB-INF/keystore.cer"/>
                                     </args>
                                 </keytool>
                             </target>
