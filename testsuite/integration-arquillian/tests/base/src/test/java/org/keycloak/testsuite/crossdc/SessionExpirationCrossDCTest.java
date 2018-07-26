@@ -40,7 +40,9 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -417,20 +419,18 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC)
     public void testLogoutUserWithFailover(
             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-
-        // Start node2 on first DC
-        startBackendNode(DC.FIRST, 1);
 
         // Don't include remote stats. Size is smaller because of distributed cache
         List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
                 false, cacheDc1Statistics, cacheDc2Statistics, false);
 
         // Kill node2 now. Around 10 sessions (half of SESSIONS_COUNT) will be lost on Keycloak side. But not on infinispan side
-        stopBackendNode(DC.FIRST, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 1);
 
         channelStatisticsCrossDc.reset();
 
@@ -461,14 +461,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_EVERY_DC)
     public void testLogoutWithAllStartedNodes(
             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-
-        // Start node2 on every DC
-        startBackendNode(DC.FIRST, 1);
-        startBackendNode(DC.SECOND, 1);
 
         // Create sessions. Don't include remote stats. Size is smaller because of distributed cache
         List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
@@ -505,8 +502,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         }, 50, 50);
 
         // Stop both nodes
-        stopBackendNode(DC.FIRST, 1);
-        stopBackendNode(DC.SECOND, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.SECOND, 1);
     }
 
     private void assertTestAppActiveSessionsCount(int expectedSessionsCount) {

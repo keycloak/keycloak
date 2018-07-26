@@ -37,10 +37,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.junit.Test;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@InitialDcState(authServers = ServerSetup.ALL_NODES_IN_EVERY_DC)
 public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
 
     @ArquillianResource
@@ -56,35 +58,11 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
 
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
-        log.debug("--DC: Starting cacheServers if not started already");
-        suiteContext.getCacheServersInfo().stream()
-                .filter((containerInfo) -> !containerInfo.isStarted())
-                .map(ContainerInfo::getQualifier)
-                .forEach(containerController::start);
-        
-        log.debug("--DC: Initializing load balancer - enabling all started nodes across DCs");
-        this.loadBalancerCtrl.disableAllBackendNodes();
-
-        this.suiteContext.getDcAuthServerBackendsInfo().stream()
-                .flatMap(List::stream)
-                .filter((containerInfo) -> !containerInfo.getQualifier().contains("manual"))
-                .filter((containerInfo) -> !containerInfo.isStarted())
-                .map(ContainerInfo::getQualifier)
-                .forEach((nodeName) -> {
-                    containerController.start(nodeName);
-                    loadBalancerCtrl.enableBackendNodeByName(nodeName);
-                });
+        loadBalancerCtrl.enableAllBackendNodes();
     }
 
     @Override
     public void postAfterAbstractKeycloak() {
-        log.debug("--DC: postAfterAbstractKeycloak");
-        suiteContext.getDcAuthServerBackendsInfo().stream()
-                .flatMap(List::stream)
-                .filter(ContainerInfo::isStarted)
-                .map(ContainerInfo::getQualifier)
-                .forEach(containerController::stop);
-
         loadBalancerCtrl.disableAllBackendNodes();
         
         //realms is already removed and this prevents another removal in AuthServerTestEnricher.afterClass

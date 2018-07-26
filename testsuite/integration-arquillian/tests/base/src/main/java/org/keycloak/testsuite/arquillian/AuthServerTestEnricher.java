@@ -249,7 +249,7 @@ public class AuthServerTestEnricher {
         }
 
         suiteContextProducer.set(suiteContext);
-        CacheServerTestEnricher.initializeSuiteContext(suiteContext);
+        CrossDCTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
     }
 
