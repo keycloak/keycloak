@@ -23,10 +23,13 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -34,37 +37,27 @@ import org.keycloak.testsuite.util.OAuthClient;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC)
 public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     private static final int SESSIONS_COUNT = 10;
 
     @Before
     public void beforeSessionsPreloadCrossDCTest() throws Exception {
-        // Start DC1 and only All Keycloak nodes on DC2 are stopped
-        stopBackendNode(DC.SECOND, 0);
         disableDcOnLoadBalancer(DC.SECOND);
     }
-
 
     private void stopAllCacheServersAndAuthServers() {
         log.infof("Going to stop all auth servers");
 
-        stopBackendNode(DC.FIRST, 0);
-        disableLoadBalancerNode(DC.FIRST, 0);
-        stopBackendNode(DC.SECOND, 0);
-        disableLoadBalancerNode(DC.SECOND, 0);
+        CrossDCTestEnricher.forAllBackendNodes(CrossDCTestEnricher::stopAuthServerBackendNode);
+        loadBalancerCtrl.disableAllBackendNodes();
 
         log.infof("Auth servers stopped successfully. Going to stop all cache servers");
 
-        suiteContext.getCacheServersInfo().stream()
-                .filter(containerInfo -> containerInfo.isStarted())
-                .forEach(containerInfo -> {
-                    stopCacheServer(containerInfo);
-                });
-
+        DC.validDcsStream().forEach(CrossDCTestEnricher::stopCacheServer);
         log.infof("Cache servers stopped successfully");
     }
-
 
     @Test
     public void sessionsPreloadTest() throws Exception {
@@ -75,7 +68,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(false);
 
         // Start 2nd DC.
-        startBackendNode(DC.SECOND, 0);
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
@@ -113,15 +106,14 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         stopAllCacheServersAndAuthServers();
 
         // Start cache containers on both DC1 and DC2
-        startCacheServer(DC.FIRST);
-        startCacheServer(DC.SECOND);
+        DC.validDcsStream().forEach(CrossDCTestEnricher::startCacheServer);
 
         // Start Keycloak on DC1. Sessions should be preloaded from DB
-        startBackendNode(DC.FIRST, 0);
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.FIRST, 0);
 
         // Start Keycloak on DC2. Sessions should be preloaded from remoteCache
-        startBackendNode(DC.SECOND, 0);
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
@@ -167,19 +159,21 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         }
 
         // Start 2nd DC.
-        startBackendNode(DC.SECOND, 0);
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
-        // Ensure loginFailures are loaded in both 1st DC and 2nd DC
-        int size1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
-        int size2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
-        int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-        int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-        log.infof("size1: %d, size2: %d, loginFailures1: %d, loginFailures2: %d", size1, size2, loginFailures1, loginFailures2);
-        Assert.assertEquals(size1, 1);
-        Assert.assertEquals(size2, 1);
-        Assert.assertEquals(loginFailures1, loginFailuresBefore + SESSIONS_COUNT);
-        Assert.assertEquals(loginFailures2, loginFailuresBefore + SESSIONS_COUNT);
+        Retry.execute(() -> {
+            // Ensure loginFailures are loaded in both 1st DC and 2nd DC
+            int size1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
+            int size2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
+            int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+            int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+            log.infof("size1: %d, size2: %d, loginFailures1: %d, loginFailures2: %d", size1, size2, loginFailures1, loginFailures2);
+            Assert.assertEquals(size1, 1);
+            Assert.assertEquals(size2, 1);
+            Assert.assertEquals(loginFailures1, loginFailuresBefore + SESSIONS_COUNT);
+            Assert.assertEquals(loginFailures2, loginFailuresBefore + SESSIONS_COUNT);
+        }, 3, 400);
 
         // On DC2 sessions were preloaded from from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::loginFailures"));

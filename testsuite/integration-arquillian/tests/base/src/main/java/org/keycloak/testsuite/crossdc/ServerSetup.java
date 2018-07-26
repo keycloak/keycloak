@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,25 +16,13 @@
  */
 package org.keycloak.testsuite.crossdc;
 
-import java.util.Arrays;
-import java.util.stream.Stream;
-
 /**
- * Identifier of datacentre in the testsuite
- * @author hmlnarik
+ * @author vramik
  */
-public enum DC {
-    FIRST,
-    SECOND,
-    UNDEFINED;
-
-    public int getDcIndex() {
-        return ordinal();
-    }
-
-    private static final DC[] VALID_DCS = new DC[] { FIRST, SECOND };
-
-    public static Stream<DC> validDcsStream() {
-        return Arrays.stream(VALID_DCS);
-    }
+public enum ServerSetup {
+    FIRST_NODE_IN_FIRST_DC,
+    FIRST_NODE_IN_EVERY_DC,
+    ALL_NODES_IN_EVERY_DC,
+    ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC,
+    ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC;
 }

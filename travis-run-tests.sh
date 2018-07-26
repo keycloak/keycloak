@@ -74,7 +74,7 @@ if [ $1 == "server-group4" ]; then
     run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test
 fi
 
-if [ $1 == "crossdc1" ]; then
+if [ $1 == "crossdc-server" ]; then
     cd testsuite/integration-arquillian
     mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
 
@@ -84,7 +84,7 @@ if [ $1 == "crossdc1" ]; then
     exit ${PIPESTATUS[0]}
 fi
 
-if [ $1 == "crossdc2" ]; then
+if [ $1 == "crossdc-adapter" ]; then
     cd testsuite/integration-arquillian
     mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
 

@@ -371,7 +371,7 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>clean-second-cache-server-arquillian-bug-workaround</id>
+                            <id>clean-second-cache-server-arquillian-bug-workaround</id><!--https://issues.jboss.org/browse/WFARQ-44-->
                             <phase>process-test-resources</phase>
                             <goals><goal>run</goal></goals>
                             <configuration>

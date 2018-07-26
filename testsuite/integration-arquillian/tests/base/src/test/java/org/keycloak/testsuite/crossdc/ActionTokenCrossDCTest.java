@@ -50,6 +50,8 @@ import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
 /**
  *
@@ -80,6 +82,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC)
     public void sendResetPasswordEmailSuccessWorksInCrossDc(
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
@@ -87,7 +90,6 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
       @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
         log.debug("--DC: START sendResetPasswordEmailSuccessWorksInCrossDc");
         
-        startBackendNode(DC.FIRST, 1);
         cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
@@ -155,6 +157,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
     @Test
+    @InitialDcState(authServers = ServerSetup.FIRST_NODE_IN_FIRST_DC)
     public void sendResetPasswordEmailAfterNewNodeAdded() throws IOException, MessagingException {
         log.debug("--DC: START sendResetPasswordEmailAfterNewNodeAdded");
         disableDcOnLoadBalancer(DC.SECOND);
@@ -188,7 +191,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
         assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         disableDcOnLoadBalancer(DC.FIRST);
-        startBackendNode(DC.SECOND, 1);
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.SECOND, 1);
 
         Retry.execute(() -> {
