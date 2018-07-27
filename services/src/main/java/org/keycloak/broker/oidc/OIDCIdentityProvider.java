@@ -486,7 +486,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String trustedIssuers = getConfig().getIssuer();
 
-        if (trustedIssuers != null) {
+        if (trustedIssuers != null && trustedIssuers.length() > 0) {
             String[] issuers = trustedIssuers.split(",");
 
             for (String trustedIssuer : issuers) {
