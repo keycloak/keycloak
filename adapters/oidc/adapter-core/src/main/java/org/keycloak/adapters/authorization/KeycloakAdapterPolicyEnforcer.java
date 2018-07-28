@@ -18,7 +18,7 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +78,8 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
 
         if (newAuthorization != null) {
-            List<Permission> grantedPermissions = authorization.getPermissions();
-            List<Permission> newPermissions = newAuthorization.getPermissions();
+            Collection<Permission> grantedPermissions = authorization.getPermissions();
+            Collection<Permission> newPermissions = newAuthorization.getPermissions();
 
             for (Permission newPermission : newPermissions) {
                 if (!grantedPermissions.contains(newPermission)) {

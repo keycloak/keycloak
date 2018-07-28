@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -174,7 +175,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
         AuthorizationResponse response = getAuthzClient().authorization(userName, password).authorize(request);
         AccessToken token = toAccessToken(response.getToken());
         Authorization authorization = token.getAuthorization();
-        return authorization.getPermissions();
+        return new ArrayList<>(authorization.getPermissions());
     }
 
     private void createResourcePermission(ResourceRepresentation resource, String... policies) {

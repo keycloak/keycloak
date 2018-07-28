@@ -22,9 +22,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,13 +86,13 @@ public class AccessToken extends IDToken {
     public static class Authorization implements Serializable {
 
         @JsonProperty("permissions")
-        private List<Permission> permissions;
+        private Collection<Permission> permissions;
 
-        public List<Permission> getPermissions() {
+        public Collection<Permission> getPermissions() {
             return permissions;
         }
 
-        public void setPermissions(List<Permission> permissions) {
+        public void setPermissions(Collection<Permission> permissions) {
             this.permissions = permissions;
         }
     }

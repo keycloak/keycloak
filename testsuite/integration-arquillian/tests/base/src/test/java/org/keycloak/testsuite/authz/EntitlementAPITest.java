@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -273,7 +274,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AuthorizationResponse response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
         AccessToken rpt = toAccessToken(response.getToken());
 
-        List<Permission> permissions = rpt.getAuthorization().getPermissions();
+        List<Permission> permissions = new ArrayList<>(rpt.getAuthorization().getPermissions());
 
         assertEquals(10, permissions.size());
 
@@ -293,7 +294,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
         rpt = toAccessToken(response.getToken());
 
-        permissions = rpt.getAuthorization().getPermissions();
+        permissions = new ArrayList<>(rpt.getAuthorization().getPermissions());
 
         assertEquals(10, permissions.size());
 
@@ -317,7 +318,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
         rpt = toAccessToken(response.getToken());
 
-        permissions = rpt.getAuthorization().getPermissions();
+        permissions = new ArrayList<>(rpt.getAuthorization().getPermissions());
 
         assertEquals(10, permissions.size());
         assertEquals("Resource 16", permissions.get(0).getResourceName());
@@ -340,7 +341,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         response = getAuthzClient(configFile).authorization("marta", "password").authorize(request);
         rpt = toAccessToken(response.getToken());
 
-        permissions = rpt.getAuthorization().getPermissions();
+        permissions = new ArrayList<>(rpt.getAuthorization().getPermissions());
 
         assertEquals(5, permissions.size());
         assertEquals("Resource 16", permissions.get(0).getResourceName());
@@ -442,7 +443,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.resources().resource(resource.getId()).update(resource);
 
-        // the addition of a new scope invalidates the permission previously granted to the resource
+        // the addition of a new scope still grants access to resource and any scope
         assertFalse(hasPermission("kolo", "password", resource.getId()));
 
         accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
@@ -484,6 +485,39 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertTrue(hasPermission("kolo", "password", resource.getId()));
         assertFalse(hasPermission("kolo", "password", resource.getId(), "Scope A"));
         assertFalse(hasPermission("kolo", "password", resource.getId(), "Scope B"));
+    }
+
+    @Test
+    public void testObtainAllEntitlementsWithLimit() throws Exception {
+        org.keycloak.authorization.client.resource.AuthorizationResource authorizationResource = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password");
+        AuthorizationResponse response = authorizationResource.authorize();
+        AccessToken accessToken = toAccessToken(response.getToken());
+        Authorization authorization = accessToken.getAuthorization();
+
+        assertTrue(authorization.getPermissions().size() >= 20);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        Metadata metadata = new Metadata();
+
+        metadata.setLimit(10);
+
+        request.setMetadata(metadata);
+
+        response = authorizationResource.authorize(request);
+        accessToken = toAccessToken(response.getToken());
+        authorization = accessToken.getAuthorization();
+
+        assertEquals(10, authorization.getPermissions().size());
+
+        metadata.setLimit(1);
+
+        request.setMetadata(metadata);
+
+        response = authorizationResource.authorize(request);
+        accessToken = toAccessToken(response.getToken());
+        authorization = accessToken.getAuthorization();
+
+        assertEquals(1, authorization.getPermissions().size());
     }
 
     @Test
@@ -625,7 +659,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
         assertNotNull(response.getToken());
-        List<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
         assertEquals(2, permissions.size());
 
         for (Permission grantedPermission : permissions) {
@@ -697,7 +731,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AuthorizationResponse response = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(accessToken).authorize(new AuthorizationRequest());
         AccessToken rpt = toAccessToken(response.getToken());
         Authorization authz = rpt.getAuthorization();
-        List<Permission> permissions = authz.getPermissions();
+        Collection<Permission> permissions = authz.getPermissions();
 
         assertNotNull(permissions);
         assertFalse(permissions.isEmpty());
@@ -718,7 +752,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {
         AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getToken()).getAuthorization();
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertFalse(permissions.isEmpty());

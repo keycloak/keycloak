@@ -186,6 +186,7 @@ public class AuthorizationRequest {
 
         private Boolean includeResourceName;
         private Integer limit;
+        private String responseMode;
 
         public Boolean getIncludeResourceName() {
             if (includeResourceName == null) {
@@ -204,6 +205,14 @@ public class AuthorizationRequest {
 
         public void setLimit(Integer limit) {
             this.limit = limit;
+        }
+
+        public void setResponseMode(String responseMode) {
+            this.responseMode = responseMode;
+        }
+
+        public String getResponseMode() {
+            return responseMode;
         }
     }
 }

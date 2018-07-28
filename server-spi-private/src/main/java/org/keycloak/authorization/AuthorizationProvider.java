@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.authorization.model.PermissionTicket;
@@ -30,7 +31,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.evaluator.Evaluators;
-import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
+import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
@@ -74,18 +75,18 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
  */
 public final class AuthorizationProvider implements Provider {
 
-    private final DefaultPolicyEvaluator policyEvaluator;
+    private final PolicyEvaluator policyEvaluator;
     private StoreFactory storeFactory;
     private StoreFactory storeFactoryDelegate;
     private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories, PolicyEvaluator policyEvaluator) {
         this.keycloakSession = session;
         this.realm = realm;
         this.policyProviderFactories = policyProviderFactories;
-        this.policyEvaluator = new DefaultPolicyEvaluator(this);
+        this.policyEvaluator = policyEvaluator;
     }
 
     /**
@@ -95,7 +96,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link Evaluators} instance
      */
     public Evaluators evaluators() {
-        return new Evaluators(policyEvaluator);
+        return new Evaluators(this);
     }
 
     /**
@@ -167,6 +168,10 @@ public final class AuthorizationProvider implements Provider {
 
     public RealmModel getRealm() {
         return realm;
+    }
+
+    public PolicyEvaluator getPolicyEvaluator() {
+        return policyEvaluator;
     }
 
     @Override
@@ -381,6 +386,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+                policyStore.findByResource(resourceId, resourceServerId, consumer);
+            }
+
+            @Override
             public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
                 return policyStore.findByResourceType(resourceType, resourceServerId);
             }
@@ -396,6 +406,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+                policyStore.findByScopeIds(scopeIds, resourceId, resourceServerId, consumer);
+            }
+
+            @Override
             public List<Policy> findByType(String type, String resourceServerId) {
                 return policyStore.findByType(type, resourceServerId);
             }
@@ -403,6 +418,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public List<Policy> findDependentPolicies(String id, String resourceServerId) {
                 return policyStore.findDependentPolicies(id, resourceServerId);
+            }
+
+            @Override
+            public void findByResourceType(String type, String id, Consumer<Policy> policyConsumer) {
+                policyStore.findByResourceType(type, id, policyConsumer);
             }
         };
     }

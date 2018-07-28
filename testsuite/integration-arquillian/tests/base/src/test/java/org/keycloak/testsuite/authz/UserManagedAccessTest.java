@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -84,7 +85,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
@@ -142,7 +143,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
@@ -204,7 +205,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
@@ -280,7 +281,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A");
@@ -382,7 +383,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");

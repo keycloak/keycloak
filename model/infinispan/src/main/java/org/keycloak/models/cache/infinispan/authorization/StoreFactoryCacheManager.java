@@ -35,7 +35,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class StoreFactoryCacheManager extends CacheManager {
-    private static final Logger logger = Logger.getLogger(RealmCacheManager.class);
+    private static final Logger logger = Logger.getLogger(StoreFactoryCacheManager.class);
 
     public StoreFactoryCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         super(cache, revisions);

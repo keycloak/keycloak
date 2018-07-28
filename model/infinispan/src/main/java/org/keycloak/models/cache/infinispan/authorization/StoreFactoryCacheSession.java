@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -756,8 +757,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 }
 
                 return Arrays.asList(policy);
-            },
-                    (revision, policies) -> new PolicyListQuery(revision, cacheKey, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+            }, (revision, policies) -> new PolicyListQuery(revision, cacheKey, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, null);
 
             if (result.isEmpty()) {
                 return null;
@@ -780,40 +780,62 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public List<Policy> findByResource(String resourceId, String resourceServerId) {
             String cacheKey = getPolicyByResource(resourceId, resourceServerId);
             return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResource(resourceId, resourceServerId),
-                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceId, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceId, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, null);
+        }
+
+        @Override
+        public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+            String cacheKey = getPolicyByResource(resourceId, resourceServerId);
+            cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResource(resourceId, resourceServerId),
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceId, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
         }
 
         @Override
         public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
             String cacheKey = getPolicyByResourceType(resourceType, resourceServerId);
             return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResourceType(resourceType, resourceServerId),
-                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceType, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceType, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, null);
+        }
+
+        @Override
+        public void findByResourceType(String resourceType, String resourceServerId, Consumer<Policy> consumer) {
+            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId);
+            cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResourceType(resourceType, resourceServerId),
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceType, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
         }
 
         @Override
         public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
             if (scopeIds == null) return null;
-            List<Policy> result = new ArrayList<>();
+            Set<Policy> result = new HashSet<>();
 
             for (String id : scopeIds) {
                 String cacheKey = getPolicyByScope(id, resourceServerId);
-                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
+                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, null));
             }
 
-            return result;
+            return new ArrayList<>(result);
         }
 
         @Override
         public List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
             if (scopeIds == null) return null;
-            List<Policy> result = new ArrayList<>();
+            Set<Policy> result = new HashSet<>();
 
             for (String id : scopeIds) {
                 String cacheKey = getPolicyByResourceScope(id, resourceId, resourceServerId);
-                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceId, resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
+                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceId, resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, null));
             }
 
-            return result;
+            return new ArrayList<>(result);
+        }
+
+        @Override
+        public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+            for (String id : scopeIds) {
+                String cacheKey = getPolicyByResourceScope(id, resourceId, resourceServerId);
+                cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceId, resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+            }
         }
 
         @Override
@@ -826,7 +848,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             return getPolicyStoreDelegate().findDependentPolicies(id, resourceServerId);
         }
 
-        private <R, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
+        private <R, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {
             Q query = cache.get(cacheKey, queryType);
             if (query != null) {
                 logger.tracev("cache hit for key: {0}", cacheKey);
@@ -838,11 +860,34 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 if (invalidations.contains(cacheKey)) return model;
                 query = querySupplier.apply(loaded, model);
                 cache.addRevisioned(query, startupRevision);
+                if (consumer != null) {
+                    for (R policy: model) {
+                        consumer.accept(policy);
+                    }
+                }
                 return model;
             } else if (query.isInvalid(invalidations)) {
-                return resultSupplier.get();
+                List<R> policies = resultSupplier.get();
+
+                if (consumer != null) {
+                    for (R policy : policies) {
+                        consumer.accept(policy);
+                    }
+                }
+
+                return policies;
             } else {
-                return query.getPolicies().stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
+                Set<String> policies = query.getPolicies();
+
+                if (consumer != null) {
+                    for (String id : policies) {
+                        consumer.accept((R) findById(id, resourceServerId));
+                    }
+
+                    return null;
+                }
+
+                return policies.stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
             }
         }
     }

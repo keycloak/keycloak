@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,16 +42,16 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PermissionTicketAwareDecisionResultCollector extends DecisionResultCollector {
+public class PermissionTicketAwareDecisionResultCollector extends DecisionPermissionCollector {
 
     private final AuthorizationRequest request;
     private PermissionTicketToken ticket;
     private final Identity identity;
     private ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
-    private List<Result> results;
 
     public PermissionTicketAwareDecisionResultCollector(AuthorizationRequest request, PermissionTicketToken ticket, Identity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        super(authorization, resourceServer, request);
         this.request = request;
         this.ticket = ticket;
         this.identity = identity;
@@ -167,14 +168,5 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
                 }
             }
         }
-    }
-
-    @Override
-    protected void onComplete(List<Result> results) {
-        this.results = results;
-    }
-
-    public List<Result> results() {
-        return results;
     }
 }

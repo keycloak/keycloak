@@ -1,5 +1,7 @@
 package org.keycloak.scripting;
 
+import javax.script.ScriptContext;
+
 import org.keycloak.models.ScriptModel;
 
 /**
@@ -11,4 +13,5 @@ public interface EvaluatableScriptAdapter {
     ScriptModel getScriptModel();
 
     Object eval(ScriptBindingsConfigurer bindingsConfigurer) throws ScriptExecutionException;
+    Object eval(ScriptContext context) throws ScriptExecutionException;
 }

@@ -21,7 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,7 +130,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         assertNotNull(response.getToken());
         AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
-        List<Permission> permissions = authorizationClaim.getPermissions();
+        List<Permission> permissions = new ArrayList<>(authorizationClaim.getPermissions());
 
         assertEquals(1, permissions.size());
 
@@ -164,7 +166,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         assertNotNull(response.getToken());
         AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
-        List<Permission> permissions = authorizationClaim.getPermissions();
+        List<Permission> permissions = new ArrayList<>(authorizationClaim.getPermissions());
 
         assertEquals(1, permissions.size());
 

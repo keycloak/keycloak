@@ -2,6 +2,7 @@ package org.keycloak.scripting;
 
 import javax.script.Bindings;
 import javax.script.CompiledScript;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
@@ -36,5 +37,14 @@ class CompiledEvaluatableScriptAdapter extends AbstractEvaluatableScriptAdapter 
     @Override
     protected Object eval(final Bindings bindings) throws ScriptException {
         return compiledScript.eval(bindings);
+    }
+
+    @Override
+    public Object eval(ScriptContext context) throws ScriptExecutionException {
+        try {
+            return compiledScript.eval(context);
+        } catch (ScriptException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

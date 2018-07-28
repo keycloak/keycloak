@@ -61,6 +61,9 @@ public class Permission {
     }
 
     public String getResourceId() {
+        if (resourceId == null || "".equals(resourceId.trim())) {
+            return null;
+        }
         return this.resourceId;
     }
 

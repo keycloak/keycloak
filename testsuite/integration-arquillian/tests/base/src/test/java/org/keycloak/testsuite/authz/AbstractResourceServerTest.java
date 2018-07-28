@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -33,8 +34,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -42,7 +41,6 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -176,7 +174,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
         }
     }
 
-    protected void assertPermissions(List<Permission> permissions, String expectedResource, String... expectedScopes) {
+    protected void assertPermissions(Collection<Permission> permissions, String expectedResource, String... expectedScopes) {
         Iterator<Permission> iterator = permissions.iterator();
 
         while (iterator.hasNext()) {
