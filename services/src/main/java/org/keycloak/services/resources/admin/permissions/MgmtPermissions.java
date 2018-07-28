@@ -20,7 +20,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
-import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.common.UserModelIdentity;
@@ -30,7 +29,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
-import org.keycloak.authorization.policy.evaluation.DecisionResult;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.util.Permissions;
@@ -45,7 +43,7 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -332,15 +330,8 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
-            DecisionResult decisionCollector = new DecisionResult();
-            List<ResourcePermission> permissions = Permissions.permission(resourceServer, resource, scope);
-            PermissionEvaluator from = authz.evaluators().from(permissions, context);
-            from.evaluate(decisionCollector);
-            if (!decisionCollector.completed()) {
-                logger.error("Failed to run permission check", decisionCollector.getError());
-                return false;
-            }
-            return decisionCollector.getResults().get(0).getEffect() == Decision.Effect.PERMIT;
+            ResourcePermission permission = Permissions.permission(resourceServer, resource, scope);
+            return !authz.evaluators().from(Arrays.asList(permission), context).evaluate(resourceServer, null).isEmpty();
         } finally {
             session.getContext().setRealm(oldRealm);
         }

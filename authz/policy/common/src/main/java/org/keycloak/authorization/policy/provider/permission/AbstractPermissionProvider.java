@@ -17,34 +17,42 @@
 package org.keycloak.authorization.policy.provider.permission;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AbstractPermissionProvider implements PolicyProvider {
-
-    public AbstractPermissionProvider() {
-
-    }
+public abstract class AbstractPermissionProvider implements PolicyProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        if (!(evaluation instanceof DefaultEvaluation)) {
-            throw new IllegalArgumentException("Unexpected evaluation instance type [" + evaluation.getClass() + "]");
-        }
-
-        Policy policy = evaluation.getPolicy();
         AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
+        DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
+        Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
+        Policy policy = evaluation.getPolicy();
+        ResourcePermission permission = evaluation.getPermission();
 
         policy.getAssociatedPolicies().forEach(associatedPolicy -> {
-            PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
-            DefaultEvaluation.class.cast(evaluation).setPolicy(associatedPolicy);
-            policyProvider.evaluate(evaluation);
-            evaluation.denyIfNoEffect();
+            Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
+            Decision.Effect effect = decisions.get(permission);
+
+            if (effect == null) {
+                PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+                defaultEvaluation.setPolicy(associatedPolicy);
+                policyProvider.evaluate(defaultEvaluation);
+                evaluation.denyIfNoEffect();
+                decisions.put(permission, defaultEvaluation.getEffect());
+            } else {
+                defaultEvaluation.setEffect(effect);
+            }
         });
     }
 

@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 
 import javax.ws.rs.client.Client;
@@ -98,7 +99,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"}, new String[] {"ScopeC"});
         AccessToken accessToken = toAccessToken(response.getToken());
         AccessToken.Authorization authorization = accessToken.getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB", "ScopeC");
@@ -110,7 +111,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"});
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
@@ -132,7 +133,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", null, new String[] {"ScopeA", "ScopeB"});
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertFalse(response.isUpgraded());
         assertNotNull(permissions);
@@ -155,7 +156,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"});
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertFalse(response.isUpgraded());
         assertNotNull(permissions);
@@ -194,7 +195,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", resourceA.getId(), new String[] {"ScopeA", "ScopeB"});
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertFalse(response.isUpgraded());
         assertNotNull(permissions);
@@ -261,7 +262,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AuthorizationResponse response = authorize("marta", "password", resourceA.getName(), new String[] {"READ"});
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertFalse(response.isUpgraded());
         assertNotNull(permissions);
@@ -303,7 +304,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
                 new PermissionRequest(resourceB.getName(), "ScopeC"));
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, resourceA.getName(), "ScopeA", "ScopeB");
@@ -324,7 +325,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
@@ -346,7 +347,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
@@ -366,7 +367,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
@@ -447,7 +448,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        Collection<Permission> permissions = authorization.getPermissions();
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");

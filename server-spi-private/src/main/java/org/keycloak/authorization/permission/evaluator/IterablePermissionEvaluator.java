@@ -17,16 +17,21 @@
  */
 package org.keycloak.authorization.permission.evaluator;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
-import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -36,19 +41,24 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
     private final Iterator<ResourcePermission> permissions;
     private final EvaluationContext executionContext;
     private final PolicyEvaluator policyEvaluator;
+    private final AuthorizationProvider authorizationProvider;
 
-    IterablePermissionEvaluator(Iterator<ResourcePermission> permissions, EvaluationContext executionContext, PolicyEvaluator policyEvaluator) {
+    IterablePermissionEvaluator(Iterator<ResourcePermission> permissions, EvaluationContext executionContext, AuthorizationProvider authorizationProvider) {
         this.permissions = permissions;
         this.executionContext = executionContext;
-        this.policyEvaluator = policyEvaluator;
+        this.authorizationProvider = authorizationProvider;
+        this.policyEvaluator = authorizationProvider.getPolicyEvaluator();
     }
 
     @Override
     public Decision evaluate(Decision decision) {
         try {
+            Map<Policy, Map<Object, Decision.Effect>> decisionCache = new HashMap<>();
+
             while (this.permissions.hasNext()) {
-                this.policyEvaluator.evaluate(this.permissions.next(), this.executionContext, decision);
+                this.policyEvaluator.evaluate(this.permissions.next(), authorizationProvider, executionContext, decision, decisionCache);
             }
+
             decision.onComplete();
         } catch (Throwable cause) {
             decision.onError(cause);
@@ -57,21 +67,11 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
     }
 
     @Override
-    public List<Result> evaluate() {
-        AtomicReference<List<Result>> result = new AtomicReference<>();
+    public Collection<Permission> evaluate(ResourceServer resourceServer, AuthorizationRequest request) {
+        DecisionPermissionCollector decision = new DecisionPermissionCollector(authorizationProvider, resourceServer, request);
 
-        evaluate(new DecisionResultCollector() {
-            @Override
-            public void onError(Throwable cause) {
-                throw new RuntimeException("Failed to evaluate permissions", cause);
-            }
+        evaluate(decision);
 
-            @Override
-            protected void onComplete(List<Result> results) {
-                result.set(results);
-            }
-        });
-
-        return result.get();
+        return decision.results();
     }
 }

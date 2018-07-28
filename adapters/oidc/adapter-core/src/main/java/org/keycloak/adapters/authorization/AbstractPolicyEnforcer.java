@@ -17,6 +17,7 @@
  */
 package org.keycloak.adapters.authorization;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -151,7 +152,7 @@ public abstract class AbstractPolicyEnforcer {
         }
 
         boolean hasPermission = false;
-        List<Permission> grantedPermissions = authorization.getPermissions();
+        Collection<Permission> grantedPermissions = authorization.getPermissions();
 
         for (Permission permission : grantedPermissions) {
             if (permission.getResourceId() != null) {

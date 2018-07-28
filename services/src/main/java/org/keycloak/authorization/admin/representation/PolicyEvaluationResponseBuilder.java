@@ -18,13 +18,13 @@ package org.keycloak.authorization.admin.representation;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.admin.PolicyEvaluationService;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
-import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -52,13 +53,13 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class PolicyEvaluationResponseBuilder {
-    public static PolicyEvaluationResponse build(List<Result> results, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
+    public static PolicyEvaluationResponse build(PolicyEvaluationService.EvaluationDecisionCollector decision, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
         List<PolicyEvaluationResponse.EvaluationResultRepresentation> resultsRep = new ArrayList<>();
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
-        authorizationData.setPermissions(Permissions.permits(results, null, authorization, resourceServer));
+        authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
         ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
@@ -68,6 +69,8 @@ public class PolicyEvaluationResponseBuilder {
         }
 
         response.setRpt(accessToken);
+
+        Collection<Result> results = decision.getResults();
 
         if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
             response.setStatus(DecisionEffect.DENY);
@@ -217,7 +220,7 @@ public class PolicyEvaluationResponseBuilder {
 
         policyResultRep.setPolicy(representation);
 
-        if (result.getStatus() == Decision.Effect.DENY) {
+        if (result.getEffect() == Decision.Effect.DENY) {
             policyResultRep.setStatus(DecisionEffect.DENY);
             policyResultRep.setScopes(representation.getScopes());
         } else {

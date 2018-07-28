@@ -664,6 +664,6 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 }
                 return baseAttributes;
             }
-        }, policy, evaluation -> {}, authorization);
+        }, policy, evaluation -> {}, authorization, null);
     }
 }
