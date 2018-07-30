@@ -25,7 +25,7 @@ The RH-SSO application templates using xref:../introduction/introduction.adoc#pa
 * The xref:create-jgroups-keystore[JGroups keystore] used for encryption of JGroups communications between nodes in the cluster, and
 * xref:create-server-truststore[RH-SSO server truststore] used for securing the RH-SSO requests
 
-the {productname} image to be deployed properly.
+the {project_openshift_product_name} image to be deployed properly.
 
 [IMPORTANT]
 ====
@@ -255,11 +255,11 @@ Red Hat Single Sign-On does not provide any pre-configured management account ou
 The administrator account can be created:
 
 * By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the RH-SSO application template, or
-* By xref:sso-admin-remote-shell[a remote shell session to particular RH-SSO pod], if the {productname} image is deployed without an application template.
+* By xref:sso-admin-remote-shell[a remote shell session to particular RH-SSO pod], if the {project_openshift_product_name} image is deployed without an application template.
 
 [NOTE]
 ====
-Red Hat Single Sign-On allows an initial administrator account to be created via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form, but only if the Welcome Page is accessed from localhost; this method of administrator account creation is not applicable for the {productname} image.
+Red Hat Single Sign-On allows an initial administrator account to be created via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form, but only if the Welcome Page is accessed from localhost; this method of administrator account creation is not applicable for the {project_openshift_product_name} image.
 ====
 
 [[sso-admin-template-parameters]]
@@ -309,7 +309,7 @@ $ oc env dc/sso -e SSO_ADMIN_USERNAME="" SSO_ADMIN_PASSWORD=""
 [[sso-admin-remote-shell]]
 ==== Creating RH-SSO Administrator Account via Remote Shell Session to RH-SSO Pod
 
-Run following commands to create an administrator account for the `master` realm of the RH-SSO server, when deploying the {productname} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the RH-SSO application pod has been started:
+Run following commands to create an administrator account for the `master` realm of the RH-SSO server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the RH-SSO application pod has been started:
 
 . Identify the RH-SSO application pod.
 +
@@ -319,7 +319,7 @@ NAME                READY     STATUS    RESTARTS   AGE
 sso-12-pt93n        1/1       Running   0          1m
 sso-mysql-6-d97pf   1/1       Running   0          2m
 ----
-. Open a remote shell session to the {productname} container.
+. Open a remote shell session to the {project_openshift_product_name} container.
 +
 ----
 $ oc rsh sso-12-pt93n

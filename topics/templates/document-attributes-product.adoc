@@ -6,6 +6,7 @@
 :project_versionMvn: 4.0.0.Final-redhat1
 :project_versionNpm: 4.0.0.Final-redhat1
 :project_images: rhsso-images
+:project_openshift_product_name: RH-SSO for OpenShift
 
 ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On

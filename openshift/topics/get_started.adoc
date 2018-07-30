@@ -1,7 +1,7 @@
 == Get Started
 
-=== Using the {productname} Image Streams and Application Templates
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {productname} images, run the following commands:
+=== Using the {project_openshift_product_name} Image Streams and Application Templates
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {project_openshift_product_name} images, run the following commands:
 
 . On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
 +
@@ -28,16 +28,16 @@ done
 $ oc -n openshift import-image redhat-sso72-openshift:1.0
 ----
 
-=== Preparing and Deploying the {productname} Application Templates
+=== Preparing and Deploying the {project_openshift_product_name} Application Templates
 
 [[Configuring-Keystores]]
 ==== Configuring Keystores
 
-The {productname} image requires two keystores: +
+The {project_openshift_product_name} image requires two keystores: +
 - An SSL keystore to provide private and public keys for https traffic encryption. +
 - A JGroups keystore to provide private and public keys for network traffic encryption between nodes in the cluster.
 
-These keystores are expected by the {productname} image, even if the application uses only http on a single-node OpenShift instance. Self-signed certificates do not provide secure communication and are intended for internal testing purposes.
+These keystores are expected by the {project_openshift_product_name} image, even if the application uses only http on a single-node OpenShift instance. Self-signed certificates do not provide secure communication and are intended for internal testing purposes.
 
 [WARNING]
 For production environments Red Hat recommends that you use your own SSL certificate purchased from a verified Certificate Authority (CA) for SSL-encrypted connections (HTTPS).
@@ -48,7 +48,7 @@ See the https://access.redhat.com/documentation/en-us/jboss_enterprise_applicati
 
 OpenShift uses objects called `Secrets` to hold sensitive information, such as passwords or keystores. See the https://access.redhat.com/documentation/en-us/openshift_enterprise/3.2/html-single/developer_guide/index#dev-guide-secrets[Secrets chapter] in the OpenShift documentation for more information.
 
-The {productname} image requires one or more secrets that hold the two keystores described earlier. This provides the necessary authorization to applications in the project.
+The {project_openshift_product_name} image requires one or more secrets that hold the two keystores described earlier. This provides the necessary authorization to applications in the project.
 
 Use the SSL and JGroups keystore files to create secrets for the project:
 [subs="verbatim,macros"]
@@ -62,7 +62,7 @@ $ oc secret new <pass:quotes[_sso-jgroups-secret_]> <pass:quotes[_jgroups.jceks_
 
 Service accounts are API objects that exist within each project and allow users to associate certain secrets and roles with applications in a project namespace. This provides the application with the necessary authorization to run with all required privileges.
 
-The service account that you create must be configured with the correct permissions to view pods in Kubernetes. This is required in order for clustering with the {productname} image to work. You can view the top of the log files to see whether the correct service account permissions have been configured.
+The service account that you create must be configured with the correct permissions to view pods in Kubernetes. This is required in order for clustering with the {project_openshift_product_name} image to work. You can view the top of the log files to see whether the correct service account permissions have been configured.
 
 . Create a service account to be used for the SSO deployment:
 +
@@ -92,11 +92,11 @@ Red Hat Single Sign-On does not provide any pre-configured management account ou
 The administrator account can be created:
 
 * By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the RH-SSO application template, or
-* By xref:sso-admin-remote-shell[a remote shell session to particular RH-SSO pod], if the {productname} image is deployed without an application template.
+* By xref:sso-admin-remote-shell[a remote shell session to particular RH-SSO pod], if the {project_openshift_product_name} image is deployed without an application template.
 
 [NOTE]
 ====
-Red Hat Single Sign-On allows an initial administrator account creation via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form. But only if the `Welcome Page` is accessed from a localhost, this method of administrator account creation is not applicable for {productname} image.
+Red Hat Single Sign-On allows an initial administrator account creation via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form. But only if the `Welcome Page` is accessed from a localhost, this method of administrator account creation is not applicable for {project_openshift_product_name} image.
 ====
 
 [[sso-admin-template-parameters]]
@@ -146,7 +146,7 @@ $ oc env dc/sso -e SSO_ADMIN_USERNAME="" SSO_ADMIN_PASSWORD=""
 [[sso-admin-remote-shell]]
 ===== Creating RH-SSO Administrator Account via Remote Shell Session to RH-SSO Pod
 
-Run following commands to create administrator account for the `master` realm of the RH-SSO server, when deploying the {productname} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the RH-SSO application pod has been started:
+Run following commands to create administrator account for the `master` realm of the RH-SSO server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the RH-SSO application pod has been started:
 
 . Identify the RH-SSO application pod.
 +
@@ -156,7 +156,7 @@ NAME                READY     STATUS    RESTARTS   AGE
 sso-12-pt93n        1/1       Running   0          1m
 sso-mysql-6-d97pf   1/1       Running   0          2m
 ----
-. Open a remote shell session to {productname} container.
+. Open a remote shell session to {project_openshift_product_name} container.
 +
 ----
 $ oc rsh sso-12-pt93n
@@ -248,11 +248,11 @@ These are some of the more common variables to configure an RH-SSO deployment:
 |===
 
 See the xref:env_vars[Reference chapter] for a more comprehensive list of the RH-SSO environment variables.
-See the xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {productname} Image] for an end-to-end example of RH-SSO deployment.
+See the xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} Image] for an end-to-end example of RH-SSO deployment.
 
 ==== Routes
 
-The {productname} templates use TLS passthrough termination for routes by default. This means that the destination route receives encrypted traffic without the OpenShift router providing TLS termination. Users do not need the relevant SSL certificate to connect to the RH-SSO login page.
+The {project_openshift_product_name} templates use TLS passthrough termination for routes by default. This means that the destination route receives encrypted traffic without the OpenShift router providing TLS termination. Users do not need the relevant SSL certificate to connect to the RH-SSO login page.
 
 For more information on OpenShift route types, see the link:https://docs.openshift.com/container-platform/3.7/architecture/networking/routes.html#route-types[Networking chapter] of the OpenShift Architecture Guide.
 
@@ -397,7 +397,7 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 
 [IMPORTANT]
 ====
-This guide assumes the {productname} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
+This guide assumes the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
 
 * *_sso71-mysql_*
 * *_sso72-mysql_*
@@ -411,7 +411,7 @@ This guide assumes the {productname} image has been previously link:https://acce
 
 ===== Create RH-SSO Realm, Roles, and User for the EAP 6.4 / 7.0 JSP Application
 
-The EAP 6.4 / 7.0 JSP service application requires dedicated RH-SSO realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {productname} image has been deployed:
+The EAP 6.4 / 7.0 JSP service application requires dedicated RH-SSO realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {project_openshift_product_name} image has been deployed:
 
 *Create the RH-SSO Realm*
 

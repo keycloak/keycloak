@@ -348,7 +348,7 @@ _sso-truststore-volume_ volume.
 |===
 
 Available link:https://docs.openshift.com/container-platform/latest/dev_guide/templates.html#overview[application templates]
-for {productname} can combine the xref:conf_env_vars[aforementioned
+for {project_openshift_product_name} can combine the xref:conf_env_vars[aforementioned
 configuration variables] with common OpenShift variables (for example
 *_APPLICATION_NAME_* or *_SOURCE_REPOSITORY_URL_*), product specific variables
 (e.g. *_HORNETQ_CLUSTER_PASSWORD_*), or configuration variables typical to

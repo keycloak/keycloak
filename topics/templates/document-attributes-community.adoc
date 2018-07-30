@@ -9,6 +9,7 @@
 :project_images: keycloak-images
 :project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
+:project_openshift_product_name: Keycloak for OpenShift
 
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
