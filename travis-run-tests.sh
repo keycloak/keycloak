@@ -25,12 +25,16 @@ function should-tests-run() {
 ## You can define a precondition for running a particular test group by defining function should-tests-run-<test-group-name>.
 ## Its return value determines whether the test group should run.
 
-function should-tests-run-crossdc() {
+function should-tests-run-crossdc-server() {
     # If this is not a pull request, it is build as a branch update. In that case test everything
     [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
 
     git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
         egrep -i 'crossdc|infinispan'
+}
+
+function should-tests-run-crossdc-adapter() {
+    should-tests-run-crossdc-server
 }
 
 if ! should-tests-run; then
