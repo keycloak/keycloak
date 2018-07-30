@@ -59,9 +59,6 @@ public class ClientScopeResource {
     protected ClientScopeModel clientScope;
     protected KeycloakSession session;
 
-    @Context
-    protected UriInfo uriInfo;
-
     public ClientScopeResource(RealmModel realm, AdminPermissionEvaluator auth, ClientScopeModel clientScope, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
@@ -107,7 +104,7 @@ public class ClientScopeResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
@@ -141,7 +138,7 @@ public class ClientScopeResource {
 
         try {
             realm.removeClientScope(clientScope.getId());
-            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } catch (ModelException me) {
             return ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);

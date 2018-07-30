@@ -86,8 +86,6 @@ public class IdentityProviderResource {
     private final IdentityProviderModel identityProviderModel;
     private final AdminEventBuilder adminEvent;
 
-    @Context private UriInfo uriInfo;
-
     public IdentityProviderResource(AdminPermissionEvaluator auth, RealmModel realm, KeycloakSession session, IdentityProviderModel identityProviderModel, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
@@ -137,7 +135,7 @@ public class IdentityProviderResource {
             this.realm.removeIdentityProviderMapper(mapper);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
         return Response.noContent().build();
     }
@@ -161,7 +159,7 @@ public class IdentityProviderResource {
         try {
             updateIdpFromRep(providerRep, realm, session);
 
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(providerRep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(providerRep).success();
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -235,14 +233,13 @@ public class IdentityProviderResource {
     /**
      * Export public broker configuration for identity provider
      *
-     * @param uriInfo
      * @param format Format to use
      * @return
      */
     @GET
     @Path("export")
     @NoCache
-    public Response export(@Context UriInfo uriInfo, @QueryParam("format") String format) {
+    public Response export(@QueryParam("format") String format) {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
@@ -251,7 +248,7 @@ public class IdentityProviderResource {
 
         try {
             IdentityProviderFactory factory = getIdentityProviderFactory();
-            return factory.create(session, identityProviderModel).export(uriInfo, realm, format);
+            return factory.create(session, identityProviderModel).export(session.getContext().getUri(), realm, format);
         } catch (Exception e) {
             return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }
@@ -339,10 +336,10 @@ public class IdentityProviderResource {
             return ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
         }
 
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo, model.getId())
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri(), model.getId())
             .representation(mapper).success();
 
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
 
     }
 
@@ -389,7 +386,7 @@ public class IdentityProviderResource {
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
         realm.updateIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
 
     }
 
@@ -411,7 +408,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
     }
 

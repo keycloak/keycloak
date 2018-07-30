@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,8 +33,8 @@ import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -48,7 +47,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,9 +80,6 @@ public class RoleMapperResource {
 
     @Context
     protected ClientConnection clientConnection;
-
-    @Context
-    protected UriInfo uriInfo;
 
     @Context
     protected KeycloakSession session;
@@ -236,7 +231,7 @@ public class RoleMapperResource {
             roleMapper.grantRole(roleModel);
         }
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 
     /**
@@ -279,7 +274,7 @@ public class RoleMapperResource {
 
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
 
     }
 
@@ -293,7 +288,7 @@ public class RoleMapperResource {
         if (clientModel == null) {
             throw new NotFoundException("Client not found");
         }
-        ClientRoleMappingsResource resource = new ClientRoleMappingsResource(uriInfo, session, realm, auth, roleMapper,
+        ClientRoleMappingsResource resource = new ClientRoleMappingsResource(session.getContext().getUri(), session, realm, auth, roleMapper,
                 clientModel, adminEvent,
                 managePermission, viewPermission);
         return resource;

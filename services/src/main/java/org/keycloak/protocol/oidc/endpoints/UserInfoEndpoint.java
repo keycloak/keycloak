@@ -45,8 +45,8 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -56,11 +56,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author pedroigor
@@ -72,9 +70,6 @@ public class UserInfoEndpoint {
 
     @Context
     private HttpResponse response;
-
-    @Context
-    private UriInfo uriInfo;
 
     @Context
     private KeycloakSession session;
@@ -135,7 +130,7 @@ public class UserInfoEndpoint {
         AccessToken token = null;
         try {
             RSATokenVerifier verifier = RSATokenVerifier.create(tokenString)
-                    .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
             String kid = verifier.getHeader().getKeyId();
             verifier.publicKey(session.keys().getRsaPublicKey(realm, kid));
             token = verifier.verify().getToken();
@@ -194,7 +189,7 @@ public class UserInfoEndpoint {
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
 
         if (cfg.isUserInfoSignatureRequired()) {
-            String issuerUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+            String issuerUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
             String audience = clientModel.getClientId();
             claims.put("iss", issuerUrl);
             claims.put("aud", audience);

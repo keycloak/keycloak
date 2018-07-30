@@ -147,7 +147,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (statusResponse.getDestination() != null && !session.getContext().getUri().getAbsolutePath().toString().equals(statusResponse.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -179,7 +179,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             session.getContext().setClient(client);
             logger.debug("logout response");
-            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
             return response;
         }
@@ -283,7 +283,7 @@ public class SamlService extends AuthorizationEndpointBase {
             String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
-                redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
+                redirect = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri.toString(), realm, client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
@@ -386,12 +386,12 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                String postBindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, SamlProtocol.SAML_POST_BINDING);
+                String postBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, SamlProtocol.SAML_POST_BINDING);
                 if (samlClient.forcePostBinding() && postBindingUri != null && ! postBindingUri.trim().isEmpty())
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 
-                String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
+                String bindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (samlClient.requiresRealmSignature()) {
@@ -412,7 +412,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                 }
                 logger.debug("browser Logout");
-                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             } else if (logoutRequest.getSessionIndex() != null) {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
 
@@ -426,7 +426,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     }
 
                     try {
-                        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+                        authManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
                     } catch (Exception e) {
                         logger.warn("Failure with backchannel logout", e);
                     }
@@ -438,12 +438,12 @@ public class SamlService extends AuthorizationEndpointBase {
             // default
 
             String logoutBinding = getBindingType();
-            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
+            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
             String logoutRelayState = relayState;
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
-            builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+            builder.issuer(RealmsResource.realmBaseUrl(session.getContext().getUri()).build(realm.getName()).toString());
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
@@ -466,7 +466,7 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         private boolean checkSsl() {
-            if (uriInfo.getBaseUri().getScheme().equals("https")) {
+            if (session.getContext().getUri().getBaseUri().getScheme().equals("https")) {
                 return true;
             } else {
                 return !realm.getSslRequired().isRequired(clientConnection);
@@ -518,7 +518,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
             KeyLocator clientKeyLocator = new HardcodedKeyLocator(publicKey);
-            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_REQUEST_KEY);
         }
 
         @Override
@@ -539,7 +539,7 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     protected Response newBrowserAuthentication(AuthenticationSessionModel authSession, boolean isPassive, boolean redirectToAuthentication) {
-        SamlProtocol samlProtocol = new SamlProtocol().setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(uriInfo);
+        SamlProtocol samlProtocol = new SamlProtocol().setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(session.getContext().getUri());
         return newBrowserAuthentication(authSession, isPassive, redirectToAuthentication, samlProtocol);
     }
 
@@ -576,7 +576,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @Produces(MediaType.APPLICATION_XML)
     @NoCache
     public String getDescriptor() throws Exception {
-        return getIDPMetadataDescriptor(uriInfo, session, realm);
+        return getIDPMetadataDescriptor(session.getContext().getUri(), session, realm);
 
     }
 
@@ -708,7 +708,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return true;    // destination is optional
         }
 
-        URI expected = uriInfo.getAbsolutePath();
+        URI expected = session.getContext().getUri().getAbsolutePath();
 
         if (Objects.equals(expected, destination)) {
             return true;
@@ -716,12 +716,12 @@ public class SamlService extends AuthorizationEndpointBase {
 
         Integer portByScheme = knownPorts.get(expected.getScheme());
         if (expected.getPort() < 0 && portByScheme != null) {
-            return Objects.equals(uriInfo.getRequestUriBuilder().port(portByScheme).build(), destination);
+            return Objects.equals(session.getContext().getUri().getRequestUriBuilder().port(portByScheme).build(), destination);
         }
 
         String protocolByPort = knownProtocols.get(expected.getPort());
         if (expected.getPort() >= 0 && Objects.equals(protocolByPort, expected.getScheme())) {
-            return Objects.equals(uriInfo.getRequestUriBuilder().port(-1).build(), destination);
+            return Objects.equals(session.getContext().getUri().getRequestUriBuilder().port(-1).build(), destination);
         }
 
         return false;

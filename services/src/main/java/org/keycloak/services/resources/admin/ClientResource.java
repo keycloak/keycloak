@@ -77,7 +77,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -102,9 +101,6 @@ public class ClientResource {
     private AdminEventBuilder adminEvent;
     protected ClientModel client;
     protected KeycloakSession session;
-
-    @Context
-    protected UriInfo uriInfo;
 
     @Context
     protected KeycloakApplication keycloak;
@@ -155,7 +151,7 @@ public class ClientResource {
 
         try {
             updateClientFromRep(rep, client, session);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             updateAuthorizationSettings(rep);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -203,7 +199,7 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
+        return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(session.getContext().getUri()));
     }
 
     /**
@@ -220,7 +216,7 @@ public class ClientResource {
         }
 
         new ClientManager(new RealmManager(session)).removeClient(realm, client);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
 
@@ -239,7 +235,7 @@ public class ClientResource {
         logger.debug("regenerateSecret");
         UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
         return rep;
     }
 
@@ -255,12 +251,12 @@ public class ClientResource {
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.clients().requireManage(client);
 
-        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, uriInfo, client, RegistrationAuth.AUTHENTICATED);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, session.getContext().getUri(), client, RegistrationAuth.AUTHENTICATED);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
         rep.setRegistrationAccessToken(token);
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
         return rep;
     }
 
@@ -296,7 +292,7 @@ public class ClientResource {
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent);
+        return new RoleContainerResource(session, session.getContext().getUri(), realm, auth, client, adminEvent);
     }
 
 
@@ -343,7 +339,7 @@ public class ClientResource {
         }
         client.addClientScope(clientScope, defaultScope);
 
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT).resourcePath(session.getContext().getUri()).success();
     }
 
 
@@ -359,7 +355,7 @@ public class ClientResource {
         }
         client.removeClientScope(clientScope);
 
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT).resourcePath(session.getContext().getUri()).success();
     }
 
 
@@ -392,7 +388,7 @@ public class ClientResource {
 
     @Path("evaluate-scopes")
     public ClientScopeEvaluateResource clientScopeEvaluateResource() {
-        return new ClientScopeEvaluateResource(session, uriInfo, realm, auth, client, clientConnection);
+        return new ClientScopeEvaluateResource(session, session.getContext().getUri(), realm, auth, client, clientConnection);
     }
 
     /**
@@ -431,8 +427,8 @@ public class ClientResource {
     public GlobalRequestResult pushRevocation() {
         auth.clients().requireConfigure(client);
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).resource(ResourceType.CLIENT).success();
-        return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).resource(ResourceType.CLIENT).success();
+        return new ResourceAdminManager(session).pushClientRevocationPolicy(session.getContext().getUri().getRequestUri(), realm, client);
 
     }
 
@@ -567,7 +563,7 @@ public class ClientResource {
         }
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo, node).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri(), node).success();
     }
 
     /**
@@ -588,7 +584,7 @@ public class ClientResource {
             throw new NotFoundException("Client does not have node ");
         }
         client.unregisterNode(node);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri()).success();
     }
 
     /**
@@ -606,8 +602,8 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         logger.debug("Test availability of cluster nodes");
-        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
-        adminEvent.operation(OperationType.ACTION).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo).representation(result).success();
+        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(session.getContext().getUri().getRequestUri(), realm, client);
+        adminEvent.operation(OperationType.ACTION).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;
     }
 

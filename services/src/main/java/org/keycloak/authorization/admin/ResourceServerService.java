@@ -27,7 +27,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -68,9 +67,6 @@ public class ResourceServerService {
     private ResourceServer resourceServer;
     private final ClientModel client;
 
-    @Context
-    private UriInfo uriInfo;
-
     public ResourceServerService(AuthorizationProvider authorization, ResourceServer resourceServer, ClientModel client, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.authorization = authorization;
         this.session = authorization.getKeycloakSession();
@@ -96,7 +92,7 @@ public class ResourceServerService {
         this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().create(this.client.getId());
         createDefaultRoles(serviceAccount);
         createDefaultPermission(createDefaultResource(), createDefaultPolicy());
-        audit(OperationType.CREATE, uriInfo, newClient);
+        audit(OperationType.CREATE, session.getContext().getUri(), newClient);
 
         return resourceServer;
     }
@@ -108,14 +104,14 @@ public class ResourceServerService {
         this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
-        audit(OperationType.UPDATE, uriInfo, false);
+        audit(OperationType.UPDATE, session.getContext().getUri(), false);
         return Response.noContent().build();
     }
 
     public void delete() {
         this.auth.realm().requireManageAuthorization();
         authorization.getStoreFactory().getResourceServerStore().delete(resourceServer.getId());
-        audit(OperationType.DELETE, uriInfo, false);
+        audit(OperationType.DELETE, session.getContext().getUri(), false);
     }
 
     @GET
@@ -136,21 +132,21 @@ public class ResourceServerService {
     @Path("/import")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importSettings(@Context final UriInfo uriInfo, ResourceServerRepresentation rep) {
+    public Response importSettings(ResourceServerRepresentation rep) {
         this.auth.realm().requireManageAuthorization();
 
         rep.setClientId(client.getId());
 
         RepresentationToModel.toModel(rep, authorization);
 
-        audit(OperationType.UPDATE, uriInfo, false);
+        audit(OperationType.UPDATE, session.getContext().getUri(), false);
 
         return Response.noContent().build();
     }
 
     @Path("/resource")
     public ResourceSetService getResourceSetResource() {
-        ResourceSetService resource = new ResourceSetService(this.resourceServer, this.authorization, this.auth, adminEvent);
+        ResourceSetService resource = new ResourceSetService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
@@ -159,7 +155,7 @@ public class ResourceServerService {
 
     @Path("/scope")
     public ScopeService getScopeResource() {
-        ScopeService resource = new ScopeService(this.resourceServer, this.authorization, this.auth, adminEvent);
+        ScopeService resource = new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

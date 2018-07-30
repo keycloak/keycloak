@@ -17,7 +17,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -32,7 +31,6 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
@@ -49,7 +47,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -75,9 +72,6 @@ public class WelcomeResource {
     protected HttpHeaders headers;
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private KeycloakSession session;
 
     public WelcomeResource(boolean bootstrap) {
@@ -95,7 +89,7 @@ public class WelcomeResource {
     public Response getWelcomePage() throws URISyntaxException {
         checkBootstrap();
 
-        String requestUri = uriInfo.getRequestUri().toString();
+        String requestUri = session.getContext().getUri().getRequestUri().toString();
         if (!requestUri.endsWith("/")) {
             return Response.seeOther(new URI(requestUri + "/")).build();
         } else {
@@ -243,15 +237,15 @@ public class WelcomeResource {
 
     private String setCsrfCookie() {
         String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
-        String cookiePath = uriInfo.getPath();
-        boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+        String cookiePath = session.getContext().getUri().getPath();
+        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
-        String cookiePath = uriInfo.getPath();
-        boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+        String cookiePath = session.getContext().getUri().getPath();
+        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true);
     }
 

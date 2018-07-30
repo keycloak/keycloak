@@ -23,9 +23,6 @@ public class DockerV2LoginProtocolService {
     private final EventBuilder event;
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private KeycloakSession session;
 
     @Context

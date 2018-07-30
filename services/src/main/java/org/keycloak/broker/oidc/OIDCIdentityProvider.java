@@ -101,8 +101,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         @GET
         @Path("logout_response")
-        public Response logoutResponse(@Context UriInfo uriInfo,
-                                       @QueryParam("state") String state) {
+        public Response logoutResponse(@QueryParam("state") String state) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
                 logger.error("no valid user session");
@@ -118,7 +117,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
-            return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
     }

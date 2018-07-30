@@ -20,7 +20,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,7 +33,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.*;
+import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -78,9 +78,6 @@ public class UsersResource {
     protected ClientConnection clientConnection;
 
     @Context
-    protected UriInfo uriInfo;
-
-    @Context
     protected KeycloakSession session;
 
     @Context
@@ -97,13 +94,12 @@ public class UsersResource {
      *
      * Username must be unique.
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
+    public Response createUser(final UserRepresentation rep) {
         auth.users().requireManage();
 
         // Double-check duplicated username and email here due to federation
@@ -120,13 +116,13 @@ public class UsersResource {
 
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();

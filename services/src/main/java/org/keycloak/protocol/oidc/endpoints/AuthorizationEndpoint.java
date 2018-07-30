@@ -105,7 +105,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     @GET
     public Response buildGet() {
         logger.trace("Processing @GET request");
-        return process(uriInfo.getQueryParameters());
+        return process(session.getContext().getUri().getQueryParameters());
     }
 
     private Response process(MultivaluedMap<String, String> params) {
@@ -358,7 +358,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
         // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client, isOIDCRequest);
+        redirectUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUriParam, realm, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
@@ -372,7 +372,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authenticationSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
         authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
-        authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
         if (request.getState() != null) authenticationSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
         if (request.getNonce() != null) authenticationSession.setClientNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
@@ -406,11 +406,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
+        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
     }
 
     private Response buildRegister() {
-        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+        authManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
 
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
@@ -422,7 +422,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildForgotCredential() {
-        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+        authManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
 
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();

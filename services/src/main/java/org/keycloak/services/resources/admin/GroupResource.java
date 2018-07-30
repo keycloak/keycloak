@@ -21,7 +21,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +30,10 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -40,20 +43,14 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 /**
  * @resource Groups
@@ -74,8 +71,6 @@ public class GroupResource {
         this.adminEvent = adminEvent.resource(ResourceType.GROUP);
         this.group = group;
     }
-
-    @Context private UriInfo uriInfo;
 
      /**
      *
@@ -106,7 +101,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         updateGroup(rep, group);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
 
     }
@@ -116,7 +111,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         realm.removeGroup(group);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
 
@@ -151,8 +146,8 @@ public class GroupResource {
         } else {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
-            URI uri = uriInfo.getBaseUriBuilder()
-                                           .path(uriInfo.getMatchedURIs().get(2))
+            URI uri = session.getContext().getUri().getBaseUriBuilder()
+                                           .path(session.getContext().getUri().getMatchedURIs().get(2))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
             rep.setId(child.getId());
@@ -160,7 +155,7 @@ public class GroupResource {
 
         }
         realm.moveGroup(child, group);
-        adminEvent.resourcePath(uriInfo).representation(rep).success();
+        adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
