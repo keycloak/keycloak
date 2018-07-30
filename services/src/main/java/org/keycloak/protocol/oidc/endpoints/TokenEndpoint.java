@@ -422,7 +422,7 @@ public class TokenEndpoint {
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
-            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request);
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
             if (certConf != null) {
                 responseBuilder.getAccessToken().setCertConf(certConf);
                 responseBuilder.getRefreshToken().setCertConf(certConf);
