@@ -251,7 +251,7 @@ public class ClientResource {
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.clients().requireManage(client);
 
-        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, session.getContext().getUri(), client, RegistrationAuth.AUTHENTICATED);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, client, RegistrationAuth.AUTHENTICATED);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
         rep.setRegistrationAccessToken(token);

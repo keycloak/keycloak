@@ -31,6 +31,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.urls.HostnameProvider;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.UriInfo;
@@ -66,25 +67,25 @@ public class ClientRegistrationTokenUtils {
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), session.getContext().getUri(), client, registrationAuth);
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, UriInfo uri, ClientModel client, RegistrationAuth registrationAuth) {
+    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth) {
         String id = KeycloakModelUtils.generateId();
         client.setRegistrationToken(id);
 
         RegistrationAccessToken regToken = new RegistrationAccessToken();
         regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
 
-        return setupToken(regToken, session, realm, uri, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
+        return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
     }
 
-    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, UriInfo uri, ClientInitialAccessModel model) {
+    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model) {
         JsonWebToken initialToken = new JsonWebToken();
-        return setupToken(initialToken, session, realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
+        return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
-    public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, UriInfo uri, String token) {
+    public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token) {
         if (token == null) {
             return TokenVerification.error(new RuntimeException("Missing token"));
         }
@@ -110,7 +111,7 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Token is not JWT", e));
         }
 
-        if (!getIssuer(realm, uri).equals(jwt.getIssuer())) {
+        if (!getIssuer(session, realm).equals(jwt.getIssuer())) {
             return TokenVerification.error(new RuntimeException("Issuer from token don't match with the realm issuer."));
         }
 
@@ -127,8 +128,8 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, UriInfo uri, String id, String type, int expiration) {
-        String issuer = getIssuer(realm, uri);
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+        String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
@@ -143,8 +144,8 @@ public class ClientRegistrationTokenUtils {
         return token;
     }
 
-    private static String getIssuer(RealmModel realm, UriInfo uri) {
-        return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
+    private static String getIssuer(KeycloakSession session, RealmModel realm) {
+        return Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
     }
 
     protected static class TokenVerification {

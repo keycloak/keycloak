@@ -22,6 +22,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -45,6 +46,8 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     private KeycloakSession session;
 
+    private KeycloakUriInfo uriInfo;
+
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
     }
@@ -64,8 +67,11 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     @Override
-    public UriInfo getUri() {
-        return getContextObject(UriInfo.class);
+    public KeycloakUriInfo getUri() {
+        if (uriInfo == null) {
+            uriInfo = new KeycloakUriInfo(session, getContextObject(UriInfo.class));
+        }
+        return uriInfo;
     }
 
     @Override
@@ -86,6 +92,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setRealm(RealmModel realm) {
         this.realm = realm;
+        this.uriInfo = null;
     }
 
     @Override
