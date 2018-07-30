@@ -83,7 +83,7 @@ public class ClientInitialAccessResource {
 
         ClientInitialAccessPresentation rep = wrap(clientInitialAccessModel);
 
-        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, session.getContext().getUri(), clientInitialAccessModel);
+        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel);
         rep.setToken(token);
 
         response.setStatus(Response.Status.CREATED.getStatusCode());

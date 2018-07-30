@@ -71,7 +71,6 @@ public class ClientRegistrationAuth {
 
     private void init() {
         realm = session.getContext().getRealm();
-        UriInfo uri = session.getContext().getUri();
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authorizationHeader == null) {
@@ -85,7 +84,7 @@ public class ClientRegistrationAuth {
 
         token = split[1];
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, token);
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token);
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }

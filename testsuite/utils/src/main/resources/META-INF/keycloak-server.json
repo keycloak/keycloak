@@ -1,4 +1,15 @@
 {
+
+    "hostname": {
+        "provider": "request",
+
+        "fixed": {
+            "hostname": "localhost",
+            "httpPort": "-1",
+            "httpsPort": "-1"
+        }
+    },
+
     "admin": {
         "realm": "master"
     },
@@ -60,7 +71,6 @@
     "connectionsHttpClient": {
         "default": {}
     },
-
 
     "connectionsJpa": {
         "default": {
