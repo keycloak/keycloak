@@ -264,12 +264,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(ScopeUpdatedEvent.create(id, name, serverId));
     }
 
-    public void registerResourceInvalidation(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner) {
-        cache.resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
+    public void registerResourceInvalidation(String id, String name, String type, Set<String> uris, Set<String> scopes, String serverId, String owner) {
+        cache.resourceUpdated(id, name, type, uris, scopes, serverId, owner, invalidations);
         ResourceAdapter adapter = managedResources.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId, owner));
+        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uris, scopes, serverId, owner));
     }
 
     public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String defaultResourceType, String serverId) {
@@ -550,7 +550,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
             Resource resource = getResourceStoreDelegate().create(id, name, resourceServer, owner);
             Resource cached = findById(resource.getId(), resourceServer.getId());
-            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
+            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUris(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
             return cached;
         }
 
@@ -561,8 +561,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (resource == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(ResourceRemovedEvent.create(id, resource.getName(), resource.getType(), resource.getUri(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId()));
-            cache.resourceRemoval(id, resource.getName(), resource.getType(), resource.getUri(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId(), invalidations);
+            invalidationEvents.add(ResourceRemovedEvent.create(id, resource.getName(), resource.getType(), resource.getUris(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId()));
+            cache.resourceRemoval(id, resource.getName(), resource.getType(), resource.getUris(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId(), invalidations);
             getResourceStoreDelegate().delete(id);
 
         }

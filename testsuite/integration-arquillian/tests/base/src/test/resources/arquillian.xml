@@ -79,13 +79,13 @@
         <property name="browser">${browser}</property>
         <property name="firefox_binary">${firefox_binary}</property>
     </extension>
-    
+
     <engine>
         <!-- This allows manual inspection of deployed archives. -->
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
-    
-    <container qualifier="auth-server-undertow" mode="suite" default="true">
+
+    <container qualifier="auth-server-undertow" mode="manual" default="true">
         <configuration>
             <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="bindAddress">0.0.0.0</property>
@@ -94,8 +94,8 @@
             <property name="remoteMode">${undertow.remote}</property>
         </configuration>
     </container>
-    
-    <container qualifier="auth-server-${auth.server}" mode="suite" default="true">
+
+    <container qualifier="auth-server-${auth.server}" mode="manual" default="true">
         <configuration>
             <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -226,7 +226,7 @@
 
     <!-- Cross DC. Node numbering is [centre #].[node #] -->
     <group qualifier="auth-server-jboss-cross-dc">
-        <container qualifier="cache-server-cross-dc-1" mode="suite" >
+        <container qualifier="cache-server-cross-dc-1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
@@ -252,7 +252,7 @@
             </configuration>
         </container>
 
-        <container qualifier="cache-server-cross-dc-2" mode="suite" >
+        <container qualifier="cache-server-cross-dc-2" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
@@ -290,7 +290,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="suite" >
+        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.undertow.crossdc}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
@@ -337,7 +337,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="suite" >
+        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.undertow.crossdc}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
@@ -383,7 +383,7 @@
                 }</property>
             </configuration>
         </container>
-        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="suite" >
+        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.jboss.crossdc}</property>
                 <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -436,7 +436,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="suite" >
+        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.jboss.crossdc}</property>
                 <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>

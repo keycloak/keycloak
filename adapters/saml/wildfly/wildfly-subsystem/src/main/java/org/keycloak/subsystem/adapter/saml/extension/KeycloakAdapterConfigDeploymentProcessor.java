@@ -17,6 +17,8 @@
 
 package org.keycloak.subsystem.adapter.saml.extension;
 
+import static org.keycloak.subsystem.adapter.saml.extension.Elytron.isElytronEnabled;
+
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -55,7 +57,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             addKeycloakSamlAuthData(phaseContext);
         }
 
-        addConfigurationListener(deploymentUnit);
+        addConfigurationListener(phaseContext);
     }
 
     private void addKeycloakSamlAuthData(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -129,7 +131,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
     }
 
-    private void addConfigurationListener(DeploymentUnit deploymentUnit) {
+    private void addConfigurationListener(DeploymentPhaseContext phaseContext) {
+        DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
             return;
@@ -148,10 +151,13 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         if (!loginConfig.getAuthMethod().equals("KEYCLOAK-SAML")) {
             return;
         }
-        ListenerMetaData listenerMetaData = new ListenerMetaData();
 
-        listenerMetaData.setListenerClass(KeycloakConfigurationServletListener.class.getName());
+        if (isElytronEnabled(phaseContext)) {
+            ListenerMetaData listenerMetaData = new ListenerMetaData();
 
-        webMetaData.getListeners().add(listenerMetaData);
+            listenerMetaData.setListenerClass(KeycloakConfigurationServletListener.class.getName());
+
+            webMetaData.getListeners().add(listenerMetaData);
+        }
     }
 }

@@ -34,7 +34,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * note: migrated from old testsuite

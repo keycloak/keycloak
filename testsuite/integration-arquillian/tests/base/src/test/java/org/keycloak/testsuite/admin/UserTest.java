@@ -324,6 +324,13 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEmpty();
 
     }
+    
+    // KEYCLOAK-7015
+    @Test
+    public void createTwoUsersWithEmptyStringEmails() {
+        createUser("user1", "");
+        createUser("user2", "");
+    }
 
     @Test
     public void createUserWithFederationLink() {
@@ -1212,7 +1219,7 @@ public class UserTest extends AbstractAdminTest {
             switchEditUsernameAllowedOn(false);
         }
     }
-
+    
     @Test
     public void resetUserPassword() {
         String userId = createUser("user1", "user1@localhost");

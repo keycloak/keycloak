@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="org.keycloak.examples.cordova" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0">
+    <name>Keycloak Auth</name>
+    <description>Keycloak Cordova Example</description>
+    <author href="http://www.keycloak.org">Keycloak Team</author>
+    <feature name="http://api.phonegap.com/1.0/device" />
+    <preference name="permissions" value="none" />
+    <preference name="AndroidLaunchMode" value="singleInstance" />
+    <gap:plugin name="cordova-plugin-inappbrowser" />
+    <gap:plugin name="cordova-plugin-whitelist" source="npm" version="1.0.0" />
+    <access origin="*" />
+    <allow-navigation href="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
+    <universal-links>
+        <host name="keycloak-cordova-example.github.io" scheme="https">
+            <path event="keycloak" url="/login" />
+        </host>
+    </universal-links>
+    <plugin name="cordova-plugin-browsertab" spec="~0.2.0" />
+    <plugin name="cordova-plugin-deeplinks" spec="^1.1.0" />
+    <engine name="ios" spec="^4.5.4" />
+    <engine name="android" spec="^6.4.0" />
+</widget>

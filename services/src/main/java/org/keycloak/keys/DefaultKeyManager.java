@@ -19,20 +19,19 @@ package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 
 import javax.crypto.SecretKey;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,202 +48,170 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     @Override
+    public KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm) {
+        for (KeyProvider p : getProviders(realm)) {
+            for (KeyWrapper key : p .getKeys()) {
+                if (key.getStatus().isActive() && matches(key, use, algorithm)) {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracev("Active key found: realm={0} kid={1} algorithm={2}", realm.getName(), key.getKid(), algorithm);
+                    }
+
+                    return key;
+                }
+            }
+        }
+        throw new RuntimeException("Failed to find key: realm=" + realm.getName() + " algorithm=" + algorithm);
+    }
+
+    @Override
+    public KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm) {
+        if (kid == null) {
+            logger.warnv("kid is null, can't find public key", realm.getName(), kid);
+            return null;
+        }
+
+        for (KeyProvider p : getProviders(realm)) {
+            for (KeyWrapper key : p.getKeys()) {
+                if (key.getKid().equals(kid) && key.getStatus().isEnabled() && matches(key, use, algorithm)) {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracev("Active key realm={0} kid={1} algorithm={2}", realm.getName(), key.getKid(), algorithm);
+                    }
+
+                    return key;
+                }
+            }
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.tracev("Failed to find public key realm={0} kid={1} algorithm={2}", realm.getName(), kid, algorithm);
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm) {
+        List<KeyWrapper> keys = new LinkedList<>();
+        for (KeyProvider p : getProviders(realm)) {
+            for (KeyWrapper key : p .getKeys()) {
+                if (key.getStatus().isEnabled() && matches(key, use, algorithm)) {
+                    keys.add(key);
+                }
+            }
+        }
+        return keys;
+    }
+
+    @Override
+    public List<KeyWrapper> getKeys(RealmModel realm) {
+        List<KeyWrapper> keys = new LinkedList<>();
+        for (KeyProvider p : getProviders(realm)) {
+            for (KeyWrapper key : p .getKeys()) {
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
+
+    @Override
+    @Deprecated
     public ActiveRsaKey getActiveRsaKey(RealmModel realm) {
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.RSA)) {
-                RsaKeyProvider r = (RsaKeyProvider) p;
-                if (r.getKid() != null && r.getPrivateKey() != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Active key realm={0} kid={1}", realm.getName(), p.getKid());
-                    }
-                    String kid = p.getKid();
-                    return new ActiveRsaKey(kid, r.getPrivateKey(), r.getPublicKey(kid), r.getCertificate(kid));
-                }
-            }
-        }
-        throw new RuntimeException("Failed to get RSA keys");
+        KeyWrapper key = getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
+        return new ActiveRsaKey(key.getKid(), (PrivateKey) key.getSignKey(), (PublicKey) key.getVerifyKey(), key.getCertificate());
     }
 
     @Override
+    @Deprecated
     public ActiveHmacKey getActiveHmacKey(RealmModel realm) {
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.HMAC)) {
-                HmacKeyProvider h = (HmacKeyProvider) p;
-                if (h.getKid() != null && h.getSecretKey() != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Active secret realm={0} kid={1}", realm.getName(), p.getKid());
-                    }
-                    String kid = p.getKid();
-                    return new ActiveHmacKey(kid, h.getSecretKey());
-                }
-            }
-        }
-        throw new RuntimeException("Failed to get keys");
+        KeyWrapper key = getActiveKey(realm, KeyUse.SIG, Algorithm.HS256);
+        return new ActiveHmacKey(key.getKid(), key.getSecretKey());
     }
 
     @Override
+    @Deprecated
     public ActiveAesKey getActiveAesKey(RealmModel realm) {
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.AES)) {
-                AesKeyProvider h = (AesKeyProvider) p;
-                if (h.getKid() != null && h.getSecretKey() != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Active AES Key realm={0} kid={1}", realm.getName(), p.getKid());
-                    }
-                    String kid = p.getKid();
-                    return new ActiveAesKey(kid, h.getSecretKey());
-                }
-            }
-        }
-        throw new RuntimeException("Failed to get keys");
+        KeyWrapper key = getActiveKey(realm, KeyUse.ENC, Algorithm.AES);
+        return new ActiveAesKey(key.getKid(), key.getSecretKey());
     }
 
     @Override
+    @Deprecated
     public PublicKey getRsaPublicKey(RealmModel realm, String kid) {
-        if (kid == null) {
-            logger.warnv("KID is null, can't find public key", realm.getName(), kid);
-            return null;
-        }
-
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.RSA)) {
-                RsaKeyProvider r = (RsaKeyProvider) p;
-                PublicKey publicKey = r.getPublicKey(kid);
-                if (publicKey != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Found public key realm={0} kid={1}", realm.getName(), kid);
-                    }
-                    return publicKey;
-                }
-            }
-        }
-        if (logger.isTraceEnabled()) {
-            logger.tracev("Failed to find public key realm={0} kid={1}", realm.getName(), kid);
-        }
-        return null;
+        KeyWrapper key = getKey(realm, kid, KeyUse.SIG, Algorithm.RS256);
+        return key != null ? (PublicKey) key.getVerifyKey() : null;
     }
 
     @Override
+    @Deprecated
     public Certificate getRsaCertificate(RealmModel realm, String kid) {
-        if (kid == null) {
-            logger.warnv("KID is null, can't find public key", realm.getName(), kid);
-            return null;
-        }
-
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.RSA)) {
-                RsaKeyProvider r = (RsaKeyProvider) p;
-                Certificate certificate = r.getCertificate(kid);
-                if (certificate != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Found certificate realm={0} kid={1}", realm.getName(), kid);
-                    }
-                    return certificate;
-                }
-            }
-        }
-        if (logger.isTraceEnabled()) {
-            logger.tracev("Failed to find certificate realm={0} kid={1}", realm.getName(), kid);
-        }
-        return null;
+        KeyWrapper key = getKey(realm, kid, KeyUse.SIG, Algorithm.RS256);
+        return key != null ? key.getCertificate() : null;
     }
 
     @Override
+    @Deprecated
     public SecretKey getHmacSecretKey(RealmModel realm, String kid) {
-        if (kid == null) {
-            logger.warnv("KID is null, can't find secret key", realm.getName(), kid);
-            return null;
-        }
-
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.HMAC)) {
-                HmacKeyProvider h = (HmacKeyProvider) p;
-                SecretKey s = h.getSecretKey(kid);
-                if (s != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Found secret key realm={0} kid={1}", realm.getName(), kid);
-                    }
-                    return s;
-                }
-            }
-        }
-        if (logger.isTraceEnabled()) {
-            logger.tracev("Failed to find secret key realm={0} kid={1}", realm.getName(), kid);
-        }
-        return null;
+        KeyWrapper key = getKey(realm, kid, KeyUse.SIG, Algorithm.HS256);
+        return key != null ? key.getSecretKey() : null;
     }
 
     @Override
+    @Deprecated
     public SecretKey getAesSecretKey(RealmModel realm, String kid) {
-        if (kid == null) {
-            logger.warnv("KID is null, can't find aes key", realm.getName(), kid);
-            return null;
-        }
-
-        for (KeyProvider p : getProviders(realm)) {
-            if (p.getType().equals(AlgorithmType.AES)) {
-                AesKeyProvider h = (AesKeyProvider) p;
-                SecretKey s = h.getSecretKey(kid);
-                if (s != null) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Found AES key realm={0} kid={1}", realm.getName(), kid);
-                    }
-                    return s;
-                }
-            }
-        }
-        if (logger.isTraceEnabled()) {
-            logger.tracev("Failed to find AES key realm={0} kid={1}", realm.getName(), kid);
-        }
-        return null;
+        KeyWrapper key = getKey(realm, kid, KeyUse.ENC, Algorithm.AES);
+        return key.getSecretKey();
     }
 
     @Override
-    public List<RsaKeyMetadata> getRsaKeys(RealmModel realm, boolean includeDisabled) {
+    @Deprecated
+    public List<RsaKeyMetadata> getRsaKeys(RealmModel realm) {
         List<RsaKeyMetadata> keys = new LinkedList<>();
-        for (KeyProvider p : getProviders(realm)) {
-            if (p instanceof RsaKeyProvider) {
-                if (includeDisabled) {
-                    keys.addAll(p.getKeyMetadata());
-                } else {
-                    List<RsaKeyMetadata> metadata = p.getKeyMetadata();
-                    metadata.stream().filter(k -> k.getStatus() != KeyMetadata.Status.DISABLED).forEach(k -> keys.add(k));
-                }
-            }
+        for (KeyWrapper key : getKeys(realm, KeyUse.SIG, Algorithm.RS256)) {
+            RsaKeyMetadata m = new RsaKeyMetadata();
+            m.setCertificate(key.getCertificate());
+            m.setPublicKey((PublicKey) key.getVerifyKey());
+            m.setKid(key.getKid());
+            m.setProviderId(key.getProviderId());
+            m.setProviderPriority(key.getProviderPriority());
+            m.setStatus(key.getStatus());
+
+            keys.add(m);
         }
         return keys;
     }
 
     @Override
-    public List<SecretKeyMetadata> getHmacKeys(RealmModel realm, boolean includeDisabled) {
+    public List<SecretKeyMetadata> getHmacKeys(RealmModel realm) {
         List<SecretKeyMetadata> keys = new LinkedList<>();
-        for (KeyProvider p : getProviders(realm)) {
-            if (p instanceof HmacKeyProvider) {
-                if (includeDisabled) {
-                    keys.addAll(p.getKeyMetadata());
-                } else {
-                    List<SecretKeyMetadata> metadata = p.getKeyMetadata();
-                    metadata.stream().filter(k -> k.getStatus() != KeyMetadata.Status.DISABLED).forEach(k -> keys.add(k));
-                }
-            }
+        for (KeyWrapper key : getKeys(realm, KeyUse.SIG, Algorithm.HS256)) {
+            SecretKeyMetadata m = new SecretKeyMetadata();
+            m.setKid(key.getKid());
+            m.setProviderId(key.getProviderId());
+            m.setProviderPriority(key.getProviderPriority());
+            m.setStatus(key.getStatus());
+
+            keys.add(m);
         }
         return keys;
     }
 
     @Override
-    public List<SecretKeyMetadata> getAesKeys(RealmModel realm, boolean includeDisabled) {
+    public List<SecretKeyMetadata> getAesKeys(RealmModel realm) {
         List<SecretKeyMetadata> keys = new LinkedList<>();
-        for (KeyProvider p : getProviders(realm)) {
-            if (p instanceof AesKeyProvider) {
-                if (includeDisabled) {
-                    keys.addAll(p.getKeyMetadata());
-                } else {
-                    List<SecretKeyMetadata> metadata = p.getKeyMetadata();
-                    metadata.stream().filter(k -> k.getStatus() != KeyMetadata.Status.DISABLED).forEach(k -> keys.add(k));
-                }
-            }
+        for (KeyWrapper key : getKeys(realm, KeyUse.ENC, Algorithm.AES)) {
+            SecretKeyMetadata m = new SecretKeyMetadata();
+            m.setKid(key.getKid());
+            m.setProviderId(key.getProviderId());
+            m.setProviderPriority(key.getProviderPriority());
+            m.setStatus(key.getStatus());
+
+            keys.add(m);
         }
         return keys;
+    }
+
+    private boolean matches(KeyWrapper key, KeyUse use, String algorithm) {
+        return use.equals(key.getUse()) && key.getAlgorithms().contains(algorithm);
     }
 
     private List<KeyProvider> getProviders(RealmModel realm) {
@@ -255,10 +222,6 @@ public class DefaultKeyManager implements KeyManager {
             List<ComponentModel> components = new LinkedList<>(realm.getComponents(realm.getId(), KeyProvider.class.getName()));
             components.sort(new ProviderComparator());
 
-            boolean activeRsa = false;
-            boolean activeHmac = false;
-            boolean activeAes = false;
-
             for (ComponentModel c : components) {
                 try {
                     ProviderFactory<KeyProvider> f = session.getKeycloakSessionFactory().getProviderFactory(KeyProvider.class, c.getProviderId());
@@ -266,41 +229,30 @@ public class DefaultKeyManager implements KeyManager {
                     KeyProvider provider = factory.create(session, c);
                     session.enlistForClose(provider);
                     providers.add(provider);
-                    if (provider.getType().equals(AlgorithmType.RSA)) {
-                        RsaKeyProvider r = (RsaKeyProvider) provider;
-                        if (r.getKid() != null && r.getPrivateKey() != null) {
-                            activeRsa = true;
-                        }
-                    } else if (provider.getType().equals(AlgorithmType.HMAC)) {
-                        HmacKeyProvider r = (HmacKeyProvider) provider;
-                        if (r.getKid() != null && r.getSecretKey() != null) {
-                            activeHmac = true;
-                        }
-                    } else if (provider.getType().equals(AlgorithmType.AES)) {
-                        AesKeyProvider r = (AesKeyProvider) provider;
-                        if (r.getKid() != null && r.getSecretKey() != null) {
-                            activeAes = true;
-                        }
-                    }
-
                 } catch (Throwable t) {
                     logger.errorv(t, "Failed to load provider {0}", c.getId());
                 }
             }
 
-            if (!activeRsa) {
+            providersMap.put(realm.getId(), providers);
+
+            try {
+                getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
+            } catch (RuntimeException e) {
                 providers.add(new FailsafeRsaKeyProvider());
             }
 
-            if (!activeHmac) {
+            try {
+                getActiveKey(realm, KeyUse.SIG, Algorithm.HS256);
+            } catch (RuntimeException e) {
                 providers.add(new FailsafeHmacKeyProvider());
             }
 
-            if (!activeAes) {
+            try {
+                getActiveKey(realm, KeyUse.ENC, Algorithm.AES);
+            } catch (RuntimeException e) {
                 providers.add(new FailsafeAesKeyProvider());
             }
-
-            providersMap.put(realm.getId(), providers);
         }
         return providers;
     }

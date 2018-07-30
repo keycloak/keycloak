@@ -25,8 +25,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
-import org.keycloak.representations.idm.authorization.PermissionTicketToken.ResourcePermission;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -80,13 +80,13 @@ public class HttpMethodAuthenticator<R> {
         method.param("claim_token", request.getClaimToken());
         method.param("claim_token_format", request.getClaimTokenFormat());
         method.param("pct", request.getPct());
-        method.param("rpt", request.getRpt());
+        method.param("rpt", request.getRptToken());
         method.param("scope", request.getScope());
         method.param("audience", request.getAudience());
         method.param("subject_token", request.getSubjectToken());
 
         if (permissions != null) {
-            for (ResourcePermission permission : permissions.getResources()) {
+            for (Permission permission : permissions.getPermissions()) {
                 String resourceId = permission.getResourceId();
                 Set<String> scopes = permission.getScopes();
                 StringBuilder value = new StringBuilder();

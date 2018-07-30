@@ -30,11 +30,13 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -661,4 +663,88 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         assertNotEquals(offlineToken.getSessionState(), offlineToken2.getSessionState());
     }
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    private int[] changeOfflineSessionSettings(boolean isEnabled, int sessionMax, int sessionIdle) {
+        int prev[] = new int[2];
+        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
+        prev[0] = rep.getOfflineSessionMaxLifespan().intValue();
+        prev[1] = rep.getOfflineSessionIdleTimeout().intValue();
+        RealmBuilder realmBuilder = RealmBuilder.create();
+        realmBuilder.offlineSessionMaxLifespanEnabled(isEnabled).offlineSessionMaxLifespan(sessionMax).offlineSessionIdleTimeout(sessionIdle);
+        adminClient.realm("test").update(realmBuilder.build());
+        return prev;
+    }
+
+    @Test
+    public void offlineTokenBrowserFlowMaxLifespanExpired() throws Exception {
+        // expect that offline session expired by max lifespan
+        final int MAX_LIFESPAN = 3600;
+        final int IDLE_LIFESPAN = 6000;
+        testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, MAX_LIFESPAN + 60);
+    }
+
+    @Test
+    public void offlineTokenBrowserFlowIdleTimeExpired() throws Exception {
+        // expect that offline session expired by idle time
+        final int MAX_LIFESPAN = 3000;
+        final int IDLE_LIFESPAN = 600;
+        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
+        testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, IDLE_LIFESPAN + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS + 60);
+    }
+
+    private void testOfflineSessionExpiration(int idleTime, int maxLifespan, int offset) {
+        int prev[] = null;
+        try {
+            prev = changeOfflineSessionSettings(true, maxLifespan, idleTime);
+
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.clientId("offline-client");
+            oauth.redirectUri(offlineClientAppUri);
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin()
+                    .client("offline-client")
+                    .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                    .assertEvent();
+
+            final String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+            String offlineTokenString = tokenResponse.getRefreshToken();
+            RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+
+            tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+            AccessToken refreshedToken = oauth.verifyToken(tokenResponse.getAccessToken());
+            offlineTokenString = tokenResponse.getRefreshToken();
+            offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+            Assert.assertEquals(200, tokenResponse.getStatusCode());
+            Assert.assertEquals(sessionId, refreshedToken.getSessionState());
+
+            // wait to expire
+            setTimeOffset(offset);
+
+            tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+
+            Assert.assertEquals(400, tokenResponse.getStatusCode());
+            assertEquals("invalid_grant", tokenResponse.getError());
+
+            // Assert userSession expired
+            testingClient.testing().removeExpired("test");
+            try {
+                testingClient.testing().removeUserSession("test", sessionId);
+            } catch (NotFoundException nfe) {
+                // Ignore
+            }
+
+            setTimeOffset(0);
+            
+        } finally {
+            changeOfflineSessionSettings(false, prev[0], prev[1]);
+        }
+    }
 }

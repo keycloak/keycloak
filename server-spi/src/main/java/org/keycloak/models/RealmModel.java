@@ -179,6 +179,13 @@ public interface RealmModel extends RoleContainerModel {
 
     int getAccessTokenLifespan();
 
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    boolean isOfflineSessionMaxLifespanEnabled();
+    void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled);
+
+    int getOfflineSessionMaxLifespan();
+    void setOfflineSessionMaxLifespan(int seconds);
+
     void setAccessTokenLifespan(int seconds);
 
     int getAccessTokenLifespanForImplicitFlow();

@@ -24,4 +24,15 @@ public class Environment {
 
     public static final boolean IS_IBM_JAVA = System.getProperty("java.vendor").contains("IBM");
 
+    public static final int DEFAULT_JBOSS_AS_STARTUP_TIMEOUT = 300;
+
+    public static int getServerStartupTimeout() {
+        String timeout = System.getProperty("jboss.as.management.blocking.timeout");
+        if (timeout != null) {
+            return Integer.parseInt(timeout);
+        } else {
+            return DEFAULT_JBOSS_AS_STARTUP_TIMEOUT;
+        }
+    }
+
 }

@@ -283,6 +283,10 @@ public class TokenManager {
                 .accessToken(validation.newToken)
                 .generateRefreshToken();
 
+        if (validation.newToken.getAuthorization() != null) {
+            responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
         // bind refreshed access and refresh token with Client Certificate

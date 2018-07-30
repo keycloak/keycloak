@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.2.0.Final-SNAPSHOT</version>
     </parent>
     <name>Keycloak Misc</name>
     <description/>
@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring-boot-starter</module>
-        <module>spring-boot-2-starter</module>
+        <module>spring-legacy-boot-starter</module>
         <module>keycloak-test-helper</module>
     </modules>
 </project>

@@ -244,6 +244,45 @@ public final class KeycloakModelUtils {
     }
 
 
+    /**
+     * Wrap given runnable job into KeycloakTransaction. Set custom timeout for the JTA transaction (in case we're in the environment with JTA enabled)
+     *
+     * @param factory
+     * @param task
+     * @param timeoutInSeconds
+     */
+    public static void runJobInTransactionWithTimeout(KeycloakSessionFactory factory, KeycloakSessionTask task, int timeoutInSeconds) {
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        try {
+            if (lookup != null) {
+                if (lookup.getTransactionManager() != null) {
+                    try {
+                        lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+                    } catch (SystemException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            runJobInTransaction(factory, task);
+
+        } finally {
+            if (lookup != null) {
+                if (lookup.getTransactionManager() != null) {
+                    try {
+                        // Reset to default transaction timeout
+                        lookup.getTransactionManager().setTransactionTimeout(0);
+                    } catch (SystemException e) {
+                        // Shouldn't happen for Wildfly transaction manager
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+
+    }
+
+
     public static String getMasterRealmAdminApplicationClientId(String realmName) {
         return realmName + "-realm";
     }

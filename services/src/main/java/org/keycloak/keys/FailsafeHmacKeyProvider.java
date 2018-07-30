@@ -20,6 +20,10 @@ package org.keycloak.keys;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.crypto.SecretKey;
@@ -29,12 +33,28 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FailsafeHmacKeyProvider extends FailsafeSecretKeyProvider implements HmacKeyProvider {
+public class FailsafeHmacKeyProvider extends FailsafeSecretKeyProvider {
 
     private static final Logger logger = Logger.getLogger(FailsafeHmacKeyProvider.class);
+
+    @Override
+    protected KeyUse getUse() {
+        return KeyUse.SIG;
+    }
+
+    @Override
+    protected String getType() {
+        return KeyType.OCT;
+    }
+
+    @Override
+    protected String getAlgorithm() {
+        return Algorithm.HS256;
+    }
 
     @Override
     protected Logger logger() {
         return logger;
     }
+
 }

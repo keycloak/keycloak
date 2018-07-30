@@ -195,6 +195,7 @@ public class UserResource {
             user.setUsername(rep.getUsername());
         }
         if (rep.getEmail() != null) user.setEmail(rep.getEmail());
+        if (rep.getEmail() == "") user.setEmail(null);
         if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
         if (rep.getLastName() != null) user.setLastName(rep.getLastName());
 

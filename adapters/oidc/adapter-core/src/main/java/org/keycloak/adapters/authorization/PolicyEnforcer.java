@@ -225,9 +225,10 @@ public class PolicyEnforcer {
             for (String id : protectedResource.findAll()) {
                 ResourceRepresentation resourceDescription = protectedResource.findById(id);
 
-                if (resourceDescription.getUri() != null) {
-                    PathConfig pathConfig = PathConfig.createPathConfig(resourceDescription);
-                    paths.put(pathConfig.getPath(), pathConfig);
+                if (resourceDescription.getUris() != null && !resourceDescription.getUris().isEmpty()) {
+                    for(PathConfig pathConfig : PathConfig.createPathConfigs(resourceDescription)) {
+                        paths.put(pathConfig.getPath(), pathConfig);
+                    }
                 }
             }
         }
@@ -277,7 +278,7 @@ public class PolicyEnforcer {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
                             }
 
-                            pathConfig = PathConfig.createPathConfig(matchingResources.get(0));
+                            pathConfig = PathConfig.createPathConfigs(matchingResources.get(0)).iterator().next();
 
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);
@@ -323,7 +324,7 @@ public class PolicyEnforcer {
 
                 if (!search.isEmpty()) {
                     ResourceRepresentation targetResource = search.get(0);
-                    PathConfig config = PathConfig.createPathConfig(targetResource);
+                    PathConfig config = PathConfig.createPathConfigs(targetResource).iterator().next();
 
                     config.setScopes(originalConfig.getScopes());
                     config.setMethods(originalConfig.getMethods());

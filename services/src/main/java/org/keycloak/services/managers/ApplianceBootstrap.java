@@ -76,6 +76,9 @@ public class ApplianceBootstrap {
         realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
         realm.setSsoSessionMaxLifespan(36000);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        realm.setOfflineSessionMaxLifespanEnabled(false);
+        realm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setAccessCodeLifespanLogin(1800);

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.2.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -197,6 +197,21 @@
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${app.server.jboss.home}/standalone-cluster</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-configs-secured-deployments</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-secured-deployments</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${app.server.jboss.home}/standalone</directory>
@@ -393,7 +408,7 @@
                             </execution>
                             <execution>
                                 <id>add-secured-deployments</id>
-                                <phase>process-resources</phase>
+                                <phase>generate-test-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -403,6 +418,7 @@
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
+                                        <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-secured-deployments/configuration</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -413,7 +429,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
@@ -429,7 +445,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                     <executable>./jboss-cli.sh</executable>
                                     <arguments>
@@ -628,18 +644,6 @@
             </activation>
             <modules>
                 <module>relative</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-eap6-fuse</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6-fuse</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap6-fuse</module>
             </modules>
         </profile>
     </profiles>

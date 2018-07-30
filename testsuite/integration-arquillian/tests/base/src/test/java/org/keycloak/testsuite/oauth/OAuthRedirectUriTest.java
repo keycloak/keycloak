@@ -19,12 +19,23 @@ package org.keycloak.testsuite.oauth;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.hamcrest.Matchers;
+import org.hamcrest.core.StringStartsWith;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jgroups.protocols.TP;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -44,6 +55,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
@@ -135,6 +147,11 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                 .redirectUris("http://localhost/*")
                 .secret("password");
         realm.client(installedApp8);
+
+        ClientBuilder installedAppCustomScheme = ClientBuilder.create().id("custom-scheme").name("custom-scheme")
+                .redirectUris("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login")
+                .secret("password");
+        realm.client(installedAppCustomScheme);
 
         testRealms.add(realm.build());
     }
@@ -244,6 +261,35 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         URL url = new URL(driver.getCurrentUrl());
         Assert.assertTrue(url.toString().startsWith(APP_ROOT));
         Assert.assertTrue(url.toString().contains("key=value"));
+    }
+
+    @Test
+    public void testWithCustomScheme() throws IOException {
+        oauth.clientId("custom-scheme");
+
+        oauth.redirectUri("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login");
+        oauth.openLoginForm();
+
+        RequestConfig globalConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.BEST_MATCH).build();
+        CookieStore cookieStore = new BasicCookieStore();
+        HttpClientContext context = HttpClientContext.create();
+        context.setCookieStore(cookieStore);
+
+        String loginUrl = driver.getCurrentUrl();
+
+        CloseableHttpClient client = HttpClients.custom().setDefaultRequestConfig(globalConfig).setDefaultCookieStore(cookieStore).build();
+
+        try {
+            String loginPage = SimpleHttp.doGet(loginUrl, client).asString();
+
+            String formAction = loginPage.split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
+            SimpleHttp.Response response = SimpleHttp.doPost(formAction, client).param("username", "test-user@localhost").param("password", "password").asResponse();
+
+            response.getStatus();
+            assertThat(response.getFirstHeader("Location"), Matchers.startsWith("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login"));
+        } finally {
+            client.close();
+        }
     }
 
     @Test

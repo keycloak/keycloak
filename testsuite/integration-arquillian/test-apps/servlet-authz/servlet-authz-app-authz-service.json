@@ -60,6 +60,10 @@
     {
       "name": "Resource Protected With Claim",
       "uri": "/protected/context/context.jsp"
+    },
+    {
+      "name": "Multiple URL resource",
+      "uris": ["/keycloak-7269/sub-resource1/*", "/keycloak-7269/sub-resource2/{whatever-pattern}/page.jsp"]
     }
   ],
   "policies": [
@@ -196,6 +200,16 @@
       "config": {
         "resources": "[\"Resource Protected With Claim\"]",
         "applyPolicies": "[\"Request Claim Policy\"]"
+      }
+    },
+    {
+      "name": "Permission for multiple url resource",
+      "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Multiple URL resource\"]",
+        "applyPolicies": "[\"All Users Policy\"]"
       }
     },
     {

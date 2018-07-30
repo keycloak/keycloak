@@ -27,6 +27,8 @@ import org.keycloak.services.ServicesLogger;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -143,6 +145,28 @@ public class OIDCAttributeMapperHelper {
         return null;
     }
 
+    // A character in a claim component is either a literal character escaped by a backslash (\., \\, \_, \q, etc.)
+    // or any character other than backslash (escaping) and dot (claim component separator)
+    private static final Pattern CLAIM_COMPONENT = Pattern.compile("^((\\\\.|[^\\\\.])+?)\\.");
+
+    private static final Pattern BACKSLASHED_CHARACTER = Pattern.compile("\\\\(.)");
+
+    public static List<String> splitClaimPath(String claimPath) {
+        final LinkedList<String> claimComponents = new LinkedList<>();
+        Matcher m = CLAIM_COMPONENT.matcher(claimPath);
+        int start = 0;
+        while (m.find()) {
+            claimComponents.add(BACKSLASHED_CHARACTER.matcher(m.group(1)).replaceAll("$1"));
+            start = m.end();
+            // This is necessary to match the start of region as the start of string as determined by ^
+            m.region(start, claimPath.length());
+        }
+        if (claimPath.length() > start) {
+            claimComponents.add(BACKSLASHED_CHARACTER.matcher(claimPath.substring(start)).replaceAll("$1"));
+        }
+        return claimComponents;
+    }
+
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
         attributeValue = mapAttributeValue(mappingModel, attributeValue);
         if (attributeValue == null) return;
@@ -151,17 +175,20 @@ public class OIDCAttributeMapperHelper {
         if (protocolClaim == null) {
             return;
         }
-        String[] split = protocolClaim.split("\\.");
+        List<String> split = splitClaimPath(protocolClaim);
+        final int length = split.size();
+        int i = 0;
         Map<String, Object> jsonObject = token.getOtherClaims();
-        for (int i = 0; i < split.length; i++) {
-            if (i == split.length - 1) {
-                jsonObject.put(split[i], attributeValue);
+        for (String component : split) {
+            i++;
+            if (i == length) {
+                jsonObject.put(component, attributeValue);
             } else {
-                Map<String, Object> nested = (Map<String, Object>)jsonObject.get(split[i]);
+                Map<String, Object> nested = (Map<String, Object>)jsonObject.get(component);
 
                 if (nested == null) {
                     nested = new HashMap<String, Object>();
-                    jsonObject.put(split[i], nested);
+                    jsonObject.put(component, nested);
                 }
 
                 jsonObject = nested;

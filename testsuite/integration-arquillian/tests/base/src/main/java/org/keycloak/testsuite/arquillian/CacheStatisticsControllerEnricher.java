@@ -95,7 +95,9 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
         if (annotation.domain().isEmpty()) {
             try {
-                Retry.execute(() -> value.reset(), 2, 150);
+                LOG.debug("Going to try reset InfinispanCacheStatistics (2 attempts, 150 ms interval)");
+                int execute = Retry.execute(() -> value.reset(), 2, 150);
+                LOG.debug("reset in " + execute + " attempts");
             } catch (RuntimeException ex) {
                 if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1
                    && suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex()).isStarted()) {

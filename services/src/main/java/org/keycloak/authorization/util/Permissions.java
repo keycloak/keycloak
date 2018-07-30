@@ -191,7 +191,7 @@ public final class Permissions {
                         // Later they will be filtered based on any denied scope, if any.
                         // TODO: we could probably provide a configuration option to let users decide whether or not a resource-based permission should grant all scopes associated with the resource.
                         grantedScopes.addAll(permission.getScopes());
-                    } if (resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
+                    } if (resource != null && resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
                         userManagedPermissions.add(policyResult);
                     }
                     deniedCount--;

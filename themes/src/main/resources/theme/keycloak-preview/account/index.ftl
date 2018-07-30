@@ -13,10 +13,16 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
-            var isRegistrationEmailAsUsername = ${realm.registrationEmailAsUsername?c};
-            var isEditUserNameAllowed = ${realm.editUsernameAllowed?c};
-            var isInternationalizationEnabled = ${realm.internationalizationEnabled?c};
-
+                
+            var features = {
+                isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
+                isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
+                isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
+                isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
+                isEventsEnabled : ${isEventsEnabled?c},
+                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c}
+            }
+                
             var availableLocales = [];
             <#list supportedLocales as locale, label>
                 availableLocales.push({locale : '${locale}', label : '${label}'});
@@ -134,6 +140,9 @@
                      we are unable to localize the button's message.  Not sure what to do about that yet.
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
+                    <#if referrer?has_content && referrer_uri?has_content>
+                        <li><a class="nav-item-iconic" href="${referrer_uri}" id="referrer"><span class="pficon-arrow"></span>${msg("backTo",referrer)}</a></li>
+                    </#if>
                     <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
                     <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
                         <li class="dropdown">
@@ -187,7 +196,7 @@
                               <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
                               <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
                               <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
+                              <h3 id="linkedAccounts"><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -206,7 +215,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div id="myResources" class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -226,6 +235,14 @@
     </div>
 
         <script>
+            if (!features.isLinkedAccountsEnabled) {
+                document.getElementById("linkedAccounts").style.display='none';
+            }
+                
+            if (!features.isMyResourcesEnabled) {
+                document.getElementById("myResources").style.display='none';
+            }
+                
             var winHash = window.location.hash;
             if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
                 document.getElementById("welcomeScreen").style.display='none';

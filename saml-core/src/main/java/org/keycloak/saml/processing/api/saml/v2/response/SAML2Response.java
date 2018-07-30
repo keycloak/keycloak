@@ -244,7 +244,7 @@ public class SAML2Response {
 
         // subject -> nameid
         NameIDType nameIDType = new NameIDType();
-        nameIDType.setFormat(URI.create(idp.getNameIDFormat()));
+        nameIDType.setFormat(idp.getNameIDFormat() == null ? null : URI.create(idp.getNameIDFormat()));
         nameIDType.setValue(idp.getNameIDFormatValue());
 
         SubjectType.STSubType subType = new SubjectType.STSubType();

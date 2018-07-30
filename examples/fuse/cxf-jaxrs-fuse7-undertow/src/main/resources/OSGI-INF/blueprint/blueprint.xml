@@ -36,34 +36,4 @@
         </jaxrs:serviceBeans>
     </jaxrs:server>
 
-
-    <!-- Securing of whole /cxf context by unregister default cxf servlet from paxweb and re-register with applied security constraints -->
-    <bean id="cxfConstraintMapping" class="org.keycloak.adapters.osgi.PaxWebSecurityConstraintMapping">
-        <property name="roles">
-            <list>
-                <value>user</value>
-            </list>
-        </property>
-        <property name="url" value="/cxf/*" />
-        <property name="authentication" value="true"/>
-    </bean>
-
-    <bean id="cxfKeycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService"
-          init-method="start" destroy-method="stop">
-        <property name="bundleContext" ref="blueprintBundleContext" />
-        <property name="constraintMappings">
-            <list>
-                <ref component-id="cxfConstraintMapping" />
-            </list>
-        </property>
-    </bean>
-
-    <bean id="defaultCxfReregistration" class="org.keycloak.adapters.osgi.ServletReregistrationService" depends-on="cxfKeycloakPaxWebIntegration"
-          init-method="start" destroy-method="stop">
-        <property name="bundleContext" ref="blueprintBundleContext" />
-        <property name="managedServiceReference">
-            <reference interface="org.osgi.service.cm.ManagedService" filter="(service.pid=org.apache.cxf.osgi)" timeout="5000"  />
-        </property>
-    </bean>
-
 </blueprint>

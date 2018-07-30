@@ -122,12 +122,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected void handleAccessDenied(OIDCHttpFacade facade) {
-        KeycloakSecurityContext securityContext = facade.getSecurityContext();
-
-        if (securityContext == null) {
-            return;
-        }
-
         String accessDeniedPath = getEnforcerConfig().getOnDenyRedirectTo();
         HttpFacade.Response response = facade.getResponse();
 
@@ -211,17 +205,16 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     private boolean isBearerAuthorization(OIDCHttpFacade httpFacade) {
         List<String> authHeaders = httpFacade.getRequest().getHeaders("Authorization");
-        if (authHeaders == null || authHeaders.size() == 0) {
-            return false;
+
+        if (authHeaders != null) {
+            for (String authHeader : authHeaders) {
+                String[] split = authHeader.trim().split("\\s+");
+                if (split == null || split.length != 2) continue;
+                if (!split[0].equalsIgnoreCase("Bearer")) continue;
+                return true;
+            }
         }
 
-        for (String authHeader : authHeaders) {
-            String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) continue;
-            if (!split[0].equalsIgnoreCase("Bearer")) continue;
-            return true;
-        }
-
-        return false;
+        return getPolicyEnforcer().getDeployment().isBearerOnly();
     }
 }

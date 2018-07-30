@@ -70,6 +70,8 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
                     clearAuthenticationContext();
                 }
             }
+
+            request.setAttribute(KeycloakSecurityContext.class.getName(), keycloakSecurityContext);
         }
 
         filterChain.doFilter(request, response);

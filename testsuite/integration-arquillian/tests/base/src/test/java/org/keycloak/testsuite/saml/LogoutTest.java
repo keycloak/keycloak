@@ -49,7 +49,6 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -78,8 +77,6 @@ public class LogoutTest extends AbstractSamlTest {
 
     private final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
     private final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
-
-    private static final String SAML_BROKER_ALIAS = "saml-broker";
 
     @Before
     public void setup() {
@@ -412,10 +409,6 @@ public class LogoutTest extends AbstractSamlTest {
 
             assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         }
-    }
-
-    private URI getSamlBrokerUrl(String realmName) {
-        return URI.create(getAuthServerRealmBase(realmName).toString() + "/broker/" + SAML_BROKER_ALIAS + "/endpoint");
     }
 
 }

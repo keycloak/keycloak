@@ -33,6 +33,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -55,6 +56,8 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
@@ -706,6 +709,50 @@ public class LDAPProvidersIntegrationNoImportTest {
 
             // Revert mappers
             ComponentModel hardcodedMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "hardcoded role");
+            appRealm.removeComponent(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
+    public void testHardcodedGroupMapper() {
+        KeycloakSession session = keycloakRule.startSession();
+        ComponentModel firstNameMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            GroupModel hardcodedGroup = appRealm.createGroup("hardcoded-group", "hardcoded-group");
+
+            // assert that user "johnkeycloak" doesn't have hardcoded group
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertFalse(john.isMemberOf(hardcodedGroup));
+
+            ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded group", ldapModel.getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
+            appRealm.addComponentModel(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            GroupModel hardcodedGroup = appRealm.getGroupById("hardcoded-group");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertTrue(john.isMemberOf(hardcodedGroup));
+
+            // Can't remove user from hardcoded role
+            try {
+                john.leaveGroup(hardcodedGroup);
+                Assert.fail("Didn't expected to leave group");
+            } catch (ModelException expected) {
+            }
+
+            // Revert mappers
+            ComponentModel hardcodedMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "hardcoded group");
             appRealm.removeComponent(hardcodedMapperModel);
         } finally {
             keycloakRule.stopSession(session, true);

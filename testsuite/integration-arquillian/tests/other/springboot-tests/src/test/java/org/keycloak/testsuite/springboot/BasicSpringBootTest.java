@@ -73,9 +73,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
 
         loginPage.login(USER_LOGIN_2, USER_PASSWORD_2);
 
-        Assert.assertTrue("Must return 403 because of incorrect role",
-                driver.getPageSource().contains("There was an unexpected error (type=Forbidden, status=403)")
-                || driver.getPageSource().contains("\"status\":403,\"error\":\"Forbidden\""));
+        Assert.assertTrue("Must return 403 because of incorrect role", driver.getPageSource().contains("Forbidden"));
     }
 
     @Test

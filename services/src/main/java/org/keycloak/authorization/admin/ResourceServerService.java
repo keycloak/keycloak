@@ -54,6 +54,8 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
+import java.util.Collections;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -221,7 +223,7 @@ public class ResourceServerService {
         ResourceRepresentation defaultResource = new ResourceRepresentation();
 
         defaultResource.setName("Default Resource");
-        defaultResource.setUri("/*");
+        defaultResource.setUris(Collections.singleton("/*"));
         defaultResource.setType("urn:" + this.client.getClientId() + ":resources:default");
 
         getResourceSetResource().create(defaultResource);

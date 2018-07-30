@@ -118,11 +118,16 @@ public class AuthenticationManager {
             return false;
         }
         int currentTime = Time.currentTime();
-
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
 
-        return userSession.getLastSessionRefresh() + maxIdle > currentTime;
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (realm.isOfflineSessionMaxLifespanEnabled()) {
+            int max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+            return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
+        } else {
+            return userSession.getLastSessionRefresh() + maxIdle > currentTime;
+        }
     }
 
     public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
@@ -989,16 +994,10 @@ public class AuthenticationManager {
     protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
                                                HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
                                                Set<String> requiredActions) {
-        for (String action : requiredActions) {
-            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-            if (model == null) {
-                logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
-                continue;
-            }
-            if (!model.isEnabled()) {
-                continue;
-            }
 
+        List<RequiredActionProviderModel> sortedRequiredActions = sortRequiredActionsByPriority(realm, requiredActions);
+
+        for (RequiredActionProviderModel model : sortedRequiredActions) {
             RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
@@ -1037,6 +1036,23 @@ public class AuthenticationManager {
             }
         }
         return null;
+    }
+
+    private static List<RequiredActionProviderModel> sortRequiredActionsByPriority(RealmModel realm, Set<String> requiredActions) {
+        List<RequiredActionProviderModel> actions = new ArrayList<>();
+        for (String action : requiredActions) {
+            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            if (model == null) {
+                logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
+                continue;
+            }
+            if (!model.isEnabled()) {
+                continue;
+            }
+            actions.add(model);
+        }
+        Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
+        return actions;
     }
 
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {

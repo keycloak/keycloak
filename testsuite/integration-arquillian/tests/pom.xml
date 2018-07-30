@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.2.0.Final-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -371,7 +371,7 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>clean-second-cache-server-arquillian-bug-workaround</id>
+                            <id>clean-second-cache-server-arquillian-bug-workaround</id><!--https://issues.jboss.org/browse/WFARQ-44-->
                             <phase>process-test-resources</phase>
                             <goals><goal>run</goal></goals>
                             <configuration>
@@ -572,35 +572,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-karaf-managed</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-osgi</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.enterprise</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
     <profiles>
 
@@ -920,9 +891,6 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                    </plugin>
                 </plugins>
                 <pluginManagement>
                     <plugins>
@@ -992,9 +960,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                 </plugins>
                 <pluginManagement>
@@ -1111,9 +1076,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                 </plugins>
                 <pluginManagement>
@@ -1521,6 +1483,12 @@
                     <version>${project.version}</version>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-util</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
                 <!--                <dependency>
                     <groupId>org.arquillian.extension</groupId>
                     <artifactId>arquillian-recorder-reporter-impl</artifactId>
@@ -1709,6 +1677,12 @@
                     <type>zip</type>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>org.osgi.enterprise</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+
             </dependencies>
 
             <dependencyManagement>
@@ -1729,6 +1703,9 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>

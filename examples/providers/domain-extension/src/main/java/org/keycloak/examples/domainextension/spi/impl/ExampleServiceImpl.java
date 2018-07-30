@@ -36,7 +36,7 @@ public class ExampleServiceImpl implements ExampleService {
     public ExampleServiceImpl(KeycloakSession session) {
         this.session = session;
         if (getRealm() == null) {
-            throw new IllegalStateException("The service cannot accept a session without a realm in it's context.");
+            throw new IllegalStateException("The service cannot accept a session without a realm in its context.");
         }
     }
 

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -131,6 +129,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
@@ -270,21 +270,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         driver.manage().deleteAllCookies();
     }
     
-    private void assumeNotElytronAdapter() {
-        if (!AppServerTestEnricher.isUndertowAppServer()) {
-            try {
-                Assume.assumeFalse(FileUtils.readFileToString(Paths.get(System.getProperty("app.server.home"), "standalone", "configuration", "standalone.xml").toFile(), "UTF-8").contains("<security-domain name=\"KeycloakDomain\""));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     //KEYCLOAK-702
     @Test
     public void testTokenInCookieSSO() {
-        assumeNotElytronAdapter();
-
         // Login
         String tokenCookie = loginToCustomerCookiePortal();
         
@@ -309,8 +297,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-702
     @Test
     public void testTokenInCookieRefresh() {
-        assumeNotElytronAdapter();
-
         log.debug("Set token timeout 10 sec");
         RealmRepresentation demo = adminClient.realm("demo").toRepresentation();
         int originalTokenTimeout = demo.getAccessTokenLifespan();
@@ -360,8 +346,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-702
     @Test
     public void testInvalidTokenCookie() {
-        assumeNotElytronAdapter();
-
         // Login
         String tokenCookie = loginToCustomerCookiePortal();
         String changedTokenCookie = tokenCookie.replace("a", "b");
@@ -664,8 +648,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testVersion() {
+        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth");
+        WaitUtils.waitForPageToLoad();
         jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
+        WaitUtils.waitForPageToLoad();
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
@@ -994,7 +981,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         String appServer = System.getProperty("app.server");
         if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
-            serverLogPath = System.getProperty("app.server.home") + "/standalone/log/server.log";
+            serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 
         String appServerUrl;

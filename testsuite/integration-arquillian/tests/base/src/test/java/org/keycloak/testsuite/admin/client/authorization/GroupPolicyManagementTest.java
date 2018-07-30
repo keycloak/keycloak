@@ -23,8 +23,6 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.NotFoundException;
@@ -35,16 +33,12 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.GroupPoliciesResource;
 import org.keycloak.admin.client.resource.GroupPolicyResource;
 import org.keycloak.admin.client.resource.PolicyResource;
-import org.keycloak.admin.client.resource.RolePoliciesResource;
-import org.keycloak.admin.client.resource.RolePolicyResource;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -82,6 +76,21 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
     }
 
     @Test
+    public void testCreateWithoutGroupsClaim() {
+        AuthorizationResource authorization = getClient().authorization();
+        GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.addGroupPath("/Group A/Group B/Group C", true);
+        representation.addGroupPath("Group F");
+
+        assertCreated(authorization, representation);
+    }
+
+    @Test
     public void testUpdate() {
         AuthorizationResource authorization = getClient().authorization();
         GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
@@ -100,6 +109,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("changed");
         representation.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         representation.setLogic(Logic.POSITIVE);
+        representation.setGroupsClaim(null);
         representation.removeGroup("/Group A/Group B");
 
         GroupPoliciesResource policies = authorization.policies().group();

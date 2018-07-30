@@ -16,7 +16,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.utils.io.IOUtil;
 
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;

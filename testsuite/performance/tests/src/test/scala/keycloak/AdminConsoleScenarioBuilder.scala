@@ -13,6 +13,7 @@ import org.jboss.perf.util.Util
 import org.jboss.perf.util.Util.randomUUID
 import org.keycloak.gatling.Utils.{urlEncodedRoot, urlencode}
 import org.keycloak.performance.TestConfig
+import org.keycloak.performance.templates.DatasetTemplate
 
 
 /**
@@ -47,12 +48,17 @@ object AdminConsoleScenarioBuilder {
           lastRefresh + TestConfig.refreshTokenPeriod * 1000 < System.currentTimeMillis())
     }
 
+    val datasetTemplate = new DatasetTemplate()
+    datasetTemplate.validateConfiguration
+    val dataset = datasetTemplate.produce
+    val realmsIterator = dataset.randomRealmIterator
+  
 }
 
 class AdminConsoleScenarioBuilder {
 
   var chainBuilder = exec(s => {
-    val realm = TestConfig.randomRealmsIterator().next()
+    val realm = realmsIterator.next
     val serverUrl = TestConfig.serverUrisIterator.next()
     s.setAll(
       "keycloakServer" -> serverUrl,
@@ -61,7 +67,7 @@ class AdminConsoleScenarioBuilder {
       "state" -> randomUUID(),
       "nonce" -> randomUUID(),
       "randomClientId" -> ("client_" + randomUUID()),
-      "realm" -> realm,
+      "realm" -> realm.getRepresentation.getRealm,
       "username" -> TestConfig.authUser,
       "password" -> TestConfig.authPassword,
       "clientId" -> "security-admin-console"

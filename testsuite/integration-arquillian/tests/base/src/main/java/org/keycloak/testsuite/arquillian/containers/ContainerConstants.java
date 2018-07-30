@@ -24,9 +24,18 @@ public interface ContainerConstants {
     public static final String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
     public static final String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;" + APP_SERVER_WILDFLY + "-ha-node-2";
 
+    public static final String APP_SERVER_WILDFLY10 = APP_SERVER_PREFIX + "wildfly10";
+    public static final String APP_SERVER_WILDFLY10_CLUSTER = APP_SERVER_WILDFLY10 + "-ha-node-1;" + APP_SERVER_WILDFLY10 + "-ha-node-2";
+
+    public static final String APP_SERVER_WILDFLY9 = APP_SERVER_PREFIX + "wildfly9";
+
     public static final String APP_SERVER_EAP = APP_SERVER_PREFIX + "eap";
     public static final String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
 
     public static final String APP_SERVER_EAP6 = APP_SERVER_PREFIX + "eap6";
     public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
+
+    public static final String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
+    public static final String APP_SERVER_FUSE70 = APP_SERVER_PREFIX + "fuse70";
+    public static final String APP_SERVER_FUSE71 = APP_SERVER_PREFIX + "fuse71";
 }

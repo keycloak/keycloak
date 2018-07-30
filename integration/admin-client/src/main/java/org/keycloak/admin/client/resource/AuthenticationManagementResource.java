@@ -164,6 +164,14 @@ public interface AuthenticationManagementResource {
     @DELETE
     void removeRequiredAction(@PathParam("alias") String alias);
 
+    @Path("required-actions/{alias}/raise-priority")
+    @POST
+    void raiseRequiredActionPriority(@PathParam("alias") String alias);
+
+    @Path("required-actions/{alias}/lower-priority")
+    @POST
+    void lowerRequiredActionPriority(@PathParam("alias") String alias);
+
     @Path("config-description/{providerId}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

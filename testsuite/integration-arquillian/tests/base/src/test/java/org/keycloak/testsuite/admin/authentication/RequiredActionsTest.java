@@ -72,6 +72,8 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
     @Test
     public void testCRUDRequiredAction() {
+        int lastPriority = authMgmtResource.getRequiredActions().get(authMgmtResource.getRequiredActions().size() - 1).getPriority();
+
         // Just Dummy RequiredAction is not registered in the realm
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
         Assert.assertEquals(1, result.size());
@@ -95,6 +97,9 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         RequiredActionProviderRepresentation rep = authMgmtResource.getRequiredAction(DummyRequiredActionFactory.PROVIDER_ID);
         compareRequiredAction(rep, newRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, "Dummy Action",
                 true, false, Collections.<String, String>emptyMap()));
+
+        // Confirm the registered priority - should be N + 1
+        Assert.assertEquals(lastPriority + 1, rep.getPriority());
 
         // Update not-existent - should fail
         try {

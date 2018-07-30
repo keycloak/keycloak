@@ -18,8 +18,10 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -31,13 +33,16 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
 /**
@@ -149,6 +154,9 @@ public class ConsentsTest extends AbstractKeycloakTest {
     @Page
     protected ConsentPage consentPage;
 
+    @Page
+    protected ErrorPage errorPage;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation providerRealm = createProviderRealm();
@@ -223,6 +231,12 @@ public class ConsentsTest extends AbstractKeycloakTest {
         }
     }
 
+    @After
+    public void cleanUser() {
+        String userId = adminClient.realm(providerRealmName()).users().search(getUserLogin()).get(0).getId();
+        adminClient.realm(providerRealmName()).users().delete(userId);
+    }
+
     @Test
     public void testConsents() {
         driver.navigate().to(getAccountUrl(consumerRealmName()));
@@ -293,6 +307,41 @@ public class ConsentsTest extends AbstractKeycloakTest {
         // list sessions
         sessions = userResource.getUserSessions();
         Assert.assertEquals("There should be no active session", 0, sessions.size());
+    }
+
+    @Test
+    public void testConsentCancel() {
+        // setup account client to require consent
+        RealmResource providerRealm = adminClient.realm(providerRealmName());
+        ClientResource accountClient = findClientByClientId(providerRealm, "account");
+
+        ClientRepresentation clientRepresentation = accountClient.toRepresentation();
+        clientRepresentation.setConsentRequired(true);
+        accountClient.update(clientRepresentation);
+
+        // setup correct realm
+        accountPage.setAuthRealm(providerRealmName());
+
+        // navigate to account console and login
+        accountPage.navigateTo();
+        loginPage.form().login(getUserLogin(), getUserPassword());
+
+        consentPage.assertCurrent();
+
+        consentPage.cancel();
+
+        // check an error page after cancelling the consent
+        errorPage.assertCurrent();
+        assertEquals("No access", errorPage.getError());
+
+        // follow the link "back to application"
+        errorPage.clickBackToApplication();
+
+        loginPage.form().login(getUserLogin(), getUserPassword());
+        consentPage.confirm();
+
+        // successful login
+        accountPage.assertCurrent();
     }
 
     private String getAccountUrl(String realmName) {

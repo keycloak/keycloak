@@ -77,7 +77,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         addInvalidations(InScopePredicate.create().scope(id), invalidations);
     }
 
-    public void resourceUpdated(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner, Set<String> invalidations) {
+    public void resourceUpdated(String id, String name, String type, Set<String> uris, Set<String> scopes, String serverId, String owner, Set<String> invalidations) {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
@@ -89,8 +89,10 @@ public class StoreFactoryCacheManager extends CacheManager {
             addInvalidations(InResourcePredicate.create().resource(type), invalidations);
         }
 
-        if (uri != null) {
-            invalidations.add(StoreFactoryCacheSession.getResourceByUriCacheKey(uri, serverId));
+        if (uris != null) {
+            for (String uri: uris) {
+                invalidations.add(StoreFactoryCacheSession.getResourceByUriCacheKey(uri, serverId));
+            }
         }
 
         if (scopes != null) {
@@ -101,8 +103,8 @@ public class StoreFactoryCacheManager extends CacheManager {
         }
     }
 
-    public void resourceRemoval(String id, String name, String type, String uri, String owner, Set<String> scopes, String serverId, Set<String> invalidations) {
-        resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
+    public void resourceRemoval(String id, String name, String type, Set<String> uris, String owner, Set<String> scopes, String serverId, Set<String> invalidations) {
+        resourceUpdated(id, name, type, uris, scopes, serverId, owner, invalidations);
         addInvalidations(InResourcePredicate.create().resource(id), invalidations);
     }
 

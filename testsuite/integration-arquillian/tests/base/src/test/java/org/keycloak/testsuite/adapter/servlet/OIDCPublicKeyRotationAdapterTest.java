@@ -42,7 +42,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -80,6 +80,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTest {
@@ -306,7 +308,7 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
 
     private String getActiveKeyProvider() {
         KeysMetadataRepresentation keyMetadata = adminClient.realm(DEMO).keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(AlgorithmType.RSA.name());
+        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
             if (rep.getKid().equals(activeKid)) {
                 return rep.getProviderId();

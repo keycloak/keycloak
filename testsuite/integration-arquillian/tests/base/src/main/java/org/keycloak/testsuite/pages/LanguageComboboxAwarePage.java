@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -40,5 +41,6 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" + language + "']"));
         String url = langLink.getAttribute("href");
         driver.navigate().to(url);
+        WaitUtils.waitForPageToLoad();
     }
 }

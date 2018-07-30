@@ -177,7 +177,7 @@ public class AdminConsole {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console client");
         }
-        return new ClientManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
+        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
 
     }
 

@@ -187,6 +187,13 @@ public class SharedAttributeDefinitons {
             .setDefaultValue(new ModelNode(false))
             .build();
 
+    protected static final SimpleAttributeDefinition PROXY_URL =
+            new SimpleAttributeDefinitionBuilder("proxy-url", ModelType.STRING, true)
+                    .setXmlName("proxy-url")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
+
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
         ATTRIBUTES.add(REALM_PUBLIC_KEY);
@@ -214,6 +221,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
         ATTRIBUTES.add(AUTODETECT_BEARER_ONLY);
         ATTRIBUTES.add(IGNORE_OAUTH_QUERY_PARAMETER);
+        ATTRIBUTES.add(PROXY_URL);
     }
 
     /**

@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -132,7 +133,11 @@ public class RemoteCacheInvoker {
 
     private <K, V extends SessionEntity> void replace(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
         boolean replaced = false;
-        while (!replaced) {
+        int iteration = 0;
+
+        while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+            iteration++;
+
             VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getVersioned(key);
             if (versioned == null) {
                 logger.warnf("Not found entity to replace for key '%s'", key);
@@ -158,6 +163,10 @@ public class RemoteCacheInvoker {
                     logger.tracef("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
                 }
             }
+        }
+
+        if (!replaced) {
+            logger.warnf("Failed to replace entity '%s' in remote cache '%s'", key, remoteCache.getName());
         }
     }
 

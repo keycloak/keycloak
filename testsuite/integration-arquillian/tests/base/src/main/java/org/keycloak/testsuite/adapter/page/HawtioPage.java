@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.adapter.page;
 
 import org.keycloak.testsuite.page.AbstractPage;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -27,18 +27,24 @@ public class HawtioPage extends AbstractPage {
     }
 
     @FindBy(xpath = "//a[@class='dropdown-toggle' and @data-original-title='Preferences and log out']")
+    @JavascriptBrowser
     private WebElement dropDownMenu;
 
     @FindBy(xpath = "//a[@ng-click='logout()']")
+    @JavascriptBrowser
     private WebElement logoutButton;
 
+    @FindBy(xpath = "//input[@type='submit' and @value='Yes']")
+    @JavascriptBrowser
+    private WebElement modal;
+
     public void logout() {
-        waitUntilElement(dropDownMenu).is().visible();
+        log.debug("logging out");
+        waitUntilElement(dropDownMenu).is().clickable();
         dropDownMenu.click();
-        waitUntilElement(logoutButton).is().visible();
+        waitUntilElement(logoutButton).is().clickable();
         logoutButton.click();
-        By modal = By.xpath("//input[@type='submit' and @value='Yes']");
-        waitUntilElement(modal).is().visible();
-        driver.findElement(modal).click();
+        waitUntilElement(modal).is().clickable();
+        modal.click();
     }
 }

@@ -44,6 +44,9 @@ public class RealmRepresentation {
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
     protected Integer offlineSessionIdleTimeout;
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    protected Boolean offlineSessionMaxLifespanEnabled;
+    protected Integer offlineSessionMaxLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
@@ -294,6 +297,23 @@ public class RealmRepresentation {
 
     public void setOfflineSessionIdleTimeout(Integer offlineSessionIdleTimeout) {
         this.offlineSessionIdleTimeout = offlineSessionIdleTimeout;
+    }
+
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    public Boolean getOfflineSessionMaxLifespanEnabled() {
+        return offlineSessionMaxLifespanEnabled;
+    }
+
+    public void setOfflineSessionMaxLifespanEnabled(Boolean offlineSessionMaxLifespanEnabled) {
+        this.offlineSessionMaxLifespanEnabled = offlineSessionMaxLifespanEnabled;
+    }
+
+    public Integer getOfflineSessionMaxLifespan() {
+        return offlineSessionMaxLifespan;
+    }
+
+    public void setOfflineSessionMaxLifespan(Integer offlineSessionMaxLifespan) {
+        this.offlineSessionMaxLifespan = offlineSessionMaxLifespan;
     }
 
     public List<ScopeMappingRepresentation> getScopeMappings() {

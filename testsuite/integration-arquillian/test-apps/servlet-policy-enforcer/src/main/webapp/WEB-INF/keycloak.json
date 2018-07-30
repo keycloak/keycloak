@@ -73,6 +73,18 @@
             {
                 "name": "Pattern 15",
                 "path": "/keycloak-7148/{id}/*"
+            },
+            {
+                "name": "Pattern 16",
+                "path": "/keycloak-7269/sub-resource1"
+            },
+            {
+                "name": "Pattern 16",
+                "path": "/keycloak-7269/sub-resource2/*"
+            },
+            {
+                "name": "Pattern 16",
+                "path": "/keycloak-7269/sub-resource1/{test-pattern}/specialSuffix"
             }
         ]
     }

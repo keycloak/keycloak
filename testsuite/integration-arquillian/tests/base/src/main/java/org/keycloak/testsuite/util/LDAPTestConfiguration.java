@@ -32,7 +32,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
+import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

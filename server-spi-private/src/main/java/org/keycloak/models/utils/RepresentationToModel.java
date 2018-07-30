@@ -196,6 +196,14 @@ public class RepresentationToModel {
             newRealm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
 
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null) newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        else newRealm.setOfflineSessionMaxLifespanEnabled(false);
+
+        if (rep.getOfflineSessionMaxLifespan() != null)
+            newRealm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
+        else newRealm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
+
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
 
@@ -906,6 +914,10 @@ public class RepresentationToModel {
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespan() != null)
+            realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -1850,6 +1862,7 @@ public class RepresentationToModel {
     public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setConfig(rep.getConfig());
+        model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
         model.setProviderId(rep.getProviderId());
@@ -2343,7 +2356,7 @@ public class RepresentationToModel {
             existing.setName(resource.getName());
             existing.setDisplayName(resource.getDisplayName());
             existing.setType(resource.getType());
-            existing.setUri(resource.getUri());
+            existing.updateUris(resource.getUris());
             existing.setIconUri(resource.getIconUri());
             existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
             existing.updateScopes(resource.getScopes().stream()
@@ -2375,7 +2388,7 @@ public class RepresentationToModel {
 
         model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
-        model.setUri(resource.getUri());
+        model.updateUris(resource.getUris());
         model.setIconUri(resource.getIconUri());
         model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
 

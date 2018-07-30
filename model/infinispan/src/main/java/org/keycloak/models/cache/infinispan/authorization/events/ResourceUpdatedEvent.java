@@ -40,16 +40,16 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
     private String name;
     private String serverId;
     private String type;
-    private String uri;
+    private Set<String> uris;
     private Set<String> scopes;
     private String owner;
 
-    public static ResourceUpdatedEvent create(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner) {
+    public static ResourceUpdatedEvent create(String id, String name, String type, Set<String> uris, Set<String> scopes, String serverId, String owner) {
         ResourceUpdatedEvent event = new ResourceUpdatedEvent();
         event.id = id;
         event.name = name;
         event.type = type;
-        event.uri = uri;
+        event.uris = uris;
         event.scopes = scopes;
         event.serverId = serverId;
         event.owner = owner;
@@ -68,7 +68,7 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
+        cache.resourceUpdated(id, name, type, uris, scopes, serverId, owner, invalidations);
     }
 
     public static class ExternalizerImpl implements Externalizer<ResourceUpdatedEvent> {
@@ -82,7 +82,7 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
             MarshallUtil.marshallString(obj.id, output);
             MarshallUtil.marshallString(obj.name, output);
             MarshallUtil.marshallString(obj.type, output);
-            MarshallUtil.marshallString(obj.uri, output);
+            KeycloakMarshallUtil.writeCollection(obj.uris, KeycloakMarshallUtil.STRING_EXT, output);
             KeycloakMarshallUtil.writeCollection(obj.scopes, KeycloakMarshallUtil.STRING_EXT, output);
             MarshallUtil.marshallString(obj.serverId, output);
             MarshallUtil.marshallString(obj.owner, output);
@@ -103,7 +103,7 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
             res.id = MarshallUtil.unmarshallString(input);
             res.name = MarshallUtil.unmarshallString(input);
             res.type = MarshallUtil.unmarshallString(input);
-            res.uri = MarshallUtil.unmarshallString(input);
+            res.uris = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, HashSet::new);
             res.scopes = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, HashSet::new);
             res.serverId = MarshallUtil.unmarshallString(input);
             res.owner = MarshallUtil.unmarshallString(input);

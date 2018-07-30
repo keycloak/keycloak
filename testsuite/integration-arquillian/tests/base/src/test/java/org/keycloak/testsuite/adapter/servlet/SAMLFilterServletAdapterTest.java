@@ -5,18 +5,20 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
+import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
 /**
  * @author mhajas
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @UseServletFilter(filterName = "saml-filter", filterClass = "org.keycloak.adapters.saml.servlet.SamlFilter",
         filterDependency = "org.keycloak:keycloak-saml-servlet-filter-adapter")
-public class SAMLFilterServletAdapterTest extends SAMLServletsAdapterTest {
+public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
 
     @Before
     public void checkRoles() {

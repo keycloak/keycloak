@@ -17,21 +17,19 @@
 
 package org.keycloak.keys;
 
+import org.keycloak.crypto.KeyStatus;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class KeyMetadata {
-
-    public enum Status {
-        ACTIVE, PASSIVE, DISABLED
-    }
 
     private String providerId;
     private long providerPriority;
 
     private String kid;
 
-    private Status status;
+    private KeyStatus status;
 
     public String getProviderId() {
         return providerId;
@@ -57,11 +55,11 @@ public abstract class KeyMetadata {
         this.kid = kid;
     }
 
-    public Status getStatus() {
+    public KeyStatus getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(KeyStatus status) {
         this.status = status;
     }
 
