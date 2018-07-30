@@ -32,7 +32,7 @@ Run the appropriate module installation script.
 For the OIDC module, enter the following command:
 
 ----
-$ {EAP_HOME}/bin/jboss-cli.sh -c --file=${EAP_HOME}/bin/adapter-install.cli
+$ $EAP_HOME/bin/jboss-cli.sh -c --file=$EAP_HOME/bin/adapter-install.cli
 ----
 
 Your installation is complete.
@@ -69,7 +69,7 @@ Run the appropriate module installation script.
 For the OIDC module, enter the following command:
 
 ----
-$ {EAP_HOME}/bin/jboss-cli.sh -c --file=${EAP_HOME}/bin/adapter-install.cli
+$ $EAP_HOME/bin/jboss-cli.sh -c --file=$EAP_HOME/bin/adapter-install.cli
 ----
 
 Your installation is complete.

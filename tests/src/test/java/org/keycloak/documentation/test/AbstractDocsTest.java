@@ -9,9 +9,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractDocsTest {
 
@@ -61,25 +63,25 @@ public abstract class AbstractDocsTest {
 
     @Test
     public void checkVariables() {
-        List<String> missingVariables = utils.findMissingVariables(body, config.getIgnoredVariables());
+        Set<String> missingVariables = utils.findMissingVariables(body, config.getIgnoredVariables());
         checkFailures("Variables not found", missingVariables);
     }
 
     @Test
     public void checkIncludes() {
-        List<String> missingIncludes = utils.findMissingIncludes(body);
+        Set<String> missingIncludes = utils.findMissingIncludes(body);
         checkFailures("Includes not found", missingIncludes);
     }
 
     @Test
     public void checkImages() {
-        List<String> failures = linkUtils.findInvalidImages(body, guideDir, guideUrl);
+        Set<String> failures = linkUtils.findInvalidImages(body, guideDir, guideUrl);
         checkFailures("Images not found", failures);
     }
 
     @Test
     public void checkInternalAnchors() {
-        List<String> invalidInternalAnchors = linkUtils.findInvalidInternalAnchors(body);
+        Set<String> invalidInternalAnchors = linkUtils.findInvalidInternalAnchors(body);
         checkFailures("Internal anchors not found", invalidInternalAnchors);
     }
 
@@ -87,7 +89,7 @@ public abstract class AbstractDocsTest {
     public void checkExternalLinks() throws IOException {
         List<LinkUtils.InvalidLink> invalidLinks = linkUtils.findInvalidLinks(body, config.getIgnoredLinks(), config.getIgnoredLinkRedirects());
         if (!invalidLinks.isEmpty()) {
-            List<String> failures = new LinkedList<>();
+            Set<String> failures = new HashSet<>();
             for (LinkUtils.InvalidLink l : invalidLinks) {
                 failures.add(l.getLink() + " (" + l.getError() + ")");
             }
@@ -95,7 +97,7 @@ public abstract class AbstractDocsTest {
         }
     }
 
-    private void checkFailures(String message, List<String> failures) {
+    private void checkFailures(String message, Set<String> failures) {
         if (!failures.isEmpty()) {
             throw new Failures(message, failures);
         }

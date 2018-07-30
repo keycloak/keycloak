@@ -34,8 +34,8 @@ public class LinkUtils {
         saveCheckedLinksCache();
     }
 
-    public List<String> findInvalidInternalAnchors(String body) {
-        List<String> invalidInternalAnchors = new LinkedList<>();
+    public Set<String> findInvalidInternalAnchors(String body) {
+        Set<String> invalidInternalAnchors = new HashSet<>();
         Pattern p = Pattern.compile("<a href=\"([^ \"]*)[^>]*\">");
         Matcher m = p.matcher(body);
         while (m.find()) {
@@ -109,8 +109,8 @@ public class LinkUtils {
         return invalidLinks;
     }
 
-    public List<String> findInvalidImages(String body, File guideDir, String guideUrl) {
-        List<String> missingImages = new LinkedList<>();
+    public Set<String> findInvalidImages(String body, File guideDir, String guideUrl) {
+        Set<String> missingImages = new HashSet<>();
         Pattern p = Pattern.compile("<img src=\"([^ \"]*)[^>]*\"");
         Matcher m = p.matcher(body);
         while (m.find()) {

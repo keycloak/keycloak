@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,9 +61,9 @@ public class DocUtils {
         }
     }
 
-    public List<String> findMissingVariables(String body, List<String> ignoredVariables) {
-        List<String> missingVariables = new LinkedList<>();
-        Pattern p = Pattern.compile("[^$/=\\s]\\{([^ }\"]*)}");
+    public Set<String> findMissingVariables(String body, List<String> ignoredVariables) {
+        Set<String> missingVariables = new HashSet<>();
+        Pattern p = Pattern.compile("[^$/=\n]\\{([^ }\"]*)}");
         Matcher m = p.matcher(body);
         while (m.find()) {
             String key = m.group(1);
@@ -72,8 +74,8 @@ public class DocUtils {
         return missingVariables;
     }
 
-    public List<String> findMissingIncludes(String body) {
-        List<String> missingIncludes = new LinkedList<>();
+    public Set<String> findMissingIncludes(String body) {
+        Set<String> missingIncludes = new HashSet<>();
         Pattern p = Pattern.compile("Unresolved directive.*");
         Matcher m = p.matcher(body);
         if (m.find()) {

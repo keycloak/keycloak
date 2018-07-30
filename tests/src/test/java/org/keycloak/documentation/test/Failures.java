@@ -3,12 +3,13 @@ package org.keycloak.documentation.test;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Set;
 
 public class Failures extends AssertionError {
 
-    private List<String> failures;
+    private Set<String> failures;
 
-    public Failures(String error, List<String> failures) {
+    public Failures(String error, Set<String> failures) {
         super(error);
         this.failures = failures;
     }
