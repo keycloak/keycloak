@@ -308,6 +308,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
+        String uiLocales = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.UI_LOCALES_PARAM);
+        if (getConfig().isForwardUiLocales() && uiLocales != null) {
+            uriBuilder.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM, uiLocales);
+        }
+
         String prompt = getConfig().getPrompt();
         if (prompt == null || prompt.isEmpty()) {
             prompt = request.getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT);

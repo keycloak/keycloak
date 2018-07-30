@@ -86,4 +86,12 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public String getPrompt() {
         return getConfig().get("prompt");
     }
+
+    public boolean isForwardUiLocales() {
+        return Boolean.valueOf(getConfig().get("forwardUiLocales"));
+    }
+
+    public void setForwardUiLocales(boolean forwardUiLocales) {
+        getConfig().put("forwardUiLocales", String.valueOf(forwardUiLocales));
+    }
 }
