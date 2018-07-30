@@ -61,6 +61,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -79,9 +80,11 @@ public class ResourceSetService {
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
+    private KeycloakSession session;
     private ResourceServer resourceServer;
 
-    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public ResourceSetService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
@@ -92,14 +95,14 @@ public class ResourceSetService {
     @NoCache
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
+    public Response createPost(ResourceRepresentation resource) {
         if (resource == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
         ResourceRepresentation newResource = create(resource);
 
-        audit(uriInfo, resource, resource.getId(), OperationType.CREATE);
+        audit(resource, resource.getId(), OperationType.CREATE);
 
         return Response.status(Status.CREATED).entity(newResource).build();
     }
@@ -134,7 +137,7 @@ public class ResourceSetService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, ResourceRepresentation resource) {
+    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -147,14 +150,14 @@ public class ResourceSetService {
 
         toModel(resource, resourceServer, authorization);
 
-        audit(uriInfo, resource, OperationType.UPDATE);
+        audit(resource, OperationType.UPDATE);
 
         return Response.noContent().build();
     }
 
     @Path("{id}")
     @DELETE
-    public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
+    public Response delete(@PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
@@ -166,7 +169,7 @@ public class ResourceSetService {
         storeFactory.getResourceStore().delete(id);
 
         if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(uriInfo, toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+            audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
         }
 
         return Response.noContent().build();
@@ -465,16 +468,16 @@ public class ResourceSetService {
         }
     }
 
-    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, OperationType operation) {
-        audit(uriInfo, resource, null, operation);
+    private void audit(ResourceRepresentation resource, OperationType operation) {
+        audit(resource, null, operation);
     }
 
-    public void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, String id, OperationType operation) {
+    public void audit(ResourceRepresentation resource, String id, OperationType operation) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
             if (id != null) {
-                adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();
+                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
             } else {
-                adminEvent.operation(operation).resourcePath(uriInfo).representation(resource).success();
+                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
             }
         }
     }

@@ -45,6 +45,8 @@ import org.keycloak.authorization.protection.policy.UserManagedPermissionService
  */
 public class ProtectionService {
 
+    @Context
+    private KeycloakSession session;
     private final AuthorizationProvider authorization;
 
     @Context
@@ -58,11 +60,11 @@ public class ProtectionService {
     public Object resource() {
         KeycloakIdentity identity = createIdentity(true);
         ResourceServer resourceServer = getResourceServer(identity);
-        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null, createAdminEventBuilder(identity, resourceServer));
+        ResourceSetService resourceManager = new ResourceSetService(this.session, resourceServer, this.authorization, null, createAdminEventBuilder(identity, resourceServer));
 
         ResteasyProviderFactory.getInstance().injectProperties(resourceManager);
 
-        ResourceService resource = new ResourceService(resourceServer, identity, resourceManager);
+        ResourceService resource = new ResourceService(this.session, resourceServer, identity, resourceManager);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

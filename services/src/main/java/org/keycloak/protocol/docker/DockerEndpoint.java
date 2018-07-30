@@ -43,7 +43,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     public Response build() {
         ProfileHelper.requireFeature(Profile.Feature.DOCKER);
 
-        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        final MultivaluedMap<String, String> params = session.getContext().getUri().getQueryParameters();
 
         account = params.getFirst(DockerAuthV2Protocol.ACCOUNT_PARAM);
         if (account == null) {
@@ -72,7 +72,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader();
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new DockerAuthV2Protocol(session, realm, uriInfo, headers, event.event(login)), false, false);
+        return handleBrowserAuthenticationRequest(authenticationSession, new DockerAuthV2Protocol(session, realm, session.getContext().getUri(), headers, event.event(login)), false, false);
     }
 
     private void updateAuthenticationSession() {
@@ -83,7 +83,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setClientNote(DockerAuthV2Protocol.ACCOUNT_PARAM, account);
         authenticationSession.setClientNote(DockerAuthV2Protocol.SERVICE_PARAM, service);
         authenticationSession.setClientNote(DockerAuthV2Protocol.SCOPE_PARAM, scope);
-        authenticationSession.setClientNote(DockerAuthV2Protocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        authenticationSession.setClientNote(DockerAuthV2Protocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
     }
 

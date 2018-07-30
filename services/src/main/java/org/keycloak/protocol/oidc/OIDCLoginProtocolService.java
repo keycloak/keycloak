@@ -67,9 +67,6 @@ public class OIDCLoginProtocolService {
     private EventBuilder event;
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private KeycloakSession session;
 
     @Context
@@ -244,8 +241,8 @@ public class OIDCLoginProtocolService {
     @GET
     @Path("delegated")
     public Response kcinitBrowserLoginComplete(@QueryParam("error") boolean error) {
-        AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
-        AuthenticationManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
         if (error) {
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms

@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -54,7 +53,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
@@ -72,18 +70,23 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -133,7 +136,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     public void init() {
         eventStore = session.getProvider(EventStoreProvider.class);
 
-        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo).setHttpHeaders(headers);
+        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(headers);
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
@@ -142,7 +145,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             account.setStateChecker(stateChecker);
         }
 
-        String requestOrigin = UriUtils.getOrigin(uriInfo.getBaseUri());
+        String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getBaseUri());
 
         String origin = headers.getRequestHeaders().getFirst("Origin");
         if (origin != null && !requestOrigin.equals(origin)) {
@@ -245,7 +248,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("totp")
     @GET
     public Response totpPage() {
-        account.setAttribute("mode", uriInfo.getQueryParameters().getFirst("mode"));
+        account.setAttribute("mode", session.getContext().getUri().getQueryParameters().getFirst("mode"));
         return forwardToPage("totp", AccountPages.TOTP);
     }
 
@@ -383,11 +386,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
 
-        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountFormService.class, "sessionsPage");
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        UriBuilder builder = Urls.accountBase(session.getContext().getUri().getBaseUri()).path(AccountFormService.class, "sessionsPage");
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer != null) {
             builder.queryParam("referrer", referrer);
 
@@ -422,13 +425,13 @@ public class AccountFormService extends AbstractSecuredLocalService {
         new UserSessionManager(session).revokeOfflineToken(user, client);
 
         // Logout clientSessions for this user and client
-        AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, uriInfo, headers);
+        AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, session.getContext().getUri(), headers);
 
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
 
-        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountFormService.class, "applicationsPage");
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        UriBuilder builder = Urls.accountBase(session.getContext().getUri().getBaseUri()).path(AccountFormService.class, "applicationsPage");
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer != null) {
             builder.queryParam("referrer", referrer);
 
@@ -458,7 +461,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
-        account.setAttribute("mode", uriInfo.getQueryParameters().getFirst("mode"));
+        account.setAttribute("mode", session.getContext().getUri().getQueryParameters().getFirst("mode"));
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("Cancel")) {
@@ -591,7 +594,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel s : sessions) {
             if (!s.getId().equals(auth.getSession().getId())) {
-                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers, true);
+                AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), clientConnection, headers, true);
             }
         }
 
@@ -646,7 +649,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         switch (accountSocialAction) {
             case ADD:
-                String redirectUri = UriBuilder.fromUri(Urls.accountFederatedIdentityPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
+                String redirectUri = UriBuilder.fromUri(Urls.accountFederatedIdentityPage(session.getContext().getUri().getBaseUri(), realm.getName())).build().toString();
 
                 try {
                     String nonce = UUID.randomUUID().toString();
@@ -654,7 +657,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                     String input = nonce + auth.getSession().getId() +  client.getClientId() + providerId;
                     byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
                     String hash = Base64Url.encode(check);
-                    URI linkUrl = Urls.identityProviderLinkRequest(this.uriInfo.getBaseUri(), providerId, realm.getName());
+                    URI linkUrl = Urls.identityProviderLinkRequest(this.session.getContext().getUri().getBaseUri(), providerId, realm.getName());
                     linkUrl = UriBuilder.fromUri(linkUrl)
                             .queryParam("nonce", nonce)
                             .queryParam("hash", hash)
@@ -936,7 +939,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Override
     protected URI getBaseRedirectUri() {
-        return Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
+        return Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName());
     }
 
     public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
@@ -944,19 +947,19 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     private String[] getReferrer() {
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer == null) {
             return null;
         }
 
-        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
+        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
 
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
             }
 
             if (referrerUri != null) {
@@ -969,7 +972,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

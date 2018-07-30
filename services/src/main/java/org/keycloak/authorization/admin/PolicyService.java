@@ -57,6 +57,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
@@ -71,6 +72,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class PolicyService {
 
+    @Context
+    private KeycloakSession session;
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
     protected final AdminPermissionEvaluator auth;
@@ -108,7 +111,7 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(@Context UriInfo uriInfo, String payload) {
+    public Response create(String payload) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
         }
@@ -118,7 +121,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(uriInfo, representation, representation.getId(), OperationType.CREATE);
+        audit(representation, representation.getId(), OperationType.CREATE);
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -325,12 +328,12 @@ public class PolicyService {
         });
     }
 
-    private void audit(@Context UriInfo uriInfo, AbstractPolicyRepresentation resource, String id, OperationType operation) {
+    private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
             if (id != null) {
-                adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();
+                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
             } else {
-                adminEvent.operation(operation).resourcePath(uriInfo).representation(resource).success();
+                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
             }
         }
     }

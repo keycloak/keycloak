@@ -70,7 +70,7 @@ public class SamlEcpProfileService extends SamlService {
                 protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
                     // force passive authentication when executing this profile
                     requestAbstractType.setIsPassive(true);
-                    requestAbstractType.setDestination(uriInfo.getAbsolutePath());
+                    requestAbstractType.setDestination(session.getContext().getUri().getAbsolutePath());
                     return super.loginRequest(relayState, requestAbstractType, client);
                 }
             }.execute(Soap.toSamlHttpPostMessage(inputStream), null, null);
@@ -143,7 +143,7 @@ public class SamlEcpProfileService extends SamlService {
             protected Response buildLogoutResponse(UserSessionModel userSession, String logoutBindingUri, SAML2LogoutResponseBuilder builder, JaxrsSAML2BindingBuilder binding) throws ConfigurationException, ProcessingException, IOException {
                 return Soap.createFault().reason("Logout not supported.").build();
             }
-        }.setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(uriInfo);
+        }.setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(session.getContext().getUri());
     }
 
     @Override

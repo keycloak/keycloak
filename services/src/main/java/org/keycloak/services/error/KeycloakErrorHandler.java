@@ -8,14 +8,12 @@ import org.keycloak.Config;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
@@ -27,11 +25,13 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,9 +41,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);
 
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
-
-    @Context
-    private UriInfo uriInfo;
 
     @Context
     private KeycloakSession session;
@@ -103,7 +100,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     }
 
     private RealmModel resolveRealm() {
-        String path = uriInfo.getPath();
+        String path = session.getContext().getUri().getPath();
         Matcher m = realmNamePattern.matcher(path);
         String realmName;
         if(m.matches()) {
@@ -130,8 +127,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         attributes.put("statusCode", statusCode);
 
         attributes.put("realm", realm);
-        attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
-        attributes.put("locale", new LocaleBean(realm, locale, uriInfo.getBaseUriBuilder(), messagesBundle));
+        attributes.put("url", new UrlBean(realm, theme, session.getContext().getUri().getBaseUri(), null));
+        attributes.put("locale", new LocaleBean(realm, locale, session.getContext().getUri().getBaseUriBuilder(), messagesBundle));
 
 
         String errorKey = statusCode == 404 ? Messages.PAGE_NOT_FOUND : Messages.INTERNAL_SERVER_ERROR;
