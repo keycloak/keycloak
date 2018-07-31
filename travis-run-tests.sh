@@ -60,6 +60,8 @@ fi
 
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
+    # Generate documentation to catch potential issues earlier than during the release
+    mvn test -B -nsu -f services -Pjboss-release
 fi
 
 if [ $1 == "server-group1" ]; then
