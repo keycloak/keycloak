@@ -561,7 +561,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     }
     
     $scope.disableCredentialTypes = function() {
-        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
+        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
                 $route.reload();
                 Notifications.success("Credentials disabled");
