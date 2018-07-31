@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -35,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FreeMarkerUtil {
 
     private ConcurrentHashMap<String, Template> cache;
+    private final KeycloakSanitizerMethod kcSanitizeMethod = new KeycloakSanitizerMethod();
 
     public FreeMarkerUtil() {
         if (Config.scope("theme").getBoolean("cacheTemplates", true)) {
@@ -43,6 +45,10 @@ public class FreeMarkerUtil {
     }
 
     public String processTemplate(Object data, String templateName, Theme theme) throws FreeMarkerException {
+        if (data instanceof Map) {
+            ((Map)data).put("kcSanitize", kcSanitizeMethod);
+        }
+        
         try {
             Template template;
             cache = null;
