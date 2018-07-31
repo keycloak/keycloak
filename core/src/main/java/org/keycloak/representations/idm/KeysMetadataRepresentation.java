@@ -19,6 +19,7 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,6 +55,7 @@ public class KeysMetadataRepresentation {
         private String status;
 
         private String type;
+        private Set<String> algorithms;
 
         private String publicKey;
         private String certificate;
@@ -96,6 +98,14 @@ public class KeysMetadataRepresentation {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public Set<String> getAlgorithms() {
+            return algorithms;
+        }
+
+        public void setAlgorithms(Set<String> algorithms) {
+            this.algorithms = algorithms;
         }
 
         public String getPublicKey() {

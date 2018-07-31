@@ -47,6 +47,7 @@ public class MigrationTest extends AbstractMigrationTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
     }
+
     @Before
     public void beforeMigrationTest() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
@@ -58,29 +59,36 @@ public class MigrationTest extends AbstractMigrationTest {
         addTestRealmToTestRealmReps(migrationRealm2);
         addTestRealmToTestRealmReps(migrationRealm3);
     }
+
     private void addTestRealmToTestRealmReps(RealmResource realm) {
         try {
             testRealmReps.add(realm.toRepresentation());
         } catch (NotFoundException ex) {
         }
     }
+
+    @Test
+    @Migration(versionFrom = "3.4.3.Final")
+    public void migration3_4_3Test() {
+        testMigratedData();
+        testMigrationTo4_x();
+    }
+
     @Test
     @Migration(versionFrom = "2.5.5.Final")
     public void migration2_5_5Test() {
         testMigratedData();
-        testMigrationTo3_x_and_higher();
+        testMigrationTo3_x();
+        testMigrationTo4_x();
     }
+
     @Test
     @Migration(versionFrom = "1.9.8.Final")
     public void migration1_9_8Test() throws Exception {
         testMigratedData();
-        testMigrationTo2_0_0();
-        testMigrationTo2_1_0();
-        testMigrationTo2_2_0();
-        testMigrationTo2_3_0();
-        testMigrationTo2_5_0();
-        testMigrationTo2_5_1();
-        testMigrationTo3_x_and_higher();
+        testMigrationTo2_x();
+        testMigrationTo3_x();
+        testMigrationTo4_x();
     }
 
     @Test

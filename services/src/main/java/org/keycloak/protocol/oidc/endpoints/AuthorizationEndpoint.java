@@ -46,7 +46,10 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -92,10 +95,20 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.event(EventType.LOGIN);
     }
 
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response buildPost() {
+        logger.trace("Processing @POST request");
+        return process(httpRequest.getDecodedFormParameters());
+    }
+
     @GET
-    public Response build() {
-        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
-        String requestUri = uriInfo.getRequestUri().toString();
+    public Response buildGet() {
+        logger.trace("Processing @GET request");
+        return process(uriInfo.getQueryParameters());
+    }
+
+    private Response process(MultivaluedMap<String, String> params) {
         String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
 
         checkSsl();

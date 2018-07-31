@@ -60,8 +60,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -483,6 +485,38 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals(1, mappers.size());
         assertEquals(1, mappers.get(0).getConfig().size());
         assertEquals("offline_access", mappers.get(0).getConfig().get("role"));
+    }
+
+    // KEYCLOAK-7872
+    @Test
+    public void testDeleteProtocolMappersAfterDeleteIdentityProvider() {
+        create(createRep("google3", "google"));
+
+        IdentityProviderResource provider = realm.identityProviders().get("google3");
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias("google3");
+        mapper.setName("my_mapper");
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", "offline_access");
+        mapper.setConfig(config);
+
+        Response response = provider.addMapper(mapper);
+
+        List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
+        assertThat(mappers, hasSize(1));
+
+        assertAdminEvents.clear();
+
+        provider.remove();
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("google3"), ResourceType.IDENTITY_PROVIDER);
+
+        create(createRep("google3", "google"));
+
+        IdentityProviderResource newProvider = realm.identityProviders().get("google3");
+
+        assertThat(newProvider.getMappers(), empty());
     }
 
     @Test

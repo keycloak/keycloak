@@ -143,6 +143,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("dotted phone", "phone", "home\\.phone", "String", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
@@ -170,6 +171,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(idToken.getOtherClaims().get("home_phone"));
             assertThat((List<String>) idToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
+            assertNotNull(idToken.getOtherClaims().get("home.phone"));
+            assertThat((List<String>) idToken.getOtherClaims().get("home.phone"), hasItems("617-777-6666"));
             assertEquals("coded", idToken.getOtherClaims().get("hard"));
             Map nested = (Map) idToken.getOtherClaims().get("nested");
             assertEquals("coded-nested", nested.get("hard"));
@@ -221,6 +224,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard")
                         || model.getName().equals("hard-nested")
                         || model.getName().equals("custom phone")
+                        || model.getName().equals("dotted phone")
                         || model.getName().equals("departments")
                         || model.getName().equals("firstDepartment")
                         || model.getName().equals("nested phone")

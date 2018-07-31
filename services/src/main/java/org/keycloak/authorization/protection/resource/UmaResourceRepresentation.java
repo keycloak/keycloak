@@ -37,7 +37,7 @@ public class UmaResourceRepresentation extends ResourceRepresentation {
         setId(resource.getId());
         setName(resource.getName());
         setType(resource.getType());
-        setUri(resource.getUri());
+        setUris(resource.getUris());
         setIconUri(resource.getIconUri());
         setOwner(resource.getOwner());
         setScopes(resource.getScopes());
@@ -49,7 +49,7 @@ public class UmaResourceRepresentation extends ResourceRepresentation {
         setId(resource.getId());
         setName(resource.getName());
         setType(resource.getType());
-        setUri(resource.getUri());
+        setUris(resource.getUris());
         setIconUri(resource.getIconUri());
         setOwner(resource.getOwner());
         setScopes(resource.getScopes().stream().map(scope -> new ScopeRepresentation(scope.getName())).collect(Collectors.toSet()));

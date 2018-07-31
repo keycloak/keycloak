@@ -53,7 +53,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
+public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
     protected static final String REALM_NAME = "authz-test";
 
@@ -174,10 +174,6 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create authz client", cause);
         }
-    }
-
-    protected AccessToken toAccessToken(String rpt) throws Exception {
-        return JsonSerialization.readValue(new JWSInput(rpt).getContent(), AccessToken.class);
     }
 
     protected void assertPermissions(List<Permission> permissions, String expectedResource, String... expectedScopes) {

@@ -34,6 +34,8 @@ import org.keycloak.models.KeycloakSession;
  */
 public class InfinispanUtil {
 
+    public static final int MAXIMUM_REPLACE_RETRIES = 25;
+
     // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
     public static Set<RemoteStore> getRemoteStores(Cache ispnCache) {
         return ispnCache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class);

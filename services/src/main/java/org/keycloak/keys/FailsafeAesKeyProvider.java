@@ -18,13 +18,31 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class FailsafeAesKeyProvider extends FailsafeSecretKeyProvider implements AesKeyProvider {
+public class FailsafeAesKeyProvider extends FailsafeSecretKeyProvider {
 
     private static final Logger logger = Logger.getLogger(FailsafeAesKeyProvider.class);
+
+    @Override
+    protected KeyUse getUse() {
+        return KeyUse.ENC;
+    }
+
+    @Override
+    protected String getType() {
+        return KeyType.OCT;
+    }
+
+    @Override
+    protected String getAlgorithm() {
+        return Algorithm.AES;
+    }
 
     @Override
     protected Logger logger() {

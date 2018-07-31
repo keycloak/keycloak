@@ -17,6 +17,8 @@
 
 package org.keycloak.subsystem.adapter.extension;
 
+import static org.keycloak.subsystem.adapter.extension.Elytron.isElytronEnabled;
+
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -73,7 +75,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             addKeycloakAuthData(phaseContext, service);
         }
 
-        addConfigurationListener(deploymentUnit);
+        addConfigurationListener(phaseContext);
 
         // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
 
@@ -125,7 +127,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         webMetaData.setContextParams(contextParams);
     }
 
-    private void addConfigurationListener(DeploymentUnit deploymentUnit) {
+    private void addConfigurationListener(DeploymentPhaseContext phaseContext) {
+        DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
             return;
@@ -144,16 +147,18 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         if (!loginConfig.getAuthMethod().equals("KEYCLOAK")) {
             return;
         }
-        ListenerMetaData listenerMetaData = new ListenerMetaData();
 
-        listenerMetaData.setListenerClass(KeycloakConfigurationServletListener.class.getName());
+        if (isElytronEnabled(phaseContext)) {
+            ListenerMetaData listenerMetaData = new ListenerMetaData();
 
-        webMetaData.getListeners().add(listenerMetaData);
+            listenerMetaData.setListenerClass(KeycloakConfigurationServletListener.class.getName());
+
+            webMetaData.getListeners().add(listenerMetaData);
+        }
     }
 
     @Override
     public void undeploy(DeploymentUnit du) {
 
     }
-
 }

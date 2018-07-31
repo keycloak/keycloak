@@ -145,4 +145,11 @@ public class Keycloak {
     public void close() {
         client.close();
     }
+
+    /**
+     * @return true if the underlying client is closed.
+     */
+    public boolean isClosed() {
+        return client.isClosed();
+    }
 }

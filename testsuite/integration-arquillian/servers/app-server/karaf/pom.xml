@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.2.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -68,7 +68,7 @@
                                         </requireProperty>
                                         <requireOS>
                                             <family>!windows</family>
-                                            <message>Automated Kara/Fuse adapter configuration currently doesn't work on Windows.</message>
+                                            <message>Automated Karaf/Fuse adapter configuration currently doesn't work on Windows.</message>
                                         </requireOS>
                                     </rules>
                                 </configuration>
@@ -139,6 +139,7 @@
                                             <includes>
                                                 <include>users.properties</include>
                                                 <include>keycloak-bearer.json</include>
+                                                <include>cxf-customerservice-keycloak.json</include>
                                                 <include>keycloak-direct-access.json</include>
                                                 <include>keycloak-hawtio-client.json</include>
                                                 <include>keycloak-hawtio.json</include>
@@ -189,7 +190,7 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>                    
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -255,14 +256,38 @@
         </profile>
         <profile>
             <id>app-server-fuse63</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse63</value>
+                </property>
+            </activation>
             <modules>
                 <module>fuse63</module>
             </modules>
         </profile>
         <profile>
             <id>app-server-fuse70</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse70</value>
+                </property>
+            </activation>
             <modules>
                 <module>fuse70</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-fuse71</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse71</value>
+                </property>
+            </activation>
+            <modules>
+                <module>fuse71</module>
             </modules>
         </profile>
     </profiles>

@@ -80,7 +80,9 @@ public interface LoginFormsProvider extends Provider {
     Response createOAuthGrant();
 
     Response createCode();
-    
+
+    Response createX509ConfirmPage();
+
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     LoginFormsProvider setClientSessionCode(String accessCode);

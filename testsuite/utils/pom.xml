@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.2.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,6 +32,7 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
+        <keycloak.additionalClasspathElement>NON_EXISTENT_PATH_OVERRIDE_ON_COMMAND_LINE</keycloak.additionalClasspathElement>
     </properties>
 
 
@@ -285,6 +286,9 @@
                         <configuration>
                             <mainClass>org.keycloak.testsuite.KeycloakServer</mainClass>
                             <classpathScope>test</classpathScope>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${keycloak.additionalClasspathElement}</additionalClasspathElement>
+                            </additionalClasspathElements>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -94,11 +94,6 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return new KeycloakPreAuthActionsFilter(httpSessionManager());
     }
 
-    @Bean
-    protected KeycloakAuthenticatedActionsFilter keycloakAuthenticatedActionsFilter() {
-        return new KeycloakAuthenticatedActionsFilter();
-    }
-
     protected KeycloakCsrfRequestMatcher keycloakCsrfRequestMatcher() {
         return new KeycloakCsrfRequestMatcher();
     }
@@ -125,8 +120,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
                 .and()
                 .addFilterBefore(keycloakPreAuthActionsFilter(), LogoutFilter.class)
                 .addFilterBefore(keycloakAuthenticationProcessingFilter(), BasicAuthenticationFilter.class)
-                .addFilterBefore(keycloakAuthenticatedActionsFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(keycloakSecurityContextRequestFilter(), SecurityContextHolderAwareRequestFilter.class)
+                .addFilterAfter(keycloakAuthenticatedActionsRequestFilter(), KeycloakSecurityContextRequestFilter.class)
                 .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint())
                 .and()
                 .logout()
@@ -138,5 +133,10 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
     @Bean
     protected KeycloakSecurityContextRequestFilter keycloakSecurityContextRequestFilter() {
         return new KeycloakSecurityContextRequestFilter();
+    }
+
+    @Bean
+    protected KeycloakAuthenticatedActionsFilter keycloakAuthenticatedActionsRequestFilter() {
+        return new KeycloakAuthenticatedActionsFilter();
     }
 }

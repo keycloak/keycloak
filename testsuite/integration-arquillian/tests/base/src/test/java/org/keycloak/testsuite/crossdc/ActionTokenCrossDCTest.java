@@ -47,8 +47,11 @@ import org.keycloak.testsuite.pages.ProceedPage;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
 /**
  *
@@ -79,12 +82,14 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC)
     public void sendResetPasswordEmailSuccessWorksInCrossDc(
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
       @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
       @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
       @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-        startBackendNode(DC.FIRST, 1);
+        log.debug("--DC: START sendResetPasswordEmailSuccessWorksInCrossDc");
+        
         cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
@@ -133,7 +138,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
                 }
         );
 
-        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+        assertThat(PageUtils.getPageTitle(driver), containsString("Your account has been updated."));
 
         // Verify that there was an action token added in the node which was targetted by the link
         assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
@@ -148,10 +153,13 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
         );
 
         errorPage.assertCurrent();
+        log.debug("--DC: END sendResetPasswordEmailSuccessWorksInCrossDc");
     }
 
     @Test
+    @InitialDcState(authServers = ServerSetup.FIRST_NODE_IN_FIRST_DC)
     public void sendResetPasswordEmailAfterNewNodeAdded() throws IOException, MessagingException {
+        log.debug("--DC: START sendResetPasswordEmailAfterNewNodeAdded");
         disableDcOnLoadBalancer(DC.SECOND);
 
         UserRepresentation userRep = new UserRepresentation();
@@ -183,17 +191,16 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
         assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
 
         disableDcOnLoadBalancer(DC.FIRST);
-        getManuallyStartedBackendNodes(DC.SECOND)
-          .findFirst()
-          .ifPresent(c -> {
-              containerController.start(c.getQualifier());
-              loadBalancerCtrl.enableBackendNodeByName(c.getQualifier());
-          });
+        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 0);
+        enableLoadBalancerNode(DC.SECOND, 1);
 
         Retry.execute(() -> {
             driver.navigate().to(link);
             errorPage.assertCurrent();
         }, 3, 400);
+
+        log.debug("--DC: END sendResetPasswordEmailAfterNewNodeAdded");
     }
 
 }

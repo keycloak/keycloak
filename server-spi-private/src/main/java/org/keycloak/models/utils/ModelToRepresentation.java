@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -841,7 +842,7 @@ public class ModelToRepresentation {
         resource.setType(model.getType());
         resource.setName(model.getName());
         resource.setDisplayName(model.getDisplayName());
-        resource.setUri(model.getUri());
+        resource.setUris(model.getUris());
         resource.setIconUri(model.getIconUri());
         resource.setOwnerManagedAccess(model.isOwnerManagedAccess());
 

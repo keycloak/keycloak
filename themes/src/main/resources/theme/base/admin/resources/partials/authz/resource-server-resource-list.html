@@ -72,7 +72,7 @@
             <th width="1%"></th>
             <th>{{:: 'name' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
-            <th>{{:: 'authz-uri' | translate}}</th>
+            <th>{{:: 'authz-uris' | translate}}</th>
             <th>{{:: 'authz-owner' | translate}}</th>
             <th width="11%" style="text-align: center">{{:: 'actions' | translate}}</th>
         </tr>
@@ -108,8 +108,9 @@
                 <span data-ng-show="!resource.type">{{:: 'authz-no-type-defined' | translate}}</span>
             </td>
             <td>
-                <span data-ng-show="resource.uri">{{resource.uri}}</span>
-                <span data-ng-show="!resource.uri">{{:: 'authz-no-uri-defined' | translate}}</span>
+                <span data-ng-show="resource.uris.length == 0">{{:: 'authz-no-uri-defined' | translate}}</span>
+                <span data-ng-show="resource.uris.length == 1">{{resource.uris[0]}}</span>
+                <span data-ng-show="resource.uris.length > 1">{{resource.uris.length}} {{:: 'authz-uris' | translate}}</span>
             </td>
             <td>{{resource.owner.name}}</td>
             <td align="center">
@@ -143,6 +144,11 @@
                                 <dd>
                                     <span data-ng-show="resource.policies && !resource.policies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
                                     <span ng-repeat="policy in resource.policies" data-ng-show="resource.policies.length > 0"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}</span>
+                                </dd>
+                                <dt>{{:: 'authz-uris' | translate}}</dt>
+                                <dd>
+                                    <span data-ng-show="resource.uris && !resource.uris.length">{{:: 'authz-no-uri-defined' | translate}}</span>
+                                    <span ng-repeat="uri in resource.uris" data-ng-show="resource.uris.length > 0">{{uri}}{{$last ? '' : ', '}}</span>
                                 </dd>
                             </dl>
                         </div>

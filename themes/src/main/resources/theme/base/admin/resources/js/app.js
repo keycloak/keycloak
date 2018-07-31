@@ -289,8 +289,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmKeysCtrl'
         })
-        .when('/realms/:realm/keys/list', {
-            templateUrl : resourceUrl + '/partials/realm-keys-list.html',
+        .when('/realms/:realm/keys/passive', {
+            templateUrl : resourceUrl + '/partials/realm-keys-passive.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -304,6 +304,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmKeysCtrl'
         })
+        .when('/realms/:realm/keys/disabled', {
+                    templateUrl : resourceUrl + '/partials/realm-keys-disabled.html',
+                    resolve : {
+                        realm : function(RealmLoader) {
+                            return RealmLoader();
+                        },
+                        serverInfo : function(ServerInfoLoader) {
+                            return ServerInfoLoader();
+                        },
+                        keys: function(RealmKeysLoader) {
+                            return RealmKeysLoader();
+                        }
+                    },
+                    controller : 'RealmKeysCtrl'
+                })
         .when('/realms/:realm/keys/providers', {
             templateUrl : resourceUrl + '/partials/realm-keys-providers.html',
             resolve : {

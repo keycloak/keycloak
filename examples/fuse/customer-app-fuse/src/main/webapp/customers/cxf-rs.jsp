@@ -4,6 +4,8 @@
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.CxfRsClient" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
+<%@ page import="org.keycloak.common.util.UriUtils"%>
+<%@ page import="org.keycloak.KeycloakSecurityContext"%>
 <%@ page session="false" %>
 <html>
 <head>
@@ -16,6 +18,7 @@
     String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
             .queryParam("referrer", "customer-portal").build("demo").toString();
     IDToken idToken = CxfRsClient.getIDToken(request);
+    KeycloakSecurityContext kSession = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
 %>
 <p>Goto: <a href="/product-portal">products</a> | <a href="<%=logoutUri%>">logout</a> | <a
         href="<%=acctUri%>">manage acct</a></p>
@@ -28,6 +31,7 @@ Servlet User Principal <b><%=request.getUserPrincipal().getName()%>
 <p>First: <%=idToken.getGivenName()%></p>
 <p>Last: <%=idToken.getFamilyName()%></p>
 <h2>Customer Listing</h2>
+<p><b>curl</b> -H "Authorization: Bearer <%=kSession.getTokenString()%>" <%=UriUtils.getOrigin(request.getRequestURL().toString()) + "/cxf/customerservice/customers"%></p>
 <%
     java.util.List<String> list = null;
     try {

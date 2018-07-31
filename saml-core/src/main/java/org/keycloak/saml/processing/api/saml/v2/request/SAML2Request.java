@@ -107,7 +107,7 @@ public class SAML2Request {
         // Create a default NameIDPolicy
         NameIDPolicyType nameIDPolicy = new NameIDPolicyType();
         nameIDPolicy.setAllowCreate(Boolean.TRUE);
-        nameIDPolicy.setFormat(URI.create(this.nameIDFormat));
+        nameIDPolicy.setFormat(this.nameIDFormat == null ? null : URI.create(this.nameIDFormat));
 
         authnRequest.setNameIDPolicy(nameIDPolicy);
 

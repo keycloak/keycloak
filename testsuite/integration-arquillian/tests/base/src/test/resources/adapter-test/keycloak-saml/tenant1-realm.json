@@ -1,0 +1,73 @@
+{
+    "id": "tenant1",
+    "realm": "tenant1",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user" ]
+        },
+        {
+            "username" : "user-tenant1",
+            "enabled": true,
+            "email" : "user-tenant1@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "user-tenant1" }
+            ],
+            "realmRoles": [ "user" ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "multi-tenant",
+            "name": "multi-tenant",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "frontchannelLogout": true,
+            "baseUrl": "http://localhost:8080/multi-tenant-saml/",
+            "redirectUris": [
+                "http://localhost:8080/multi-tenant-saml/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant1",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant1",
+                "saml_single_logout_service_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant1",
+                "saml_single_logout_service_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant1",
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIICwTCCAakCBgFjh8UCJDANBgkqhkiG9w0BAQsFADAkMSIwIAYDVQQDDBltdWx0aS10ZW5hbnQtc2FtbC10ZW5hbnQxMB4XDTE4MDUyMjEyMTIwNVoXDTI4MDUyMjEyMTM0NVowJDEiMCAGA1UEAwwZbXVsdGktdGVuYW50LXNhbWwtdGVuYW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJFoRVHp55NFqAbzQ9WRWKNP3yUrAT5HT0klZg8ttuMq5JhuGvl5aADnoOUhD/SbJST73ObF3JMqRSW8899yKByYxG5HH03KEpbGbB+gT2dYwzHSqN7E2G0h+VSpfQvjOyMFdRQORbBicnTVN+a828JlTf7uxmQ2ifgKuuZgUtUydLRh9vbcbYMP0sqKBNXAJKzJuqv6yQPmn78OGvtDZz+oThcJ44QQ19A/PaNrDNPKvjQsibfBfyV/tCaRs6UKIdROy272ZDL8aqVrZqnFzF5mTNOa+Ko91UTLaWKsSxBPk3Tv2tZJkeoWztFBOjVEV3Uz76BraUSZeg78oNfuuJMCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEABVma/QDyE2ZyNZuFjoJ9+FuUlTElcoHsId1W6UY1tfpi4kqBneLtxJfOUtCHveogNgFaJJHiAfJDtpj3iNuEtziyRQuSlg7NiHHhKcxAUpBBs6So2zlTfTrwC647IOQWPFQRTQruJJnSMQHQ0PRBG6HBQKpVtltk5PEMOi0YK/y0XxMMqi2/0TCyVEuQlLbu+gN95xIkXTh90dte1Vh7PJk54Mby9Yk3Q0Qq0aVF805/GimA9o/rGYSruH6Tj8qGp6rvVN6StM4o9sDnZIEcZMEWTvaeLZxQ0A8TD4NWgp+M2MmRH/hahyOkiYL3nv/S/MTe0VmC908h6+R0QqGTYQ==",
+                "saml.signing.private.key": "MIIEowIBAAKCAQEAkWhFUennk0WoBvND1ZFYo0/fJSsBPkdPSSVmDy224yrkmG4a+XloAOeg5SEP9JslJPvc5sXckypFJbzz33IoHJjEbkcfTcoSlsZsH6BPZ1jDMdKo3sTYbSH5VKl9C+M7IwV1FA5FsGJydNU35rzbwmVN/u7GZDaJ+Aq65mBS1TJ0tGH29txtgw/SyooE1cAkrMm6q/rJA+afvw4a+0NnP6hOFwnjhBDX0D89o2sM08q+NCyJt8F/JX+0JpGzpQoh1E7LbvZkMvxqpWtmqcXMXmZM05r4qj3VRMtpYqxLEE+TdO/a1kmR6hbO0UE6NURXdTPvoGtpRJl6Dvyg1+64kwIDAQABAoIBAA3Xrlm4+cnEZNWcjQWk25pYfTbNnEWwhjTBcbDaOkHwEGkOelTroOINKv0FI762klet/n6dsXz1FjYcgd7wwC7QwEp7TNib9x8RbrOoEEcXZSW2F0t10+C3zkOoCvZ5wGR6HYY2QZ4kER9cOQEnU4hzGnS9iHd71bCeXOKXousWyJGMg3Bl5MSIqNabSIMNTqOHVR8TEMOSGjkYQO4oTP+YcySbIatAVj95aMGTUWJZxMVDBHt2CyjvKIRq1nJV8nhuUH3ui2wZJIscjPuSWFHAuB/dDli2XK8aZUyMGrbD2AjFhegrG73/w71QvCqZ14hOiaX3SCRKJFqwsZ+iW/kCgYEA2emTez8HDvxW5dhbV+qIl+PSBhGBz7w0Wr6dc7Nakriue9ad3lBr2LjrI2hLUHcrS/TKhnyLfe67lODysYPd9HHwFDMxgXQLTrZudQkUt8ebNi//1MGRuZ1Z6W/7MW9oN/JwoqWcYkXN+4bIQyTkKQA4lvkaBOuKEIFUn059I50CgYEAqtJ56pc9gJDB+nnJ778dYlLLxjsGIZawWXf9BgxnPnoIRn5ejOusfB/BExeLxngmMOxNI0IAL59NmkNPCse/SSXGM8GS2llSqEtZBCtTfYuhhyAhoqA4qwrm9WJybuYaKeBllmmrbOX/TmzhC0dwy0anUG0tm4NFTV8AK95hje8CgYEAm3woeWYteSngLzxDYOW99PLfpujTARC/Ioij/CxbUhloloA6QKiNayP201rVcmK1iArwfylats6jFcW0Jal7s7GgpikpB79vWgido/CI0eEhBHcXSg2cFx8JSqFWUJ23dUQNzl/wx8YbBX/UYORv0DmSJ1cyk5Qk/UXqxYjRjZkCgYACwfcZ5Gsnwi5/fqvV5P3ycme7wYQt0qLyLs+040pfZdTwXmXkXIGiV1jkmAK3p4TmUUpFgXFDU40LKn8CK4tZAPUcLMnUIJEHCoBbYt+sLS7kYY5pc7C2giyMVZSHWcueVXMOZJJR5byjZXqUlgiqH2/gCoMr+YiK4Te9fY+RnQKBgGekolH+YH4HiUtYKn5qGKveiSpOy/X90zMLLKFWVjngsYEqDj7Bi8S8t1MReaMPMMo/sEBwYE+jomnCH3Dj+HlKf00WjFa/5pbFWqbiIcGGdXslfJSNSDeQ5bpdc6MqFnumZHumExqUGGGXUxVXnhf2NyhfGixNiukWXAIhzlW2"
+            }
+        }
+    ]
+}

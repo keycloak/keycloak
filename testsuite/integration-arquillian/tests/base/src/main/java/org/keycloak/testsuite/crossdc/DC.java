@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.crossdc;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 /**
  * Identifier of datacentre in the testsuite
  * @author hmlnarik
@@ -27,5 +30,11 @@ public enum DC {
 
     public int getDcIndex() {
         return ordinal();
+    }
+
+    private static final DC[] VALID_DCS = new DC[] { FIRST, SECOND };
+
+    public static Stream<DC> validDcsStream() {
+        return Arrays.stream(VALID_DCS);
     }
 }

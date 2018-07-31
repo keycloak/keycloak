@@ -26,8 +26,8 @@ mvn clean install
 
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
-mvn verify -Pgenerate-data -Ddataset=100u2c -DnumOfWorkers=10 -DhashIterations=100
-mvn verify -Ptest -Ddataset=100u2c -DusersPerSec=2 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60 -DfilterResults=true
+mvn verify -Pgenerate-data -Ddataset=1r_10c_100u -DnumOfWorkers=10
+mvn verify -Ptest -Ddataset=1r_10c_100u -DusersPerSec=2 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DmeasurementPeriod=60 -DfilterResults=true
 ```
 
 Now open the generated report in a browser - the link to .html file is displayed at the end of the test.
@@ -39,7 +39,7 @@ mvn verify -Pteardown
 
 You can perform all phases in a single run:
 ```
-mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u2c -DnumOfWorkers=10 -DhashIterations=100 -DusersPerSec=4 -DrampUpPeriod=10
+mvn verify -Pprovision,generate-data,test,teardown -Ddataset=1r_10c_100u -DnumOfWorkers=10 -DusersPerSec=4 -DrampUpPeriod=10
 ```
 Note: The order in which maven profiles are listed does not determine the order in which profile related plugins are executed. `teardown` profile always executes last.
 
@@ -103,6 +103,23 @@ it is necessary to update the generated Keycloak server configuration (inside `k
 adding a `clean` goal to the provisioning command like so: `mvn clean verify -Pprovision …`. It is *not* necessary to update this configuration 
 when switching between `singlenode` and `cluster` deployments.
 
+#### Manual Provisioning
+
+If you want to generate data or run the test against an already running instance of Keycloak server
+you need to provide information about the system in a properties file.
+
+Create file: `tests/target/provisioned-system.properties` with the following properties:
+```
+keycloak.frontend.servers=http://localhost:8080/auth
+keycloak.admin.user=admin
+keycloak.admin.password=admin
+```
+and replace the values with your actual information. Then it will be possible to run tasks: `generate-data` and `test`.
+
+The tasks: `export-dump`, `import-dump` and `collect` (see below) are only available with the automated provisioning
+because they require direct access to the provisioned services.
+
+
 ### Collect Artifacts
 
 Usage: `mvn verify -Pcollect`
@@ -122,45 +139,31 @@ because it contains the `provisioned-system.properties` with information about t
 
 ### Generate Test Data
 
-Usage: `mvn verify -P generate-data [-Ddataset=NAMED_PROPERTY_SET] [-DnumOfWorkers=N]`. The default dataset is `2u2c`. Workers default to `1`.
+Usage: `mvn verify -P generate-data [-Ddataset=NAMED_PROPERTY_SET] [-DnumOfWorkers=N]`. Workers default to `1`.
 
-The parameters are loaded from `tests/parameters/datasets/${dataset}.properties` file.
-Individual properties can be overriden from command line via `-D` params.
+The parameters are loaded from `tests/src/test/resources/dataset/${dataset}.properties` file with `${dataset}` defaulting to `default`.
 
 To use a custom properties file specify `-Ddataset.properties.file=ABSOLUTE_PATH_TO_FILE` instead of `-Ddataset`.
 
 To generate data using a different version of Keycloak Admin Client set property `-Dserver.version=SERVER_VERSION` to match the version of the provisioned server.
 
-#### Dataset Parameters
-
-| Property | Description | Value in the Default Dataset |
-| --- | --- | --- | 
-| `numOfRealms` | Number of realms to be created. | `1`  |
-| `usersPerRealm` | Number of users per realm. | `2`  |
-| `clientsPerRealm` | Number of clients per realm. | `2`  |
-| `realmRoles` | Number of realm-roles per realm. | `2`  |
-| `realmRolesPerUser` | Number of realm-roles assigned to a created user. Has to be less than or equal to `realmRoles`. | `2`  |
-| `clientRolesPerUser` | Number of client-roles assigned to a created user. Has to be less than or equal to `clientsPerRealm * clientRolesPerClient`. | `2`  |
-| `clientRolesPerClient` | Number of client-roles per created client. | `2`  |
-| `hashIterations` | Number of password hashing iterations. | `27500`  |
-
+To delete the generated dataset add `-Ddelete=true` to the above command. Dataset is deleted by deleting individual realms.
 
 #### Examples:
 - Generate the default dataset. `mvn verify -P generate-data`
-- Generate the `100u2c` dataset. `mvn verify -P generate-data -Ddataset=100u2c`
-- Generate the `100u2c` dataset but override some parameters. `mvn verify -P generate-data -Ddataset=100u2c -DclientRolesPerUser=5 -DclientRolesPerClient=5`
+- Generate the `1r_10c_100u` dataset. `mvn verify -P generate-data -Ddataset=1r_10c_100u`
 
 #### Export Database
 
 To export the generated data to a data-dump file enable profile `-P export-dump`. This will create a `${DATASET}.sql.gz` file next to the dataset properties file.
 
-Example: `mvn verify -P generate-data,export-dump -Ddataset=100u2c`
+Example: `mvn verify -P generate-data,export-dump -Ddataset=1r_10c_100u`
 
 #### Import Database
 
 To import data from an existing data-dump file use profile `-P import-dump`.
 
-Example: `mvn verify -P import-dump -Ddataset=100u2c`
+Example: `mvn verify -P import-dump -Ddataset=1r_10c_100u`
 
 If the dump file doesn't exist locally the script will attempt to download it from `${db.dump.download.site}` which defaults to `https://downloads.jboss.org/keycloak-qe/${server.version}` 
 with `server.version` defaulting to `${project.version}` from `pom.xml`.
@@ -221,11 +224,11 @@ When running the tests it is necessary to define the dataset to be used.
 
 - Run test specific test and dataset parameters:
 
-`mvn verify -P test -Dtest.properties=oidc-login-logout -Ddataset=100u2c`
+`mvn verify -P test -Dtest.properties=oidc-login-logout -Ddataset=1r_10c_100u`
 
 - Run test with specific test and dataset parameters, overriding some from command line:
 
-`mvn verify -P test -Dtest.properties=admin-console -Ddataset=100u2c -DrampUpPeriod=30 -DwarmUpPeriod=60 -DusersPerSec=0.3`
+`mvn verify -P test -Dtest.properties=admin-console -Ddataset=1r_10c_100u -DrampUpPeriod=30 -DwarmUpPeriod=60 -DusersPerSec=0.3`
 
 #### Running `OIDCRegisterAndLogoutSimulation`
 
@@ -240,7 +243,7 @@ Running the user registration simulation requires a different approach to datase
 `mvn verify -P test -D test.properties=oidc-register-logout -DsequentialUsersFrom=0 -DusersPerRealm=<MAX_EXPECTED_REGISTRATIONS>`
 
 ##### Example B:
-1. Generate or import dataset with 100 users: `mvn verify -P generate-data -Ddataset=100u2c`. This will create 1 realm and users 0-99.
+1. Generate or import dataset with 100 users: `mvn verify -P generate-data -Ddataset=1r_10c_100u`. This will create 1 realm and users 0-99.
 2. Run the registration test starting from user 100:
 
 `mvn verify -P test -D test.properties=oidc-register-logout -DsequentialUsersFrom=100 -DusersPerRealm=<MAX_EXPECTED_REGISTRATIONS>`

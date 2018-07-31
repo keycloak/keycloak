@@ -301,6 +301,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
             var resource = {};
             resource.scopes = [];
             resource.attributes = {};
+            resource.uris = [];
 
             $scope.resource = angular.copy(resource);
 
@@ -310,7 +311,17 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 }
             }, true);
 
+            $scope.$watch('newUri', function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.changed = true;
+                }
+            }, true);
+
             $scope.save = function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.addUri();
+                }
+
                 for (i = 0; i < $scope.resource.scopes.length; i++) {
                     delete $scope.resource.scopes[i].text;
                 }
@@ -350,7 +361,17 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                     }
                 }, true);
 
+                $scope.$watch('newUri', function() {
+                    if ($scope.newUri && $scope.newUri.length > 0) {
+                        $scope.changed = true;
+                    }
+                }, true);
+
                 $scope.save = function() {
+                    if ($scope.newUri && $scope.newUri.length > 0) {
+                        $scope.addUri();
+                    }
+
                     for (i = 0; i < $scope.resource.scopes.length; i++) {
                         delete $scope.resource.scopes[i].text;
                     }
@@ -411,6 +432,15 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
 
     $scope.removeAttribute = function(key) {
         delete $scope.resource.attributes[key];
+    }
+
+    $scope.addUri = function() {
+        $scope.resource.uris.push($scope.newUri);
+        $scope.newUri = "";
+    }
+
+    $scope.deleteUri = function(index) {
+        $scope.resource.uris.splice(index, 1);
     }
 });
 

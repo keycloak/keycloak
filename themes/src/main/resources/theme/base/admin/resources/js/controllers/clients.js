@@ -778,8 +778,10 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
         var clientCopy = angular.copy(client);
         delete clientCopy.id;
 
-        for (var i = 0; i < clientCopy.protocolMappers.length; i++) {
-            delete clientCopy.protocolMappers[i].id;
+        if (clientCopy.protocolMappers) {
+            for (var i = 0; i < clientCopy.protocolMappers.length; i++) {
+                delete clientCopy.protocolMappers[i].id;
+            }
         }
 
         saveAs(new Blob([angular.toJson(clientCopy, 4)], { type: 'application/json' }), clientCopy.clientId + '.json');

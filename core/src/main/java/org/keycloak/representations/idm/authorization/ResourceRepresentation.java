@@ -44,7 +44,9 @@ public class ResourceRepresentation {
     private String id;
 
     private String name;
-    private String uri;
+
+    @JsonProperty("uris")
+    private Set<String> uris;
     private String type;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty("scopes")
@@ -64,29 +66,37 @@ public class ResourceRepresentation {
      * Creates a new instance.
      *
      * @param name a human-readable string describing a set of one or more resources
-     * @param uri a {@link URI} that provides the network location for the resource set being registered
+     * @param uris a {@link List} of {@link URI} that provides network locations for the resource set being registered
      * @param type a string uniquely identifying the semantics of the resource set
      * @param scopes the available scopes for this resource set
      * @param iconUri a {@link URI} for a graphic icon representing the resource set
      */
-    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type, String iconUri) {
         this.name = name;
         this.scopes = scopes;
-        this.uri = uri;
+        this.uris = uris;
         this.type = type;
         this.iconUri = iconUri;
+    }
+
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
+        this(name, scopes, Collections.singleton(uri), type, iconUri);
     }
 
     /**
      * Creates a new instance.
      *
      * @param name a human-readable string describing a set of one or more resources
-     * @param uri a {@link URI} that provides the network location for the resource set being registered
+     * @param uris a {@link List} of {@link URI} that provides the network location for the resource set being registered
      * @param type a string uniquely identifying the semantics of the resource set
      * @param scopes the available scopes for this resource set
      */
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type) {
+        this(name, scopes, uris, type, null);
+    }
+
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type) {
-        this(name, scopes, uri, type, null);
+        this(name, scopes, Collections.singleton(uri), type, null);
     }
 
     /**
@@ -97,7 +107,7 @@ public class ResourceRepresentation {
      * @param scopes the available scopes for this resource set
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes) {
-        this(name, scopes, null, null, null);
+        this(name, scopes, (Set<String>) null, null, null);
     }
 
     public ResourceRepresentation(String name, String... scopes) {
@@ -114,7 +124,7 @@ public class ResourceRepresentation {
      *
      */
     public ResourceRepresentation() {
-        this(null, null, null, null, null);
+        this(null, null, (Set<String>) null, null, null);
     }
 
     public void setId(String id) {
@@ -133,8 +143,18 @@ public class ResourceRepresentation {
         return displayName;
     }
 
+    @Deprecated
+    @JsonIgnore
     public String getUri() {
-        return this.uri;
+        if (this.uris == null || this.uris.isEmpty()) {
+            return null;
+        }
+
+        return this.uris.iterator().next();
+    }
+
+    public Set<String> getUris() {
+        return this.uris;
     }
 
     public String getType() {
@@ -161,10 +181,33 @@ public class ResourceRepresentation {
         this.displayName = displayName;
     }
 
+    @Deprecated
     public void setUri(String uri) {
         if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
-            this.uri = uri;
+            this.uris = Collections.singleton(uri);
         }
+    }
+
+    public void setUris(Set<String> uris) {
+        if (uris != null) {
+            Set<String> resultSet = new HashSet<>();
+            for (String uri : uris) {
+                if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
+                    resultSet.add(uri);
+                }
+            }
+
+            this.uris = resultSet;
+        }
+    }
+
+    @JsonProperty("uri")
+    public void addUri(String uri) {
+        if (this.uris == null) {
+            this.uris = new HashSet<>();
+        }
+
+        uris.add(uri);
     }
 
     public void setType(String type) {

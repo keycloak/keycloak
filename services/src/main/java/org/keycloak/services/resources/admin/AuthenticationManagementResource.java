@@ -72,6 +72,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
@@ -244,6 +245,32 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find flow with id");
         }
         return ModelToRepresentation.toRepresentation(realm, flow);
+    }
+
+    /**
+     * Update an authentication flow
+     *
+     * @param flow Authentication flow representation
+     * @return
+     */
+    @Path("/flows/{id}")
+    @PUT
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow) {
+        auth.realm().requireManageRealm();
+
+        AuthenticationFlowRepresentation existingFlow = getFlow(id);
+
+        if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
+            return ErrorResponse.exists("Failed to update flow with empty alias name");
+        }
+
+        flow.setId(existingFlow.getId());
+        realm.updateAuthenticationFlow(RepresentationToModel.toModel(flow));
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(flow).success();
+
+        return Response.accepted(flow).build();
     }
 
     /**
@@ -854,6 +881,7 @@ public class AuthenticationManagementResource {
         requiredAction.setName(name);
         requiredAction.setProviderId(providerId);
         requiredAction.setDefaultAction(false);
+        requiredAction.setPriority(getNextRequiredActionPriority());
         requiredAction.setEnabled(true);
         requiredAction = realm.addRequiredActionProvider(requiredAction);
 
@@ -861,7 +889,12 @@ public class AuthenticationManagementResource {
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.REQUIRED_ACTION).resourcePath(uriInfo).representation(data).success();
     }
 
+    private int getNextRequiredActionPriority() {
+        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
+        return actions.isEmpty() ? 0 : actions.get(actions.size() - 1).getPriority() + 1;
+    }
 
+    
     /**
      * Get required actions
      *
@@ -887,6 +920,7 @@ public class AuthenticationManagementResource {
         rep.setAlias(model.getAlias());
         rep.setName(model.getName());
         rep.setDefaultAction(model.isDefaultAction());
+        rep.setPriority(model.getPriority());
         rep.setEnabled(model.isEnabled());
         rep.setConfig(model.getConfig());
         return rep;
@@ -933,6 +967,7 @@ public class AuthenticationManagementResource {
         update.setAlias(rep.getAlias());
         update.setProviderId(model.getProviderId());
         update.setDefaultAction(rep.isDefaultAction());
+        update.setPriority(rep.getPriority());
         update.setEnabled(rep.isEnabled());
         update.setConfig(rep.getConfig());
         realm.updateRequiredActionProvider(update);
@@ -956,6 +991,74 @@ public class AuthenticationManagementResource {
         realm.removeRequiredActionProvider(model);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.REQUIRED_ACTION).resourcePath(uriInfo).success();
+    }
+
+    /**
+     * Raise required action's priority
+     *
+     * @param alias Alias of required action
+     */
+    @Path("required-actions/{alias}/raise-priority")
+    @POST
+    @NoCache
+    public void raiseRequiredActionPriority(@PathParam("alias") String alias) {
+        auth.realm().requireManageRealm();
+
+        RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
+        if (model == null) {
+            throw new NotFoundException("Failed to find required action.");
+        }
+
+        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
+        RequiredActionProviderModel previous = null;
+        for (RequiredActionProviderModel action : actions) {
+            if (action.getId().equals(model.getId())) {
+                break;
+            }
+            previous = action;
+        }
+        if (previous == null) return;
+        int tmp = previous.getPriority();
+        previous.setPriority(model.getPriority());
+        realm.updateRequiredActionProvider(previous);
+        model.setPriority(tmp);
+        realm.updateRequiredActionProvider(model);
+
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REQUIRED_ACTION).resourcePath(uriInfo).success();
+    }
+
+    /**
+     * Lower required action's priority
+     *
+     * @param alias Alias of required action
+     */
+    @Path("/required-actions/{alias}/lower-priority")
+    @POST
+    @NoCache
+    public void lowerRequiredActionPriority(@PathParam("alias") String alias) {
+        auth.realm().requireManageRealm();
+
+        RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
+        if (model == null) {
+            throw new NotFoundException("Failed to find required action.");
+        }
+
+        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
+        int i = 0;
+        for (i = 0; i < actions.size(); i++) {
+            if (actions.get(i).getId().equals(model.getId())) {
+                break;
+            }
+        }
+        if (i + 1 >= actions.size()) return;
+        RequiredActionProviderModel next = actions.get(i + 1);
+        int tmp = model.getPriority();
+        model.setPriority(next.getPriority());
+        realm.updateRequiredActionProvider(model);
+        next.setPriority(tmp);
+        realm.updateRequiredActionProvider(next);
+
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REQUIRED_ACTION).resourcePath(uriInfo).success();
     }
 
     /**

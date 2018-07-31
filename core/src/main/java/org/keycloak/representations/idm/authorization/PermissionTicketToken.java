@@ -33,16 +33,16 @@ import org.keycloak.representations.JsonWebToken;
  */
 public class PermissionTicketToken extends JsonWebToken {
 
-    private final List<ResourcePermission> resources;
+    private final List<Permission> permissions;
 
     @JsonDeserialize(using = StringListMapDeserializer.class)
     private Map<String, List<String>> claims;
 
     public PermissionTicketToken() {
-        this(new ArrayList<ResourcePermission>());
+        this(new ArrayList<Permission>());
     }
 
-    public PermissionTicketToken(List<ResourcePermission> resources, String audience, AccessToken accessToken) {
+    public PermissionTicketToken(List<Permission> permissions, String audience, AccessToken accessToken) {
         if (accessToken != null) {
             id(TokenIdGenerator.generateId());
             subject(accessToken.getSubject());
@@ -54,15 +54,15 @@ public class PermissionTicketToken extends JsonWebToken {
         if (audience != null) {
             audience(audience);
         }
-        this.resources = resources;
+        this.permissions = permissions;
     }
 
-    public PermissionTicketToken(List<ResourcePermission> resources) {
+    public PermissionTicketToken(List<Permission> resources) {
         this(resources, null, null);
     }
 
-    public List<ResourcePermission> getResources() {
-        return this.resources;
+    public List<Permission> getPermissions() {
+        return this.permissions;
     }
 
     public Map<String, List<String>> getClaims() {
@@ -71,30 +71,5 @@ public class PermissionTicketToken extends JsonWebToken {
 
     public void setClaims(Map<String, List<String>> claims) {
         this.claims = claims;
-    }
-
-    public static class ResourcePermission {
-
-        @JsonProperty("id")
-        private String resourceId;
-
-        @JsonProperty("scopes")
-        private Set<String> scopes;
-
-        public ResourcePermission() {
-        }
-
-        public ResourcePermission(String resourceId, Set<String> scopes) {
-            this.resourceId = resourceId;
-            this.scopes = scopes;
-        }
-
-        public String getResourceId() {
-            return resourceId;
-        }
-
-        public Set<String> getScopes() {
-            return scopes;
-        }
     }
 }

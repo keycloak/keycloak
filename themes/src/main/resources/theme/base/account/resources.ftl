@@ -285,7 +285,7 @@
                             </#list>
                         <#else>
                             <tr>
-                                <td colspan="5">There are no resources shared with you</td>
+                                <td colspan="6">There are no resources shared with you</td>
                             </tr>
                         </#if>
                     </tbody>

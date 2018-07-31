@@ -111,7 +111,6 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
     # Prepare Fuse server
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
-      -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229 \
       -Dapp.server.karaf.update.config=true \
@@ -120,11 +119,11 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
       -Dmaven.repo.local=$HOME/.m2/repository
  
     # Run the Fuse adapter tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse63/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
-      -Dfuse63.version=6.3.0.redhat-229
+      -Dtest=Fuse*AdapterTest
 
 
 ### JBoss Fuse 7.0
@@ -157,10 +156,10 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
       -Dmaven.repo.local=$HOME/.m2/repository
  
     # Run the Fuse adapter tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse70/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean test \
-      -Dbrowser=phantomjs \
-      -Papp-server-fuse70
+      -Papp-server-fuse70 \
+      -Dtest=Fuse*AdapterTest
 
 
 ### EAP6 with Hawtio

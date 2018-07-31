@@ -56,6 +56,8 @@ public class Templates {
                 return "code.ftl";
             case LOGIN_PAGE_EXPIRED:
                 return "login-page-expired.ftl";
+            case X509_CONFIRM:
+                return "login-x509-info.ftl";
             default:
                 throw new IllegalArgumentException();
         }

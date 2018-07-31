@@ -17,29 +17,41 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+
+import static org.hamcrest.Matchers.containsString;
+
+import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+
+import java.io.IOException;
+import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
 import org.keycloak.testsuite.adapter.page.CustomerPortalSubsystem;
 import org.keycloak.testsuite.adapter.page.ProductPortalSubsystem;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest {
+public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest implements SelfManagedAppContainerLifecycle {
+
+    @ArquillianResource
+    private ContainerController controller;
 
     @Page
     private CustomerPortalSubsystem customerPortalSubsystem;
@@ -60,6 +72,24 @@ public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
         return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+    }
+
+    @Before
+    @Override
+    public void startServer() {
+        try {
+            AppServerTestEnricher.prepareServerDir("standalone-secured-deployments");
+        } catch (IOException ex) {
+            throw new RuntimeException("Wasn't able to prepare server dir.", ex);
+        }
+
+        controller.start(testContext.getAppServerInfo().getQualifier());
+    }
+
+    @After
+    @Override
+    public void stopServer() {
+        controller.stop(testContext.getAppServerInfo().getQualifier());
     }
 
     @Test

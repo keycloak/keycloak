@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderFactory<HmacKeyProvider> implements HmacKeyProviderFactory {
+public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderFactory<GeneratedHmacKeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedHmacKeyProviderFactory.class);
 
@@ -49,7 +49,7 @@ public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderF
             .build();
 
     @Override
-    public HmacKeyProvider create(KeycloakSession session, ComponentModel model) {
+    public GeneratedHmacKeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedHmacKeyProvider(model);
     }
 

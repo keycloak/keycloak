@@ -16,12 +16,16 @@
  */
 import {Component, OnInit} from '@angular/core';
 
+declare const resourceUrl: string;
+
 @Component({
     selector: 'app-mobile-authenticator-setup-page',
     templateUrl: './mobile-authenticator-setup-page.component.html',
     styleUrls: ['./mobile-authenticator-setup-page.component.css']
 })
 export class MobileAuthenticatorSetupPageComponent implements OnInit {
+
+    private resourceUrl: string = resourceUrl;
 
     constructor() {
     }

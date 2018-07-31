@@ -253,7 +253,13 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
             </div>
-
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="forwardParameters">{{:: 'forwarded-query-parameters' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="forwardParameters" type="text" ng-model="identityProvider.config.forwardParameters"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.forwarded-query-parameters.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="newIdentityProvider">
             <legend uncollapsed><span class="text">{{:: 'import-external-idp-config' | translate}}</span> <kc-tooltip>{{:: 'import-external-idp-config.tooltip' | translate}}</kc-tooltip></legend>

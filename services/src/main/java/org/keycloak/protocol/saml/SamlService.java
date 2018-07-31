@@ -23,6 +23,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.crypto.KeyStatus;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -80,7 +81,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.keys.KeyMetadata;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SPMetadataDescriptor;
@@ -591,8 +591,8 @@ public class SamlService extends AuthorizationEndpointBase {
         StringBuilder keysString = new StringBuilder();
         Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getRsaKeys(realm, false));
+          : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getRsaKeys(realm));
         for (RsaKeyMetadata key : keys) {
             addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
         }

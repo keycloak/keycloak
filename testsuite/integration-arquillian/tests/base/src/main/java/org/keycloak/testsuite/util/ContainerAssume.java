@@ -24,10 +24,18 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 public class ContainerAssume {
 
     private static final Logger log = Logger.getLogger(ContainerAssume.class);
+    private static final String fuse6 = "fuse63";
+    private static final String fuse7 = "fuse7";
 
     public static void assumeNotAuthServerUndertow() {
         Assume.assumeFalse("Doesn't work on auth-server-undertow", 
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
+    }
+
+    public static void assumeClusteredContainer() {
+        Assume.assumeTrue(
+              String.format("Ignoring test since %s is set to false",
+                    AuthServerTestEnricher.AUTH_SERVER_CLUSTER_PROPERTY), AuthServerTestEnricher.AUTH_SERVER_CLUSTER);
     }
 
     public static void assumeNotAppServerUndertow() {
@@ -40,4 +48,11 @@ public class ContainerAssume {
                 System.getProperty("app.server", "undertow").equals("undertow"));
     }
 
+    public static void assumeNotAppServerFuse6() {
+        Assume.assumeFalse("The test doesn't work on " + fuse6, fuse6.equals(System.getProperty("app.server")));
+    }
+
+    public static void assumeNotAppServerFuse7() {
+        Assume.assumeFalse("The test doesn't work on " + fuse7, System.getProperty("app.server").contains(fuse7));
+    }
 }
