@@ -1219,7 +1219,45 @@ public class UserTest extends AbstractAdminTest {
             switchEditUsernameAllowedOn(false);
         }
     }
-    
+
+    @Test
+    public void updateUserWithRawCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_rawpw");
+        user.setEmail("email.raw@localhost");
+
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Arrays.asList(rawPassword));
+
+        String id = createUser(user);
+
+        CredentialModel credential = fetchCredentials("user_rawpw");
+        assertNotNull("Expecting credential", credential);
+        assertEquals(PasswordPolicy.HASH_ALGORITHM_DEFAULT, credential.getAlgorithm());
+        assertEquals(PasswordPolicy.HASH_ITERATIONS_DEFAULT, credential.getHashIterations());
+        assertNotEquals("ABCD", credential.getValue());
+        assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
+
+        UserResource userResource = realm.users().get(id);
+        UserRepresentation userRep = userResource.toRepresentation();
+
+        CredentialRepresentation rawPasswordForUpdate = new CredentialRepresentation();
+        rawPasswordForUpdate.setValue("EFGH");
+        rawPasswordForUpdate.setType(CredentialRepresentation.PASSWORD);
+        userRep.setCredentials(Arrays.asList(rawPasswordForUpdate));
+
+        updateUser(userResource, userRep);
+
+        CredentialModel updatedCredential = fetchCredentials("user_rawpw");
+        assertNotNull("Expecting credential", updatedCredential);
+        assertEquals(PasswordPolicy.HASH_ALGORITHM_DEFAULT, updatedCredential.getAlgorithm());
+        assertEquals(PasswordPolicy.HASH_ITERATIONS_DEFAULT, updatedCredential.getHashIterations());
+        assertNotEquals("EFGH", updatedCredential.getValue());
+        assertEquals(CredentialRepresentation.PASSWORD, updatedCredential.getType());
+    }
+
     @Test
     public void resetUserPassword() {
         String userId = createUser("user1", "user1@localhost");
