@@ -182,6 +182,7 @@ public class ResourceRepresentation {
     }
 
     @Deprecated
+    @JsonSetter("uri")
     public void setUri(String uri) {
         if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
             this.uris = Collections.singleton(uri);
@@ -199,15 +200,6 @@ public class ResourceRepresentation {
 
             this.uris = resultSet;
         }
-    }
-
-    @JsonProperty("uri")
-    public void addUri(String uri) {
-        if (this.uris == null) {
-            this.uris = new HashSet<>();
-        }
-
-        uris.add(uri);
     }
 
     public void setType(String type) {
