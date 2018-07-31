@@ -30,6 +30,7 @@ import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingEnumeration;
@@ -92,7 +93,23 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         String entryDN = ldapObject.getDn().toString();
-        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true);
+        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true, null);
+        this.operationManager.createSubContext(entryDN, ldapAttributes);
+        ldapObject.setUuid(getEntryIdentifier(ldapObject));
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), entryDN);
+        }
+    }
+
+    public void add(LDAPObject ldapObject, CommonLDAPGroupMapperConfig groupMapperConfig) {
+        // id will be assigned by the ldap server
+        if (ldapObject.getUuid() != null) {
+            throw new ModelException("Can't add object with already assigned uuid");
+        }
+
+        String entryDN = ldapObject.getDn().toString();
+        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true, groupMapperConfig);
         this.operationManager.createSubContext(entryDN, ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
@@ -105,7 +122,7 @@ public class LDAPIdentityStore implements IdentityStore {
     public void update(LDAPObject ldapObject) {
         checkRename(ldapObject);
 
-        BasicAttributes updatedAttributes = extractAttributes(ldapObject, false);
+        BasicAttributes updatedAttributes = extractAttributes(ldapObject, false, null);
         NamingEnumeration<Attribute> attributes = updatedAttributes.getAll();
 
         String entryDn = ldapObject.getDn().toString();
@@ -396,7 +413,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
 
-    protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate) {
+    protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate, CommonLDAPGroupMapperConfig groupMapperConfig) {
         BasicAttributes entryAttributes = new BasicAttributes();
 
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
@@ -447,11 +464,13 @@ public class LDAPIdentityStore implements IdentityStore {
             for (String objectClassValue : ldapObject.getObjectClasses()) {
                 objectClassAttribute.add(objectClassValue);
 
+                // TODO: Use config values instead of these hardcoded LDAPConstants (GroupMapperConfig#getGroupObjectClasses() || RoleMapperConfig#getRoleObjectClasses())
                 if ((objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
                         || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
                         || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) &&
-                        (entryAttributes.get(LDAPConstants.MEMBER) == null)) {
-                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
+                        (entryAttributes.get(groupMapperConfig.getMembershipLdapAttribute()) == null)) {
+                    // Is it really always necessary to include an empty member on a new group? Shouldn't this be behind a config option?
+                    entryAttributes.put(groupMapperConfig.getMembershipLdapAttribute(), LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
                 }
             }
 

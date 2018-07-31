@@ -30,6 +30,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 
 import java.util.Collection;
@@ -128,7 +129,7 @@ public class LDAPUtils {
     // roles & groups
 
     public static LDAPObject createLDAPGroup(LDAPStorageProvider ldapProvider, String groupName, String groupNameAttribute, Collection<String> objectClasses,
-                                             String parentDn, Map<String, Set<String>> additionalAttributes) {
+                                             String parentDn, Map<String, Set<String>> additionalAttributes, CommonLDAPGroupMapperConfig groupMapperConfig) {
         LDAPObject ldapObject = new LDAPObject();
 
         ldapObject.setRdnAttributeName(groupNameAttribute);
@@ -143,7 +144,7 @@ public class LDAPUtils {
             ldapObject.setAttribute(attrEntry.getKey(), attrEntry.getValue());
         }
 
-        ldapProvider.getLdapIdentityStore().add(ldapObject);
+        ldapProvider.getLdapIdentityStore().add(ldapObject, groupMapperConfig);
         return ldapObject;
     }
 
