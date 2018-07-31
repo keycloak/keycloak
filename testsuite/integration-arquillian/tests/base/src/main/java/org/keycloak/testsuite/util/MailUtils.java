@@ -47,7 +47,13 @@ public class MailUtils {
 
     public static String getPasswordResetEmailLink(EmailBody body) throws IOException, MessagingException {
         final String textChangePwdUrl = getLink(body.getText());
-        final String htmlChangePwdUrl = getLink(body.getHtml());
+        String htmlChangePwdUrl = getLink(body.getHtml());
+        
+        // undo changes that may have been made by html sanitizer
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("&#61;", "=");
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("..", ".");
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("&amp;", "&");
+        
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;

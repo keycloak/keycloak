@@ -357,7 +357,13 @@ public abstract class AbstractIdentityProviderTest {
 
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
 
-        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
+        String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
+        
+        // undo changes that may have been made by html sanitizer
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("&#61;", "=");
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("..", ".");
+        htmlChangePwdUrl = htmlChangePwdUrl.replace("&amp;", "&");
+        
         assertEquals(htmlChangePwdUrl, textVerificationUrl);
 
         return htmlChangePwdUrl;

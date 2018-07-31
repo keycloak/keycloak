@@ -16,6 +16,7 @@
       "dependencyExclusion.io.undertow:*@*": "1.4.18.SP2-redhat-1",
       "dependencyExclusion.org.wildfly.security:*@*": "1.1.8.Final-redhat-1",
       "dependencyExclusion.org.freemarker:freemarker@*": "2.3.26.incubating-redhat-1",
+      "dependencyExclusion.com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer@*": "20180219.1.0.redhat-1",
       "dependencyExclusion.org.liquibase:liquibase-core@*": "$COMMONCFG_LIQUIBASE_3_4_1",
       "dependencyExclusion.org.twitter4j:twitter4j-core@*": "$COMMONCFG_TWITTER4J_4_0_4",
       "dependencyExclusion.com.google.zxing:core@*": "$COMMONCFG_ZXING_3_2_1",
