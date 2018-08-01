@@ -40,7 +40,7 @@ public abstract class UserIdentityToModelMapper {
 
         @Override
         public UserModel find(AuthenticationFlowContext context, Object userIdentity) throws Exception {
-            return KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), userIdentity.toString().trim());
+            return KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), userIdentity.toString().trim(), null);
         }
     }
 

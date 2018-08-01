@@ -31,12 +31,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.UserModelByCreatedTimestampComparator;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,6 +52,8 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
     private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
+    
+    public static final String RESET_CREDENTIALS_OTHER_USERNAMES = "RESET_CREDENTIALS_OTHER_USERNAMES";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -95,10 +102,35 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         RealmModel realm = context.getRealm();
         UserModel user = context.getSession().users().getUserByUsername(username, realm);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, realm);
+            if(realm.isDuplicateEmailsAllowed()) {
+                Map<String, String> params = new HashMap<>();
+                params.put("email", username);
+                List<UserModel> allByEmailList = context.getSession().users().searchForUser(params, realm);
+                if(allByEmailList.size() > 1) {
+                    // order accounts same way as during login and select first one to reset password for. Inform about others. 
+                    TreeSet<UserModel> ts = new TreeSet<>(UserModelByCreatedTimestampComparator.INSTANCE);
+                    ts.addAll(allByEmailList);
+                    StringBuilder sb = new StringBuilder(); 
+                    for(UserModel u : ts) {
+                        if(user == null) {
+                            user = u;
+                        } else {
+                           if(sb.length() > 0) sb.append(", ");
+                           sb.append(u.getUsername());
+                        }
+                    }
+                    context.getAuthenticationSession().setAuthNote(RESET_CREDENTIALS_OTHER_USERNAMES, sb.toString());
+                } else if(allByEmailList.size() == 1) {
+                    user = allByEmailList.get(0);
+                }
+            } else {    
+                user =  context.getSession().users().getUserByEmail(username, realm);
+            } 
         }
 
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        if(user!=null)
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERID, user.getId());
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.

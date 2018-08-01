@@ -17,12 +17,34 @@
 
 package org.keycloak.models.utils;
 
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.transaction.InvalidTransactionException;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -38,27 +60,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
-
-import javax.crypto.spec.SecretKeySpec;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -194,23 +201,183 @@ public final class KeycloakModelUtils {
                                 .findFirst()
                                 .isPresent();
     }
+    
+    /**
+     * Try to find all relevant users by username or email for authentication, depending on relm settings and provided input info.
+     *
+     * @param session
+     * @param realm to find user for
+     * @param username username or email of the users to find
+     * @return found users, never null
+     */
+    public static Set<UserModel> findUsersByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
+        UserModel byUsername = session.users().getUserByUsername(username, realm);
+        Set<UserModel> allByEmail = null;
+        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
+            Map<String, String> params = new HashMap<>();
+            params.put("email", username);
+            List<UserModel> allByEmailList = session.users().searchForUser(params, realm);
+            if(allByEmailList != null && !allByEmailList.isEmpty()) {
+                allByEmail = preprocessByEmailListForUserSelection(allByEmailList, byUsername);
+            }
+        }
+        Set<UserModel> ret = new LinkedHashSet<UserModel>();
+        if(byUsername!=null)
+            ret.add(byUsername);
+        if(allByEmail!=null) {
+            ret.addAll(allByEmail);
+        }
+        return ret;
+    }
 
     /**
-     * Try to find user by username or email for authentication
+     * Try to find user by username or email for authentication, depending on relm settings and provided input info.
      *
-     * @param realm    realm
-     * @param username username or email of user
+     * @param session
+     * @param realm to find user for
+     * @param username username or email of the user to find
+     * @param password may be used to select correct user in case of ambiguous email-like username if duplicate emails are enabled. Can be null.
      * @return found user
      */
-    public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
-        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
-            UserModel user = session.users().getUserByEmail(username, realm);
-            if (user != null) {
-                return user;
+    public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username, String password) {
+      
+        if(password != null && password.isEmpty())
+            password = null;
+        
+        UserModel byUsername = session.users().getUserByUsername(username, realm); 
+        
+        if ((byUsername == null || !byUsername.isEnabled() || password != null) && realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
+            if (!realm.isDuplicateEmailsAllowed()) {
+                UserModel byEmail = session.users().getUserByEmail(username, realm);
+                if (byEmail != null && byUsername != null) {
+                    return selectBetterUserAccount(session, realm, password, byUsername, byEmail);
+                } else if (byUsername == null) {
+                    return byEmail;
+                } else {
+                    return byUsername;
+                }
+            } else {
+                // [1] optimization not to search accounts by email if we have active one found by username already and password matches to it, or if we do not know password to select any other better
+                if(byUsername != null && byUsername.isEnabled() && (password == null || validatePassword(session, realm, byUsername, password))) {
+                    return byUsername;
+                }
+
+                Map<String, String> params = new HashMap<>();
+                params.put("email", username);
+                List<UserModel> allByEmailList = session.users().searchForUser(params, realm);
+                if(allByEmailList !=null && !allByEmailList.isEmpty()) {
+                    Set<UserModel> allByEmail = preprocessByEmailListForUserSelection(allByEmailList, byUsername);
+                    UserModel byEmailFirstDisabled = null;
+                    UserModel byEmailFirstEnabled = null;
+                    for (UserModel byEmail : allByEmail) {
+                        if(byEmail.isEnabled()) {
+                            if(password == null) {
+                                // this is best choice now, byUsername was returned by optimization [1] if it is better
+                                return byEmail;
+                            } else if(validatePassword(session, realm, byEmail, password)) {
+                                // this is best choice now, byUsername was returned by optimization [1] if it is better
+                                return byEmail;
+                            } else if(byEmailFirstEnabled == null) {
+                                //store it for later use if no better will be found in the list 
+                                byEmailFirstEnabled = byEmail;
+                            }
+                        } else if(byEmailFirstDisabled == null) {
+                            //store it for later use if no better will be found in the list
+                            byEmailFirstDisabled = byEmail;
+                        }
+                    }
+                    
+                    // no enabled user with matching password found, going to select the best one from what we have 
+                    if(byUsername != null && (byUsername.isEnabled() || byEmailFirstEnabled == null)) {
+                        return byUsername;
+                    }
+                    if(byEmailFirstEnabled != null) {
+                        return byEmailFirstEnabled;
+                    }
+                    return byEmailFirstDisabled;
+                }
             }
         }
 
-        return session.users().getUserByUsername(username, realm);
+        return byUsername;
+    }
+
+    /**
+     * Preprocess list of users found by email for best user selection. Steps: 
+     * <ul>
+     * <li> order users by creation time to have consistent selection logic
+     * <li> remove user found by username not to be processed twice
+     * </ul>
+     * 
+     * @param allByEmail List of users found by email to preprocess
+     * @param byUsername user we found by username. Can be null.
+     * @return
+     * 
+     * @see #findUserByNameOrEmail(KeycloakSession, RealmModel, String, String)
+     */
+    private static Set<UserModel> preprocessByEmailListForUserSelection(List<UserModel> allByEmail, UserModel byUsername) {
+        TreeSet<UserModel> ret =  new TreeSet<>(UserModelByCreatedTimestampComparator.INSTANCE);
+        for(UserModel u : allByEmail) {
+            if(u != null && (byUsername == null || !byUsername.getId().equals(u.getId()))) {
+                ret.add(u);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Select better account from two provided. Priority of features used for selection:
+     * <ul>
+     * <li> not null
+     * <li> enabled
+     * <li> matching password if provided
+     * <li> first one passed into the method
+     * </ul>
+     * 
+     * 
+     * @param session
+     * @param realm
+     * @param password to be used for selection, can be null
+     * @param byUsername first account to select from
+     * @param byEmail second account to select from
+     * @return
+     */
+    protected static UserModel selectBetterUserAccount(KeycloakSession session, RealmModel realm, String password, UserModel byUsername, UserModel byEmail) {
+        if (byUsername.isEnabled() && !byEmail.isEnabled()) {
+            return byUsername;
+        } else if (!byUsername.isEnabled() && byEmail.isEnabled()) {
+            return byEmail;
+        } else if (byUsername.isEnabled() && byEmail.isEnabled()) {
+            if(password != null) {
+                if(validatePassword(session, realm, byUsername, password)) {
+                    return byUsername;
+                } else if(validatePassword(session, realm, byEmail, password)) {
+                    return byEmail;
+                } else {
+                    return byUsername;
+                }
+            } else {
+                return byUsername;
+            }
+        } else {
+            return byUsername;
+        }
+    }
+    
+    /**
+     * Validate password for the user.
+     * 
+     * @param session
+     * @param realm
+     * @param user to validate password for
+     * @param password to validate
+     * @return true if password is valid for given user
+     * @see UserCredentialManager#isValid(RealmModel, UserModel, CredentialInput...)
+     */
+    private static boolean validatePassword(KeycloakSession session, RealmModel realm, UserModel user, String password) {
+        if(password == null)
+            return false;
+        return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
     /**

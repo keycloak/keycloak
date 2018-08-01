@@ -53,6 +53,7 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
         RealmRepresentation realmRep = new RealmRepresentation();
         // change realm settings to allow login with email after having imported users with duplicate email addresses
         realmRep.setLoginWithEmailAllowed(true);
+        realmRep.setDuplicateEmailsAllowed(false);
         adminClient.realm("test-duplicate-emails").update(realmRep);
     }
 

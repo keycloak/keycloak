@@ -50,6 +50,11 @@ public class UserBuilder {
         rep.setId(id);
         return this;
     }
+    
+    public UserBuilder createdTimestamp(Long createdTimestamp) {
+        rep.setCreatedTimestamp(createdTimestamp);;
+        return this;
+    }
 
     public UserBuilder username(String username) {
         rep.setUsername(username);

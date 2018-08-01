@@ -64,6 +64,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -623,9 +624,12 @@ public class AuthenticationProcessor {
             if (username == null) {
 
             } else {
-                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-                if (user != null) {
-                    getBruteForceProtector().failedLogin(realm, user, connection);
+                //KEYCLOAK-6799 in case duplicate emails are allowed we have to log failure for all matching accounts
+                Set<UserModel> users = KeycloakModelUtils.findUsersByNameOrEmail(session, realm, username);
+                if (users != null && !users.isEmpty()) {
+                    for(UserModel user: users) {
+                        getBruteForceProtector().failedLogin(realm, user, connection);
+                    }
                 }
             }
         }
@@ -633,16 +637,23 @@ public class AuthenticationProcessor {
 
     protected void logSuccess() {
         if (realm.isBruteForceProtected()) {
-            String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-            // TODO: as above, need to handle non form success
+            String userid = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERID);
+            if (userid != null) {
+                UserModel user = session.users().getUserById(userid, realm);
+                if (user != null) {
+                    getBruteForceProtector().successfulLogin(realm, user, connection);
+                }
+            } else {
+                String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+                // todo need to handle non form failures
+                if (username == null) {
 
-            if(username == null) {
-                return;
-            }
-
-            UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-            if (user != null) {
-                getBruteForceProtector().successfulLogin(realm, user, connection);
+                } else {
+                    UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username, null);
+                    if (user != null) {
+                        getBruteForceProtector().successfulLogin(realm, user, connection);
+                    }
+                }
             }
         }
     }

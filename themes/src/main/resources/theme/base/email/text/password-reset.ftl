@@ -1,2 +1,3 @@
 <#ftl output_format="plainText">
-${msg("passwordResetBody",link, linkExpiration, realmName, linkExpirationFormatter(linkExpiration))}
+<#assign moreAccountsText><#if moreAccounts??>${msg("passwordResetMoreAccounts", user.username, moreAccounts)}</#if></#assign>
+${msg("passwordResetBody",link, linkExpiration, realmName, linkExpirationFormatter(linkExpiration), moreAccountsText)}
