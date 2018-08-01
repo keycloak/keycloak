@@ -205,7 +205,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
 
     @Test
-    @Ignore("KEYCLOAK-7562")
     public void testErrorConditions() throws Exception {
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);

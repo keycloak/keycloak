@@ -1,0 +1,19 @@
+package org.keycloak.url;
+
+import org.keycloak.urls.HostnameProvider;
+
+import javax.ws.rs.core.UriInfo;
+
+public class RequestHostnameProvider implements HostnameProvider {
+
+    @Override
+    public String getHostname(UriInfo originalUriInfo) {
+        return originalUriInfo.getBaseUri().getHost();
+    }
+
+    @Override
+    public int getPort(UriInfo originalUriInfo) {
+        return originalUriInfo.getRequestUri().getPort();
+    }
+
+}

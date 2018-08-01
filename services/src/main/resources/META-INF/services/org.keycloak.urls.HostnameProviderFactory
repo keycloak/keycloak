@@ -1,0 +1,2 @@
+org.keycloak.url.FixedHostnameProviderFactory
+org.keycloak.url.RequestHostnameProviderFactory

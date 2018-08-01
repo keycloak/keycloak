@@ -367,4 +367,12 @@ if (outcome == failed) of /subsystem=keycloak-server/spi=x509cert-lookup/:read-r
   echo
 end-if
 
+# Migrate from 4.2.0 to 4.3.0
+if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/:read-resource
+  echo Adding spi=hostname...
+  /subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
+  /subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
+  echo
+end-if
+
 echo *** End Migration ***

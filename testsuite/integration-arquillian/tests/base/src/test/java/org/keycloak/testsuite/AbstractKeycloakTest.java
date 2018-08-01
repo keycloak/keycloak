@@ -149,9 +149,7 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
         if (adminClient == null || adminClient.isClosed()) {
-            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
-            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
-            testContext.setAdminClient(adminClient);
+            reconnectAdminClient();
         }
 
         getTestingClient();
@@ -179,6 +177,16 @@ public abstract class AbstractKeycloakTest {
 
         oauth.init(adminClient, driver);
 
+    }
+
+    public void reconnectAdminClient() throws Exception {
+        if (adminClient != null && !adminClient.isClosed()) {
+            adminClient.close();
+        }
+
+        String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+        adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
+        testContext.setAdminClient(adminClient);
     }
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {

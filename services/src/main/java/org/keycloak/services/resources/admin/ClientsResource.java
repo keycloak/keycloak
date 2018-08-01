@@ -155,13 +155,12 @@ public class ClientsResource {
      *
      * Client's client_id must be unique!
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createClient(final @Context UriInfo uriInfo, final ClientRepresentation rep) {
+    public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
         ValidationMessages validationMessages = new ValidationMessages();
@@ -185,7 +184,7 @@ public class ClientsResource {
                 }
             }
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
                 if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
@@ -196,12 +195,12 @@ public class ClientsResource {
                     ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                     if (authorizationSettings != null) {
-                        authorizationService.resourceServer().importSettings(uriInfo, authorizationSettings);
+                        authorizationService.resourceServer().importSettings(authorizationSettings);
                     }
                 }
             }
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }

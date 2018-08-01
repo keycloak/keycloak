@@ -34,6 +34,7 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
@@ -46,6 +47,7 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -633,6 +635,14 @@ public class OAuthClient {
         }
     }
 
+    public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return SimpleHttp.doGet(AUTH_SERVER_ROOT + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public void closeClient(CloseableHttpClient client) {
         try {
             client.close();
@@ -729,7 +739,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
@@ -822,6 +832,11 @@ public class OAuthClient {
     public String getRefreshTokenUrl() {
         UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
+    }
+
+    public OAuthClient baseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+        return this;
     }
 
     public OAuthClient realm(String realm) {

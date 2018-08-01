@@ -62,8 +62,6 @@ public abstract class AuthorizationEndpointBase {
     protected AuthenticationManager authManager;
 
     @Context
-    protected UriInfo uriInfo;
-    @Context
     protected HttpHeaders headers;
     @Context
     protected HttpRequest httpRequest;
@@ -87,7 +85,7 @@ public abstract class AuthorizationEndpointBase {
                 .setEventBuilder(event)
                 .setRealm(realm)
                 .setSession(session)
-                .setUriInfo(uriInfo)
+                .setUriInfo(session.getContext().getUri())
                 .setRequest(httpRequest);
 
         authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, flowPath);
@@ -136,7 +134,7 @@ public abstract class AuthorizationEndpointBase {
             return processor.finishAuthentication(protocol);
         } else {
             try {
-                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, authSession);
+                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, session.getContext().getUri(), authSession);
                 if (redirectToAuthentication) {
                     return processor.redirectToFlow();
                 }
@@ -152,7 +150,7 @@ public abstract class AuthorizationEndpointBase {
     }
 
     protected void checkSsl() {
-        if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
+        if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             event.error(Errors.SSL_REQUIRED);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.HTTPS_REQUIRED);
         }

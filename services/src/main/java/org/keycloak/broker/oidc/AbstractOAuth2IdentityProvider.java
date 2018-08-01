@@ -389,9 +389,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         @Context
         protected HttpHeaders headers;
 
-        @Context
-        protected UriInfo uriInfo;
-
         public Endpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
             this.callback = callback;
             this.realm = realm;
@@ -447,7 +444,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
+                    .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }

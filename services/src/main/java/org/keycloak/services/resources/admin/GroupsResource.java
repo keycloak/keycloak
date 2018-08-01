@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.apache.http.HttpStatus;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -28,21 +27,23 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import twitter4j.JSONException;
-import twitter4j.JSONObject;
 
 /**
  * @resource Groups
@@ -62,8 +63,6 @@ public class GroupsResource {
         this.adminEvent = adminEvent.resource(ResourceType.GROUP);
 
     }
-
-    @Context private UriInfo uriInfo;
 
     /**
      * Get group hierarchy.  Only name and ids are returned.
@@ -153,16 +152,16 @@ public class GroupsResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
         } else {
             child = realm.createGroup(rep.getName());
             GroupResource.updateGroup(rep, child);
-            URI uri = uriInfo.getAbsolutePathBuilder()
+            URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                     .path(child.getId()).build();
             builder.status(201).location(uri);
 
             rep.setId(child.getId());
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, child.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
         }
         realm.moveGroup(child, null);
 

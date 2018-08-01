@@ -1,25 +1,40 @@
 package org.keycloak.services.resources.account;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
-import org.keycloak.models.*;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.util.LocaleHelper;
+import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.utils.MediaType;
 
+import javax.json.Json;
+import javax.json.JsonObjectBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -28,23 +43,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonWriter;
-import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.forms.account.freemarker.model.FeaturesBean;
-import org.keycloak.models.ClientModel;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.Auth;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.LocaleHelper;
-import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.services.validation.Validation;
-import org.keycloak.theme.beans.MessageFormatterMethod;
 
 /**
  * Created by st on 29/03/17.
@@ -56,9 +54,7 @@ public class AccountConsole {
 
     @Context
     protected KeycloakSession session;
-    @Context
-    protected UriInfo uriInfo;
-    
+
     private final AppAuthManager authManager;
     private final RealmModel realm;
     private final ClientModel client;
@@ -83,12 +79,12 @@ public class AccountConsole {
     @GET
     @NoCache
     public Response getMainPage() throws URISyntaxException, IOException, FreeMarkerException {
-        if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(uriInfo.getRequestUriBuilder().path("/").build()).build();
+        if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
+            return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("/").build()).build();
         } else {
             Map<String, Object> map = new HashMap<>();
 
-            URI baseUri = uriInfo.getBaseUri();
+            URI baseUri = session.getContext().getUri().getBaseUri();
 
             map.put("authUrl", session.getContext().getContextPath());
             map.put("baseUrl", session.getContext().getContextPath() + "/realms/" + realm.getName() + "/account");
@@ -189,19 +185,19 @@ public class AccountConsole {
     
     // TODO: took this code from elsewhere - refactor
     private String[] getReferrer() {
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer == null) {
             return null;
         }
 
-        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
+        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
 
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
             }
             
             if (referrerUri != null) {
@@ -214,7 +210,7 @@ public class AccountConsole {
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

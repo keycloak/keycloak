@@ -167,12 +167,15 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
-     * Creates an instance of {@code TokenVerifier} from the given string on a JWT of the given class.
+     * Creates an instance of {@code TokenVerifier} for the given token.
      * The token verifier has no checks defined. Note that the checks are only tested when
      * {@link #verify()} method is invoked.
+     * <p>
+     * <b>NOTE:</b> The returned token verifier cannot verify token signature since
+     * that is not part of the {@link JsonWebToken} object.
      * @return
      */
-    public static <T extends JsonWebToken> TokenVerifier<T> create(T token) {
+    public static <T extends JsonWebToken> TokenVerifier<T> createWithoutSignature(T token) {
         return new TokenVerifier(token);
     }
 
