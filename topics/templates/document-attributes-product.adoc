@@ -12,12 +12,14 @@ ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On
 :project_versionDoc: 7.3
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
+:maven_repository: https://maven.repository.redhat.com/ga/
 endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
 :project_versionDoc: 1
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
+:maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]
 
 :project_dirref: RHSSO_HOME

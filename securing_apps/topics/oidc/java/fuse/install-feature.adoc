@@ -15,12 +15,12 @@ ifeval::[{project_product}==true]
 For {project_name} you first need to configure a proper Maven repository, so you can install the artifacts. For more information see the
 https://access.redhat.com/maven-repository[JBoss Enterprise Maven repository] page.
 
-Assuming the Maven repository is https://maven.repository.redhat.com/ga/, add the following to the `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg` file and add the repository to the list of supported repositories. For example:
+Assuming the Maven repository is {maven_repository}, add the following to the `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg` file and add the repository to the list of supported repositories. For example:
 
-[source]
+[source,subs="attributes"]
 ----
  org.ops4j.pax.url.mvn.repositories= \
-    https://maven.repository.redhat.com/ga@id=redhat.product.repo
+    {maven_repository}@id=redhat.product.repo
     http://repo1.maven.org/maven2@id=maven.central.repo, \
     ...
 ----
