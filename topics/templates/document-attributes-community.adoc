@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 4.2.0.Final
-:project_versionMvn: 4.2.0.Final
-:project_versionNpm: 4.2.0-final
-:project_versionDoc: 4.2
+:project_version: 4.3.0.Final
+:project_versionMvn: 4.3.0.Final
+:project_versionNpm: 4.3.0-final
+:project_versionDoc: 4.3
 :project_images: keycloak-images
 :project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
