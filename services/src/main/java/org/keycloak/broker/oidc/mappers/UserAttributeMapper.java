@@ -49,6 +49,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     public static final String EMAIL = "email";
     public static final String FIRST_NAME = "firstName";
     public static final String LAST_NAME = "lastName";
+    public static final String USERNAME = "username";
 
     static {
         ProviderConfigProperty property;
@@ -62,7 +63,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
-        property.setHelpText("User attribute name to store claim.  Use email, lastName, and firstName to map to those predefined user properties.");
+        property.setHelpText("User attribute name to store claim.  Use username, email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
@@ -109,6 +110,8 @@ public class UserAttributeMapper extends AbstractClaimMapper {
             setIfNotEmpty(context::setFirstName, values);
         } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(context::setLastName, values);
+        } else if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(context::setUsername, values);
         } else {
             List<String> valuesToString = values.stream()
                     .filter(Objects::nonNull)
@@ -149,6 +152,8 @@ public class UserAttributeMapper extends AbstractClaimMapper {
             setIfNotEmpty(user::setFirstName, values);
         } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(user::setLastName, values);
+        } else if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotEmpty(user::setUsername, values);
         } else {
             List<String> current = user.getAttribute(attribute);
             if (!CollectionUtil.collectionEquals(values, current)) {
