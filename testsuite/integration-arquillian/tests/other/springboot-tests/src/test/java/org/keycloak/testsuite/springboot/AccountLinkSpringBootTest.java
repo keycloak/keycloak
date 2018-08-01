@@ -159,7 +159,6 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
 
     @Test
-    @Ignore("KEYCLOAK-7868")
     public void testErrorConditions() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
