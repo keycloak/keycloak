@@ -13,7 +13,7 @@ The `Client Authenticator` list box specifies the type of credential you are goi
 It defaults to client ID and secret.  The secret is automatically generated for you and the `Regenerate Secret`
 button allows you to recreate this secret if you want or need to.
 
-Alternatively, you can opt to use a signed Json Web Token (JWT) instead of a secret.
+Alternatively, you can opt to use a signed Json Web Token (JWT) or x509 certificate validation (also called Mutual TLS) instead of a secret.
 
 .Signed JWT
 image:{project_images}/client-credentials-jwt.png[]
@@ -54,3 +54,20 @@ section for more details.
 If you select this option in the `Client Authenticator` list box, you can use a JWT signed by client secret instead of the private key.
 
 This client secret will be used to sign the JWT by the client.
+
+.X509 Certificate
+
+By enabling this option {project_name} will validate if the client uses proper X509 certificate during the TLS Handshake.
+
+NOTE: This option requires mutual TLS in {project_name}, see <<_enable-mtls-wildfly, Enable mutual SSL in WildFly>>.
+
+.Import Certificate
+image:{project_images}/x509-client-auth.png[]
+
+The validator checks also the certificate's Subject DN field with configured regexp validation expression. For some
+use cases, it is sufficient to accept all certificates. In that case, you can use `(.*?)(?:$)` expression.
+
+There are two ways for {project_name} to obtain the Client ID from the request. The first option is the `client_id`
+parameter in the query (described in Section 2.2 of the https://tools.ietf.org/html/rfc6749[OAuth 2.0 Specification]).
+The second option is to supply `client_id` as a query parameter.
+

@@ -6,3 +6,8 @@ is fixed, which allows configuring a fixed hostname. The latter makes sure that 
 used and also allows internal applications to invoke {project_name} through an alternative URL.
 
 For more details refer to the threat mitigation section in the link:{adminguide_link}[{adminguide_name}].
+
+= X509 Client Authenticator
+
+The newly added Client Authenticator uses X509 Client Certificates and Mutual TLS to secure a connection from the client. In addition to that
+the Keycloak Server validates Subject DN field of the client's certificate.
