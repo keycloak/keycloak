@@ -2855,7 +2855,7 @@
       "security-admin-console" : [ ],
       "master-test-client" : [ {
         "id" : "c20a33ec-cbd3-4d2b-bdb5-5fb4cfa50906",
-        "name" : "master-test-client",
+        "name" : "master-test-client-role",
         "scopeParamRequired" : false,
         "composite" : false,
         "clientRole" : true,
