@@ -23,7 +23,7 @@ public class AuthzResourceUseMoreURIs extends CustomKeycloakTask {
                         String resourceId = resultSet.getString(1);
                         String resourceUri = resultSet.getString(2);
 
-                        InsertStatement insertComponent = new InsertStatement(null, null, database.correctObjectName("RESOURCE_URI", Table.class))
+                        InsertStatement insertComponent = new InsertStatement(null, null, database.correctObjectName("RESOURCE_URIS", Table.class))
                                 .addColumnValue("RESOURCE_ID", resourceId)
                                 .addColumnValue("VALUE", resourceUri);
 
@@ -36,7 +36,7 @@ public class AuthzResourceUseMoreURIs extends CustomKeycloakTask {
                 statement.close();
             }
 
-            confirmationMessage.append("Moved " + statements.size() + " records from RESOURCE_SERVER_RESOURCE to RESOURCE_URI table");
+            confirmationMessage.append("Moved " + statements.size() + " records from RESOURCE_SERVER_RESOURCE to RESOURCE_URIS table");
         } catch (Exception e) {
             throw new CustomChangeException(getTaskId() + ": Exception when updating data from previous version", e);
         }
