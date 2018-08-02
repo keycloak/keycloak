@@ -361,6 +361,7 @@
             <properties>
                 <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
+                <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
             </properties>
             <build>
                 <pluginManagement>
@@ -478,6 +479,10 @@
                                                     <parameter>
                                                         <name>password</name>
                                                         <value>${keycloak.connectionsJpa.password}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>schema</name>
+                                                        <value>${keycloak.connectionsJpa.schema}</value>
                                                     </parameter>
                                                 </parameters>
                                             </transformationSet>

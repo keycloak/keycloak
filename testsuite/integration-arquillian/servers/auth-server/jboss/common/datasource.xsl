@@ -25,6 +25,7 @@
 
 
     <xsl:variable name="nsDS" select="'urn:jboss:domain:datasources:'"/>
+    <xsl:variable name="nsKS" select="'urn:jboss:domain:keycloak-server'"/>
     
     <!-- Remove keycloak datasource definition. -->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
@@ -34,6 +35,7 @@
     
     <xsl:param name="db.jdbc_url"/>
     <xsl:param name="driver"/>
+    <xsl:param name="schema"/>
 
     <xsl:param name="min.poolsize" select="'10'"/>
     <xsl:param name="max.poolsize" select="'50'"/>
@@ -72,6 +74,12 @@
         </datasource>
     </xsl:variable>
     
+    <xsl:variable name="newSchemaDefinition">
+        <xsl:if test="$schema != 'DEFAULT'">
+            <property name="schema" value="{$schema}"/>
+        </xsl:if>
+    </xsl:variable>
+
     <xsl:variable name="newDriverDefinition">
         <xsl:if test="$driver != 'h2'">
             <driver name="{$driver}" module="test.jdbc.{$driver}" />
@@ -93,6 +101,16 @@
 		         /*[local-name()='drivers' and starts-with(namespace-uri(), $nsDS)]">
         <xsl:copy>
             <xsl:copy-of select="$newDriverDefinition"/>
+            <xsl:apply-templates select="@* | node()" />
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsKS)]
+                         /*[local-name()='spi' and starts-with(namespace-uri(), $nsKS) and @name='connectionsJpa']
+                         /*[local-name()='provider' and starts-with(namespace-uri(), $nsKS)]
+                         /*[local-name()='properties' and starts-with(namespace-uri(), $nsKS)]">
+        <xsl:copy>
+            <xsl:copy-of select="$newSchemaDefinition"/>
             <xsl:apply-templates select="@* | node()" />
         </xsl:copy>
     </xsl:template>
