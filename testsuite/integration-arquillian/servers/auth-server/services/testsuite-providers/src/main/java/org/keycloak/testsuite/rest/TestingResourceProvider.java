@@ -89,6 +89,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -772,6 +775,33 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return SerializationUtil.encodeException(t);
         }
     }
+
+
+    @POST
+    @Path("/run-model-test-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
+                                       @QueryParam("testMethodName") String testMethodName) throws Exception {
+        try {
+            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
+
+            Class testClass = cl.loadClass(testClassName);
+            Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
+
+            Object test = testClass.newInstance();
+            testMethod.invoke(test, session);
+
+            return "SUCCESS";
+        } catch (Throwable t) {
+            if (t instanceof InvocationTargetException) {
+                t = ((InvocationTargetException) t).getTargetException();
+            }
+
+            return SerializationUtil.encodeException(t);
+        }
+    }
+
 
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {
