@@ -19,14 +19,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-fuse-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak.example.demo</groupId>
-    <artifactId>customer-portal-fuse-example</artifactId>
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>fuse-example-customer-portal</artifactId>
     <packaging>war</packaging>
     <name>Customer Portal - Secured in Karaf/Fuse</name>
     <description/>

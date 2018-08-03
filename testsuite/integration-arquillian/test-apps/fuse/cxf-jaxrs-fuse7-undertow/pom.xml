@@ -19,31 +19,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-fuse-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak.example.demo</groupId>
-    <artifactId>cxf-jaxrs-example</artifactId>
+    <artifactId>fuse-example-cxf-jaxrs-fuse7-undertow</artifactId>
     <packaging>bundle</packaging>
-    <name>CXF JAXRS Example - Secured in Karaf/Fuse</name>
+    <name>CXF JAXRS Example - Secured in Karaf/Fuse 7.0 on Undertow</name>
 
     <properties>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             javax.ws.rs;version="[2,3)",
-            META-INF.cxf;version="[2.7,3.2)",
-            META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
-            org.apache.cxf.transport.http;version="[2.7,3.2)",
-            org.apache.cxf.*;version="[2.7,3.2)",
+            META-INF.cxf;version="[2.7,3.3)",
+            META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
+            org.apache.cxf.transport.http;version="[2.7,3.3)",
+            org.apache.cxf.*;version="[2.7,3.3)",
             com.fasterxml.jackson.jaxrs.json;version="${jackson.version}",
-            org.eclipse.jetty.security;version="[8,10)",
-            org.eclipse.jetty.util.security;version="[8,10)",
             org.keycloak.*;version="${project.version}",
-            org.keycloak.adapters.jetty;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.private>
@@ -64,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-transports-http-jetty</artifactId>
+            <artifactId>cxf-rt-transports-http-undertow</artifactId>
             <version>${cxf.version}</version>
         </dependency>
     </dependencies>

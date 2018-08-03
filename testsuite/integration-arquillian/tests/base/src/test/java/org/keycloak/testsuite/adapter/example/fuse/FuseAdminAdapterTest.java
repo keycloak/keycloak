@@ -101,7 +101,7 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/demorealm.json"));
+        RealmRepresentation fuseRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/demorealm.json"));
         testRealms.add(fuseRealm);
     }
 

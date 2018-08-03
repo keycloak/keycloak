@@ -30,12 +30,12 @@
 
           <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
           <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example-fuse7-undertow/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/cxf-jaxrs-example-fuse7-undertow/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/cxf-jaxws-example-fuse7-undertow/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
-          <bundle>mvn:org.keycloak.example.demo/external-config/${project.version}/war</bundle>
-          <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example-fuse7-undertow/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-camel-endpoint-fuse7-undertow/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxrs-fuse7-undertow/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxws-fuse7-undertow/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-customer-portal/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-external-config/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-product-portal-fuse7-undertow/${project.version}</bundle>
       </feature>
 
       <feature name="keycloak-fuse-6.3-example" version="${project.version}">
@@ -48,12 +48,12 @@
           <feature>keycloak-jetty9-adapter</feature>
           <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
           <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
-          <bundle>mvn:org.keycloak.example.demo/external-config/${project.version}/war</bundle>
-          <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/cxf-jaxws-example/${project.version}</bundle>
-          <bundle>mvn:org.keycloak.example.demo/cxf-jaxrs-example/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-product-portal/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-customer-portal/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-external-config/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-camel-endpoint/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxws/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxrs/${project.version}</bundle>
       </feature>
 
       <!-- The difference are keycloak-jetty8-adapter and camel-jetty feature -->
@@ -67,11 +67,11 @@
         <feature>keycloak-jetty8-adapter</feature>
         <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
-        <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
-        <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.example.demo/cxf-jaxws-example/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.example.demo/cxf-jaxrs-example/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.testsuite/fuse-example-product-portal/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.testsuite/fuse-example-customer-portal/${project.version}/war</bundle>
+        <bundle>mvn:org.keycloak.testsuite/fuse-example-camel-endpoint/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxws/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxrs/${project.version}</bundle>
     </feature>
 
 </features>

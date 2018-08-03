@@ -61,7 +61,6 @@
         <module>js-console</module>
         <module>multi-tenant</module>
         <module>basic-auth</module>
-        <module>fuse</module>
         <module>kerberos</module>
         <module>themes</module>
         <module>saml</module>

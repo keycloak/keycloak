@@ -20,7 +20,6 @@ package org.keycloak.testsuite.adapter.example.fuse;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -40,6 +39,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.hamcrest.Matchers;
 
 /**
  *
@@ -65,7 +65,7 @@ public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/demorealm.json"));
+        RealmRepresentation fuseRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/demorealm.json"));
         testRealms.add(fuseRealm);
     }
 
@@ -91,10 +91,11 @@ public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
         assertCurrentUrlStartsWith(customerListing);
 
         String src = driver.getPageSource();
-        assertTrue(src.contains("Username: bburke@redhat.com")
-                && src.contains("Bill Burke")
-                && src.contains("Stian Thorgersen")
-        );
+        assertThat(src, Matchers.allOf(
+          containsString("Username: bburke@redhat.com"),
+          containsString("Bill Burke"),
+          containsString("Stian Thorgersen")
+        ));
 
         // account mgmt
         customerListing.clickAccountManagement();
@@ -152,9 +153,9 @@ public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
 
-        assertTrue(productPortal.getProduct1UnsecuredText().contains("401: Unauthorized"));
-        assertTrue(productPortal.getProduct1SecuredText().contains("Product received: id=1"));
-        assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
+        assertThat(productPortal.getProduct1UnsecuredText(), containsString("401: Unauthorized"));
+        assertThat(productPortal.getProduct1SecuredText(), containsString("Product received: id=1"));
+        assertThat(productPortal.getProduct2SecuredText(), containsString("Product received: id=2"));
 
         productPortal.clickLogOutLink();
         WaitUtils.waitForPageToLoad();
