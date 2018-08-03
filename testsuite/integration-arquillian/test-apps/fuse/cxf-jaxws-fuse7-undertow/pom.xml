@@ -19,54 +19,63 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-fuse-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak.example.demo</groupId>
-    <artifactId>product-portal-fuse-example-fuse7-undertow</artifactId>
+    <artifactId>fuse-example-cxf-jaxws-fuse7-undertow</artifactId>
     <packaging>bundle</packaging>
-
-    <name>Product Portal - Secured in Karaf/Fuse 7.0 on Undertow</name>
-    <description/>
+    <name>CXF JAXWS Example - Secured in Karaf/Fuse 7.0 on Undertow</name>
 
     <properties>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            javax.jws;resolution:=optional,
             javax.wsdl,
             javax.xml.bind,
             javax.xml.bind.annotation,
             javax.xml.namespace,
             javax.xml.ws,
             META-INF.cxf;version="[2.7,3.3)",
-            org.apache.cxf.transport.http;version="[2.7,3.3)",
-            org.apache.cxf.*;version="[2.7,3.3)",
+            META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
+            org.apache.cxf.transport.http_undertow;version="[2.7,3.3)";resolution:=optional,
+            org.apache.cxf.transport.http_undertow.blueprint;version="[2.7,3.3)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
-            org.keycloak.adapters.authentication;version="${project.version}";resolution:=optional,
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.private>
-            org.keycloak.example.*
+            org.keycloak.example.ws.*
         </keycloak.osgi.private>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-ws-metadata_2.0_spec</artifactId>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaxws_2.2_spec</artifactId>
+            <version>1.0</version>
         </dependency>
-
-        <!-- Dependency for jaxws client to allow sending request to jaxws endpoint provided by cxf-jaxws-example -->
         <dependency>
-            <groupId>org.keycloak.example.demo</groupId>
-            <artifactId>cxf-jaxws-example</artifactId>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxws</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
         </dependency>
     </dependencies>
 
@@ -88,8 +97,6 @@
                     </instructions>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
-
 </project>

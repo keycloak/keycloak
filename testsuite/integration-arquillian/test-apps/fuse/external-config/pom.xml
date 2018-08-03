@@ -19,15 +19,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>keycloak-examples-fuse-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - External Config</name>
-    <artifactId>external-config</artifactId>
+    <artifactId>fuse-example-external-config</artifactId>
     <packaging>war</packaging>
-    <groupId>org.keycloak.example.demo</groupId>
+    <groupId>org.keycloak.testsuite</groupId>
     <description>
         Keycloak External Config Example
     </description>

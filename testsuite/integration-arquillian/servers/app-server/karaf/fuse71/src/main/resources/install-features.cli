@@ -1,5 +1,5 @@
 feature:repo-add mvn:org.keycloak/keycloak-osgi-features/${project.version}/xml/features
-feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/${project.version}/xml/features
+feature:repo-add mvn:org.keycloak.testsuite/fuse-example-keycloak-features/${project.version}/xml/features
 
 feature:install pax-http-undertow
 

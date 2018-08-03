@@ -18,28 +18,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
-    <name>Fuse Examples</name>
+    <name>Fuse Test Applications</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-examples-fuse-parent</artifactId>
+    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+    <groupId>org.keycloak.testsuite</groupId>
     <packaging>pom</packaging>
     <properties>
-        <camel.version>2.21.0</camel.version>
+        <camel.version>2.21.2</camel.version>
     </properties>
     <modules>
         <module>customer-app-fuse</module>
-        <module>product-app-fuse</module>
-        <module>product-app-fuse7-undertow</module>
         <module>cxf-jaxrs</module>
         <module>cxf-jaxrs-fuse7-undertow</module>
         <module>cxf-jaxws</module>
         <module>cxf-jaxws-fuse7-undertow</module>
+        <module>product-app-fuse</module>
+        <module>product-app-fuse7-undertow</module>
         <module>camel</module>
         <module>camel-fuse7-undertow</module>
         <module>features</module>

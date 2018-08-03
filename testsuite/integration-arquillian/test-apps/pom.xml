@@ -23,6 +23,7 @@
         <module>servlets</module>
         <module>app-profile-jee</module>
         <module>cors</module>
+        <module>fuse</module>
     </modules>
 
     <build>

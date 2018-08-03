@@ -19,55 +19,58 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-fuse-parent</artifactId>
-        <groupId>org.keycloak</groupId>
+        <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
         <version>4.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak.example.demo</groupId>
-    <artifactId>cxf-jaxws-example-fuse7-undertow</artifactId>
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>fuse-example-camel-endpoint</artifactId>
     <packaging>bundle</packaging>
-    <name>CXF JAXWS Example - Secured in Karaf/Fuse 7.0 on Undertow</name>
+    <name>Camel endpoint example - Secured in Karaf/Fuse</name>
     <description/>
 
     <properties>
+
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            javax.jws;resolution:=optional,
-            javax.wsdl,
-            javax.xml.bind,
-            javax.xml.bind.annotation,
-            javax.xml.namespace,
-            javax.xml.ws,
-            META-INF.cxf;version="[2.7,3.3)",
-            META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
-            org.apache.cxf.transport.http_undertow;version="[2.7,3.3)";resolution:=optional,
-            org.apache.cxf.transport.http_undertow.blueprint;version="[2.7,3.3)";resolution:=optional,
+            javax.servlet;version="[3,4)",
+            javax.servlet.http;version="[3,4)",
+            org.apache.camel.*,
+            org.apache.camel;version="[2.13,3)",
+            org.eclipse.jetty.security;version="[8,10)",
+            org.eclipse.jetty.server.nio;version="[8,10)",
+            org.eclipse.jetty.util.security;version="[8,10)",
             org.keycloak.*;version="${project.version}",
-            *;resolution:=optional
+            org.osgi.service.blueprint,
+            org.osgi.service.blueprint.container,
+            org.osgi.service.event,
         </keycloak.osgi.import>
         <keycloak.osgi.private>
-            org.keycloak.example.ws.*
+            org.keycloak.example.*
         </keycloak.osgi.private>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-ws-metadata_2.0_spec</artifactId>
-            <version>1.1.2</version>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-jaxws_2.2_spec</artifactId>
-            <version>1.0</version>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-core</artifactId>
+            <version>${camel.version}</version>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.2</version>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-blueprint</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        <dependency><groupId>org.apache.camel</groupId>
+            <artifactId>camel-jetty9</artifactId>
+            <version>${camel.version}</version>
         </dependency>
     </dependencies>
 
@@ -92,4 +95,5 @@
 
         </plugins>
     </build>
+
 </project>
