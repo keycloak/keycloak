@@ -35,6 +35,7 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
 
@@ -54,8 +55,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(RealmModel realm, EventBuilder event, Map<String, Integer> knownPorts, Map<Integer, String> knownProtocols) {
-        super(realm, event, knownPorts, knownProtocols);
+    public SamlEcpProfileService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
+        super(realm, event, destinationValidator);
     }
 
     public Response authenticate(InputStream inputStream) {

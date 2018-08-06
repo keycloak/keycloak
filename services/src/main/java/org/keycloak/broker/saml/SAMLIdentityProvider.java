@@ -35,6 +35,7 @@ import org.keycloak.saml.*;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MediaType;
@@ -50,13 +51,15 @@ import java.util.TreeSet;
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
     protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
-    public SAMLIdentityProvider(KeycloakSession session, SAMLIdentityProviderConfig config) {
+    private final DestinationValidator destinationValidator;
+    public SAMLIdentityProvider(KeycloakSession session, SAMLIdentityProviderConfig config, DestinationValidator destinationValidator) {
         super(session, config);
+        this.destinationValidator = destinationValidator;
     }
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new SAMLEndpoint(realm, this, getConfig(), callback);
+        return new SAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
     }
 
     @Override
