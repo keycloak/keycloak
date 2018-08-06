@@ -18,7 +18,6 @@
 package org.keycloak.protocol.saml;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -33,18 +32,16 @@ import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
+import org.keycloak.saml.validators.DestinationValidator;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,29 +49,14 @@ import java.util.regex.Pattern;
  */
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
-    private static final Pattern PROTOCOL_MAP_PATTERN = Pattern.compile("\\s*([a-zA-Z][a-zA-Z\\d+-.]*)\\s*=\\s*(\\d+)\\s*");
-    private static final String[] DEFAULT_PROTOCOL_TO_PORT_MAP = new String[] { "http=80", "https=443" };
-
     public static final String SCOPE_ROLE_LIST = "role_list";
     private static final String ROLE_LIST_CONSENT_TEXT = "${samlRoleListScopeConsentText}";
 
-    private final Map<Integer, String> knownPorts = new HashMap<>();
-    private final Map<String, Integer> knownProtocols = new HashMap<>();
-
-    private void addToProtocolPortMaps(String protocolMapping) {
-        Matcher m = PROTOCOL_MAP_PATTERN.matcher(protocolMapping);
-        if (m.matches()) {
-            Integer port = Integer.valueOf(m.group(2));
-            String proto = m.group(1);
-
-            knownPorts.put(port, proto);
-            knownProtocols.put(proto, port);
-        }
-    }
+    private DestinationValidator destinationValidator;
 
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new SamlService(realm, event, knownProtocols, knownPorts);
+        return new SamlService(realm, event, destinationValidator);
     }
 
     @Override
@@ -87,14 +69,7 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         //PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
         //sts.installDefaultConfiguration();
 
-        String[] protocolMappings = config.getArray("knownProtocols");
-        if (protocolMappings == null) {
-            protocolMappings = DEFAULT_PROTOCOL_TO_PORT_MAP;
-        }
-
-        for (String protocolMapping : protocolMappings) {
-            addToProtocolPortMaps(protocolMapping);
-        }
+        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
     }
 
     @Override

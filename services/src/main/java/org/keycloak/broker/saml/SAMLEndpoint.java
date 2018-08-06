@@ -87,6 +87,7 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
 
 import java.util.*;
@@ -111,6 +112,7 @@ public class SAMLEndpoint {
     protected SAMLIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
     protected SAMLIdentityProvider provider;
+    private final DestinationValidator destinationValidator;
 
     @Context
     private KeycloakSession session;
@@ -122,11 +124,12 @@ public class SAMLEndpoint {
     private HttpHeaders headers;
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback) {
+    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
         this.provider = provider;
+        this.destinationValidator = destinationValidator;
     }
 
     @GET
@@ -238,7 +241,7 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
-            if (requestAbstractType.getDestination() != null && !session.getContext().getUri().getAbsolutePath().equals(requestAbstractType.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -456,7 +459,7 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() != null && !session.getContext().getUri().getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);

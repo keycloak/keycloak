@@ -85,8 +85,8 @@ import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import java.util.Map;
 
 /**
  * Resource class for the saml connect token service
@@ -98,13 +98,11 @@ public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
 
-    private final Map<String, Integer> knownPorts;
-    private final Map<Integer, String> knownProtocols;
+    private final DestinationValidator destinationValidator;
 
-    public SamlService(RealmModel realm, EventBuilder event, Map<String, Integer> knownPorts, Map<Integer, String> knownProtocols) {
+    public SamlService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
         super(realm, event);
-        this.knownPorts = knownPorts;
-        this.knownProtocols = knownProtocols;
+        this.destinationValidator = destinationValidator;
     }
 
     public abstract class BindingProtocol {
@@ -147,7 +145,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() != null && !session.getContext().getUri().getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -272,7 +270,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! isValidDestination(requestAbstractType.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -376,7 +374,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! isValidDestination(logoutRequest.getDestination())) {
+            if (! destinationValidator.validate(logoutRequest.getDestination(), session.getContext().getUri().getAbsolutePath())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -696,35 +694,10 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, knownPorts, knownProtocols);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, destinationValidator);
 
         ResteasyProviderFactory.getInstance().injectProperties(bindingService);
 
         return bindingService.authenticate(inputStream);
     }
-
-    private boolean isValidDestination(URI destination) {
-        if (destination == null) {
-            return true;    // destination is optional
-        }
-
-        URI expected = session.getContext().getUri().getAbsolutePath();
-
-        if (Objects.equals(expected, destination)) {
-            return true;
-        }
-
-        Integer portByScheme = knownPorts.get(expected.getScheme());
-        if (expected.getPort() < 0 && portByScheme != null) {
-            return Objects.equals(session.getContext().getUri().getRequestUriBuilder().port(portByScheme).build(), destination);
-        }
-
-        String protocolByPort = knownProtocols.get(expected.getPort());
-        if (expected.getPort() >= 0 && Objects.equals(protocolByPort, expected.getScheme())) {
-            return Objects.equals(session.getContext().getUri().getRequestUriBuilder().port(-1).build(), destination);
-        }
-
-        return false;
-    }
-
 }
