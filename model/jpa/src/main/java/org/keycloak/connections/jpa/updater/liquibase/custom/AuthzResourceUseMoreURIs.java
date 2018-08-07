@@ -14,7 +14,7 @@ public class AuthzResourceUseMoreURIs extends CustomKeycloakTask {
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
         try {
-            PreparedStatement statement = jdbcConnection.prepareStatement("select ID,URI from " + getTableName("RESOURCE_SERVER_RESOURCE"));
+            PreparedStatement statement = jdbcConnection.prepareStatement("select ID,URI from " + getTableName("RESOURCE_SERVER_RESOURCE") + " where URI is not null");
 
             try {
                 ResultSet resultSet = statement.executeQuery();
