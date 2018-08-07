@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.roles;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -72,19 +73,19 @@ public class RoleDetailsForm extends Form {
     }
 
     public void setName(String name) {
-        setInputValue(nameInput, name);
+        UIUtils.setTextInputValue(nameInput, name);
     }
 
     public String getName() {
-        return getInputValue(nameInput);
+        return UIUtils.getTextInputValue(nameInput);
     }
 
     public void setDescription(String description) {
-        setInputValue(descriptionInput, description);
+        UIUtils.setTextInputValue(descriptionInput, description);
     }
 
     public String getDescription() {
-        return getInputValue(descriptionInput);
+        return UIUtils.getTextInputValue(descriptionInput);
     }
 
     public void setScopeParamRequired(boolean scopeParamRequired) {

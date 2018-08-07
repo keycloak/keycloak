@@ -287,10 +287,10 @@ This will start latest Keycloak and import the realm JSON file, which was previo
       -Dmigrated.auth.server.version=1.9.8.Final
 
 
-## UI tests
+## Admin Console UI tests
 The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox, Google Chrome and Internet Explorer. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
-The UI tests are focused on the Admin Console as well as on some login scenarios. They are placed in the `console` module and are disabled by default.
+The UI tests are focused on the Admin Console. They are placed in the `console` module and are disabled by default.
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
@@ -302,6 +302,17 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
     clean test \
     -Dbrowser=firefox \
     -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
+```
+
+## Base UI tests
+Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
+They are designed to work with mobile browsers (alongside the standard desktop browsers). For details on the supported browsers and their configuration please refer to [Different Browsers chapter](#different-browsers).
+#### Execution example
+```
+mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
+    clean test \
+    -Pandroid \
+    -Dappium.avd=Nexus_5X_API_27
 ```
 
 ## Welcome Page tests
@@ -366,30 +377,69 @@ To run the tests run:
 To run individual social provider test only you can use option like `-Dtest=SocialLoginTest#linkedinLogin`
 
 ## Different Browsers
- 
-#### Mozilla Firefox
-* **Supported version:** [latest ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
-* **Driver download required:** no (using the old legacy Firefox driver)
-* **Run with:** `-Dbrowser=firefox`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
+You can use many different real-world browsers to run the integration tests.
+Although technically they can be run with almost every test in the testsuite, they can fail with some of them as the tests often require specific optimizations for given browser. Therefore, only some of the test modules have support to be run with specific browsers.
+
+#### Mozilla Firefox with legacy driver
+* **Supported test modules:** `console`
+* **Supported version:** [52 ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
+* **Driver download required:** no
+* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=true`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
 
 #### Mozilla Firefox with GeckoDriver
-You can also use Firefox automation with modern Marionette protocol and GeckoDriver. However, this is **highly experimental** and the testsuite may not work as expected.
+* **Supported test modules:** `base-ui`
 * **Supported version:** as latest as possible (Firefox has better support for Marionette with each version released)
 * **Driver download required:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
 * **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=false -Dwebdriver.gecko.driver=path/to/geckodriver`
 
 #### Google Chrome
+* **Supported test modules:** `console`, `base-ui`
 * **Supported version:** latest stable
-* **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) which corresponds with your version of the browser
+* **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
 * **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
 
 #### Internet Explorer
+* **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
 * **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
 
+#### Apple Safari
+* **Supported test modules:** `base-ui`
+* **Supported version:** latest stable
+* **Driver download required:** no (the driver is bundled with macOS)
+* **Run with:** `-Dbrowser=safari`
+
 #### Automatic driver downloads
 You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
+
+#### Mobile browsers
+The support for testing with the mobile browsers is implemented using the [Appium](http://appium.io/) project.
+This means the tests can be run with a real mobile browser in a real mobile OS. However, only emulators/simulators of mobile devices are supported at the moment (no physical devices) in our testsuite.
+
+First, you need to install the Appium server. If you have Node.js and npm installed on your machine, you can do that with: `npm install -g appium`. For further details and requirements please refer to the [official Appium documentation](http://appium.io/docs/en/about-appium/intro/).
+The tests will try to start the Appium server automatically but you can do it manually as well (just by executing `appium`).
+
+To use a mobile browser you need to create a virtual device. The most convenient way to do so is to install the desired platform's IDE - either [Android Studio](https://developer.android.com/studio/) (for Android devices) or [Xcode](https://developer.apple.com/xcode/) (for iOS devices) - then you can create a device (smartphone/tablet) there. For details please refer to documentation of those IDEs.
+
+#### Google Chrome on Android
+* **Supported test modules:** `base-ui`
+* **Supported host OS:** Windows, Linux, macOS
+* **Supported browser version:** latest stable
+* **Supported mobile OS version:** Android 7.x, 8.x
+* **Run with:** `mvn clean test -Pandroid -Dappium.avd=name_of_the_AVD` where AVD is the name of your Android Virtual Device (e.g. `Nexus_5X_API_27`)
+
+**Tips & tricks:**
+* If the AVD name contains any spaces, you need to replace them with underscores when specifying the `-Dappium.avd=...`.
+* It's probable that a freshly created device will contain an outdated Chrome version. To update to the latest version (without using the Play Store) you need to download an `.apk` for Chrome and install it with `adb install -r path/to/chrome.apk`.
+* Chrome on Android uses ChromeDriver similarly to regular desktop Chrome. The ChromeDriver is bundled with the Appium server. To use a newer ChromeDriver please follow the [Appium documentation](http://appium.io/docs/en/writing-running-appium/web/chromedriver/).
+
+#### Apple Safari on iOS
+* **Supported test modules:** `base-ui`
+* **Supported host OS:** macOS
+* **Supported browser version:** _depends on the mobile OS version_
+* **Supported mobile OS version:** iOS 11.x
+* **Run with:** `mvn clean test -Pios -Dappium.deviceName=device_name` where the device name is your device identification (e.g. `iPhone X`)
 
 ## Run X.509 tests
 

@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
@@ -89,7 +88,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         cookies.stream().forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foobar/")));
 
         // lets back to "/realms/foo/account" to test the cookies for "foo" realm are still there and haven't been (correctly) sent to "foobar"
-        URLUtils.navigateToUri( oauth.AUTH_SERVER_ROOT + "/realms/foo/account", true);
+        URLUtils.navigateToUri( oauth.AUTH_SERVER_ROOT + "/realms/foo/account");
 
         cookies = driver.manage().getCookies();
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);

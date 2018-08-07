@@ -37,8 +37,8 @@ import java.nio.charset.Charset;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
-import static org.keycloak.testsuite.util.URLUtils.currentUrlEqual;
-import static org.keycloak.testsuite.util.URLUtils.currentUrlStartWith;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlStartsWith;
 
 /**
  *
@@ -62,7 +62,7 @@ public class URLAssert {
 
     public static void assertCurrentUrlEquals(final String url) {
         assertTrue("Expected URL: " + url + "; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-                currentUrlEqual(url));
+                currentUrlEquals(url));
     }
 
 
@@ -82,7 +82,7 @@ public class URLAssert {
 
     public static void assertCurrentUrlStartsWith(final String url){
         assertTrue("URL expected to begin with:" + url + "; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-        currentUrlStartWith(url));
+        currentUrlStartsWith(url));
     }
 
 

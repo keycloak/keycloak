@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.clients.credentials;
 
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -77,8 +78,8 @@ public class SAMLClientCredentialsForm extends Form {
     }
 
     private void fillCredentials() {
-        setInputValue(uploadKeyAlias, "samlKey");
-        setInputValue(uploadStorePassword, "secret");
+        UIUtils.setTextInputValue(uploadKeyAlias, "samlKey");
+        UIUtils.setTextInputValue(uploadStorePassword, "secret");
     }
 
     private void navigateToImport() {

@@ -91,8 +91,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testRealmAdminConsolePage.navigateTo();
         testRealmLoginPage.form().register();
         assertCurrentUrlStartsWith(testRealmRegistrationPage);
-        testRealmRegistrationPage.waitForConfirmPasswordInputPresent();
-        testRealmRegistrationPage.waitForUsernameInputPresent();
+        assertTrue(testRealmRegistrationPage.isConfirmPasswordPresent());
+        assertTrue(testRealmRegistrationPage.isUsernamePresent());
         log.info("verified registration is enabled");
 
         // test email as username
@@ -107,8 +107,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testRealmAdminConsolePage.navigateTo();
         testRealmLoginPage.form().register();
         assertCurrentUrlStartsWith(testRealmRegistrationPage);
-        testRealmRegistrationPage.waitForConfirmPasswordInputPresent();
-        testRealmRegistrationPage.waitForUsernameInputNotPresent();
+        assertTrue(testRealmRegistrationPage.isConfirmPasswordPresent());
+        assertFalse(testRealmRegistrationPage.isUsernamePresent());
         log.info("verified email as username");
 
         // test user reg. disabled
@@ -121,7 +121,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.debug("disabled");
         
         testRealmAdminConsolePage.navigateTo();
-        testRealmLoginPage.form().waitForRegisterLinkNotPresent();
+        assertFalse(testRealmLoginPage.form().isRegisterLinkPresent());
         log.info("verified regisration is disabled");
     }
     
@@ -186,7 +186,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.debug("disabled");
         
         testRealmAdminConsolePage.navigateTo();
-        testRealmLoginPage.form().waitForResetPasswordLinkNotPresent();
+        assertFalse(testRealmLoginPage.form().isForgotPasswordLinkPresent());
         log.info("verified reset password is disabled");
     }
     
@@ -220,8 +220,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
         testAccountPage.navigateTo();
         testAccountPage.signOut();
-        testRealmLoginPage.form().waitForLoginButtonPresent();
-        testRealmLoginPage.form().waitForRememberMeNotPresent();
+        assertTrue(testRealmLoginPage.form().isLoginButtonPresent());
+        assertFalse(testRealmLoginPage.form().isRememberMePresent());
         log.info("verified remember me is disabled");
         
     }

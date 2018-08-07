@@ -51,7 +51,7 @@
         <arquillian-core.version>1.2.1.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>2.2.6</shrinkwrap-resolver.version>
-        <selenium.version>3.11.0</selenium.version>
+        <selenium.version>3.13.0</selenium.version>
         <arquillian-drone.version>2.5.1</arquillian-drone.version>
         <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.0.Final</arquillian-wildfly-container.version>
@@ -61,6 +61,7 @@
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
         <testcontainers.version>1.5.1</testcontainers.version>
+        <appium.client.version>6.1.0</appium.client.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.clients.authorization.scope;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,9 +44,9 @@ public class ScopeForm extends Form {
     protected ModalDialog modalDialog;
 
     public void populate(ScopeRepresentation expected) {
-        setInputValue(name, expected.getName());
-        setInputValue(displayName, expected.getDisplayName());
-        setInputValue(iconUri, expected.getIconUri());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(displayName, expected.getDisplayName());
+        UIUtils.setTextInputValue(iconUri, expected.getIconUri());
         save();
     }
 
@@ -57,9 +58,9 @@ public class ScopeForm extends Form {
     public ScopeRepresentation toRepresentation() {
         ScopeRepresentation representation = new ScopeRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDisplayName(getInputValue(displayName));
-        representation.setIconUri(getInputValue(iconUri));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDisplayName(UIUtils.getTextInputValue(displayName));
+        representation.setIconUri(UIUtils.getTextInputValue(iconUri));
 
         return representation;
     }

@@ -79,7 +79,7 @@ public class Account extends AccountManagement {
     }
     
     public boolean isCurrent() {
-        return URLUtils.currentUrlStartWith(toString());     // Sometimes after login the URL ends with /# or similar
+        return URLUtils.currentUrlStartsWith(toString());     // Sometimes after login the URL ends with /# or similar
     }
 
 }

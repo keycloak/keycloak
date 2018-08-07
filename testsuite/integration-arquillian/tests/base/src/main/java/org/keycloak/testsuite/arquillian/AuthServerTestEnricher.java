@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.arquillian;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
@@ -61,7 +62,7 @@ public class AuthServerTestEnricher {
 
     protected static final Logger log = Logger.getLogger(AuthServerTestEnricher.class);
 
-    @Inject 
+    @Inject
     private Instance<ContainerController> containerConroller;
     @Inject
     private Instance<ContainerRegistry> containerRegistry;
@@ -118,6 +119,18 @@ public class AuthServerTestEnricher {
         int port = sslRequired ? httpsPort : httpPort;
 
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
+    }
+
+    public static String getAuthServerBrowserContextRoot() throws MalformedURLException {
+        return getAuthServerBrowserContextRoot(new URL(getAuthServerContextRoot()));
+    }
+
+    public static String getAuthServerBrowserContextRoot(URL contextRoot) {
+        String browserHost = System.getProperty("auth.server.browserHost");
+        if (StringUtils.isEmpty(browserHost)) {
+            browserHost = contextRoot.getHost();
+        }
+        return String.format("%s://%s:%s", contextRoot.getProtocol(), browserHost, contextRoot.getPort());
     }
 
     public static OnlineManagementClient getManagementClient() {
@@ -259,7 +272,10 @@ public class AuthServerTestEnricher {
 
     private ContainerInfo updateWithAuthServerInfo(ContainerInfo authServerInfo, int clusterPortOffset) {
         try {
-            authServerInfo.setContextRoot(new URL(getAuthServerContextRoot(clusterPortOffset)));
+            URL contextRoot = new URL(getAuthServerContextRoot(clusterPortOffset));
+
+            authServerInfo.setContextRoot(contextRoot);
+            authServerInfo.setBrowserContextRoot(new URL(getAuthServerBrowserContextRoot(contextRoot)));
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException(ex);
         }

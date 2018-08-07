@@ -19,6 +19,7 @@ package org.keycloak.testsuite.arquillian;
 
 import java.io.File;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -80,9 +81,9 @@ public class AppServerTestEnricher {
 
     public static String getAppServerContextRoot(int clusterPortOffset) {
         String host = System.getProperty("app.server.host", "localhost");
-        
+
         boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
-  
+
         int port = sslRequired ? parsePort("app.server.https.port") : parsePort("app.server.http.port");
         String scheme = sslRequired ? "https" : "http";
 
@@ -97,6 +98,18 @@ public class AppServerTestEnricher {
         }
     }
 
+    public static String getAppServerBrowserContextRoot() throws MalformedURLException {
+        return getAppServerBrowserContextRoot(new URL(getAuthServerContextRoot()));
+    }
+
+    public static String getAppServerBrowserContextRoot(URL contextRoot) {
+        String browserHost = System.getProperty("app.server.browserHost");
+        if (StringUtils.isEmpty(browserHost)) {
+            browserHost = contextRoot.getHost();
+        }
+        return String.format("%s://%s:%s", contextRoot.getProtocol(), browserHost, contextRoot.getPort());
+    }
+
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
         testContext = testContextInstance.get();
 
@@ -104,7 +117,7 @@ public class AppServerTestEnricher {
         if (appServerQualifiers == null) { // no adapter test
             log.info("\n\n" + testContext);
             return;
-        } 
+        }
 
         String appServerQualifier = null;
         for (String qualifier : appServerQualifiers) {
@@ -140,11 +153,12 @@ public class AppServerTestEnricher {
     private ContainerInfo updateWithAppServerInfo(ContainerInfo appServerInfo, int clusterPortOffset) {
         try {
 
-            String appServerContextRootStr = isRelative()
+            URL appServerContextRoot = new URL(isRelative()
                     ? getAuthServerContextRoot(clusterPortOffset)
-                    : getAppServerContextRoot(clusterPortOffset);
+                    : getAppServerContextRoot(clusterPortOffset));
 
-            appServerInfo.setContextRoot(new URL(appServerContextRootStr));
+            appServerInfo.setContextRoot(appServerContextRoot);
+            appServerInfo.setBrowserContextRoot(new URL(getAppServerBrowserContextRoot(appServerContextRoot)));
 
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException(ex);
@@ -198,12 +212,12 @@ public class AppServerTestEnricher {
 
     /**
      * Workaround for WFARQ-44. It cannot be used 'cleanServerBaseDir' property.
-     * 
-     * It copies deployments and configuration into $JBOSS_HOME/standalone-test from where 
+     *
+     * It copies deployments and configuration into $JBOSS_HOME/standalone-test from where
      * the container is started for the test
-     * 
+     *
      * @param baseDir string representing folder name, relative to app.server.home, from which the copy is made
-     * @throws IOException 
+     * @throws IOException
      */
     public static void prepareServerDir(String baseDir) throws IOException {
         log.debug("Creating cleanServerBaseDir from: " + baseDir);

@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -78,16 +79,16 @@ public class ResourceForm extends Form {
             }
         }
 
-        setInputValue(name, expected.getName());
-        setInputValue(displayName, expected.getDisplayName());
-        setInputValue(type, expected.getType());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(displayName, expected.getDisplayName());
+        UIUtils.setTextInputValue(type, expected.getType());
 
         for (String uri : expected.getUris()) {
-            setInputValue(newUri, uri);
+            UIUtils.setTextInputValue(newUri, uri);
             addUriButton.click();
         }
 
-        setInputValue(iconUri, expected.getIconUri());
+        UIUtils.setTextInputValue(iconUri, expected.getIconUri());
 
         Set<ScopeRepresentation> scopes = expected.getScopes();
 
@@ -123,15 +124,15 @@ public class ResourceForm extends Form {
     public ResourceRepresentation toRepresentation() {
         ResourceRepresentation representation = new ResourceRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDisplayName(getInputValue(displayName));
-        representation.setType(getInputValue(type));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDisplayName(UIUtils.getTextInputValue(displayName));
+        representation.setType(UIUtils.getTextInputValue(type));
 
         for (WebElement uriInput : driver.findElements(By.xpath("//input[@ng-model='resource.uris[i]']"))) {
-            representation.addUri(getInputValue(uriInput));
+            representation.addUri(UIUtils.getTextInputValue(uriInput));
         }
 
-        representation.setIconUri(getInputValue(iconUri));
+        representation.setIconUri(UIUtils.getTextInputValue(iconUri));
         representation.setScopes(scopesInput.getSelected());
 
         return representation;
@@ -152,7 +153,7 @@ public class ResourceForm extends Form {
         private List<WebElement> selection;
 
         public void select(String name) {
-            setInputValue(search, name);
+            UIUtils.setTextInputValue(search, name);
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

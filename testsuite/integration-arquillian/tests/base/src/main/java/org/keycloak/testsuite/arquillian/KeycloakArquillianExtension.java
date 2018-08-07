@@ -79,7 +79,7 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
 
         builder
-                .override(Configurator.class, WebDriverFactory.class, KeycloakWebDriverConfigurator.class)
+                .observer(KeycloakWebDriverConfigurator.class)
                 .observer(HtmlUnitScreenshots.class)
                 .observer(KeycloakDronePostSetup.class);
 

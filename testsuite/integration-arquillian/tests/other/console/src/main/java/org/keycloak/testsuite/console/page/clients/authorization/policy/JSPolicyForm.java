@@ -20,6 +20,7 @@ import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -46,8 +47,8 @@ public class JSPolicyForm extends Form {
     protected ModalDialog modalDialog;
 
     public void populate(JSPolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
         JavascriptExecutor scriptExecutor = (JavascriptExecutor) driver;
@@ -67,8 +68,8 @@ public class JSPolicyForm extends Form {
     public JSPolicyRepresentation toRepresentation() {
         JSPolicyRepresentation representation = new JSPolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
 
         JavascriptExecutor scriptExecutor = (JavascriptExecutor) driver;

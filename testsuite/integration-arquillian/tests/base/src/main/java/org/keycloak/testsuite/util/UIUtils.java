@@ -1,8 +1,11 @@
 package org.keycloak.testsuite.util;
 
+import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -14,6 +17,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class UIUtils {
+
+    public static final String VALUE_ATTR_NAME = "value";
 
     public static boolean selectContainsOption(Select select, String optionText) {
         for (WebElement option : select.getOptions()) {
@@ -58,7 +63,7 @@ public final class UIUtils {
      * @param element
      */
     public static void navigateToLink(WebElement element) {
-        URLUtils.navigateToUri(element.getAttribute("href"), true);
+        URLUtils.navigateToUri(element.getAttribute("href"));
     }
 
     /**
@@ -79,5 +84,37 @@ public final class UIUtils {
         jsExecutor.executeScript("arguments[0].setAttribute('style', 'display:block !important');", element);
         element.sendKeys(keys);
         jsExecutor.executeScript("arguments[0].setAttribute('style', '" + styleBckp + "');", element);
+    }
+
+    public static String getTextInputValue(WebElement input) {
+        return input.getAttribute(VALUE_ATTR_NAME);
+    }
+
+    public static void setTextInputValue(WebElement input, String value) {
+        input.click();
+        input.clear();
+        if (value != null) {
+            input.sendKeys(value);
+        }
+
+        WebDriver driver = getCurrentDriver();
+        if (driver instanceof AndroidDriver) {
+            AndroidDriver androidDriver = (AndroidDriver) driver;
+            androidDriver.hideKeyboard(); // stability improvement
+        }
+    }
+
+    /**
+     * Contains some browser-specific tweaks for getting an element text.
+     *
+     * @param element
+     * @return
+     */
+    public static String getTextFromElement(WebElement element) {
+        String text = element.getText();
+        if (getCurrentDriver() instanceof SafariDriver) {
+            return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
+        }
+        return text;
     }
 }

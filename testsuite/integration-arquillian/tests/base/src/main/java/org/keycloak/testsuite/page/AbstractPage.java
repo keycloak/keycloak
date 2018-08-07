@@ -92,15 +92,11 @@ public abstract class AbstractPage {
     }
 
     public void navigateTo() {
-        navigateTo(true);
-    }
-
-    public void navigateTo(boolean waitForMatch) {
-        URLUtils.navigateToUri(buildUri().toASCIIString(), waitForMatch);
+        URLUtils.navigateToUri(buildUri().toASCIIString());
     }
 
     public boolean isCurrent() {
-        return URLUtils.currentUrlEqual(toString());
+        return URLUtils.currentUrlEquals(toString());
     }
 
     public void assertCurrent() {

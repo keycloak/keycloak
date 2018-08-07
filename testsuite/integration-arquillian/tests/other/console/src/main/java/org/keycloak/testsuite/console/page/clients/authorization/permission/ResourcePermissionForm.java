@@ -41,6 +41,7 @@ import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -102,14 +103,14 @@ public class ResourcePermissionForm extends Form {
     private GroupPolicy groupPolicy;
 
     public void populate(ResourcePermissionRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         decisionStrategy.selectByValue(expected.getDecisionStrategy().name());
 
         resourceTypeSwitch.setOn(expected.getResourceType() != null);
 
         if (expected.getResourceType() != null) {
-            setInputValue(resourceType, expected.getResourceType());
+            UIUtils.setTextInputValue(resourceType, expected.getResourceType());
         } else {
             resourceTypeSwitch.setOn(false);
             resourceSelect.update(expected.getResources());
@@ -132,11 +133,11 @@ public class ResourcePermissionForm extends Form {
     public ResourcePermissionRepresentation toRepresentation() {
         ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setDecisionStrategy(DecisionStrategy.valueOf(decisionStrategy.getFirstSelectedOption().getText().toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
-        String inputValue = getInputValue(resourceType);
+        String inputValue = UIUtils.getTextInputValue(resourceType);
 
         if (!"".equals(inputValue)) {
             representation.setResourceType(inputValue);

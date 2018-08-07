@@ -22,6 +22,7 @@
 package org.keycloak.testsuite.console.page.clients.clustering;
 
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -45,7 +46,7 @@ public class ClientClusteringForm extends Form {
     private WebElement hostNameInput;
 
     private void setNodeReRegistrationTimeout(String value) {
-        setInputValue(nodeReRegistrationTimeoutInput, value);
+        UIUtils.setTextInputValue(nodeReRegistrationTimeoutInput, value);
     }
     
     private void setNodeReRegistrationTimeoutUnit(String value) {
@@ -60,7 +61,7 @@ public class ClientClusteringForm extends Form {
     public void addNode(String hostName) {
         registerNodeManuallyLink.click();
 //        waitforElement(hostNameInput);
-        setInputValue(hostNameInput, hostName);
+        UIUtils.setTextInputValue(hostNameInput, hostName);
         save();
     }
 }

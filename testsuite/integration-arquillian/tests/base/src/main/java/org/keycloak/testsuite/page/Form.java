@@ -19,7 +19,6 @@ package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -53,22 +52,6 @@ public class Form {
         guardAjax(cancel).click();
     }
 
-    public static String getInputValue(WebElement input) {
-        return input.getAttribute(VALUE);
-    }
-
-    public static final String VALUE = "value";
-
-    public static void setInputValue(WebElement input, String value) {
-        if (input.isEnabled()) {
-            input.clear();
-            if (value != null) {
-                input.sendKeys(value);
-            }
-        } else {
-            // TODO log warning
-        }
-    }
     public WebElement saveBtn() {
         return save;
     }

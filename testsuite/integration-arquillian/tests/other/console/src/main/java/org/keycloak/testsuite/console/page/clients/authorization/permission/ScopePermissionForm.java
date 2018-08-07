@@ -44,6 +44,7 @@ import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -108,8 +109,8 @@ public class ScopePermissionForm extends Form {
     private GroupPolicy groupPolicy;
 
     public void populate(ScopePermissionRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         decisionStrategy.selectByValue(expected.getDecisionStrategy().name());
 
         Set<String> resources = expected.getResources();
@@ -141,8 +142,8 @@ public class ScopePermissionForm extends Form {
     public ScopePermissionRepresentation toRepresentation() {
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setDecisionStrategy(DecisionStrategy.valueOf(decisionStrategy.getFirstSelectedOption().getText().toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
         representation.setResources(resourceSelect.getSelected());

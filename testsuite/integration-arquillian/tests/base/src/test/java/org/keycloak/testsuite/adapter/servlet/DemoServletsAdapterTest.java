@@ -87,7 +87,6 @@ import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Applications;
@@ -261,6 +260,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         loginEventsPage.setConsoleRealm(DEMO);
         applicationsPage.setAuthRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
+        oAuthGrantPage.setAuthRealm(DEMO);
     }
     
     @Before
@@ -433,7 +433,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -508,7 +508,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -534,7 +534,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         log.info("Current url: " + driver.getCurrentUrl());
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         log.info("Current url: " + driver.getCurrentUrl());
@@ -566,7 +566,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -723,7 +723,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testTokenMinTTL() {
         // Login
         tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(tokenMinTTLPage);
@@ -767,7 +767,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Test I need to reauthenticate with prompt=login
         String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
-        URLUtils.navigateToUri(appUri, true);
+        URLUtils.navigateToUri(appUri);
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         AccessToken token = tokenMinTTLPage.getAccessToken();
@@ -805,14 +805,14 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String portalUri = securePortal.getUriBuilder().build().toString();
             UriBuilder uriBuilder = securePortal.getUriBuilder();
             String appUri = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de en").build().toString();
-            URLUtils.navigateToUri(appUri, true);
+            URLUtils.navigateToUri(appUri);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
             // check the ui_locales param is there
             Map<String, String> parameters = getQueryFromUrl(driver.getCurrentUrl());
             assertThat(parameters.get(OAuth2Constants.UI_LOCALES_PARAM), allOf(containsString("de"), containsString("en")));
 
             String appUriDe = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de").build().toString();
-            URLUtils.navigateToUri(appUriDe, true);
+            URLUtils.navigateToUri(appUriDe);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
             // check that the page is in german
