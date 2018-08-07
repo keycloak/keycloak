@@ -16,8 +16,9 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.keycloak.OAuth2Constants;
+import org.hamcrest.Matchers;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.common.constants.KerberosConstants;
@@ -29,8 +30,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -43,6 +42,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -51,7 +51,8 @@ import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -84,16 +85,26 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected RealmResource masterRealm;
 
     protected void testMigratedData() {
+        testMigratedData(true);
+    }
+
+    protected void testMigratedData(boolean supportsAuthzService) {
         log.info("testing migrated data");
         //master realm
         testMigratedMasterData();
         //migrationRealm
-        testMigratedMigrationData();
+        testMigratedMigrationData(supportsAuthzService);
     }
 
-    protected void testMigratedMigrationData() {
+    protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
-        assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
+        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
+
+        if (supportsAuthzService) {
+            expectedClientIds.add("authz-servlet");
+        }
+
+        assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
         String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
         assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
@@ -199,8 +210,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testOfflineScopeAddedToClient();
     }
 
-    protected void testMigrationTo4_2_0() {
+    protected void testMigrationTo4_2_0(boolean supportsAuthzService) {
         testRequiredActionsPriority(this.masterRealm, this.migrationRealm);
+
+        if (supportsAuthzService) {
+            testResourceWithMultipleUris();
+        }
     }
 
     private void testCliConsoleScopeSize(RealmResource realm) {
@@ -332,6 +347,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         List<PolicyRepresentation> migratedRulesPolicies = policies.stream().filter(policyRepresentation -> "rules".equals(policyRepresentation.getType())).collect(Collectors.toList());
 
         assertEquals(1, migratedRulesPolicies.size());
+    }
+
+    private void testResourceWithMultipleUris() {
+        ClientsResource clients = migrationRealm.clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
+        ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
+        org.junit.Assert.assertThat(resource.getUris(), Matchers.containsInAnyOrder("/*"));
     }
 
     protected void testAuthorizationServices(RealmResource... realms) {
@@ -513,8 +535,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo3_4_2();
     }
 
-    protected void testMigrationTo4_x() {
+    protected void testMigrationTo4_x(boolean supportsAuthzServices) {
         testMigrationTo4_0_0();
-        testMigrationTo4_2_0();
+        testMigrationTo4_2_0(supportsAuthzServices);
+    }
+
+    protected void testMigrationTo4_x() {
+        testMigrationTo4_x(true);
     }
 }

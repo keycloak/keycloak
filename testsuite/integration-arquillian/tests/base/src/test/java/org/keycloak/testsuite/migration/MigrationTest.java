@@ -85,10 +85,10 @@ public class MigrationTest extends AbstractMigrationTest {
     @Test
     @Migration(versionFrom = "1.9.8.Final")
     public void migration1_9_8Test() throws Exception {
-        testMigratedData();
+        testMigratedData(false);
         testMigrationTo2_x();
         testMigrationTo3_x();
-        testMigrationTo4_x();
+        testMigrationTo4_x(false);
     }
 
     @Test
@@ -96,5 +96,4 @@ public class MigrationTest extends AbstractMigrationTest {
     public void migrationInAuthorizationServicesTest() {
         testDroolsToRulesPolicyTypeMigration();
     }
-
 }
