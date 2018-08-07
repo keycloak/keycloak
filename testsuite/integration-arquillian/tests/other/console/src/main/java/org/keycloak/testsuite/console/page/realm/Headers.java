@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -31,11 +32,11 @@ public class Headers extends SecurityDefenses {
         private WebElement contentSecurityPolicy;
 
         public void setXFrameOptions(String value) {
-            setInputValue(xFrameOptions, value);
+            UIUtils.setTextInputValue(xFrameOptions, value);
         }
 
         public void setContentSecurityPolicy(String value) {
-            setInputValue(contentSecurityPolicy, value);
+            UIUtils.setTextInputValue(contentSecurityPolicy, value);
         }
     }
 }

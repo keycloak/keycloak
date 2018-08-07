@@ -26,7 +26,9 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerBrowserContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 
 import java.lang.annotation.Annotation;
@@ -107,6 +109,12 @@ public class URLProvider extends URLResourceProvider {
                 if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
                 
                 return appServerBackendsInfo.get(0).getContextRoot();
+            }
+            if (AuthServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
+                return suiteContext.get().getAuthServerInfo().getBrowserContextRoot();
+            }
+            if (AppServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
+                return testContext.get().getAppServerInfo().getBrowserContextRoot();
             }
         }
 

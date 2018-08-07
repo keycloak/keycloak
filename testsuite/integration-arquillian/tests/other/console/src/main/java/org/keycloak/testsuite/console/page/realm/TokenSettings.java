@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -89,7 +90,7 @@ public class TokenSettings extends RealmSettings {
         private void setTimeout(Select timeoutElement, WebElement unitElement,
                 int timeout, TimeUnit unit) {
             timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
-            setInputValue(unitElement, valueOf(timeout));
+            UIUtils.setTextInputValue(unitElement, valueOf(timeout));
         }
 
         public boolean isOperationEquals(String tokenType, int timeout, TimeUnit unit) {

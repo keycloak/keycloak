@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -64,9 +65,9 @@ public class GroupPolicyForm extends Form {
     private WebDriver driver;
 
     public void populate(GroupPolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
-        setInputValue(groupsClaim, expected.getGroupsClaim());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(groupsClaim, expected.getGroupsClaim());
         logic.selectByValue(expected.getLogic().name());
 
 
@@ -135,10 +136,10 @@ public class GroupPolicyForm extends Form {
     public GroupPolicyRepresentation toRepresentation() {
         GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
 
-        String groupsClaimValue = getInputValue(groupsClaim);
+        String groupsClaimValue = UIUtils.getTextInputValue(groupsClaim);
 
         representation.setGroupsClaim(groupsClaim == null || "".equals(groupsClaimValue.trim()) ? null : groupsClaimValue);
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));

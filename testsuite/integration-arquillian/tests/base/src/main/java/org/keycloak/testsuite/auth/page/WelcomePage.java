@@ -21,7 +21,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.page.Form.setInputValue;
+import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
@@ -47,9 +47,9 @@ public class WelcomePage extends AuthServer {
     }
 
     public void setPassword(String username, String password) {
-        setInputValue(usernameInput, username);
-        setInputValue(passwordInput, password);
-        setInputValue(passwordConfirmationInput, password);
+        setTextInputValue(usernameInput, username);
+        setTextInputValue(passwordInput, password);
+        setTextInputValue(passwordConfirmationInput, password);
 
         clickLink(createButton);
 

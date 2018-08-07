@@ -136,7 +136,7 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
 
         // Try to login again. It should fail now because not yet allowed to download new keys
         tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         URLAssert.assertCurrentUrlStartsWith(tokenMinTTLPage.getInjectedUrl().toString());
@@ -281,7 +281,7 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
 
     private void loginToTokenMinTtlApp() {
         tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(tokenMinTTLPage);

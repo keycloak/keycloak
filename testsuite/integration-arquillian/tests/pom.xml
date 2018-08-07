@@ -52,6 +52,7 @@
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
 
         <auth.server.host>localhost</auth.server.host>
+        <auth.server.browserHost/> <!-- if set, this host will be used by the browser instead of auth.server.host -->
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.events.http.port>8089</auth.server.events.http.port>
@@ -145,14 +146,22 @@
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
         <github.username/>
         <github.secretToken/>
-        <ieDriverArch/>
+        <ieDriverArch>Win32</ieDriverArch>
         <js.browser>phantomjs</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <firefox_binary>/usr/bin/firefox</firefox_binary>
+        <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>true</firefoxLegacyDriver>
         <chromeBinary/>
         <chromeArguments/>
+
+        <appium.platformName/>
+        <appium.deviceName/>
+        <appium.browserName/>
+        <appium.avd/>
+        <appium.automationName/>
+        <appium.noReset/>
+        <appium.fullReset/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -391,6 +400,7 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
+                            <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
 
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
@@ -403,6 +413,7 @@
                             <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
 
                             <auth.server.host>${auth.server.host}</auth.server.host>
+                            <auth.server.browserHost>${auth.server.browserHost}</auth.server.browserHost>
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.events.http.port>${auth.server.events.http.port}</auth.server.events.http.port>
@@ -471,6 +482,14 @@
                             <chromeArguments>${chromeArguments}</chromeArguments>
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
+
+                            <appium.platformName>${appium.platformName}</appium.platformName>
+                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
+                            <appium.browserName>${appium.browserName}</appium.browserName>
+                            <appium.avd>${appium.avd}</appium.avd>
+                            <appium.automationName>${appium.automationName}</appium.automationName>
+                            <appium.noReset>${appium.noReset}</appium.noReset>
+                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
 
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>
@@ -1464,6 +1483,12 @@
                             <artifactId>guava</artifactId>
                         </exclusion>
                     </exclusions>
+                </dependency>
+
+                <dependency>
+                    <groupId>io.appium</groupId>
+                    <artifactId>java-client</artifactId>
+                    <version>${appium.client.version}</version>
                 </dependency>
 
                 <dependency>

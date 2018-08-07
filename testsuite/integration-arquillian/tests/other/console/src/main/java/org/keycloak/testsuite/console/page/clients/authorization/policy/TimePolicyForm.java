@@ -20,6 +20,7 @@ import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -82,21 +83,21 @@ public class TimePolicyForm extends Form {
     protected ModalDialog modalDialog;
 
     public void populate(TimePolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
-        setInputValue(notBefore, expected.getNotBefore());
-        setInputValue(notOnOrAfter, expected.getNotOnOrAfter());
-        setInputValue(dayMonth, expected.getDayMonth());
-        setInputValue(dayMonthEnd, expected.getDayMonthEnd());
-        setInputValue(month, expected.getMonth());
-        setInputValue(monthEnd, expected.getMonthEnd());
-        setInputValue(year, expected.getYear());
-        setInputValue(yearEnd, expected.getYearEnd());
-        setInputValue(hour, expected.getHour());
-        setInputValue(hourEnd, expected.getHourEnd());
-        setInputValue(minute, expected.getMinute());
-        setInputValue(minuteEnd, expected.getMinuteEnd());
+        UIUtils.setTextInputValue(notBefore, expected.getNotBefore());
+        UIUtils.setTextInputValue(notOnOrAfter, expected.getNotOnOrAfter());
+        UIUtils.setTextInputValue(dayMonth, expected.getDayMonth());
+        UIUtils.setTextInputValue(dayMonthEnd, expected.getDayMonthEnd());
+        UIUtils.setTextInputValue(month, expected.getMonth());
+        UIUtils.setTextInputValue(monthEnd, expected.getMonthEnd());
+        UIUtils.setTextInputValue(year, expected.getYear());
+        UIUtils.setTextInputValue(yearEnd, expected.getYearEnd());
+        UIUtils.setTextInputValue(hour, expected.getHour());
+        UIUtils.setTextInputValue(hourEnd, expected.getHourEnd());
+        UIUtils.setTextInputValue(minute, expected.getMinute());
+        UIUtils.setTextInputValue(minuteEnd, expected.getMinuteEnd());
 
         if (save) {
             save();
@@ -111,21 +112,21 @@ public class TimePolicyForm extends Form {
     public TimePolicyRepresentation toRepresentation() {
         TimePolicyRepresentation representation = new TimePolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
-        representation.setDayMonth(getInputValue(dayMonth));
-        representation.setDayMonthEnd(getInputValue(dayMonthEnd));
-        representation.setMonth(getInputValue(month));
-        representation.setMonthEnd(getInputValue(monthEnd));
-        representation.setYear(getInputValue(year));
-        representation.setYearEnd(getInputValue(yearEnd));
-        representation.setHour(getInputValue(hour));
-        representation.setHourEnd(getInputValue(hourEnd));
-        representation.setMinute(getInputValue(minute));
-        representation.setMinuteEnd(getInputValue(minuteEnd));
-        representation.setNotBefore(getInputValue(notBefore));
-        representation.setNotOnOrAfter(getInputValue(notOnOrAfter));
+        representation.setDayMonth(UIUtils.getTextInputValue(dayMonth));
+        representation.setDayMonthEnd(UIUtils.getTextInputValue(dayMonthEnd));
+        representation.setMonth(UIUtils.getTextInputValue(month));
+        representation.setMonthEnd(UIUtils.getTextInputValue(monthEnd));
+        representation.setYear(UIUtils.getTextInputValue(year));
+        representation.setYearEnd(UIUtils.getTextInputValue(yearEnd));
+        representation.setHour(UIUtils.getTextInputValue(hour));
+        representation.setHourEnd(UIUtils.getTextInputValue(hourEnd));
+        representation.setMinute(UIUtils.getTextInputValue(minute));
+        representation.setMinuteEnd(UIUtils.getTextInputValue(minuteEnd));
+        representation.setNotBefore(UIUtils.getTextInputValue(notBefore));
+        representation.setNotOnOrAfter(UIUtils.getTextInputValue(notOnOrAfter));
 
         return representation;
     }

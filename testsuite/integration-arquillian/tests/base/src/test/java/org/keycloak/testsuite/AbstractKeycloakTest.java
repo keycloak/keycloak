@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite;
 
+import io.appium.java_client.AppiumDriver;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -29,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -83,6 +85,7 @@ import java.util.concurrent.TimeoutException;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 
 /**
  *
@@ -93,6 +96,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public abstract class AbstractKeycloakTest {
 
     protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "false"));
+
+    protected static final String ENGLISH_LOCALE_NAME = "English";
 
     protected Logger log = Logger.getLogger(this.getClass());
 
@@ -173,6 +178,8 @@ public abstract class AbstractKeycloakTest {
             if (!isImportAfterEachMethod()) {
                 testContext.setTestRealmReps(testRealmReps);
             }
+
+            afterAbstractKeycloakTestRealmImport();
         }
 
         oauth.init(adminClient, driver);
@@ -193,6 +200,8 @@ public abstract class AbstractKeycloakTest {
     }
     protected void postAfterAbstractKeycloak() {
     }
+
+    protected void afterAbstractKeycloakTestRealmImport() {}
 
     @After
     public void afterAbstractKeycloakTest() {
@@ -269,9 +278,47 @@ public abstract class AbstractKeycloakTest {
 
     protected void deleteAllCookiesForRealm(String realmName) {
         // masterRealmPage.navigateTo();
-        driver.navigate().to(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
+    }
+
+    // this is useful mainly for smartphones as cookies deletion doesn't work there
+    protected void deleteAllSessionsInRealm(String realmName) {
+        log.info("removing all sessions from '" + realmName + "' realm...");
+        try {
+            adminClient.realm(realmName).logoutAll();
+            log.info("sessions successfully deleted");
+        }
+        catch (NotFoundException e) {
+            log.warn("realm not found");
+        }
+    }
+
+    protected void resetRealmSession(String realmName) {
+        deleteAllCookiesForRealm(realmName);
+
+        if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
+            try {
+                log.info("resetting realm session");
+
+                final RealmRepresentation realmRep = adminClient.realm(realmName).toRepresentation();
+
+                deleteAllSessionsInRealm(realmName); // logout users
+
+                if (realmRep.isInternationalizationEnabled()) { // reset the locale
+                    String locale = getDefaultLocaleName(realmRep.getRealm());
+                    loginPage.localeDropdown().selectByText(locale);
+                    log.info("locale reset to " + locale);
+                }
+            } catch (NotFoundException e) {
+                log.warn("realm not found");
+            }
+        }
+    }
+
+    protected String getDefaultLocaleName(String realmName) {
+        return ENGLISH_LOCALE_NAME;
     }
 
     public void setDefaultPageUriParameters() {

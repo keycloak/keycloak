@@ -369,7 +369,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void assertAccount() {
-        assertTrue(URLUtils.currentUrlStartWith(accountPage.toString())); // Sometimes after login the URL ends with /# or similar
+        assertTrue(URLUtils.currentUrlStartsWith(accountPage.toString())); // Sometimes after login the URL ends with /# or similar
 
         assertEquals(getConfig("profile.firstName"), accountPage.getFirstName());
         assertEquals(getConfig("profile.lastName"), accountPage.getLastName());

@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.clients.mappers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -150,7 +151,7 @@ public class CreateClientMappersForm extends Form {
     }
     
     public void setName(String value) {
-        setInputValue(nameElement, value);
+        UIUtils.setTextInputValue(nameElement, value);
     }
     
     public boolean isConsentRequired() {
@@ -162,11 +163,11 @@ public class CreateClientMappersForm extends Form {
     }
 
     public String getConsentText() {
-        return getInputValue(consentTextElement);
+        return UIUtils.getTextInputValue(consentTextElement);
     }
 
     public void setConsentText(String consentText) {
-        setInputValue(consentTextElement, consentText);
+        UIUtils.setTextInputValue(consentTextElement, consentText);
     }
 
     public void setMapperType(String type) {
@@ -174,27 +175,27 @@ public class CreateClientMappersForm extends Form {
     }
     
     public String getProperty() {
-        return getInputValue(propertyInput);
+        return UIUtils.getTextInputValue(propertyInput);
     }
     
     public void setProperty(String value) {
-        setInputValue(propertyInput, value);
+        UIUtils.setTextInputValue(propertyInput, value);
     }
 
     public String getUserAttribute() {
-        return getInputValue(userAttributeInput);
+        return UIUtils.getTextInputValue(userAttributeInput);
     }
 
     public void setUserAttribute(String value) {
-        setInputValue(userAttributeInput, value);
+        UIUtils.setTextInputValue(userAttributeInput, value);
     }
 
     public String getUserSessionNote() {
-        return getInputValue(userSessionNoteInput);
+        return UIUtils.getTextInputValue(userSessionNoteInput);
     }
 
     public void setUserSessionNote(String value) {
-        setInputValue(userSessionNoteInput, value);
+        UIUtils.setTextInputValue(userSessionNoteInput, value);
     }
 
     public boolean isMultivalued() {
@@ -206,35 +207,35 @@ public class CreateClientMappersForm extends Form {
     }
 
     public String getRole() {
-        return getInputValue(roleInput);
+        return UIUtils.getTextInputValue(roleInput);
     }
 
     public void setRole(String value) {
-        setInputValue(roleInput, value);
+        UIUtils.setTextInputValue(roleInput, value);
     }
 
     public String getNewRole() {
-        return getInputValue(newRoleInput);
+        return UIUtils.getTextInputValue(newRoleInput);
     }
 
     public void setNewRole(String value) {
-        setInputValue(newRoleInput, value);
+        UIUtils.setTextInputValue(newRoleInput, value);
     }
 
     public String getTokenClaimName() {
-        return getInputValue(tokenClaimNameInput);
+        return UIUtils.getTextInputValue(tokenClaimNameInput);
     }
 
     public void setTokenClaimName(String value) {
-        setInputValue(tokenClaimNameInput, value);
+        UIUtils.setTextInputValue(tokenClaimNameInput, value);
     }
 
     public String getTokenClaimValue() {
-        return getInputValue(tokenClaimValueInput);
+        return UIUtils.getTextInputValue(tokenClaimValueInput);
     }
 
     public void setTokenClaimValue(String value) {
-        setInputValue(tokenClaimValueInput, value);
+        UIUtils.setTextInputValue(tokenClaimValueInput, value);
     }
 
     public String getClaimJSONType() {
@@ -292,11 +293,11 @@ public class CreateClientMappersForm extends Form {
     private OnOffSwitch singleGroupAttributeSwitch;
     
     public void setRoleAttributeName(String value) {
-        setInputValue(roleAttributeNameInput, value);
+        UIUtils.setTextInputValue(roleAttributeNameInput, value);
     }
     
     public void setFriendlyName(String value) {
-        setInputValue(friendlyNameInput, value);
+        UIUtils.setTextInputValue(friendlyNameInput, value);
     }
 
     public void setSamlAttributeNameFormat(String value) {
@@ -308,11 +309,11 @@ public class CreateClientMappersForm extends Form {
     }
     
     public void setAttributeValue(String value) {
-        setInputValue(attributeValueInput, value);
+        UIUtils.setTextInputValue(attributeValueInput, value);
     }
     
     public void setGroupAttributeName(String value) {
-        setInputValue(groupAttributeNameInput, value);
+        UIUtils.setTextInputValue(groupAttributeNameInput, value);
     }
     
     public void setSingleGroupAttribute(boolean value) {

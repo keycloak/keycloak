@@ -16,6 +16,7 @@ import java.util.Objects;
 public class ContainerInfo implements Comparable<ContainerInfo> {
 
     private URL contextRoot;
+    private URL browserContextRoot;
     private Container arquillianContainer;
 
     public ContainerInfo(Container arquillianContainer) {
@@ -51,6 +52,14 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
 
     public void setContextRoot(URL contextRoot) {
         this.contextRoot = contextRoot;
+    }
+
+    public void setBrowserContextRoot(URL browserContextRoot) {
+        this.browserContextRoot = browserContextRoot;
+    }
+
+    public URL getBrowserContextRoot() {
+        return browserContextRoot;
     }
 
     public boolean isUndertow() {

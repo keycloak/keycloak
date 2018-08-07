@@ -22,6 +22,7 @@
 package org.keycloak.testsuite.console.page.authentication.flows;
 
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -59,8 +60,8 @@ public class CreateFlowForm extends Form {
     }
     
     public void setValues(String alias, String description, FlowType flowType) {
-        setInputValue(aliasInput, alias);
-        setInputValue(descriptionTextarea, description);
+        UIUtils.setTextInputValue(aliasInput, alias);
+        UIUtils.setTextInputValue(descriptionTextarea, description);
         flowTypeSelect.selectByVisibleText(flowType.getName());
         save();
     }

@@ -91,7 +91,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //configure OTP for test user
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
         String totpSecret = testRealmLoginPage.form().totpForm().getTotpSecret();
         testRealmLoginPage.form().totpForm().setTotp(totp.generateTOTP(totpSecret));
         testRealmLoginPage.form().totpForm().submit();
@@ -117,7 +116,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -134,7 +132,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -170,7 +167,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -192,7 +188,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -238,7 +233,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -285,7 +279,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -339,7 +332,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
@@ -389,7 +381,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         configureOTP();
         testRealmLoginPage.form().login(testUser);
-        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);

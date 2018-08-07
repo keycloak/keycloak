@@ -40,6 +40,7 @@
         <module>adapters</module>
         <module>sssd</module>
         <module>springboot-tests</module>
+        <module>base-ui</module>
     </modules>
 
     <properties>
@@ -66,7 +67,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*,log4j.properties</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>

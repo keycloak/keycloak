@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -51,12 +52,11 @@ public class AppServerWelcomePage extends AppServerContextRoot {
     }
 
     public void navigateToConsole() {
-        URLUtils.navigateToUri(getInjectedUrl().toString() + "/console", true);
-        loginPage.form().waitForLoginButtonPresent();
+        URLUtils.navigateToUri(getInjectedUrl().toString() + "/console");
     }
 
     public void login(String username, String password) {
-        loginPage.form().waitForLoginButtonPresent();
+        assertTrue(loginPage.form().isLoginButtonPresent());
         loginPage.form().login(username, password);
         waitForPageToLoad();
     }

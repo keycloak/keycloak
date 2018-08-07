@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.auth.page.account;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.auth.page.PasswordFields;
 
 import javax.ws.rs.core.UriBuilder;
 

@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.AbstractMultipleSelect2;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -65,8 +66,8 @@ public class RolePolicyForm extends Form {
     protected ModalDialog modalDialog;
 
     public void populate(RolePolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
         Set<RolePolicyRepresentation.RoleDefinition> roles = expected.getRoles();
@@ -124,8 +125,8 @@ public class RolePolicyForm extends Form {
     public RolePolicyRepresentation toRepresentation() {
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
 
         Set<RolePolicyRepresentation.RoleDefinition> roles = realmRoleSelect.getSelected();
