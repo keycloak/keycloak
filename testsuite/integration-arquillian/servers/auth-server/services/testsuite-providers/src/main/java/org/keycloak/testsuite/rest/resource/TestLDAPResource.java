@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest.resource;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -160,5 +161,21 @@ public class TestLDAPResource {
 
         LDAPObject james = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
         LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
+    }
+
+
+    /**
+     * Remove specified user directly just from the LDAP server
+     */
+    @DELETE
+    @Path("/remove-ldap-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void removeLDAPUser(@QueryParam("username") String ldapUsername) {
+        ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(session, realm);
+        UserStorageProviderModel ldapModel = new UserStorageProviderModel(ldapCompModel);
+        LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+        LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, realm,
+                ldapProvider.getLdapIdentityStore().getConfig(), ldapUsername);
     }
 }

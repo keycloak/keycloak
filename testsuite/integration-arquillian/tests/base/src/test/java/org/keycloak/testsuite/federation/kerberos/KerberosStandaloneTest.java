@@ -18,11 +18,7 @@
 package org.keycloak.testsuite.federation.kerberos;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 import javax.ws.rs.client.Entity;
@@ -33,28 +29,34 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.util.ldap.KerberosEmbeddedServer;
 
 /**
+ * Test for the KerberosFederationProvider (kerberos without LDAP integration)
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KerberosStandaloneTest extends AbstractKerberosTest {
+public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-standalone-connection.properties";
 
     @ClassRule
-    public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION);
+    public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION, KerberosEmbeddedServer.DEFAULT_KERBEROS_REALM);
+
+
+    @Override
+    protected KerberosRule getKerberosRule() {
+        return kerberosRule;
+    }
+
 
     @Override
     protected CommonKerberosConfig getKerberosConfig() {
@@ -63,44 +65,15 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
     @Override
     protected ComponentRepresentation getUserStorageConfiguration() {
-        Map<String,String> kerberosConfig = kerberosRule.getConfig();
-        MultivaluedHashMap<String, String> config = toComponentConfig(kerberosConfig);
-
-        UserStorageProviderModel model = new UserStorageProviderModel();
-        model.setLastSync(0);
-        model.setChangedSyncPeriod(-1);
-        model.setFullSyncPeriod(-1);
-        model.setName("kerberos-standalone");
-        model.setPriority(0);
-        model.setProviderId(KerberosFederationProviderFactory.PROVIDER_NAME);
-        model.setConfig(config);
-
-        ComponentRepresentation rep = ModelToRepresentation.toRepresentationWithoutConfig(model);
-        return rep;
+        return getUserStorageConfiguration("kerberos-standalone", KerberosFederationProviderFactory.PROVIDER_NAME);
     }
 
-
-    @Override
-    protected boolean isCaseSensitiveLogin() {
-        return kerberosRule.isCaseSensitiveLogin();
-    }
-    
-    @Override
-    protected boolean isStartEmbeddedLdapServer() {
-        return kerberosRule.isStartEmbeddedLdapServer();
-    }
-
-
-    @Override
-    protected void setKrb5ConfPath() {
-        kerberosRule.setKrb5ConfPath(testingClient.testing());
-    }
 
     @Test
     public void spnegoLoginTest() throws Exception {
-        spnegoLoginTestImpl();
+        assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
-        // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
+        // Assert user was imported and hasn't any required action on him. Profile info is NOT synced from LDAP. Just username is filled and email is "guessed"
         assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, false);
     }
 
