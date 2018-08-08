@@ -106,7 +106,8 @@ class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
 
         // EhCache in disabled-like-mode
         Configuration ehCacheConfig = new Configuration();
-        CacheConfiguration defaultCache = new CacheConfiguration("default", 1).eternal(false).timeToIdleSeconds(30)
+        ehCacheConfig.setName(name);
+        CacheConfiguration defaultCache = new CacheConfiguration(name + "-default", 1).eternal(false).timeToIdleSeconds(30)
                 .timeToLiveSeconds(30).overflowToDisk(false);
         ehCacheConfig.addDefaultCache(defaultCache);
         CacheService cacheService = new CacheService(new CacheManager(ehCacheConfig));

@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -120,7 +121,7 @@ public class LDAPTestUtils {
     public static ComponentModel getLdapProviderModel(KeycloakSession session, RealmModel realm) {
         List<ComponentModel> components = realm.getComponents(realm.getId(), UserStorageProvider.class.getName());
         for (ComponentModel component : components) {
-            if ("test-ldap".equals(component.getName())) {
+            if (LDAPStorageProviderFactory.PROVIDER_NAME.equals(component.getProviderId())) {
                 return component;
             }
         }

@@ -20,6 +20,7 @@ package org.keycloak.testsuite.client.resources;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,4 +54,13 @@ public interface TestingLDAPResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     void prepareGroupsLDAPTest();
+
+
+    /**
+     * Remove specified user directly just from the LDAP server
+     */
+    @DELETE
+    @Path("/remove-ldap-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void removeLDAPUser(@QueryParam("username") String ldapUsername);
 }

@@ -22,6 +22,20 @@ userPassword: secret
 krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KEYCLOAK.ORG
 krb5KeyVersionNumber: 0
 
+# Cross-realm trust support! Realm KEYCLOAK.ORG will trust the realm KC2.COM
+dn: uid=krbtgt2,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: KDC Service
+sn: Service
+uid: krbtgt2
+userPassword: secret
+krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KC2.COM
+krb5KeyVersionNumber: 0
+
 dn: uid=ldap,ou=People,dc=keycloak,dc=org
 objectClass: top
 objectClass: person

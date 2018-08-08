@@ -1,15 +1,15 @@
-dn: dc=keycloak,dc=org
+dn: dc=kc2,dc=com
 objectclass: dcObject
 objectclass: organization
-o: Keycloak
-dc: Keycloak
+o: Kc2
+dc: Kc2
 
-dn: ou=People,dc=keycloak,dc=org
+dn: ou=People,dc=kc2,dc=com
 objectClass: organizationalUnit
 objectClass: top
 ou: People
 
-dn: uid=krbtgt,ou=People,dc=keycloak,dc=org
+dn: uid=krbtgt,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -19,11 +19,11 @@ cn: KDC Service
 sn: Service
 uid: krbtgt
 userPassword: secret
-krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KEYCLOAK.ORG
+krb5PrincipalName: krbtgt/KC2.COM@KC2.COM
 krb5KeyVersionNumber: 0
 
 # Cross-realm trust support! Realm KEYCLOAK.ORG will trust the realm KC2.COM
-dn: uid=krbtgt2,ou=People,dc=keycloak,dc=org
+dn: uid=krbtgt2,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -36,7 +36,7 @@ userPassword: secret
 krb5PrincipalName: krbtgt/KEYCLOAK.ORG@KC2.COM
 krb5KeyVersionNumber: 0
 
-dn: uid=ldap,ou=People,dc=keycloak,dc=org
+dn: uid=ldap,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -49,7 +49,7 @@ userPassword: randall
 krb5PrincipalName: ${ldapSaslPrincipal}
 krb5KeyVersionNumber: 0
 
-dn: uid=HTTP,ou=People,dc=keycloak,dc=org
+dn: uid=HTTP,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -59,10 +59,10 @@ cn: HTTP
 sn: Service
 uid: HTTP
 userPassword: httppwd
-krb5PrincipalName: HTTP/${hostname}@KEYCLOAK.ORG
+krb5PrincipalName: HTTP/${hostname}@KC2.COM
 krb5KeyVersionNumber: 0
 
-dn: uid=hnelson,ou=People,dc=keycloak,dc=org
+dn: uid=hnelson2,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -70,13 +70,13 @@ objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: Horatio
 sn: Nelson
-mail: hnelson@keycloak.org
-uid: hnelson
+mail: hnelson2@kc2.com
+uid: hnelson2
 userPassword: secret
-krb5PrincipalName: hnelson@KEYCLOAK.ORG
+krb5PrincipalName: hnelson2@KC2.COM
 krb5KeyVersionNumber: 0
 
-dn: uid=jduke,ou=People,dc=keycloak,dc=org
+dn: uid=jduke2,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -84,13 +84,13 @@ objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: Java
 sn: Duke
-mail: jduke@keycloak.org
-uid: jduke
+mail: jduke2@keycloak.org
+uid: jduke2
 userPassword: theduke
-krb5PrincipalName: jduke@KEYCLOAK.ORG
+krb5PrincipalName: jduke2@KC2.COM
 krb5KeyVersionNumber: 0
 
-dn: uid=gsstestserver,ou=People,dc=keycloak,dc=org
+dn: uid=gsstestserver,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
@@ -100,5 +100,5 @@ cn: gsstestserver
 sn: Service
 uid: gsstestserver
 userPassword: gsstestpwd
-krb5PrincipalName: gsstestserver/xxx@KEYCLOAK.ORG
+krb5PrincipalName: gsstestserver/xxx@KC2.COM
 krb5KeyVersionNumber: 0
