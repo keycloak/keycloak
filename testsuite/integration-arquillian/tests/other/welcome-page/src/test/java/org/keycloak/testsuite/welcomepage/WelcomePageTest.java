@@ -20,9 +20,7 @@ package org.keycloak.testsuite.welcomepage;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -109,7 +107,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Test
     public void test_2_RemoteAccessNoAdmin() throws Exception {
-        navigateToUri(getPublicServerUrl().toString(), true);
+        navigateToUri(getPublicServerUrl().toString());
         Assert.assertFalse("Welcome page did not ask to create a new admin user.", welcomePage.isPasswordSet());
     }
 
@@ -125,7 +123,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Test
     public void test_4_RemoteAccessWithAdmin() throws Exception {
-        navigateToUri(getPublicServerUrl().toString(), true);
+        navigateToUri(getPublicServerUrl().toString());
         Assert.assertTrue("Welcome page asked to set admin password.", welcomePage.isPasswordSet());
     }
 

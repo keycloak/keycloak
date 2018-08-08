@@ -128,9 +128,11 @@ public class ResourceForm extends Form {
         representation.setDisplayName(UIUtils.getTextInputValue(displayName));
         representation.setType(UIUtils.getTextInputValue(type));
 
+        Set<String> uris = new HashSet<>();
         for (WebElement uriInput : driver.findElements(By.xpath("//input[@ng-model='resource.uris[i]']"))) {
-            representation.addUri(UIUtils.getTextInputValue(uriInput));
+            uris.add(UIUtils.getTextInputValue(uriInput));
         }
+        representation.setUris(uris);
 
         representation.setIconUri(UIUtils.getTextInputValue(iconUri));
         representation.setScopes(scopesInput.getSelected());
