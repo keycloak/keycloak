@@ -143,6 +143,8 @@ In the undertow subsystem, add the `session-config` under the `servlet-container
     ...
 </servlet-container>
 ----
+  
+WARNING: Use the `session-config` only with the mod_cluster load balancer. In other cases, configure sticky session over the `AUTH_SESSION_ID` cookie directly in a load balancer.
 
 Then you can configure `proxy-address-forwarding` as described in the chapter <<_setting-up-a-load-balancer-or-proxy, Load Balancer >> .
 Note that mod_cluster uses AJP connector by default, so you need to configure that one.
@@ -169,3 +171,5 @@ cd $RHSSO_NODE2
 
 Access the server on `http://localhost:8080/auth` . Creation of admin user is possible just from local address and without load balancer (proxy) access,
 so you first need to access backend node directly on `http://localhost:8180/auth` to create admin user.
+
+WARNING: When using mod_cluster you should always access the cluster through the load balancer and not directly through the backend node.
