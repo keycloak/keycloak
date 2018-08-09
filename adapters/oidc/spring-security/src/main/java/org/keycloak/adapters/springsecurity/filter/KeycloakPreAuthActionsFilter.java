@@ -48,10 +48,11 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakPreAuthActionsFilter.class);
 
-    private final NodesRegistrationManagement management = new NodesRegistrationManagement();
+    private NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement();
     private ApplicationContext applicationContext;
     private AdapterDeploymentContext deploymentContext;
     private UserSessionManagement userSessionManagement;
+    private PreAuthActionsHandlerFactory preAuthActionsHandlerFactory = new PreAuthActionsHandlerFactory();
 
     public KeycloakPreAuthActionsFilter() {
         super();
@@ -69,7 +70,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
     @Override
     public void destroy() {
         log.debug("Unregistering deployment");
-        management.stop();
+        nodesRegistrationManagement.stop();
     }
 
     @Override
@@ -77,7 +78,8 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
             throws IOException, ServletException {
 
         HttpFacade facade = new SimpleHttpFacade((HttpServletRequest)request, (HttpServletResponse)response);
-        PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
+        nodesRegistrationManagement.tryRegister(deploymentContext.resolveDeployment(facade));
+        PreAuthActionsHandler handler = preAuthActionsHandlerFactory.createPreAuthActionsHandler(facade);
         if (handler.handleRequest()) {
             log.debug("Pre-auth filter handled request: {}", ((HttpServletRequest) request).getRequestURI());
         } else {
@@ -92,5 +94,24 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+    
+    void setNodesRegistrationManagement(NodesRegistrationManagement nodesRegistrationManagement) {
+        this.nodesRegistrationManagement = nodesRegistrationManagement;
+    }
+    
+    void setPreAuthActionsHandlerFactory(PreAuthActionsHandlerFactory preAuthActionsHandlerFactory) {
+        this.preAuthActionsHandlerFactory = preAuthActionsHandlerFactory;
+    }
+    
+    /**
+     * Creates {@link PreAuthActionsHandler}s.
+     * 
+     * Package-private class to enable mocking.
+     */
+    class PreAuthActionsHandlerFactory {
+        PreAuthActionsHandler createPreAuthActionsHandler(HttpFacade facade) {
+            return new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
+        }
     }
 }
