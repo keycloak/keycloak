@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response.Status;
@@ -68,17 +69,27 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         Metadata metadata = request.getMetadata();
-        long limit = Long.MAX_VALUE;
+        final AtomicLong limit;
 
         if (metadata != null && metadata.getLimit() != null) {
-            limit = metadata.getLimit();
+            limit = new AtomicLong(metadata.getLimit());
+        } else {
+            limit = new AtomicLong(Long.MAX_VALUE);
         }
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().limit(limit).forEach(resource -> permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
+        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId(), resource -> {
+            if (limit.decrementAndGet() >= 0) {
+                permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request));
+            }
+        });
 
         // obtain all resources where owner is the current user
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().limit(limit).forEach(resource -> permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request)));
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
+            if (limit.decrementAndGet() >= 0) {
+                permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request));
+            }
+        });
 
         // obtain all resources granted to the user via permission tickets (uma)
         List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(identity.getId(), resourceServer.getId());
@@ -91,10 +102,10 @@ public final class Permissions {
 
                 if (permission == null) {
                     userManagedPermissions.put(ticket.getResource().getId(), new ResourcePermission(ticket.getResource(), new ArrayList<>(), resourceServer, request.getClaims()));
-                    limit--;
+                    limit.decrementAndGet();
                 }
 
-                if (--limit <= 0) {
+                if (limit.decrementAndGet() <= 0) {
                     break;
                 }
             }
@@ -117,7 +128,7 @@ public final class Permissions {
             if (type != null && !resource.getOwner().equals(resourceServer.getId())) {
                 StoreFactory storeFactory = authorization.getStoreFactory();
                 ResourceStore resourceStore = storeFactory.getResourceStore();
-                resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
+                resourceStore.findByType(type, resourceServer.getId(), resource1 -> {
                     if (resource1.getOwner().equals(resourceServer.getId())) {
                         for (Scope typeScope : resource1.getScopes()) {
                             if (!scopes.contains(typeScope)) {
@@ -137,7 +148,7 @@ public final class Permissions {
                 }
 
                 return byName;
-            }).collect(Collectors.toList());
+            }).filter(resource.getScopes()::contains).collect(Collectors.toList());
         }
 
         return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());

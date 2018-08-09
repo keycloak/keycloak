@@ -639,7 +639,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource = new ResourceRepresentation();
 
         resource.setName(KeycloakModelUtils.generateId());
-        resource.addScope("sensors:view", "sensors:update", "sensors:delete");
+        resource.addScope("sensors:view", "sensors:update");
 
         resourceIds.add(authorization.resources().create(resource).readEntity(ResourceRepresentation.class).getId());
 
@@ -692,6 +692,81 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertTrue(resourceIds.containsAll(Arrays.asList(grantedPermission.getResourceId())));
             assertEquals(2, grantedPermission.getScopes().size());
             assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("sensors:view", "sensors:update")));
+        }
+    }
+
+    @Test
+    public void testObtainAllEntitlementsForResource() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("scope:view", "scope:update", "scope:delete");
+
+        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addResource(resource.getId());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission);
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(null, "scope:view", "scope:update", "scope:delete");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(3, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view")));
+        }
+
+        resource.setScopes(new HashSet<>());
+        resource.addScope("scope:view", "scope:update");
+
+        authorization.resources().resource(resource.getId()).update(resource);
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(null, "scope:view", "scope:update", "scope:delete");
+
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(2, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view", "scope:update")));
+        }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "scope:view", "scope:update", "scope:delete");
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(2, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view", "scope:update")));
         }
     }
 

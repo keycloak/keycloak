@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.ResourceServer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * A {@link ResourceStore} is responsible to manage the persistence of {@link Resource} instances.
@@ -73,6 +74,8 @@ public interface ResourceStore {
      * @return a list with all resource instances owned by the given owner
      */
     List<Resource> findByOwner(String ownerId, String resourceServerId);
+
+    void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer);
 
     /**
      * Finds all {@link Resource} instances with the given uri.
@@ -133,4 +136,14 @@ public interface ResourceStore {
      * @return a list of resources with the given type
      */
     List<Resource> findByType(String type, String resourceServerId);
+
+    /**
+     * Finds all {@link Resource} with the given type.
+     *
+     * @param type the type of the resource
+     * @param resourceServerId the resource server id
+     * @param consumer the result consumer
+     * @return a list of resources with the given type
+     */
+    void findByType(String type, String resourceServerId, Consumer<Resource> consumer);
 }

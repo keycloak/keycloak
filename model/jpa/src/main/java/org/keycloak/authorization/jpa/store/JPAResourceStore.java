@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -99,6 +101,15 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByOwner(ownerId, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
         String queryName = "findResourceIdByOwner";
 
         if (resourceServerId == null) {
@@ -114,19 +125,12 @@ public class JPAResourceStore implements ResourceStore {
             query.setParameter("serverId", resourceServerId);
         }
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(id -> resourceStore.findById(id, resourceServerId))
+                .filter(Objects::nonNull)
+                .forEach(consumer);
     }
 
     @Override
@@ -279,6 +283,15 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByType(String type, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByType(type, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByType", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -286,18 +299,11 @@ public class JPAResourceStore implements ResourceStore {
         query.setParameter("ownerId", resourceServerId);
         query.setParameter("serverId", resourceServerId);
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(id -> resourceStore.findById(id, resourceServerId))
+                .filter(Objects::nonNull)
+                .forEach(consumer);
     }
 }
