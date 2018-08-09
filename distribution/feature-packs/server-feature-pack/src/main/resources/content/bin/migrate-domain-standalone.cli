@@ -47,6 +47,7 @@ if (result == undefined) of /profile=$standaloneProfile/subsystem=infinispan/cac
   echo Updating authorization cache container..
   /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=strategy,value=LRU)
   /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=100)
+  echo
 end-if
 
 # Migrate from 2.0.0 to 2.1.0
@@ -347,6 +348,7 @@ if (outcome == success) of /profile=$standaloneProfile/subsystem=undertow/server
   /profile=$standaloneProfile/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header/:remove
   /profile=$standaloneProfile/subsystem=undertow/configuration=filter/response-header=x-powered-by-header/:remove
   /profile=$standaloneProfile/subsystem=undertow/configuration=filter/response-header=server-header/:remove
+  echo
 end-if
 
 if (outcome == success) of /profile=$standaloneProfile/subsystem=jdr/:read-resource
@@ -401,6 +403,65 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=keycloak-server/
   echo Adding spi=hostname...
   /profile=$standaloneProfile/subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
   /profile=$standaloneProfile/subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
+  echo
+end-if
+
+# Migrate from 4.3.0 to 4.4.0
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=elytron/permission-set=login-permission/:read-resource
+  echo Adding permission-set=login-permission to elytron
+  /profile=$standaloneProfile/subsystem=elytron/permission-set=login-permission:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}])
+  /profile=$standaloneProfile/subsystem=elytron/permission-set=default-permissions/:add(permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
+  /profile=$standaloneProfile/subsystem=elytron/simple-permission-mapper=default-permission-mapper/:undefine-attribute(name=permission-mappings)
+  /profile=$standaloneProfile/subsystem=elytron/simple-permission-mapper=default-permission-mapper:write-attribute(name=permission-mappings,value=[{permission-sets=[{permission-set=login-permission},{permission-set=default-permissions}],match-all=true},{permission-sets=[{permission-set=default-permissions}],principals=[anonymous]}])
+  echo
+end-if
+
+if (result == org.hibernate.infinispan) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate:read-attribute(name=module)
+  echo Update hibernate cache module
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate:write-attribute(name=module, value=org.infinispan.hibernate-cache)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate entity cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=entity/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=local-query/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate local-query cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=local-query/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=local-query/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak realms cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak users cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=users/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak authorization cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak keys cache and replacing with object-memory
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:remove
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=keys/memory=object:add(size=1000)
+  echo
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:read-resource
+  echo Changing JNDI reference in connectionsInfinispan SPI
+  /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:undefine-attribute(name=properties)
+  /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:write-attribute(name=properties,value={cacheContainer=java:jboss/infinispan/container/keycloak})
   echo
 end-if
 

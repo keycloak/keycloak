@@ -24,6 +24,7 @@ import java.io.ObjectOutput;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,14 +59,14 @@ public class SessionData {
         @Override
         public void writeObject(ObjectOutput output, SessionData obj) throws IOException {
             MarshallUtil.marshallString(obj.realmId, output);
-            MarshallUtil.marshallInt(output, obj.lastSessionRefresh);
+            KeycloakMarshallUtil.marshall(obj.lastSessionRefresh, output);
         }
 
 
         @Override
         public SessionData readObject(ObjectInput input) throws IOException, ClassNotFoundException {
             String realmId = MarshallUtil.unmarshallString(input);
-            int lastSessionRefresh = MarshallUtil.unmarshallInt(input);
+            int lastSessionRefresh = KeycloakMarshallUtil.unmarshallInteger(input);
 
             return new SessionData(realmId, lastSessionRefresh);
         }

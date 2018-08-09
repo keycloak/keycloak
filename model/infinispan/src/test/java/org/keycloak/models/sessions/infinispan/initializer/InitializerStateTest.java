@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.initializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
+import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.storage.CacheableStorageProviderModel;
 
 import java.text.DateFormat;
@@ -33,8 +34,54 @@ import java.util.List;
 public class InitializerStateTest {
 
     @Test
+    public void testOfflineLoaderContext() {
+        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
+        Assert.assertEquals(ctx.getSegmentsCount(), 6);
+
+        ctx = new OfflinePersistentUserSessionLoaderContext(19, 5);
+        Assert.assertEquals(ctx.getSegmentsCount(), 4);
+
+        ctx = new OfflinePersistentUserSessionLoaderContext(20, 5);
+        Assert.assertEquals(ctx.getSegmentsCount(), 4);
+
+        ctx = new OfflinePersistentUserSessionLoaderContext(21, 5);
+        Assert.assertEquals(ctx.getSegmentsCount(), 5);
+    }
+
+
+    @Test
+    public void testRemoteLoaderContext() {
+        assertSegmentsForRemoteLoader(0, 64, -1, 1);
+        assertSegmentsForRemoteLoader(0, 64, 256, 1);
+        assertSegmentsForRemoteLoader(5, 64, 256, 1);
+        assertSegmentsForRemoteLoader(63, 64, 256, 1);
+        assertSegmentsForRemoteLoader(64, 64, 256, 1);
+        assertSegmentsForRemoteLoader(65, 64, 256, 2);
+        assertSegmentsForRemoteLoader(127, 64, 256, 2);
+        assertSegmentsForRemoteLoader(1000, 64, 256, 16);
+
+        assertSegmentsForRemoteLoader(2047, 64, 256, 32);
+        assertSegmentsForRemoteLoader(2048, 64, 256, 32);
+        assertSegmentsForRemoteLoader(2049, 64, 256, 64);
+
+        assertSegmentsForRemoteLoader(1000, 64, 256, 16);
+        assertSegmentsForRemoteLoader(10000, 64, 256, 256);
+        assertSegmentsForRemoteLoader(1000000, 64, 256, 256);
+        assertSegmentsForRemoteLoader(10000000, 64, 256, 256);
+    }
+
+    private void assertSegmentsForRemoteLoader(int sessionsTotal, int sessionsPerSegment, int ispnSegmentsCount, int expectedSegments) {
+        RemoteCacheSessionsLoaderContext ctx = new RemoteCacheSessionsLoaderContext(ispnSegmentsCount, sessionsPerSegment, sessionsTotal);
+        Assert.assertEquals(expectedSegments, ctx.getSegmentsCount());
+    }
+
+
+    @Test
     public void testComputationState() {
-        InitializerState state = new InitializerState(28, 5);
+        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
+        Assert.assertEquals(ctx.getSegmentsCount(), 6);
+
+        InitializerState state = new InitializerState(ctx.getSegmentsCount());
 
         Assert.assertFalse(state.isFinished());
         List<Integer> segments = state.getUnfinishedSegments(3);

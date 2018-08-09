@@ -29,6 +29,7 @@ import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.VersionedValue;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -83,10 +84,12 @@ public class RemoteCacheInvoker {
             logger.tracef("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
         }
 
+        TopologyInfo topology = InfinispanUtil.getTopologyInfo(kcSession);
+
         Retry.executeWithBackoff((int iteration) -> {
 
             try {
-                runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+                runOnRemoteCache(topology, context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
             } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s', iteration '%s'. Will try to retry the task",
@@ -101,7 +104,7 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
+    private <K, V extends SessionEntity> void runOnRemoteCache(TopologyInfo topology, RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
         final V session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
@@ -119,11 +122,11 @@ public class RemoteCacheInvoker {
                 if (existing != null) {
                     logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
 
-                    replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
+                    replace(topology, remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
                 }
                 break;
             case REPLACE:
-                replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
+                replace(topology, remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
                 break;
             default:
                 throw new IllegalStateException("Unsupported state " +  operation);
@@ -131,14 +134,13 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <K, V extends SessionEntity> void replace(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
+    private <K, V extends SessionEntity> void replace(TopologyInfo topology, RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
         boolean replaced = false;
-        int iteration = 0;
+        int replaceIteration = 0;
+        while (!replaced && replaceIteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+            replaceIteration++;
 
-        while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-            iteration++;
-
-            VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getVersioned(key);
+            VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getWithMetadata(key);
             if (versioned == null) {
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
@@ -151,16 +153,17 @@ public class RemoteCacheInvoker {
             task.runUpdate(session);
 
             if (logger.isTraceEnabled()) {
-                logger.tracef("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
+                logger.tracef("%s: Before replaceWithVersion. Entity to write version %d: %s", logTopologyData(topology, replaceIteration),
+                        versioned.getVersion(), session);
             }
 
             replaced = remoteCache.replaceWithVersion(key, SessionEntityWrapper.forTransport(session), versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
-                logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());
+                logger.debugf("%s: Failed to replace entity '%s' version %d. Will retry again", logTopologyData(topology, replaceIteration), key, versioned.getVersion());
             } else {
                 if (logger.isTraceEnabled()) {
-                    logger.tracef("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
+                    logger.tracef("%s: Replaced entity version %d in remote cache: %s", logTopologyData(topology, replaceIteration), versioned.getVersion(), session);
                 }
             }
         }
@@ -168,6 +171,11 @@ public class RemoteCacheInvoker {
         if (!replaced) {
             logger.warnf("Failed to replace entity '%s' in remote cache '%s'", key, remoteCache.getName());
         }
+    }
+
+
+    private String logTopologyData(TopologyInfo topology, int iteration) {
+        return topology.toString() + ", replaceIteration: " + iteration;
     }
 
 

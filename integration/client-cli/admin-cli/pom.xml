@@ -145,7 +145,7 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec</artifact>
+                                    <artifact>org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec</artifact>
                                     <includes>
                                         <include>**/**</include>
                                     </includes>

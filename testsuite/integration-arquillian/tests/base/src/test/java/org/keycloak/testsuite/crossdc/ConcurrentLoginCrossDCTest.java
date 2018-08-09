@@ -20,12 +20,10 @@ package org.keycloak.testsuite.crossdc;
 import java.util.ArrayList;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import java.util.List;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.admin.concurrency.ConcurrentLoginTest;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 import java.util.Arrays;

@@ -21,7 +21,10 @@ import org.infinispan.Cache;
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -60,8 +63,46 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
     // Just coordinator will run this
     @Override
     protected void startLoading() {
-        InitializerState state = getOrCreateInitializerState();
+        InitializerState state = getStateFromCache();
+        SessionLoader.LoaderContext[] ctx = new SessionLoader.LoaderContext[1];
+        if (state == null) {
+            // Rather use separate transactions for update and counting
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession session) {
+                    sessionLoader.init(session);
+                }
 
+            });
+
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession session) {
+                    ctx[0] = sessionLoader.computeLoaderContext(session);
+                }
+
+            });
+
+            state = new InitializerState(ctx[0].getSegmentsCount());
+            saveStateToCache(state);
+        } else {
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession session) {
+                    ctx[0] = sessionLoader.computeLoaderContext(session);
+                }
+
+            });
+        }
+
+        log.debugf("Start loading with loader: '%s', ctx: '%s' , state: %s",
+                sessionLoader.toString(), ctx[0].toString(), state.toString());
+
+        startLoadingImpl(state, ctx[0]);
+    }
+
+
+    protected void startLoadingImpl(InitializerState state, SessionLoader.LoaderContext ctx) {
         // Assume each worker has same processor's count
         int processors = Runtime.getRuntime().availableProcessors();
 
@@ -88,7 +129,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
                 List<Future<WorkerResult>> futures = new LinkedList<>();
                 for (Integer segment : segments) {
                     SessionInitializerWorker worker = new SessionInitializerWorker();
-                    worker.setWorkerEnvironment(segment, sessionsPerSegment, sessionLoader);
+                    worker.setWorkerEnvironment(segment, ctx, sessionLoader);
                     if (!distributed) {
                         worker.setEnvironment(workCache, null);
                     }

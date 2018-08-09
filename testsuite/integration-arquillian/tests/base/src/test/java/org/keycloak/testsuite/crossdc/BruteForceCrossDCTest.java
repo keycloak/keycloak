@@ -168,6 +168,9 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
+//        log.infof("Sleeping");
+//        Thread.sleep(3600000);
+
         // Clear all
         adminClient.realms().realm(REALM_NAME).attackDetection().clearAllBruteForce();
         assertStatistics("After brute force cleared", 0, 0, 0);
@@ -222,6 +225,8 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testBruteForceConcurrentUpdate() throws Exception {
+        //Thread.sleep(120000);
+
         // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);

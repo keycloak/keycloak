@@ -950,7 +950,7 @@
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>true</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
             </properties>
             <dependencies>
                 <dependency>

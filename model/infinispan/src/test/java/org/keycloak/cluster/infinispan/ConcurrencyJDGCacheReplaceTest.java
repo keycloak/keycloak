@@ -51,9 +51,9 @@ import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationB
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ConcurrencyJDGSessionsCacheTest {
+public class ConcurrencyJDGCacheReplaceTest {
 
-    protected static final Logger logger = Logger.getLogger(ConcurrencyJDGSessionsCacheTest.class);
+    protected static final Logger logger = Logger.getLogger(ConcurrencyJDGCacheReplaceTest.class);
 
     private static final int ITERATION_PER_WORKER = 1000;
 
@@ -152,6 +152,8 @@ public class ConcurrencyJDGSessionsCacheTest {
         InfinispanUtil.getRemoteCache(cache2).replace("123", session);
 
         // Create caches, listeners and finally worker threads
+        remoteCache1 = InfinispanUtil.getRemoteCache(cache1);
+        remoteCache2 = InfinispanUtil.getRemoteCache(cache2);
         Thread worker1 = createWorker(cache1, 1);
         Thread worker2 = createWorker(cache2, 2);
 
@@ -256,7 +258,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
             executor.submit(() -> {
                 // TODO: can be optimized - object sent in the event
-                VersionedValue<SessionEntity> versionedVal = remoteCache.getVersioned(cacheKey);
+                VersionedValue<SessionEntity> versionedVal = remoteCache.getWithMetadata(cacheKey);
                 for (int i = 0; i < 10; i++) {
 
                     if (versionedVal.getVersion() < event.getVersion()) {
@@ -267,7 +269,7 @@ public class ConcurrencyJDGSessionsCacheTest {
                             throw new RuntimeException(ie);
                         }
 
-                        versionedVal = remoteCache.getVersioned(cacheKey);
+                        versionedVal = remoteCache.getWithMetadata(cacheKey);
                     } else {
                         break;
                     }
@@ -316,7 +318,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
                 ReplaceStatus replaced = ReplaceStatus.NOT_REPLACED;
                 while (replaced != ReplaceStatus.REPLACED) {
-                    VersionedValue<UserSessionEntity> versioned = remoteCache.getVersioned("123");
+                    VersionedValue<UserSessionEntity> versioned = remoteCache.getWithMetadata("123");
                     UserSessionEntity oldSession = versioned.getValue();
                     //UserSessionEntity clone = DistributedCacheConcurrentWritesTest.cloneSession(oldSession);
                     UserSessionEntity clone = oldSession;
@@ -340,7 +342,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
                 // Try to see if remoteCache on 2nd DC is immediatelly seeing our change
                 RemoteCache secondDCRemoteCache = myThreadId == 1 ? remoteCache2 : remoteCache1;
-                UserSessionEntity thatSession = (UserSessionEntity) secondDCRemoteCache.get("123");
+                //UserSessionEntity thatSession = (UserSessionEntity) secondDCRemoteCache.get("123");
 
                 //Assert.assertEquals("someVal", thatSession.getNotes().get(noteKey));
                 //System.out.println("Passed");

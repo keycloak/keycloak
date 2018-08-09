@@ -146,7 +146,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             // Check that route owner is always node1
             getTestingClientFor(backendNode(0)).server().run(session -> {
                 Cache authSessionCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
-                String keyOwner = InfinispanUtil.getKeyPrimaryOwnerAddress(authSessionCache, authSessionCookie);
+                String keyOwner = InfinispanUtil.getTopologyInfo(session).getRouteName(authSessionCache, authSessionCookie);
                 Assert.assertEquals("node1", keyOwner);
             });
         }

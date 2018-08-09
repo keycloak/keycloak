@@ -35,6 +35,7 @@
         <module name="org.keycloak.keycloak-ldap-federation"/>
         <module name="org.infinispan"/>
         <module name="org.infinispan.client.hotrod"/>
+        <module name="org.jgroups"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="javax.persistence.api"/>

@@ -165,7 +165,6 @@ public class KeycloakMarshallUtil {
         return isSet ? input.readInt() : null;
     }
 
-
     public static class ConcurrentHashMapBuilder<K, V> implements MarshallUtil.MapBuilder<K, V, ConcurrentHashMap<K, V>> {
 
         @Override

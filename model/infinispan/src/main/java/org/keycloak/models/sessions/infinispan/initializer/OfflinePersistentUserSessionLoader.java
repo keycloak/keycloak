@@ -29,12 +29,11 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflinePersistentUserSessionLoader implements SessionLoader, Serializable {
+public class OfflinePersistentUserSessionLoader implements SessionLoader<OfflinePersistentUserSessionLoaderContext>, Serializable {
 
     private static final Logger log = Logger.getLogger(OfflinePersistentUserSessionLoader.class);
 
@@ -43,6 +42,13 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader, Serial
 
     // Just local-DC aware flag
     public static final String PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC = "PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC";
+
+
+    private final int sessionsPerSegment;
+
+    public OfflinePersistentUserSessionLoader(int sessionsPerSegment) {
+        this.sessionsPerSegment = sessionsPerSegment;
+    }
 
 
     @Override
@@ -60,14 +66,19 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader, Serial
 
 
     @Override
-    public int getSessionsCount(KeycloakSession session) {
+    public OfflinePersistentUserSessionLoaderContext computeLoaderContext(KeycloakSession session) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        return persister.getUserSessionsCount(true);
+        int sessionsCount = persister.getUserSessionsCount(true);
+
+        return new OfflinePersistentUserSessionLoaderContext(sessionsCount, sessionsPerSegment);
     }
 
 
     @Override
-    public boolean loadSessions(KeycloakSession session, int first, int max) {
+    public boolean loadSessions(KeycloakSession session, OfflinePersistentUserSessionLoaderContext ctx, int segment) {
+        int first = ctx.getSessionsPerSegment() * segment;
+        int max = sessionsPerSegment;
+
         if (log.isTraceEnabled()) {
             log.tracef("Loading sessions - first: %d, max: %d", first, max);
         }
@@ -130,6 +141,15 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader, Serial
 
 
         log.debugf("Persistent sessions loaded successfully!");
+    }
+
+
+    @Override
+    public String toString() {
+        return new StringBuilder("OfflinePersistentUserSessionLoader [ ")
+                .append("sessionsPerSegment: ").append(sessionsPerSegment)
+                .append(" ]")
+                .toString();
     }
 
 }

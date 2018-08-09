@@ -35,6 +35,7 @@
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         
         <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
+        <cache.server.jboss.jdg-transactions-enabled>false</cache.server.jboss.jdg-transactions-enabled>
         <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
         <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
         <cache.server.jboss.version>${infinispan.version}</cache.server.jboss.version>

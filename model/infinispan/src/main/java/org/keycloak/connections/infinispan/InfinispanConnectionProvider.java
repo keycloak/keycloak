@@ -75,14 +75,8 @@ public interface InfinispanConnectionProvider extends Provider {
     <K, V> RemoteCache<K, V> getRemoteCache(String name);
 
     /**
-     * @return Address of current node in cluster. In non-cluster environment, it returns some other non-null value (eg. hostname with some random value like "host-123456" )
+     * @return Information about cluster topology
      */
-    String getNodeName();
-
-    /**
-     *
-     * @return siteName or null if we're not in environment with multiple sites (data centers)
-     */
-    String getSiteName();
+    TopologyInfo getTopologyInfo();
 
 }

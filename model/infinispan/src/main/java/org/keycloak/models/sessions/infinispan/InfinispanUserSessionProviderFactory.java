@@ -141,7 +141,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     // Count of sessions to be computed in each segment
     private int getSessionsPerSegment() {
-        return config.getInt("sessionsPerSegment", 100);
+        return config.getInt("sessionsPerSegment", 64);
     }
 
     private int getTimeoutForPreloadingSessionsSeconds() {
@@ -161,7 +161,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache, new OfflinePersistentUserSessionLoader(), "offlineUserSessions", sessionsPerSegment, maxErrors);
+                InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                        new OfflinePersistentUserSessionLoader(sessionsPerSegment), "offlineUserSessions", sessionsPerSegment, maxErrors);
 
                 // DB-lock to ensure that persistent sessions are loaded from DB just on one DC. The other DCs will load them from remote cache.
                 CacheInitializer initializer = new DBLockBasedCacheInitializer(session, ispnInitializer);
@@ -302,7 +303,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache, new RemoteCacheSessionsLoader(cacheName), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
+                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
 
                 initializer.initCache();
                 initializer.loadSessions();

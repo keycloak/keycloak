@@ -16,5 +16,5 @@ cd /subsystem=infinispan/cache-container=keycloak
 ./distributed-cache=loginFailures/store=remote:add(cache=loginFailures,                 fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory})
 
 ./distributed-cache=actionTokens/store=remote:add(cache=actionTokens,                   fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory})
-./distributed-cache=actionTokens/eviction=EVICTION:add(max-entries=-1, strategy=NONE)
+./distributed-cache=actionTokens/memory-object:add(size=-1)
 ./distributed-cache=actionTokens/expiration=EXPIRATION:add(max-idle=-1,interval=300000)
