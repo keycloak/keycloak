@@ -18,10 +18,9 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -61,7 +60,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             return;
         }
 
-        Set<Policy> verified = new HashSet<>();
+        AtomicBoolean verified = new AtomicBoolean();
         Consumer<Policy> policyConsumer = createPolicyEvaluator(permission, authorizationProvider, executionContext, decision, verified, decisionCache);
         Resource resource = permission.getResource();
 
@@ -85,7 +84,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId(), policyConsumer);
         }
 
-        if (!verified.isEmpty()) {
+        if (verified.get()) {
             decision.onComplete(permission);
             return;
         }
@@ -97,12 +96,8 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
     }
 
-    private Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Set<Policy> verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
+    private Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, AtomicBoolean verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
         return parentPolicy -> {
-            if (!verified.add(parentPolicy)) {
-                return;
-            }
-
             PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
 
             if (policyProvider == null) {
@@ -110,6 +105,8 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             }
 
             policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
+
+            verified.compareAndSet(false, true);
         };
     }
 }

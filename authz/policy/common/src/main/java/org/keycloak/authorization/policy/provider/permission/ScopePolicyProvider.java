@@ -44,6 +44,7 @@ public class ScopePolicyProvider extends AbstractPermissionProvider {
 
             if (effect != null) {
                 defaultEvaluation.setEffect(effect);
+                return;
             }
         }
 

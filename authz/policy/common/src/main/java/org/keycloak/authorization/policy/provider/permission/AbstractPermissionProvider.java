@@ -44,9 +44,10 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
             Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
             Decision.Effect effect = decisions.get(permission);
 
+            defaultEvaluation.setPolicy(associatedPolicy);
+
             if (effect == null) {
                 PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
-                defaultEvaluation.setPolicy(associatedPolicy);
                 policyProvider.evaluate(defaultEvaluation);
                 evaluation.denyIfNoEffect();
                 decisions.put(permission, defaultEvaluation.getEffect());
