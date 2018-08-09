@@ -59,6 +59,9 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
             case 'client-secret-jwt':
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-secret-jwt.html';
                 break;
+            case 'client-x509':
+                $scope.clientAuthenticatorConfigPartial = 'client-credentials-x509.html';
+                break;
             default:
                 $scope.currentAuthenticatorConfigProperties = clientConfigProperties[val];
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-generic.html';
@@ -123,6 +126,48 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
     });
 
     $scope.cancel = function() {
+        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
+    };
+});
+
+module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifications) {
+    console.log('ClientX509Ctrl invoked');
+
+    $scope.clientCopy = angular.copy($scope.client);
+    $scope.changed = false;
+
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, $scope.clientCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if (!$scope.client.attributes["x509.subjectdn"]) {
+            Notifications.error("The SubjectDN must not be empty.");
+        } else {
+            Client.update({
+                realm : $scope.realm.realm,
+                client : $scope.client.id
+            }, $scope.client, function() {
+                $scope.changed = false;
+                $scope.clientCopy = angular.copy($scope.client);
+                Notifications.success("Client authentication configuration has been saved to the client.");
+            }, function() {
+                Notifications.error("The SubjectDN was not changed due to a problem.");
+                $scope.subjectdn = "error";
+            });
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.reset = function() {
+        $scope.client.attributes["x509.subjectdn"] = $scope.clientCopy.attributes["x509.subjectdn"];
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
     };
 });

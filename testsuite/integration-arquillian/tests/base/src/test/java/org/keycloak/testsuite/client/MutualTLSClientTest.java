@@ -2,10 +2,14 @@ package org.keycloak.testsuite.client;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
+import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -36,9 +40,11 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
 
    private static final String CLIENT_ID = "confidential-x509";
    private static final String DISABLED_CLIENT_ID = "confidential-disabled-x509";
+   private static final String EXACT_SUBJECT_DN_CLIENT_ID = "confidential-subjectdn-x509";
    private static final String USER = "keycloak-user@localhost";
    private static final String PASSWORD = "password";
    private static final String REALM = "test";
+   private static final String EXACT_CERTIFICATE_SUBJECT_DN = "CN=Keycloak, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US";
 
    @Override
    public void configureTestRealm(RealmRepresentation testRealm) {
@@ -46,11 +52,19 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       properConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       properConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       properConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      properConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)"));
 
       ClientRepresentation disabledConfiguration = KeycloakModelUtils.createClient(testRealm, DISABLED_CLIENT_ID);
       disabledConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       disabledConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       disabledConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      disabledConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)"));
+
+      ClientRepresentation exactSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, EXACT_SUBJECT_DN_CLIENT_ID);
+      exactSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
+      exactSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
+      exactSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      exactSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, EXACT_CERTIFICATE_SUBJECT_DN));
    }
 
    @BeforeClass
@@ -71,6 +85,18 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    @Test
+   public void testSuccessfulClientInvocationWithProperCertificateAndSubjectDN() throws Exception {
+      //given
+      Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore;
+
+      //when
+      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+
+      //then
+      assertTokenObtained(token);
+   }
+
+   @Test
    public void testSuccessfulClientInvocationWithClientIdInQueryParams() throws Exception {
       //given//when
       OAuthClient.AccessTokenResponse token = null;
@@ -81,6 +107,18 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
 
       //then
       assertTokenObtained(token);
+   }
+
+   @Test
+   public void testFailedClientInvocationWithProperCertificateAndWrongSubjectDN() throws Exception {
+      //given
+      Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOtherKeyStoreAndTrustStore;
+
+      //when
+      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+
+      //then
+      assertTokenNotObtained(token);
    }
 
    @Test

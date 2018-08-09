@@ -1,10 +1,13 @@
 package org.keycloak.authentication.authenticators.client;
 
+import org.apache.commons.codec.binary.StringUtils;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -17,10 +20,16 @@ import javax.ws.rs.core.Response;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-x509";
+    public static final String ATTR_PREFIX = "x509";
+    public static final String ATTR_SUBJECT_DN = ATTR_PREFIX + ".subjectdn";
+
     protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -38,7 +47,8 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             return;
         }
 
-        X509Certificate[] certs = new X509Certificate[0];
+        X509Certificate[] certs = null;
+        ClientModel client = null;
         try {
             certs = provider.getCertificateChain(context.getHttpRequest());
             String client_id = null;
@@ -52,17 +62,17 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
                 client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
             }
 
-            if (client_id == null) {
-                if (queryParams != null) {
-                    client_id = queryParams.getFirst(OAuth2Constants.CLIENT_ID);
-                } else {
-                    Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
-                    context.challenge(challengeResponse);
-                    return;
-                }
+            if (client_id == null && queryParams != null) {
+                client_id = queryParams.getFirst(OAuth2Constants.CLIENT_ID);
             }
 
-            ClientModel client = context.getRealm().getClientByClientId(client_id);
+            if (client_id == null) {
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
+                context.challenge(challengeResponse);
+                return;
+            }
+
+            client = context.getRealm().getClientByClientId(client_id);
             if (client == null) {
                 context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
                 return;
@@ -77,6 +87,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         } catch (GeneralSecurityException e) {
             logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
             context.attempted();
+            return;
         }
 
         if (certs == null || certs.length == 0) {
@@ -85,6 +96,34 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             logger.debug("[X509ClientCertificateAuthenticator:authenticate] x509 client certificate is not available for mutual SSL.");
             context.attempted();
             return;
+        }
+
+        String subjectDNRegexp = client.getAttribute(ATTR_SUBJECT_DN);
+        if (subjectDNRegexp == null || subjectDNRegexp.length() == 0) {
+            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] " + ATTR_SUBJECT_DN + " is null or empty");
+            context.attempted();
+            return;
+        }
+        Pattern subjectDNPattern = Pattern.compile(subjectDNRegexp);
+
+        Optional<String> matchedCertificate = Arrays.stream(certs)
+              .map(certificate -> certificate.getSubjectDN().getName())
+              .filter(subjectdn -> subjectDNPattern.matcher(subjectdn).matches())
+              .findFirst();
+
+        if (!matchedCertificate.isPresent()) {
+            // We do quite expensive operation here, so better check the logging level beforehand.
+            if (logger.isDebugEnabled()) {
+                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for pattern " + subjectDNRegexp);
+                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Available SubjectDNs: " +
+                      Arrays.stream(certs)
+                            .map(cert -> cert.getSubjectDN().getName())
+                            .collect(Collectors.toList()));
+            }
+            context.attempted();
+            return;
+        } else {
+            logger.debug("[X509ClientCertificateAuthenticator:authenticate] Matched " + matchedCertificate.get() + " certificate.");
         }
 
         context.success();
@@ -111,11 +150,10 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public Map<String, Object> getAdapterConfiguration(ClientModel client) {
-        Map<String, Object> result = new HashMap<>();
-        return result;
+        return Collections.emptyMap();
     }
 
-    @Override
+   @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             Set<String> results = new HashSet<>();
