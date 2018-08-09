@@ -19,127 +19,138 @@ package org.keycloak.models.sessions.infinispan.remotestore;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.impl.RemoteCacheImpl;
+import org.infinispan.client.hotrod.impl.operations.IterationStartOperation;
+import org.infinispan.client.hotrod.impl.operations.IterationStartResponse;
+import org.infinispan.client.hotrod.impl.operations.OperationsFactory;
 import org.infinispan.commons.marshall.Marshaller;
+import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.RemoteCacheProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 
+import static org.infinispan.client.hotrod.impl.Util.await;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RemoteCacheSessionsLoader implements SessionLoader {
+public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessionsLoaderContext>, Serializable {
 
     private static final Logger log = Logger.getLogger(RemoteCacheSessionsLoader.class);
 
-
-    // Javascript to be executed on remote infinispan server.
-    // Flag CACHE_MODE_LOCAL is optimization used just when remoteCache is replicated as all the entries are available locally. For distributed caches, it can't be used
-    private static final String REMOTE_SCRIPT_FOR_LOAD_SESSIONS =
-            "function loadSessions() {" +
-                    "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
-                    "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
-                    "  var cacheMode = cache.getCacheConfiguration().clustering().cacheMode(); \n" +
-                    "  var canUseLocalFlag = !cacheMode.isClustered() || cacheMode.isReplicated(); \n" +
-
-                    "  var cacheStream; \n" +
-                    "  if (canUseLocalFlag) { \n" +
-                    "      cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
-                    "  } else { \n" +
-                    "      cacheStream = cache.getAdvancedCache().withFlags([ ]).entrySet().stream();\n" +
-                    "  }; \n" +
-
-                    "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
-                    "    new java.util.function.Function() {\n" +
-                    "      apply: function(entry) {\n" +
-                    "        return entry.getKey();\n" +
-                    "      }\n" +
-                    "    },\n" +
-                    "    new java.util.function.Function() {\n" +
-                    "      apply: function(entry) {\n" +
-                    "        return entry.getValue();\n" +
-                    "      }\n" +
-                    "    }\n" +
-                    "  ));\n" +
-                    "\n" +
-                    "  cacheStream.close();\n" +
-                    "  return result;\n" +
-                    "};\n" +
-                    "\n" +
-                    "loadSessions();";
-
-
-
     private final String cacheName;
+    private final int sessionsPerSegment;
 
-    public RemoteCacheSessionsLoader(String cacheName) {
+    public RemoteCacheSessionsLoader(String cacheName, int sessionsPerSegment) {
         this.cacheName = cacheName;
+        this.sessionsPerSegment = sessionsPerSegment;
     }
+
 
     @Override
     public void init(KeycloakSession session) {
+    }
+
+
+    @Override
+    public RemoteCacheSessionsLoaderContext computeLoaderContext(KeycloakSession session) {
         RemoteCache remoteCache = getRemoteCache(session);
+        int sessionsTotal = remoteCache.size();
+        int ispnSegments = getIspnSegmentsCount(remoteCache);
 
-        RemoteCache<String, String> scriptCache = remoteCache.getRemoteCacheManager().getCache(RemoteCacheProvider.SCRIPT_CACHE_NAME);
+        return new RemoteCacheSessionsLoaderContext(ispnSegments, sessionsPerSegment, sessionsTotal);
 
-        if (!scriptCache.containsKey("load-sessions.js")) {
-            scriptCache.put("load-sessions.js",
-                    "// mode=local,language=javascript\n" +
-                            REMOTE_SCRIPT_FOR_LOAD_SESSIONS);
+    }
+
+
+    protected int getIspnSegmentsCount(RemoteCache remoteCache) {
+        OperationsFactory operationsFactory = ((RemoteCacheImpl) remoteCache).getOperationsFactory();
+
+        // Same like RemoteCloseableIterator.startInternal
+        IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, sessionsPerSegment, false);
+        IterationStartResponse startResponse = await(iterationStartOperation.execute());
+
+        try {
+            // Could happen for non-clustered caches
+            if (startResponse.getSegmentConsistentHash() == null) {
+                return -1;
+            } else {
+                return startResponse.getSegmentConsistentHash().getNumSegments();
+            }
+        } finally {
+            startResponse.getChannel().close();
         }
     }
 
-    @Override
-    public int getSessionsCount(KeycloakSession session) {
-        RemoteCache remoteCache = getRemoteCache(session);
-        return remoteCache.size();
-    }
 
     @Override
-    public boolean loadSessions(KeycloakSession session, int first, int max) {
+    public boolean loadSessions(KeycloakSession session, RemoteCacheSessionsLoaderContext context, int segment) {
         Cache cache = getCache(session);
         Cache decoratedCache = cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE, Flag.IGNORE_RETURN_VALUES);
+        RemoteCache remoteCache = getRemoteCache(session);
 
-        RemoteCache<?, ?> remoteCache = getRemoteCache(session);
+        Set<Integer> myIspnSegments = getMyIspnSegments(segment, context);
 
-        log.debugf("Will do bulk load of sessions from remote cache '%s' . First: %d, max: %d", cache.getName(), first, max);
+        log.debugf("Will do bulk load of sessions from remote cache '%s' . Segment: %d", cache.getName(), segment);
 
-        Map<String, Integer> remoteParams = new HashMap<>();
-        remoteParams.put("first", first);
-        remoteParams.put("max", max);
-        Map<byte[], byte[]> remoteObjects = remoteCache.execute("load-sessions.js", remoteParams);
-
-        log.debugf("Successfully finished loading sessions '%s' . First: %d, max: %d", cache.getName(), first, max);
-
-        Marshaller marshaller = remoteCache.getRemoteCacheManager().getMarshaller();
-
-        for (Map.Entry<byte[], byte[]> entry : remoteObjects.entrySet()) {
-            try {
-                Object key = marshaller.objectFromByteBuffer(entry.getKey());
-                SessionEntityWrapper entityWrapper = (SessionEntityWrapper) marshaller.objectFromByteBuffer(entry.getValue());
-
-                decoratedCache.putAsync(key, entityWrapper);
-            } catch (Exception e) {
-                log.warn("Error loading session from remote cache", e);
+        CloseableIterator<Map.Entry> iterator = null;
+        int countLoaded = 0;
+        try {
+            iterator = remoteCache.retrieveEntries(null, myIspnSegments, context.getSessionsPerSegment());
+            while (iterator.hasNext()) {
+                countLoaded++;
+                Map.Entry entry = iterator.next();
+                decoratedCache.putAsync(entry.getKey(), entry.getValue());
+            }
+        } catch (RuntimeException e) {
+            log.warnf(e, "Error loading sessions from remote cache '%s' for segment '%d'", remoteCache.getName(), segment);
+            throw e;
+        } finally {
+            if (iterator != null) {
+                iterator.close();
             }
         }
+
+        log.debugf("Successfully finished loading sessions from cache '%s' . Segment: %d, Count of sessions loaded: %d", cache.getName(), segment, countLoaded);
 
         return true;
     }
 
 
-    private Cache getCache(KeycloakSession session) {
-        InfinispanConnectionProvider ispn = session.getProvider(InfinispanConnectionProvider.class);
-        return ispn.getCache(cacheName);
+    // Compute set of ISPN segments into 1 "worker" segment
+    protected Set<Integer> getMyIspnSegments(int segment, RemoteCacheSessionsLoaderContext ctx) {
+        // Remote cache is non-clustered
+        if (ctx.getIspnSegmentsCount() < 0) {
+            return null;
+        }
+
+        if (ctx.getIspnSegmentsCount() % ctx.getSegmentsCount() > 0) {
+            throw new IllegalStateException("Illegal state. IspnSegmentsCount: " + ctx.getIspnSegmentsCount() + ", segmentsCount: " + ctx.getSegmentsCount());
+        }
+
+        int countPerSegment = ctx.getIspnSegmentsCount() / ctx.getSegmentsCount();
+        int first = segment * countPerSegment;
+        int last = first + countPerSegment - 1;
+
+        Set<Integer> myIspnSegments = new HashSet<>();
+        for (int i=first ; i<=last ; i++) {
+            myIspnSegments.add(i);
+        }
+        return myIspnSegments;
+
     }
 
 
@@ -165,12 +176,28 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
     @Override
     public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {
-
     }
 
+
+    protected Cache getCache(KeycloakSession session) {
+        InfinispanConnectionProvider ispn = session.getProvider(InfinispanConnectionProvider.class);
+        return ispn.getCache(cacheName);
+    }
+
+
     // Get remoteCache, which may be secured
-    private RemoteCache getRemoteCache(KeycloakSession session) {
+    protected RemoteCache getRemoteCache(KeycloakSession session) {
         InfinispanConnectionProvider ispn = session.getProvider(InfinispanConnectionProvider.class);
         return ispn.getRemoteCache(cacheName);
+    }
+
+
+    @Override
+    public String toString() {
+        return new StringBuilder("RemoteCacheSessionsLoader [ ")
+                .append("cacheName: ").append(cacheName)
+                .append(", sessionsPerSegment: ").append(sessionsPerSegment)
+                .append(" ]")
+                .toString();
     }
 }

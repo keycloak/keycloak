@@ -254,8 +254,8 @@ public class UserSessionEntity extends SessionEntity {
             MarshallUtil.marshallString(session.getRealmId(), output);
             MarshallUtil.marshallString(session.getUser(), output);
 
-            MarshallUtil.marshallInt(output, session.getLastSessionRefresh());
-            MarshallUtil.marshallInt(output, session.getStarted());
+            KeycloakMarshallUtil.marshall(session.getLastSessionRefresh(), output);
+            KeycloakMarshallUtil.marshall(session.getStarted(), output);
             output.writeBoolean(session.isRememberMe());
 
             int state = session.getState() == null ? 0 : STATE_TO_ID.get(session.getState());
@@ -291,8 +291,8 @@ public class UserSessionEntity extends SessionEntity {
             sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
             sessionEntity.setUser(MarshallUtil.unmarshallString(input));
 
-            sessionEntity.setLastSessionRefresh(MarshallUtil.unmarshallInt(input));
-            sessionEntity.setStarted(MarshallUtil.unmarshallInt(input));
+            sessionEntity.setLastSessionRefresh(KeycloakMarshallUtil.unmarshallInteger(input));
+            sessionEntity.setStarted(KeycloakMarshallUtil.unmarshallInteger(input));
             sessionEntity.setRememberMe(input.readBoolean());
 
             sessionEntity.setState(ID_TO_STATE.get(input.readInt()));

@@ -25,6 +25,7 @@
 
     <xsl:param name="local.site" />
     <xsl:param name="remote.site" />
+    <xsl:param name="transactions.enabled" />
 
     <xsl:variable name="nsCacheServer" select="'urn:infinispan:server:core:'"/>
     <xsl:variable name="nsJGroups" select="'urn:infinispan:server:jgroups:'"/>
@@ -36,7 +37,9 @@
             <xsl:apply-templates select="@* | node()" />
 
             <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
-                <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+                <xsl:if test="$transactions.enabled='true'">
+                    <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+                </xsl:if>
                 <locking acquire-timeout="0" />
                 <backups>
                     <backup site="{$remote.site}" failure-policy="FAIL" strategy="SYNC" enabled="true">

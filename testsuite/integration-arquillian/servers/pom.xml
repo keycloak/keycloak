@@ -47,8 +47,8 @@
         <fuse62.version>6.2.1.redhat-084</fuse62.version>
         
         <!-- cache server versions -->
-        <!--<infinispan.version>9.0.1.Final</infinispan.version>--> <!-- Use same version like our infinispan version for now -->
-        <jdg.version>8.4.0.Final-redhat-2</jdg.version><!-- JDG 7.1.0 -->
+        <!--<infinispan.version>8.2.8.Final</infinispan.version>--><!-- Use same infinspan-server version as our version -->
+        <jdg.version>8.5.0.Final-redhat-9</jdg.version><!-- JDG 7.2.0 -->
         
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>

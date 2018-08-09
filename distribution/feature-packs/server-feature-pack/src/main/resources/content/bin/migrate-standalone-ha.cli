@@ -137,7 +137,7 @@ if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/invali
   echo
 end-if
 if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:read-attribute(name=strategy,include-defaults=false)
-  echo Updating eviction in local-cache=users...
+  echo Updating eviction in local-cache=users
   /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=strategy,value=LRU)
   /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=max-entries,value=10000)
   echo
@@ -428,6 +428,102 @@ if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/:read-resource
   echo Adding spi=hostname...
   /subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
   /subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
+  echo
+end-if
+
+# Migrate from 4.3.0 to 4.4.0
+if (outcome == failed) of /subsystem=elytron/permission-set=login-permission/:read-resource
+  echo Adding permission-set=login-permission to elytron
+  /subsystem=elytron/permission-set=login-permission:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}])
+  /subsystem=elytron/permission-set=default-permissions/:add(permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper/:undefine-attribute(name=permission-mappings)
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper:write-attribute(name=permission-mappings,value=[{permission-sets=[{permission-set=login-permission},{permission-set=default-permissions}],match-all=true},{permission-sets=[{permission-set=default-permissions}],principals=[anonymous]}])
+  echo
+end-if
+
+
+if (result == org.hibernate.infinispan) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=module)
+  echo Update hibernate cache module
+  /subsystem=infinispan/cache-container=hibernate:write-attribute(name=module, value=org.infinispan.hibernate-cache)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=default-cache)
+  echo Remove default cache from hibernate cache
+  /subsystem=infinispan/cache-container=hibernate:undefine-attribute(name=default-cache)
+  echo
+end-if
+if (result == ASYNC) of /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:read-attribute(name=mode)
+  echo Switching mode for timestamps cache from ASYNC to SYNC
+  /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:write-attribute(name=mode, value=SYNC)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate entity cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/distributed-cache=local-query/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate local-query cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/memory=object:add(size=10000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak realms cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak users cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak authorization cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak keys cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/memory=object:add(size=1000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for tcp stack
+  /subsystem=jgroups/stack=tcp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=tcp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=jgroups/stack=udp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for udp stack
+  /subsystem=jgroups/stack=udp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=udp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=remoting/configuration=endpoint:read-resource
+  echo Remove endpoint from remoting configuration
+  /subsystem=remoting/configuration=endpoint:remove
+  echo
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:undefine-attribute(name=port)
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=modcluster:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=modcluster:undefine-attribute(name=port)
+end-if
+
+if (outcome == success) of /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:read-resource
+  echo Changing JNDI reference in connectionsInfinispan SPI
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:undefine-attribute(name=properties)
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:write-attribute(name=properties,value={cacheContainer=java:jboss/infinispan/container/keycloak})
   echo
 end-if
 

@@ -1,6 +1,6 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:i="urn:jboss:domain:infinispan:4.0"
+                xmlns:i="urn:jboss:domain:infinispan:6.0"
                 version="2.0"
                 exclude-result-prefixes="xalan i">
 
@@ -23,7 +23,17 @@
             <xsl:value-of select="$sessionCacheOwners"/>
         </xsl:attribute>
     </xsl:template>
+    <xsl:template match="//i:cache-container/i:distributed-cache[@name='clientSessions']/@owners">
+        <xsl:attribute name="owners">
+            <xsl:value-of select="$sessionCacheOwners"/>
+        </xsl:attribute>
+    </xsl:template>
     <xsl:template match="//i:cache-container/i:distributed-cache[@name='offlineSessions']/@owners">
+        <xsl:attribute name="owners">
+            <xsl:value-of select="$offlineSessionCacheOwners"/>
+        </xsl:attribute>
+    </xsl:template>
+    <xsl:template match="//i:cache-container/i:distributed-cache[@name='offlineClientSessions']/@owners">
         <xsl:attribute name="owners">
             <xsl:value-of select="$offlineSessionCacheOwners"/>
         </xsl:attribute>

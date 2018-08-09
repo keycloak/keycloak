@@ -34,6 +34,7 @@
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <cache.server.jboss.home>${containers.home}/${cache.server.jboss.unpacked.folder.name}</cache.server.jboss.home>
         <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
+        <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
         <security.xslt>security.xsl</security.xslt>
     </properties>
 
@@ -126,6 +127,10 @@
                                                     <name>remote.site</name>
                                                     <value>dc-1</value>
                                                 </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
+                                                </parameter>
                                             </parameters>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
                                             <fileMappers>
@@ -151,6 +156,10 @@
                                                 <parameter>
                                                     <name>remote.site</name>
                                                     <value>dc-0</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
                                                 </parameter>
                                             </parameters>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>

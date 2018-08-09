@@ -161,7 +161,10 @@ public class InfinispanKeyStorageProviderTest {
         final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
-        cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+        cb.memory()
+                .evictionStrategy(EvictionStrategy.REMOVE)
+                .evictionType(EvictionType.COUNT)
+                .size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
         cb.jmxStatistics().enabled(true);
         Configuration cfg = cb.build();
 

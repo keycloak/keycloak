@@ -27,7 +27,7 @@ Migration scripts are applied using **offline mode**. Temporary data are removed
 `maven-exec-plugin` is used to read migrated configs and saves the output to `${project.build.directory}/migrated-${config.name}.txt`
 
 ### `default-test`
-`org.keycloak.test.config.migrationConfigMigrationTest` is executed. It compares generated outputs from ${project.build.directory}
+`org.keycloak.test.config.migration.ConfigMigrationTest` is executed. It compares generated outputs from ${project.build.directory}
 
 If config outputs don't equal to each other, **by default** the test will compare outputs more deeply to get more readable output. It fails on first found difference.
 

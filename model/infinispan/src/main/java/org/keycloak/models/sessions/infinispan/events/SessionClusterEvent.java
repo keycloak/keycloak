@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.events;
 
 import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import java.io.IOException;
@@ -52,8 +53,9 @@ public abstract class SessionClusterEvent implements ClusterEvent {
         this.realmId = realmId;
         this.eventKey = eventKey;
         this.resendingEvent = resendingEvent;
-        this.siteId = InfinispanUtil.getMySite(session);
-        this.nodeId = InfinispanUtil.getMyAddress(session);
+        TopologyInfo topology = InfinispanUtil.getTopologyInfo(session);
+        this.siteId = topology.getMySiteName();
+        this.nodeId = topology.getMyNodeName();
     }
 
 

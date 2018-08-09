@@ -112,7 +112,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                                            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+                                            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
                                         </artifactItem>                                        
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>

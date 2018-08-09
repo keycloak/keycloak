@@ -44,7 +44,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ConcurrencyJDGRemoteCacheTest {
+public class ConcurrencyJDGCachePutTest {
 
     private static Map<String, EntryInfo> state = new HashMap<>();
 
@@ -54,7 +54,7 @@ public class ConcurrencyJDGRemoteCacheTest {
 
     public static void main(String[] args) throws Exception {
         // Init map somehow
-        for (int i=0 ; i<3000 ; i++) {
+        for (int i=0 ; i<1000 ; i++) {
             String key = "key-" + i;
             state.put(key, new EntryInfo());
         }
@@ -74,10 +74,22 @@ public class ConcurrencyJDGRemoteCacheTest {
 
         long took = System.currentTimeMillis() - start;
 
+        Map<String, EntryInfo> failedState = new HashMap<>();
+
         // Output
         for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
             System.out.println(entry.getKey() + ":::" + entry.getValue());
+
+            if (entry.getValue().th1.get() != entry.getValue().th2.get()) {
+                failedState.put(entry.getKey(), entry.getValue());
+            }
+
             worker1.cache.remove(entry.getKey());
+        }
+
+        System.out.println("\nFAILED ENTRIES. SIZE: " + failedState.size() + "\n");
+        for (Map.Entry<String, EntryInfo> entry : failedState.entrySet()) {
+            System.out.println(entry.getKey() + ":::" + entry.getValue());
         }
 
         System.out.println("Took: " + took + " ms");

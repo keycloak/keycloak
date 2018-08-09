@@ -52,8 +52,12 @@
             <version>${wildfly.core.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
+            <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-readline</artifactId>
         </dependency>
     </dependencies>
 </project>

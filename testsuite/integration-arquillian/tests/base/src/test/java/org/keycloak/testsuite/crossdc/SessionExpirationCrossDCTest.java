@@ -192,7 +192,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             int clientSessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(clientSessionsCacheName).size();
             int remoteSessions1 = (Integer) cacheDc1Statistics.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
             int remoteSessions2 = (Integer) cacheDc2Statistics.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
-            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_SENT_MESSAGES);
+            // Needs to use "received_messages" on Infinispan 9.2.4.Final.  Stats for "sent_messages" is always null
+            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_RECEIVED_MESSAGES);
             log.infof(messagePrefix + ": sessions1: %d, sessions2: %d, remoteSessions1: %d, remoteSessions2: %d, sentMessages: %d", sessions1, sessions2, remoteSessions1, remoteSessions2, messagesCount);
 
             Assert.assertEquals(sessions1, sessions1Expected);
@@ -432,6 +433,15 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Kill node2 now. Around 10 sessions (half of SESSIONS_COUNT) will be lost on Keycloak side. But not on infinispan side
         CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 1);
 
+        // Assert it's still possible to refresh tokens. UserSessions, which were cleared from the Keycloak node, should be downloaded from remoteStore
+        int i1 = 0;
+        for (OAuthClient.AccessTokenResponse response : responses) {
+            i1++;
+            OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            Assert.assertNotNull("Failed in iteration " + i1, refreshTokenResponse.getRefreshToken());
+            Assert.assertNull("Failed in iteration " + i1, refreshTokenResponse.getError());
+        }
+
         channelStatisticsCrossDc.reset();
 
         // Increase offset a bit to ensure logout happens later then token issued time
@@ -662,7 +672,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         Retry.execute(() -> {
             int authSessions1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
             int authSessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
-            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_SENT_MESSAGES);
+            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_RECEIVED_MESSAGES);
             log.infof(messagePrefix + ": authSessions1: %d, authSessions2: %d, sentMessages: %d", authSessions1, authSessions2, messagesCount);
 
             int diff1 = authSessions1 - authSessions01;

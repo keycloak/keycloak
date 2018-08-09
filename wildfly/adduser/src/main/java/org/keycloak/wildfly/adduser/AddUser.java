@@ -18,16 +18,28 @@
 package org.keycloak.wildfly.adduser;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.cl.parser.ParserGenerator;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandNotFoundException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.container.CommandContainer;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
-import org.jboss.aesh.console.command.registry.CommandRegistry;
+import org.aesh.command.CommandDefinition;
+import org.aesh.command.impl.activator.AeshCommandActivatorProvider;
+import org.aesh.command.impl.activator.AeshOptionActivatorProvider;
+import org.aesh.command.impl.completer.AeshCompleterInvocationProvider;
+import org.aesh.command.impl.container.AeshCommandContainerBuilder;
+import org.aesh.command.impl.converter.AeshConverterInvocationProvider;
+import org.aesh.command.impl.invocation.AeshInvocationProviders;
+import org.aesh.command.impl.parser.CommandLineParser;
+import org.aesh.command.impl.validator.AeshValidatorInvocationProvider;
+import org.aesh.command.invocation.InvocationProviders;
+import org.aesh.command.option.Option;
+import org.aesh.command.Command;
+import org.aesh.command.CommandNotFoundException;
+import org.aesh.command.CommandResult;
+import org.aesh.command.container.CommandContainer;
+import org.aesh.command.invocation.CommandInvocation;
+import org.aesh.command.impl.registry.AeshCommandRegistryBuilder;
+import org.aesh.command.parser.CommandLineParserException;
+import org.aesh.command.registry.CommandRegistry;
+import org.aesh.command.settings.Settings;
+import org.aesh.command.settings.SettingsBuilder;
+import org.aesh.readline.AeshContext;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -57,34 +69,41 @@ public class AddUser {
     private static final int DEFAULT_HASH_ITERATIONS = 100000;
     private static final String DEFAULT_HASH_ALGORITH = PasswordPolicy.HASH_ALGORITHM_DEFAULT;
 
-    public static void main(String[] args) throws Exception {
-        AddUserCommand command = new AddUserCommand();
+    public static void main(String[] args) {
+        AddUserCommand command;
         try {
-            ParserGenerator.parseAndPopulate(command, COMMAND_NAME, args);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        }
+            Settings settings = SettingsBuilder.builder().build();
+            InvocationProviders invocationProviders = new AeshInvocationProviders(settings);
+            AeshContext aeshContext = settings.aeshContext();
+            CommandLineParser<AddUserCommand<CommandInvocation>> parser = new AeshCommandContainerBuilder<AddUserCommand<CommandInvocation>, CommandInvocation>().create(new AddUserCommand<>()).getParser();
 
-        if (command.isHelp()) {
-            printHelp(command);
-        } else {
-            try {
+            StringBuilder sb = new StringBuilder(COMMAND_NAME);
+            for (String arg : args) {
+                sb.append(" " + arg);
+            }
+            parser.populateObject(sb.toString(), invocationProviders, aeshContext, CommandLineParser.Mode.VALIDATE);
+            command = parser.getCommand();
+
+            if (command.isHelp()) {
+                printHelp(command);
+            } else {
                 String password = command.getPassword();
                 checkRequired(command, "user");
 
-                if(isEmpty(command, "password")){
+                if (isEmpty(command, "password")) {
                     password = promptForInput();
                 }
 
                 File addUserFile = getAddUserFile(command);
 
                 createUser(addUserFile, command.getRealm(), command.getUser(), password, command.getRoles(), command.getIterations());
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
-                System.exit(1);
             }
         }
+        catch (Exception e){
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+
     }
 
     private static File getAddUserFile(AddUserCommand command) throws Exception {
@@ -255,7 +274,7 @@ public class AddUser {
         return new String(passwordArray);
     }
 
-    private static void printHelp(Command command) throws CommandNotFoundException {
+    private static void printHelp(Command command) throws CommandNotFoundException, CommandLineParserException {
         CommandRegistry registry = new AeshCommandRegistryBuilder().command(command).create();
         CommandContainer commandContainer = registry.getCommand(command.getClass().getAnnotation(CommandDefinition.class).name(), null);
         String help = commandContainer.printHelp(null);
@@ -263,7 +282,7 @@ public class AddUser {
     }
 
     @CommandDefinition(name= COMMAND_NAME, description = "[options...]")
-    public static class AddUserCommand implements Command {
+    public static class AddUserCommand<CI extends CommandInvocation> implements Command<CI> {
 
         @Option(shortName = 'r', hasValue = true, description = "Name of realm to add user to")
         private String realm;

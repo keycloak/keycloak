@@ -42,33 +42,25 @@ public class InitializerState extends SessionEntity {
 
     private static final Logger log = Logger.getLogger(InitializerState.class);
 
-    private final int sessionsCount;
     private final int segmentsCount;
     private final BitSet segments;
     private int lowestUnfinishedSegment = 0;
 
-    public InitializerState(int sessionsCount, int sessionsPerSegment) {
-        this.sessionsCount = sessionsCount;
+    public InitializerState(int segmentsCount) {
+        this.segmentsCount = segmentsCount;
+        this.segments = new BitSet(segmentsCount);
 
-        int segmentsCountLocal = sessionsCount / sessionsPerSegment;
-        if (sessionsPerSegment * segmentsCountLocal < sessionsCount) {
-            segmentsCountLocal = segmentsCountLocal + 1;
-        }
-        this.segmentsCount = segmentsCountLocal;
-        this.segments = new BitSet(segmentsCountLocal);
-
-        log.debugf("sessionsCount: %d, sessionsPerSegment: %d, segmentsCount: %d", sessionsCount, sessionsPerSegment, segmentsCountLocal);
+        log.debugf("segmentsCount: %d", segmentsCount);
 
         updateLowestUnfinishedSegment();
     }
 
-    private InitializerState(String realmId, int sessionsCount, int segmentsCount, BitSet segments) {
+    private InitializerState(String realmId, int segmentsCount, BitSet segments) {
         super(realmId);
-        this.sessionsCount = sessionsCount;
         this.segmentsCount = segmentsCount;
         this.segments = segments;
 
-        log.debugf("sessionsCount: %d, segmentsCount: %d", sessionsCount, segmentsCount);
+        log.debugf("segmentsCount: %d", segmentsCount);
 
         updateLowestUnfinishedSegment();
     }
@@ -116,18 +108,15 @@ public class InitializerState extends SessionEntity {
     @Override
     public String toString() {
         int finished = segments.cardinality();
-        int nonFinished = this.segmentsCount;
+        int nonFinished = segmentsCount - finished;
 
-        return "sessionsCount: "
-          + sessionsCount
-          + (", finished segments count: " + finished)
+        return "finished segments count: " + finished
           + (", non-finished segments count: " + nonFinished);
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 97 * hash + this.sessionsCount;
         hash = 97 * hash + this.segmentsCount;
         hash = 97 * hash + Objects.hashCode(this.segments);
         hash = 97 * hash + this.lowestUnfinishedSegment;
@@ -146,9 +135,6 @@ public class InitializerState extends SessionEntity {
             return false;
         }
         final InitializerState other = (InitializerState) obj;
-        if (this.sessionsCount != other.sessionsCount) {
-            return false;
-        }
         if (this.segmentsCount != other.segmentsCount) {
             return false;
         }
@@ -170,7 +156,6 @@ public class InitializerState extends SessionEntity {
             output.writeByte(VERSION_1);
 
             MarshallUtil.marshallString(value.getRealmId(), output);
-            output.writeInt(value.sessionsCount);
             output.writeInt(value.segmentsCount);
             MarshallUtil.marshallByteArray(value.segments.toByteArray(), output);
         }
@@ -188,7 +173,6 @@ public class InitializerState extends SessionEntity {
         public InitializerState readObjectVersion1(ObjectInput input) throws IOException {
             return new InitializerState(
               MarshallUtil.unmarshallString(input),
-              input.readInt(),
               input.readInt(),
               BitSet.valueOf(MarshallUtil.unmarshallByteArray(input))
             );
