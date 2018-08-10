@@ -57,6 +57,40 @@ This parameter is *optional*. An integer N that defines a limit for the amount o
 +
 This parameter is *optional*. A boolean value indicating whether the server should create permission requests to the resources and scopes referenced by a permission ticket.
 This parameter only have effect if used together with the `ticket` parameter as part of a UMA authorization process.
++
+* **response_mode**
++
+This parameter is *optional*. A string value indicating how the server should respond to authorization requests. This parameter is specially useful when
+you are mainly interested in either the overall decision or the permissions granted by the server, instead of an standard OAuth2 response. Possible values are:
++
+*** `decision`
++
+Indicates that responses from the server should only represent the overall decision by returning a JSON with the following format:
++
+```json
+{
+    'result': true
+}
+```
++
+If the authorization request does not map to any permission, a `403` HTTP status code is returned instead.
++
+*** `permissions`
++
+Indicates that responses from the server should contain any permission granted by the server by returning a JSON with the following format:
++
+```json
+[
+    {
+        'rsid': 'My Resource'
+        'scopes': ['view', 'update']
+    },
+
+    ...
+]
+```
++
+If the authorization request does not map to any permission, a `403` HTTP status code is returned instead.
 
 Example of a authorization request when a client is seeking access to two resources protected by a resource server.
 
