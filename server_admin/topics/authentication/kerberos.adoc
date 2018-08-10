@@ -188,6 +188,47 @@ WARNING: Credential delegation has some security implications so only use it if 
          It's highly recommended to use it together with HTTPS.
          See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[this article] for more details.
 
+==== Cross-realm trust
+
+In the Kerberos V5 protocol, the `realm` is a set of Kerberos principals defined in the Kerberos database (typically LDAP server).
+The Kerberos protocol has a concept of cross-realm trust. For example, if there are 2 kerberos realms A and B, the cross-realm trust
+will allow the users from realm A to access resources (services) of realm B. This means that realm B trusts the realm A.
+
+.Kerberos cross-realm trust
+image:images/kerberos-trust-basic.png[]
+
+
+The {project_name} server has support for cross-realm trust. There are few things which need to be done to achieve this:
+
+* Configure the Kerberos servers for the cross-realm trust. This step is dependent on the concrete Kerberos server implementations used.
+In general, it is needed to add the Kerberos principal `krbtgt/B@A` to both Kerberos databases of realm A and B. It is needed that
+this principal has same keys on both Kerberos realms. This is usually achieved when the principals have same password, key version number
+and there are same ciphers used in both realms. It is recommended to consult the Kerberos server documentation for more details.
+
+NOTE: The cross-realm trust is unidirectional by default. If you want bidirectional trust to have realm A also trust realm B,
+you must also add the principal `krbtgt/A@B` to both Kerberos databases. However, trust is transitive by default. If realm B
+trusts realm A and realm C trusts realm B, then realm C automatically trusts realm A without a need to have principal `krbtgt/C@A`
+available. Some additional configuration (for example `capaths`) may be needed to configure on Kerberos client side, so that
+the clients are able to find the trust path. Consult the Kerberos documentation for more details.
+
+
+* Configure {project_name} server
+
+** If you use an LDAP storage provider with Kerberos support, you need to configure the server principal for realm B as in this
+example: `HTTP/mydomain.com@B`. The LDAP server must be able to find the users from realm A if you want users from realm A to
+successfully authenticate to {project_name}, as {project_name} server must be able to do SPNEGO flow and then find the users.
+For example, kerberos principal user `john@A` must be available as a user in the LDAP under an LDAP DN
+such as `uid=john,ou=People,dc=example,dc=com`. If you want both users from realm A and B to authenticate, you need to ensure
+that LDAP is able to find users from both realms A and B. We want to improve this limitation in future versions, so you can
+potentially create more separate LDAP providers for separate realms and ensure that SPNEGO works for both of them.
+
+** If you use a Kerberos user storage provider (typically the Kerberos without LDAP integration), you need to configure the
+server principal as `HTTP/mydomain.com@B` and users from both Kerberos realms A and B should be able to authenticate.
+
+WARNING: For the Kerberos user storage provider, it is recommended that there are no conflicting users among kerberos realms. If
+conflicting users exist, they will be mapped to the same {project_name} user. This is also something, which we want to improve in
+future versions and provide some more flexible mappings from Kerberos principals to {project_name} usernames.
+
 ==== Troubleshooting
 
 If you have issues, we recommend that you enable additional logging to debug the problem:
