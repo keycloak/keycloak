@@ -36,4 +36,4 @@ grantMethod: prompt <4>
 Use client ID and secret defined by `oc create` command to enter them back on the {project_name} `Add identity provider` page.
 Go back to {project_name} and specify those items.
 
-Please refer to https://docs.openshift.org/latest/architecture/additional_concepts/authentication.html#oauth[official OpenShift documentation] for more detailed guides.
+Please refer to https://docs.okd.io/latest/architecture/additional_concepts/authentication.html#oauth[official OpenShift documentation] for more detailed guides.
