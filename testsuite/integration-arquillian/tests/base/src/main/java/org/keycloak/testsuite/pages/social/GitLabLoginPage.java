@@ -45,6 +45,12 @@ public class GitLabLoginPage extends AbstractSocialLoginPage {
         catch (NoSuchElementException e) {
             // already logged in
         }
-        authorizeButton.click();
+
+        try {
+            authorizeButton.click();
+        }
+        catch (NoSuchElementException e) {
+            // might not be necessary
+        }
     }
 }
