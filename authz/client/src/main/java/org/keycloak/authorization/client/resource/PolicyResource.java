@@ -69,7 +69,7 @@ public class PolicyResource {
         try {
             return callable.call();
         } catch (Exception cause) {
-            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error creating policy for resurce [" + resourceId + "]", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error creating policy for resource [" + resourceId + "]", cause);
         }
     }
 
@@ -99,7 +99,7 @@ public class PolicyResource {
         try {
             callable.call();
         } catch (Exception cause) {
-            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating policy for resurce [" + resourceId + "]", cause);
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating policy for resource [" + resourceId + "]", cause);
         }
     }
 
@@ -121,7 +121,7 @@ public class PolicyResource {
         try {
             callable.call();
         } catch (Exception cause) {
-            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating policy for resurce [" + resourceId + "]", cause);
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating policy for resource [" + resourceId + "]", cause);
         }
     }
 
@@ -181,7 +181,7 @@ public class PolicyResource {
         try {
             return callable.call();
         } catch (Exception cause) {
-            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error creating policy for resurce [" + resourceId + "]", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error creating policy for resource [" + resourceId + "]", cause);
         }
     }
 }
