@@ -151,7 +151,7 @@ public class UserManagedPermissionService {
         }
 
         if (!resource.getOwner().equals(identity.getId())) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Only resource onwer can access policies for resource [" + resourceId + "]", Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Only resource owner can access policies for resource [" + resourceId + "]", Status.BAD_REQUEST);
         }
 
         if (!resource.isOwnerManagedAccess()) {
