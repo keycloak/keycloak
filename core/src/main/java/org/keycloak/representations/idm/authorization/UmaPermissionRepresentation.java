@@ -26,32 +26,15 @@ import java.util.Set;
  */
 public class UmaPermissionRepresentation extends AbstractPolicyRepresentation {
     
-    private String id;
-    private String description;
     private Set<String> roles;
     private Set<String> groups;
     private Set<String> clients;
+    private Set<String> users;
     private String condition;
 
     @Override
     public String getType() {
         return "uma";
-    }
-
-    public void setId(String id){
-        this.id = id;
-    }
-    
-    public String getId(){
-        return id;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public void setRoles(Set<String> roles) {
@@ -122,6 +105,27 @@ public class UmaPermissionRepresentation extends AbstractPolicyRepresentation {
 
     public Set<String> getClients() {
         return clients;
+    }
+
+    public void setUsers(Set<String> users) {
+        this.users = users;
+    }
+
+    public void addUser(String... user) {
+        if (this.users == null) {
+            this.users = new HashSet<>();
+        }
+        this.users.addAll(Arrays.asList(user));
+    }
+
+    public void removeUser(String user) {
+        if (this.users != null) {
+            this.users.remove(user);
+        }
+    }
+
+    public Set<String> getUsers() {
+        return this.users;
     }
 
     public void setCondition(String condition) {
