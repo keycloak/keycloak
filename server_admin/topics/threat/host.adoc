@@ -1,22 +1,33 @@
 
 === Host
 
-{project_name} uses the request URL for a number of things. For example, the URL sent in password reset emails.
+{project_name} uses the public hostname for a number of things. For example, in the token issuer fields and URLs sent in
+password reset emails.
 
-By default, the request URL is based on the `Host` header and there is no check to make sure this URL is the valid and
-correct URL.
+By default, the hostname is based on the request headers and there is no check to make sure this hostname is valid.
 
 If you are not using a load balancer or proxy in front of {project_name} that prevents invalid host headers, you must
-explicitly configure what URLs should be accepted.
+explicitly configure what hostnames should be accepted.
 
-The following example will only permit requests to `localhost.localdomain` or `localhost`:
+The Hostname SPI provides a way to configure the hostname for a request. Out of the box there are two providers. These are
+request and fixed. It is also possible to develop your own provider in the case the built-in providers do not provide
+the functionality needed.
+
+==== Request provider
+
+This is the default hostname provider and uses request headers to determine the hostname. As it uses the headers from
+the request it is important to use this in combination with a proxy or a filter that rejects invalid hostnames.
+
+It is beyond the scope of this documentation to provide instructions on how to configure valid hostnames for a proxy. To
+configure it in a filter you need to edit standalone.xml to set permitted aliases for the server. The following example
+will only permit requests to `auth.example.com`:
 
 [source,xml,subs="attributes+"]
 ----
 <subsystem xmlns="{subsystem_undertow_xml_urn}">
     <server name="default-server" default-host="ignore">
         ...
-        <host name="default-host" alias="localhost.localdomain, localhost">
+        <host name="default-host" alias="auth.example.com">
             <location name="/" handler="welcome-content"/>
             <http-invoker security-realm="ApplicationRealm"/>
         </host>
@@ -33,8 +44,54 @@ Here is the equivalent configuration using CLI commands:
 [source,bash]
 ----
 /subsystem=undertow/server=default-server:write-attribute(name=default-host,value=ignore)
-/subsystem=undertow/server=default-server/host=default-host:write-attribute(name=alias,value=[localhost.localdomain, localhost]
+/subsystem=undertow/server=default-server/host=default-host:write-attribute(name=alias,value=[auth.example.com]
 
 :reload
 ----
+
+==== Fixed provider
+
+The fixed provider makes it possible to configure a fixed hostname. Unlike the request provider the fixed
+provider allows internal applications to invoke {project_name} on an alternative URL (for example an internal IP
+address). It is also possible to override the hostname for a specific realm through the configuration of the realm in the
+admin console.
+
+This is the recommended provider to use in production.
+
+To change to the fixed provider and configure the hostname edit standalone.xml. The following example shows the fixed
+provider with the hostname set to auth.example.com:
+
+[source, xml]
+----
+<spi name="hostname">
+    <default-provider>fixed</default-provider>
+    <provider name="fixed" enabled="true">
+        <properties>
+            <property name="hostname" value="auth.example.com"/>
+            <property name="httpPort" value="-1"/>
+            <property name="httpsPort" value="-1"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+Here is the equivalent configuration using CLI commands:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=hostname:write-attribute(name=default-provider, value="fixed")
+/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.hostname,value="auth.example.com")
+----
+
+By default it is assumed that the public URL uses default ports. If you are not using default ports this can be changed
+by setting the `httpPort` and `httpsPort` properties for the fixed provider.
+
+==== Custom provider
+
+To develop a custom hostname provider you need to implement `org.keycloak.urls.HostnameProviderFactory` and
+`org.keycloak.urls.HostnameProvider`.
+
+Follow the instructions in the Service Provider Interfaces section in link:{developerguide_link}[{developerguide_name}]
+for more information on how to develop a custom provider.
+
 

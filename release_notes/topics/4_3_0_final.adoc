@@ -1,0 +1,8 @@
+= Hostname SPI
+
+The hostname SPI introduces a more flexible way to configure the hostname for {project_name}. There is two
+built-in providers. The first is request, which uses the request headers to determine the hostname. The second
+is fixed, which allows configuring a fixed hostname. The latter makes sure that only valid hostnames can be
+used and also allows internal applications to invoke {project_name} through an alternative URL.
+
+For more details refer to the threat mitigation section in the link:{adminguide_link}[{adminguide_name}].

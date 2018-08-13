@@ -1,5 +1,14 @@
 == Migration Changes
 
+=== Migration to 4.3.0
+
+==== Hostname configuration
+
+In previous versions it was recommended to use a filter to specify permitted hostnames. It is now possible to
+set a fixed hostname which makes it easier to make sure the valid hostname is used and also allows internal
+applications to invoke {project_name} through an alternative URL, for example an internal IP address. It is
+recommended that you switch to this approach in production.
+
 === Migrating to 4.0.0
 
 ==== Client Templates changed to Client Scopes
