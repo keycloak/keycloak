@@ -240,7 +240,6 @@
                                 <goal>copy</goal>
                             </goals>
                             <configuration>
-                                <skip>${app.server.skip.unpack}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
@@ -296,7 +295,6 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${app.server.skip.unpack}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>

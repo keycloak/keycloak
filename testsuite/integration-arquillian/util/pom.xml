@@ -65,5 +65,11 @@
             <artifactId>org.osgi.enterprise</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <!-- Ability to compile/run jsp on undertow -->
+            <groupId>io.undertow.jastow</groupId>
+            <artifactId>jastow</artifactId>
+            <version>2.1.0.Final</version>
+        </dependency>
     </dependencies>
 </project>
