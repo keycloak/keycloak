@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -48,10 +51,12 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -60,6 +65,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -127,30 +133,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         configureAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
     }
 
-    public void configureAuthorization(String clientId) throws Exception {
-        ClientResource client = getClient(getRealm(), clientId);
-        AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Default Policy");
-        policy.setCode("$evaluation.grant();");
-
-        authorization.policies().js().create(policy).close();
-
-        for (int i = 1; i <= 20; i++) {
-            ResourceRepresentation resource = new ResourceRepresentation("Resource " + i);
-
-            authorization.resources().create(resource).close();
-
-            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
-
-            permission.setName(resource.getName() + " Permission");
-            permission.addResource(resource.getName());
-            permission.addPolicy(policy.getName());
-
-            authorization.permissions().resource().create(permission).close();
-        }
+    @After
+    public void removeAuthorization() throws Exception {
+        removeAuthorization(RESOURCE_SERVER_TEST);
+        removeAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
     }
 
     @Test
@@ -770,6 +756,209 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
     }
 
+    @Test
+    public void testOverridePermission() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        JSPolicyRepresentation onlyOwnerPolicy = new JSPolicyRepresentation();
+
+        onlyOwnerPolicy.setName(KeycloakModelUtils.generateId());
+        onlyOwnerPolicy.setCode("var context = $evaluation.getContext();\n" +
+                "var identity = context.getIdentity();\n" +
+                "var permission = $evaluation.getPermission();\n" +
+                "var resource = permission.getResource();\n" +
+                "\n" +
+                "if (resource) {\n" +
+                "    if (resource.owner == identity.id) {\n" +
+                "        $evaluation.grant();\n" +
+                "    }\n" +
+                "}");
+
+        authorization.policies().js().create(onlyOwnerPolicy).close();
+
+        ResourceRepresentation typedResource = new ResourceRepresentation();
+
+        typedResource.setType("resource");
+        typedResource.setName(KeycloakModelUtils.generateId());
+        typedResource.addScope("read", "update");
+
+        typedResource = authorization.resources().create(typedResource).readEntity(ResourceRepresentation.class);
+
+        ResourcePermissionRepresentation typedResourcePermission = new ResourcePermissionRepresentation();
+
+        typedResourcePermission.setName(KeycloakModelUtils.generateId());
+        typedResourcePermission.setResourceType("resource");
+        typedResourcePermission.addPolicy(onlyOwnerPolicy.getName());
+
+        typedResourcePermission = authorization.permissions().resource().create(typedResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+
+        ResourceRepresentation martaResource = new ResourceRepresentation();
+
+        martaResource.setType("resource");
+        martaResource.setName(KeycloakModelUtils.generateId());
+        martaResource.addScope("read", "update");
+        martaResource.setOwner("marta");
+
+        martaResource = authorization.resources().create(martaResource).readEntity(ResourceRepresentation.class);
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(martaResource.getName());
+
+        // marta can access her resource
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
+        }
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(martaResource.getId());
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        UserPolicyRepresentation onlyKoloPolicy = new UserPolicyRepresentation();
+
+        onlyKoloPolicy.setName(KeycloakModelUtils.generateId());
+        onlyKoloPolicy.addUser("kolo");
+
+        authorization.policies().user().create(onlyKoloPolicy);
+
+        ResourcePermissionRepresentation martaResourcePermission = new ResourcePermissionRepresentation();
+
+        martaResourcePermission.setName(KeycloakModelUtils.generateId());
+        martaResourcePermission.addResource(martaResource.getId());
+        martaResourcePermission.addPolicy(onlyKoloPolicy.getName());
+
+        martaResourcePermission = authorization.permissions().resource().create(martaResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
+        }
+
+        typedResourcePermission.setResourceType(null);
+        typedResourcePermission.addResource(typedResource.getName());
+
+        authorization.permissions().resource().findById(typedResourcePermission.getId()).update(typedResourcePermission);
+
+        // now kolo can access marta's resources, last permission is overriding policies from typed resource
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
+        }
+
+        ScopePermissionRepresentation martaResourceUpdatePermission = new ScopePermissionRepresentation();
+
+        martaResourceUpdatePermission.setName(KeycloakModelUtils.generateId());
+        martaResourceUpdatePermission.addResource(martaResource.getId());
+        martaResourceUpdatePermission.addScope("update");
+        martaResourceUpdatePermission.addPolicy(onlyOwnerPolicy.getName());
+
+        martaResourceUpdatePermission = authorization.permissions().scope().create(martaResourceUpdatePermission).readEntity(ScopePermissionRepresentation.class);
+
+        // now kolo can only read, but not update
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(1, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read"));
+        }
+
+        authorization.permissions().resource().findById(martaResourcePermission.getId()).remove();
+
+        try {
+            // after removing permission to marta resource, kolo can not access any scope in the resource
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        martaResourceUpdatePermission.addPolicy(onlyKoloPolicy.getName());
+        martaResourceUpdatePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).update(martaResourceUpdatePermission);
+
+        // now kolo can access because update permission changed to allow him to access the resource using an affirmative strategy
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(1, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("update"));
+        }
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+
+        // marta can still access her resource
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("update", "read"));
+        }
+
+        authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).remove();
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+
+        try {
+            // back to original setup, permissions not granted by the type resource
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+    }
+
     private void testRptRequestWithResourceName(String configFile) {
         Metadata metadata = new Metadata();
 
@@ -860,5 +1049,44 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         return authzClient;
+    }
+
+    private void configureAuthorization(String clientId) throws Exception {
+        ClientResource client = getClient(getRealm(), clientId);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName("Default Policy");
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        for (int i = 1; i <= 20; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation("Resource " + i);
+
+            authorization.resources().create(resource).close();
+
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+            permission.setName(resource.getName() + " Permission");
+            permission.addResource(resource.getName());
+            permission.addPolicy(policy.getName());
+
+            authorization.permissions().resource().create(permission).close();
+        }
+    }
+
+    private void removeAuthorization(String clientId) throws Exception {
+        ClientResource client = getClient(getRealm(), clientId);
+        ClientRepresentation representation = client.toRepresentation();
+
+        representation.setAuthorizationServicesEnabled(false);
+
+        client.update(representation);
+
+        representation.setAuthorizationServicesEnabled(true);
+
+        client.update(representation);
     }
 }

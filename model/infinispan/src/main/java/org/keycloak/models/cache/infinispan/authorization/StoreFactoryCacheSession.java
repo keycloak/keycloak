@@ -666,7 +666,17 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             return result;
         }
 
-         @Override
+        @Override
+        public void findByScope(List<String> ids, String resourceServerId, Consumer<Resource> consumer) {
+            if (ids == null) return;
+
+            for (String id : ids) {
+                String cacheKey = getResourceByScopeCacheKey(id, resourceServerId);
+                cacheQuery(cacheKey, ResourceScopeListQuery.class, () -> getResourceStoreDelegate().findByScope(Arrays.asList(id), resourceServerId), (revision, resources) -> new ResourceScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+            }
+        }
+
+        @Override
         public List<Resource> findByType(String type, String resourceServerId) {
              if (type == null) return Collections.emptyList();
              String cacheKey = getResourceByTypeCacheKey(type, resourceServerId);

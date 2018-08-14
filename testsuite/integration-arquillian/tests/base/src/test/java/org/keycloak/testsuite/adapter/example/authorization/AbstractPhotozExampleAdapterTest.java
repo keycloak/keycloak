@@ -303,7 +303,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         printUpdatedPolicies();
 
         clientPage.navigateToAdminAlbum(false);
+
         clientPage.viewAlbum("Alice Family Album", true);
+        clientPage.navigateToAdminAlbum(false);
+        clientPage.deleteAlbum("Alice Family Album", true);
 
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
             if ("Album Resource Permission".equals(policy.getName())) {
@@ -366,6 +369,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
+    @Ignore
     @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
         ContainerAssume.assumeNotAuthServerUndertow();
@@ -398,6 +402,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     @Test
+    @Ignore
     public void testClientRoleNotRequired() throws Exception {
         loginToClientPage("alice", "alice");
 

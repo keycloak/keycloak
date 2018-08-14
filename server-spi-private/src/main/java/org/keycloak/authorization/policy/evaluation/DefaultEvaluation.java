@@ -61,10 +61,6 @@ public class DefaultEvaluation implements Evaluation {
         this(permission, executionContext, parentPolicy, null, decision, authorizationProvider, decisionCache);
     }
 
-    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision, AuthorizationProvider authorizationProvider) {
-        this(permission, executionContext, parentPolicy, policy, decision, authorizationProvider, null);
-    }
-
     public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, AuthorizationProvider authorizationProvider) {
         this(permission, executionContext, null, null, decision, authorizationProvider, Collections.emptyMap());
     }
@@ -275,6 +271,7 @@ public class DefaultEvaluation implements Evaluation {
 
     public void setPolicy(Policy policy) {
         this.policy = policy;
+        this.effect = null;
     }
 
     public void setEffect(Effect effect) {

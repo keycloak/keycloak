@@ -158,8 +158,7 @@ public class PolicyEvaluationService {
     }
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization, AuthorizationRequest request) {
-        List<ResourceRepresentation> resources = representation.getResources();
-        return resources.stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
+        return representation.getResources().stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
             StoreFactory storeFactory = authorization.getStoreFactory();
             if (resource == null) {
                 resource = new ResourceRepresentation();
@@ -171,25 +170,28 @@ public class PolicyEvaluationService {
                 givenScopes = new HashSet();
             }
 
-            Set<String> scopeNames = givenScopes.stream().map(ScopeRepresentation::getName).collect(Collectors.toSet());
+            ScopeStore scopeStore = storeFactory.getScopeStore();
+
+            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(scopeRepresentation.getName(), resourceServer.getId())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
-                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopeNames, authorization, request))).stream();
+                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopeNames, authorization, request));
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request));
             } else {
-                ScopeStore scopeStore = storeFactory.getScopeStore();
-                List<Scope> scopes = scopeNames.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
-                List<ResourcePermission> collect = new ArrayList<>();
-
-                if (!scopes.isEmpty()) {
-                    collect.addAll(scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer)).collect(Collectors.toList()));
-                } else {
-                    collect.addAll(Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request));
+                if (scopes.isEmpty()) {
+                    return Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request).stream();
                 }
 
-                return collect.stream();
+                List<Resource> resources = storeFactory.getResourceStore().findByScope(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
+
+                if (resources.isEmpty()) {
+                    return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
+                }
+
+
+                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request));
             }
         }).collect(Collectors.toList());
     }
@@ -282,7 +284,7 @@ public class PolicyEvaluationService {
         }
 
         @Override
-        protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Set<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
+        protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
             result.setStatus(Effect.PERMIT);
             result.getPermission().getScopes().retainAll(grantedScopes);
             super.grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);

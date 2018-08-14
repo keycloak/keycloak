@@ -24,6 +24,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -32,7 +33,7 @@ import java.util.Map;
 public class Result {
 
     private final ResourcePermission permission;
-    private final Map<String, PolicyResult> results = new HashMap<>();
+    private final Map<String, PolicyResult> results = new LinkedHashMap<>();
     private final Evaluation evaluation;
     private Effect status = Effect.DENY;
 
@@ -63,6 +64,10 @@ public class Result {
 
     public Effect getEffect() {
         return status;
+    }
+
+    public PolicyResult getPolicy(Policy policy) {
+        return results.get(policy.getId());
     }
 
     public static class PolicyResult {
