@@ -110,6 +110,8 @@ public interface ResourceStore {
      */
     List<Resource> findByScope(List<String> id, String resourceServerId);
 
+    void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer);
+
     /**
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *

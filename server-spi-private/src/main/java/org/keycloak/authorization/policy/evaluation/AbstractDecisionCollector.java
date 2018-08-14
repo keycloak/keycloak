@@ -38,7 +38,21 @@ public abstract class AbstractDecisionCollector implements Decision<DefaultEvalu
         Policy parentPolicy = evaluation.getParentPolicy();
 
         if (parentPolicy != null) {
-            results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());
+            if (parentPolicy.equals(evaluation.getPolicy())) {
+                Result.PolicyResult cached = results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).policy(parentPolicy);
+
+                for (Result result : results.values()) {
+                    Result.PolicyResult policyResult = result.getPolicy(parentPolicy);
+
+                    if (policyResult != null) {
+                        for (Result.PolicyResult associatePolicy : policyResult.getAssociatedPolicies()) {
+                            cached.policy(associatePolicy.getPolicy(), associatePolicy.getEffect());
+                        }
+                    }
+                }
+            } else {
+                results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());
+            }
         } else {
             results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).setStatus(evaluation.getEffect());
         }
@@ -51,7 +65,11 @@ public abstract class AbstractDecisionCollector implements Decision<DefaultEvalu
 
     @Override
     public void onComplete(ResourcePermission permission) {
-        onComplete(results.get(permission));
+        Result result = results.get(permission);
+
+        if (result != null) {
+            onComplete(result);
+        }
     }
 
     protected void onComplete(Result result) {

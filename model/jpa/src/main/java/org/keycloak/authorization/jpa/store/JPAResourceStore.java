@@ -238,25 +238,27 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByScope(List<String> scopes, String resourceServerId) {
+        List<Resource> result = new ArrayList<>();
+
+        findByScope(scopes, resourceServerId, result::add);
+
+        return result;
+    }
+
+    @Override
+    public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByScope", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopes);
         query.setParameter("serverId", resourceServerId);
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(id -> resourceStore.findById(id, resourceServerId))
+                .filter(Objects::nonNull)
+                .forEach(consumer);
     }
 
     @Override

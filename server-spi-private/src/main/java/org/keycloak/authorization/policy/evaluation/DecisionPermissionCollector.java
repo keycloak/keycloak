@@ -56,50 +56,46 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
     public void onComplete(Result result) {
         ResourcePermission permission = result.getPermission();
         Resource resource = permission.getResource();
-        Set<Scope> grantedScopes = new HashSet<>();
+        List<Scope> requestedScopes = permission.getScopes();
 
         if (Effect.PERMIT.equals(result.getEffect())) {
-            if (resource != null) {
-                grantedScopes.addAll(resource.getScopes());
-            } else {
-                grantedScopes.addAll(permission.getScopes());
-            }
-
-            grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
+            grantPermission(authorizationProvider, permissions, permission, resource != null ? resource.getScopes() : requestedScopes, resourceServer, request, result);
         } else {
+            Set<Scope> grantedScopes = new HashSet<>();
             Set<Scope> deniedScopes = new HashSet<>();
             List<Result.PolicyResult> userManagedPermissions = new ArrayList<>();
-            Collection<Result.PolicyResult> permissionResults = new ArrayList<>(result.getResults());
-            Iterator<Result.PolicyResult> iterator = permissionResults.iterator();
+            boolean resourceGranted = false;
+            boolean anyDeny = false;
 
-            while (iterator.hasNext()) {
-                Result.PolicyResult policyResult = iterator.next();
+            for (Result.PolicyResult policyResult : result.getResults()) {
                 Policy policy = policyResult.getPolicy();
                 Set<Scope> policyScopes = policy.getScopes();
 
                 if (isGranted(policyResult)) {
                     if (isScopePermission(policy)) {
-                        for (Scope scope : permission.getScopes()) {
+                        for (Scope scope : requestedScopes) {
                             if (policyScopes.contains(scope)) {
-                                // try to grant any scope from a scope-based permission
                                 grantedScopes.add(scope);
                             }
                         }
                     } else if (isResourcePermission(policy)) {
-                        // we assume that all requested scopes should be granted given that we are processing a resource-based permission.
-                        // Later they will be filtered based on any denied scope, if any.
-                        // TODO: we could probably provide a configuration option to let users decide whether or not a resource-based permission should grant all scopes associated with the resource.
-                        grantedScopes.addAll(permission.getScopes());
-                    }
-                    if (resource != null && resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
+                        grantedScopes.addAll(requestedScopes);
+                    } else if (resource != null && resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
                         userManagedPermissions.add(policyResult);
                     }
-                    iterator.remove();
+                    if (!resourceGranted) {
+                        resourceGranted = policy.getResources().contains(resource);
+                    }
                 } else {
                     if (isResourcePermission(policy)) {
-                        deniedScopes.addAll(resource.getScopes());
+                        if (!resourceGranted) {
+                            deniedScopes.addAll(requestedScopes);
+                        }
                     } else {
                         deniedScopes.addAll(policyScopes);
+                    }
+                    if (!anyDeny) {
+                        anyDeny = true;
                     }
                 }
             }
@@ -107,28 +103,27 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             // remove any scope denied from the list of granted scopes
             grantedScopes.removeAll(deniedScopes);
 
-            if (!userManagedPermissions.isEmpty()) {
-                Set<Scope> scopes = new HashSet<>();
-
+            if (userManagedPermissions.isEmpty()) {
+                if (!resourceGranted && (grantedScopes.isEmpty() && !requestedScopes.isEmpty())) {
+                    return;
+                }
+            } else {
                 for (Result.PolicyResult userManagedPermission : userManagedPermissions) {
                     grantedScopes.addAll(userManagedPermission.getPolicy().getScopes());
                 }
 
-                if (!scopes.isEmpty()) {
-                    grantedScopes.clear();
+                if (grantedScopes.isEmpty() && !resource.getScopes().isEmpty()) {
+                    return;
                 }
 
-                // deny scopes associated with a resource that are not explicitly granted by the user
-                if (!resource.getScopes().isEmpty() && scopes.isEmpty()) {
-                    deniedScopes.addAll(resource.getScopes());
-                } else {
-                    permissionResults.clear();
-                }
+                anyDeny = false;
             }
 
-            if (!grantedScopes.isEmpty() || (permissionResults.isEmpty() && deniedScopes.isEmpty())) {
-                grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
+            if (anyDeny && grantedScopes.isEmpty()) {
+                return;
             }
+
+            grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
         }
     }
 
@@ -141,7 +136,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
         throw new RuntimeException("Failed to evaluate permissions", cause);
     }
 
-    protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Set<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
+    protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
         Set<String> scopeNames = grantedScopes.stream().map(Scope::getName).collect(Collectors.toSet());
         Resource resource = permission.getResource();
 
@@ -149,14 +144,11 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             permissions.add(createPermission(resource, scopeNames, permission.getClaims(), request));
         } else if (!grantedScopes.isEmpty()) {
             ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
-            List<Resource> resources = resourceStore.findByScope(grantedScopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
 
-            if (resources.isEmpty()) {
+            resourceStore.findByScope(grantedScopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource1 -> permissions.add(createPermission(resource, scopeNames, permission.getClaims(), request)));
+
+            if (permissions.isEmpty()) {
                 permissions.add(createPermission(null, scopeNames, permission.getClaims(), request));
-            } else {
-                for (Resource grantedResource : resources) {
-                    permissions.add(createPermission(grantedResource, scopeNames, permission.getClaims(), request));
-                }
             }
         }
     }
