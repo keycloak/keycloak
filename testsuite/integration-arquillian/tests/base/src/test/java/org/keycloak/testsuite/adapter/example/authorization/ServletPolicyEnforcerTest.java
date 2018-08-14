@@ -56,6 +56,7 @@ import org.openqa.selenium.By;
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
 
@@ -545,7 +546,7 @@ public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
     }
 
     private void navigateTo() {
-        this.driver.navigate().to(getResourceServerUrl());
+        this.driver.navigate().to(getResourceServerUrl() + "/");
         WaitUtils.waitUntilElement(By.xpath("//p[text() = 'Welcome']"));
     }
 

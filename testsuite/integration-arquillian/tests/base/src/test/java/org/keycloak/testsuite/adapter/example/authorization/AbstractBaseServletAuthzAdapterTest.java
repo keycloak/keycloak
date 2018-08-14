@@ -138,7 +138,7 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
     }
 
     protected void navigateTo() {
-        this.driver.navigate().to(getResourceServerUrl());
+        this.driver.navigate().to(getResourceServerUrl() + "/");
         WaitUtils.waitUntilElement(By.xpath("//a[text() = 'Dynamic Menu']"));
     }
 

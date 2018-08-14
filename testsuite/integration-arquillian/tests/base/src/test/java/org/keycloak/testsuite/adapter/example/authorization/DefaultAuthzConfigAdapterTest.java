@@ -50,6 +50,7 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
 
@@ -104,7 +105,7 @@ public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
     }
 
     private void login() throws MalformedURLException {
-        this.driver.navigate().to(getResourceServerUrl());
+        this.driver.navigate().to(getResourceServerUrl() + "/");
         this.loginPage.form().login("alice", "alice");
     }
 
