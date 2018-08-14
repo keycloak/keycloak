@@ -139,6 +139,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
         bindings.put("token", token);
         bindings.put("userSession", userSession);
         bindings.put("keycloakSession", keycloakSession);
+        bindings.put("LOG", LOGGER);
       });
     } catch (Exception ex) {
       LOGGER.error("Error during execution of ProtocolMapper script", ex);
