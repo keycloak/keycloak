@@ -58,6 +58,6 @@ public class GoogleLoginPage extends AbstractSocialLoginPage {
     @Override
     public void logout() {
         log.info("performing logout from Google");
-        navigateToUri("https://www.google.com/accounts/Logout", false);
+        navigateToUri("https://www.google.com/accounts/Logout");
     }
 }
