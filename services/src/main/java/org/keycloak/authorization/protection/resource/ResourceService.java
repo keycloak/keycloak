@@ -128,7 +128,12 @@ public class ResourceService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
+
+        if(deep != null && deep) {
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult);
+        } else {
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
+        }
     }
 
     private void checkResourceServerSettings() {
