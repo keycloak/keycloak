@@ -44,3 +44,16 @@ app.get('/protected/resource', keycloak.enforcer('resource:view'), function (req
   res.json({message: 'access granted'});
 });
 ```
+
+= Support hosted domain for Google logins
+
+Login with Google now supports the `hd` parameter to restrict Google logins to a specific hosted domain at Google. When
+this is specified in the identity provider any login from a different domain is rejected.
+
+Thanks to https://github.com/brushmate[brushmate] for the contribution.
+
+= Escape unsafe tags in HTML output
+
+Most HTML output is already escaped for HTML tags, but there are some places where HTML tags are permitted.
+These are only where admin access is needed to update the value. Even though it would require admin access to update such
+fields we have added an extra layer of defence and are now escaping unsafe elements like `<script>`.
