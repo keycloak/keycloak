@@ -176,9 +176,9 @@ public class PolicyEvaluationService {
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
-                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request))).stream();
+                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request));
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
                     return Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request).stream();
@@ -191,7 +191,7 @@ public class PolicyEvaluationService {
                 }
 
 
-                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, scopes.stream().map(Scope::getName).collect(Collectors.toSet()), authorization, request));
+                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, scopes, authorization, request));
             }
         }).collect(Collectors.toList());
     }

@@ -31,10 +31,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -679,6 +681,22 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertEquals(2, grantedPermission.getScopes().size());
             assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("sensors:view", "sensors:update")));
         }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(null, "sensors:view");
+        request.addPermission(null, "sensors:update");
+
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertTrue(resourceIds.containsAll(Arrays.asList(grantedPermission.getResourceId())));
+            assertEquals(2, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("sensors:view", "sensors:update")));
+        }
     }
 
     @Test
@@ -760,19 +778,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     public void testOverridePermission() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
-        JSPolicyRepresentation onlyOwnerPolicy = new JSPolicyRepresentation();
-
-        onlyOwnerPolicy.setName(KeycloakModelUtils.generateId());
-        onlyOwnerPolicy.setCode("var context = $evaluation.getContext();\n" +
-                "var identity = context.getIdentity();\n" +
-                "var permission = $evaluation.getPermission();\n" +
-                "var resource = permission.getResource();\n" +
-                "\n" +
-                "if (resource) {\n" +
-                "    if (resource.owner == identity.id) {\n" +
-                "        $evaluation.grant();\n" +
-                "    }\n" +
-                "}");
+        JSPolicyRepresentation onlyOwnerPolicy = createOnlyOwnerPolicy();
 
         authorization.policies().js().create(onlyOwnerPolicy).close();
 
@@ -956,6 +962,196 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         } catch (RuntimeException expected) {
             assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
             assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+    }
+
+    @NotNull
+    private JSPolicyRepresentation createOnlyOwnerPolicy() {
+        JSPolicyRepresentation onlyOwnerPolicy = new JSPolicyRepresentation();
+
+        onlyOwnerPolicy.setName(KeycloakModelUtils.generateId());
+        onlyOwnerPolicy.setCode("var context = $evaluation.getContext();\n" +
+                "var identity = context.getIdentity();\n" +
+                "var permission = $evaluation.getPermission();\n" +
+                "var resource = permission.getResource();\n" +
+                "\n" +
+                "if (resource) {\n" +
+                "    if (resource.owner == identity.id) {\n" +
+                "        $evaluation.grant();\n" +
+                "    }\n" +
+                "}");
+
+        return onlyOwnerPolicy;
+    }
+
+    @Test
+    public void testPermissionsWithResourceAttributes() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        JSPolicyRepresentation onlyPublicResourcesPolicy = new JSPolicyRepresentation();
+
+        onlyPublicResourcesPolicy.setName(KeycloakModelUtils.generateId());
+        onlyPublicResourcesPolicy.setCode("var createPermission = $evaluation.getPermission();\n" +
+                "var resource = createPermission.getResource();\n" +
+                "\n" +
+                "if (resource) {\n" +
+                "    var attributes = resource.getAttributes();\n" +
+                "    var visibility = attributes.get('visibility');\n" +
+                "    \n" +
+                "    if (visibility && \"private\".equals(visibility.get(0))) {\n" +
+                "        $evaluation.deny();\n" +
+                "      } else {\n" +
+                "        $evaluation.grant();\n" +
+                "    }\n" +
+                "}");
+
+        authorization.policies().js().create(onlyPublicResourcesPolicy).close();
+
+        JSPolicyRepresentation onlyOwnerPolicy = createOnlyOwnerPolicy();
+
+        authorization.policies().js().create(onlyOwnerPolicy).close();
+
+        ResourceRepresentation typedResource = new ResourceRepresentation();
+
+        typedResource.setType("resource");
+        typedResource.setName(KeycloakModelUtils.generateId());
+
+        typedResource = authorization.resources().create(typedResource).readEntity(ResourceRepresentation.class);
+
+        ResourceRepresentation userResource = new ResourceRepresentation();
+
+        userResource.setName(KeycloakModelUtils.generateId());
+        userResource.setType("resource");
+        userResource.setOwner("marta");
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put("visibility", Arrays.asList("private"));
+        userResource.setAttributes(attributes);
+
+        userResource = authorization.resources().create(userResource).readEntity(ResourceRepresentation.class);
+
+        ResourcePermissionRepresentation typedResourcePermission = new ResourcePermissionRepresentation();
+
+        typedResourcePermission.setName(KeycloakModelUtils.generateId());
+        typedResourcePermission.setResourceType("resource");
+        typedResourcePermission.addPolicy(onlyPublicResourcesPolicy.getName());
+
+        typedResourcePermission = authorization.permissions().resource().create(typedResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+
+        // marta can access any public resource
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(typedResource.getId());
+        request.addPermission(userResource.getId());
+
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(typedResource.getName(), grantedPermission.getResourceName());
+        }
+
+        typedResourcePermission.addPolicy(onlyOwnerPolicy.getName());
+        typedResourcePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        authorization.permissions().resource().findById(typedResourcePermission.getId()).update(typedResourcePermission);
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertThat(Arrays.asList(typedResource.getName(), userResource.getName()), Matchers.hasItem(grantedPermission.getResourceName()));
+        }
+
+        typedResource.setAttributes(attributes);
+
+        authorization.resources().resource(typedResource.getId()).update(typedResource);
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertThat(userResource.getName(), Matchers.equalTo(grantedPermission.getResourceName()));
+        }
+
+        userResource.addScope("create", "read");
+        authorization.resources().resource(userResource.getId()).update(userResource);
+
+        typedResource.addScope("create", "read");
+        authorization.resources().resource(typedResource.getId()).update(typedResource);
+
+        ScopePermissionRepresentation createPermission = new ScopePermissionRepresentation();
+
+        createPermission.setName(KeycloakModelUtils.generateId());
+        createPermission.addScope("create");
+        createPermission.addPolicy(onlyPublicResourcesPolicy.getName());
+
+        authorization.permissions().scope().create(createPermission);
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertThat(userResource.getName(), Matchers.equalTo(grantedPermission.getResourceName()));
+            assertThat(grantedPermission.getScopes(), Matchers.not(Matchers.hasItem("create")));
+        }
+
+        typedResource.setAttributes(new HashMap<>());
+
+        authorization.resources().resource(typedResource.getId()).update(typedResource);
+
+        response = authzClient.authorization("marta", "password").authorize();
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+
+        for (Permission grantedPermission : permissions) {
+            if (grantedPermission.getResourceName().equals(userResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.not(Matchers.hasItem("create")));
+            } else if (grantedPermission.getResourceName().equals(typedResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.containsInAnyOrder("create", "read"));
+            }
+        }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(typedResource.getId());
+        request.addPermission(userResource.getId());
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+
+        for (Permission grantedPermission : permissions) {
+            if (grantedPermission.getResourceName().equals(userResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.not(Matchers.hasItem("create")));
+            } else if (grantedPermission.getResourceName().equals(typedResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.containsInAnyOrder("create", "read"));
+            }
+        }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(userResource.getId());
+        request.addPermission(typedResource.getId());
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+
+        for (Permission grantedPermission : permissions) {
+            if (grantedPermission.getResourceName().equals(userResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.not(Matchers.hasItem("create")));
+            } else if (grantedPermission.getResourceName().equals(typedResource.getName())) {
+                assertThat(grantedPermission.getScopes(), Matchers.containsInAnyOrder("create", "read"));
+            }
         }
     }
 
