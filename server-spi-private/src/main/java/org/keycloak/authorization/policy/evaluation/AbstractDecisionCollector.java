@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -36,25 +37,39 @@ public abstract class AbstractDecisionCollector implements Decision<DefaultEvalu
     @Override
     public void onDecision(DefaultEvaluation evaluation) {
         Policy parentPolicy = evaluation.getParentPolicy();
+        ResourcePermission permission = evaluation.getPermission();
 
         if (parentPolicy != null) {
             if (parentPolicy.equals(evaluation.getPolicy())) {
-                Result.PolicyResult cached = results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).policy(parentPolicy);
+                results.computeIfAbsent(permission, permission1 -> {
+                    for (Result result : results.values()) {
+                        Result.PolicyResult policyResult = result.getPolicy(parentPolicy);
 
-                for (Result result : results.values()) {
-                    Result.PolicyResult policyResult = result.getPolicy(parentPolicy);
+                        if (policyResult != null) {
+                            Result newResult = new Result(permission1, evaluation);
+                            Result.PolicyResult newPolicyResult = newResult.policy(parentPolicy);
 
-                    if (policyResult != null) {
-                        for (Result.PolicyResult associatePolicy : policyResult.getAssociatedPolicies()) {
-                            cached.policy(associatePolicy.getPolicy(), associatePolicy.getEffect());
+                            for (Result.PolicyResult associatePolicy : policyResult.getAssociatedPolicies()) {
+                                newPolicyResult.policy(associatePolicy.getPolicy(), associatePolicy.getEffect());
+                            }
+
+                            Map<String, Set<String>> claims = result.getPermission().getClaims();
+
+                            if (!claims.isEmpty()) {
+                                permission1.addClaims(claims);
+                            }
+
+                            return newResult;
                         }
                     }
-                }
+
+                    return null;
+                }).policy(parentPolicy);
             } else {
-                results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());
+                results.computeIfAbsent(permission, p -> new Result(p, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());
             }
         } else {
-            results.computeIfAbsent(evaluation.getPermission(), permission -> new Result(permission, evaluation)).setStatus(evaluation.getEffect());
+            results.computeIfAbsent(permission, p -> new Result(p, evaluation)).setStatus(evaluation.getEffect());
         }
     }
 

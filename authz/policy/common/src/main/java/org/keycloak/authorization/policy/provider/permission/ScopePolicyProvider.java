@@ -39,13 +39,11 @@ public class ScopePolicyProvider extends AbstractPermissionProvider {
         Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(policy, p -> new HashMap<>());
         ResourcePermission permission = evaluation.getPermission();
 
-        for (Scope scope : permission.getScopes()) {
-            Decision.Effect effect = decisions.get(scope);
+        Decision.Effect effect = decisions.get(permission);
 
-            if (effect != null) {
-                defaultEvaluation.setEffect(effect);
-                return;
-            }
+        if (effect != null) {
+            defaultEvaluation.setEffect(effect);
+            return;
         }
 
         Decision.Effect decision = defaultEvaluation.getEffect();
@@ -53,9 +51,7 @@ public class ScopePolicyProvider extends AbstractPermissionProvider {
         if (decision == null) {
             super.evaluate(evaluation);
 
-            for (Scope scope : policy.getScopes()) {
-                decisions.put(scope, defaultEvaluation.getEffect());
-            }
+            decisions.put(permission, defaultEvaluation.getEffect());
         }
     }
 }

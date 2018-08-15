@@ -20,15 +20,13 @@ package org.keycloak.authorization.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
@@ -38,11 +36,9 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
-import org.keycloak.services.ErrorResponseException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -80,14 +76,14 @@ public final class Permissions {
         // obtain all resources where owner is the resource server
         resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
-                permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request));
+                permissions.add(createResourcePermissions(resource, authorization, request));
             }
         });
 
         // obtain all resources where owner is the current user
         resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
-                permissions.add(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization, request));
+                permissions.add(createResourcePermissions(resource, authorization, request));
             }
         });
 
@@ -116,45 +112,30 @@ public final class Permissions {
         return permissions;
     }
 
-    public static ResourcePermission createResourcePermissions(Resource resource, Set<String> requestedScopes, AuthorizationProvider authorization, AuthorizationRequest request) {
-        String type = resource.getType();
-        ResourceServer resourceServer = resource.getResourceServer();
+    public static ResourcePermission createResourcePermissions(Resource resource, Collection<Scope> requestedScopes, AuthorizationProvider authorization, AuthorizationRequest request) {
         List<Scope> scopes;
 
         if (requestedScopes.isEmpty()) {
-            scopes = new LinkedList<>(resource.getScopes());
-            // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
-            // is owned by the resource server itself
-            if (type != null && !resource.getOwner().equals(resourceServer.getId())) {
-                StoreFactory storeFactory = authorization.getStoreFactory();
-                ResourceStore resourceStore = storeFactory.getResourceStore();
-                resourceStore.findByType(type, resourceServer.getId(), resource1 -> {
-                    if (resource1.getOwner().equals(resourceServer.getId())) {
-                        for (Scope typeScope : resource1.getScopes()) {
-                            if (!scopes.contains(typeScope)) {
-                                scopes.add(typeScope);
-                            }
-                        }
-                    }
-                });
-            }
+            scopes = populateTypedScopes(resource, authorization);
         } else {
-            ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-            scopes = requestedScopes.stream().map(scopeName -> {
-                Scope byName = scopeStore.findByName(scopeName, resource.getResourceServer().getId());
-
-                if (byName == null) {
-                    throw new ErrorResponseException("invalid_scope", "Invalid scope [" + scopeName + "].", Status.BAD_REQUEST);
-                }
-
-                return byName;
-            }).filter(resource.getScopes()::contains).collect(Collectors.toList());
+            scopes = requestedScopes.stream().filter(scope -> resource.getScopes().contains(scope)).collect(Collectors.toList());
         }
 
         return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());
     }
 
-    public static ResourcePermission createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization, AuthorizationRequest request) {
+    public static ResourcePermission createResourcePermissions(Resource resource, AuthorizationProvider authorization, AuthorizationRequest request) {
+        List<Scope> requestedScopes = resource.getScopes();
+
+        if (requestedScopes.isEmpty()) {
+            return new ResourcePermission(resource, populateTypedScopes(resource, authorization), resource.getResourceServer(), request.getClaims());
+        }
+
+        return new ResourcePermission(resource, resource.getResourceServer(), request.getClaims());
+    }
+
+    private static List<Scope> populateTypedScopes(Resource resource, AuthorizationProvider authorization) {
+        List<Scope> scopes = new LinkedList<>(resource.getScopes());
         String type = resource.getType();
         ResourceServer resourceServer = resource.getResourceServer();
 
@@ -163,7 +144,7 @@ public final class Permissions {
         if (type != null && !resource.getOwner().equals(resourceServer.getId())) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
+            resourceStore.findByType(type, resourceServer.getId(), resource1 -> {
                 if (resource1.getOwner().equals(resourceServer.getId())) {
                     for (Scope typeScope : resource1.getScopes()) {
                         if (!scopes.contains(typeScope)) {
@@ -174,6 +155,6 @@ public final class Permissions {
             });
         }
 
-        return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());
+        return scopes;
     }
 }

@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -355,10 +357,10 @@ public class AuthorizationTokenService {
         ResourceStore resourceStore = storeFactory.getResourceStore();
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Metadata metadata = request.getMetadata();
-        Integer limit = metadata != null ? metadata.getLimit() : null;
+        final AtomicInteger limit = metadata != null && metadata.getLimit() != null ? new AtomicInteger(metadata.getLimit()) : null;
 
         for (Permission permission : ticket.getPermissions()) {
-            if (limit != null && limit <= 0) {
+            if (limit != null && limit.get() <= 0) {
                 break;
             }
 
@@ -368,7 +370,7 @@ public class AuthorizationTokenService {
                 requestedScopes = new HashSet<>();
             }
 
-            List<Resource> existingResources = new ArrayList<>();
+            List<Resource> requestedResources = new ArrayList<>();
             String resourceId = permission.getResourceId();
 
             if (resourceId != null) {
@@ -379,14 +381,14 @@ public class AuthorizationTokenService {
                 }
 
                 if (resource != null) {
-                    existingResources.add(resource);
+                    requestedResources.add(resource);
                 } else {
                     String resourceName = resourceId;
                     Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());
 
                     if (ownerResource != null) {
                         permission.setResourceId(ownerResource.getId());
-                        existingResources.add(ownerResource);
+                        requestedResources.add(ownerResource);
                     }
 
                     if (!identity.isResourceServer()) {
@@ -394,7 +396,7 @@ public class AuthorizationTokenService {
 
                         if (serverResource != null) {
                             permission.setResourceId(serverResource.getId());
-                            existingResources.add(serverResource);
+                            requestedResources.add(serverResource);
                         }
                     }
                 }
@@ -406,45 +408,66 @@ public class AuthorizationTokenService {
                 requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
             }
 
-            List<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(Objects::nonNull).collect(Collectors.toList());
+            Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(Objects::nonNull).collect(Collectors.toSet());
 
-            if (resourceId != null && existingResources.isEmpty()) {
+            if (resourceId != null && requestedResources.isEmpty()) {
                 throw new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
             }
 
-            if ((permission.getScopes() != null && !permission.getScopes().isEmpty()) && requestedScopesModel.isEmpty()) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " are invalid", Status.BAD_REQUEST);
+            if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {
+                throw new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " is invalid", Status.BAD_REQUEST);
             }
 
-            if (!existingResources.isEmpty()) {
-                for (Resource resource : existingResources) {
+            if (!requestedResources.isEmpty()) {
+                for (Resource resource : requestedResources) {
+                    if (limit != null && limit.get() <= 0) {
+                        break;
+                    }
                     ResourcePermission perm = permissionsToEvaluate.get(resource.getId());
 
                     if (perm == null) {
-                        perm = Permissions.createResourcePermissions(resource, requestedScopes, authorization, request);
+                        perm = Permissions.createResourcePermissions(resource, requestedScopesModel, authorization, request);
                         permissionsToEvaluate.put(resource.getId(), perm);
                         if (limit != null) {
-                            limit--;
+                            limit.decrementAndGet();
                         }
                     } else {
                         for (Scope scope : requestedScopesModel) {
-                            if (!perm.getScopes().contains(scope)) {
-                                perm.getScopes().add(scope);
-                            }
+                            perm.addScope(scope);
                         }
                     }
                 }
             } else {
-                List<Resource> resources = resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
+                AtomicBoolean processed = new AtomicBoolean();
 
-                if (resources.isEmpty()) {
-                    permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", new ResourcePermission(null, requestedScopesModel, resourceServer, request.getClaims()));
-                } else {
-                    for (Resource resource : resources) {
-                        permissionsToEvaluate.put(resource.getId(), Permissions.createResourcePermissions(resource, requestedScopes, authorization, request));
+                resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource -> {
+                    if (limit != null && limit.get() <= 0) {
+                        return;
+                    }
+
+                    ResourcePermission perm = permissionsToEvaluate.get(resource.getId());
+
+                    if (perm == null) {
+                        perm = Permissions.createResourcePermissions(resource, requestedScopesModel, authorization, request);
+                        permissionsToEvaluate.put(resource.getId(), perm);
                         if (limit != null) {
-                            limit--;
+                            limit.decrementAndGet();
                         }
+                    } else {
+                        for (Scope scope : requestedScopesModel) {
+                            perm.addScope(scope);
+                        }
+                    }
+
+                    processed.compareAndSet(false, true);
+                });
+
+                if (!processed.get()) {
+                    for (Scope scope : requestedScopesModel) {
+                        if (limit != null && limit.getAndDecrement() <= 0) {
+                            break;
+                        }
+                        permissionsToEvaluate.computeIfAbsent(scope.getId(), s -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer, request.getClaims()));
                     }
                 }
             }
@@ -460,7 +483,7 @@ public class AuthorizationTokenService {
 
                 if (permissions != null) {
                     for (Permission grantedPermission : permissions) {
-                        if (limit != null && limit <= 0) {
+                        if (limit != null && limit.get() <= 0) {
                             break;
                         }
 
@@ -473,7 +496,7 @@ public class AuthorizationTokenService {
                                 permission = new ResourcePermission(resource, new ArrayList<>(), resourceServer, grantedPermission.getClaims());
                                 permissionsToEvaluate.put(resource.getId(), permission);
                                 if (limit != null) {
-                                    limit--;
+                                    limit.decrementAndGet();
                                 }
                             } else {
                                 if (grantedPermission.getClaims() != null) {

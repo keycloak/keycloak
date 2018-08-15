@@ -18,26 +18,34 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -46,6 +54,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -61,6 +70,8 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
     private JSPolicyRepresentation claimAPolicy;
     private JSPolicyRepresentation claimBPolicy;
+    private JSPolicyRepresentation claimCPolicy;
+    private JSPolicyRepresentation denyPolicy;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -100,6 +111,39 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         claimBPolicy.setCode("$evaluation.getPermission().addClaim('claim-b', 'claim-b');$evaluation.grant();");
 
         authorization.policies().js().create(claimBPolicy).close();
+
+        claimCPolicy = new JSPolicyRepresentation();
+
+        claimCPolicy.setName("Policy Claim C");
+        claimCPolicy.setCode("$evaluation.getPermission().addClaim('claim-c', 'claim-c');$evaluation.grant();");
+
+        authorization.policies().js().create(claimCPolicy).close();
+
+        denyPolicy = new JSPolicyRepresentation();
+
+        denyPolicy.setName("Deny Policy");
+        denyPolicy.setCode("$evaluation.getPermission().addClaim('deny-policy', 'deny-policy');$evaluation.deny();");
+
+        authorization.policies().js().create(denyPolicy).close();
+    }
+
+    @After
+    public void removeAuthorization() throws Exception {
+        ClientResource client = getClient(getRealm());
+        ClientRepresentation representation = client.toRepresentation();
+
+        representation.setAuthorizationServicesEnabled(false);
+
+        client.update(representation);
+
+        representation.setAuthorizationServicesEnabled(true);
+
+        client.update(representation);
+
+        ResourcesResource resources = client.authorization().resources();
+        List<ResourceRepresentation> defaultResource = resources.findByName("Default Resource");
+
+        resources.resource(defaultResource.get(0).getId()).remove();
     }
 
     @Test
@@ -174,6 +218,227 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         assertTrue(claims.containsKey("claim-a"));
         assertTrue(claims.containsKey("claim-b"));
+    }
+
+    @Test
+    public void testClaimsFromDifferentScopePermissions() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resourceA = new ResourceRepresentation(KeycloakModelUtils.generateId(), "create", "update");
+
+        authorization.resources().create(resourceA).close();
+
+        ResourceRepresentation resourceB = new ResourceRepresentation(KeycloakModelUtils.generateId(), "create", "update");
+
+        authorization.resources().create(resourceB).close();
+
+        ScopePermissionRepresentation allScopesPermission = new ScopePermissionRepresentation();
+
+        allScopesPermission.setName(KeycloakModelUtils.generateId());
+        allScopesPermission.addScope("create", "update");
+        allScopesPermission.addPolicy(claimAPolicy.getName(), claimBPolicy.getName());
+
+        authorization.permissions().scope().create(allScopesPermission).close();
+
+        ScopePermissionRepresentation updatePermission = new ScopePermissionRepresentation();
+
+        updatePermission.setName(KeycloakModelUtils.generateId());
+        updatePermission.addScope("update");
+        updatePermission.addPolicy(claimCPolicy.getName());
+
+        updatePermission = authorization.permissions().scope().create(updatePermission).readEntity(ScopePermissionRepresentation.class);
+
+        AuthzClient authzClient = getAuthzClient();
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(null, "create", "update");
+
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
+        Authorization authorizationClaim = rpt.getAuthorization();
+        List<Permission> permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(2, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+        }
+
+        updatePermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().scope().findById(updatePermission.getId()).update(updatePermission);
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        rpt = toAccessToken(response.getToken());
+        authorizationClaim = rpt.getAuthorization();
+        permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(2, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+            assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+        }
+    }
+
+    @Test
+    public void testClaimsFromDifferentResourcePermissions() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resourceA = new ResourceRepresentation(KeycloakModelUtils.generateId());
+
+        resourceA.setType("typed-resource");
+
+        authorization.resources().create(resourceA).close();
+
+        ResourcePermissionRepresentation allScopesPermission = new ResourcePermissionRepresentation();
+
+        allScopesPermission.setName(KeycloakModelUtils.generateId());
+        allScopesPermission.addResource(resourceA.getName());
+        allScopesPermission.addPolicy(claimAPolicy.getName(), claimBPolicy.getName());
+
+        authorization.permissions().resource().create(allScopesPermission).close();
+
+        ResourcePermissionRepresentation updatePermission = new ResourcePermissionRepresentation();
+
+        updatePermission.setName(KeycloakModelUtils.generateId());
+        updatePermission.addResource(resourceA.getName());
+        updatePermission.addPolicy(claimCPolicy.getName());
+
+        updatePermission = authorization.permissions().resource().create(updatePermission).readEntity(ResourcePermissionRepresentation.class);
+
+        AuthzClient authzClient = getAuthzClient();
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize();
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
+        Authorization authorizationClaim = rpt.getAuthorization();
+        List<Permission> permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(1, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+        }
+
+        updatePermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().findById(updatePermission.getId()).update(updatePermission);
+
+        try {
+            authzClient.authorization("marta", "password").authorize();
+            fail("can not access resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        ResourceRepresentation resourceInstance = new ResourceRepresentation(KeycloakModelUtils.generateId(), "create", "update");
+
+        resourceInstance.setType(resourceA.getType());
+        resourceInstance.setOwner("marta");
+
+        resourceInstance = authorization.resources().create(resourceInstance).readEntity(ResourceRepresentation.class);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(null, "create", "update");
+
+        try {
+            authzClient.authorization("marta", "password").authorize(request);
+            fail("can not access resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        ResourcePermissionRepresentation resourceInstancePermission = new ResourcePermissionRepresentation();
+
+        resourceInstancePermission.setName(KeycloakModelUtils.generateId());
+        resourceInstancePermission.addResource(resourceInstance.getId());
+        resourceInstancePermission.addPolicy(claimCPolicy.getName());
+
+        resourceInstancePermission = authorization.permissions().resource().create(resourceInstancePermission).readEntity(ResourcePermissionRepresentation.class);
+
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+        rpt = toAccessToken(response.getToken());
+        authorizationClaim = rpt.getAuthorization();
+        permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(1, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+            assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+        }
+
+        response = authzClient.authorization("marta", "password").authorize();
+        assertNotNull(response.getToken());
+        rpt = toAccessToken(response.getToken());
+        authorizationClaim = rpt.getAuthorization();
+        permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(1, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+            assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+            assertThat(permission.getScopes(), Matchers.containsInAnyOrder("create", "update"));
+        }
+
+        updatePermission.setPolicies(new HashSet<>());
+        updatePermission.addPolicy(claimCPolicy.getName());
+        authorization.permissions().resource().findById(updatePermission.getId()).update(updatePermission);
+
+        response = authzClient.authorization("marta", "password").authorize();
+        assertNotNull(response.getToken());
+        rpt = toAccessToken(response.getToken());
+        authorizationClaim = rpt.getAuthorization();
+        permissions = new ArrayList<>(authorizationClaim.getPermissions());
+
+        assertEquals(2, permissions.size());
+
+        for (Permission permission : permissions) {
+            Map<String, Set<String>> claims = permission.getClaims();
+
+            assertNotNull(claims);
+
+            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+        }
     }
 
     private RealmResource getRealm() throws Exception {
