@@ -19,12 +19,22 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.Test;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
@@ -96,6 +106,36 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertEquals("/resources/{pattern}/sub-resources/{pattern}/*", resources.get(0).getUri());
     }
 
+    @Test
+    public void testFindDeep() {
+        ResourceRepresentation resource1 = new ResourceRepresentation("/*", new HashSet<>());
+
+        resource1.addScope("a", "b", "c");
+        resource1.setType("type");
+
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put("a", Arrays.asList("a"));
+        attributes.put("b", Arrays.asList("b"));
+        attributes.put("c", Arrays.asList("c"));
+
+        resource1.setAttributes(attributes);
+
+        resource1.setIconUri("icon");
+        resource1.setUris(new HashSet<>(Arrays.asList("/a", "/b", "/c")));
+
+        ResourceRepresentation resource = doCreateResource(resource1);
+        AuthzClient authzClient = getAuthzClient();
+        List<ResourceRepresentation> representations = authzClient.protection().resource().find(resource.getId(), null, null, null, null, null, false, true,null, null);
+
+        assertEquals(1, representations.size());
+        assertEquals(resource.getId(), representations.get(0).getId());
+        assertEquals(resource.getName(), representations.get(0).getName());
+        assertEquals(resource.getIconUri(), representations.get(0).getIconUri());
+        assertThat(resource.getUris(), Matchers.containsInAnyOrder(representations.get(0).getUris().toArray()));
+        assertThat(resource.getAttributes().entrySet(), Matchers.containsInAnyOrder(representations.get(0).getAttributes().entrySet().toArray()));
+    }
+
     @Override
     protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
         ResourceRepresentation resource = toResourceRepresentation(newResource);
@@ -127,7 +167,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         resourceRepresentation.setId(created.getId());
         resourceRepresentation.setName(created.getName());
         resourceRepresentation.setIconUri(created.getIconUri());
-        resourceRepresentation.setUri(created.getUri());
+        resourceRepresentation.setUris(created.getUris());
         resourceRepresentation.setType(created.getType());
         resourceRepresentation.setOwner(created.getOwner());
         resourceRepresentation.setScopes(created.getScopes().stream().map(scopeRepresentation -> {
@@ -151,7 +191,13 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         resource.setId(newResource.getId());
         resource.setName(newResource.getName());
         resource.setIconUri(newResource.getIconUri());
-        resource.setUri(newResource.getUri());
+
+        if (newResource.getUris() != null && !newResource.getUris().isEmpty()) {
+            resource.setUris(newResource.getUris());
+        } else {
+            resource.setUri(newResource.getUri());
+        }
+
         resource.setType(newResource.getType());
 
         if (newResource.getOwner() != null) {
@@ -168,6 +214,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         }).collect(Collectors.toSet()));
 
         resource.setAttributes(newResource.getAttributes());
+
 
         return resource;
     }
