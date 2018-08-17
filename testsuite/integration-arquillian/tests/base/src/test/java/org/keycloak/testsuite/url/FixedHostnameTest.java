@@ -114,9 +114,9 @@ public class FixedHostnameTest extends AbstractKeycloakTest {
 
     private void configureFixedHostname() throws Exception {
         if (suiteContext.getAuthServerInfo().isUndertow()) {
-            configureUndertow("fixed", "keycloak.127.0.0.1.nip.io", "8180", "8543");
+            configureUndertow("fixed", "keycloak.127.0.0.1.nip.io");
         } else if (suiteContext.getAuthServerInfo().isJBossBased()) {
-            configureWildFly("fixed", "keycloak.127.0.0.1.nip.io", "8180", "8543");
+            configureWildFly("fixed", "keycloak.127.0.0.1.nip.io");
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -127,9 +127,9 @@ public class FixedHostnameTest extends AbstractKeycloakTest {
 
     private void clearFixedHostname() throws Exception {
         if (suiteContext.getAuthServerInfo().isUndertow()) {
-            configureUndertow("request", "localhost", "-1", "-1");
+            configureUndertow("request", "localhost");
         } else if (suiteContext.getAuthServerInfo().isJBossBased()) {
-            configureWildFly("request", "localhost", "-1", "-1");
+            configureWildFly("request", "localhost");
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -137,25 +137,21 @@ public class FixedHostnameTest extends AbstractKeycloakTest {
         reconnectAdminClient();
     }
 
-    private void configureUndertow(String provider, String hostname, String httpPort, String httpsPort) {
+    private void configureUndertow(String provider, String hostname) {
         controller.stop(suiteContext.getAuthServerInfo().getQualifier());
 
         System.setProperty("keycloak.hostname.provider", provider);
         System.setProperty("keycloak.hostname.fixed.hostname", hostname);
-        System.setProperty("keycloak.hostname.fixed.httpPort", httpPort);
-        System.setProperty("keycloak.hostname.fixed.httpsPort", httpsPort);
 
         controller.start(suiteContext.getAuthServerInfo().getQualifier());
     }
 
-    private void configureWildFly(String provider, String hostname, String httpPort, String httpsPort) throws Exception {
+    private void configureWildFly(String provider, String hostname) throws Exception {
         OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
         Administration administration = new Administration(client);
 
         client.execute("/subsystem=keycloak-server/spi=hostname:write-attribute(name=default-provider, value=" + provider + ")");
         client.execute("/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.hostname,value=" + hostname + ")");
-        client.execute("/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.httpPort,value=" + httpPort + ")");
-        client.execute("/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.httpsPort,value=" + httpsPort + ")");
 
         administration.reloadIfRequired();
 
