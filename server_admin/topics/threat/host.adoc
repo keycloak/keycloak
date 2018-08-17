@@ -83,8 +83,9 @@ Here is the equivalent configuration using CLI commands:
 /subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.hostname,value="auth.example.com")
 ----
 
-By default it is assumed that the public URL uses default ports. If you are not using default ports this can be changed
-by setting the `httpPort` and `httpsPort` properties for the fixed provider.
+By default the `httpPort` and `httpsPort` are received from the request. As long as any proxies are configured correctly
+it should not be necessary to change this. It is possible to configure fixed ports if necessary by setting the `httpPort` and
+`httpsPort` properties on the fixed provider.
 
 ==== Custom provider
 
