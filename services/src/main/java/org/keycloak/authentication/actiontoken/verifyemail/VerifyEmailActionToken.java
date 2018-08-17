@@ -37,9 +37,10 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
 
-    public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String email) {
+    public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String email, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.email = email;
+        this.issuedFor = clientId;
     }
 
     private VerifyEmailActionToken() {

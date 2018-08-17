@@ -121,7 +121,20 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-        return null;
+        ClientRepresentation client = new ClientRepresentation();
+        client.setId("broker-app");
+        client.setClientId("broker-app");
+        client.setName("broker-app");
+        client.setSecret("broker-app-secret");
+        client.setEnabled(true);
+
+        client.setRedirectUris(Collections.singletonList(getAuthRoot(suiteContext) +
+                "/auth/*"));
+
+        client.setBaseUrl(getAuthRoot(suiteContext) +
+                "/auth/realms/" + REALM_CONS_NAME + "/app");
+
+        return Collections.singletonList(client);
     }
 
     @Override

@@ -166,6 +166,15 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .addRedirectUri("http://localhost:8080/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build(),
+          ClientBuilder.create()
+            .id("broker-app")
+            .clientId("broker-app")
+            .name("broker-app")
+            .secret("broker-app-secret")
+            .enabled(true)
+            .addRedirectUri(getAuthRoot(suiteContext) + "/auth/*")
+            .baseUrl(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()
         );
     }

@@ -131,7 +131,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
           existingUser.getId(), absoluteExpirationInSecs, authSessionEncodedId,
-          brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
+          brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
         );
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
                 authSession.getClient().getClientId(), authSession.getTabId());
