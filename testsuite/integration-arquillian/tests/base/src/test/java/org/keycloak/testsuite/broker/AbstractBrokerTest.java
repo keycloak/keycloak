@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.broker;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +19,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.*;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 
 import java.util.Collections;
@@ -27,11 +31,14 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.core.Response;
 
@@ -48,6 +55,10 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
     public static final String ROLE_FRIENDLY_MANAGER = "friendly-manager";
 
     protected IdentityProviderResource identityProviderResource;
+
+    @Drone
+    @SecondBrowser
+    protected WebDriver driver2;
 
     @Before
     public void beforeBrokerTest() {
@@ -181,15 +192,10 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         MailServer.createEmailAccount(USER_EMAIL, "password");
         
         try {
-            //configure smpt server in the realm
-            RealmRepresentation master = adminClient.realm(bc.consumerRealmName()).toRepresentation();
-            master.setSmtpServer(suiteContext.getSmtpServer());
-            adminClient.realm(bc.consumerRealmName()).update(master);
-        
+            configureSMPTServer();
+
             //create user on consumer's site who should be linked later
-            UserRepresentation newUser = UserBuilder.create().username("consumer").email(USER_EMAIL).enabled(true).build();
-            String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
-            resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
+            String linkedUserId = createUser("consumer");
         
             //test
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
@@ -228,8 +234,74 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
             
             //test if the user has verified email
-            assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(userId).toRepresentation().isEmailVerified());
+            assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(linkedUserId).toRepresentation().isEmailVerified());
         } finally {
+            removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer");
+            // stop mail server
+            MailServer.stop();
+        }
+    }
+
+    @Test
+    public void testVerifyEmailInNewBrowserWithPreserveClient() {
+        //start mail server
+        MailServer.start();
+        MailServer.createEmailAccount(USER_EMAIL, "password");
+
+        try {
+            configureSMPTServer();
+
+            //create user on consumer's site who should be linked later
+            String linkedUserId = createUser("consumer");
+
+            driver.navigate().to(getLoginUrl(bc.consumerRealmName(), "broker-app"));
+
+            log.debug("Clicking social " + bc.getIDPAlias());
+            accountLoginPage.clickSocial(bc.getIDPAlias());
+
+            waitForPage(driver, "log in to", true);
+
+            Assert.assertTrue("Driver should be on the provider realm page right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+            log.debug("Logging in");
+            accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+            waitForPage(driver, "update account information", false);
+
+            Assert.assertTrue(updateAccountInformationPage.isCurrent());
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+
+            //link account by email
+            waitForPage(driver, "account already exists", false);
+            idpConfirmLinkPage.clickLinkAccount();
+
+            String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                    "Someone wants to link your ", false);
+
+            log.info("navigating to url from email in second browser: " + url);
+
+            // navigate to url in the second browser
+            driver2.navigate().to(url);
+
+            final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
+            MatcherAssert.assertThat(proceedLink, Matchers.notNullValue());
+
+            // check if the initial client is preserved
+            String link = proceedLink.getAttribute("href");
+            MatcherAssert.assertThat(link, Matchers.containsString("client_id=broker-app"));
+            proceedLink.click();
+
+            assertThat(driver2.getPageSource(), Matchers.containsString("You successfully verified your email. Please go back to your original browser and continue there with the login."));
+
+            //test if the user has verified email
+            assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(linkedUserId).toRepresentation().isEmailVerified());
+        } finally {
+            removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer");
             // stop mail server
             MailServer.stop();
         }
@@ -430,5 +502,18 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         errorPage.assertCurrent();
         String link = errorPage.getBackToApplicationLink();
         Assert.assertTrue(link.endsWith("/auth/realms/consumer/account"));
+    }
+
+    private void configureSMPTServer() {
+        RealmRepresentation master = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        master.setSmtpServer(suiteContext.getSmtpServer());
+        adminClient.realm(bc.consumerRealmName()).update(master);
+    }
+
+    private String createUser(String username) {
+        UserRepresentation newUser = UserBuilder.create().username(username).email(USER_EMAIL).enabled(true).build();
+        String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
+        resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
+        return userId;
     }
 }

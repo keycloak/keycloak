@@ -27,8 +27,9 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
 
     public static final String TOKEN_TYPE = "reset-credentials";
 
-    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId) {
+    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
+        this.issuedFor = clientId;
     }
 
     private ResetCredentialsActionToken() {

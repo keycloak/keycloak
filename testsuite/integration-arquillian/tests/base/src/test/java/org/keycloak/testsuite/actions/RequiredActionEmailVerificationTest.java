@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -29,6 +30,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,9 +45,11 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -384,9 +388,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
           .detail(Details.CODE_ID, Matchers.not(Matchers.is(mailCodeId)))
-          .client(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)   // as authentication sessions are browser-specific,
-                                                            // the client and redirect_uri is unrelated to
-                                                            // the "test-app" specified in loginPage.open()
+          .client(oauth.getClientId())   // the "test-app" client specified in loginPage.open() is expected
           .detail(Details.REDIRECT_URI, Matchers.any(String.class))
           .assertEvent();
 
@@ -627,6 +629,39 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
             accountPage.assertCurrent();
         }
+    }
+
+    @Test
+    public void verifyEmailNewBrowserSessionPreserveClient() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        // open link in the second browser without the session
+        driver2.navigate().to(verificationUrl.trim());
+
+        // follow the link
+        final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
+        assertThat(proceedLink, Matchers.notNullValue());
+
+        // check if the initial client is preserved
+        String link = proceedLink.getAttribute("href");
+        assertThat(link, Matchers.containsString("client_id=test-app"));
+        proceedLink.click();
+
+        // confirmation in the second browser
+        assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
+
+        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to Application"));
+        assertThat(backToApplicationLink, Matchers.notNullValue());
     }
 
     @Test
