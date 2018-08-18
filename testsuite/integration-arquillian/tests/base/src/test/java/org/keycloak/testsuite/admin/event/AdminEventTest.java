@@ -39,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 
 /**
  * Test getting and filtering admin events.
@@ -153,4 +154,37 @@ public class AdminEventTest extends AbstractEventTest {
         assertTrue(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
+    private void checkupdateRealmEventsConfigEvent(int size) {
+        List<AdminEventRepresentation> events = events();
+        assertEquals(size, events.size());
+        AdminEventRepresentation event = events().get(0);assertEquals("UPDATE", event.getOperationType());
+        assertEquals(realmName(), event.getRealmId());
+        assertEquals("events/config", event.getResourcePath());
+        assertEquals("master", event.getAuthDetails().getRealmId());
+        assertNotNull(event.getRepresentation());
+    }
+    
+    @Test
+    public void updateRealmEventsConfig() {
+        // change from OFF to ON should be stored
+        configRep.setAdminEventsDetailsEnabled(Boolean.TRUE);
+        configRep.setAdminEventsEnabled(Boolean.TRUE);
+        saveConfig();
+        checkupdateRealmEventsConfigEvent(1);
+        
+        // any other change should be store too
+        configRep.setEventsEnabled(Boolean.TRUE);
+        saveConfig();
+        checkupdateRealmEventsConfigEvent(2);
+        
+        // change from ON to OFF should be stored too
+        configRep.setAdminEventsEnabled(Boolean.FALSE);
+        saveConfig();
+        checkupdateRealmEventsConfigEvent(3);
+        
+        // another change should not be stored cos it was OFF already
+        configRep.setAdminEventsDetailsEnabled(Boolean.FALSE);
+        saveConfig();
+        assertEquals(3, events().size());
+    }
 }

@@ -75,6 +75,10 @@ import java.util.Map;
 import javax.ws.rs.BadRequestException;
 
 import static org.junit.Assert.*;
+import org.keycloak.events.EventType;
+import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -280,6 +284,64 @@ public class RealmTest extends AbstractAdminTest {
 
         adminClient.realms().realm("test-immutable-old").remove();
         adminClient.realms().realm("test-immutable").remove();
+    }
+
+    private RealmEventsConfigRepresentation copyRealmEventsConfigRepresentation(RealmEventsConfigRepresentation rep) {
+        RealmEventsConfigRepresentation recr = new RealmEventsConfigRepresentation();
+        recr.setEnabledEventTypes(rep.getEnabledEventTypes());
+        recr.setEventsListeners(rep.getEventsListeners());
+        recr.setEventsExpiration(rep.getEventsExpiration());
+        recr.setEventsEnabled(rep.isEventsEnabled());
+        recr.setAdminEventsEnabled(rep.isAdminEventsEnabled());
+        recr.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
+        return recr;
+    }
+    
+    private void checkRealmEventsConfigRepresentation(RealmEventsConfigRepresentation expected,
+            RealmEventsConfigRepresentation actual) {
+        assertEquals(expected.getEnabledEventTypes().size(), actual.getEnabledEventTypes().size());
+        assertTrue(actual.getEnabledEventTypes().containsAll(expected.getEnabledEventTypes()));
+        assertEquals(expected.getEventsListeners().size(), actual.getEventsListeners().size());
+        assertTrue(actual.getEventsListeners().containsAll(expected.getEventsListeners()));
+        assertEquals(expected.getEventsExpiration(), actual.getEventsExpiration());
+        assertEquals(expected.isEventsEnabled(), actual.isEventsEnabled());
+        assertEquals(expected.isAdminEventsEnabled(), actual.isAdminEventsEnabled());
+        assertEquals(expected.isAdminEventsDetailsEnabled(), actual.isAdminEventsDetailsEnabled());
+    }
+    
+    @Test
+    public void updateRealmEventsConfig() {
+        RealmEventsConfigRepresentation rep = realm.getRealmEventsConfig();
+        RealmEventsConfigRepresentation repOrig = copyRealmEventsConfigRepresentation(rep);
+        
+        // the "event-queue" listener should be enabled by default
+        assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID));
+        
+        // first modification => remove "event-queue", should be sent to the queue
+        rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), EventType.LOGIN_ERROR.name()));
+        rep.setEventsListeners(Arrays.asList(JBossLoggingEventListenerProviderFactory.ID));
+        rep.setEventsExpiration(36000L);
+        rep.setEventsEnabled(true);
+        rep.setAdminEventsEnabled(true);
+        rep.setAdminEventsDetailsEnabled(true);
+        adminClient.realms().realm(REALM_NAME).updateRealmEventsConfig(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, "events/config", rep, ResourceType.REALM);
+        RealmEventsConfigRepresentation actual = realm.getRealmEventsConfig();
+        checkRealmEventsConfigRepresentation(rep, actual);
+        
+        // second modification => should not be sent cos event-queue was removed in the first mod
+        rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), 
+                EventType.LOGIN_ERROR.name(), EventType.CLIENT_LOGIN.name()));
+        adminClient.realms().realm(REALM_NAME).updateRealmEventsConfig(rep);
+        assertAdminEvents.assertEmpty();
+        actual = realm.getRealmEventsConfig();
+        checkRealmEventsConfigRepresentation(rep, actual);
+        
+        // third modification => restore queue => should be sent and recovered
+        adminClient.realms().realm(REALM_NAME).updateRealmEventsConfig(repOrig);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, "events/config", repOrig, ResourceType.REALM);
+        actual = realm.getRealmEventsConfig();
+        checkRealmEventsConfigRepresentation(repOrig, actual);
     }
 
     @Test

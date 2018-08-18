@@ -680,6 +680,11 @@ public class RealmAdminResource {
 
         logger.debug("updating realm events config: " + realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM).realm(realm)
+                .resourcePath(session.getContext().getUri()).representation(rep)
+                // refresh the builder to consider old and new config
+                .refreshRealmEventsConfig(session)
+                .success();
     }
 
     /**
