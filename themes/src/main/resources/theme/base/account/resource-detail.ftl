@@ -57,24 +57,7 @@
     </style>
     <script>
         function removeScopeElm(elm) {
-            var td = elm.parentNode;
-            var tr = td.parentNode;
-            var tbody = tr.parentNode;
-
-            td.removeChild(elm);
-
-            var childCount = td.childNodes.length - 1;
-
-            for (i = 0; i < td.childNodes.length; i++) {
-                if (!td.childNodes[i].tagName || td.childNodes[i].tagName.toUpperCase() != 'DIV') {
-                    td.removeChild(td.childNodes[i]);
-                    childCount--;
-                }
-            }
-
-            if (childCount <= 0) {
-                tbody.removeChild(tr);
-            }
+            elm.parentNode.removeChild(elm);
         }
 
         function removeAllScopes(id) {
