@@ -8,7 +8,7 @@
 .project
 .settings
 .classpath
-bin
+bin/
 .factorypath
 
 
