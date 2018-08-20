@@ -369,7 +369,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
-    @Ignore
     @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
         ContainerAssume.assumeNotAuthServerUndertow();
@@ -402,7 +401,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     @Test
-    @Ignore
     public void testClientRoleNotRequired() throws Exception {
         loginToClientPage("alice", "alice");
 
