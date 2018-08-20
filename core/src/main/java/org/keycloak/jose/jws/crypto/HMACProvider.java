@@ -25,6 +25,7 @@ import org.keycloak.jose.jws.JWSInput;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 

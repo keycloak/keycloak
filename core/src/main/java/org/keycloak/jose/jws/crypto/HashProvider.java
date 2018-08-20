@@ -27,18 +27,16 @@ import java.util.Arrays;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class HashProvider {
-
-    // See "at_hash" and "c_hash" in OIDC specification
-    public static String oidcHash(Algorithm jwtAlgorithm, String input) {
-        byte[] digest = digest(jwtAlgorithm, input);
+    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+    public static String oidcHash(String jwtAlgorithmName, String input) {
+        byte[] digest = digest(jwtAlgorithmName, input);
 
         int hashLength = digest.length / 2;
         byte[] hashInput = Arrays.copyOf(digest, hashLength);
 
         return Base64Url.encode(hashInput);
     }
-
-    private static byte[] digest(Algorithm algorithm, String input) {
+    private static byte[] digest(String algorithm, String input) {
         String digestAlg = getJavaDigestAlgorithm(algorithm);
 
         try {
@@ -49,18 +47,22 @@ public class HashProvider {
             throw new RuntimeException(e);
         }
     }
-
-    private static String getJavaDigestAlgorithm(Algorithm alg) {
+    private static String getJavaDigestAlgorithm(String alg) {
         switch (alg) {
-            case RS256:
+            case "RS256":
                 return "SHA-256";
-            case RS384:
+            case "RS384":
                 return "SHA-384";
-            case RS512:
+            case "RS512":
                 return "SHA-512";
             default:
                 throw new IllegalArgumentException("Not an RSA Algorithm");
         }
+    }
+
+    // See "at_hash" and "c_hash" in OIDC specification
+    public static String oidcHash(Algorithm jwtAlgorithm, String input) {
+        return oidcHash(jwtAlgorithm.name(), input);
     }
 
 }
