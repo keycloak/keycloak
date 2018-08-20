@@ -37,4 +37,7 @@ before_install:
 script: 
   - ./travis-run-tests.sh $TESTS
 
+after_success:
+  - .travis/docker-hub-master-trigger.sh
+
 sudo: false
