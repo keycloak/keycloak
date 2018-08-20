@@ -57,8 +57,6 @@ import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -123,7 +121,7 @@ public class AuthorizationTokenService {
                     throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
                 }
 
-                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, realm, accessToken);
+                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, accessToken);
                 return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
             } catch (OAuthErrorException cause) {
                 throw new RuntimeException("Failed to verify ID token", cause);
@@ -538,21 +536,16 @@ public class AuthorizationTokenService {
     private PermissionTicketToken verifyPermissionTicket(KeycloakAuthorizationRequest request) {
         String ticketString = request.getTicket();
 
-        if (ticketString == null || !Tokens.verifySignature(request.getKeycloakSession(), request.getRealm(), ticketString)) {
+        PermissionTicketToken ticket = request.getKeycloakSession().tokens().decode(ticketString, PermissionTicketToken.class);
+        if (ticket == null) {
             throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 
-        try {
-            PermissionTicketToken ticket = new JWSInput(ticketString).readJsonContent(PermissionTicketToken.class);
-
-            if (!ticket.isActive()) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
-            }
-
-            return ticket;
-        } catch (JWSInputException e) {
-            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Could not parse permission ticket.", Status.FORBIDDEN);
+        if (!ticket.isActive()) {
+            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
         }
+
+        return ticket;
     }
 
     private boolean isGranted(PermissionTicketToken ticket, AuthorizationRequest request, Collection<Permission> permissions) {

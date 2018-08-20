@@ -27,7 +27,7 @@ import java.util.Arrays;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class HashProvider {
-    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+
     public static String oidcHash(String jwtAlgorithmName, String input) {
         byte[] digest = digest(jwtAlgorithmName, input);
 

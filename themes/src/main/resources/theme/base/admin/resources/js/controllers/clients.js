@@ -929,11 +929,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
     ];
 
-    $scope.oidcSignatureAlgorithms = [
-        "unsigned",
-        "RS256"
-    ];
-
     $scope.requestObjectSignatureAlgorithms = [
         "any",
         "none",
@@ -1097,6 +1092,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         }
 
+        $scope.accessTokenSignedResponseAlg = $scope.client.attributes['access.token.signed.response.alg'];
+        $scope.idTokenSignedResponseAlg = $scope.client.attributes['id.token.signed.response.alg'];
+
         var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
         $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
 
@@ -1205,6 +1203,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.changeSamlSigKeyNameTranformer = function() {
         $scope.clientEdit.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] = $scope.samlXmlKeyNameTranformer;
+    };
+
+    $scope.changeAccessTokenSignedResponseAlg = function() {
+        $scope.clientEdit.attributes['access.token.signed.response.alg'] = $scope.accessTokenSignedResponseAlg;
+    };
+
+    $scope.changeIdTokenSignedResponseAlg = function() {
+        $scope.clientEdit.attributes['id.token.signed.response.alg'] = $scope.idTokenSignedResponseAlg;
     };
 
     $scope.changeUserInfoSignedResponseAlg = function() {

@@ -387,14 +387,46 @@
 
         <fieldset data-ng-show="protocol == 'openid-connect'">
             <legend collapsed><span class="text">{{:: 'fine-oidc-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-oidc-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenSignedResponseAlg">{{:: 'access-token-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenSignedResponseAlg"
+                                ng-change="changeAccessTokenSignedResponseAlg()"
+                                ng-model="accessTokenSignedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenSignedResponseAlg">{{:: 'id-token-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenSignedResponseAlg"
+                                ng-change="changeIdTokenSignedResponseAlg()"
+                                ng-model="idTokenSignedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userInfoSignedResponseAlg">{{:: 'user-info-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="userInfoSignedResponseAlg"
                                 ng-change="changeUserInfoSignedResponseAlg()"
-                                ng-model="userInfoSignedResponseAlg"
-                                ng-options="sig for sig in oidcSignatureAlgorithms">
+                                ng-model="userInfoSignedResponseAlg">
+                            <option value="unsigned">unsigned</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
                         </select>
                     </div>
                 </div>

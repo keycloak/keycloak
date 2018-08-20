@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite.util;
 
 import java.io.IOException;
@@ -16,20 +32,17 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.jose.jws.EcdsaTokenSignatureProviderFactory;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.TokenSignatureProvider;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.TestContext;
-
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
 
 public class TokenSignatureUtil {
     private static Logger log = Logger.getLogger(TokenSignatureUtil.class);
@@ -40,18 +53,29 @@ public class TokenSignatureUtil {
     private static final String TEST_REALM_NAME = "test";
 
     public static void changeRealmTokenSignatureProvider(Keycloak adminClient, String toSigAlgName) {
-        RealmRepresentation rep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
-        Map<String, String> attributes = rep.getAttributes();
-        log.tracef("change realm test signature algorithm from %s to %s", attributes.get(COMPONENT_SIGNATURE_ALGORITHM_KEY), toSigAlgName);
-        attributes.put(COMPONENT_SIGNATURE_ALGORITHM_KEY, toSigAlgName);
-        rep.setAttributes(attributes);
-        adminClient.realm(TEST_REALM_NAME).update(rep);
+        changeRealmTokenSignatureProvider(TEST_REALM_NAME, adminClient, toSigAlgName);
     }
 
-    public static void changeClientTokenSignatureProvider(ClientResource clientResource, Keycloak adminClient, String toSigAlgName) {
+    public static void changeRealmTokenSignatureProvider(String realm, Keycloak adminClient, String toSigAlgName) {
+        RealmRepresentation rep = adminClient.realm(realm).toRepresentation();
+        Map<String, String> attributes = rep.getAttributes();
+        log.tracef("change realm test signature algorithm from %s to %s", attributes.get(COMPONENT_SIGNATURE_ALGORITHM_KEY), toSigAlgName);
+        rep.setDefaultSignatureAlgorithm(toSigAlgName);
+        rep.setAttributes(attributes);
+        adminClient.realm(realm).update(rep);
+    }
+
+    public static void changeClientAccessTokenSignatureProvider(ClientResource clientResource, String toSigAlgName) {
         ClientRepresentation clientRep = clientResource.toRepresentation();
-        log.tracef("change client %s signature algorithm from %s to %s", clientRep.getClientId(), OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getIdTokenSignedResponseAlg(), toSigAlgName);
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(toSigAlgName);
+        log.tracef("change client %s access token signature algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG), toSigAlgName);
+        clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, toSigAlgName);
+        clientResource.update(clientRep);
+    }
+
+    public static void changeClientIdTokenSignatureProvider(ClientResource clientResource, String toSigAlgName) {
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        log.tracef("change client %s access token signature algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG), toSigAlgName);
+        clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, toSigAlgName);
         clientResource.update(clientRep);
     }
 
@@ -64,21 +88,11 @@ public class TokenSignatureUtil {
         return verifier.verify(jws.getSignature());
     }
 
-    public static void registerTokenSignatureProvider(String sigAlgName, Keycloak adminClient, TestContext testContext) {
-        long priority = System.currentTimeMillis();
-
-        ComponentRepresentation rep = createTokenSignatureRep("valid", EcdsaTokenSignatureProviderFactory.ID);
-        rep.setConfig(new MultivaluedHashMap<>());
-        rep.getConfig().putSingle("priority", Long.toString(priority));
-        rep.getConfig().putSingle("org.keycloak.jose.jws.TokenSignatureProvider.algorithm", sigAlgName);
-
-        Response response = adminClient.realm(TEST_REALM_NAME).components().add(rep);
-        String id = ApiUtil.getCreatedId(response);
-        testContext.getOrCreateCleanup(TEST_REALM_NAME).addComponentId(id);
-        response.close();
+    public static void registerKeyProvider(String ecNistRep, Keycloak adminClient, TestContext testContext) {
+        registerKeyProvider(TEST_REALM_NAME, ecNistRep, adminClient, testContext);
     }
 
-    public static void registerKeyProvider(String ecNistRep, Keycloak adminClient, TestContext testContext) {
+    public static void registerKeyProvider(String realm, String ecNistRep, Keycloak adminClient, TestContext testContext) {
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createKeyRep("valid", GeneratedEcdsaKeyProviderFactory.ID);
@@ -86,20 +100,10 @@ public class TokenSignatureUtil {
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecNistRep);
 
-        Response response = adminClient.realm(TEST_REALM_NAME).components().add(rep);
+        Response response = adminClient.realm(realm).components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        testContext.getOrCreateCleanup(TEST_REALM_NAME).addComponentId(id);
+        testContext.getOrCreateCleanup(realm).addComponentId(id);
         response.close();
-    }
-
-    private static ComponentRepresentation createTokenSignatureRep(String name, String providerId) {
-        ComponentRepresentation rep = new ComponentRepresentation();
-        rep.setName(name);
-        rep.setParentId(TEST_REALM_NAME);
-        rep.setProviderId(providerId);
-        rep.setProviderType(TokenSignatureProvider.class.getName());
-        rep.setConfig(new MultivaluedHashMap<>());
-        return rep;
     }
 
     private static ComponentRepresentation createKeyRep(String name, String providerId) {
@@ -126,7 +130,7 @@ public class TokenSignatureUtil {
                 }
                 KeyFactory kf = null;
                 try {
-                    kf = KeyFactory.getInstance("EC");
+                    kf = KeyFactory.getInstance(rep.getType());
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
@@ -140,23 +144,10 @@ public class TokenSignatureUtil {
         return publicKey;
     }
 
-    private static String getJavaAlgorithm(String sigAlgName) {
-        switch (sigAlgName) {
-        case "ES256":
-            return "SHA256withECDSA";
-        case "ES384":
-            return "SHA384withECDSA";
-        case "ES512":
-            return "SHA512withECDSA";
-        default:
-            throw new IllegalArgumentException("Not an ECDSA Algorithm");
-        }
-    }
-
     private static Signature getSignature(String sigAlgName) {
         try {
             // use Bouncy Castle for signature verification intentionally
-            Signature signature = Signature.getInstance(getJavaAlgorithm(sigAlgName), "BC");
+            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), "BC");
             return signature;
         } catch (Exception e) {
             throw new RuntimeException(e);

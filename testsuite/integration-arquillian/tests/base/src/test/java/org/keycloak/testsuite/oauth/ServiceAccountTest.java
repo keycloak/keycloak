@@ -111,7 +111,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         events.expectClientLogin()
                 .client("service-account-cl")
@@ -131,7 +131,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(refreshedResponse.getRefreshToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
 
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
@@ -148,7 +148,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         events.expectClientLogin()
                 .client("service-account-cl")
@@ -232,7 +232,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         Assert.assertEquals("updated-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
 
         // Username updated after client ID changed

@@ -76,6 +76,8 @@
                                         <include>org/keycloak/representations/oidc/OIDCClientRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/authorization/**</include>
                                         <include>org/keycloak/representations/JsonWebToken.class</include>
+                                        <include>org/keycloak/Token.class</include>
+                                        <include>org/keycloak/TokenCategory.class</include>
                                     </includes>
                                 </filter>
                                 <filter>

@@ -22,9 +22,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -44,7 +47,9 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.NoSuchElementException;
 
 import javax.ws.rs.client.Client;
@@ -353,6 +358,45 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
+
+    @Test
+    public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
+        loginPage.open();
+        loginPage.login("login-test", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+        String keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+        // Check identity cookie is signed with HS256
+        String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+        assertEquals("HS256", algorithm);
+
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
+
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+            keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+            // Check identity cookie is still signed with HS256
+            algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+            assertEquals("HS256", algorithm);
+
+            // Check identity cookie still works
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+        }
     }
 
     @Test

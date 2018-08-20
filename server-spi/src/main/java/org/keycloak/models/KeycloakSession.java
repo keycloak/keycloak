@@ -180,4 +180,11 @@ public interface KeycloakSession {
      */
     ThemeManager theme();
 
+    /**
+     * Token manager
+     *
+     * @return
+     */
+    TokenManager tokens();
+
 }

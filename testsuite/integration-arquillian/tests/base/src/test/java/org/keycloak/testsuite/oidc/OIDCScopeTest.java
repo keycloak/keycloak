@@ -410,7 +410,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
 
         Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
-        RefreshToken refreshToken1 = oauth.verifyRefreshToken(tokens.refreshToken);
+        RefreshToken refreshToken1 = oauth.parseRefreshToken(tokens.refreshToken);
 
         assertProfile(idToken, true);
         assertEmail(idToken, true);

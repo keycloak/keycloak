@@ -21,7 +21,6 @@ import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
 
 import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.*;
 import org.keycloak.services.Urls;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -139,7 +138,6 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
      */
     public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
         String issuerUri = getIssuer(realm, uri);
-        KeyManager.ActiveHmacKey keys = session.keys().getActiveHmacKey(realm);
 
         this
           .issuedAt(Time.currentTime())
@@ -147,10 +145,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
           .issuer(issuerUri)
           .audience(issuerUri);
 
-        return new JWSBuilder()
-          .kid(keys.getKid())
-          .jsonContent(this)
-          .hmac512(keys.getSecretKey());
+        return session.tokens().encode(this);
     }
 
     private static String getIssuer(RealmModel realm, UriInfo uri) {

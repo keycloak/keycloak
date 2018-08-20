@@ -191,7 +191,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         events.expectLogin()
                 .client(clientId)
@@ -213,7 +213,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(refreshedResponse.getRefreshToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
 
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
@@ -230,7 +230,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         events.expectLogin()
                 .client("resource-owner")

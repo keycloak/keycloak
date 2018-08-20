@@ -1,23 +1,35 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.keys;
-
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+import java.security.KeyPair;
+import java.util.List;
 
 public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFactory {
 
@@ -37,6 +49,30 @@ public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFa
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedEcdsaKeyProvider(session.getContext().getRealm(), model);
+    }
+
+    @Override
+    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
+        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.ES256) || algorithm.equals(Algorithm.ES384) || algorithm.equals(Algorithm.ES512))) {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel generated = new ComponentModel();
+            generated.setName("fallback-" + algorithm);
+            generated.setParentId(realm.getId());
+            generated.setProviderId(ID);
+            generated.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle(Attributes.PRIORITY_KEY, "-100");
+            config.putSingle(ECDSA_ELLIPTIC_CURVE_KEY, convertAlgorithmToECDomainParmNistRep(algorithm));
+            generated.setConfig(config);
+
+            realm.addComponentModel(generated);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -64,18 +100,18 @@ public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFa
         if (ecInNistRep == null) ecInNistRep = DEFAULT_ECDSA_ELLIPTIC_CURVE;
 
         if (!(model.contains(ECDSA_PRIVATE_KEY_KEY) && model.contains(ECDSA_PUBLIC_KEY_KEY))) {
-            generateKeys(realm, model, ecInNistRep);
+            generateKeys(model, ecInNistRep);
             logger.debugv("Generated keys for {0}", realm.getName());
         } else {
             String currentEc = model.get(ECDSA_ELLIPTIC_CURVE_KEY);
             if (!ecInNistRep.equals(currentEc)) {
-                generateKeys(realm, model, ecInNistRep);
+                generateKeys(model, ecInNistRep);
                 logger.debugv("Elliptic Curve changed, generating new keys for {0}", realm.getName());
             }
         }
     }
 
-    private void generateKeys(RealmModel realm, ComponentModel model, String ecInNistRep) {
+    private void generateKeys(ComponentModel model, String ecInNistRep) {
         KeyPair keyPair;
         try {
             keyPair = generateEcdsaKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));

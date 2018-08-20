@@ -1,8 +1,23 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite.keys;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.util.List;
@@ -18,7 +33,6 @@ import org.keycloak.crypto.KeyType;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -27,8 +41,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
 
 public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
     private static final String DEFAULT_EC = "P-256";
@@ -51,27 +63,27 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void defaultEc() throws Exception {
+    public void defaultEc() {
         supportedEc(null);
     }
 
     @Test
-    public void supportedEcP521() throws Exception {
+    public void supportedEcP521() {
         supportedEc("P-521");
     }
 
     @Test
-    public void supportedEcP384() throws Exception {
+    public void supportedEcP384() {
         supportedEc("P-384");
     }
 
     @Test
-    public void supportedEcP256() throws Exception {
+    public void supportedEcP256() {
         supportedEc("P-256");
     }
 
     @Test
-    public void unsupportedEcK163() throws Exception {
+    public void unsupportedEcK163() {
         // NIST.FIPS.186-4 Koblitz Curve over Binary Field
         unsupportedEc("K-163");
     }
@@ -138,16 +150,6 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
             response.close();
         }
         assertEquals(isEcAccepted, false);
-    }
-    
-    protected void assertErrror(Response response, String error) {
-        if (!response.hasEntity()) {
-            fail("No error message set");
-        }
-
-        ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
-        assertEquals(error, errorRepresentation.getErrorMessage());
-        response.close();
     }
 
     protected ComponentRepresentation createRep(String name, String providerId) {

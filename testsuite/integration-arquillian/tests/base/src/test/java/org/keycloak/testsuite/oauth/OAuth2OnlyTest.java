@@ -18,10 +18,6 @@
 package org.keycloak.testsuite.oauth;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import javax.ws.rs.core.UriBuilder;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -31,7 +27,6 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ClientModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -40,8 +35,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -103,7 +96,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.init(adminClient, driver);
+        oauth.init(driver);
     }
 
 

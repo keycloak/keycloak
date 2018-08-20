@@ -19,12 +19,10 @@ package org.keycloak.protocol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -33,7 +31,6 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
@@ -46,7 +43,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RestartLoginCookie {
+public class RestartLoginCookie implements Token {
     private static final Logger logger = Logger.getLogger(RestartLoginCookie.class);
     public static final String KC_RESTART = "KC_RESTART";
 
@@ -109,16 +106,9 @@ public class RestartLoginCookie {
         this.action = action;
     }
 
-    public String encode(KeycloakSession session, RealmModel realm) {
-        KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
-
-        JWSBuilder builder = new JWSBuilder();
-        return builder.kid(activeKey.getKid()).jsonContent(this)
-               .hmac256(activeKey.getSecretKey());
-    }
-
     public RestartLoginCookie() {
     }
+
     public RestartLoginCookie(AuthenticationSessionModel authSession) {
         this.action = authSession.getAction();
         this.clientId = authSession.getClient().getClientId();
@@ -131,7 +121,7 @@ public class RestartLoginCookie {
 
     public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, AuthenticationSessionModel authSession) {
         RestartLoginCookie restart = new RestartLoginCookie(authSession);
-        String encoded = restart.encode(session, realm);
+        String encoded = session.tokens().encode(restart);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true);
@@ -152,18 +142,12 @@ public class RestartLoginCookie {
             return null;
         }
         String encodedCookie = cook.getValue();
-        JWSInput input = new JWSInput(encodedCookie);
-        String kid = input.getHeader().getKeyId();
-        SecretKey secretKey = kid == null ? session.keys().getActiveHmacKey(realm).getSecretKey() : session.keys().getHmacSecretKey(realm, input.getHeader().getKeyId());
-        if (secretKey == null) {
-            logger.debug("Failed to retrieve HMAC secret key for session restart");
-            return null;
-        }
-        if (!HMACProvider.verify(input, secretKey)) {
+
+        RestartLoginCookie cookie = session.tokens().decode(encodedCookie, RestartLoginCookie.class);
+        if (cookie == null) {
             logger.debug("Failed to verify encoded RestartLoginCookie");
             return null;
         }
-        RestartLoginCookie cookie = input.readJsonContent(RestartLoginCookie.class);
 
         ClientModel client = realm.getClientByClientId(cookie.getClientId());
         if (client == null) return null;
@@ -188,5 +172,10 @@ public class RestartLoginCookie {
         }
 
         return authSession;
+    }
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.INTERNAL;
     }
 }

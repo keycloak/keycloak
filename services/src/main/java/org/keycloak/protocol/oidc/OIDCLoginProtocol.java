@@ -29,6 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -205,8 +206,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
-            TokenManager tokenManager = new TokenManager();
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
+            org.keycloak.protocol.oidc.TokenManager tokenManager = new org.keycloak.protocol.oidc.TokenManager();
+            org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
                     .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
@@ -341,7 +342,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
         PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
-        String token = new TokenManager().encodeToken(session, realm, adminAction);
+        String token = session.tokens().encode(adminAction);
         logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
         try {

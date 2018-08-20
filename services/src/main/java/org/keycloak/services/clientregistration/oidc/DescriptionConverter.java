@@ -121,7 +121,6 @@ public class DescriptionConverter {
             else configWrapper.setUseMtlsHoKToken(false);
         }
 
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
             configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
         }
@@ -206,7 +205,6 @@ public class DescriptionConverter {
         } else {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
         }
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
         }
