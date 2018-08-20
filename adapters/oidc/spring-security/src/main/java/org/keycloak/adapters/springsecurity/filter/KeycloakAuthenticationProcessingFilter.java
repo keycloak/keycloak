@@ -35,7 +35,7 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
 import org.keycloak.adapters.springsecurity.authentication.RequestAuthenticatorFactory;
-import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticatorFactor;
+import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticatorFactory;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
@@ -84,7 +84,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     private AdapterDeploymentContext adapterDeploymentContext;
     private AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
     private AuthenticationManager authenticationManager;
-    private RequestAuthenticatorFactory requestAuthenticatorFactory = new SpringSecurityRequestAuthenticatorFactor();
+    private RequestAuthenticatorFactory requestAuthenticatorFactory = new SpringSecurityRequestAuthenticatorFactory();
 
     /**
      * Creates a new Keycloak authentication processing filter with given {@link AuthenticationManager} and the
