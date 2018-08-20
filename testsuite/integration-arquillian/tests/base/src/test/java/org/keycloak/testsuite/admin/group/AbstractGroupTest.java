@@ -61,9 +61,6 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test");
 
         JWSInput jws = new JWSInput(refreshToken);
-        if (!RSAProvider.verify(jws, publicKey)) {
-            throw new RuntimeException("Invalid refresh token");
-        }
         RefreshToken refreshTokenRepresentation = jws.readJsonContent(RefreshToken.class);
 
         events.expectLogin()

@@ -17,25 +17,24 @@
 
 package org.keycloak.services.clientregistration;
 
+import org.keycloak.TokenCategory;
+import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeyManager;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
-import org.keycloak.urls.HostnameProvider;
 import org.keycloak.util.TokenUtil;
-
-import javax.ws.rs.core.UriInfo;
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,9 +45,10 @@ public class ClientRegistrationTokenUtils {
     public static final String TYPE_REGISTRATION_ACCESS_TOKEN = "RegistrationAccessToken";
 
     public static String updateTokenSignature(KeycloakSession session, ClientRegistrationAuth auth) {
-        KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(session.getContext().getRealm());
+        String algorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer();
 
-        if (keys.getKid().equals(auth.getKid())) {
+        if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();
         } else {
             RegistrationAccessToken regToken = new RegistrationAccessToken();
@@ -61,7 +61,7 @@ public class ClientRegistrationTokenUtils {
             regToken.issuer(auth.getJwt().getIssuer());
             regToken.audience(auth.getJwt().getIssuer());
 
-            String token = new JWSBuilder().kid(keys.getKid()).jsonContent(regToken).rsa256(keys.getPrivateKey());
+            String token = new JWSBuilder().jsonContent(regToken).sign(signer);
             return token;
         }
     }
@@ -81,7 +81,7 @@ public class ClientRegistrationTokenUtils {
     }
 
     public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model) {
-        JsonWebToken initialToken = new JsonWebToken();
+        InitialAccessToken initialToken = new InitialAccessToken();
         return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
@@ -90,33 +90,22 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Missing token"));
         }
 
-        JWSInput input;
-        try {
-            input = new JWSInput(token);
-        } catch (JWSInputException e) {
-            return TokenVerification.error(new RuntimeException("Invalid token", e));
-        }
-
-        String kid = input.getHeader().getKeyId();
-        PublicKey publicKey = session.keys().getRsaPublicKey(realm, kid);
-
-        if (!RSAProvider.verify(input, publicKey)) {
-            return TokenVerification.error(new RuntimeException("Failed verify token"));
-        }
-
+        String kid;
         JsonWebToken jwt;
         try {
-            jwt = input.readJsonContent(JsonWebToken.class);
-        } catch (JWSInputException e) {
-            return TokenVerification.error(new RuntimeException("Token is not JWT", e));
-        }
+            TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
+                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE);
 
-        if (!getIssuer(session, realm).equals(jwt.getIssuer())) {
-            return TokenVerification.error(new RuntimeException("Issuer from token don't match with the realm issuer."));
-        }
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            verifier.verifierContext(verifierContext);
 
-        if (!jwt.isActive()) {
-            return TokenVerification.error(new RuntimeException("Token not active."));
+            kid = verifierContext.getKid();
+
+            verifier.verify();
+
+            jwt = verifier.getToken();
+        } catch (VerificationException e) {
+            return TokenVerification.error(new RuntimeException("Failed decode token", e));
         }
 
         if (!(TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType()) ||
@@ -138,10 +127,7 @@ public class ClientRegistrationTokenUtils {
         jwt.issuer(issuer);
         jwt.audience(issuer);
 
-        KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-
-        String token = new JWSBuilder().kid(keys.getKid()).jsonContent(jwt).rsa256(keys.getPrivateKey());
-        return token;
+        return session.tokens().encode(jwt);
     }
 
     private static String getIssuer(KeycloakSession session, RealmModel realm) {

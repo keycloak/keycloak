@@ -18,6 +18,7 @@
 package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.TokenCategory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -357,4 +358,10 @@ public class IDToken extends JsonWebToken {
     public void setStateHash(String stateHash) {
         this.stateHash = stateHash;
     }
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.ID;
+    }
+
 }

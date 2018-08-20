@@ -113,7 +113,7 @@ public class LogoutEndpoint {
         UserSessionModel userSession = null;
         if (encodedIdToken != null) {
             try {
-                IDToken idToken = tokenManager.verifyIDTokenSignature(session, realm, encodedIdToken);
+                IDToken idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
                 userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);

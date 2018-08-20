@@ -19,9 +19,13 @@ package org.keycloak.jose.jwk;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
 
 import java.math.BigInteger;
+import java.security.Key;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**
@@ -30,9 +34,10 @@ import java.security.interfaces.RSAPublicKey;
 public class JWKBuilder {
 
     public static final String DEFAULT_PUBLIC_KEY_USE = "sig";
-    public static final String DEFAULT_MESSAGE_DIGEST = "SHA-256";
 
     private String kid;
+
+    private String algorithm;
 
     private JWKBuilder() {
     }
@@ -46,18 +51,46 @@ public class JWKBuilder {
         return this;
     }
 
+    public JWKBuilder algorithm(String algorithm) {
+        this.algorithm = algorithm;
+        return this;
+    }
+
     public JWK rs256(PublicKey key) {
+        algorithm(Algorithm.RS256);
+        return rsa(key);
+    }
+
+    public JWK rsa(Key key) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
         k.setKeyId(kid);
-        k.setKeyType(RSAPublicJWK.RSA);
-        k.setAlgorithm(RSAPublicJWK.RS256);
+        k.setKeyType(KeyType.RSA);
+        k.setAlgorithm(algorithm);
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
+
+        return k;
+    }
+
+
+    public JWK ec(Key key) {
+        ECPublicKey ecKey = (ECPublicKey) key;
+
+        ECPublicJWK k = new ECPublicJWK();
+
+        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+        k.setKeyId(kid);
+        k.setKeyType(KeyType.EC);
+        k.setAlgorithm(algorithm);
+        k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
+        k.setCrv("P-" + ecKey.getParams().getCurve().getField().getFieldSize());
+        k.setX(Base64Url.encode(ecKey.getW().getAffineX().toByteArray()));
+        k.setY(Base64Url.encode(ecKey.getW().getAffineY().toByteArray()));
 
         return k;
     }

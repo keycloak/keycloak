@@ -17,16 +17,17 @@
 
 package org.keycloak.keys.loader;
 
-import java.security.PublicKey;
-
+import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.keys.*;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
-import org.jboss.logging.Logger;
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

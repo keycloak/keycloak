@@ -30,7 +30,6 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -182,7 +181,7 @@ public abstract class AbstractKeycloakTest {
             afterAbstractKeycloakTestRealmImport();
         }
 
-        oauth.init(adminClient, driver);
+        oauth.init(driver);
 
     }
 

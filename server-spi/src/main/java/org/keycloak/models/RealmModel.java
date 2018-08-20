@@ -162,6 +162,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
+    String getDefaultSignatureAlgorithm();
+    void setDefaultSignatureAlgorithm(String defaultSignatureAlgorithm);
+
     boolean isRevokeRefreshToken();
     void setRevokeRefreshToken(boolean revokeRefreshToken);
 

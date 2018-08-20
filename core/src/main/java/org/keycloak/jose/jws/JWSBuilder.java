@@ -18,6 +18,7 @@
 package org.keycloak.jose.jws;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.util.JsonSerialization;
@@ -25,7 +26,6 @@ import org.keycloak.util.JsonSerialization;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.Key;
 import java.security.PrivateKey;
 
 /**
@@ -37,7 +37,7 @@ public class JWSBuilder {
     String kid;
     String contentType;
     byte[] contentBytes;
-    
+
     public JWSBuilder type(String type) {
         this.type = type;
         return this;
@@ -67,31 +67,7 @@ public class JWSBuilder {
         return new EncodingBuilder();
     }
 
-    protected String encodeAll(StringBuffer encoding, byte[] signature) {
-        encoding.append('.');
-        if (signature != null) {
-            encoding.append(Base64Url.encode(signature));
-        }
-        return encoding.toString();
-    }
 
-    protected void encode(Algorithm alg, byte[] data, StringBuffer encoding) {
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-        encode(alg.name(), data, encoding);
-    }
-
-    protected byte[] marshalContent() {
-        return contentBytes;
-    }
-
-    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-    protected void encode(String sigAlgName, byte[] data, StringBuffer encoding) {
-        encoding.append(encodeHeader(sigAlgName));
-        encoding.append('.');
-        encoding.append(Base64Url.encode(data));
-    }
-
-    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
     protected String encodeHeader(String sigAlgName) {
         StringBuilder builder = new StringBuilder("{");
         builder.append("\"alg\":\"").append(sigAlgName).append("\"");
@@ -107,30 +83,55 @@ public class JWSBuilder {
         }
     }
 
-    public class EncodingBuilder {
-        public String none() {
-            StringBuffer buffer = new StringBuffer();
-            byte[] data = marshalContent();
-            encode(Algorithm.none, data, buffer);
-            return encodeAll(buffer, null);
+    protected String encodeAll(StringBuilder encoding, byte[] signature) {
+        encoding.append('.');
+        if (signature != null) {
+            encoding.append(Base64Url.encode(signature));
         }
+        return encoding.toString();
+    }
 
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI        
-        public String sign(JWSSignatureProvider signatureProvider, String sigAlgName, Key key) {
-            StringBuffer buffer = new StringBuffer();
+    protected void encode(Algorithm alg, byte[] data, StringBuilder encoding) {
+        encode(alg.name(), data, encoding);
+    }
+
+    protected void encode(String sigAlgName, byte[] data, StringBuilder encoding) {
+        encoding.append(encodeHeader(sigAlgName));
+        encoding.append('.');
+        encoding.append(Base64Url.encode(data));
+    }
+
+    protected byte[] marshalContent() {
+        return contentBytes;
+    }
+
+    public class EncodingBuilder {
+
+        public String sign(SignatureSignerContext signer) {
+            kid = signer.getKid();
+
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
-            encode(sigAlgName, data, buffer);
+            encode(signer.getAlgorithm(), data, buffer);
             byte[] signature = null;
             try {
-                signature = signatureProvider.sign(buffer.toString().getBytes("UTF-8"), sigAlgName, key);
-            } catch (UnsupportedEncodingException e) {
+                signature = signer.sign(buffer.toString().getBytes("UTF-8"));
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
             return encodeAll(buffer, signature);
         }
 
+        public String none() {
+            StringBuilder buffer = new StringBuilder();
+            byte[] data = marshalContent();
+            encode(Algorithm.none, data, buffer);
+            return encodeAll(buffer, null);
+        }
+
+        @Deprecated
         public String sign(Algorithm algorithm, PrivateKey privateKey) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(algorithm, data, buffer);
             byte[] signature = null;
@@ -142,20 +143,24 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String rsa256(PrivateKey privateKey) {
             return sign(Algorithm.RS256, privateKey);
         }
 
+        @Deprecated
         public String rsa384(PrivateKey privateKey) {
             return sign(Algorithm.RS384, privateKey);
         }
 
+        @Deprecated
         public String rsa512(PrivateKey privateKey) {
             return sign(Algorithm.RS512, privateKey);
         }
 
+        @Deprecated
         public String hmac256(byte[] sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS256, data, buffer);
             byte[] signature = null;
@@ -167,8 +172,9 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String hmac384(byte[] sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS384, data, buffer);
             byte[] signature = null;
@@ -180,8 +186,9 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String hmac512(byte[] sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS512, data, buffer);
             byte[] signature = null;
@@ -193,8 +200,9 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String hmac256(SecretKey sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS256, data, buffer);
             byte[] signature = null;
@@ -206,8 +214,9 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String hmac384(SecretKey sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS384, data, buffer);
             byte[] signature = null;
@@ -219,8 +228,9 @@ public class JWSBuilder {
             return encodeAll(buffer, signature);
         }
 
+        @Deprecated
         public String hmac512(SecretKey sharedSecret) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS512, data, buffer);
             byte[] signature = null;

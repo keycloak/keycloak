@@ -19,6 +19,7 @@ package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.TokenCategory;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.io.Serializable;
@@ -270,4 +271,10 @@ public class AccessToken extends IDToken {
     public void setScope(String scope) {
         this.scope = scope;
     }
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.ACCESS;
+    }
+
 }

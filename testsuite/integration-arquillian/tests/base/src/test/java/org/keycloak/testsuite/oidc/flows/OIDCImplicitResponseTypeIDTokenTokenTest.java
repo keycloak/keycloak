@@ -61,7 +61,7 @@ public class OIDCImplicitResponseTypeIDTokenTokenTest extends AbstractOIDCRespon
 
         // Validate "at_hash"
         Assert.assertNotNull(idToken.getAccessTokenHash());
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+
         Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getAccessToken()));
         Assert.assertNull(idToken.getCodeHash());
 

@@ -1086,15 +1086,12 @@ public class TokenEndpoint {
         String rpt = formParams.getFirst("rpt");
 
         if (rpt != null) {
-            if (!Tokens.verifySignature(session, realm, rpt)) {
+            AccessToken accessToken = session.tokens().decode(rpt, AccessToken.class);
+            if (accessToken == null) {
                 throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
 
-            try {
-                authorizationRequest.setRpt(new JWSInput(rpt).readJsonContent(AccessToken.class));
-            } catch (JWSInputException e) {
-                throw new CorsErrorResponseException(cors, "invalid_rpt", "Invalid RPT", Status.FORBIDDEN);
-            }
+            authorizationRequest.setRpt(accessToken);
         }
 
         authorizationRequest.setScope(formParams.getFirst("scope"));

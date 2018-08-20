@@ -18,15 +18,12 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -34,7 +31,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderFactory<GeneratedHmacKeyProvider> {
+public class GeneratedHmacKeyProviderFactory extends AbstractGeneratedSecretKeyProviderFactory<GeneratedHmacKeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedHmacKeyProviderFactory.class);
 
@@ -42,15 +39,40 @@ public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderF
 
     private static final String HELP_TEXT = "Generates HMAC secret key";
 
-    public static final int DEFAULT_HMAC_KEY_SIZE = 32;
+    public static final int DEFAULT_HMAC_KEY_SIZE = 64;
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = SecretKeyProviderUtils.configurationBuilder()
             .property(Attributes.SECRET_SIZE_PROPERTY)
+            .property(Attributes.HS_ALGORITHM_PROPERTY)
             .build();
 
     @Override
     public GeneratedHmacKeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedHmacKeyProvider(model);
+    }
+
+    @Override
+    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
+        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.HS256) || algorithm.equals(Algorithm.HS384) || algorithm.equals(Algorithm.HS512))) {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel generated = new ComponentModel();
+            generated.setName("fallback-" + algorithm);
+            generated.setParentId(realm.getId());
+            generated.setProviderId(ID);
+            generated.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle(Attributes.PRIORITY_KEY, "-100");
+            config.putSingle(Attributes.ALGORITHM_KEY, algorithm);
+            generated.setConfig(config);
+
+            realm.addComponentModel(generated);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

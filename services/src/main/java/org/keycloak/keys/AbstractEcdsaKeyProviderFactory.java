@@ -1,9 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.keys;
-
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -14,11 +25,13 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
+
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-
-@SuppressWarnings("rawtypes")
 public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFactory {
 
     protected static final String ECDSA_PRIVATE_KEY_KEY = "ecdsaPrivateKey";
@@ -77,22 +90,29 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
     }
 
     public static String convertECDomainParmNistRepToAlgorithm(String ecInNistRep) {
-        // convert Elliptic Curve Domain Parameter Name in NIST to Algorithm (JWA) representation
-        String ecInAlgorithmRep = null;
         switch(ecInNistRep) {
             case "P-256" :
-                ecInAlgorithmRep = Algorithm.ES256;
-                break;
+                return Algorithm.ES256;
             case "P-384" :
-                ecInAlgorithmRep = Algorithm.ES384;
-                break;
+                return Algorithm.ES384;
             case "P-521" :
-                ecInAlgorithmRep = Algorithm.ES512;
-                break;
+                return Algorithm.ES512;
             default :
-                // return null
+                return null;
         }
-        return ecInAlgorithmRep;
+    }
+
+    public static String convertAlgorithmToECDomainParmNistRep(String algorithm) {
+        switch(algorithm) {
+            case Algorithm.ES256 :
+                return "P-256";
+            case Algorithm.ES384 :
+                return "P-384";
+            case Algorithm.ES512 :
+                return "P-521";
+            default :
+                return null;
+        }
     }
 
 }

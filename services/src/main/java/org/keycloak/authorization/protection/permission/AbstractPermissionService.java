@@ -16,6 +16,21 @@
  */
 package org.keycloak.authorization.protection.permission;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.TokenManager;
+import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
+import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import org.keycloak.services.ErrorResponseException;
+
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,23 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.ws.rs.core.Response;
-
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.representations.idm.authorization.PermissionRequest;
-import org.keycloak.representations.idm.authorization.PermissionResponse;
-import org.keycloak.representations.idm.authorization.PermissionTicketToken;
-import org.keycloak.services.ErrorResponseException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -150,7 +148,6 @@ public class AbstractPermissionService {
     private String createPermissionTicket(List<PermissionRequest> request) {
         List<Permission> permissions = verifyRequestedResource(request);
 
-        KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
         ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
         PermissionTicketToken token = new PermissionTicketToken(permissions, targetClient.getClientId(), this.identity.getAccessToken());
         Map<String, List<String>> claims = new HashMap<>();
@@ -167,7 +164,6 @@ public class AbstractPermissionService {
             token.setClaims(claims);
         }
 
-        return new JWSBuilder().kid(keys.getKid()).jsonContent(token)
-                .rsa256(keys.getPrivateKey());
+        return this.authorization.getKeycloakSession().tokens().encode(token);
     }
 }

@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -37,7 +38,6 @@ import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,10 +45,6 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
-
-    public static final List<String> DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
-
-    public static final List<String> DEFAULT_USER_INFO_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.RS256.toString());
 
     public static final List<String> DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.none.toString(), Algorithm.RS256.toString());
 
@@ -94,8 +90,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setCheckSessionIframe(uriBuilder.clone().path(OIDCLoginProtocolService.class, "getLoginStatusIframe").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(uriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
 
-        config.setIdTokenSigningAlgValuesSupported(DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED);
-        config.setUserInfoSigningAlgValuesSupported(DEFAULT_USER_INFO_SIGNING_ALG_VALUES_SUPPORTED);
+        config.setIdTokenSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+        config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
         config.setRequestObjectSigningAlgValuesSupported(DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED);
         config.setResponseTypesSupported(DEFAULT_RESPONSE_TYPES_SUPPORTED);
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
@@ -145,7 +141,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getClientAuthMethodsSupported() {
-        List<String> result = new ArrayList<>();
+        List<String> result = new LinkedList<>();
 
         List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
         for (ProviderFactory factory : providerFactories) {
@@ -153,6 +149,17 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             result.addAll(clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL));
         }
 
+        return result;
+    }
+
+    private List<String> getSupportedSigningAlgorithms(boolean includeNone) {
+        List<String> result = new LinkedList<>();
+        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(SignatureProvider.class)) {
+            result.add(s.getId());
+        }
+        if (includeNone) {
+            result.add("none");
+        }
         return result;
     }
 

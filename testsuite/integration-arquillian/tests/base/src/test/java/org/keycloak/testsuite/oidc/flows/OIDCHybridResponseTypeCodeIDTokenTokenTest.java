@@ -62,18 +62,18 @@ public class OIDCHybridResponseTypeCodeIDTokenTokenTest extends AbstractOIDCResp
 
         // Validate "at_hash" and "c_hash"
         Assert.assertNotNull(idToken.getAccessTokenHash());
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+
         Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getAccessToken()));
         Assert.assertNotNull(idToken.getCodeHash());
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+
         Assert.assertEquals(idToken.getCodeHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getCode()));
 
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         // Validate "s_hash"
         Assert.assertNotNull(idToken.getStateHash());
-        // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-        Assert.assertEquals(idToken.getStateHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getState())); 
+
+        Assert.assertEquals(idToken.getStateHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getState()));
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);

@@ -949,7 +949,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         // Create second session
         try {
             OAuthClient oauth2 = new OAuthClient();
-            oauth2.init(adminClient, driver2);
+            oauth2.init(driver2);
             oauth2.doLogin("view-sessions", "password");
 
             EventRepresentation login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();

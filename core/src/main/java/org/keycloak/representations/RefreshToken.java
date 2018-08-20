@@ -17,6 +17,7 @@
 
 package org.keycloak.representations;
 
+import org.keycloak.TokenCategory;
 import org.keycloak.util.TokenUtil;
 
 import java.util.HashMap;
@@ -58,4 +59,8 @@ public class RefreshToken extends AccessToken {
         }
     }
 
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.INTERNAL;
+    }
 }

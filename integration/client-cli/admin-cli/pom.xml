@@ -88,6 +88,8 @@
                                         -->
                                         <include>org/keycloak/representations/idm/**</include>
                                         <include>org/keycloak/representations/JsonWebToken.class</include>
+                                        <include>org/keycloak/Token.class</include>
+                                        <include>org/keycloak/TokenCategory.class</include>
                                     </includes>
                                 </filter>
                                 <filter>
