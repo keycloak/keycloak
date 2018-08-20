@@ -17,8 +17,6 @@
 
 package org.keycloak.keys;
 
-import java.security.Key;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
@@ -28,7 +26,7 @@ import org.keycloak.crypto.KeyUse;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedHmacKeyProvider extends GeneratedSecretKeyProvider {
+public class GeneratedHmacKeyProvider extends AbstractGeneratedSecretKeyProvider {
 
     public GeneratedHmacKeyProvider(ComponentModel model) {
         super(model, KeyUse.SIG, KeyType.OCT, Algorithm.HS256);

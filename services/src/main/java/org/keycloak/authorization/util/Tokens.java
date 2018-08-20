@@ -19,17 +19,15 @@
 package org.keycloak.authorization.util;
 
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.jose.jws.TokenSignature;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 
 import javax.ws.rs.core.Response.Status;
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -60,11 +58,10 @@ public class Tokens {
         return null;
     }
 
-    public static boolean verifySignature(KeycloakSession keycloakSession, RealmModel realm, String token) {
+    public static boolean verifySignature(KeycloakSession keycloakSession, String token) {
         try {
             JWSInput jws = new JWSInput(token);
-            PublicKey publicKey = keycloakSession.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
-            return RSAProvider.verify(jws, publicKey);
+            return TokenSignature.verify(keycloakSession, jws);
         } catch (Exception e) {
             throw new ErrorResponseException("invalid_signature", "Unexpected error while validating signature.", Status.INTERNAL_SERVER_ERROR);
         }

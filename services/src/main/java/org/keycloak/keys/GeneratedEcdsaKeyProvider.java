@@ -1,19 +1,17 @@
 package org.keycloak.keys;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 public class GeneratedEcdsaKeyProvider extends AbstractEcdsaKeyProvider {
     private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProvider.class);

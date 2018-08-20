@@ -20,7 +20,8 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.PublicKeyLoader;
 
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  *

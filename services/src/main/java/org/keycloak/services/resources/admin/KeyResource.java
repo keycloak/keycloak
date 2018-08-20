@@ -69,16 +69,14 @@ public class KeyResource {
             r.setKid(key.getKid());
             r.setStatus(key.getStatus() != null ? key.getStatus().name() : null);
             r.setType(key.getType());
-            r.setAlgorithms(key.getAlgorithms());
+            r.setAlgorithm(key.getAlgorithm());
             r.setPublicKey(key.getVerifyKey() != null ? PemUtils.encodeKey(key.getVerifyKey()) : null);
             r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
             keys.getKeys().add(r);
 
             if (key.getStatus().isActive()) {
-                for (String a : key.getAlgorithms()) {
-                    if (!keys.getActive().containsKey(a)) {
-                        keys.getActive().put(a, key.getKid());
-                    }
+                if (!keys.getActive().containsKey(key.getAlgorithm())) {
+                    keys.getActive().put(key.getAlgorithm(), key.getKid());
                 }
             }
         }

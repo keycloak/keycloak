@@ -37,6 +37,7 @@ public class RealmRepresentation {
     protected String displayName;
     protected String displayNameHtml;
     protected Integer notBefore;
+    protected String defaultSignatureAlgorithm;
     protected Boolean revokeRefreshToken;
     protected Integer refreshTokenMaxReuse;
     protected Integer accessTokenLifespan;
@@ -241,6 +242,14 @@ public class RealmRepresentation {
 
     public void setSslRequired(String sslRequired) {
         this.sslRequired = sslRequired;
+    }
+
+    public String getDefaultSignatureAlgorithm() {
+        return defaultSignatureAlgorithm;
+    }
+
+    public void setDefaultSignatureAlgorithm(String defaultSignatureAlgorithm) {
+        this.defaultSignatureAlgorithm = defaultSignatureAlgorithm;
     }
 
     public Boolean getRevokeRefreshToken() {

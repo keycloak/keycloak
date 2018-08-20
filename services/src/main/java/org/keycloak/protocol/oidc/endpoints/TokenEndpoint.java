@@ -1086,7 +1086,7 @@ public class TokenEndpoint {
         String rpt = formParams.getFirst("rpt");
 
         if (rpt != null) {
-            if (!Tokens.verifySignature(session, realm, rpt)) {
+            if (!Tokens.verifySignature(session, rpt)) {
                 throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
 

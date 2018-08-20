@@ -1,10 +1,5 @@
 package org.keycloak.keys;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
@@ -14,11 +9,13 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
+
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-
-@SuppressWarnings("rawtypes")
 public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFactory {
 
     protected static final String ECDSA_PRIVATE_KEY_KEY = "ecdsaPrivateKey";
@@ -77,22 +74,29 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
     }
 
     public static String convertECDomainParmNistRepToAlgorithm(String ecInNistRep) {
-        // convert Elliptic Curve Domain Parameter Name in NIST to Algorithm (JWA) representation
-        String ecInAlgorithmRep = null;
         switch(ecInNistRep) {
             case "P-256" :
-                ecInAlgorithmRep = Algorithm.ES256;
-                break;
+                return Algorithm.ES256;
             case "P-384" :
-                ecInAlgorithmRep = Algorithm.ES384;
-                break;
+                return Algorithm.ES384;
             case "P-521" :
-                ecInAlgorithmRep = Algorithm.ES512;
-                break;
+                return Algorithm.ES512;
             default :
-                // return null
+                return null;
         }
-        return ecInAlgorithmRep;
+    }
+
+    public static String convertAlgorithmToECDomainParmNistRep(String algorithm) {
+        switch(algorithm) {
+            case Algorithm.ES256 :
+                return "P-256";
+            case Algorithm.ES384 :
+                return "P-384";
+            case Algorithm.ES512 :
+                return "P-521";
+            default :
+                return null;
+        }
     }
 
 }

@@ -4,6 +4,19 @@
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="defaultSignatureAlgorithm">{{:: 'default-signature-algorithm' | translate}}</label>
+
+            <div class="col-md-6">
+                <select id="defaultSignatureAlgorithm" class="form-control" ng-model="realm.defaultSignatureAlgorithm"
+                        ng-options="provider for provider in serverInfo.listProviderIds('signature')">
+                </select>
+            </div>
+
+            <kc-tooltip>{{:: 'default-signature-algorithm.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="revokeRefreshToken">{{:: 'revoke-refresh-token' | translate}}</label>
 
             <div class="col-md-6">

@@ -31,7 +31,11 @@ import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,18 +53,45 @@ public class DefaultKeyManager implements KeyManager {
 
     @Override
     public KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm) {
-        for (KeyProvider p : getProviders(realm)) {
+        KeyWrapper activeKey = getActiveKey(getProviders(realm), realm, use, algorithm);
+        if (activeKey != null) {
+            return activeKey;
+        }
+
+        logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+
+        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(KeyProvider.class)) {
+            KeyProviderFactory kf = (KeyProviderFactory) f;
+            if (kf.createFallbackKeys(session, use, algorithm)) {
+                providersMap.remove(realm.getId());
+                List<KeyProvider> providers = getProviders(realm);
+                activeKey = getActiveKey(providers, realm, use, algorithm);
+                if (activeKey != null) {
+                    logger.warnv("Fallback key created: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+                    return activeKey;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        logger.errorv("Failed to create fallback key for realm: realm={0} algorithm={1} use={2", realm.getName(), algorithm, use.name());
+        throw new RuntimeException("Failed to find key: realm=" + realm.getName() + " algorithm=" + algorithm + " use=" + use.name());
+    }
+
+    private KeyWrapper getActiveKey(List<KeyProvider> providers, RealmModel realm, KeyUse use, String algorithm) {
+        for (KeyProvider p : providers) {
             for (KeyWrapper key : p .getKeys()) {
                 if (key.getStatus().isActive() && matches(key, use, algorithm)) {
                     if (logger.isTraceEnabled()) {
-                        logger.tracev("Active key found: realm={0} kid={1} algorithm={2}", realm.getName(), key.getKid(), algorithm);
+                        logger.tracev("Active key found: realm={0} kid={1} algorithm={2} use={3}", realm.getName(), key.getKid(), algorithm, use.name());
                     }
 
                     return key;
                 }
             }
         }
-        throw new RuntimeException("Failed to find key: realm=" + realm.getName() + " algorithm=" + algorithm);
+        return null;
     }
 
     @Override
@@ -74,7 +105,7 @@ public class DefaultKeyManager implements KeyManager {
             for (KeyWrapper key : p.getKeys()) {
                 if (key.getKid().equals(kid) && key.getStatus().isEnabled() && matches(key, use, algorithm)) {
                     if (logger.isTraceEnabled()) {
-                        logger.tracev("Active key realm={0} kid={1} algorithm={2}", realm.getName(), key.getKid(), algorithm);
+                        logger.tracev("Found key: realm={0} kid={1} algorithm={2} use={3}", realm.getName(), key.getKid(), algorithm, use.name());
                     }
 
                     return key;
@@ -83,7 +114,7 @@ public class DefaultKeyManager implements KeyManager {
         }
 
         if (logger.isTraceEnabled()) {
-            logger.tracev("Failed to find public key realm={0} kid={1} algorithm={2}", realm.getName(), kid, algorithm);
+            logger.tracev("Failed to find public key: realm={0} kid={1} algorithm={2} use={3}", realm.getName(), kid, algorithm, use.name());
         }
 
         return null;
@@ -211,7 +242,7 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     private boolean matches(KeyWrapper key, KeyUse use, String algorithm) {
-        return use.equals(key.getUse()) && key.getAlgorithms().contains(algorithm);
+        return use.equals(key.getUse()) && key.getAlgorithm().equals(algorithm);
     }
 
     private List<KeyProvider> getProviders(RealmModel realm) {
@@ -235,24 +266,6 @@ public class DefaultKeyManager implements KeyManager {
             }
 
             providersMap.put(realm.getId(), providers);
-
-            try {
-                getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-            } catch (RuntimeException e) {
-                providers.add(new FailsafeRsaKeyProvider());
-            }
-
-            try {
-                getActiveKey(realm, KeyUse.SIG, Algorithm.HS256);
-            } catch (RuntimeException e) {
-                providers.add(new FailsafeHmacKeyProvider());
-            }
-
-            try {
-                getActiveKey(realm, KeyUse.ENC, Algorithm.AES);
-            } catch (RuntimeException e) {
-                providers.add(new FailsafeAesKeyProvider());
-            }
         }
         return providers;
     }

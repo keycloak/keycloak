@@ -757,9 +757,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                 .post(Entity.form(form));
     }
 
-    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-
-    private void refreshToken(String sigAlgName) throws Exception {
+    private void refreshToken(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -772,17 +770,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(tokenResponse.getIdToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -828,35 +826,34 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void tokenRefreshRequest_RealmRS384_ClientRS384_EffectiveRS384() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS384);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS384);
-            refreshToken(Algorithm.RS384);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS384);
+            refreshToken(Algorithm.RS384, Algorithm.RS384, Algorithm.RS384);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
     @Test
-    public void tokenRefreshRequest_RealmRS256_ClientRS512_EffectiveRS512() throws Exception {
+    public void tokenRefreshRequest_RealmRS256_ClientRS512_EffectiveRS256() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS512);
-            refreshToken(Algorithm.RS512);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS512);
+            refreshToken(Algorithm.RS256, Algorithm.RS512, Algorithm.RS256);
         } finally {
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
     @Test
-    public void tokenRefreshRequest_RealmRS256_ClientES256_EffectiveES256() throws Exception {
+    public void tokenRefreshRequest_RealmRS256_ClientES256_EffectiveRS256() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.ES256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
             TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-            TokenSignatureUtil.registerTokenSignatureProvider(Algorithm.ES256, adminClient, testContext);
-            refreshTokenSignatureVerifyOnly(Algorithm.ES256);
+            refreshTokenSignatureVerifyOnly(Algorithm.RS256, Algorithm.ES256, Algorithm.RS256);
         } finally {
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
@@ -864,30 +861,28 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void tokenRefreshRequest_RealmES384_ClientES384_EffectiveES384() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES384);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.ES384);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES384);
             TokenSignatureUtil.registerKeyProvider("P-384", adminClient, testContext);
-            TokenSignatureUtil.registerTokenSignatureProvider(Algorithm.ES384, adminClient, testContext);
-            refreshTokenSignatureVerifyOnly(Algorithm.ES384);
+            refreshTokenSignatureVerifyOnly(Algorithm.ES384, Algorithm.ES384, Algorithm.ES384);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
     @Test
-    public void tokenRefreshRequest_RealmRS256_ClientES512_EffectiveES512() throws Exception {
+    public void tokenRefreshRequest_RealmRS256_ClientES512_EffectiveRS256() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.ES512);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES512);
             TokenSignatureUtil.registerKeyProvider("P-521", adminClient, testContext);
-            TokenSignatureUtil.registerTokenSignatureProvider(Algorithm.ES512, adminClient, testContext);
-            refreshTokenSignatureVerifyOnly(Algorithm.ES512);
+            refreshTokenSignatureVerifyOnly(Algorithm.RS256, Algorithm.ES512, Algorithm.RS256);
         } finally {
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
-    private void refreshTokenSignatureVerifyOnly(String sigAlgName) throws Exception {
+    private void refreshTokenSignatureVerifyOnly(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -900,17 +895,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(tokenResponse.getIdToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
-        assertEquals(sigAlgName, header.getAlgorithm().name());
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -931,9 +926,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals("bearer", response.getTokenType());
 
         // verify JWS for refreshed access token and refresh token
-        assertEquals(TokenSignatureUtil.verifySignature(sigAlgName, response.getAccessToken(), adminClient), true);
-        assertEquals(TokenSignatureUtil.verifySignature(sigAlgName, response.getIdToken(), adminClient), true);
-        assertEquals(TokenSignatureUtil.verifySignature(sigAlgName, response.getRefreshToken(), adminClient), true);
+        assertEquals(TokenSignatureUtil.verifySignature(expectedAccessAlg, response.getAccessToken(), adminClient), true);
+        assertEquals(TokenSignatureUtil.verifySignature(expectedIdTokenAlg, response.getIdToken(), adminClient), true);
+        assertEquals(TokenSignatureUtil.verifySignature(expectedRefreshAlg, response.getRefreshToken(), adminClient), true);
 
         EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));

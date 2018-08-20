@@ -92,7 +92,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getAlgorithms().contains(Algorithm.HS256)) {
+            if (k.getAlgorithm().equals(Algorithm.HS256)) {
                 key = k;
                 break;
             }
@@ -107,7 +107,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void largeKeysize() throws Exception {
+    public void largeKeysize() {
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createRep("valid", GeneratedHmacKeyProviderFactory.ID);
@@ -127,7 +127,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getAlgorithms().contains(Algorithm.HS256)) {
+            if (k.getAlgorithm().equals(Algorithm.HS256)) {
                 key = k;
                 break;
             }

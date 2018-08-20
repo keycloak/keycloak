@@ -753,8 +753,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         }
     }
 
-    // KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
-    private void offlineTokenRequest(String sigAlgName) throws Exception {
+    private void offlineTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
@@ -765,19 +764,19 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
        String refreshToken = tokenResponse.getRefreshToken();
        if (idToken != null) {
            header = new JWSInput(idToken).getHeader();
-           assertEquals(sigAlgName, header.getAlgorithm().name());
+           assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
            assertEquals("JWT", header.getType());
            assertNull(header.getContentType());
        }
        if (accessToken != null) {
            header = new JWSInput(accessToken).getHeader();
-           assertEquals(sigAlgName, header.getAlgorithm().name());
+           assertEquals(expectedAccessAlg, header.getAlgorithm().name());
            assertEquals("JWT", header.getType());
            assertNull(header.getContentType());
        }
        if (refreshToken != null) {
            header = new JWSInput(refreshToken).getHeader();
-           assertEquals(sigAlgName, header.getAlgorithm().name());
+           assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
            assertEquals("JWT", header.getType());
            assertNull(header.getContentType());
        }
@@ -823,15 +822,16 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
 
     }
+
     @Test
-    public void offlineTokenRequest_RealmRS512_ClientRS384_EffectiveRS384() throws Exception {
+    public void offlineTokenRequest_RealmRS512_ClientRS384() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS512");
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), adminClient, "RS384");
-            offlineTokenRequest("RS384");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), "RS384");
+            offlineTokenRequest("RS512","RS384", "RS512");
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), adminClient, "RS256");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), "RS256");
         }
     }
 }

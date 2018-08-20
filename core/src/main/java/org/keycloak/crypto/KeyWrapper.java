@@ -19,17 +19,13 @@ package org.keycloak.crypto;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 public class KeyWrapper {
 
     private String providerId;
     private long providerPriority;
     private String kid;
-    private Set<String> algorithms;
+    private String algorithm;
     private String type;
     private KeyUse use;
     private KeyStatus status;
@@ -62,19 +58,12 @@ public class KeyWrapper {
         this.kid = kid;
     }
 
-    public Set<String> getAlgorithms() {
-        return algorithms;
+    public String getAlgorithm() {
+        return algorithm;
     }
 
-    public void setAlgorithms(String... algorithms) {
-        this.algorithms = new HashSet<>();
-        for (String a : algorithms) {
-            this.algorithms.add(a);
-        }
-    }
-
-    public void setAlgorithms(Set<String> algorithms) {
-        this.algorithms = algorithms;
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
 
     public String getType() {

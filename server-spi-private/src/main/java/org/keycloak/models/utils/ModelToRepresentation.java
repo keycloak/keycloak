@@ -259,6 +259,7 @@ public class ModelToRepresentation {
         rep.setDuplicateEmailsAllowed(realm.isDuplicateEmailsAllowed());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
+        rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());

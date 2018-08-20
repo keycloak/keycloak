@@ -202,6 +202,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public String getDefaultSignatureAlgorithm() {
+        if(isUpdated()) return updated.getDefaultSignatureAlgorithm();
+        return cached.getDefaultSignatureAlgorithm();
+    }
+
+    @Override
+    public void setDefaultSignatureAlgorithm(String defaultSignatureAlgorithm) {
+        getDelegateForUpdate();
+        updated.setDefaultSignatureAlgorithm(defaultSignatureAlgorithm);
+    }
+
+    @Override
     public boolean isBruteForceProtected() {
         if (isUpdated()) return updated.isBruteForceProtected();
         return cached.isBruteForceProtected();

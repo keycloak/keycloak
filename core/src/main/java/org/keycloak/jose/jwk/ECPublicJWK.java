@@ -15,38 +15,49 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.jose.jwk;
 
-import org.jboss.logging.Logger;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FailsafeHmacKeyProvider extends FailsafeSecretKeyProvider {
+public class ECPublicJWK extends JWK {
 
-    private static final Logger logger = Logger.getLogger(FailsafeHmacKeyProvider.class);
+    public static final String CRV = "crv";
+    public static final String X = "x";
+    public static final String Y = "y";
 
-    @Override
-    protected KeyUse getUse() {
-        return KeyUse.SIG;
+    @JsonProperty(CRV)
+    private String crv;
+
+    @JsonProperty(X)
+    private String x;
+
+    @JsonProperty(Y)
+    private String y;
+
+    public String getCrv() {
+        return crv;
     }
 
-    @Override
-    protected String getType() {
-        return KeyType.OCT;
+    public void setCrv(String crv) {
+        this.crv = crv;
     }
 
-    @Override
-    protected String getAlgorithm() {
-        return Algorithm.HS256;
+    public String getX() {
+        return x;
     }
 
-    @Override
-    protected Logger logger() {
-        return logger;
+    public void setX(String x) {
+        this.x = x;
     }
 
+    public String getY() {
+        return y;
+    }
+
+    public void setY(String y) {
+        this.y = y;
+    }
 }

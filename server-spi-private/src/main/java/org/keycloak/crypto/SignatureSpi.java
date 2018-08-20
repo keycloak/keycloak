@@ -1,12 +1,11 @@
-package org.keycloak.jose.jws;
+package org.keycloak.crypto;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
-// KEYCLOAK-7560 Refactoring Token Signing and Verifying by Token Signature SPI
+public class SignatureSpi implements Spi {
 
-public class TokenSignatureSpi implements Spi {
     @Override
     public boolean isInternal() {
         return true;
@@ -14,16 +13,17 @@ public class TokenSignatureSpi implements Spi {
 
     @Override
     public String getName() {
-        return "tokenSignature";
+        return "signature";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return TokenSignatureProvider.class;
+        return SignatureProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return TokenSignatureProviderFactory.class;
+        return SignatureProviderFactory.class;
     }
+
 }
