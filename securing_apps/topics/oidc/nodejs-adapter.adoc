@@ -1,7 +1,7 @@
 [[_nodejs_adapter]]
 === Node.js Adapter
 
-{project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps — the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
+{project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps - the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
 ifeval::[{project_community}==true]
 The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {project_name} organization] and the source is available at
