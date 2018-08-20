@@ -176,14 +176,14 @@ public class AuthorizationTokenService {
 
                         responseClaims.put(RESPONSE_MODE_DECISION_RESULT, true);
 
-                        return createSuccessfulResponse(responseClaims, targetClient, request);
+                        return createSuccessfulResponse(responseClaims, request);
                     } else if (RESPONSE_MODE_PERMISSIONS.equals(metadata.getResponseMode())) {
-                        return createSuccessfulResponse(permissions, targetClient, request);
+                        return createSuccessfulResponse(permissions, request);
                     } else {
                         throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid response_mode", Status.BAD_REQUEST);
                     }
                 } else {
-                    return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), targetClient, request);
+                    return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), request);
                 }
             }
 
@@ -203,9 +203,9 @@ public class AuthorizationTokenService {
         }
     }
 
-    private Response createSuccessfulResponse(Object response, ClientModel targetClient, KeycloakAuthorizationRequest request) {
+    private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
         return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                .allowedOrigins(request.getKeycloakSession().getContext().getUri(), targetClient)
+                .allowedOrigins(request.getKeycloakSession().getContext().getUri(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
