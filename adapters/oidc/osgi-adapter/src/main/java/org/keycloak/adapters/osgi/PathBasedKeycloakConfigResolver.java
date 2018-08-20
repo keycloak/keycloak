@@ -87,6 +87,7 @@ public class PathBasedKeycloakConfigResolver implements KeycloakConfigResolver {
             if (!cacheConfiguration(pathFragment, configuration)) {
                 throw new IllegalStateException("Not able to read the file " + configuration);
             }
+            deployment = getCachedDeployment(pathFragment);
         }
 
         return deployment;
