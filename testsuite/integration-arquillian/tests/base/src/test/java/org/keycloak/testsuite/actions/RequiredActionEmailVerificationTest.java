@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ProceedPage;
@@ -832,4 +833,91 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         }
     }
 
+    @Test
+    public void verifyEmailWhileLoggedIn() throws IOException, MessagingException {
+        UserAttributeUpdater userAttributeUpdater = new UserAttributeUpdater(testRealm().users().get(testUserId));
+        userAttributeUpdater.setEmailVerified(true).update();
+
+        final String testRealmName = testRealm().toRepresentation().getRealm();
+        accountPage.setAuthRealm(testRealmName);
+        oauth.realm(testRealmName).clientId("account").redirectUri(getAuthServerRoot() + "realms/" + testRealmName + "/account");
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        accountPage.assertCurrent();
+
+        userAttributeUpdater.setEmailVerified(false).setRequiredActions(RequiredAction.VERIFY_EMAIL).update();
+
+        // this will result in email verification
+        loginPage.open();
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        // confirm
+        driver.navigate().to(verificationUrl);
+
+        // back to account, already logged in
+        accountPage.assertCurrent();
+
+        // email should be verified and required actions empty
+        UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
+        Assert.assertTrue(user.isEmailVerified());
+        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+    }
+
+    @Test
+    public void verifyEmailInNewBrowserWhileLoggedInFirstBrowser() throws IOException, MessagingException {
+        UserAttributeUpdater userAttributeUpdater = new UserAttributeUpdater(testRealm().users().get(testUserId));
+        userAttributeUpdater.setEmailVerified(true).update();
+
+        final String testRealmName = testRealm().toRepresentation().getRealm();
+        accountPage.setAuthRealm(testRealmName);
+        oauth.realm(testRealmName).clientId("account").redirectUri(getAuthServerRoot() + "realms/" + testRealmName + "/account");
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        accountPage.assertCurrent();
+
+        userAttributeUpdater.setEmailVerified(false).setRequiredActions(RequiredAction.VERIFY_EMAIL).update();
+
+        // this will result in email verification
+        loginPage.open();
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        // confirm in the second browser
+        driver2.navigate().to(verificationUrl);
+
+        // follow the link
+        final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
+        assertThat(proceedLink, Matchers.notNullValue());
+        proceedLink.click();
+
+        // confirmation in the second browser
+        assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
+
+        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to Application"));
+        assertThat(backToApplicationLink, Matchers.notNullValue());
+        backToApplicationLink.click();
+
+        // login page should be shown in the second browser
+        assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Log In"));
+
+        // email should be verified and required actions empty
+        UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
+        Assert.assertTrue(user.isEmailVerified());
+        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+
+        // after refresh in the first browser the account console should be shown
+        driver.navigate().refresh();
+        accountPage.assertCurrent();
+    }
 }
