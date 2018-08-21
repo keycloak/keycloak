@@ -1,18 +1,18 @@
 <div class="page-header">
-  <h1>{{'linkedAccountsHtmlTitle' | translate}}</h1>
+  <h1 id="pageTitle">{{'linkedAccountsHtmlTitle' | translate}}</h1>
 </div>
 <div class="col-sm-12 card-pf card-linked-account">
   <div class="card-pf-body row">
     <div class="col-md-3">
-      <div class="card-pf-subtitle">
+      <div class="card-pf-subtitle" id="authorizedProvidersSubTitle">
         {{'authorizedProvider' | translate}}
       </div>
-      <div class="introMessage">
+      <div class="introMessage" id="authorizedProvidersSubMessage">
         <p>{{'authorizedProviderMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-md-9">
-      <div class="list-group list-view-pf list-view-pf-view">
+      <div class="list-group list-view-pf list-view-pf-view" id="authorizedProvidersList">
         <div class="list-group-item">
           <div class="list-view-pf-actions">
             <a href="#" data-toggle="modal" data-target="#myModal">{{'doRemove' | translate}}</a>
@@ -43,15 +43,15 @@
 <div class="col-sm-12 card-pf card-linked-account">
   <div class="card-pf-body row">
     <div class="col-md-3">
-      <div class="card-pf-subtitle">
+      <div class="card-pf-subtitle" id="identityProviderSubTitle">
         {{'identityProvider' | translate}}
       </div>
-      <div class="introMessage">
+      <div class="introMessage" id="identityProviderSubMessage">
         <p>{{'identityProviderMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-md-9">
-      <div class="list-group list-view-pf list-view-pf-view ">
+      <div class="list-group list-view-pf list-view-pf-view " id="identityProviderList">
         <div class="list-group-item">
           <div class="list-view-pf-actions">
             <a href="#">{{'doLink' | translate}}</a>

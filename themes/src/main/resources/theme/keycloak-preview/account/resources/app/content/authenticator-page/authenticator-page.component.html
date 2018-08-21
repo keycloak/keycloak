@@ -1,10 +1,10 @@
 <div class="page-header">
-    <h1>{{'authenticatorTitle' | translate}}</h1>
+    <h1 id="pageTitle">{{'authenticatorTitle' | translate}}</h1>
 </div>
 
 <div class="col-sm-12 card-pf">
   <div class="card-pf-body p-b">
-    <span class="label label-default m-r">OFF</span>
+    <span class="label label-default m-r" id="authenticatorStatus">OFF</span>
     <!-- <span class="label label-primary m-r">ON</span> -->
     {{'authenticatorStatusMessage' | translate}} off
   </div>
@@ -13,15 +13,15 @@
 <div class="col-sm-12 card-pf">
   <div class="card-pf-body row">
     <div class="col-sm-4 col-md-4">
-      <div class="card-pf-subtitle">
+      <div class="card-pf-subtitle" id="authenticatorFinishSetUpTitle">
           {{'authenticatorFinishSetUpTitle' | translate}}
       </div>
-      <div class="introMessage">
+      <div class="introMessage" id="authenticatorFinishSetUpMessage">
           <p>{{'authenticatorFinishSetUpMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-sm-8 col-md-8">
-      <div class="list-pf list-pf-stacked list-authenticator">
+      <div class="list-pf list-pf-stacked list-authenticator" id="authenticatorFinishList">
         <div class="list-authenticator-item">
           <div class="list-pf-container">
             <div class="list-pf-content list-pf-content-flex ">
@@ -63,15 +63,15 @@
 <div class="col-sm-12 card-pf">
   <div class="card-pf-body row">
     <div class="col-sm-4 col-md-4">
-      <div class="card-pf-subtitle">
+      <div class="card-pf-subtitle" id="authenticatorSubTitle">
           {{'authenticatorSubTitle' | translate}}
       </div>
-      <div class="introMessage">
+      <div class="introMessage" id="authenticatorSubMessage">
           <p>{{'authenticatorSubMessage' | translate}}</p>
       </div>
     </div>
     <div class="col-sm-8 col-md-8">
-      <div class="list-pf list-pf-stacked list-authenticator">
+      <div class="list-pf list-pf-stacked list-authenticator" id="authenticatorList">
         <div class="list-authenticator-item">
           <div class="list-pf-container">
             <div class="list-pf-content list-pf-content-flex">

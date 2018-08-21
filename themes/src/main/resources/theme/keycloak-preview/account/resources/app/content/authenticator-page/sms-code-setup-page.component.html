@@ -1,4 +1,4 @@
-<ol class="breadcrumb">
+<ol class="breadcrumb" id="breadcrumbs">
   <li>{{'accountSecurityTitle' | translate}}</li>
   <li>
     <a href="#">{{'authenticatorTitle' | translate}}</a>
@@ -9,10 +9,10 @@
 <div class="col-sm-12 card-pf ">
     <div class="card-pf-body row">
         <div class="col-sm-12 col-md-4">
-          <div class="card-pf-subtitle">
+          <div class="card-pf-subtitle" id="authenticatorSMSCodeSetupTitle">
               {{'authenticatorSMSCodeSetupTitle' | translate}}
           </div>
-          <div class="introMessage">
+          <div class="introMessage" id="smscodeIntroMessage">
             <p>{{'smscodeIntroMessage' | translate}}</p>
           </div>
         </div>
@@ -24,7 +24,7 @@
                 China +86
                 <span class="caret dropdown-caret"></span>
               </button>
-              <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu-lan">
+              <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu-lan" id="dropdownMenu">
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Argentina +54</a></li>
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Brazil +55</a></li>
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Canada +1</a></li>
@@ -43,6 +43,6 @@
             <label for="EnterVerificationCode">{{'enterYourVerficationCode' | translate}}</label>
             <input class="form-control" id="EnterVerificationCode">
           </div>
-          <button class="btn btn-primary">Finish</button>
-          <button class="btn btn-default">Cancel</button>
+          <button class="btn btn-primary" id="authenticatorFinishBtn">Finish</button>
+          <button class="btn btn-default" id="authenticatorCancelBtn">Cancel</button>
         </div>

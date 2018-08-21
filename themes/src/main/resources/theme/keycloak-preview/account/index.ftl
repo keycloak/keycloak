@@ -146,10 +146,10 @@
                     <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
                     <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
                         <li class="dropdown">
-                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="localeDropdownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             ${msg("locale_" + locale)} <span class="caret"></span>
                           </a>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                          <ul class="dropdown-menu" aria-labelledby="localeDropdownBtn" id="localeDropdownMenu">
                           <#list supportedLocales as locale, label>
                             <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
                           </#list>
@@ -165,12 +165,12 @@
 <!-- Home Page -->
 
     <div class="cards-pf" id="welcomeScreen">
-        <div class="text-center">
+        <div class="text-center" id="welcomeMsg">
           <h1>${msg("accountManagementWelcomeMessage")}</h1>
         </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="personalInfoCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -179,12 +179,12 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("personalInfoHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("personalInfoIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                              <h3 id="personalInfoLink"><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="accountSecurityCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -193,15 +193,15 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("accountSecurityTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3 id="linkedAccounts"><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
+                              <h3 id="changePasswordLink"><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
+                              <h3 id="authenticatiorLink"><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3 id="deviceActivityLink"><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
+                              <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="applicationsCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -210,12 +210,12 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("applicationsHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("applicationsIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                              <h3 id="applicationsLink"><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="myResources" class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="myResourcesCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -224,7 +224,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("myResources")}</h2>
                               <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/my-resources">${msg("myResources")}</a></h3>
+                              <h3 id="myResourcesLink"><a href="${baseUrl}/#/my-resources">${msg("myResources")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -236,11 +236,11 @@
 
         <script>
             if (!features.isLinkedAccountsEnabled) {
-                document.getElementById("linkedAccounts").style.display='none';
+                document.getElementById("linkedAccountsLink").style.display='none';
             }
                 
             if (!features.isMyResourcesEnabled) {
-                document.getElementById("myResources").style.display='none';
+                document.getElementById("myResourcesCard").style.display='none';
             }
                 
             var winHash = window.location.hash;

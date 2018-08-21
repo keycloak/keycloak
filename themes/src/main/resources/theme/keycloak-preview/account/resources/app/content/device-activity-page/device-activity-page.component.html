@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h1>{{'deviceActivityHtmlTitle' | translate}}</h1>
+  <h1 id="pageTitle">{{'deviceActivityHtmlTitle' | translate}}</h1>
 </div>
 
 
@@ -7,18 +7,18 @@
   <div class="card-pf-body">
     <div class="row">
       <div class="col-sm-12 col-md-8">
-        <h2 class="card-pf-title">
+        <h2 class="card-pf-title" id="signedInDevicesTitle">
           Signed In Devices
         </h2>
-        <p class="detail-description">You can find devices that have logged into your account from the list. Log out any of them if the device is unfamiliar or logged in wrong place and time.</p>
+        <p class="detail-description" id="signedInDevicesDesc">You can find devices that have logged into your account from the list. Log out any of them if the device is unfamiliar or logged in wrong place and time.</p>
       </div>
       <div class="col-sm-12 col-md-4">
-        <button class="btn btn-default pull-right pull-right-sm" type="button" data-toggle="modal" data-target="#myModal">Log Out All Devices</button>
+        <button class="btn btn-default pull-right pull-right-sm" type="button" data-toggle="modal" data-target="#myModal" id="logoutAllDevicesBtn">Log Out All Devices</button>
       </div>
     </div>
     <div class="row">
       <div class="container-fluid">
-        <div class="list-group list-view-pf list-view-pf-view">
+        <div class="list-group list-view-pf list-view-pf-view" id="signedInDevicesList">
           <div class="list-group-item">
             <div class="list-group-item-header">
               <div class="list-view-pf-expand">
@@ -116,14 +116,14 @@
 </div>
 <div class="card-pf">
   <div class="card-pf-body">
-    <h2 class="card-pf-title">
+    <h2 class="card-pf-title" id="recentlyUsedDevicesTitle">
       Recently Used Devices
     </h2>
-    <p class="detail-description">You can find devices that you used in the last month, but they have not logged into your account anymore.</p>
+    <p class="detail-description" id="recentlyUsedDevicesDesc">You can find devices that you used in the last month, but they have not logged into your account anymore.</p>
 
     <div class="row">
       <div class="container-fluid">
-        <div class="list-group list-view-pf list-view-pf-view">
+        <div class="list-group list-view-pf list-view-pf-view" id="recentlyUsedDevicesList">
           <div class="list-group-item">
             <div class="list-group-item-header">
               <div class="list-view-pf-expand">
