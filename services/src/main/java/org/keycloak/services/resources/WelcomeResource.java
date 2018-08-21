@@ -181,7 +181,7 @@ public class WelcomeResource {
 
           map.put("properties", theme.getProperties());
 
-          URI uri = Urls.themeRoot(uriInfo.getBaseUri());
+          URI uri = Urls.themeRoot(session.getContext().getUri().getBaseUri());
           String resourcesPath = uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
           map.put("resourcesPath", resourcesPath);
 
