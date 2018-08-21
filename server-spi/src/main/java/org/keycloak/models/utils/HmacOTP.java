@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 
 /**
@@ -110,9 +111,7 @@ public class HmacOTP {
         // Get the HEX in a Byte[]
         byte[] msg = hexStr2Bytes(counter);
 
-        // Adding one byte to get the right conversion
-        // byte[] k = hexStr2Bytes(key);
-        byte[] k = key.getBytes();
+        byte[] k = key.getBytes( StandardCharsets.ISO_8859_1 );
 
         hash = hmac_sha1(crypto, k, msg);
 
