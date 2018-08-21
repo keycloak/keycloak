@@ -1159,17 +1159,17 @@
             if (!type || type == 'default') {
                 return {
                     login: function(options) {
-                        window.location.href = kc.createLoginUrl(options);
+                        window.location.replace(kc.createLoginUrl(options));
                         return createPromise().promise;
                     },
 
                     logout: function(options) {
-                        window.location.href = kc.createLogoutUrl(options);
+                        window.location.replace(kc.createLogoutUrl(options));
                         return createPromise().promise;
                     },
 
                     register: function(options) {
-                        window.location.href = kc.createRegisterUrl(options);
+                        window.location.replace(kc.createRegisterUrl(options));
                         return createPromise().promise;
                     },
 
