@@ -1,4 +1,4 @@
-<ol class="breadcrumb">
+<ol class="breadcrumb" id="breadcrumbs">
   <li>{{'accountSecurityTitle' | translate}}</li>
   <li>
     <a href="#">{{'authenticatorTitle' | translate}}</a>
@@ -9,10 +9,10 @@
 <div class="col-sm-12 card-pf ">
     <div class="card-pf-body row">
         <div class="col-sm-12 col-md-4">
-          <div class="card-pf-subtitle">
+          <div class="card-pf-subtitle" id="authenticatorBackupCodesSetupTitle">
               {{'authenticatorBackupCodesSetupTitle' | translate}}
           </div>
-          <div class="introMessage">
+          <div class="introMessage" id="backupcodesIntroMessage">
             <p>{{'backupcodesIntroMessage' | translate}}</p>
           </div>
         </div>
@@ -20,12 +20,12 @@
           <div class="backup-codes-box">
             <div class="backup-codes-box-header">
               <div class="header-text">
-                <b>{{'realmName' | translate}}:</b> Admin
+                <b>{{'realmName' | translate}}:</b> <span id="realmName">Admin</span>
               </div>
             </div>
             <!--Backup Codes Box Header-->
             <div class="backup-codes-box-body">
-              <ol class="backup-codes-list">
+              <ol class="backup-codes-list" id="backupCodesList">
                 <li>7890 7327</li>
                 <li>0000 7347</li>
                 <li>7890 1227</li>
@@ -43,9 +43,9 @@
           </div>
           <!--Backup Codes Box Body-->
           <div class="top-margin-m">
-            <button type="button" class="btn btn-default">{{'doDownload' | translate}}</button>
-            <button type="button" class="btn btn-default">{{'doPrint' | translate}}</button>
-            <button type="button" class="btn btn-default">{{'doCopy' | translate}}</button>
+            <button type="button" class="btn btn-default" id="backupCodesDownloadBtn">{{'doDownload' | translate}}</button>
+            <button type="button" class="btn btn-default" id="backupCodesPrintBtn">{{'doPrint' | translate}}</button>
+            <button type="button" class="btn btn-default" id="backupCodesCopyBtn">{{'doCopy' | translate}}</button>
           </div>
           <!--Buttons Group-->
           <div class="top-margin-m">
@@ -56,11 +56,11 @@
           </div>
           <!--Annotations-->
           <hr>
-          <button type="button" class="btn btn-default">{{'generateNewBackupCodes' | translate}}</button>
+          <button type="button" class="btn btn-default" id="generateNewBackupCodesBtn">{{'generateNewBackupCodes' | translate}}</button>
           <div class="generate-annotation">
             {{'backupCodesTips-3' | translate}}
           </div>
           <div class="top-margin-m">
-            <a href="">&lt; {{'backtoAuthenticatorPage' | translate}}</a>
+            <a href="" id="backtoAuthenticatorPage">&lt; {{'backtoAuthenticatorPage' | translate}}</a>
           </div>
         </div>
