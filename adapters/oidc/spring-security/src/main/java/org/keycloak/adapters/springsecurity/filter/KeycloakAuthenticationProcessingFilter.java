@@ -144,7 +144,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
-                = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
+                = createRequestAuthenticator(facade, request, deployment, tokenStore, -1);
 
         AuthOutcome result = authenticator.authenticate();
         log.debug("Auth outcome: {}", result);
@@ -183,6 +183,24 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
             }
             return null;
         }
+    }
+
+    /**
+     * Creates a new request authenticator.
+     *
+     * @param facade the current <code>HttpFacade</code> (required)
+     * @param request the current <code>HttpServletRequest</code> (required)
+     * @param deployment the <code>KeycloakDeployment</code> (required)
+     * @param tokenStore the <cdoe>AdapterTokenStore</cdoe> (required)
+     * @param sslRedirectPort the SSL redirect port (required)
+     */
+    protected RequestAuthenticator createRequestAuthenticator(
+            HttpFacade facade,
+            HttpServletRequest request,
+            KeycloakDeployment deployment,
+            AdapterTokenStore tokenStore,
+            int sslRedirectPort) {
+        return new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, sslRedirectPort);
     }
 
     @Override
