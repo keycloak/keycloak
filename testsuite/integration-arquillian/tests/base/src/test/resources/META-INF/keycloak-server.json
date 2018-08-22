@@ -41,6 +41,9 @@
     "userSessionPersister": {
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },
+    "authorization" : {
+        "provider" : "${keycloak.authorizationProvider.provider:default}"
+    },
 
     "authorizationPersister": {
         "provider": "${keycloak.authorization.provider:jpa}"

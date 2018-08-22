@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.UserManagedPermissionUtil;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -43,6 +45,7 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
@@ -236,6 +239,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         for (String id : invalidations) {
             cache.invalidateObject(id);
         }
+
+        session.getProvider(AuthorizationProvider.class).clear();
 
         cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheStoreFactoryProviderFactory.AUTHORIZATION_INVALIDATION_EVENTS);
     }

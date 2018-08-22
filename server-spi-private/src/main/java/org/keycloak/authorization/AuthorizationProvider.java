@@ -30,7 +30,11 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.permission.evaluator.Evaluators;
+import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
@@ -46,6 +50,8 @@ import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
@@ -73,7 +79,7 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class AuthorizationProvider implements Provider {
+public class AuthorizationProvider implements Provider {
 
     private final PolicyEvaluator policyEvaluator;
     private StoreFactory storeFactory;
@@ -172,6 +178,16 @@ public final class AuthorizationProvider implements Provider {
 
     public PolicyEvaluator getPolicyEvaluator() {
         return policyEvaluator;
+    }
+
+    public Collection<Permission> evaluatePermissions(Collection<ResourcePermission> toEvaluate, EvaluationContext evaluationContext, ResourceServer resourceServer, AuthorizationRequest authorizationRequest, String tokenID, PermissionTicketAwareDecisionResultCollector decision) {
+        PermissionEvaluator e = evaluators().from(toEvaluate, evaluationContext);
+
+        if (decision != null) {
+            return e.evaluate(decision).results();
+        } else {
+            return e.evaluate(resourceServer, authorizationRequest);
+        }
     }
 
     @Override
@@ -527,4 +543,7 @@ public final class AuthorizationProvider implements Provider {
             }
         };
     }
+
+    // Empty for now
+    public void clear() {}
 }

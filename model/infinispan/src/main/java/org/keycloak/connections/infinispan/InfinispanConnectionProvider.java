@@ -42,6 +42,7 @@ public interface InfinispanConnectionProvider extends Provider {
     String AUTHENTICATION_SESSIONS_CACHE_NAME = "authenticationSessions";
     String WORK_CACHE_NAME = "work";
     String AUTHORIZATION_CACHE_NAME = "authorization";
+    String AUTHORIZATION_PERMISSION_CACHE_NAME = "authorizationPermissions";
     String AUTHORIZATION_REVISIONS_CACHE_NAME = "authorizationRevisions";
     int AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX = 20000;
 

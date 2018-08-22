@@ -61,7 +61,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public String getId() {
-        return "authorization";
+        return "default";
     }
 
     @Override

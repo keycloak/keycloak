@@ -7,6 +7,7 @@
 /subsystem=keycloak-server/spi=userCache/:add
 /subsystem=keycloak-server/spi=userCache/provider=default/:add(enabled=true)
 /subsystem=keycloak-server/spi=userSessionPersister/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=authorization/:add(default-provider=default)
 /subsystem=keycloak-server/spi=timer/:add(default-provider=basic)
 /subsystem=keycloak-server/spi=connectionsHttpClient/:add
 /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default/:add(enabled=true)

@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -80,6 +81,16 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth")
                         .publicClient())
                 .build());
+    }
+
+    protected String getIdToken(String username, String password) {
+        oauth.realm("authz-test");
+        oauth.clientId("test-app");
+        oauth.openLoginForm();
+        OAuthClient.AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
+        String code = resp.getCode();
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, password);
+        return response.getIdToken();
     }
 
     protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String claimToken) {

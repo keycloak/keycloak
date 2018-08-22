@@ -129,6 +129,7 @@ public class KeycloakIdentity implements Identity {
 
                 ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel);
                 this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
+                this.accessToken.id(token.getId());
             }
 
             AccessToken.Access realmAccess = this.accessToken.getRealmAccess();

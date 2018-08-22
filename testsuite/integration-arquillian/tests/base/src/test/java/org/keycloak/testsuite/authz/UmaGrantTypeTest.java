@@ -513,14 +513,4 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertThat((Collection<String>) claim.get("resource_scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
         assertThat((Collection<String>) claim.get("scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
     }
-
-    private String getIdToken(String username, String password) {
-        oauth.realm("authz-test");
-        oauth.clientId("test-app");
-        oauth.openLoginForm();
-        OAuthClient.AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
-        String code = resp.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, password);
-        return response.getIdToken();
-    }
 }

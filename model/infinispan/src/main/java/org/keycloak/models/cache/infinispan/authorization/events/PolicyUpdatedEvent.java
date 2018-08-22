@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
@@ -34,7 +35,7 @@ import org.infinispan.commons.marshall.SerializeWith;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @SerializeWith(PolicyUpdatedEvent.ExternalizerImpl.class)
-public class PolicyUpdatedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
+public class PolicyUpdatedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent, Policy.PolicyChangedEvent {
 
     private String id;
     private String name;

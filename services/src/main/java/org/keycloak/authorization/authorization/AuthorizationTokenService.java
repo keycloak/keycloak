@@ -155,18 +155,27 @@ public class AuthorizationTokenService {
             ResourceServer resourceServer = getResourceServer(ticket, request);
             KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
+            AuthorizationProvider authorization = request.getAuthorization();
+
             Collection<Permission> permissions;
+            String tokenID = identity.getAccessToken().getId();
+            Collection<ResourcePermission> requestedPermissions;
+            PermissionTicketAwareDecisionResultCollector decisionResultCollector = null;
+
 
             if (request.getTicket() != null) {
-                permissions = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
+                requestedPermissions = createPermissions(ticket, request, resourceServer, identity, authorization);
+                decisionResultCollector = new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization);
             } else if (ticket.getPermissions().isEmpty() && request.getRpt() == null) {
-                permissions = evaluateAllPermissions(request, resourceServer, evaluationContext, identity);
+                requestedPermissions = Permissions.all(resourceServer, identity, authorization, request);
             } else {
-                permissions = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
+                requestedPermissions = createPermissions(ticket, request, resourceServer, identity, authorization);
             }
 
+            permissions = authorization.evaluatePermissions(requestedPermissions, evaluationContext, resourceServer,
+                    request, tokenID, decisionResultCollector);
+
             if (isGranted(ticket, request, permissions)) {
-                AuthorizationProvider authorization = request.getAuthorization();
                 ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
                 Metadata metadata = request.getMetadata();
                 String responseMode = metadata != null ? metadata.getResponseMode() : null;
@@ -213,27 +222,6 @@ public class AuthorizationTokenService {
 
     private boolean isPublicClientRequestingEntitlementWithClaims(KeycloakAuthorizationRequest request) {
         return request.getClaimToken() != null && request.getKeycloakSession().getContext().getClient().isPublicClient() && request.getTicket() == null;
-    }
-
-    private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
-        AuthorizationProvider authorization = request.getAuthorization();
-        return authorization.evaluators()
-                .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
-                .evaluate(resourceServer, request);
-    }
-
-    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
-        AuthorizationProvider authorization = request.getAuthorization();
-        return authorization.evaluators()
-                .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
-                .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
-    }
-
-    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
-        AuthorizationProvider authorization = request.getAuthorization();
-        return authorization.evaluators()
-                .from(Permissions.all(resourceServer, identity, authorization, request), evaluationContext)
-                .evaluate(resourceServer, request);
     }
 
     private AuthorizationResponse createAuthorizationResponse(KeycloakIdentity identity, Collection<Permission> entitlements, KeycloakAuthorizationRequest request, ClientModel targetClient) {

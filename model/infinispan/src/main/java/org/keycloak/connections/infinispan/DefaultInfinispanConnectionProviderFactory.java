@@ -148,6 +148,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
             cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
 
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_PERMISSION_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
+            cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_PERMISSION_CACHE_NAME, true);
+
+
             this.topologyInfo = new TopologyInfo(cacheManager, config, false);
 
             logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheContainerLookup);
@@ -317,6 +321,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
         cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_PERMISSION_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_PERMISSION_CACHE_NAME, true);
     }
 
 

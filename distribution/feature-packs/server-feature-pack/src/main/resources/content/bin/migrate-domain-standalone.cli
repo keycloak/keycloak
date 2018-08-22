@@ -465,4 +465,11 @@ if (outcome == success) of /profile=$standaloneProfile/subsystem=keycloak-server
   echo
 end-if
 
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=authorization/:read-resource
+  echo Adding spi=authorization...
+  /profile=$standaloneProfile/subsystem=keycloak-server/spi=authorization/:add(default-provider=default)
+  echo
+end-if
+
+
 echo *** End Migration of /profile=$standaloneProfile ***

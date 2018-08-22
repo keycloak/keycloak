@@ -434,4 +434,10 @@ if (outcome == success) of /subsystem=keycloak-server/spi=connectionsInfinispan/
   echo
 end-if
 
+if (outcome == failed) of /subsystem=keycloak-server/spi=authorization/:read-resource
+  echo Adding spi=authorization...
+  /subsystem=keycloak-server/spi=authorization/:add(default-provider=default)
+  echo
+end-if
+
 echo *** End Migration ***

@@ -540,4 +540,10 @@ if (outcome == success) of /socket-binding-group=$clusteredProfile-sockets/socke
   /profile=$clusteredProfile/socket-binding-group=$clusteredProfile-sockets/socket-binding=modcluster:undefine-attribute(name=port)
 end-if
 
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=authorization/:read-resource
+  echo Adding spi=authorization...
+  /profile=$clusteredProfile/subsystem=keycloak-server/spi=authorization/:add(default-provider=default)
+  echo
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***
