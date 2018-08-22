@@ -31,13 +31,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
-import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
-import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
-import org.keycloak.protocol.saml.mappers.HardcodedRole;
-import org.keycloak.protocol.saml.mappers.RoleListMapper;
-import org.keycloak.protocol.saml.mappers.RoleNameMapper;
-import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
+import org.keycloak.protocol.saml.mappers.*;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -74,15 +68,13 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -414,6 +406,10 @@ public class SamlAdapterTestStrategy extends ExternalResource {
                 app.addProtocolMapper(GroupMembershipMapper.create("groups", "group", null, null, true));
                 app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("topAttribute", "topAttribute", "topAttribute", "Basic", null));
                 app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("level2Attribute", "level2Attribute", "level2Attribute", "Basic", null));
+                app.addProtocolMapper(ScriptBasedMapper.create("test-script-mapper1", "script-single-value", "Basic", null, "'hello_' + user.getUsername()", true));
+                app.addProtocolMapper(ScriptBasedMapper.create("test-script-mapper2", "script-multiple-values-single-attribute-array", "Basic", null, "Java.to(['A', 'B', 'C'], Java.type('java.lang.String[]'))", true));
+                app.addProtocolMapper(ScriptBasedMapper.create("test-script-mapper3", "script-multiple-values-single-attribute-list", "Basic", null, "new java.util.ArrayList(['D', 'E', 'F'])", true));
+                app.addProtocolMapper(ScriptBasedMapper.create("test-script-mapper4", "script-multiple-values-multiple-attributes-set", "Basic", null, "new java.util.HashSet(['G', 'H', 'I'])", false));
             }
         }, "demo");
         {
@@ -437,6 +433,22 @@ public class SamlAdapterTestStrategy extends ExternalResource {
             Assert.assertNotNull(groups);
             Set<String> groupSet = new HashSet<>();
             assertEquals("level2@redhat.com", principal.getFriendlyAttribute("email"));
+            assertEquals("hello_level2groupuser", principal.getAttribute("script-single-value"));
+            assertThat(principal.getAttributes("script-multiple-values-single-attribute-array"), containsInAnyOrder("A","B","C"));
+            assertEquals(1, principal.getAssertion().getAttributeStatements().stream().
+                    flatMap(x -> x.getAttributes().stream()).
+                    filter(x -> x.getAttribute().getName().equals("script-multiple-values-single-attribute-array"))
+                    .count());
+            assertThat(principal.getAttributes("script-multiple-values-single-attribute-list"), containsInAnyOrder("D","E","F"));
+            assertEquals(1, principal.getAssertion().getAttributeStatements().stream().
+                    flatMap(x -> x.getAttributes().stream()).
+                    filter(x -> x.getAttribute().getName().equals("script-multiple-values-single-attribute-list"))
+                    .count());
+            assertThat(principal.getAttributes("script-multiple-values-multiple-attributes-set"), containsInAnyOrder("G","H","I"));
+            assertEquals(3, principal.getAssertion().getAttributeStatements().stream().
+                    flatMap(x -> x.getAttributes().stream()).
+                    filter(x -> x.getAttribute().getName().equals("script-multiple-values-multiple-attributes-set"))
+                    .count());
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
             checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/", true);
 
@@ -460,6 +472,7 @@ public class SamlAdapterTestStrategy extends ExternalResource {
             assertEquals("bburke@redhat.com", principal.getFriendlyAttribute("email"));
             assertEquals("617", principal.getAttribute("phone"));
             Assert.assertNull(principal.getFriendlyAttribute("phone"));
+            assertEquals("hello_bburke", principal.getAttribute("script-single-value"));
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
             checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/", true);
 
