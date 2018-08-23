@@ -48,6 +48,7 @@ import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifec
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest implements SelfManagedAppContainerLifecycle {
 
     @ArquillianResource
