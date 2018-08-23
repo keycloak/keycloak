@@ -1,5 +1,4 @@
 language: java
-dist: precise
 
 cache:
   cache: false
