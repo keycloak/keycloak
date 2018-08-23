@@ -50,8 +50,7 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class ConsoleProtectionTest extends AbstractAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703

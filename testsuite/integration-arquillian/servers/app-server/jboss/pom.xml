@@ -571,12 +571,27 @@
                 </pluginManagement>
             </build>
         </profile>
+
+        <!-- Latest EAP (currently 7.2.X) -->
         <profile>
             <id>app-server-eap</id>
             <activation>
                 <property>
                     <name>app.server</name>
                     <value>eap</value>
+                </property>
+            </activation>
+            <modules>
+                <module>eap</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>app-server-eap71</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap71</value>
                 </property>
             </activation>
             <modules>
