@@ -138,7 +138,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @AfterClass
     public static void onAfterClass() {
-        httpService.stop();
+        if (httpService != null) {
+            httpService.stop();
+        }
     }
 
     @Override
