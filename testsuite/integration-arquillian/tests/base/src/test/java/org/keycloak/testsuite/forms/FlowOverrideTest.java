@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.forms;
 
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -53,6 +54,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
+import java.nio.charset.Charset;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -66,6 +68,8 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";
     public static final String TEST_APP_FLOW = "test-app-flow";
+    public static final String TEST_APP_HTTP_CHALLENGE = "http-challenge-client";
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -189,7 +193,16 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
             client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.DIRECT_GRANT_BINDING, directGrant.getId());
 
 
-
+            client = realm.addClient(TEST_APP_HTTP_CHALLENGE);
+            client.setSecret("password");
+            client.setBaseUrl("http://localhost:8180/auth/realms/master/app/auth");
+            client.setManagementUrl("http://localhost:8180/auth/realms/master/app/admin");
+            client.setEnabled(true);
+            client.addRedirectUri("http://localhost:8180/auth/realms/master/app/auth/*");
+            client.setPublicClient(true);
+            client.setDirectAccessGrantsEnabled(true);
+            client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.DIRECT_GRANT_BINDING, realm.getFlowByAlias("http challenge").getId());
+            client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, realm.getFlowByAlias("http challenge").getId());
         });
     }
 
@@ -318,6 +331,76 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
             assertEquals(200, response.getStatus());
             response.close();
         }
+
+        httpClient.close();
+        events.clear();
+    }
+
+    @Test
+    public void testClientOverrideFlowUsingDirectGrantHttpChallenge() {
+        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        WebTarget grantTarget = httpClient.target(grantUri);
+
+        // no username/password
+        Form form = new Form();
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
+        form.param(OAuth2Constants.CLIENT_ID, TEST_APP_HTTP_CHALLENGE);
+        Response response = grantTarget.request()
+                .post(Entity.form(form));
+        assertEquals("Basic realm=\"test\"", response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
+        assertEquals(401, response.getStatus());
+        response.close();
+
+        // now, username password using basic challenge response
+        response = grantTarget.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("test-user@localhost", "password"))
+                .post(Entity.form(form));
+        assertEquals(200, response.getStatus());
+        response.close();
+
+        httpClient.close();
+        events.clear();
+    }
+
+    @Test
+    public void testClientOverrideFlowUsingBrowserHttpChallenge() {
+        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        oauth.clientId(TEST_APP_HTTP_CHALLENGE);
+        String grantUri = oauth.getLoginFormUrl();
+        WebTarget grantTarget = httpClient.target(grantUri);
+
+        Response response = grantTarget.request().get();
+        assertEquals(302, response.getStatus());
+        String location = response.getHeaderString(HttpHeaders.LOCATION);
+        response.close();
+
+        // first challenge
+        response = httpClient.target(location).request().get();
+        assertEquals("Basic realm=\"test\"", response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
+        assertEquals(401, response.getStatus());
+        response.close();
+
+        // now, username password using basic challenge response
+        response = httpClient.target(location).request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("test-user@localhost", "password"))
+                .post(Entity.form(new Form()));
+        assertEquals(302, response.getStatus());
+        location = response.getHeaderString(HttpHeaders.LOCATION);
+        response.close();
+
+        Form form = new Form();
+
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
+        form.param(OAuth2Constants.CLIENT_ID, TEST_APP_HTTP_CHALLENGE);
+        form.param(OAuth2Constants.REDIRECT_URI, "http://localhost:8180/auth/realms/master/app/auth");
+        form.param(OAuth2Constants.CODE, location.substring(location.indexOf(OAuth2Constants.CODE) + OAuth2Constants.CODE.length() + 1));
+
+        // exchange code to token
+        response = httpClient.target(oauth.getAccessTokenUrl()).request()
+                .post(Entity.form(form));
+        assertEquals(200, response.getStatus());
+        response.close();
 
         httpClient.close();
         events.clear();
