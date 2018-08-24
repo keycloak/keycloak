@@ -31,6 +31,7 @@ import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswor
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -404,25 +405,27 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(0, exe.exitCode());
         Assert.assertEquals(0, exe.stdoutLines().size());
 
-        exe = KcinitExec.execute("token");
-        Assert.assertEquals(0, exe.exitCode());
-        Assert.assertEquals(1, exe.stdoutLines().size());
-        String token = exe.stdoutLines().get(0).trim();
-        //System.out.println("token: " + token);
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)) {
+            exe = KcinitExec.execute("token");
+            Assert.assertEquals(0, exe.exitCode());
+            Assert.assertEquals(1, exe.stdoutLines().size());
+            String token = exe.stdoutLines().get(0).trim();
+            //System.out.println("token: " + token);
 
-        exe = KcinitExec.execute("token app");
-        Assert.assertEquals(0, exe.exitCode());
-        Assert.assertEquals(1, exe.stdoutLines().size());
-        String appToken = exe.stdoutLines().get(0).trim();
-        Assert.assertFalse(appToken.equals(token));
-        //System.out.println("token: " + token);
+            exe = KcinitExec.execute("token app");
+            Assert.assertEquals(0, exe.exitCode());
+            Assert.assertEquals(1, exe.stdoutLines().size());
+            String appToken = exe.stdoutLines().get(0).trim();
+            Assert.assertFalse(appToken.equals(token));
+            //System.out.println("token: " + token);
 
 
-        exe = KcinitExec.execute("token badapp");
-        Assert.assertEquals(1, exe.exitCode());
-        Assert.assertEquals(0, exe.stdoutLines().size());
-        Assert.assertEquals(1, exe.stderrLines().size());
-        Assert.assertTrue(exe.stderrLines().get(0), exe.stderrLines().get(0).contains("failed to exchange token: invalid_client Audience not found"));
+            exe = KcinitExec.execute("token badapp");
+            Assert.assertEquals(1, exe.exitCode());
+            Assert.assertEquals(0, exe.stdoutLines().size());
+            Assert.assertEquals(1, exe.stderrLines().size());
+            Assert.assertTrue(exe.stderrLines().get(0), exe.stderrLines().get(0).contains("failed to exchange token: invalid_client Audience not found"));
+        }
 
         exe = KcinitExec.execute("logout");
         Assert.assertEquals(0, exe.exitCode());
