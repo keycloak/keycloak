@@ -19,6 +19,7 @@
 :authorizationguide_link: {project_doc_base_url}/authorization_services/
 :adapterguide_name: Securing Applications and Services Guide
 :adapterguide_link: {project_doc_base_url}/securing_apps/
+:adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
 :adminguide_link: {project_doc_base_url}/server_admin/
 :adminguide_bruteforce_name: Password guess: brute force attacks

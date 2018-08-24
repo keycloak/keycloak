@@ -1,0 +1,7 @@
+
+=== Identity broker logout
+
+When logout from {project_name} is triggered, {project_name} will send a request to the external identity provider
+that was used to login to Keycloak, and the user will be logged out from this identity provider as well.
+It is possible to skip this behaviour and avoid logout at the external identity provider.
+See link:{adapterguide_logout_link}[adapter logout documentation] for more details.
