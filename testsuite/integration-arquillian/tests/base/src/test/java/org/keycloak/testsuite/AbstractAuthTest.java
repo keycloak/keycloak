@@ -137,7 +137,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         deleteAllSessionsInRealm(testRealmAccountPage.getAuthRealm());
     }
 
-    private void resetTestRealmSession() {
+    protected void resetTestRealmSession() {
         resetRealmSession(testRealmAccountPage.getAuthRealm());
     }
 

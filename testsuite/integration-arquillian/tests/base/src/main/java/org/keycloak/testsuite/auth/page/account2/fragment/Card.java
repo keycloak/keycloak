@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.auth.page.account.fragment;
 
-import org.keycloak.testsuite.page.AbstractAlert;
+package org.keycloak.testsuite.auth.page.account2.fragment;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.openqa.selenium.WebDriver;
 
 /**
- *
- * @author tkyjovsk
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public class AccountManagementAlert extends AbstractAlert {
+public abstract class Card {
+    @Drone
+    private WebDriver driver;
 
-    public boolean isError() {
-        return checkAlertType("error");
-    }
-
+    public abstract boolean isVisible();
 }

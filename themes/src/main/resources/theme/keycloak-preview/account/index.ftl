@@ -194,7 +194,7 @@
                               <h2>${msg("accountSecurityTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
                               <h3 id="changePasswordLink"><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                              <h3 id="authenticatiorLink"><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3 id="authenticatorLink"><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
                               <h3 id="deviceActivityLink"><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
                               <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>

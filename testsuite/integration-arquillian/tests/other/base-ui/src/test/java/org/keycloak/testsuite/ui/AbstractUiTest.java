@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite.ui;
 
+import org.junit.Before;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -34,14 +34,9 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
     public static final String LOCALIZED_THEME = "localized-theme";
     public static final String CUSTOM_LOCALE_NAME = "Přísný jazyk";
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setId(TEST);
-        testRealmRep.setRealm(TEST);
-        testRealmRep.setEnabled(true);
-        configureInternationalizationForRealm(testRealmRep);
-        testRealms.add(testRealmRep);
+    @Before
+    public void addTestUser() {
+        createTestUserWithAdminClient(false);
     }
 
     protected void configureInternationalizationForRealm(RealmRepresentation realm) {
@@ -57,5 +52,13 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
         realm.setAdminTheme(LOCALIZED_THEME);
         realm.setAccountTheme(LOCALIZED_THEME);
         realm.setEmailTheme(LOCALIZED_THEME);
+    }
+
+    protected IdentityProviderRepresentation createIdentityProviderRepresentation(String alias, String providerId) {
+        IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+        idpRep.setProviderId(providerId);
+        idpRep.setAlias(alias);
+        idpRep.setConfig(new HashMap<>());
+        return idpRep;
     }
 }
