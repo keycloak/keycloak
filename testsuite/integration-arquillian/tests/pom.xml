@@ -167,6 +167,7 @@
         <backends.console.output>true</backends.console.output>
 
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
+        <testsuite.ui.layout>0</testsuite.ui.layout> <!-- this is to tell the UI tests what type of layout to expect (doesn't setup the layout, just what to expect); 0 == desktop layout, 1 == smartphone layout, 2 == tablet layout -->
 
         <skip.add.user.json>false</skip.add.user.json>
         <skip.clean.second.cache>true</skip.clean.second.cache>
@@ -461,6 +462,7 @@
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
+                            <testsuite.ui.layout>${testsuite.ui.layout}</testsuite.ui.layout>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
 

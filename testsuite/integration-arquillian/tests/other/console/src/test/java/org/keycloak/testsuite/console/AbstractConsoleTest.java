@@ -26,8 +26,8 @@ import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
-import org.keycloak.testsuite.console.page.fragment.AdminConsoleAlert;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
+import org.keycloak.testsuite.page.PatternFlyClosableAlert;
 import org.openqa.selenium.support.FindBy;
 
 import static org.junit.Assert.assertTrue;
@@ -53,8 +53,8 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    @FindBy(className = "alert")
-    protected AdminConsoleAlert alert;
+    @Page
+    protected PatternFlyClosableAlert alert;
 
     protected boolean adminLoggedIn = false;
 
@@ -111,13 +111,11 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     }
 
     public void assertAlertSuccess() {
-        assertTrue("Alert is not success", alert.isSuccess());
-        alert.close();
+        alert.assertSuccess();
     }
 
     public void assertAlertDanger() {
-        assertTrue("Alert is not danger", alert.isDanger());
-        alert.close();
+        alert.assertDanger();
     }
 
     public ConfigureMenu configure() {

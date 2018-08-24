@@ -1,7 +1,12 @@
 package org.keycloak.testsuite.util;
 
 import io.appium.java_client.android.AndroidDriver;
+import org.apache.commons.lang3.StringUtils;
+import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -19,6 +24,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 public final class UIUtils {
 
     public static final String VALUE_ATTR_NAME = "value";
+    public static final short EXPECTED_UI_LAYOUT = Short.parseShort(System.getProperty("testsuite.ui.layout")); // 0 == desktop layout, 1 == smartphone layout, 2 == tablet layout
 
     public static boolean selectContainsOption(Select select, String optionText) {
         for (WebElement option : select.getOptions()) {
@@ -53,6 +59,18 @@ public final class UIUtils {
 
     public static void clickLink(WebElement element) {
         performOperationWithPageReload(element::click);
+    }
+
+    /**
+     * This is as an alternative for {@link #clickLink(WebElement)} and should be used in situations where we can't use
+     * {@link WaitUtils#waitForPageToLoad()}. This is because {@link WaitUtils#waitForPageToLoad()} would wait until the
+     * alert would disappeared itself (timeout).
+     *
+     * @param button to click on
+     */
+    public static void clickBtnAndWaitForAlert(WebElement button) {
+        button.click();
+        AbstractPatternFlyAlert.waitUntilDisplayed();
     }
 
     /**
@@ -93,8 +111,12 @@ public final class UIUtils {
     public static void setTextInputValue(WebElement input, String value) {
         input.click();
         input.clear();
-        if (value != null) {
+        if (!StringUtils.isEmpty(value)) { // setting new input
             input.sendKeys(value);
+        }
+        else { // just clearing the input; input.clear() may not fire all JS events so we need to let the page know that something's changed
+            input.sendKeys("a");
+            input.sendKeys(Keys.BACK_SPACE);
         }
 
         WebDriver driver = getCurrentDriver();
@@ -116,5 +138,22 @@ public final class UIUtils {
             return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
         }
         return text;
+    }
+
+    /**
+     * Should be used solely with {@link org.jboss.arquillian.graphene.GrapheneElement}, i.e. all elements annotated by
+     * {@link org.openqa.selenium.support.FindBy}. CANNOT be used with elements found directly using
+     * {@link WebDriver#findElement(By)} and similar.
+     *
+     * @param element
+     * @return true if element is present and visible
+     */
+    public static boolean isElementVisible(WebElement element) {
+        try {
+            return element.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
 }

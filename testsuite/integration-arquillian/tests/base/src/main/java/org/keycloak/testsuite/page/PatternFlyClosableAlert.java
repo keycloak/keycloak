@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.console.page.fragment;
+package org.keycloak.testsuite.page;
 
-import org.jboss.arquillian.graphene.fragment.Root;
-import org.keycloak.testsuite.page.AbstractAlert;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  * @author Petr Mensik
  * @author tkyjovsk
  */
-public class AdminConsoleAlert extends AbstractAlert {
+public class PatternFlyClosableAlert extends AbstractPatternFlyAlert {
 
     @FindBy(xpath = ".//button[@class='close']")
     protected WebElement closeButton;
@@ -42,6 +43,45 @@ public class AdminConsoleAlert extends AbstractAlert {
 
     public boolean isDanger() {
         return checkAlertType("danger");
+    }
+
+    @Override
+    public void assertSuccess(String expectedText) {
+        super.assertSuccess(expectedText);
+        close();
+    }
+
+    public void assertInfo() {
+        assertInfo(null);
+    }
+
+    public void assertInfo(String expectedText) {
+        assertDisplayed();
+        assertTrue("Alert type should be info", isInfo());
+        if (expectedText != null) assertEquals(expectedText, getText());
+        close();
+    }
+
+    public void assertWarning() {
+        assertWarning(null);
+    }
+
+    public void assertWarning(String expectedText) {
+        assertDisplayed();
+        assertTrue("Alert type should be warning", isWarning());
+        if (expectedText != null) assertEquals(expectedText, getText());
+        close();
+    }
+
+    public void assertDanger() {
+        assertDanger(null);
+    }
+
+    public void assertDanger(String expectedText) {
+        assertDisplayed();
+        assertTrue("Alert type should be danger", isDanger());
+        if (expectedText != null) assertEquals(expectedText, getText());
+        close();
     }
 
     public void close() {

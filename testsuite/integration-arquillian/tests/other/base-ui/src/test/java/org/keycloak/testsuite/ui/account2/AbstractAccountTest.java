@@ -15,36 +15,49 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.login;
+package org.keycloak.testsuite.ui.account2;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.auth.page.account2.WelcomeScreen;
 import org.keycloak.testsuite.ui.AbstractUiTest;
 
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public abstract class AbstractLoginTest extends AbstractUiTest {
+public abstract class AbstractAccountTest extends AbstractUiTest {
+    public static final String ACCOUNT_THEME_NAME = "keycloak-preview";
+
+    @Page
+    protected WelcomeScreen accountWelcomeScreen;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
         RealmRepresentation testRealmRep = testRealms.get(0);
-        configureInternationalizationForRealm(testRealmRep);
+        testRealmRep.setAccountTheme(ACCOUNT_THEME_NAME);
     }
 
-    protected void assertLoginFailed(String message) {
-        assertCurrentUrlDoesntStartWith(testRealmAccountPage);
-        assertTrue("Feedback message should be an error", loginPage.feedbackMessage().isError());
-        assertEquals(message, loginPage.feedbackMessage().getText());
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.ACCOUNT2);
     }
 
-    protected void assertLoginSuccessful() {
-        assertCurrentUrlStartsWith(testRealmAccountPage);
+    @Before
+    public void beforeAccountTest() {
+        accountWelcomeScreen.navigateTo();
+    }
+
+    protected void loginToAccount() {
+        assertCurrentUrlStartsWithLoginUrlOf(accountWelcomeScreen);
+        loginPage.form().login(testUser);
     }
 }

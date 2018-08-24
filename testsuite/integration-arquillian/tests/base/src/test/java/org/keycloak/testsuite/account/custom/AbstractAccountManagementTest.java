@@ -21,8 +21,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
-import org.keycloak.testsuite.auth.page.account.fragment.AccountManagementAlert;
-import org.openqa.selenium.support.FindBy;
+import org.keycloak.testsuite.auth.page.account.fragment.AccountManagementPatternFlyAlert;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -36,8 +35,8 @@ public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
     @Page
     protected AccountManagement testRealmAccountManagementPage;
 
-    @FindBy(className = "alert")
-    protected AccountManagementAlert alert;
+    @Page
+    protected AccountManagementPatternFlyAlert alert;
 
     @Override
     public void setDefaultPageUriParameters() {
