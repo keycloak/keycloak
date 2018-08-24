@@ -66,10 +66,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.keycloak.common.Profile;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
+import org.keycloak.testsuite.ProfileAssume;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -350,6 +352,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testResourceWithMultipleUris() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+        
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
         ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
