@@ -149,6 +149,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
+        addProviderInfo(result, "basic-auth", "Basic Auth Challenge", "Challenge-response authentication using HTTP BASIC scheme.");
+        addProviderInfo(result, "basic-auth-otp", "Basic Auth Password+OTP", "Challenge-response authentication using HTTP BASIC scheme.  Password param should contain a combination of password + otp. Realm's OTP policy is used to determine how to parse this. This SHOULD NOT BE USED in conjection with regular basic auth provider.");
         addProviderInfo(result, "console-username-password", "Username Password Challenge",
                 "Proprietary challenge protocol for CLI clients that queries for username password");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
@@ -173,6 +175,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username is already known from identity provider authentication");
+        addProviderInfo(result, "no-cookie-redirect", "Browser Redirect/Refresh", "Perform a 302 redirect to get user agent's current URI on authenticate path with an auth_session_id query parameter.  This is for client's that do not support cookies.");
         addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
                 "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");

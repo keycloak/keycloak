@@ -185,6 +185,19 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, OPTIONAL, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
+        flow = newFlow("http challenge", "An authentication flow based on challenge-response HTTP Authentication Schemes","basic-flow", true, true);
+        addExecExport(flow, null, false, "no-cookie-redirect", false, null, REQUIRED, 10);
+        addExecExport(flow, null, false, "basic-auth", false, null, REQUIRED, 20);
+        addExecExport(flow, null, false, "basic-auth-otp", false, null, DISABLED, 30);
+        addExecExport(flow, null, false, "auth-spnego", false, null, DISABLED, 40);
+
+        execs = new LinkedList<>();
+        addExecInfo(execs, "Browser Redirect/Refresh", "no-cookie-redirect", false, 0, 0, REQUIRED, null, new String[]{REQUIRED});
+        addExecInfo(execs, "Basic Auth Challenge", "basic-auth", false, 0, 1, REQUIRED, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
+        addExecInfo(execs, "Basic Auth Password+OTP", "basic-auth-otp", false, 0, 2, DISABLED, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
+        addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 3, DISABLED, null, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
+        expected.add(new FlowExecutions(flow, execs));
+
         flow = newFlow("registration", "registration flow", "basic-flow", true, true);
         addExecExport(flow, "registration form", false, "registration-page-form", true, null, REQUIRED, 10);
 

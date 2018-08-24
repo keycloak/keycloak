@@ -17,7 +17,9 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
@@ -26,6 +28,10 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.AuthenticationFlowBindings;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
@@ -71,6 +77,36 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
         // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
         assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", false);
+    }
+
+    @Test
+    public void testClientOverrideFlowUsingBrowserHttpChallenge() throws Exception {
+        List<AuthenticationExecutionInfoRepresentation> executions = testRealmResource().flows().getExecutions("http challenge");
+
+        for (AuthenticationExecutionInfoRepresentation execution : executions) {
+            if ("basic-auth".equals(execution.getProviderId())) {
+                execution.setRequirement("OPTIONAL");
+                testRealmResource().flows().updateExecutions("http challenge", execution);
+            }
+            if ("auth-spnego".equals(execution.getProviderId())) {
+                execution.setRequirement("ALTERNATIVE");
+                testRealmResource().flows().updateExecutions("http challenge", execution);
+            }
+        }
+
+
+        Map<String, String> flows = new HashMap<>();
+        AuthenticationFlowRepresentation flow = testRealmResource().flows().getFlows().stream().filter(flowRep -> flowRep.getAlias().equalsIgnoreCase("http challenge")).findAny().get();
+
+        flows.put(AuthenticationFlowBindings.BROWSER_BINDING, flow.getId());
+
+        ClientRepresentation client = testRealmResource().clients().findByClientId("kerberos-app-challenge").get(0);
+
+        client.setAuthenticationFlowBindingOverrides(flows);
+
+        testRealmResource().clients().get(client.getId()).update(client);
+
+        assertSuccessfulSpnegoLogin(client.getClientId(),"hnelson", "hnelson", "secret");
     }
 
     @Test

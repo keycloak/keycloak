@@ -178,13 +178,18 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected AccessToken assertSuccessfulSpnegoLogin(String loginUsername, String expectedUsername, String password) throws Exception {
+        return assertSuccessfulSpnegoLogin("kerberos-app", loginUsername, expectedUsername, password);
+    }
+
+    protected AccessToken assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
+        oauth.clientId(clientId);
         Response spnegoResponse = spnegoLogin(loginUsername, password);
         Assert.assertEquals(302, spnegoResponse.getStatus());
 
         List<UserRepresentation> users = testRealmResource().users().search(expectedUsername, 0, 1);
         String userId = users.get(0).getId();
         events.expectLogin()
-                .client("kerberos-app")
+                .client(clientId)
                 .user(userId)
                 .detail(Details.USERNAME, expectedUsername)
                 .assertEvent();
@@ -233,7 +238,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             if (response.getLocation() == null)
                 return response;
             String uri = response.getLocation().toString();
-            if (uri.contains("login-actions/required-action")) {
+            if (uri.contains("login-actions/required-action") || uri.contains("auth_session_id")) {
                 response = client.target(uri).request().get();
             }
         }
