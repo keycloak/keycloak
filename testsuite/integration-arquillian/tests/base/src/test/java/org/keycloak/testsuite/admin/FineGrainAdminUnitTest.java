@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.client.admin.cli.util.ConfigUtil;
+import org.keycloak.common.Profile;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -41,6 +42,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
@@ -856,6 +858,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
      */
     @Test
     public void testWithTokenExchange() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("master");
             ClientModel client = session.realms().getClientByClientId("kcinit", realm);
