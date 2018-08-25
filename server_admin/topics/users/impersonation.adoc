@@ -8,7 +8,7 @@ can impersonate a user.  There are two locations an admin can initiate impersona
 .Users
 image:{project_images}/user-search.png[]
 
-You can see here that the admin has searched for `jim`.  Next to Jim's account you can see an impersonate button.  Click that
+You can see here that the admin has searched for `john`.  Next to John's account you can see an impersonate button.  Click that
 to impersonate the user.
 
 Also, you can impersonate the user from the user `Details` tab.
