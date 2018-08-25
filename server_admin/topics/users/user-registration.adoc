@@ -6,7 +6,7 @@ You can enable {project_name} to allow user self registration.  When enabled, th
 link the user can click on to create their new account.
 
 When user self registration is enabled it is possible to use the registration form to detect valid usernames and emails.
-To prevent this enable <<_recaptcha,reCAPTCHA Support>>.
+It is also possible to enable <<_recaptcha,reCAPTCHA Support>>.
 
 Enabling registration is pretty simple.  Go to the
 `Realm Settings` left menu and click it.  Then go to the `Login` tab.  There is a `User Registration` switch on this
