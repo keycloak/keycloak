@@ -120,11 +120,39 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         for (Map.Entry<String, String> entry : BrowserSecurityHeaders.defaultHeaders.entrySet()) {
             String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
             String headerValue = response.getHeaderString(headerName);
-            Assert.assertNotNull(headerValue);
-            Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+            if (entry.getValue().isEmpty()) {
+                Assert.assertNull(headerValue);
+            } else {
+                Assert.assertNotNull(headerValue);
+                Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+            }
         }
         response.close();
         client.close();
+    }
+
+    @Test
+    public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() {
+        final String expectedCspReportOnlyValue = "default-src 'none'";
+        final String cspReportOnlyAttr = "contentSecurityPolicyReportOnly";
+        final String cspReportOnlyHeader = "Content-Security-Policy-Report-Only";
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        final String defaultContentSecurityPolicyReportOnly = realmRep.getBrowserSecurityHeaders().get(cspReportOnlyAttr);
+        realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, expectedCspReportOnlyValue);
+        adminClient.realm("test").update(realmRep);
+
+        try {
+            Client client = ClientBuilder.newClient();
+            Response response = client.target(oauth.getLoginFormUrl()).request().get();
+            String headerValue = response.getHeaderString(cspReportOnlyHeader);
+            Assert.assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
+            response.close();
+            client.close();
+        } finally {
+            realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, defaultContentSecurityPolicyReportOnly);
+            adminClient.realm("test").update(realmRep);
+        }
     }
 
     //KEYCLOAK-5556
