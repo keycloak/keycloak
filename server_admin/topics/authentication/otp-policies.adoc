@@ -15,7 +15,7 @@ generated from information configured on the `OTP Policy` tab.
 
 There are two different algorithms to choose from for your OTP generators.  Time Based (TOTP) and Counter Based (HOTP).
 For TOTP, your token generator will hash the current time and a shared secret.  The server validates the OTP by comparing
-the all hashes within a certain window of time to the submitted value.  So, TOTPs are valid only for a short window of time (usually 30 seconds).
+all the hashes within a certain window of time to the submitted value.  So, TOTPs are valid only for a short window of time (usually 30 seconds).
 For HOTP a shared counter is used instead of the current time.  The server increments the counter with each successful OTP login.  So, valid OTPs only
 change after a successful login.
 
