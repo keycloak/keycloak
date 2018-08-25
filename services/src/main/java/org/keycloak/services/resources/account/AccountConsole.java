@@ -17,7 +17,6 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
@@ -100,7 +99,7 @@ public class AccountConsole {
             
             UserModel user = null;
             if (auth != null) user = auth.getUser();
-            Locale locale = LocaleHelper.getLocale(session, realm, user);
+            Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
             Properties messages = theme.getMessages(locale);
             map.put("msg", new MessageFormatterMethod(locale, messages));

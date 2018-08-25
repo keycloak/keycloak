@@ -11,7 +11,6 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
@@ -71,7 +70,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
-            Locale locale = LocaleHelper.getLocale(session, realm, null);
+            Locale locale = session.getContext().resolveLocale(null);
 
             FreeMarkerUtil freeMarker = new FreeMarkerUtil();
             Map<String, Object> attributes = initAttributes(realm, theme, locale, statusCode);

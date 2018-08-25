@@ -23,7 +23,6 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -41,7 +40,7 @@ public class P3PHelper {
         try {
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
-            Locale locale = LocaleHelper.getLocaleFromCookie(session);
+            Locale locale = session.getContext().resolveLocale(null);
             String p3pValue = theme.getMessages(locale).getProperty("p3pPolicy");
 
             if (!Validation.isBlank(p3pValue)) {

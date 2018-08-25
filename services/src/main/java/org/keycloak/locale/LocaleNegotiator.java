@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.util;
+package org.keycloak.locale;
 
 import java.util.Locale;
 import java.util.Set;
 
-class LocaleNegotiator {
+public class LocaleNegotiator {
     private Set<String> supportedLocales;
 
-    LocaleNegotiator(Set<String> supportedLocales) {
+    public LocaleNegotiator(Set<String> supportedLocales) {
         this.supportedLocales = supportedLocales;
     }
 
-    Locale invoke(String... localeStrings) {
+    public LocaleSelection invoke(String... localeStrings) {
         for (String localeString : localeStrings) {
             if (localeString != null) {
                 Locale result = null;
@@ -38,15 +38,16 @@ class LocaleNegotiator {
                             result = locale;
                         }
                         if (locale.getCountry().equals(search.getCountry())) {
-                            return locale;
+                            return new LocaleSelection(localeString, locale);
                         }
                     }
                 }
                 if (result != null) {
-                    return result;
+                    return new LocaleSelection(localeString, result);
                 }
             }
         }
         return null;
     }
+
 }
