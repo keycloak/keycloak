@@ -1,7 +1,7 @@
 
 === User Account Service
 
-. After you create the new user, log out of the management console by opening the user drop-down menu and selecting *Sign Off*.
+. After you create the new user, log out of the management console by opening the user drop-down menu and selecting *Sign Out*.
 
 . Go to http://localhost:8080/auth/realms/demo/account and log in to the User Account Service of your `demo` realm with the user you just created.
 
