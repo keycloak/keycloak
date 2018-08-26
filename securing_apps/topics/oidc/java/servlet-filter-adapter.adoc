@@ -64,3 +64,98 @@ To use this filter, include this maven artifact in your WAR poms:
     <version>{project_versionMvn}</version>
 </dependency>
 ----
+ifeval::[{project_community}==true]
+===== Using on OSGi
+
+The servlet filter adapter is packaged as an OSGi bundle, and thus is usable in a generic OSGi environment (R6 and above) with HTTP Service and HTTP Whiteboard.
+
+====== Installation
+
+The adapter and its dependencies are distributed as Maven artifacts, so you'll need either working Internet connection to access Maven Central, or have the artifacts cached in your local Maven repo.
+
+If you are using Apache Karaf, you can simply install a feature from the Keycloak feature repo:
+
+[source,subs="attributes+"]
+----
+karaf@root()> feature:repo-add mvn:org.keycloak/keycloak-osgi-features/{project_versionMvn}/xml/features
+karaf@root()> feature:install keycloak-servlet-filter-adapter
+----
+
+For other OSGi runtimes, please refer to the runtime documentation on how to install the adapter bundle and its dependencies.
+
+NOTE: If your OSGi platform is Apache Karaf with Pax Web, you should consider using <<_fuse_adapter,JBoss Fuse 6>> or <<_fuse7_adapter,JBoss Fuse 7>> adapters instead.
+
+====== Configuration
+
+First, the adapter needs to be registered as a servlet filter with the OSGi HTTP Service. The most common ways to do this are programmatic (e.g. via bundle activator) and declarative (using OSGi annotations).
+We recommend using the latter since it simplifies the process of dynamically registering and un-registering the filter:
+
+[source,java]
+----
+package mypackage;
+
+import javax.servlet.Filter;
+import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
+
+@Component(
+    immediate = true,
+    service = Filter.class,
+    property = {
+        KeycloakOIDCFilter.CONFIG_FILE_PARAM + "=" + "keycloak.json",
+        HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_PATTERN + "=" +"/*",
+        HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT + "=" + "(osgi.http.whiteboard.context.name=mycontext)"
+    }
+)
+public class KeycloakFilter extends KeycloakOIDCFilter {
+  //
+}
+----
+
+The above snippet uses OSGi declarative service specification to expose the filter as an OSGI service under `javax.servlet.Filter` class.
+Once the class is published in the OSGi service registry, it is going to be picked up by OSGi HTTP Service implementation and used for filtering requests for the specified servlet context. This will trigger Keycloak adapter for every request that matches servlet context path + filter path.
+
+Since the component is put under the control of OSGi Configuration Admin Service, it's properties can be configured dynamically.
+To do that, either create a `mypackage.KeycloakFilter.cfg` file under the standard config location for your OSGi runtime:
+[source]
+
+----
+keycloak.config.file = /path/to/keycloak.json
+osgi.http.whiteboard.filter.pattern = /secure/*
+----
+
+or use interactive console, if your runtime allows for that:
+
+[source]
+----
+karaf@root()> config:edit mypackage.KeycloakFilter
+karaf@root()> config:property-set keycloak.config.file '${karaf.etc}/keycloak.json'
+karaf@root()> config:update
+----
+
+If you need more control, like e.g. providing custom `KeycloakConfigResolver` to implement <<_multi_tenancy,multi tenancy>>, you can register the filter programmatically:
+
+[source,java]
+----
+public class Activator implements BundleActivator {
+
+  private ServiceRegistration registration;
+
+  public void start(BundleContext context) throws Exception {
+    Hashtable props = new Hashtable();
+    props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_PATTERN, "/secure/*");
+    props.put(KeycloakOIDCFilter.CONFIG_RESOLVER_PARAM, new MyConfigResolver());
+
+    this.registration = context.registerService(Filter.class.getName(), new KeycloakOIDCFilter(), props);
+  }
+
+  public void stop(BundleContext context) throws Exception {
+    this.registration.unregister();
+  }
+}
+----
+
+Please refer to http://felix.apache.org/documentation/subprojects/apache-felix-http-service.html#using-the-osgi-http-whiteboard[Apache Felix HTTP Service] for more info on programmatic registration.
+
+endif::[]
