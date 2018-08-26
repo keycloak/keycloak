@@ -126,7 +126,7 @@ Remember that you still have to click the `Save` button!
 [[_mtls-client-certificate-bound-tokens]]
 *OAuth 2.0 Mutual TLS Client Certificate Bound Access Token*
 
-Mutual TLS binds an access token and a refresh token with a client certificate exchanged during TLS handshake. This prevents an attacker who finds a way to steal these tokens from exercising the tokens. The type of token is called a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify whether the sender of the token is legitimate.
+Mutual TLS binds an access token and a refresh token with a client certificate exchanged during TLS handshake. This prevents an attacker who finds a way to steal these tokens from exercising the tokens. This type of token is called a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify whether the sender of the token is legitimate.
 
 If the following conditions are satisfied on a token request, {project_name} will bind an access token and a refresh token with a client certificate and issue them as holder-of-key tokens. If all conditions are not met, {project_name} rejects the token request.
 
