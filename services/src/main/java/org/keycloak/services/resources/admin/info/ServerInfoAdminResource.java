@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Server Info
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ServerInfoAdminResource {

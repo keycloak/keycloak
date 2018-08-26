@@ -196,6 +196,7 @@ public class AdminRoot {
      *
      * @param headers
      * @return
+     * @returnType org.keycloak.services.resources.admin.RealmsAdminResource
      */
     @Path("realms")
     public Object getRealmsAdmin(@Context final HttpHeaders headers) {
@@ -218,6 +219,7 @@ public class AdminRoot {
     /**
      * General information about the server
      *
+     * @returnType org.keycloak.services.resources.admin.info.ServerInfoAdminResource
      * @param headers
      * @return
      */
