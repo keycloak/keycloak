@@ -48,14 +48,14 @@
       </div>
       <div class="row">
         <div class="col-xs-12 col-sm-4">
-          <div class="card-pf card-pf-view h-l">
+          <div class="card-pf h-l">
             <#if successMessage?has_content>
-                <p class="success">${successMessage}</p>
+                <p class="alert success">${successMessage}</p>
             <#elseif errorMessage?has_content>
-                <p class="error">${errorMessage}</p>
+                <p class="alert error">${errorMessage}</p>
             <#elseif bootstrap>
                 <#if localUser>
-                    <p>Please create an initial admin user to get started.</p>
+                    <p class="create-user">Please create an initial admin user to get started.</p>
                 <#else>
                     <p class="welcome-message">
                         <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
@@ -83,7 +83,7 @@
 
                     <input id="stateChecker" name="stateChecker" type="hidden" value="${stateChecker}" />
 
-                    <button id="create-button" type="submit">Create</button>
+                    <button id="create-button" type="submit" class="btn btn-primary">Create</button>
                 </form>
             </#if>
             <div class="welcome-primary-link">
@@ -95,7 +95,7 @@
           </div>
         </div>
         <div class="col-xs-12 col-sm-4">
-          <div class="card-pf card-pf-view h-l">
+          <div class="card-pf h-l">
             <h3><a href="${properties.documentationUrl}"><img src="welcome-content/admin-console.png">Documentation</a></h3>
             <div class="description">
               User Guide, Admin REST API and Javadocs
@@ -104,13 +104,13 @@
         </div>
         <div class="col-xs-12 col-sm-4">
         <#if properties.displayCommunityLinks = "true">
-          <div class="card-pf card-pf-view h-m">
+          <div class="card-pf h-m">
             <h3><a href="http://www.keycloak.org"><img src="welcome-content/keycloak-project.png">Keycloak Project</a></h3>
           </div>
-          <div class="card-pf card-pf-view h-m">
+          <div class="card-pf h-m">
             <h3><a href="https://lists.jboss.org/mailman/listinfo/keycloak-user"><img src="welcome-content/mail.png">Mailing List</a></h3>
           </div>
-          <div class="card-pf card-pf-view h-m">
+          <div class="card-pf h-m">
             <h3><a href="https://issues.jboss.org/browse/KEYCLOAK"><img src="welcome-content/bug.png">Report an issue</a></h3>
           </div>
         </#if>
