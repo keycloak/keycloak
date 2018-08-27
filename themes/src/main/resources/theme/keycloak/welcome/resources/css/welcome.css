@@ -14,14 +14,17 @@ body {
 .welcome-message {
 	margin-top: 20px;
 }
+.create-user {
+	font-weight: 600;
+}
 .h-l {
-	height: 340px;
-	padding: 20px;
+	min-height: 340px;
+	padding: 20px 20px 10px;
 	overflow: hidden;
 }
 .h-m {
 	height: 100px;
-	padding-top: 25px;
+	padding-top: 18px;
 }
 .card-pf img {
 	width: 22px;
@@ -45,6 +48,11 @@ h3 a:hover {
 	margin-top: 30px;
 }
 
+.card-pf {
+	border-top: 1px solid rgba(3, 3, 3, 0.1);
+	box-shadow: 0 1px 1px rgba(3, 3, 3, 0.275);
+}
+
 .welcome-form label,
 .welcome-form input {
 	display: block;
@@ -54,6 +62,7 @@ h3 a:hover {
 .welcome-form label {
 	color: #828486;
 	font-weight: normal;
+	margin-top: 18px;
 }
 .welcome-form input {
 	border: 0;
@@ -64,17 +73,21 @@ h3 a:hover {
 	outline-width: 0;
 }
 .welcome-form button {
-	border-radius: 20px;
+	/* border-radius: 20px;
 	background-color: #3277b2;
 	color: #fff;
-	padding: 3px 20px;
-	margin-top: 10px;
+	padding: 3px 20px; */
+	margin-top: 20px;
 }
 .error {
-    color: #c00;
+  color: #c00;
+	border-color: #c00;
+	padding: 5px 10px;
 }
 .success {
-    color: #3f9c35;
+	color: #3f9c35;
+	border-color: #3f9c35;
+	padding: 5px 10px;
 }
 .welcome-form + .welcome-primary-link,
 .welcome-message + .welcome-primary-link {
