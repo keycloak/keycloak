@@ -834,16 +834,24 @@ public class LoginActionsService {
             session.users().addConsent(realm, user.getId(), grantedConsent);
         }
 
+        // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
+        boolean updateConsentRequired = false;
+
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
             if (clientScope != null) {
-                grantedConsent.addGrantedClientScope(clientScope);
+                if (!grantedConsent.isClientScopeGranted(clientScope)) {
+                    grantedConsent.addGrantedClientScope(clientScope);
+                    updateConsentRequired = true;
+                }
             } else {
-                logger.warn("Client scope with ID '%s' not found");
+                logger.warnf("Client scope with ID '%s' not found", clientScopeId);
             }
         }
 
-        session.users().updateConsent(realm, user.getId(), grantedConsent);
+        if (updateConsentRequired) {
+            session.users().updateConsent(realm, user.getId(), grantedConsent);
+        }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
