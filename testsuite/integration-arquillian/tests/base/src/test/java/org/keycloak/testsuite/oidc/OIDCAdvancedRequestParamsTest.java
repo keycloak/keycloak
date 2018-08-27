@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -66,6 +67,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.core.UriBuilder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -288,6 +291,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .assertEvent();
 
         } finally {
+            // Revert consent
+            UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            user.revokeConsent("test-app");
+
             //  revert require consent
             ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(false);
         }
@@ -362,6 +369,68 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         errorPage.assertCurrent();
         Assert.assertTrue(errorPage.getError().startsWith("You are already authenticated as different user"));
     }
+
+
+    // prompt=consent
+    @Test
+    public void promptConsent() {
+        // Require consent
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(true);
+
+        try {
+            // Login user
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            // Grant consent
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            appPage.assertCurrent();
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .assertEvent();
+
+
+            // Re-login without prompt=consent. The previous persistent consent was used
+            driver.navigate().to(oauth.getLoginFormUrl());
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                    .assertEvent();
+
+            // Re-login with prompt=consent.
+            String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                    .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_CONSENT)
+                    .build().toString();
+            driver.navigate().to(loginFormUri);
+
+            // Assert grant page displayed again. Will need to grant consent again
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            appPage.assertCurrent();
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .assertEvent();
+
+        } finally {
+            // Revert consent
+            UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            user.revokeConsent("test-app");
+
+            //  revert require consent
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(false);
+        }
+    }
+
 
     // DISPLAY & OTHERS
 

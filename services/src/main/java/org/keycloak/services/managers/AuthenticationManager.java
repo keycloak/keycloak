@@ -40,6 +40,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ServicesLogger;
@@ -53,6 +54,7 @@ import org.keycloak.services.util.P3PHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -863,7 +865,7 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+            UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
             // See if any clientScopes need to be approved on consent screen
             List<ClientScopeModel> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(realm, grantedConsent, authSession);
@@ -878,6 +880,21 @@ public class AuthenticationManager {
         }
         return null;
 
+    }
+
+
+    private static UserConsentModel getEffectiveGrantedConsent(KeycloakSession session, AuthenticationSessionModel authSession) {
+        // If prompt=consent, we ignore existing persistent consent
+        String prompt = authSession.getClientNote(OIDCLoginProtocol.PROMPT_PARAM);
+        if (TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_CONSENT)) {
+            return null;
+        } else {
+            final RealmModel realm = authSession.getRealm();
+            final UserModel user = authSession.getAuthenticatedUser();
+            final ClientModel client = authSession.getClient();
+
+            return session.users().getConsentByClient(realm, user.getId(), client.getId());
+        }
     }
 
 
@@ -906,7 +923,7 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+            UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
             List<ClientScopeModel> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(realm, grantedConsent, authSession);
 
