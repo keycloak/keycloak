@@ -247,7 +247,61 @@ and access the RH-SSO administrator console at:
 * *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 * *\http://sso-sso-app-demo.openshift.example.com/auth/admin*
 
-using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account].
+using the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator account].
+
+[[advanced-concepts-sso-hostname-spi-setup]]
+=== Customizing Hostname for the {project_name} Server
+
+The hostname SPI introduced a flexible way to configure the hostname for the {project_name} server. There are two built-in providers. The first is `request`, which uses the request headers to determine the hostname. This is the *default setting* for {project_openshift_product_name} image. The second is `fixed`, which allows configuring a fixed hostname. The latter makes sure that only valid hostnames can be used and allows internal applications to invoke {project_name} server through an alternative URL.
+
+Run the following commands to set the `fixed` hostname SPI provider for the {project_name} server:
+
+. Deploy the {project_openshift_product_name} image with *_SSO_HOSTNAME_* environment variable set to the desired hostname of the {project_name} server.
++
+----
+$ oc new-app --template=sso-cd-x509-https \
+  -p SSO_HOSTNAME="rh-sso-server.openshift.example.com"
+----
+. Identify the name of the route for the {project_name} service.
++
+----
+$ oc get routes
+----
++
+[cols="7",options="header"]
+|===
+|NAME
+|HOST/PORT
+|PATH
+|SERVICES
+|PORT
+|TERMINATION
+|WILDCARD
+
+|sso
+|sso-sso-app-demo.openshift.example.com
+|
+|sso
+|<all>
+|reencrypt
+|None
+|===
+. Change the `host:` field to match the hostname specified as the value of the *_SSO_HOSTNAME_* environment variable above.
++
+[NOTE]
+====
+Adjust the `rh-sso-server.openshift.example.com` value in the following command as necessary.
+====
++
+----
+$ oc patch route/sso --type=json -p '[{"op": "replace", "path": "/spec/host", "value": "rh-sso-server.openshift.example.com"}]'
+----
++
+If successful, the previous command will return the following output:
++
+----
+route "sso" patched
+----
 
 [[advanced-concepts-sso-administrator-setup]]
 === Creating Administrator Account for Red Hat Single Sign-On Server
@@ -364,7 +418,7 @@ After the RH-SSO web server pod has started, it can be accessed from its custom 
 * *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the RH-SSO web server, and
 * *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted RH-SSO web server.
 
-Use the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
+Use the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
 
 [[advanced-concepts-SSO-Clients]]
 === RH-SSO Clients

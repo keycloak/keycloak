@@ -313,6 +313,17 @@ displayed as an OpenShift Instructional message when the template is
 instantiated.
 |*_admin_*
 
+|*_SSO_HOSTNAME_*
+|Custom hostname for the {project_name} server. *Not set by default*. If not
+set, the `request` hostname SPI provider, which uses the request headers to
+determine the hostname of the {project_name} server is used. If set, the
+`fixed` hostname SPI provider, with the hostname of the {project_name} server
+set to the provided variable value, is used. See dedicated
+xref:../content/advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-hostname-spi-setup[Customizing Hostname for the {project_name} Server]
+section for additional steps to be performed, when *_SSO_HOSTNAME_* variable
+is set.
+|*_rh-sso-server.openshift.example.com_*
+
 |*_SSO_REALM_*
 |Name of the realm to be created in the RH-SSO server if this environment variable
 is provided.
