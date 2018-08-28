@@ -18,24 +18,23 @@ package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class IdentityProviderBean {
+
+    public static OrderedModel.OrderedModelComparator<IdentityProvider> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
 
     private boolean displaySocial;
     private List<IdentityProvider> providers;
@@ -47,21 +46,22 @@ public class IdentityProviderBean {
         this.session = session;
 
         if (!identityProviders.isEmpty()) {
-            Set<IdentityProvider> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);
+            List<IdentityProvider> orderedList = new ArrayList<>();
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
-                    addIdentityProvider(orderedSet, realm, baseURI, identityProvider);
+                    addIdentityProvider(orderedList, realm, baseURI, identityProvider);
                 }
             }
 
-            if (!orderedSet.isEmpty()) {
-                providers = new LinkedList<>(orderedSet);
+            if (!orderedList.isEmpty()) {
+                orderedList.sort(IDP_COMPARATOR_INSTANCE);
+                providers = orderedList;
                 displaySocial = true;
             }
         }
     }
 
-    private void addIdentityProvider(Set<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
+    private void addIdentityProvider(List<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
         String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
         Map<String, String> config = identityProvider.getConfig();
@@ -81,7 +81,7 @@ public class IdentityProviderBean {
         return  realm.isRegistrationAllowed() || displaySocial;
     }
 
-    public static class IdentityProvider {
+    public static class IdentityProvider implements OrderedModel {
 
         private final String alias;
         private final String providerId; // This refer to providerType (facebook, google, etc.)
@@ -109,6 +109,7 @@ public class IdentityProviderBean {
             return providerId;
         }
 
+        @Override
         public String getGuiOrder() {
             return guiOrder;
         }
@@ -118,37 +119,4 @@ public class IdentityProviderBean {
         }
     }
 
-    public static class IdentityProviderComparator implements Comparator<IdentityProvider> {
-
-        public static IdentityProviderComparator INSTANCE = new IdentityProviderComparator();
-
-        private IdentityProviderComparator() {
-
-        }
-
-        @Override
-        public int compare(IdentityProvider o1, IdentityProvider o2) {
-
-            int o1order = parseOrder(o1);
-            int o2order = parseOrder(o2);
-
-            if (o1order > o2order)
-                return 1;
-            else if (o1order < o2order)
-                return -1;
-
-            return 1;
-        }
-
-        private int parseOrder(IdentityProvider ip) {
-            if (ip != null && ip.getGuiOrder() != null) {
-                try {
-                    return Integer.parseInt(ip.getGuiOrder());
-                } catch (NumberFormatException e) {
-                    // ignore it and use defaulr
-                }
-            }
-            return 10000;
-        }
-    }
 }

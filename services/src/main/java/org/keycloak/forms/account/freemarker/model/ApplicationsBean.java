@@ -18,10 +18,12 @@
 package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrderedModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -36,6 +38,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -72,18 +76,18 @@ public class ApplicationsBean {
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<String, ClientRoleEntry>();
             processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
 
-            List<String> clientScopesGranted = new LinkedList<String>();
+            List<ClientScopeModel> orderedScopes = new ArrayList<>();
             if (client.isConsentRequired()) {
                 UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
                 if (consent != null) {
-
-                    for (ClientScopeModel clientScope : consent.getGrantedClientScopes()) {
-                        String consentText = clientScope.getConsentScreenText();
-                        clientScopesGranted.add(consentText);
-                    }
+                    orderedScopes.addAll(consent.getGrantedClientScopes());
+                    orderedScopes.sort(new OrderedModel.OrderedModelComparator<>());
                 }
             }
+            List<String> clientScopesGranted = orderedScopes.stream()
+                    .map(ClientScopeModel::getConsentScreenText)
+                    .collect(Collectors.toList());
 
             List<String> additionalGrants = new ArrayList<>();
             if (offlineClients.contains(client)) {
