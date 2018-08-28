@@ -23,7 +23,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel {
+public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
     String getId();
 
     String getName();
@@ -48,6 +48,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     String DISPLAY_ON_CONSENT_SCREEN = "display.on.consent.screen";
     String CONSENT_SCREEN_TEXT = "consent.screen.text";
+    String GUI_ORDER = "gui.order";
 
     default boolean isDisplayOnConsentScreen() {
         String displayVal = getAttribute(DISPLAY_ON_CONSENT_SCREEN);
@@ -69,6 +70,15 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     default void setConsentScreenText(String consentScreenText) {
         setAttribute(CONSENT_SCREEN_TEXT, consentScreenText);
+    }
+
+    @Override
+    default String getGuiOrder() {
+        return getAttribute(GUI_ORDER);
+    }
+
+    default void setGuiOrder(String guiOrder) {
+        setAttribute(GUI_ORDER, guiOrder);
     }
 
 
