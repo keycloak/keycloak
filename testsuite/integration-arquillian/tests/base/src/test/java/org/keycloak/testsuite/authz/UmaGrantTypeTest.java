@@ -16,15 +16,19 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -41,6 +45,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
+import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -54,6 +60,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -454,6 +461,57 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
 
         assertTrue(permissions.isEmpty());
+    }
+
+    @Test
+    public void testTokenIntrospect() throws Exception {
+        AuthzClient authzClient = getAuthzClient();
+        AccessTokenResponse accessTokenResponse = authzClient.obtainAccessToken("marta", "password");
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
+        String rpt = response.getToken();
+
+        assertNotNull(rpt);
+        assertFalse(response.isUpgraded());
+
+        AccessToken accessToken = toAccessToken(rpt);
+        AccessToken.Authorization authorization = accessToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        Collection<Permission> permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+
+        TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(rpt);
+
+        assertNotNull(introspectionResponse);
+        assertNotNull(introspectionResponse.getPermissions());
+
+        oauth.realm("authz-test");
+        String introspectHttpResponse = oauth.introspectTokenWithClientCredential("resource-server-test", "secret", "requesting_party_token", rpt);
+
+        Map jsonNode = JsonSerialization.readValue(introspectHttpResponse, Map.class);
+
+        assertEquals(true, jsonNode.get("active"));
+
+        Collection permissionClaims = (Collection) jsonNode.get("permissions");
+
+        assertNotNull(permissionClaims);
+        assertEquals(1, permissionClaims.size());
+
+        Map<String, Object> claim = (Map) permissionClaims.iterator().next();
+
+        assertThat(claim.keySet(), containsInAnyOrder("resource_id", "rsname", "resource_scopes", "scopes", "rsid"));
+        assertThat(claim.get("rsname"), equalTo("Resource A"));
+
+        ResourceRepresentation resourceRep = authzClient.protection().resource().findByName("Resource A");
+        assertThat(claim.get("rsid"), equalTo(resourceRep.getId()));
+        assertThat(claim.get("resource_id"), equalTo(resourceRep.getId()));
+
+        assertThat((Collection<String>) claim.get("resource_scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
+        assertThat((Collection<String>) claim.get("scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
     }
 
     private String getIdToken(String username, String password) {
