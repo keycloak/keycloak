@@ -38,12 +38,6 @@ public class CreateClientMappersForm extends Form {
     @FindBy(id = "name")
     private WebElement nameElement;
 
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='consentRequired']]")
-    private OnOffSwitch consentRequiredSwitch;
-
-    @FindBy(id = "consentText")
-    private WebElement consentTextElement;
-
     @FindBy(id = "mapperTypeCreate")
     private Select mapperTypeSelect;
 
@@ -152,22 +146,6 @@ public class CreateClientMappersForm extends Form {
     
     public void setName(String value) {
         UIUtils.setTextInputValue(nameElement, value);
-    }
-    
-    public boolean isConsentRequired() {
-        return consentRequiredSwitch.isOn();
-    }
-
-    public void setConsentRequired(boolean consentRequired) {
-        consentRequiredSwitch.setOn(consentRequired);
-    }
-
-    public String getConsentText() {
-        return UIUtils.getTextInputValue(consentTextElement);
-    }
-
-    public void setConsentText(String consentText) {
-        UIUtils.setTextInputValue(consentTextElement, consentText);
     }
 
     public void setMapperType(String type) {
