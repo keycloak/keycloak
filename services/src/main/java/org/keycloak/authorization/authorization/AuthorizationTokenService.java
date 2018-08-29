@@ -65,6 +65,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -239,7 +240,13 @@ public class AuthorizationTokenService {
         KeycloakSession keycloakSession = request.getKeycloakSession();
         AccessToken accessToken = identity.getAccessToken();
         RealmModel realm = request.getRealm();
-        UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(realm, accessToken.getSessionState());
+        UserSessionProvider sessions = keycloakSession.sessions();
+        UserSessionModel userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+
+        if (userSessionModel == null) {
+            userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+        }
+
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
         AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);

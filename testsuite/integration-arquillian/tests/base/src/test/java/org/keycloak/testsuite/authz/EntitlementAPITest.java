@@ -36,6 +36,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -48,11 +50,13 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -92,12 +96,16 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
 
+    @ArquillianResource
+    protected ContainerController controller;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
                 .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
                 .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
+                .user(UserBuilder.create().username("offlineuser").password("password").addRoles("offline_access"))
                 .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
@@ -1153,6 +1161,51 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 assertThat(grantedPermission.getScopes(), Matchers.containsInAnyOrder("create", "read"));
             }
         }
+    }
+
+    @Test
+    public void testOfflineRequestingPartyToken() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+        resource.addScope("sensors:view", "sensors:update", "sensors:delete");
+
+        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addScope("sensors:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission);
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).scope("offline_access").doGrantAccessTokenRequest("secret", "offlineuser", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
+        assertNotNull(response.getToken());
+
+        controller.stop(suiteContext.getAuthServerInfo().getQualifier());
+        controller.start(suiteContext.getAuthServerInfo().getQualifier());
+        reconnectAdminClient();
+
+        TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(response.getToken());
+
+        assertTrue(introspectionResponse.getActive());
+        assertFalse(introspectionResponse.getPermissions().isEmpty());
+
+        response = authzClient.authorization(accessToken).authorize();
+        assertNotNull(response.getToken());
     }
 
     private void testRptRequestWithResourceName(String configFile) {
