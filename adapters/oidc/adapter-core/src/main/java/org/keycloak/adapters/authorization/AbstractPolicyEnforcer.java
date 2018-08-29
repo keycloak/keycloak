@@ -70,7 +70,11 @@ public abstract class AbstractPolicyEnforcer {
         if (securityContext == null) {
             if (!isDefaultAccessDeniedUri(request)) {
                 if (pathConfig != null) {
-                    challenge(pathConfig, getRequiredScopes(pathConfig, request), httpFacade);
+                    if (EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                        return createEmptyAuthorizationContext(true);
+                    } else {
+                        challenge(pathConfig, getRequiredScopes(pathConfig, request), httpFacade);
+                    }
                 } else {
                     handleAccessDenied(httpFacade);
                 }
