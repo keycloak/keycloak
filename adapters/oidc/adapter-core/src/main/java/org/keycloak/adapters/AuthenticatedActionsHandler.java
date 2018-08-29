@@ -106,7 +106,10 @@ public class AuthenticatedActionsHandler {
         if (deployment.getPolicyEnforcer() != null) {
             if (exposeHeaders != null) {
                 exposeHeaders += ",";
+            } else {
+                exposeHeaders = "";
             }
+
             exposeHeaders += "WWW-Authenticate";
         }
 
