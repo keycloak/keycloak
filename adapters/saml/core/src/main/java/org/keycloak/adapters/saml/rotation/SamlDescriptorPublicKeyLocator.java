@@ -36,6 +36,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.api.util.KeyInfoTools;
+import java.security.cert.CertificateException;
 
 /**
  * This class defines a {@link KeyLocator} that looks up public keys and certificates in IdP's
@@ -147,6 +148,11 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
         for (KeyInfo ki : signingCerts) {
             KeyName keyName = KeyInfoTools.getKeyName(ki);
             X509Certificate x509certificate = KeyInfoTools.getX509Certificate(ki);
+            try {
+                x509certificate.checkValidity();
+            } catch (CertificateException ex) {
+                x509certificate = null;
+            }
             if (x509certificate != null && keyName != null) {
                 LOG.tracef("Registering signing certificate %s", keyName.getName());
                 this.publicKeyCache.put(keyName.getName(), x509certificate.getPublicKey());

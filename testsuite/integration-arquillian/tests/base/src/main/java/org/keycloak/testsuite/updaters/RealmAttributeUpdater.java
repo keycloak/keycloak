@@ -41,6 +41,16 @@ public class RealmAttributeUpdater {
         return this;
     }
 
+    public RealmAttributeUpdater setPublicKey(String key) {
+        this.rep.setPublicKey(key);
+        return this;
+    }
+
+    public RealmAttributeUpdater setPrivateKey(String key) {
+        this.rep.setPrivateKey(key);
+        return this;
+    }
+
     public Closeable update() {
         realmResource.update(rep);
 
