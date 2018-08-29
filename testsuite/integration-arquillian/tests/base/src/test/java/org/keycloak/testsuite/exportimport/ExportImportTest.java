@@ -38,7 +38,10 @@ import java.io.File;
 import java.net.URL;
 import java.util.*;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -69,6 +72,21 @@ public class ExportImportTest extends AbstractKeycloakTest {
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
         testRealm2.setId("test-realm");
         testRealms.add(testRealm2);
+    }
+
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
+    @Override
+    public void beforeAbstractKeycloakTestRealmImport() {
+        // remove all realms (accidentally left by other tests) except for master
+        adminClient.realms().findAll().stream()
+                .map(RealmRepresentation::getRealm)
+                .filter(realmName -> ! realmName.equals("master"))
+                .forEach(this::removeRealm);
+        assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
     }
 
     private void setEventsConfig(RealmRepresentation realm) {
