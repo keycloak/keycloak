@@ -176,6 +176,41 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         assertEquals(403, response.getStatus());
     }
 
+    @Test
+    public void testMappedPathEnforcementModeDisabled() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/resourceb");
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(403, response.getStatus());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), null).getAccessToken();
+
+        httpFacade = createHttpFacade("/api/resourcea", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/resourceb", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+        response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(403, response.getStatus());
+
+        httpFacade = createHttpFacade("/api/resource/public", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
     private void initAuthorizationSettings(ClientResource clientResource) {
         if (clientResource.authorization().resources().findByName("Resource A").isEmpty()) {
             JSPolicyRepresentation policy = new JSPolicyRepresentation();
