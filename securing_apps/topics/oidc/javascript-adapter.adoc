@@ -317,7 +317,9 @@ Redirects to login form on (options is an optional object with redirectUri and/o
 Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after login.
-* prompt - By default the login screen is displayed if the user is not logged-in to {project_name}. To only authenticate to the application if the user is already logged-in and not display the login page if the user is not logged-in, set this option to `none`. To always require re-authentication and ignore SSO, set this option to `login` .
+* prompt - This parameter allows to slightly customize the login flow on the {project_name} server side.
+For example enforce displaying the login screen in case of value `login`. See link:#_params_forwarding[Parameters Forwarding Section]
+for the details and all the possible values of the `prompt` parameter.
 * maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.
 * scope - Used to forward the scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
