@@ -42,6 +42,11 @@ import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.adapters.cloned.HttpClientBuilder;
 import java.net.URI;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -205,7 +210,12 @@ public class DeploymentBuilder {
             Certificate cert = null;
             try {
                 cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+                if (cert instanceof X509Certificate) {
+                    ((X509Certificate) cert).checkValidity();
+                }
             } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            } catch (CertificateException e) {
                 throw new RuntimeException(e);
             }
             publicKey = cert.getPublicKey();
@@ -224,7 +234,12 @@ public class DeploymentBuilder {
         if (key.getPublicKeyPem() != null) {
             publicKey = PemUtils.decodePublicKey(key.getPublicKeyPem().trim());
         } else {
-            Certificate cert = PemUtils.decodeCertificate(key.getCertificatePem().trim());
+            X509Certificate cert = PemUtils.decodeCertificate(key.getCertificatePem().trim());
+            try {
+                cert.checkValidity();
+            } catch (CertificateException ex) {
+                throw new RuntimeException(ex);
+            }
             publicKey = cert.getPublicKey();
         }
         return publicKey;

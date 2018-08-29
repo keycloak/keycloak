@@ -248,7 +248,7 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
-                return null;
+                throw new UnsupportedOperationException("Not implemented yet.");
             }
         };
 
