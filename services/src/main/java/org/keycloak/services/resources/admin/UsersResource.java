@@ -179,7 +179,8 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("first") Integer firstResult,
-                                             @QueryParam("max") Integer maxResults) {
+                                             @QueryParam("max") Integer maxResults,
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         auth.users().requireQuery();
 
         firstResult = firstResult != null ? firstResult : -1;
@@ -216,9 +217,12 @@ public class UsersResource {
         }
 
         boolean canViewGlobal = auth.users().canView();
+        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
         for (UserModel user : userModels) {
             if (!canViewGlobal  && !auth.users().canView(user)) continue;
-            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
+            UserRepresentation userRep = briefRepresentationB
+              ? ModelToRepresentation.toBriefRepresentation(user)
+              : ModelToRepresentation.toRepresentation(session, realm, user);
             userRep.setAccess(auth.users().getAccess(user));
             results.add(userRep);
         }

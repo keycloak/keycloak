@@ -235,6 +235,7 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
         
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
+        $scope.query.briefRepresentation = 'true';
         
         if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
