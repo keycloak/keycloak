@@ -88,7 +88,11 @@ public class LogoutEndpoint {
     /**
      * Logout user session.  User must be logged in via a session cookie.
      *
+     * When the logout is initiated by a remote idp, the parameter "initiating_idp" can be supplied. This param will
+     * prevent upstream logout (since the logout procedure has already been started in the remote idp).
+     *
      * @param redirectUri
+     * @param initiatingIdp The alias of the idp initiating the logout.
      * @return
      */
     @GET
@@ -96,7 +100,8 @@ public class LogoutEndpoint {
     public Response logout(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, // deprecated
                            @QueryParam("id_token_hint") String encodedIdToken,
                            @QueryParam("post_logout_redirect_uri") String postLogoutRedirectUri,
-                           @QueryParam("state") String state) {
+                           @QueryParam("state") String state,
+                           @QueryParam("initiating_idp") String initiatingIdp) {
         String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
 
         if (redirect != null) {
@@ -130,7 +135,7 @@ public class LogoutEndpoint {
             if (state != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
             userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
             logger.debug("Initiating OIDC browser logout");
-            Response response =  AuthenticationManager.browserLogout(session, realm, authResult.getSession(), session.getContext().getUri(), clientConnection, headers);
+            Response response =  AuthenticationManager.browserLogout(session, realm, authResult.getSession(), session.getContext().getUri(), clientConnection, headers, initiatingIdp);
             logger.debug("finishing OIDC browser logout");
             return response;
         } else if (userSession != null) { // non browser logout

@@ -455,14 +455,20 @@ public class AuthenticationManager {
         for (UserSessionModel userSession : userSessions) {
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
-                AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
+                backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
                 clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                 TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
             }
         }
     }
 
-    public static Response browserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+    public static Response browserLogout(KeycloakSession session,
+                                         RealmModel realm,
+                                         UserSessionModel userSession,
+                                         UriInfo uriInfo,
+                                         ClientConnection connection,
+                                         HttpHeaders headers,
+                                         String initiatingIdp) {
         if (userSession == null) return null;
 
         if (logger.isDebugEnabled()) {
@@ -483,7 +489,7 @@ public class AuthenticationManager {
         }
 
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
-        if (brokerId != null) {
+        if (brokerId != null && !brokerId.equals(initiatingIdp)) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
             response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) {
