@@ -248,10 +248,10 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     @Override
     public ResourceServer realmResourceServer() {
         if (realmResourceServer != null) return realmResourceServer;
-        ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
         ClientModel client = getRealmManagementClient();
         if (client == null) return null;
-        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+        ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
+        realmResourceServer = resourceServerStore.findById(client.getId());
         return realmResourceServer;
 
     }
