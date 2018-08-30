@@ -53,9 +53,11 @@
                 <p class="alert success">${successMessage}</p>
             <#elseif errorMessage?has_content>
                 <p class="alert error">${errorMessage}</p>
+                <h3><img src="welcome-content/user.png">Administration Console</h3>
             <#elseif bootstrap>
                 <#if localUser>
-                    <p class="create-user">Please create an initial admin user to get started.</p>
+                    <h3><img src="welcome-content/user.png">Administration Console</h3>
+                    <p>Please create an initial admin user to get started.</p>
                 <#else>
                     <p class="welcome-message">
                         <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
@@ -87,7 +89,7 @@
                 </form>
             </#if>
             <div class="welcome-primary-link">
-              <h3><a href="admin/"><img src="welcome-content/user.png">Administration Console</a></h3>
+              <h3><a href="admin/"><img src="welcome-content/user.png">Administration Console <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
               <div class="description">
                 Centrally manage all aspects of the KeyCloak server
               </div>
@@ -96,22 +98,24 @@
         </div>
         <div class="col-xs-12 col-sm-4">
           <div class="card-pf h-l">
-            <h3><a href="${properties.documentationUrl}"><img src="welcome-content/admin-console.png">Documentation</a></h3>
+            <h3><a href="${properties.documentationUrl}"><img class="doc-img" src="welcome-content/admin-console.png">Documentation <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
             <div class="description">
+
               User Guide, Admin REST API and Javadocs
+
             </div>
           </div>
         </div>
         <div class="col-xs-12 col-sm-4">
         <#if properties.displayCommunityLinks = "true">
           <div class="card-pf h-m">
-            <h3><a href="http://www.keycloak.org"><img src="welcome-content/keycloak-project.png">Keycloak Project</a></h3>
+            <h3><a href="http://www.keycloak.org"><img src="welcome-content/keycloak-project.png">Keycloak Project <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
           <div class="card-pf h-m">
-            <h3><a href="https://lists.jboss.org/mailman/listinfo/keycloak-user"><img src="welcome-content/mail.png">Mailing List</a></h3>
+            <h3><a href="https://lists.jboss.org/mailman/listinfo/keycloak-user"><img src="welcome-content/mail.png">Mailing List <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
           <div class="card-pf h-m">
-            <h3><a href="https://issues.jboss.org/browse/KEYCLOAK"><img src="welcome-content/bug.png">Report an issue</a></h3>
+            <h3><a href="https://issues.jboss.org/browse/KEYCLOAK"><img src="welcome-content/bug.png">Report an issue <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
         </#if>
         </div>
