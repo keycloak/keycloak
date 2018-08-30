@@ -91,7 +91,7 @@ public abstract class CacheManager {
 
     }
 
-    public <T> T get(String id, Class<T> type) {
+    public <T extends Revisioned> T get(String id, Class<T> type) {
         Revisioned o = (Revisioned)cache.get(id);
         if (o == null) {
             return null;
