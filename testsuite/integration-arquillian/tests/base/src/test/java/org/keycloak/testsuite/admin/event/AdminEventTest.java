@@ -20,26 +20,26 @@ package org.keycloak.testsuite.admin.event;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test getting and filtering admin events.
@@ -74,29 +74,29 @@ public class AdminEventTest extends AbstractEventTest {
     @Test
     public void clearAdminEventsTest() {
         createUser("user0");
-        assertEquals(1, events().size());
+        assertThat(events().size(), is(equalTo(1)));
         testRealmResource().clearAdminEvents();
-        assertEquals(Collections.EMPTY_LIST, events());
+        assertThat(events(), is(empty()));
     }
 
     @Test
     public void adminEventAttributeTest() {
         createUser("user5");
         List<AdminEventRepresentation> events = events();
-        assertEquals(1, events.size());
+        assertThat(events().size(), is(equalTo(1)));
 
         AdminEventRepresentation event = events.get(0);
-        assertTrue(event.getTime() > 0);
-        assertEquals(realmName(), event.getRealmId());
-        assertEquals("CREATE", event.getOperationType());
-        assertNotNull(event.getResourcePath());
-        assertNull(event.getError());
+        assertThat(event.getTime(), is(greaterThan(0L)));
+        assertThat(event.getRealmId(), is(equalTo(realmName())));
+        assertThat(event.getOperationType(), is(equalTo("CREATE")));
+        assertThat(event.getResourcePath(), is(notNullValue()));
+        assertThat(event.getError(), is(nullValue()));
 
         AuthDetailsRepresentation details = event.getAuthDetails();
-        assertEquals("master", details.getRealmId());
-        assertNotNull(details.getClientId());
-        assertNotNull(details.getUserId());
-        assertNotNull(details.getIpAddress());
+        assertThat(details.getRealmId(), is(equalTo("master")));
+        assertThat(details.getClientId(), is(notNullValue()));
+        assertThat(details.getUserId(), is(notNullValue()));
+        assertThat(details.getIpAddress(), is(notNullValue()));
     }
 
     @Test
@@ -104,13 +104,13 @@ public class AdminEventTest extends AbstractEventTest {
         createUser("user1");
         List<AdminEventRepresentation> events = events();
 
-        assertEquals(1, events.size());
+        assertThat(events.size(), is(equalTo(1)));
         AdminEventRepresentation event = events().get(0);
-        assertEquals("CREATE", event.getOperationType());
+        assertThat(event.getOperationType(), is(equalTo("CREATE")));
 
-        assertEquals(realmName(), event.getRealmId());
-        assertEquals("master", event.getAuthDetails().getRealmId());
-        assertNull(event.getRepresentation());
+        assertThat(event.getRealmId(), is(equalTo(realmName())));
+        assertThat(event.getAuthDetails().getRealmId(), is(equalTo("master")));
+        assertThat(event.getRepresentation(), is(nullValue()));
     }
 
     @Test
@@ -119,10 +119,12 @@ public class AdminEventTest extends AbstractEventTest {
         saveConfig();
 
         createUser("user2");
-        AdminEventRepresentation event = events().get(0);
-        assertNotNull(event.getRepresentation());
-        assertTrue(event.getRepresentation().contains("foo"));
-        assertTrue(event.getRepresentation().contains("bar"));
+        AdminEventRepresentation event = events().stream()
+                .filter(adminEventRep -> adminEventRep.getOperationType().equals("CREATE"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Wasn't able to obtain CREATE admin event."));
+        assertThat(event.getRepresentation(), is(notNullValue()));
+        assertThat(event.getRepresentation(), allOf(containsString("foo"), containsString("bar")));
     }
 
     @Test
@@ -131,10 +133,10 @@ public class AdminEventTest extends AbstractEventTest {
         createUser("user3");
         createUser("user4");
         updateRealm();
-        assertEquals(3, events().size());
+        assertThat(events().size(), is(equalTo(3)));
 
         List<AdminEventRepresentation> events = testRealmResource().getAdminEvents(Arrays.asList("CREATE"), null, null, null, null, null, null, null, null, null);
-        assertEquals(2, events.size());
+        assertThat(events.size(), is(equalTo(2)));
     }
 
     @Test
@@ -149,19 +151,21 @@ public class AdminEventTest extends AbstractEventTest {
             testingClient.testing("test").onAdminEvent(event, false);
         }
 
-        assertEquals(100, realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null).size());
-        assertEquals(105, realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 105).size());
-        assertTrue(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size() >= 110);
+        assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null).size(), is(equalTo(100)));
+        assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 105).size(), is(equalTo(105)));
+        assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size(), is(greaterThanOrEqualTo(110)));
     }
 
-    private void checkupdateRealmEventsConfigEvent(int size) {
+    private void checkUpdateRealmEventsConfigEvent(int size) {
         List<AdminEventRepresentation> events = events();
-        assertEquals(size, events.size());
-        AdminEventRepresentation event = events().get(0);assertEquals("UPDATE", event.getOperationType());
-        assertEquals(realmName(), event.getRealmId());
-        assertEquals("events/config", event.getResourcePath());
-        assertEquals("master", event.getAuthDetails().getRealmId());
-        assertNotNull(event.getRepresentation());
+        assertThat(events.size(), is(equalTo(size)));
+        
+        AdminEventRepresentation event = events().get(0);
+        assertThat(event.getOperationType(), is(equalTo("UPDATE")));
+        assertThat(event.getRealmId(), is(equalTo(realmName())));
+        assertThat(event.getResourcePath(), is(equalTo("events/config")));
+        assertThat(event.getAuthDetails().getRealmId(), is(equalTo("master")));
+        assertThat(event.getRepresentation(), is(notNullValue()));
     }
     
     @Test
@@ -170,21 +174,21 @@ public class AdminEventTest extends AbstractEventTest {
         configRep.setAdminEventsDetailsEnabled(Boolean.TRUE);
         configRep.setAdminEventsEnabled(Boolean.TRUE);
         saveConfig();
-        checkupdateRealmEventsConfigEvent(1);
+        checkUpdateRealmEventsConfigEvent(1);
         
         // any other change should be store too
         configRep.setEventsEnabled(Boolean.TRUE);
         saveConfig();
-        checkupdateRealmEventsConfigEvent(2);
+        checkUpdateRealmEventsConfigEvent(2);
         
         // change from ON to OFF should be stored too
         configRep.setAdminEventsEnabled(Boolean.FALSE);
         saveConfig();
-        checkupdateRealmEventsConfigEvent(3);
+        checkUpdateRealmEventsConfigEvent(3);
         
         // another change should not be stored cos it was OFF already
         configRep.setAdminEventsDetailsEnabled(Boolean.FALSE);
         saveConfig();
-        assertEquals(3, events().size());
+        assertThat(events().size(), is(equalTo(3)));
     }
 }
