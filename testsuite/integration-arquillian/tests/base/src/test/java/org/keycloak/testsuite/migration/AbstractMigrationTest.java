@@ -58,12 +58,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.keycloak.common.Profile;
@@ -496,17 +499,20 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testRequiredActionsPriority(RealmResource... realms) {
         log.info("testing required action's priority");
         for (RealmResource realm : realms) {
+            log.info("Taking required actions from realm: " + realm.toRepresentation().getRealm());
             List<RequiredActionProviderRepresentation> actions = realm.flows().getRequiredActions();
 
             // Checking if the actions are in alphabetical order
             List<String> nameList = actions.stream().map(x -> x.getName()).collect(Collectors.toList());
+            log.debug("Obtained required actions: " + nameList);
             List<String> sortedByName = nameList.stream().sorted().collect(Collectors.toList());
-            assertArrayEquals(nameList.toArray(), sortedByName.toArray());
+            log.debug("Manually sorted required actions: " + sortedByName);
+            assertThat(nameList, is(equalTo(sortedByName)));
 
             // Checking the priority
             int priority = 10;
             for (RequiredActionProviderRepresentation action : actions) {
-                assertEquals(priority, action.getPriority());
+                assertThat(action.getPriority(), is(equalTo(priority)));
                 priority += 10;
             }
         }
