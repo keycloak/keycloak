@@ -84,7 +84,7 @@
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :jdgserver_name: Infinispan
-:jdgserver_version: 8.2.8
+:jdgserver_version: 9.2.4
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5

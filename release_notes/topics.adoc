@@ -1,4 +1,7 @@
 ifeval::[{project_community}==true]
+== {project_name_full} 4.4.0.Final
+include::topics/4_4_0_final.adoc[leveloffset=2]
+
 == {project_name_full} 4.3.0.Final
 include::topics/4_3_0_final.adoc[leveloffset=2]
 

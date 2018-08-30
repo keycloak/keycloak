@@ -1,0 +1,5 @@
+= Upgrade to WildFly 13
+
+The {project_name} server was upgraded to use WildFly 13 under the covers. This means update of the underlying dependencies and also
+some changes in the configuration. We now also support WildFly 13 adapter and we upgraded the underlying JDG/Infinispan server version for
+the Cross-DC setup. See link:{upgradingguide_link}[{upgradingguide_name}] for more details.
