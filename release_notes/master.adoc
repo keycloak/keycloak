@@ -8,4 +8,12 @@ include::topics/templates/document-attributes-product.adoc[]
 
 = {releasenotes_name}
 
-include::topics.adoc[]
+== {project_name_full} 7.3.CD03
+
+include::topics/4_3_0_final.adoc[leveloffset=2]
+include::topics/4_2_0_final.adoc[leveloffset=2]
+include::topics/4_1_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 7.3.CD02
+include::topics/4_0_0_final.adoc[leveloffset=2]
+include::topics/4_0_0_beta3.adoc[leveloffset=2]
