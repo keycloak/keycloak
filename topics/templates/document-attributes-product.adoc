@@ -3,8 +3,8 @@
 :project_product_cd: true
 :project_name: Red Hat Single Sign-On
 :project_version: 7.3.0.CD03
-:project_versionMvn: 4.3.0.Final-redhat-00001
-:project_versionNpm: 4.3.0.Final-redhat-00001
+:project_versionMvn: 4.3.0.Final-redhat-00002
+:project_versionNpm: 4.3.0.Final-redhat-00002
 :project_images: rhsso-images
 :project_openshift_product_name: RH-SSO for OpenShift
 
@@ -17,7 +17,7 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
-:project_versionDoc: 1
+:project_versionDoc: 7.3.0.cd03
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]
