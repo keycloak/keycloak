@@ -12,7 +12,8 @@ To start the {project_name} server while also adjusting the port:
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ .../bin/standalone.sh -Djboss.socket.binding.port-offset=100
+$ cd bin
+$ ./standalone.sh -Djboss.socket.binding.port-offset=100
 ----
 
 .Windows
