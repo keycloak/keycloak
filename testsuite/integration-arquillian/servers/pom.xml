@@ -32,10 +32,7 @@
     <properties>
         <script.suffix>sh</script.suffix>
         
-        <!--app container versions-->        
-        <wildfly10.version>10.1.0.Final</wildfly10.version>
-        <wildfly9.version>9.0.2.Final</wildfly9.version>
-        <wildfly8.version>8.2.1.Final</wildfly8.version>
+        <!--app container versions-->
         <eap6.version>7.5.20.Final-redhat-1</eap6.version>
         <eap71.version>7.1.4.GA-redhat-1</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>

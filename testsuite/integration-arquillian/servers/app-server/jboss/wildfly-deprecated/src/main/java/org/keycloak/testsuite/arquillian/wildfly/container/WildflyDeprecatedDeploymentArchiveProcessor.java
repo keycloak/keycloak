@@ -27,9 +27,9 @@ import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class Wildfly10DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
+public class WildflyDeprecatedDeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
-    private final Logger log = Logger.getLogger(Wildfly10DeploymentArchiveProcessor.class);
+    private final Logger log = Logger.getLogger(WildflyDeprecatedDeploymentArchiveProcessor.class);
     
     @Override
     public void process(Archive<?> archive, TestClass testClass) {

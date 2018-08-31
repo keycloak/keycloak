@@ -357,24 +357,24 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-wildfly10</id>
+            <id>app-server-wildfly-deprecated</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>wildfly10</value>
+                    <value>wildfly-deprecated</value>
                 </property>
             </activation>
             <properties>
-                <app.server>wildfly10</app.server> <!--in case the profile is called directly-->
+                <app.server>wildfly-deprecated</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
 
-                <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-                <infinispan.version>8.2.5.Final</infinispan.version>    <!-- KEYCLOAK-5302 -->
+                <arquillian-wildfly-container.version>${wildfly.deprecated.arquillian.wildfly.container}</arquillian-wildfly-container.version>
+                <infinispan.version>${wildfly.deprecated.infinispan.version}</infinispan.version>    <!-- KEYCLOAK-5302 -->
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-wildfly10</artifactId>
+                    <artifactId>integration-arquillian-servers-app-server-wildfly-deprecated</artifactId>
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>
@@ -383,43 +383,7 @@
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
-                    <version>${wildfly10.core.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-wildfly9</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly9</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>wildfly9</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-wildfly9</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>${wildfly.core.version}</version>
+                    <version>${wildfly.deprecated.wildfly.core.version}</version>
                 </dependency>
             </dependencies>
             <build>

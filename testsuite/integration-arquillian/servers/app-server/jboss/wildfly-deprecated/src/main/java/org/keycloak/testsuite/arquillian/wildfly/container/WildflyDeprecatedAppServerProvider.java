@@ -27,10 +27,10 @@ import org.keycloak.testsuite.arquillian.container.AppServerContainerProvider;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class Wildfly9AppServerProvider implements AppServerContainerProvider {
+public class WildflyDeprecatedAppServerProvider implements AppServerContainerProvider {
 
     private Node configuration;
-    private static final String containerName = "wildfly9";
+    private static final String containerName = "wildfly-deprecated";
 
     private final String appServerHome;
     private final String appServerJavaHome;
@@ -39,7 +39,7 @@ public class Wildfly9AppServerProvider implements AppServerContainerProvider {
     private final String managementPort;
     private final String startupTimeoutInSeconds;
 
-    public Wildfly9AppServerProvider() {
+    public WildflyDeprecatedAppServerProvider() {
         appServerHome = System.getProperty("app.server.home");
         appServerJavaHome = System.getProperty("app.server.java.home");
         appServerPortOffset = System.getProperty("app.server.port.offset");
@@ -65,7 +65,7 @@ public class Wildfly9AppServerProvider implements AppServerContainerProvider {
         List<Node> containers = new ArrayList<>();
 
         containers.add(standaloneContainer());
-//        containers.add(clusterGroup());
+        containers.add(clusterGroup());
 
         return containers;
     }
@@ -106,7 +106,7 @@ public class Wildfly9AppServerProvider implements AppServerContainerProvider {
 
     private Node clusterGroup() {
         Node group = new Node("group");
-        group.attribute("qualifier", "app-server-wildfly9-clustered");
+        group.attribute("qualifier", "app-server-wildfly-deprecated-clustered");
         addHaNodeContainer(group, 1);
         addHaNodeContainer(group, 2);
         return group;
