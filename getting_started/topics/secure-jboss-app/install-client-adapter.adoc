@@ -45,7 +45,7 @@ $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 ----
 endif::[]
 
-NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution. 
+NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution and may take some time to complete.
 
 Start the application server.
 
