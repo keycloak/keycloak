@@ -626,27 +626,15 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-wildfly9</id>
+            <id>app-server-wildfly-deprecated</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>wildfly9</value>
+                    <value>wildfly-deprecated</value>
                 </property>
             </activation>
             <modules>
-                <module>wildfly9</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly10</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly10</value>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly10</module>
+                <module>wildfly-deprecated</module>
             </modules>
         </profile>
         <profile>

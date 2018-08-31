@@ -25,23 +25,22 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-wildfly9</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-wildfly-deprecated</artifactId>
     <packaging>jar</packaging>
-    <name>App Server - Wildfly 9</name>
+    <name>App Server - Wildfly Deprecated</name>
     
     <properties>
-        <app.server.jboss>wildfly9</app.server.jboss>
+        <app.server.jboss>wildfly-deprecated</app.server.jboss>
         
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
-        <app.server.jboss.version>${wildfly9.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>wildfly-${wildfly9.version}</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.version>${wildfly.deprecated.version}</app.server.jboss.version>
+        <app.server.jboss.unpacked.folder.name>wildfly-${wildfly.deprecated.version}</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
 
-        <skip.adapter.offline.installation>false</skip.adapter.offline.installation>
-        <skip.configure.clustered.scenario>true</skip.configure.clustered.scenario>
+        <skip.elytron.adapter.installation>false</skip.elytron.adapter.installation>
     </properties>
 
     <dependencies>

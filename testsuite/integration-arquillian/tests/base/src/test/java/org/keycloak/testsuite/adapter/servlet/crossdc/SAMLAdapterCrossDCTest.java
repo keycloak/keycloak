@@ -37,7 +37,7 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
  * @author hmlnarik
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10_CLUSTER)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 public class SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {
 

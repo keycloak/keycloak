@@ -18,17 +18,17 @@ package org.keycloak.testsuite.arquillian.wildfly;
 
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.keycloak.testsuite.arquillian.wildfly.container.Wildfly10DeploymentArchiveProcessor;
+import org.keycloak.testsuite.arquillian.wildfly.container.WildflyDeprecatedDeploymentArchiveProcessor;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class Wildfly10AppServerArquillianExtension implements LoadableExtension {
+public class WildflyDeprecatedAppServerArquillianExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
-        builder.service(ApplicationArchiveProcessor.class, Wildfly10DeploymentArchiveProcessor.class);
+        builder.service(ApplicationArchiveProcessor.class, WildflyDeprecatedDeploymentArchiveProcessor.class);
     }
 
 }
