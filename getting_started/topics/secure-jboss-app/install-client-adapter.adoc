@@ -52,7 +52,8 @@ Start the application server.
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ .../bin/standalone.sh
+$ cd bin
+$ ./standalone.sh
 ----
 
 .Windows
