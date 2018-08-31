@@ -16,7 +16,7 @@
  */
  
 import {Injectable} from '@angular/core';
-import {Http, Response, RequestOptionsArgs} from '@angular/http';
+import {Http, Response, RequestOptionsArgs, Headers} from '@angular/http';
 
 import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
@@ -48,9 +48,10 @@ export class AccountServiceClient {
     
     public doPostRequest(endpoint: string,
                          responseHandler: Function,
+                         body?:any,
                          options?: RequestOptionsArgs,
                          successMessage?: string) {
-        this.http.post(this.accountUrl + endpoint, options)
+        this.http.post(this.accountUrl + endpoint, body, options)
             .subscribe((res: Response) => this.handleAccountUpdated(responseHandler, res, successMessage),
                        (error: Response) => this.handleServiceError(error));
     }
@@ -67,6 +68,15 @@ export class AccountServiceClient {
                     options?: RequestOptionsArgs,
                     successMessage?: string) {
         this.http.delete(this.accountUrl + endpoint, options)
+            .subscribe((res: Response) => this.handleAccountUpdated(responseHandler, res, successMessage),
+                       (error: Response) => this.handleServiceError(error));
+    }
+    
+    public doPut(endpoint: string,
+                    responseHandler: Function,
+                    options?: RequestOptionsArgs,
+                    successMessage?: string) {
+        this.http.put(this.accountUrl + endpoint, options)
             .subscribe((res: Response) => this.handleAccountUpdated(responseHandler, res, successMessage),
                        (error: Response) => this.handleServiceError(error));
     }

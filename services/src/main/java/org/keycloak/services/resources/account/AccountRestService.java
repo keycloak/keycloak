@@ -265,8 +265,12 @@ public class AccountRestService {
     public AccountCredentialResource credentials() {
         return new AccountCredentialResource(session, event, user);
     }
+    
+    @Path("/linked-accounts")
+    public LinkedAccountsResource linkedAccounts() {
+        return new LinkedAccountsResource(session, request, client, auth, event, user);
+    }
 
-    // TODO Federated identities
     // TODO Applications
     // TODO Logs
 

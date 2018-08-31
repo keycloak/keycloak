@@ -34,7 +34,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -253,5 +252,5 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     private String getAccountUrl(String resource) {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
     }
-
+    
 }
