@@ -6,7 +6,8 @@ To boot the {project_name} server, go to the `bin` directory of the server distr
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ .../bin/standalone.sh
+$ cd bin
+$ ./standalone.sh
 ----
 
 .Windows
