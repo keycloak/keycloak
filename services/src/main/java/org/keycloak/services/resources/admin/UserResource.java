@@ -561,11 +561,9 @@ public class UserResource {
     }
 
     /**
-     * Set up a temporary password for the user
+     * Set up a new password for the user.
      *
-     * User will have to reset the temporary password next time they log in.
-     *
-     * @param pass A Temporary password
+     * @param pass The representation must contain a value and the type equals to "password"
      */
     @Path("reset-password")
     @PUT
