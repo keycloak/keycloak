@@ -40,9 +40,13 @@ import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
@@ -59,13 +63,13 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
  */
 public class BrokerTest extends AbstractSamlTest {
 
-    private IdentityProviderRepresentation addIdentityProvider() {
+    private IdentityProviderRepresentation addIdentityProvider(String samlEndpoint) {
         IdentityProviderRepresentation identityProvider = IdentityProviderBuilder.create()
           .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
           .alias(SAML_BROKER_ALIAS)
           .displayName("SAML")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml.idp/saml")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://saml.idp/saml")
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, samlEndpoint)
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, samlEndpoint)
           .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
@@ -107,7 +111,7 @@ public class BrokerTest extends AbstractSamlTest {
 
         AuthenticationExecutionInfoRepresentation reviewProfileAuthenticator = null;
         String firstBrokerLoginFlowAlias = null;
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider())) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/saml"))) {
             IdentityProviderRepresentation idpRepresentation = idp.identityProvider().toRepresentation();
             firstBrokerLoginFlowAlias = idpRepresentation.getFirstBrokerLoginFlowAlias();
             List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(firstBrokerLoginFlowAlias);
@@ -150,6 +154,34 @@ public class BrokerTest extends AbstractSamlTest {
         } finally {
             reviewProfileAuthenticator.setRequirement(Requirement.REQUIRED.name());
             realm.flows().updateExecutions(firstBrokerLoginFlowAlias, reviewProfileAuthenticator);
+        }
+    }
+
+    @Test
+    public void testRedirectQueryParametersPreserved() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/?service=name&serviceType=prod"))) {
+            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+
+              // Virtually perform login at IdP (return artificial SAML response)
+              .getSamlResponse(REDIRECT);
+
+            assertThat(samlResponse.getSamlObject(), Matchers.instanceOf(AuthnRequestType.class));
+            AuthnRequestType ar = (AuthnRequestType) samlResponse.getSamlObject();
+            assertThat(ar.getDestination(), Matchers.equalTo(URI.create("http://saml.idp/?service=name&serviceType=prod")));
+
+            Header[] headers = new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+              .doNotFollowRedirects()
+              .executeAndTransform(resp -> resp.getHeaders(HttpHeaders.LOCATION));
+
+            assertThat(headers.length, Matchers.is(1));
+            assertThat(headers[0].getValue(), Matchers.containsString("http://saml.idp/?service=name&serviceType=prod"));
+            assertThat(headers[0].getValue(), Matchers.containsString("SAMLRequest"));
         }
     }
 
