@@ -121,6 +121,10 @@ public class DescriptionConverter {
             else configWrapper.setUseMtlsHoKToken(false);
         }
 
+        if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
+            configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
+        }
+
         return client;
     }
 
@@ -200,6 +204,9 @@ public class DescriptionConverter {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
         } else {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
+        }
+        if (config.getIdTokenSignedResponseAlg() != null) {
+            response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

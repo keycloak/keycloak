@@ -28,25 +28,6 @@ import java.util.HashMap;
  */
 public class OIDCAdvancedConfigWrapper {
 
-    private static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
-
-    private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
-    
-    private static final String REQUEST_OBJECT_REQUIRED = "request.object.required";
-    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI = "request or request_uri";
-    public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
-    public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
-
-    private static final String JWKS_URL = "jwks.url";
-
-    private static final String USE_JWKS_URL = "use.jwks.url";
-
-    private static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
-
-    // KEYCLOAK-6771 Certificate Bound Token
-    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
-    private static final String USE_MTLS_HOK_TOKEN = "tls.client.certificate.bound.access.tokens";
-
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -66,13 +47,13 @@ public class OIDCAdvancedConfigWrapper {
 
 
     public Algorithm getUserInfoSignedResponseAlg() {
-        String alg = getAttribute(USER_INFO_RESPONSE_SIGNATURE_ALG);
+        String alg = getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
         return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
     }
 
     public void setUserInfoSignedResponseAlg(Algorithm alg) {
         String algStr = alg==null ? null : alg.toString();
-        setAttribute(USER_INFO_RESPONSE_SIGNATURE_ALG, algStr);
+        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algStr);
     }
 
     public boolean isUserInfoSignatureRequired() {
@@ -80,61 +61,68 @@ public class OIDCAdvancedConfigWrapper {
     }
 
     public Algorithm getRequestObjectSignatureAlg() {
-        String alg = getAttribute(REQUEST_OBJECT_SIGNATURE_ALG);
+        String alg = getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
         return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
     }
 
     public void setRequestObjectSignatureAlg(Algorithm alg) {
         String algStr = alg==null ? null : alg.toString();
-        setAttribute(REQUEST_OBJECT_SIGNATURE_ALG, algStr);
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algStr);
     }
     
     public String getRequestObjectRequired() {
-        return getAttribute(REQUEST_OBJECT_REQUIRED);
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED);
     }
     
     public void setRequestObjectRequired(String requestObjectRequired) {
-        setAttribute(REQUEST_OBJECT_REQUIRED, requestObjectRequired);
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED, requestObjectRequired);
     }
 
     public boolean isUseJwksUrl() {
-        String useJwksUrl = getAttribute(USE_JWKS_URL);
+        String useJwksUrl = getAttribute(OIDCConfigAttributes.USE_JWKS_URL);
         return Boolean.parseBoolean(useJwksUrl);
     }
 
     public void setUseJwksUrl(boolean useJwksUrl) {
         String val = String.valueOf(useJwksUrl);
-        setAttribute(USE_JWKS_URL, val);
+        setAttribute(OIDCConfigAttributes.USE_JWKS_URL, val);
     }
 
     public String getJwksUrl() {
-        return getAttribute(JWKS_URL);
+        return getAttribute(OIDCConfigAttributes.JWKS_URL);
     }
 
     public void setJwksUrl(String jwksUrl) {
-        setAttribute(JWKS_URL, jwksUrl);
+        setAttribute(OIDCConfigAttributes.JWKS_URL, jwksUrl);
     }
 
     public boolean isExcludeSessionStateFromAuthResponse() {
-        String excludeSessionStateFromAuthResponse = getAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
+        String excludeSessionStateFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
         return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);
     }
 
     public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
         String val = String.valueOf(excludeSessionStateFromAuthResponse);
-        setAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
+        setAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
     public boolean isUseMtlsHokToken() {
-        String useUtlsHokToken = getAttribute(USE_MTLS_HOK_TOKEN);
+        String useUtlsHokToken = getAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN);
         return Boolean.parseBoolean(useUtlsHokToken);
     }
 
     public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
         String val = String.valueOf(useUtlsHokToken);
-        setAttribute(USE_MTLS_HOK_TOKEN, val);
+        setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
+    }
+
+    public String getIdTokenSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
+    }
+    public void setIdTokenSignedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
     }
 
     private String getAttribute(String attrKey) {

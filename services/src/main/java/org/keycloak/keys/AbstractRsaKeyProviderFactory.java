@@ -33,7 +33,8 @@ public abstract class AbstractRsaKeyProviderFactory implements KeyProviderFactor
         return ProviderConfigurationBuilder.create()
                 .property(Attributes.PRIORITY_PROPERTY)
                 .property(Attributes.ENABLED_PROPERTY)
-                .property(Attributes.ACTIVE_PROPERTY);
+                .property(Attributes.ACTIVE_PROPERTY)
+                .property(Attributes.ALGORITHM_PROPERTY);
     }
 
     @Override

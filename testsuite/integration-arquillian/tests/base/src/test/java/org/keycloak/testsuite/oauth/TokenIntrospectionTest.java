@@ -22,6 +22,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -32,9 +34,11 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
@@ -223,6 +227,35 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         // Assert expected scope
         OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
+    }
+
+    @Test
+    public void testIntrospectAccessTokenES256() throws Exception {
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+            assertEquals("ES256", new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
+
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+
+            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+            assertTrue(rep.isActive());
+            assertEquals("test-user@localhost", rep.getUserName());
+            assertEquals("test-app", rep.getClientId());
+            assertEquals(loginEvent.getUserId(), rep.getSubject());
+
+            // Assert expected scope
+            OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
     }
 
     @Test

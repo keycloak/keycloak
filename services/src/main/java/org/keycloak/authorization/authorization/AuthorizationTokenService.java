@@ -531,7 +531,7 @@ public class AuthorizationTokenService {
     private PermissionTicketToken verifyPermissionTicket(KeycloakAuthorizationRequest request) {
         String ticketString = request.getTicket();
 
-        if (ticketString == null || !Tokens.verifySignature(request.getKeycloakSession(), request.getRealm(), ticketString)) {
+        if (ticketString == null || !Tokens.verifySignature(request.getKeycloakSession(), ticketString)) {
             throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 

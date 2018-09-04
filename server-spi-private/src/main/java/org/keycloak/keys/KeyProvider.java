@@ -18,12 +18,8 @@
 package org.keycloak.keys;
 
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.provider.Provider;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**

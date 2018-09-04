@@ -20,11 +20,13 @@ package org.keycloak.protocol;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.crypto.SignatureContext;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.jose.jws.TokenSignature;
+import org.keycloak.jose.jws.TokenSignatureUtil;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -33,7 +35,6 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
@@ -110,11 +111,11 @@ public class RestartLoginCookie {
     }
 
     public String encode(KeycloakSession session, RealmModel realm) {
-        KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+        SignatureProvider provider = session.getProvider(SignatureProvider.class, TokenSignatureUtil.getCookieTokenSignatureAlgorithm(session));
+        SignatureContext signer = provider.signer();
 
         JWSBuilder builder = new JWSBuilder();
-        return builder.kid(activeKey.getKid()).jsonContent(this)
-               .hmac256(activeKey.getSecretKey());
+        return builder.jsonContent(this).sign(signer);
     }
 
     public RestartLoginCookie() {
@@ -153,13 +154,8 @@ public class RestartLoginCookie {
         }
         String encodedCookie = cook.getValue();
         JWSInput input = new JWSInput(encodedCookie);
-        String kid = input.getHeader().getKeyId();
-        SecretKey secretKey = kid == null ? session.keys().getActiveHmacKey(realm).getSecretKey() : session.keys().getHmacSecretKey(realm, input.getHeader().getKeyId());
-        if (secretKey == null) {
-            logger.debug("Failed to retrieve HMAC secret key for session restart");
-            return null;
-        }
-        if (!HMACProvider.verify(input, secretKey)) {
+
+        if (!TokenSignature.verify(session, input)) {
             logger.debug("Failed to verify encoded RestartLoginCookie");
             return null;
         }

@@ -24,7 +24,6 @@ import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Collections;
@@ -33,7 +32,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class GeneratedSecretKeyProvider implements KeyProvider {
+public abstract class AbstractGeneratedSecretKeyProvider implements KeyProvider {
 
     private final KeyStatus status;
     private final ComponentModel model;
@@ -43,7 +42,7 @@ public abstract class GeneratedSecretKeyProvider implements KeyProvider {
     private String type;
     private final String algorithm;
 
-    public GeneratedSecretKeyProvider(ComponentModel model, KeyUse use, String type, String algorithm) {
+    public AbstractGeneratedSecretKeyProvider(ComponentModel model, KeyUse use, String type, String algorithm) {
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
         this.kid = model.get(Attributes.KID_KEY);
         this.model = model;
@@ -69,7 +68,7 @@ public abstract class GeneratedSecretKeyProvider implements KeyProvider {
         key.setKid(kid);
         key.setUse(use);
         key.setType(type);
-        key.setAlgorithms(algorithm);
+        key.setAlgorithm(algorithm);
         key.setStatus(status);
         key.setSecretKey(secretKey);
 

@@ -24,12 +24,14 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
+
 import java.security.PublicKey;
 import java.util.*;
 import java.util.logging.Level;
@@ -143,6 +145,13 @@ public class TokenVerifier<T extends JsonWebToken> {
 
     private JWSInput jws;
     private T token;
+
+    private SignatureVerifierContext verifier = null;
+
+    public TokenVerifier<T> verifierContext(SignatureVerifierContext verifier) {
+        this.verifier = verifier;
+        return this;
+    }
 
     protected TokenVerifier(String tokenString, Class<T> clazz) {
         this.tokenString = tokenString;
@@ -337,27 +346,39 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     public void verifySignature() throws VerificationException {
-        AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
+        if (this.verifier != null) {
+            try {
+                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature())) {
+                    throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                }
+            } catch (Exception e) {
+                throw new VerificationException(e);
+            }
+        } else {
+            AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
 
-        if (null == algorithmType) {
-            throw new VerificationException("Unknown or unsupported token algorithm");
-        } else switch (algorithmType) {
-            case RSA:
-                if (publicKey == null) {
-                    throw new VerificationException("Public key not set");
-                }
-                if (!RSAProvider.verify(jws, publicKey)) {
-                    throw new TokenSignatureInvalidException(token, "Invalid token signature");
-                }   break;
-            case HMAC:
-                if (secretKey == null) {
-                    throw new VerificationException("Secret key not set");
-                }
-                if (!HMACProvider.verify(jws, secretKey)) {
-                    throw new TokenSignatureInvalidException(token, "Invalid token signature");
-                }   break;
-            default:
+            if (null == algorithmType) {
                 throw new VerificationException("Unknown or unsupported token algorithm");
+            } else switch (algorithmType) {
+                case RSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("Public key not set");
+                    }
+                    if (!RSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                case HMAC:
+                    if (secretKey == null) {
+                        throw new VerificationException("Secret key not set");
+                    }
+                    if (!HMACProvider.verify(jws, secretKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                default:
+                    throw new VerificationException("Unknown or unsupported token algorithm");
+            }
         }
     }
 
@@ -412,7 +433,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     public static <T extends JsonWebToken> Predicate<T> alternative(final Predicate<? super T>... predicates) {
         return new Predicate<T>() {
             @Override
-            public boolean test(T t) throws VerificationException {
+            public boolean test(T t) {
                 for (Predicate<? super T> predicate : predicates) {
                     try {
                         if (predicate.test(t)) {

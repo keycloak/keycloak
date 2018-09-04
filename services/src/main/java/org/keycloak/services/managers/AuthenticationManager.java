@@ -27,13 +27,16 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.SignatureContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.TokenSignatureUtil;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
@@ -64,10 +67,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.security.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.AbstractMap.SimpleEntry;
 
 /**
  * Stateless object that manages authentication
@@ -564,7 +565,7 @@ public class AuthenticationManager {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
         AccessToken identityToken = createIdentityToken(keycloakSession, realm, user, session, issuer);
-        String encoded = encodeToken(keycloakSession, realm, identityToken);
+        String encoded = encodeToken(keycloakSession, identityToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (session != null && session.isRememberMe()) {
@@ -606,15 +607,13 @@ public class AuthenticationManager {
         return null;
     }
 
-    protected static String encodeToken(KeycloakSession session, RealmModel realm, Object token) {
-        KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
-
-        logger.tracef("Encoding token with kid '%s'", activeKey.getKid());
+    protected static String encodeToken(KeycloakSession session, Object token) {
+        SignatureProvider provider = session.getProvider(SignatureProvider.class, TokenSignatureUtil.getCookieTokenSignatureAlgorithm(session));
+        SignatureContext signer = provider.signer();
 
         String encodedToken = new JWSBuilder()
-                .kid(activeKey.getKid())
                 .jsonContent(token)
-                .hmac256(activeKey.getSecretKey());
+                .sign(signer);
         return encodedToken;
     }
 
@@ -1118,23 +1117,10 @@ public class AuthenticationManager {
               .checkActive(checkActive)
               .checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
-            AlgorithmType algorithmType = verifier.getHeader().getAlgorithm().getType();
+            String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            if (AlgorithmType.RSA.equals(algorithmType)) {
-                PublicKey publicKey = session.keys().getRsaPublicKey(realm, kid);
-                if (publicKey == null) {
-                    logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
-                    return null;
-                }
-                verifier.publicKey(publicKey);
-            } else if (AlgorithmType.HMAC.equals(algorithmType)) {
-                SecretKey secretKey = session.keys().getHmacSecretKey(realm, kid);
-                if (secretKey == null) {
-                    logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
-                    return null;
-                }
-                verifier.secretKey(secretKey);
-            }
+            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
             if (checkActive) {

@@ -74,6 +74,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int failureFactor;
     //--- end brute force settings
 
+    protected String defaultSignatureAlgorithm;
     protected boolean revokeRefreshToken;
     protected int refreshTokenMaxReuse;
     protected int ssoSessionIdleTimeout;
@@ -179,6 +180,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         failureFactor = model.getFailureFactor();
         //--- end brute force settings
 
+        defaultSignatureAlgorithm = model.getDefaultSignatureAlgorithm();
         revokeRefreshToken = model.isRevokeRefreshToken();
         refreshTokenMaxReuse = model.getRefreshTokenMaxReuse();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
@@ -389,6 +391,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isEditUsernameAllowed() {
         return editUsernameAllowed;
+    }
+
+    public String getDefaultSignatureAlgorithm() {
+        return defaultSignatureAlgorithm;
     }
 
     public boolean isRevokeRefreshToken() {
