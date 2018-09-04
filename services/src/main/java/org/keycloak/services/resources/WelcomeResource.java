@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -25,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
@@ -171,8 +173,19 @@ public class WelcomeResource {
 
     private Response createWelcomePage(String successMessage, String errorMessage) {
         try {
-            Map<String, Object> map = new HashMap<>();
-            map.put("bootstrap", bootstrap);
+          Theme theme = getTheme();
+
+          Map<String, Object> map = new HashMap<>();
+
+          map.put("productName", Version.NAME);
+
+          map.put("properties", theme.getProperties());
+
+          URI uri = Urls.themeRoot(session.getContext().getUri().getBaseUri());
+          String resourcesPath = uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
+          map.put("resourcesPath", resourcesPath);
+
+           map.put("bootstrap", bootstrap);
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
@@ -189,7 +202,7 @@ public class WelcomeResource {
                 map.put("errorMessage", errorMessage);
             }
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
-            String result = freeMarkerUtil.processTemplate(map, "index.ftl", getTheme());
+            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
                     .entity(result)
