@@ -231,7 +231,7 @@ public class DeploymentArchiveProcessorUtils {
 
     private static String getAuthServerUrl() {
         String scheme = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
-        String host = System.getProperty("app.server.host", "localhost");
+        String host = System.getProperty("auth.server.host", "localhost");
         String port = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port", "8443") :
                 System.getProperty("auth.server.http.port", "8180");
 
