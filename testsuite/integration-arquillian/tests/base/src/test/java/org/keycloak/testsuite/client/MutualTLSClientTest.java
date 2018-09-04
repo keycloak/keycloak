@@ -110,6 +110,19 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    @Test
+   public void testSuccessfulClientInvocationWithClientIdInMatrixParams() throws Exception {
+      //given//when
+      OAuthClient.AccessTokenResponse token = null;
+      try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+         login(CLIENT_ID);
+         token = getAccessTokenResponseWithMatrixParams(CLIENT_ID, client);
+      }
+
+      //then
+      assertTokenObtained(token);
+   }
+
+   @Test
    public void testFailedClientInvocationWithProperCertificateAndWrongSubjectDN() throws Exception {
       //given
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOtherKeyStoreAndTrustStore;
@@ -185,13 +198,20 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Assert.assertNull(token.getAccessToken());
    }
 
+   private OAuthClient.AccessTokenResponse getAccessTokenResponseWithQueryParams(String clientId, CloseableHttpClient client) throws Exception {
+      return getAccessTokenWithUrl(oauth.getAccessTokenUrl() + "?client_id=" + clientId, client);
+   }
+
+   private OAuthClient.AccessTokenResponse getAccessTokenResponseWithMatrixParams(String clientId, CloseableHttpClient client) throws Exception {
+      return getAccessTokenWithUrl(oauth.getAccessTokenUrl() + ";client_id=" + clientId, client);
+   }
+
    /*
     * This is a very simplified version of OAuthClient#doAccessTokenRequest.
     * It test a scenario, where we do not follow the spec and specify client_id in Query Params (for in a form).
     */
-   private OAuthClient.AccessTokenResponse getAccessTokenResponseWithQueryParams(String clientId, CloseableHttpClient client) throws Exception {
-      OAuthClient.AccessTokenResponse token;// This is a very simplified version of
-      HttpPost post = new HttpPost(oauth.getAccessTokenUrl() + "?client_id=" + clientId);
+   private OAuthClient.AccessTokenResponse getAccessTokenWithUrl(String url, CloseableHttpClient client) throws Exception {
+      HttpPost post = new HttpPost(url);
       List<NameValuePair> parameters = new LinkedList<>();
       parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
       parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.getCurrentQuery().get(OAuth2Constants.CODE)));

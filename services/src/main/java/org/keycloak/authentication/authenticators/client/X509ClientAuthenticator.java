@@ -67,6 +67,15 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             if (client_id == null) {
+                client_id = context.getHttpRequest().getUri().getPathSegments().stream()
+                      .flatMap(segment -> segment.getMatrixParameters().entrySet().stream())
+                      .filter(matixParamMapEntry -> "client_id".equals(matixParamMapEntry.getKey()))
+                      .map(clientIdEntry -> clientIdEntry.getValue().get(0))
+                      .findFirst()
+                      .orElse(null);
+            }
+
+            if (client_id == null) {
                 Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
                 context.challenge(challengeResponse);
                 return;
