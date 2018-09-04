@@ -18,18 +18,54 @@ in the new installation.
 +
 For domain installations, create the empty directory {project_dirref}/domain/deployments.
 +
-NOTE: 
+NOTE:
 Files in the bin directory should not be overwritten by the files from previous versions. Changes should be made manually.
 
 . Copy any custom modules that have been added to the modules directory.
 . Run the applicable upgrade script below.
+
+ifeval::[{project_product}==true]
+To upgrade {project_name} server RPM distribution, complete the following steps:
+
+. Prior to applying the upgrade, handle any open transactions and delete the /var/opt/rh/rh-sso7/lib/keycloak/standalone/data/tx-object-store/ transaction directory.
+. Make sure you have subscribed to proper repositories containing JBOSS EAP and {project_name}.
+
+ subscription-manager repos --enable=jb-eap-7.1-for-rhel-7-server-rpms
+ subscription-manager repos --enable=rh-sso-7.2-for-rhel-7-server-rpms
++
+[NOTE]
+====
+To disable older product repositories for both JBOSS EAP and {project_name} use:
+
+ subscription-manager repos --disable=<OLDER_PRODUCT_REPO>
+
+To check the repositories use:
+
+ yum repolist
+====
+. The RPM upgrade process will not replace any of your modified configuration files, and will instead create .rpmnew files for the default configuration of the new {project_name} version.
++
+To activate any new features in the new release, such as new subsystems, you must manually merge each .rpmnew file into your existing configuration files
++
+. Copy any custom modules that have been added to the modules directory.
+. Run the applicable upgrade script as described below.
++
+[NOTE]
+====
+{project_name} RPM server distribution is using
+
+`{project_dirref}=/opt/rh/rh-sso7/root/usr/share/keycloak`
+
+Use it when calling migration scripts below.
+====
+endif::[]
 
 === Running the Standalone Mode Upgrade Script
 To run the upgrade script for standalone mode, complete the following steps:
 
 . If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
 . Stop the server.
-. Run the upgrade script: 
+. Run the upgrade script:
 
  bin/jboss-cli.sh --file=bin/migrate-standalone.cli
 
@@ -40,7 +76,7 @@ To run the upgrade script for standalone-HA mode, complete the following steps:
 
 . If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
 . Stop the server.
-. Run the upgrade script: 
+. Run the upgrade script:
 
  bin/jboss-cli.sh --file=bin/migrate-standalone-ha.cli
 
@@ -52,19 +88,19 @@ To run the upgrade script for domain mode, complete the following steps:
 . If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
 . Edit the domain script to include the location of the keycloak-server.json file.
 . Stop the server.
-. Run the upgrade script on the domain controller only: 
+. Run the upgrade script on the domain controller only:
 
  bin/jboss-cli.sh --file=bin/migrate-domain.cli
 
 === Running the Domain-clustered Mode Upgrade Script
-For domain-clustered mode, all instances must be upgraded at the same time. 
+For domain-clustered mode, all instances must be upgraded at the same time.
 
 To run the upgrade script for domain-clustered mode, complete the following steps:
 
-. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script. 
+. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
 . Edit the domain-clustered script to include the location of the keycloak-server.json file.
 . Stop the server.
-. Run the upgrade script on the domain controller only: 
+. Run the upgrade script on the domain controller only:
 
  bin/jboss-cli.sh --file=bin/migrate-domain-clustered.cli
 
