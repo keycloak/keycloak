@@ -249,6 +249,15 @@ public class PreAuthActionsHandler {
     protected void handleVersion()  {
         try {
             facade.getResponse().setStatus(200);
+            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (deployment.isCors()) {
+                String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+                if (origin == null) {
+                    log.debug("no origin header set in request");
+                } else {
+                    facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                }
+            }
             facade.getResponse().setHeader("Content-Type", "application/json");
             JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), VersionRepresentation.SINGLETON);
         } catch (Exception e) {
