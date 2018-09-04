@@ -33,7 +33,11 @@ public class RequiredActionProviderModel implements Serializable {
 
         @Override
         public int compare(RequiredActionProviderModel o1, RequiredActionProviderModel o2) {
-            return o1.priority - o2.priority;
+
+            return Comparator
+                    .comparingInt(RequiredActionProviderModel::getPriority)
+                    .thenComparing(RequiredActionProviderModel::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+                    .compare(o1, o2);
         }
     }
 
@@ -44,7 +48,7 @@ public class RequiredActionProviderModel implements Serializable {
     private boolean enabled;
     private boolean defaultAction;
     private int priority;
-    private Map<String, String> config = new HashMap<String, String>();
+    private Map<String, String> config = new HashMap<>();
 
 
     public String getId() {
