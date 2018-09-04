@@ -76,7 +76,7 @@ linking between client scope and client.
 Default Client Scopes::
   This is applicable for both OpenID Connect and SAML clients. Default client scopes are always applied when issuing OpenID Connect tokens
   or SAML assertions for this client. The client will inherit Protocol mappers and Role Scope Mappings defined on the client
-  scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of value of used for the scope
+  scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of the value used for the scope
   parameter in the OpenID Connect authorization request.
 
 Optional Client Scopes::
