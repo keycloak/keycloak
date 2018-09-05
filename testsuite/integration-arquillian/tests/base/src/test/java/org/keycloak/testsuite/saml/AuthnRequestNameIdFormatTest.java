@@ -119,7 +119,7 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testRedirectLoginNoNameIdPolicyForcePostBinding() throws Exception {
         ClientsResource clients = adminClient.realm(REALM_NAME).clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId("http://localhost:8081/sales-post/");
+        List<ClientRepresentation> foundClients = clients.findByClientId(SAML_CLIENT_ID_SALES_POST);
         assertThat(foundClients, hasSize(1));
         ClientResource clientRes = clients.get(foundClients.get(0).getId());
         ClientRepresentation client = clientRes.toRepresentation();

@@ -138,6 +138,7 @@ import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
 import org.keycloak.testsuite.page.AbstractPage;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -501,7 +502,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void disabledClientTest() {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setEnabled(false);
         clientResource.update(client);
@@ -763,9 +764,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         clientRep.setAdminUrl(appServerUrl + "sales-metadata/saml");
 
-        Response response = testRealmResource().clients().create(clientRep);
-        Assert.assertEquals(201, response.getStatus());
-        response.close();
+        try (Response response = testRealmResource().clients().create(clientRep)) {
+            Assert.assertEquals(201, response.getStatus());
+        }
 
         testSuccessfulAndUnauthorizedLogin(salesMetadataServletPage, testRealmSAMLPostLoginPage);
     }
@@ -1159,7 +1160,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testAttributes() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/employee2/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1224,7 +1225,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         config = new LinkedHashMap<>();
         config.put("new.role.name", "pee-on");
-        config.put("role", "http://localhost:8081/employee/.employee");
+        config.put("role", "http://localhost:8280/employee/.employee");
         createProtocolMapper(protocolMappersResource, "renamed-employee-role", "saml", "saml-role-name-mapper", config);
 
         for (ProtocolMapperRepresentation mapper : clientResource.toRepresentation().getProtocolMappers()) {
@@ -1265,7 +1266,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void spMetadataValidation() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation representation = clientResource.toRepresentation();
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(authServerPage.toString() + "/admin/realms/" + SAMLSERVLETDEMO + "/clients/" + representation.getId() + "/installation/providers/saml-sp-descriptor");
@@ -1278,7 +1279,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-4020
     public void testBooleanAttribute() throws Exception {
         new SamlClientBuilder()
-          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
+          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2, getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
           .login().user(bburkeUser).build()
           .processSamlResponse(Binding.POST)
             .transformDocument(responseDoc -> {

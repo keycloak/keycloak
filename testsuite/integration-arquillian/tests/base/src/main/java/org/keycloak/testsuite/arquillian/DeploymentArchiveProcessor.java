@@ -145,7 +145,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 if (AUTH_SERVER_SSL_REQUIRED) {
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
-                    modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8081", System.getProperty("app.server.https.port"));
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "http", "https");
                     modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "http", "https");
@@ -155,7 +155,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     modifyDocElementAttribute(doc, "SP", "logoutPage", "http", "https");
                 } else {
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port"));
-                    modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8081", System.getProperty("app.server.http.port"));
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.http.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                     modifyDocElementAttribute(doc, "SP", "logoutPage", "8081", System.getProperty("app.server.http.port"));

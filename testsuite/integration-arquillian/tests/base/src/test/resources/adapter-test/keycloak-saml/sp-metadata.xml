@@ -19,7 +19,7 @@
 <EntitiesDescriptor Name="urn:mace:shibboleth:testshib:two"
                     xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
         >
-    <EntityDescriptor entityID="http://localhost:8081/sales-metadata/">
+    <EntityDescriptor entityID="http://localhost:8280/sales-metadata/">
         <SPSSODescriptor AuthnRequestsSigned="true"
                 protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext">
             <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient
