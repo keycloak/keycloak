@@ -27,7 +27,7 @@ import java.net.URL;
  */
 public class SalesPostEncSignAssertionsOnlyServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "sales-post-enc-sign-assertions-only";
-    public static final String CLIENT_NAME = "http://localhost:8081/sales-post-enc-sign-assertions-only/";
+    public static final String CLIENT_NAME = "http://localhost:8280/sales-post-enc-sign-assertions-only/";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

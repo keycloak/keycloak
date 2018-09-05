@@ -19,7 +19,7 @@
 <keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                        xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_7.xsd">
-    <SP entityID="http://localhost:8081/missing-assertion-sig/"
+    <SP entityID="http://localhost:8280/missing-assertion-sig/"
         sslPolicy="EXTERNAL"
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         logoutPage="/logout.jsp"
