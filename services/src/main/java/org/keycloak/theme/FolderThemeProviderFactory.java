@@ -59,4 +59,5 @@ public class FolderThemeProviderFactory implements ThemeProviderFactory {
     public String getId() {
         return "folder";
     }
+
 }
