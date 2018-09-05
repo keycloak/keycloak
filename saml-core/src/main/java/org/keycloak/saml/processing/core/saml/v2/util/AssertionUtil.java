@@ -43,7 +43,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
@@ -140,12 +139,7 @@ public class AssertionUtil {
      * @return
      */
     public static AssertionType createAssertion(String id, NameIDType issuer) {
-        XMLGregorianCalendar issueInstant = null;
-        try {
-            issueInstant = XMLTimeUtil.getIssueInstant();
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        }
+        XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
         AssertionType assertion = new AssertionType(id, issueInstant);
         assertion.setIssuer(issuer);
         return assertion;
@@ -320,7 +314,8 @@ public class AssertionUtil {
     }
     
     /**
-     * Check whether the assertion has expired
+     * Check whether the assertion has expired.
+     * Processing rules defined in Section 2.5.1.2 of saml-core-2.0-os.pdf.
      *
      * @param assertion
      *
