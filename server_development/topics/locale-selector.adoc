@@ -1,0 +1,19 @@
+[[_locale_selector]]
+=== Locale Selector
+
+By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled. With internationalization enabled, the locale is resolved in the following priority:
+
+. `kc_locale` query parameter
+. `KEYCLOAK_LOCALE` cookie value
+. User's preferred locale if a user instance is available
+. `ui_locales` query parameter
+. `Accept-Language` request header
+. Realm's default language
+
+This behaviour can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
+
+The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, which must return a locale given a `RealmModel` and a nullable `UserModel`. The actual request is available from the `KeycloakSession#getContext` method.
+
+Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behaviour. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realms's default language.
+
+Follow the steps in <<_providers,Service Provider Interfaces>> for more details on how to create and deploy a custom provider.

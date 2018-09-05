@@ -253,6 +253,8 @@ By default message properties files should be encoded using ISO-8859-1. It's als
 usernameOrEmail=....
 ----
 
+See <<_locale_selector,Locale Selector>> on details on how the current locale is selected.
+
 ==== HTML Templates
 
 {project_name} uses https://freemarker.apache.org/[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
