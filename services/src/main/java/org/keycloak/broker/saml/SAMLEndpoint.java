@@ -88,9 +88,11 @@ import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
+import java.security.cert.CertificateException;
 import org.w3c.dom.Element;
 
 import java.util.*;
+import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
@@ -218,9 +220,13 @@ public class SAMLEndpoint {
             List<Key> keys = new LinkedList<>();
 
             for (String signingCertificate : config.getSigningCertificates()) {
+                X509Certificate cert = null;
                 try {
-                    X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    cert.checkValidity();
                     keys.add(cert.getPublicKey());
+                } catch (CertificateException e) {
+                    logger.warnf("Ignoring invalid certificate: %s", cert);
                 } catch (ProcessingException e) {
                     throw new RuntimeException(e);
                 }

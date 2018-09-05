@@ -7,7 +7,6 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
@@ -18,6 +17,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -30,6 +30,7 @@ import java.util.Map;
 
 import java.util.Map.Entry;
 import java.util.Set;
+import javax.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -264,5 +265,45 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
     @Test
     public void loginUserAllNamespacesInTopElementEncryptedAssertion() throws Exception {
         withSignedEncryptedAssertions(this::loginUserAllNamespacesInTopElement, false, true);
+    }
+
+    @Test
+    public void testWithExpiredBrokerCertificate() throws Exception {
+        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
+          .clients()
+          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
+          .get(0);
+
+        final ClientResource clientResource = realmsResouce().realm(bc.providerRealmName()).clients().get(client.getId());
+        Assert.assertThat(clientResource, Matchers.notNullValue());
+
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+            .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(true))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(true))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(false))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
+            .update();
+          Closeable clientUpdater = new ClientAttributeUpdater(clientResource)
+            .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(false))
+            .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+            .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(true))
+            .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+            .update();
+          Closeable realmUpdater = new RealmAttributeUpdater(adminClient.realm(bc.providerRealmName()))
+            .setPublicKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY)
+            .setPrivateKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY)
+            .update())
+        {
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+
+            Document doc = SAML2Request.convert(loginRep);
+            new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+              .login().idp(bc.getIDPAlias()).build()
+
+              .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        }
+
     }
 }

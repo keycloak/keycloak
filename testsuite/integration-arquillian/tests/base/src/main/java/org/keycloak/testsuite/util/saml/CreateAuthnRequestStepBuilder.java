@@ -39,6 +39,8 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
     private final URI authServerSamlUrl;
     private final Binding requestBinding;
     private final String assertionConsumerURL;
+    private String signingPublicKeyPem;  // TODO: should not be needed
+    private String signingPrivateKeyPem;
 
     private final Document forceLoginRequestDocument;
 
@@ -77,6 +79,12 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         this.relayState = relayState;
     }
 
+    public CreateAuthnRequestStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem) {
+        this.signingPrivateKeyPem = signingPrivateKeyPem;
+        this.signingPublicKeyPem = signingPublicKeyPem;
+        return this;
+    }
+
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
         Document doc = createLoginRequestDocument();
@@ -88,7 +96,10 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
             return null;
         }
 
-        return requestBinding.createSamlUnsignedRequest(authServerSamlUrl, relayState, DocumentUtil.getDocument(transformed));
+        Document samlDoc = DocumentUtil.getDocument(transformed);
+        return this.signingPrivateKeyPem == null
+          ? requestBinding.createSamlUnsignedRequest(authServerSamlUrl, relayState, samlDoc)
+          : requestBinding.createSamlSignedRequest(authServerSamlUrl, relayState, samlDoc, signingPrivateKeyPem, signingPublicKeyPem);
     }
 
     protected Document createLoginRequestDocument() {
