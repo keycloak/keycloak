@@ -4,7 +4,7 @@
     <parent>
       <artifactId>keycloak-parent</artifactId>
       <groupId>org.keycloak</groupId>
-      <version>4.3.0.Final-SNAPSHOT</version>
+      <version>4.4.0.Final</version>
       <relativePath>../../../pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-container-bundle</artifactId>

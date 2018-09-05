@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-integration-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>4.4.0.Final</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
