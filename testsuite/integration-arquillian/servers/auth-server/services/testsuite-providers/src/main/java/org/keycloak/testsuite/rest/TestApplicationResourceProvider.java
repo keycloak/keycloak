@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -135,7 +136,10 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         for (String paramName : formParams.keySet()) {
-            sb.append(paramName).append(": ").append("<span id=\"").append(paramName).append("\">").append(formParams.getFirst(paramName)).append("</span><br>");
+            sb.append(paramName).append(": ").append("<span id=\"")
+                    .append(paramName).append("\">")
+                    .append(HtmlUtils.escapeAttribute(formParams.getFirst(paramName)))
+                    .append("</span><br>");
         }
         sb.append("<br>");
 
