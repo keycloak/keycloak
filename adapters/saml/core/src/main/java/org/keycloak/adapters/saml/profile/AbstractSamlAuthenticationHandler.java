@@ -84,6 +84,7 @@ import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
 
 /**
@@ -342,7 +343,15 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         }
         try {
             assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
-            if (AssertionUtil.hasExpired(assertion)) {
+            ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+            try {
+                cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
+                // getDestination has been validated to match request URL already so it matches SAML endpoint
+                cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+            } catch (IllegalArgumentException ex) {
+                // warning has been already emitted in DeploymentBuilder
+            }
+            if (! cvb.build().isValid()) {
                 return initiateLogin();
             }
         } catch (Exception e) {
