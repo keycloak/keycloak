@@ -31,10 +31,10 @@ list in the SAML assertion.
 * For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone` and `offline_access` .
 
 The client scope, `offline_access`, is useful when client wants to obtain offline tokens. Learn about offline tokens in the
-<<_offline-access, Offline Access section>> or in the http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification],
+<<_offline-access, Offline Access section>> or in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification],
 where scope parameter is defined with the value `offline_access`.
 
-The client scopes `profile`, `email`, `address` and `phone` are also defined in the http://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[OpenID Connect specification].
+The client scopes `profile`, `email`, `address` and `phone` are also defined in the https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[OpenID Connect specification].
 These client scopes do not have any role scope mappings defined, but they have some protocol mappers defined, and these mappers correspond
 to the claims defined in the OpenID Connect specification.
 

@@ -1,6 +1,6 @@
 === Other OpenID Connect Libraries
 
-{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Resource Provider (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the http://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
+{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Resource Provider (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
 
 ==== Endpoints
 
@@ -23,7 +23,7 @@ Some RP libraries retrieve all required endpoints from this endpoint, but for ot
 
 The authorization endpoint performs authentication of the end-user. This is done by redirecting the user agent to this endpoint.
 
-For more details see the http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[Authorization Endpoint] section in the OpenID Connect specification.
+For more details see the https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[Authorization Endpoint] section in the OpenID Connect specification.
 
 ===== Token Endpoint
 ....
@@ -33,7 +33,7 @@ For more details see the http://openid.net/specs/openid-connect-core-1_0.html#Au
 The token endpoint is used to obtain tokens. Tokens can either be obtained by exchanging an authorization code or by supplying credentials directly depending on what flow is used.
 The token endpoint is also used to obtain new access tokens when they expire.
 
-For more details see the http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint[Token Endpoint] section in the OpenID Connect specification.
+For more details see the https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint[Token Endpoint] section in the OpenID Connect specification.
 
 ===== Userinfo Endpoint
 ....
@@ -42,7 +42,7 @@ For more details see the http://openid.net/specs/openid-connect-core-1_0.html#To
 
 The userinfo endpoint returns standard claims about the authenticated user, and is protected by a bearer token.
 
-For more details see the http://openid.net/specs/openid-connect-core-1_0.html#UserInfo[Userinfo Endpoint] section in the OpenID Connect specification.
+For more details see the https://openid.net/specs/openid-connect-core-1_0.html#UserInfo[Userinfo Endpoint] section in the OpenID Connect specification.
 
 ===== Logout Endpoint
 ....
@@ -105,7 +105,7 @@ credentials to obtain an Access Token, Refresh Token and ID Token from {project_
 The flow is targeted towards web applications, but is also recommended for native applications, including mobile applications, where it is possible to embed
 a user agent.
 
-For more details refer to the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] in the OpenID Connect specification.
+For more details refer to the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] in the OpenID Connect specification.
 
 ===== Implicit
 
@@ -120,7 +120,7 @@ There's also a Hybrid flow where both the Access Token and an Authorization Code
 One thing to note is that both the Implicit flow and Hybrid flow has potential security risks as the Access Token may be leaked through web server logs and
 browser history. This is somewhat mitigated by using short expiration for Access Tokens.
 
-For more details refer to the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
+For more details refer to the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
 [[_resource_owner_password_credentials_flow]]
 ===== Resource Owner Password Credentials

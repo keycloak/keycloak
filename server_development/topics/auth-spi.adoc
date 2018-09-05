@@ -760,7 +760,7 @@ For more details about this flow see the `Identity Brokering` chapter in link:{a
 [[_client_authentication]]
 === Authentication of clients
 
-{project_name} actually supports pluggable authentication for http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect] client applications.
+{project_name} actually supports pluggable authentication for https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect] client applications.
 Authentication of client (application) is used under the hood by the {project_name} adapter during sending any backchannel requests
 to the {project_name} server (like the request for exchange code to access token after successful authentication or request to refresh token).
 But the client authentication can be also used directly by you during `Direct Access grants` (represented by OAuth2 `Resource Owner Password Credentials Flow`)
@@ -773,7 +773,7 @@ For more details about {project_name} adapter and OAuth2 flows see link:{adapter
 Actually Keycloak has 2 builtin implementations of client authentication: 
 
 Traditional authentication with client_id and client_secret::
-  This is default mechanism mentioned in the http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and Keycloak supports it since it's early days.
+  This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and Keycloak supports it since it's early days.
   The public client needs to include `client_id` parameter with it's ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password. 
 
 Authentication with signed JWT::

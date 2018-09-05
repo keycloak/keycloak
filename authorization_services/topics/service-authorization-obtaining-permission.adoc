@@ -23,8 +23,8 @@ permissions for the resource(s) and scope(s) being requested. This parameter all
 * **claim_token_format**
 +
 This parameter is *optional. A string indicating the format of the token specified in the `claim_token` parameter. {project_name} supports two token
-formats: `urn:ietf:params:oauth:token-type:jwt` and `http://openid.net/specs/openid-connect-core-1_0.html#IDToken`. The `urn:ietf:params:oauth:token-type:jwt` format
-indicates that the `claim_token` parameter references an access token. The `http://openid.net/specs/openid-connect-core-1_0.html#IDToken` indicates that the
+formats: `urn:ietf:params:oauth:token-type:jwt` and `https://openid.net/specs/openid-connect-core-1_0.html#IDToken`. The `urn:ietf:params:oauth:token-type:jwt` format
+indicates that the `claim_token` parameter references an access token. The `https://openid.net/specs/openid-connect-core-1_0.html#IDToken` indicates that the
 `claim_token` parameter references an OpenID Connect ID Token.
 +
 * **rpt**

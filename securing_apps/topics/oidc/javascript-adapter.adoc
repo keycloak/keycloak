@@ -121,12 +121,12 @@ your application.
 [[_javascript_implicit_flow]]
 ==== Implicit and Hybrid Flow
 
-By default, the JavaScript adapter uses the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
+By default, the JavaScript adapter uses the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
 
 With this flow the {project_name} server returns an authorization code, not an authentication token, to the application. The JavaScript adapter exchanges
 the `code` for an access token and a refresh token after the browser is redirected back to the application.
 
-{project_name} also supports the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token
+{project_name} also supports the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token
 is sent immediately after successful authentication with {project_name}. This may have better performance than standard flow, as there is no additional
 request to exchange the code for tokens, but it has implications when the access token expires.
 
@@ -144,7 +144,7 @@ keycloak.init({ flow: 'implicit' })
 One thing to note is that only an access token is provided and there is no refresh token. This means that once the access token has expired the application
 has to do the redirect to the {project_name} again to obtain a new access token.
 
-{project_name} also supports the http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth[Hybrid] flow.
+{project_name} also supports the https://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth[Hybrid] flow.
 
 This requires the client to have both the `Standard Flow Enabled` and `Implicit Flow Enabled` flags enabled in the admin console.
 The {project_name} server will then send both the code and tokens to your application.
