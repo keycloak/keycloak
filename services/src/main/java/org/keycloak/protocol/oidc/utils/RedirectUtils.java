@@ -155,6 +155,10 @@ public class RedirectUtils {
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
                 if (validRedirect.equals(r)) return true;
+                if (validRedirect.contains("*") && !validRedirect.equals("*")) {
+                    String vr = replaceWildCards(r, validRedirect);                   
+                    if(r.equals(vr) || r.startsWith(vr)) return true;                   
+                }
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;
@@ -169,5 +173,50 @@ public class RedirectUtils {
         }
         return validRedirect;
     }
-
+    
+    private static String replaceWildCards(String r, String vr) {
+        /*
+         * Keep replacing the "*" in valid redirect with the sub strings in redirect uri
+         * and finally check if it matches with redirect uri or if redirect uri
+         * starts with that string.
+         */
+        try {
+            //Loop till all "*" is replaced 
+            while(vr.contains("*")) {
+                //Split for first two occurences of "*"
+                String[] splitVR = vr.split("\\*", 3);
+                //If redirect uri contains the firt 2 values of split array, continue wiht logic
+                if (r.contains(splitVR[0]) && r.contains(splitVR[1])) {
+                    String wildCardRep = null;
+                    //If first part of split array is empty, replace * with
+                    //sub string of redirect uri from index 0 to index of second part
+                    //of split array
+                    if (splitVR[0].isEmpty()) {
+                        wildCardRep = r.substring(0, r.indexOf(splitVR[1])); 
+                    } else if (splitVR[1].isEmpty()) {
+                        //If second part of split array is empty, repalce *
+                        // with sub string of redirect uri from index of
+                        //second part of split array to length of redirect uri
+                        wildCardRep = r.substring(splitVR[0].length(), r.length()); 
+                        
+                    } else {
+                        //repalce * with sub string of redirect uri from index of
+                        //first part of split array to index of second part
+                        //of split array
+                        wildCardRep = r.substring(splitVR[0].length(), r.indexOf(splitVR[1])); 
+                    }
+                    if (wildCardRep != null) {
+                        //Repalce the * with the sub string
+                        vr = vr.replaceFirst("\\*", wildCardRep);
+                    }
+                } else {
+                    break;
+                }               
+           }
+        } catch(Exception e) {
+            logger.error("Error while comparing with wildcard redirect uri", e);
+        }
+        
+        return vr;
+    }
 }
