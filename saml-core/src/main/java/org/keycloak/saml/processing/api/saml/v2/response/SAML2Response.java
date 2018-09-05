@@ -151,71 +151,6 @@ public class SAML2Response {
     }
 
     /**
-     * Construct a {@link ResponseType} without calling PicketLink STS for the assertion. The {@link AssertionType} is
-     * generated
-     * within this method
-     *
-     * @param ID id of the {@link ResponseType}
-     * @param sp
-     * @param idp
-     * @param issuerInfo
-     *
-     * @return
-     *
-     * @throws org.keycloak.saml.common.exceptions.ConfigurationException
-     * @throws org.keycloak.saml.common.exceptions.ProcessingException
-     */
-    public ResponseType createResponseType(String ID, SPInfoHolder sp, IDPInfoHolder idp, IssuerInfoHolder issuerInfo,
-                                           AssertionType assertion) throws ConfigurationException, ProcessingException {
-        String responseDestinationURI = sp.getResponseDestinationURI();
-
-        XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
-
-        // Create assertion -> subject
-        SubjectType subjectType = new SubjectType();
-
-        // subject -> nameid
-        NameIDType nameIDType = new NameIDType();
-        nameIDType.setFormat(URI.create(idp.getNameIDFormat()));
-        nameIDType.setValue(idp.getNameIDFormatValue());
-
-        SubjectType.STSubType subType = new SubjectType.STSubType();
-        subType.addBaseID(nameIDType);
-        subjectType.setSubType(subType);
-
-        SubjectConfirmationType subjectConfirmation = new SubjectConfirmationType();
-        subjectConfirmation.setMethod(idp.getSubjectConfirmationMethod());
-
-        SubjectConfirmationDataType subjectConfirmationData = new SubjectConfirmationDataType();
-        subjectConfirmationData.setInResponseTo(sp.getRequestID());
-        subjectConfirmationData.setRecipient(responseDestinationURI);
-        //subjectConfirmationData.setNotBefore(issueInstant);
-        subjectConfirmationData.setNotOnOrAfter(issueInstant);
-
-        subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
-
-        subjectType.addConfirmation(subjectConfirmation);
-
-        ConditionsType conditions = assertion.getConditions();
-        // Update the subjectConfirmationData expiry based on the assertion
-        if (conditions != null) {
-            subjectConfirmationData.setNotOnOrAfter(conditions.getNotOnOrAfter());
-            //Add conditions -> AudienceRestriction
-            AudienceRestrictionType audience = new AudienceRestrictionType();
-            audience.addAudience(URI.create(sp.getResponseDestinationURI()));
-            conditions.addCondition(audience);
-        }
-
-        ResponseType responseType = createResponseType(ID, issuerInfo, assertion);
-        // InResponseTo ID
-        responseType.setInResponseTo(sp.getRequestID());
-        // Destination
-        responseType.setDestination(responseDestinationURI);
-
-        return responseType;
-    }
-
-    /**
      * Create a ResponseType
      *
      * <b>NOTE:</b>: The PicketLink STS is used to issue/update the assertion
@@ -234,7 +169,7 @@ public class SAML2Response {
      * @throws ProcessingException
      */
     public ResponseType createResponseType(String ID, SPInfoHolder sp, IDPInfoHolder idp, IssuerInfoHolder issuerInfo)
-            throws ConfigurationException, ProcessingException {
+            throws ProcessingException {
         String responseDestinationURI = sp.getResponseDestinationURI();
 
         XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
@@ -266,11 +201,7 @@ public class SAML2Response {
 
         AssertionType assertionType;
         NameIDType issuerID = issuerInfo.getIssuer();
-        try {
-            issueInstant = XMLTimeUtil.getIssueInstant();
-        } catch (ConfigurationException e) {
-            throw logger.processingError(e);
-        }
+        issueInstant = XMLTimeUtil.getIssueInstant();
         ConditionsType conditions = null;
         List<StatementAbstractType> statements = new LinkedList<>();
 
@@ -303,11 +234,7 @@ public class SAML2Response {
      * @return
      */
     public ResponseType createResponseType(String ID) {
-        try {
-            return new ResponseType(ID, XMLTimeUtil.getIssueInstant());
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        }
+        return new ResponseType(ID, XMLTimeUtil.getIssueInstant());
     }
 
     /**
@@ -321,8 +248,7 @@ public class SAML2Response {
      *
      * @throws ConfigurationException
      */
-    public ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, AssertionType assertion)
-            throws ConfigurationException {
+    public ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, AssertionType assertion){
         return JBossSAMLAuthnResponseFactory.createResponseType(ID, issuerInfo, assertion);
     }
 
