@@ -104,7 +104,7 @@ This differs them from other integration tests and Admin Console UI tests.
 
 They are designed to work with most of the desktop browsers (HtmlUnit included) as well as mobile browsers (Chrome on Android and Safari on iOS). Please see [HOW-TO-RUN.md](HOW-TO-RUN.md) for details on supported browsers.
 
-The tests are place in a separate module (`tests/other/base-ui`) and are run with HtmlUnit by default.
+The tests are place in a separate module (`tests/other/base-ui`) and are disabled by default.
 
 ### Admin Console UI Tests
 

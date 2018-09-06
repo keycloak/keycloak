@@ -40,7 +40,6 @@
         <module>adapters</module>
         <module>sssd</module>
         <module>springboot-tests</module>
-        <module>base-ui</module>
     </modules>
 
     <properties>
@@ -166,6 +165,12 @@
             <id>welcome-page</id>
             <modules>
                 <module>welcome-page</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>base-ui</id>
+            <modules>
+                <module>base-ui</module>
             </modules>
         </profile>
     </profiles>
