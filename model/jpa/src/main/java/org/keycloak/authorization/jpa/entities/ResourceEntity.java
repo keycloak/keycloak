@@ -44,6 +44,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -109,7 +110,8 @@ public class ResourceEntity {
     private List<PolicyEntity> policies = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource")
-    @Fetch(FetchMode.SUBSELECT)
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
     private Collection<ResourceAttributeEntity> attributes = new ArrayList<>();
 
     public String getId() {
