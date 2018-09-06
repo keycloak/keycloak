@@ -47,6 +47,7 @@ nbproject
 
 # Maven #
 #########
+!.mvn/wrapper/maven-wrapper.jar
 target
 
 # Maven shade
