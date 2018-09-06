@@ -28,9 +28,9 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.PatternFlyClosableAlert;
+import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.FindBy;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -67,6 +67,13 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Before
     public void beforeConsoleTest() {
+        // Safari driver seemingly doesn't comply with WebDriver specs.
+        // driver.manage().deleteAllCookies() seems to delete all cookies regardless the path, i.e. when we delete cookies
+        // in the 'test' realm, they're deleted in 'master' as well resulting in admin user to be logged out.
+        if (driver instanceof SafariDriver) {
+            testContext.setAdminLoggedIn(false);
+        }
+
         createTestUserWithAdminClient();
         if (!testContext.isAdminLoggedIn()) {
             loginToMasterRealmAdminConsoleAs(adminUser);

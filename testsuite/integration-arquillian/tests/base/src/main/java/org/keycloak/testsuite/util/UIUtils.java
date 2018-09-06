@@ -10,6 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
@@ -17,6 +18,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -58,7 +60,15 @@ public final class UIUtils {
     }
 
     public static void clickLink(WebElement element) {
-        performOperationWithPageReload(element::click);
+        WebDriver driver = getCurrentDriver();
+
+        if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
+                                                                        // even though it is. In this case we just move the cursor and click.
+            performOperationWithPageReload(() -> new Actions(driver).click(element).perform());
+        }
+        else {
+            performOperationWithPageReload(element::click);
+        }
     }
 
     /**
@@ -100,6 +110,7 @@ public final class UIUtils {
         String styleBckp = element.getAttribute("style");
 
         jsExecutor.executeScript("arguments[0].setAttribute('style', 'display:block !important');", element);
+        waitUntilElement(element).is().visible();
         element.sendKeys(keys);
         jsExecutor.executeScript("arguments[0].setAttribute('style', '" + styleBckp + "');", element);
     }
@@ -115,7 +126,7 @@ public final class UIUtils {
             input.sendKeys(value);
         }
         else { // just clearing the input; input.clear() may not fire all JS events so we need to let the page know that something's changed
-            input.sendKeys("a");
+            input.sendKeys("1");
             input.sendKeys(Keys.BACK_SPACE);
         }
 
@@ -135,6 +146,13 @@ public final class UIUtils {
     public static String getTextFromElement(WebElement element) {
         String text = element.getText();
         if (getCurrentDriver() instanceof SafariDriver) {
+            try {
+                // Safari on macOS doesn't comply with WebDriver specs yet again - getText() retrieves hidden text by CSS.
+                text = element.findElement(By.xpath("./span[not(contains(@class,'ng-hide'))]")).getText();
+            }
+            catch (NoSuchElementException e) {
+                // no op
+            }
             return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
         }
         return text;
@@ -155,5 +173,15 @@ public final class UIUtils {
         catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    /**
+     * To be used only when absolutely necessary. Browsers should handle scrolling automatically but at some unknown
+     * conditions some of them (GeckoDriver) won't scroll.
+     *
+     * @param element
+     */
+    public static void scrollElementIntoView(WebElement element) {
+        ((JavascriptExecutor) getCurrentDriver()).executeScript("arguments[0].scrollIntoView(true);", element);
     }
 }

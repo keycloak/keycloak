@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.resource;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.ArrayList;
@@ -67,13 +68,13 @@ public class ResourcesTable extends DataTable {
         ResourceRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
         try {
-            if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
+            if (!(tds.isEmpty() || getTextFromElement(tds.get(1)).isEmpty())) {
                 representation = new ResourceRepresentation();
-                representation.setName(tds.get(1).getText());
-                representation.setType(tds.get(2).getText());
-                representation.setUri(tds.get(3).getText());
+                representation.setName(getTextFromElement(tds.get(1)));
+                representation.setType(getTextFromElement(tds.get(2)));
+                representation.setUri(getTextFromElement(tds.get(3)));
                 ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
-                owner.setName(tds.get(4).getText());
+                owner.setName(getTextFromElement(tds.get(4)));
                 representation.setOwner(owner);
             }
         } catch (IndexOutOfBoundsException cause) {

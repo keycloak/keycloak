@@ -13,6 +13,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.junit.Assert.*;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.URLAssert.*;
 
 /**
@@ -107,6 +108,6 @@ public class InternationalizationTest extends AbstractRealmTest {
     }
 
     private void assertLocale(WebElement element, String expected) {
-        assertEquals(expected, element.getText());
+        assertEquals(expected, getTextFromElement(element));
     }
 }

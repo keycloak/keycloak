@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.ArrayList;
@@ -65,9 +66,9 @@ public class ScopesTable extends DataTable {
     public ScopeRepresentation toRepresentation(WebElement row) {
         ScopeRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
+        if (!(tds.isEmpty() || getTextFromElement(tds.get(1)).isEmpty())) {
             representation = new ScopeRepresentation();
-            representation.setName(tds.get(1).getText());
+            representation.setName(getTextFromElement(tds.get(1)));
         }
         return representation;
     }

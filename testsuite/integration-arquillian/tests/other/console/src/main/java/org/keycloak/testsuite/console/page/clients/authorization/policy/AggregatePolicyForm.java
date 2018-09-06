@@ -131,7 +131,7 @@ public class AggregatePolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
 
         return representation;

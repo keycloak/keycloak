@@ -13,6 +13,7 @@ import static org.keycloak.services.resources.admin.ClientAttributeCertificateRe
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.JKS;
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.PKCS12;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.sendKeysToInvisibleElement;
 
 /**
@@ -67,7 +68,7 @@ public class SAMLClientCredentialsForm extends Form {
     }
 
     public String getSuccessMessage() {
-        return success.getText();
+        return getTextFromElement(success);
     }
 
     private void uploadFile(String file) {

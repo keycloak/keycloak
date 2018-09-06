@@ -40,7 +40,7 @@ public abstract class LoginBase extends AuthRealm {
     @FindBy(id = "kc-header-wrapper")
     protected WebElement header;
 
-    @FindBy(id = "kc-locale-dropdown")
+    @FindBy(id = "kc-locale")
     private LocaleDropdown localeDropdown;
 
     protected String keycloakThemeCssName;

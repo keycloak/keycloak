@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.Iterator;
@@ -127,7 +128,7 @@ public class RolePolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
 
         Set<RolePolicyRepresentation.RoleDefinition> roles = realmRoleSelect.getSelected();
 
@@ -162,7 +163,7 @@ public class RolePolicyForm extends Form {
                 RolePolicyRepresentation.RoleDefinition selectedRole = new RolePolicyRepresentation.RoleDefinition();
                 boolean clientRole = tds.size() == 4;
 
-                selectedRole.setId(clientRole ? tds.get(1).getText() + "/" + tds.get(0).getText() : tds.get(0).getText());
+                selectedRole.setId(clientRole ? getTextFromElement(tds.get(1)) + "/" + getTextFromElement(tds.get(0)) : getTextFromElement(tds.get(0)));
                 selectedRole.setRequired(tds.get(clientRole ? 2 : 1).findElement(By.tagName("input")).isSelected());
 
                 return selectedRole;
@@ -178,8 +179,8 @@ public class RolePolicyForm extends Form {
                 boolean clientRole = role.getId().indexOf("/") != -1;
                 WebElement roleName = tds.get(0);
 
-                if (!roleName.getText().isEmpty()) {
-                    if (roleName.getText().equals(getRoleId(role, clientRole))) {
+                if (!UIUtils.getTextFromElement(roleName).isEmpty()) {
+                    if (UIUtils.getTextFromElement(roleName).equals(getRoleId(role, clientRole))) {
                         WebElement required = tds.get(clientRole ? 2 : 1).findElement(By.tagName("input"));
 
                         if (required.isSelected() && role.isRequired()) {
@@ -201,8 +202,8 @@ public class RolePolicyForm extends Form {
                 List<WebElement> tds = webElement.findElements(tagName("td"));
                 boolean clientRole = tds.size() == 4;
 
-                if (!tds.get(0).getText().isEmpty()) {
-                    if (tds.get(0).getText().equals(getRoleId(roleDefinition, clientRole))) {
+                if (!UIUtils.getTextFromElement(tds.get(0)).isEmpty()) {
+                    if (UIUtils.getTextFromElement(tds.get(0)).equals(getRoleId(roleDefinition, clientRole))) {
                         tds.get(clientRole ? 3 : 2).findElement(By.tagName("button")).click();
                         return true;
                     }

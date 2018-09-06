@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.id;
 
 /**
@@ -110,14 +111,14 @@ public class RulePolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setArtifactGroupId(UIUtils.getTextInputValue(artifactGroupId));
         representation.setArtifactId(UIUtils.getTextInputValue(artifactId));
         representation.setArtifactVersion(UIUtils.getTextInputValue(artifactVersion));
-        representation.setModuleName(moduleName.getFirstSelectedOption().getText());
-        representation.setSessionName(sessionName.getFirstSelectedOption().getText());
+        representation.setModuleName(getTextFromElement(moduleName.getFirstSelectedOption()));
+        representation.setSessionName(getTextFromElement(sessionName.getFirstSelectedOption()));
         representation.setScannerPeriod(UIUtils.getTextInputValue(scannerPeriod));
-        representation.setScannerPeriodUnit(scannerPeriodUnit.getFirstSelectedOption().getText());
+        representation.setScannerPeriodUnit(getTextFromElement(scannerPeriodUnit.getFirstSelectedOption()));
 
         return representation;
     }

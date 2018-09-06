@@ -7,6 +7,7 @@ import org.openqa.selenium.WebElement;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 /**
@@ -74,11 +75,11 @@ public class RolesTable extends DataTable {
     public RoleRepresentation getRoleFromRow(WebElement row) {
         RoleRepresentation role = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+        if (!(tds.isEmpty() || getTextFromElement(tds.get(0)).isEmpty())) {
             role = new RoleRepresentation();
-            role.setName(tds.get(0).getText());
-            role.setComposite(Boolean.valueOf(tds.get(1).getText()));
-            role.setDescription(tds.get(2).getText());
+            role.setName(getTextFromElement(tds.get(0)));
+            role.setComposite(Boolean.valueOf(getTextFromElement(tds.get(1))));
+            role.setDescription(getTextFromElement(tds.get(2)));
         }
         return role;
     }

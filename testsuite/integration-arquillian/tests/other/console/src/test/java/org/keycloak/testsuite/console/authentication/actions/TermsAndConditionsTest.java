@@ -24,11 +24,11 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.auth.page.login.LoginError;
 import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
-import org.keycloak.testsuite.pages.ErrorPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ public class TermsAndConditionsTest extends AbstractConsoleTest {
     private Registration registrationPage;
 
     @Page
-    protected ErrorPage errorPage;
+    protected LoginError errorPage;
     
     @Override
     public void beforeConsoleTest() {
@@ -75,6 +75,7 @@ public class TermsAndConditionsTest extends AbstractConsoleTest {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(REALM);
         testRealmAdminConsolePage.setAdminRealm(REALM);
+        termsAndConditionsPage.setAuthRealm(testRealmPage);
     }
     
     @Override
@@ -188,10 +189,10 @@ public class TermsAndConditionsTest extends AbstractConsoleTest {
 
         // check an error page after declining the terms
         errorPage.assertCurrent();
-        assertEquals("No access", errorPage.getError());
+        assertEquals("No access", errorPage.getErrorMessage());
 
         // follow the link "back to application"
-        errorPage.clickBackToApplication();
+        errorPage.backToApplication();
 
         // login again and accept the terms for now
         loginPage.form().login(FLANDERS, FLANDERS_PASS);
