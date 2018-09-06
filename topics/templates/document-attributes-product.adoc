@@ -2,9 +2,9 @@
 :project_product: true
 :project_product_cd: true
 :project_name: Red Hat Single Sign-On
-:project_version: 7.3.0.CD03
-:project_versionMvn: 4.3.0.Final-redhat-00002
-:project_versionNpm: 4.3.0.Final-redhat-00002
+:project_version: 7.3.0.CD04
+:project_versionMvn: 4.5.0.Final-redhat-00001
+:project_versionNpm: 4.5.0.Final-redhat-00001
 :project_images: rhsso-images
 :project_openshift_product_name: RH-SSO for OpenShift
 
