@@ -10,6 +10,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -217,7 +219,7 @@ public class CreateClientMappersForm extends Form {
     }
 
     public String getClaimJSONType() {
-        return claimJSONTypeInput.getFirstSelectedOption().getText();
+        return getTextFromElement(claimJSONTypeInput.getFirstSelectedOption());
     }
 
     public void setClaimJSONType(String value) {

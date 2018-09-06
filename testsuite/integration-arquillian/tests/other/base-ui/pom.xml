@@ -31,7 +31,6 @@
 
     <properties>
         <droneInstantiationTimeoutInSeconds>600</droneInstantiationTimeoutInSeconds>
-        <firefoxLegacyDriver>false</firefoxLegacyDriver> <!-- using the new GeckoDriver -->
         <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
     </properties>
 

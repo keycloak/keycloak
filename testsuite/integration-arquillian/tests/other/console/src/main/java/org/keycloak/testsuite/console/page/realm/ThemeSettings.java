@@ -21,6 +21,8 @@ import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  *
  * @author Filip Kiss
@@ -72,7 +74,7 @@ public class ThemeSettings extends RealmSettings {
     }
 
     public void saveTheme() {
-        primaryButton.click();
+        clickLink(primaryButton);
     }
 
 }

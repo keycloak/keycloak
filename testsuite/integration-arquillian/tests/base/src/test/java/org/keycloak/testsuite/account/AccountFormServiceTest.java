@@ -56,6 +56,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -834,7 +835,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         assertFalse(pageSource.contains("Unable to scan?"));
         assertTrue(pageSource.contains("Scan barcode?"));
 
-        assertTrue(driver.findElement(By.id("kc-totp-secret-key")).getText().matches("[\\w]{4}( [\\w]{4}){7}"));
+        assertTrue(UIUtils.getTextFromElement(driver.findElement(By.id("kc-totp-secret-key"))).matches("[\\w]{4}( [\\w]{4}){7}"));
 
         assertEquals("Type: Time-based", driver.findElement(By.id("kc-totp-type")).getText());
         assertEquals("Algorithm: SHA1", driver.findElement(By.id("kc-totp-algorithm")).getText());

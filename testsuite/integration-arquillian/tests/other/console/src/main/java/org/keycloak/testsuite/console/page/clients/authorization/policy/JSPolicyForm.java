@@ -70,7 +70,7 @@ public class JSPolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
 
         JavascriptExecutor scriptExecutor = (JavascriptExecutor) driver;
 

@@ -8,6 +8,7 @@ import org.openqa.selenium.support.ui.Select;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
 
 /**
@@ -67,7 +68,7 @@ public class Flows extends Authentication {
     }
 
     public String getFlowSelectValue() {
-        return flowSelect.getFirstSelectedOption().getText();
+        return getTextFromElement(flowSelect.getFirstSelectedOption());
     }
 
     public List<String> getFlowAllValues() {

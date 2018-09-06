@@ -22,6 +22,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -73,7 +74,7 @@ public class Menu {
         }
         for (WebElement item : menuList.get(menuOrder).findElements(By.cssSelector(MENU_LOCATOR + " a"))) {
             if (item.getText().contains(linkText)) {
-                item.click();
+                clickLink(item);
                 return;
             }
         }
