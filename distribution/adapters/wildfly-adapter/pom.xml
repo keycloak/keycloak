@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-adapters-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
