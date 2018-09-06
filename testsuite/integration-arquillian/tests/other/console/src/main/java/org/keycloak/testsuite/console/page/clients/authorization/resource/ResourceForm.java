@@ -16,23 +16,26 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.resource;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -156,13 +159,9 @@ public class ResourceForm extends Form {
 
         public void select(String name) {
             UIUtils.setTextInputValue(search, name);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            pause(1000);
             for (WebElement result : result) {
-                if (result.getText().equalsIgnoreCase(name)) {
+                if (result.isDisplayed() && UIUtils.getTextFromElement(result).equalsIgnoreCase(name)) {
                     result.click();
                     return;
                 }
@@ -173,7 +172,7 @@ public class ResourceForm extends Form {
             HashSet<ScopeRepresentation> values = new HashSet<>();
 
             for (WebElement selected : selection) {
-                values.add(new ScopeRepresentation(selected.findElements(By.tagName("div")).get(0).getText()));
+                values.add(new ScopeRepresentation(getTextFromElement(selected.findElements(tagName("div")).get(0))));
             }
 
             return values;
@@ -181,11 +180,11 @@ public class ResourceForm extends Form {
 
         public void unSelect(String name, WebDriver driver) {
             for (WebElement selected : selection) {
-                if (name.equals(selected.findElements(By.tagName("div")).get(0).getText())) {
+                if (name.equals(getTextFromElement(selected.findElements(tagName("div")).get(0)))) {
                     WebElement element = selected.findElement(By.xpath("//a[contains(@class,'select2-search-choice-close')]"));
                     JavascriptExecutor executor = (JavascriptExecutor) driver;
                     executor.executeScript("arguments[0].click();", element);
-                    WaitUtils.pause(1000);
+                    pause(1000);
                     return;
                 }
             }

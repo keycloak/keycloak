@@ -25,6 +25,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -65,7 +67,7 @@ public class LoginPasswordUpdatePage {
     }
 
     public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+        return loginErrorMessage != null ? getTextFromElement(loginErrorMessage) : null;
     }
 
 }

@@ -144,7 +144,7 @@ public class ScopePermissionForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setDecisionStrategy(DecisionStrategy.valueOf(decisionStrategy.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setDecisionStrategy(DecisionStrategy.valueOf(UIUtils.getTextFromElement(decisionStrategy.getFirstSelectedOption()).toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
         representation.setResources(resourceSelect.getSelected());
         representation.setScopes(scopeSelect.getSelected());

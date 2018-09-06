@@ -30,6 +30,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.openqa.selenium.By.xpath;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -133,7 +136,7 @@ public class ClientScopesEvaluateForm extends Form {
 
         Set<String> names = rows.stream().map((WebElement row) -> {
 
-            return row.findElement(By.xpath("td[1]")).getText();
+            return getTextFromElement(row.findElement(xpath("td[1]")));
 
         }).collect(Collectors.toSet());
 
@@ -150,7 +153,7 @@ public class ClientScopesEvaluateForm extends Form {
     }
 
     public String getAccessToken() {
-        return accessTokenTextArea.getText();
+        return getTextFromElement(accessTokenTextArea);
     }
 
 

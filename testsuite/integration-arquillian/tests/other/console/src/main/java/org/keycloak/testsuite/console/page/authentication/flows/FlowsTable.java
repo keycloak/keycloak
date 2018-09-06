@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -115,7 +116,7 @@ public class FlowsTable {
             List<WebElement> requirementsOptions = alias.findElements(By.xpath(".//../parent::*//input[@type='radio']"));
             for (WebElement requirement : requirementsOptions) {
                 if (requirement.isSelected()) {
-                    flows.put(alias.getText(), requirement.getAttribute("value"));
+                    flows.put(getTextFromElement(alias), requirement.getAttribute("value"));
                 }
             }
         }
