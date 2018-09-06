@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
@@ -96,15 +97,18 @@ public class UserEntity {
     protected String realmId;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
-    @Fetch(FetchMode.SUBSELECT)
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
     protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
-    @Fetch(FetchMode.SUBSELECT)
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
     protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
-    @Fetch(FetchMode.SUBSELECT)
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
     @Column(name="FEDERATION_LINK")
