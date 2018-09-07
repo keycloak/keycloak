@@ -324,7 +324,13 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canList(RoleContainerModel container) {
-        return root.hasAnyAdminRole();
+        if (canView(container)) {
+            return true;
+        } else if (container instanceof RealmModel) {
+            return root.realm().canListRealms();
+        } else {
+            return root.clients().canList((ClientModel)container);
+        }
     }
 
     @Override
