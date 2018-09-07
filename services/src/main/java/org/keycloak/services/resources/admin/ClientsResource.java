@@ -107,7 +107,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     rep.add(representation);
                     representation.setAccess(auth.clients().getAccess(clientModel));
-                } else if (!viewableOnly) {
+                } else if (!viewableOnly && auth.clients().canView(clientModel)) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -122,7 +122,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
-                } else if (!viewableOnly && auth.clients().canList()){
+                } else if (!viewableOnly && auth.clients().canView(clientModel)){
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
