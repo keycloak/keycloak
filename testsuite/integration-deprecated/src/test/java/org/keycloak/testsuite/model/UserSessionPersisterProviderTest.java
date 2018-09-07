@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -227,7 +228,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("foo-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
 
         resetSession();
@@ -261,7 +262,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("bar-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
         createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state");
 
@@ -366,15 +367,15 @@ public class UserSessionPersisterProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
 
         createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
         createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", new DeviceInfo(), "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", new DeviceInfo(), "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         return sessions;

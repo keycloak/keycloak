@@ -1,5 +1,7 @@
 package org.keycloak.representations.account;
 
+import org.keycloak.common.DeviceInfo;
+
 import java.util.List;
 
 /**
@@ -9,6 +11,7 @@ public class SessionRepresentation {
 
     private String id;
     private String ipAddress;
+    private DeviceInfo deviceInfo;
     private int started;
     private int lastAccess;
     private int expires;
@@ -28,6 +31,14 @@ public class SessionRepresentation {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public DeviceInfo getDeviceInfo() {
+        return deviceInfo;
+    }
+
+    public void setDeviceInfo(DeviceInfo deviceInfo) {
+        this.deviceInfo = deviceInfo;
     }
 
     public int getStarted() {

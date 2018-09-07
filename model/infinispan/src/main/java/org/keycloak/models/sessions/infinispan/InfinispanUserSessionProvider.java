@@ -23,6 +23,7 @@ import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -189,16 +190,16 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         final String userSessionId = keyGenerator.generateKeyString(session, sessionCache);
-        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, device, authMethod, rememberMe, brokerSessionId, brokerUserId);
     }
 
     @Override
-    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
-        updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        updateSessionEntity(entity, realm, user, loginUsername, ipAddress, device, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
         sessionTx.addTask(id, createSessionTask, entity);
@@ -206,11 +207,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return wrap(realm, entity, false);
     }
 
-    void updateSessionEntity(UserSessionEntity entity, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    void updateSessionEntity(UserSessionEntity entity, RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         entity.setRealmId(realm.getId());
         entity.setUser(user.getId());
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
+        entity.setDeviceInfo(device);
         entity.setAuthMethod(authMethod);
         entity.setRememberMe(rememberMe);
         entity.setBrokerSessionId(brokerSessionId);
@@ -873,6 +875,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
+        entity.setDeviceInfo(userSession.getDeviceInfo());
         entity.setNotes(userSession.getNotes() == null ? new ConcurrentHashMap<>() : userSession.getNotes());
         entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
         entity.setRememberMe(userSession.isRememberMe());

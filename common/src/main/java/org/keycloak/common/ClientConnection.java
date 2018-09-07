@@ -17,6 +17,8 @@
 
 package org.keycloak.common;
 
+import java.io.IOException;
+
 /**
  * Information about the client connection
  *
@@ -31,4 +33,6 @@ public interface ClientConnection {
 
     String getLocalAddr();
     int getLocalPort();
+
+    DeviceInfo getDeviceInfo();
 }

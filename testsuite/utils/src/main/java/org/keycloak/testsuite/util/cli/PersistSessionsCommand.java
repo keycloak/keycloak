@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util.cli;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -80,7 +81,7 @@ public class PersistSessionsCommand extends AbstractCommand {
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 for (int i = 0; i < countInThisBatch; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
+                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", new DeviceInfo(), "form", true, null, null);
                     AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
                     clientSession.setRedirectUri("http://redirect");
                     clientSession.setNote("foo", "bar-" + i);

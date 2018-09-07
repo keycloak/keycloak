@@ -20,6 +20,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -103,7 +104,7 @@ public class CacheTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
 
-            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache", "127.0.0.1", "auth", false, null, null);
+            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache", "127.0.0.1", new DeviceInfo(), "auth", false, null, null);
             UserModel user2 = userSession.getUser();
 
             user.setLastName("lastName");

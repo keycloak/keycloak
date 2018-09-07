@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -122,7 +123,7 @@ public class UserSessionProviderTest {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessions[0].getId());
         assertSession(userSession, session.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
 
-        userSession.restartSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.6", "form", true, null, null);
+        userSession.restartSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.6", new DeviceInfo(), "form", true, null, null);
 
         resetSession();
 
@@ -306,13 +307,13 @@ public class UserSessionProviderTest {
             Set<String> expired = new HashSet<String>();
 
             Time.setOffset(-(realm.getSsoSessionMaxLifespan() + 1));
-            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
             expired.add(userSession.getId());
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
             Assert.assertEquals(userSession, clientSession.getUserSession());
 
             Time.setOffset(0);
-            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true, null, null);
+            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
             //s.setLastSessionRefresh(Time.currentTime() - (realm.getSsoSessionIdleTimeout() + 1));
             s.setLastSessionRefresh(0);
             expired.add(s.getId());
@@ -320,7 +321,7 @@ public class UserSessionProviderTest {
             Set<String> valid = new HashSet<String>();
             Set<String> validClientSessions = new HashSet<String>();
 
-            userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+            userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
             valid.add(userSession.getId());
             validClientSessions.add(session.sessions().createClientSession(realm, client, userSession).getId());
 
@@ -376,7 +377,7 @@ public class UserSessionProviderTest {
         try {
             for (int i = 0; i < 25; i++) {
                 Time.setOffset(i);
-                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false, null, null);
+                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, new DeviceInfo(), "form", false, null, null);
                 AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app"), userSession);
                 clientSession.setRedirectUri("http://redirect");
                 clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state");
@@ -399,7 +400,7 @@ public class UserSessionProviderTest {
     @Test
     public void testCreateAndGetInSameTransaction() {
         ClientModel client = realm.getClientByClientId("test-app");
-        UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", new DeviceInfo(), "form", true, null, null);
         AuthenticatedClientSessionModel clientSession = createClientSession(client, userSession, "http://redirect", "state");
 
         UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, userSession.getId());
@@ -413,7 +414,7 @@ public class UserSessionProviderTest {
 
     @Test
     public void testAuthenticatedClientSessions() {
-        UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", new DeviceInfo(), "form", true, null, null);
 
         ClientModel client1 = realm.getClientByClientId("test-app");
         ClientModel client2 = realm.getClientByClientId("third-party");
@@ -590,15 +591,15 @@ public class UserSessionProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
 
         createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
         createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", new DeviceInfo(), "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", new DeviceInfo(), "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         resetSession();
