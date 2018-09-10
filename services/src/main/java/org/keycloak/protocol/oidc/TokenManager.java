@@ -202,7 +202,17 @@ public class TokenManager {
         return new TokenValidation(user, userSession, clientSessionCtx, newToken);
     }
 
-    public boolean isTokenValid(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
+    /**
+     * Checks if the token is valid. Intended usage is for token introspection endpoints as the session last refresh
+     * is updated if the token was valid. This is used to keep the session alive when long lived tokens are used.
+     *
+     * @param session
+     * @param realm
+     * @param token
+     * @return
+     * @throws OAuthErrorException
+     */
+    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
         if (!token.isActive()) {
             return false;
         }
@@ -216,17 +226,24 @@ public class TokenManager {
             return false;
         }
 
+        boolean valid = false;
+
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            return isUserValid(session, realm, token, userSession);
+            valid = isUserValid(session, realm, token, userSession);
+        } else {
+            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+            if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                valid = isUserValid(session, realm, token, userSession);
+            }
         }
 
-        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-            return isUserValid(session, realm, token, userSession);
+        if (valid) {
+            userSession.setLastSessionRefresh(Time.currentTime());
         }
 
-        return false;
+        return valid;
     }
 
     private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserSessionModel userSession) {

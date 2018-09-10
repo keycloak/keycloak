@@ -86,7 +86,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
         RealmModel realm = this.session.getContext().getRealm();
 
-        return tokenManager.isTokenValid(session, realm, accessToken) ? accessToken : null;
+        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken) ? accessToken : null;
     }
 
     @Override
