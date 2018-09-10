@@ -39,6 +39,8 @@ public final class OIDCConfigAttributes {
 
     public static final String ACCESS_TOKEN_SIGNED_RESPONSE_ALG = "access.token.signed.response.alg";
 
+    public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
+
     private OIDCConfigAttributes() {
     }
 

@@ -648,7 +648,7 @@ public class TokenManager {
 
 
         token.setSessionState(session.getId());
-        token.expiration(getTokenExpiration(realm, session, clientSession));
+        token.expiration(getTokenExpiration(realm, client, session, clientSession));
 
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
@@ -657,15 +657,32 @@ public class TokenManager {
         return token;
     }
 
-    private int getTokenExpiration(RealmModel realm, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    private int getTokenExpiration(RealmModel realm, ClientModel client,  UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
             implicitFlow = OIDCResponseType.parse(responseType).isImplicitFlow();
         }
-        int tokenLifespan = implicitFlow ? realm.getAccessTokenLifespanForImplicitFlow() : realm.getAccessTokenLifespan();
 
-        int expiration = Time.currentTime() + tokenLifespan;
+        int tokenLifespan;
+
+        if (implicitFlow) {
+            tokenLifespan = realm.getAccessTokenLifespanForImplicitFlow();
+        } else {
+            String clientLifespan = client.getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN);
+            if (clientLifespan != null && !clientLifespan.trim().isEmpty()) {
+                tokenLifespan = Integer.parseInt(clientLifespan);
+            } else {
+                tokenLifespan = realm.getAccessTokenLifespan();
+            }
+        }
+
+        int expiration;
+        if (tokenLifespan == -1) {
+            expiration = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+        } else {
+            expiration = Time.currentTime() + tokenLifespan;
+        }
 
         if (!userSession.isOffline()) {
             int sessionExpires = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
