@@ -35,6 +35,7 @@
             org.keycloak.adapters.undertow.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            io.undertow.*;version="[1.4,3)",
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.fragment>${project.groupId}.keycloak-undertow-adapter</keycloak.osgi.fragment>
