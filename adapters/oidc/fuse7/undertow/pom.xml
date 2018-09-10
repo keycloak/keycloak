@@ -43,7 +43,7 @@
             org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
             org.apache.cxf.transport.http_undertow;resolution:=optional;version="[3,4)",
             org.apache.cxf.transport.servlet;resolution:=optional;version="[3,4)",
-            io.undertow.*,
+            io.undertow.*;version="[1.4,3)",
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.fragment>org.ops4j.pax.web.pax-web-undertow</keycloak.osgi.fragment>

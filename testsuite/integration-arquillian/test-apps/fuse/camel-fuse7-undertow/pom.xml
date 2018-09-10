@@ -39,7 +39,7 @@
             javax.servlet.http;version="[3,4)",
             javax.net.ssl,
             org.apache.camel.*,
-            io.undertow.*,
+            io.undertow.*;version="[1.4,3)",
             org.apache.camel;version="[2.13,3)",
             org.keycloak.*;version="${project.version}",
             org.osgi.service.blueprint,

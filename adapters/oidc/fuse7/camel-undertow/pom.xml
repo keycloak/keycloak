@@ -38,7 +38,7 @@
             org.keycloak.*;version="${project.version}",
             org.apache.camel.*,
             org.apache.camel.component.undertow,
-            io.undertow.*,
+            io.undertow.*;version="[1.4,3)",
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
