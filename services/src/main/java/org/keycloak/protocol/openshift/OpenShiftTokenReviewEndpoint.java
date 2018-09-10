@@ -16,8 +16,10 @@
  */
 package org.keycloak.protocol.openshift;
 
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -39,7 +41,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.security.PublicKey;
 import java.util.List;
 
 /**
@@ -89,22 +90,19 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider {
 
         AccessToken token = null;
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(reviewRequest.getSpec().getToken())
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(reviewRequest.getSpec().getToken(), AccessToken.class)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
-            if (publicKey == null) {
-                error(401, Errors.INVALID_TOKEN, "Invalid public key");
-            } else {
-                verifier.publicKey(publicKey);
-                verifier.verify();
-                token = verifier.getToken();
-            }
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            verifier.verifierContext(verifierContext);
+
+            verifier.verify();
+            token = verifier.getToken();
         } catch (VerificationException e) {
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 
-        if (!tokenManager.isTokenValid(session, realm, token)) {
+        if (!tokenManager.checkTokenValidForIntrospection(session, realm, token)) {
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 

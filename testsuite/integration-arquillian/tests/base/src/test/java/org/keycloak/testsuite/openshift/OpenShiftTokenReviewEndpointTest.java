@@ -6,9 +6,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -22,6 +27,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -115,6 +121,69 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     }
 
     @Test
+    public void longExpiration() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        try {
+            clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "-1");
+            client.update(clientRep);
+
+            // Set time offset just before SSO idle, to get session last refresh updated
+
+            setTimeOffset(1500);
+
+            Review review = new Review();
+
+            review.invoke().assertSuccess();
+
+            // Bump last refresh updated again
+
+            setTimeOffset(3000);
+
+            review.invoke().assertSuccess();
+
+            // And, again
+
+            setTimeOffset(4500);
+
+            // Token should still be valid as session last refresh should have been updated
+
+            review.invoke().assertSuccess();
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, null);
+            client.update(clientRep);
+        }
+    }
+
+    @Test
+    public void hs256() {
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+
+        try {
+            rep.setDefaultSignatureAlgorithm(Algorithm.HS256);
+            realm.update(rep);
+
+            Review r = new Review().algorithm(Algorithm.HS256).invoke()
+                    .assertSuccess();
+
+            String userId = testRealm().users().search(r.username).get(0).getId();
+
+            OpenShiftTokenReviewResponseRepresentation.User user = r.response.getStatus().getUser();
+
+            assertEquals(userId, user.getUid());
+            assertEquals("test-user@localhost", user.getUsername());
+            assertNotNull(user.getExtra());
+
+            r.assertScope("openid", "email", "profile");
+        } finally {
+            rep.setDefaultSignatureAlgorithm(null);
+            realm.update(rep);
+        }
+    }
+
+    @Test
     public void groups() {
         new Review().username("groups-user")
                 .invoke()
@@ -194,7 +263,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     i.token = i.token.replaceFirst(header, newHeader);
                 })
                 .invoke()
-                .assertError(401, "Invalid public key");
+                .assertError(401, "Token verification failure");
     }
 
     @Test
@@ -251,6 +320,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         private String clientId = "test-app";
         private String username = "test-user@localhost";
         private String password = "password";
+        private String algorithm = Algorithm.RS256;
         private InvokeRunnable runAfterTokenRequest;
 
         private String token;
@@ -262,6 +332,11 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
             return this;
         }
 
+        public Review algorithm(String algorithm) {
+            this.algorithm = algorithm;
+            return this;
+        }
+
         public Review runAfterTokenRequest(InvokeRunnable runnable) {
             this.runAfterTokenRequest = runnable;
             return this;
@@ -269,16 +344,20 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
         public Review invoke() {
             try {
-                String userId = testRealm().users().search(username).get(0).getId();
-                oauth.doLogin(username, password);
-                EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+                if (token == null) {
+                    String userId = testRealm().users().search(username).get(0).getId();
+                    oauth.doLogin(username, password);
+                    EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
 
-                String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-                OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+                    String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+                    OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-                events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId()).detail("client_auth_method", "testsuite-client-dummy").user(userId).assertEvent();
+                    events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId()).detail("client_auth_method", "testsuite-client-dummy").user(userId).assertEvent();
 
-                token = accessTokenResponse.getAccessToken();
+                    token = accessTokenResponse.getAccessToken();
+                }
+
+                assertEquals(algorithm, new JWSInput(token).getHeader().getAlgorithm().name());
 
                 if (runAfterTokenRequest != null) {
                     runAfterTokenRequest.run(this);
