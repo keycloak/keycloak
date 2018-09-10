@@ -35,18 +35,18 @@
                                 </label>
                             </div>
                         </#if>
-                        </div>
-                        <div class="${properties.kcFormOptionsWrapperClass!}">
-                            <#if realm.resetPasswordAllowed>
-                                <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
-                            </#if>
-                        </div>
+                    </div>
+                        
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                        <#if realm.resetPasswordAllowed>
+                            <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
+                        </#if>
+                    </div>
+                </div>
 
-                  </div>
-
-                  <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
                     <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
-                  </div>
+                </div>
             </form>
         </#if>
         </div>
