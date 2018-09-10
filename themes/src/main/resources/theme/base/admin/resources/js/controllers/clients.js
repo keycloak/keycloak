@@ -877,7 +877,7 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
 });
 
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $route, serverInfo, Client, ClientDescriptionConverter, Components, ClientStorageOperations, $location, $modal, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $route, serverInfo, Client, ClientDescriptionConverter, Components, ClientStorageOperations, $location, $modal, Dialog, Notifications, TimeUnit2) {
     $scope.flows = [];
     $scope.clientFlows = [];
     var emptyFlow = {
@@ -960,6 +960,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
+
+    $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1254,6 +1256,18 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             return true;
         }
         return false;
+    }
+
+    $scope.updateTimeouts = function() {
+        if ($scope.accessTokenLifespan.time) {
+            if ($scope.accessTokenLifespan.time === -1) {
+                $scope.clientEdit.attributes['access.token.lifespan'] = -1;
+            } else {
+                $scope.clientEdit.attributes['access.token.lifespan'] = $scope.accessTokenLifespan.toSeconds();
+            }
+        } else {
+            $scope.clientEdit.attributes['access.token.lifespan'] = null;
+        }
     }
 
     function configureAuthorizationServices() {

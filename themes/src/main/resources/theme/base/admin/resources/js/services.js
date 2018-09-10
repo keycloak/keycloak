@@ -1397,23 +1397,29 @@ module.factory('TimeUnit2', function() {
     var t = {};
 
     t.asUnit = function(time) {
-        var unit = 'Minutes';
-        if (time) {
-            if (time < 60) {
-                time = 60;
-            }
 
-            if (time % 60 == 0) {
-                unit = 'Minutes';
-                time = time / 60;
-            }
-            if (time % 60 == 0) {
-                unit = 'Hours';
-                time = time / 60;
-            }
-            if (time % 24 == 0) {
-                unit = 'Days'
-                time = time / 24;
+        var unit = 'Minutes';
+
+        if (time) {
+            if (time == -1) {
+                time = -1;
+            } else {
+                if (time < 60) {
+                    time = 60;
+                }
+
+                if (time % 60 == 0) {
+                    unit = 'Minutes';
+                    time = time / 60;
+                }
+                if (time % 60 == 0) {
+                    unit = 'Hours';
+                    time = time / 60;
+                }
+                if (time % 24 == 0) {
+                    unit = 'Days'
+                    time = time / 24;
+                }
             }
         }
 
