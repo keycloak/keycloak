@@ -17,8 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.IOException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -26,6 +24,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -490,7 +489,7 @@ public class ModelToRepresentation {
     }
 
 
-    public static ClientRepresentation toRepresentation(ClientModel clientModel) {
+    public static ClientRepresentation toRepresentation(ClientModel clientModel, KeycloakSession session) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setId(clientModel.getId());
         String providerId = StorageId.resolveProviderId(clientModel);
@@ -546,6 +545,15 @@ public class ModelToRepresentation {
                 mappings.add(toRepresentation(model));
             }
             rep.setProtocolMappers(mappings);
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+
+            if (resourceServer != null) {
+                rep.setAuthorizationServicesEnabled(true);
+            }
         }
 
         return rep;

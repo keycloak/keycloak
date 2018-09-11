@@ -17,6 +17,7 @@
 package org.keycloak.services.clientregistration.oidc;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -72,6 +73,12 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
+            List<String> grantTypes = clientOIDC.getGrantTypes();
+
+            if (grantTypes != null && grantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE)) {
+                client.setAuthorizationServicesEnabled(true);
+            }
+
             OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = create(oidcContext);
 

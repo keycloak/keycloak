@@ -71,9 +71,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
 
+            if (clientModel.isServiceAccountsEnabled()) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
+            }
+
+            if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                RepresentationToModel.createResourceServer(clientModel, session, true);
+            }
+
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
-            client = ModelToRepresentation.toRepresentation(clientModel);
+            client = ModelToRepresentation.toRepresentation(clientModel, session);
 
             client.setSecret(clientModel.getSecret());
 
@@ -98,7 +106,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireView(client);
 
-        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         if (client.getSecret() != null) {
             rep.setSecret(client.getSecret());
         }
@@ -135,7 +143,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         RepresentationToModel.updateClient(rep, client);
-        rep = ModelToRepresentation.toRepresentation(client);
+        rep = ModelToRepresentation.toRepresentation(client, session);
 
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
