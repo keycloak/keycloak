@@ -26,7 +26,7 @@ the resources and scopes to which User A has access.
 +
 Client can use any of the client authentication methods supported by {project_name}. For instance, client_id/client_secret or JWT.
 +
-.Example: an authorization request using an access token to authenticate to the token endpoint
+.Example: an authorization request using client id and client secret to authenticate to the token endpoint
 ```bash
 curl -X POST \
   http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
