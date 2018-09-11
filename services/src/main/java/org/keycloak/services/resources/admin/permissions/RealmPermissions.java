@@ -62,7 +62,7 @@ class RealmPermissions implements RealmPermissionEvaluator {
     }
 
     public boolean canManageAuthorizationDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION);
+        return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.MANAGE_CLIENTS);
 
     }
     public boolean canViewAuthorizationDefault() {

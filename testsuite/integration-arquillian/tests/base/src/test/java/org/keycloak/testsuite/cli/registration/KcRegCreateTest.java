@@ -1,10 +1,20 @@
 package org.keycloak.testsuite.cli.registration;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -13,6 +23,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -213,6 +224,88 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             config = handler.loadConfig();
             Assert.assertNull("initial token == null", config.ensureRealmConfigData(serverUrl, realm).getInitialToken());
+        }
+    }
+
+    @Test
+    public void testCreateWithAuthorizationServices() throws IOException {
+        FileConfigHandler handler = initCustomConfigFile();
+
+        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+
+            KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
+                    "' --server " + serverUrl + " --realm master --user admin --password admin");
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+
+            String token = issueInitialAccessToken("test");
+            exe = execute("create --config '" + configFile.getName() + "' --server " + serverUrl + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+
+            RealmResource realm = adminClient.realm("test");
+            ClientsResource clients = realm.clients();
+            ClientRepresentation clientRep = clients.findByClientId("authz-client").get(0);
+
+            ClientResource client = clients.get(clientRep.getId());
+
+            clientRep = client.toRepresentation();
+            Assert.assertTrue(clientRep.getAuthorizationServicesEnabled());
+
+            ResourceServerRepresentation settings = client.authorization().getSettings();
+
+            Assert.assertEquals(PolicyEnforcementMode.ENFORCING, settings.getPolicyEnforcementMode());
+            Assert.assertTrue(settings.isAllowRemoteResourceManagement());
+
+            List<RoleRepresentation> roles = client.roles().list();
+
+            Assert.assertEquals(1, roles.size());
+            Assert.assertEquals("uma_protection", roles.get(0).getName());
+
+            // create using oidc endpoint - autodetect format
+            String content = "        {\n" +
+                    "            \"redirect_uris\" : [ \"http://localhost:8980/myapp/*\" ],\n" +
+                    "            \"grant_types\" : [ \"authorization_code\", \"client_credentials\", \"refresh_token\", \"" + OAuth2Constants.UMA_GRANT_TYPE + "\" ],\n" +
+                    "            \"response_types\" : [ \"code\", \"none\" ],\n" +
+                    "            \"client_name\" : \"My Reg Authz\",\n" +
+                    "            \"client_uri\" : \"http://localhost:8980/myapp\"\n" +
+                    "        }";
+
+            try (TempFileResource tmpFile = new TempFileResource(initTempFile(".json", content))) {
+
+                exe = execute("create --config '" + configFile.getName() + "' -s 'client_name=My Reg Authz' --realm test -t " + token +
+                        " -s 'redirect_uris=[\"http://localhost:8980/myapp5/*\"]' -s client_uri=http://localhost:8980/myapp5" +
+                        " -o -f - < '" + tmpFile.getName() + "'");
+
+                assertExitCodeAndStdErrSize(exe, 0, 0);
+
+                OIDCClientRepresentation oidcClient = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+
+                Assert.assertNotNull("clientId", oidcClient.getClientId());
+                Assert.assertEquals("redirect_uris", Arrays.asList("http://localhost:8980/myapp5/*"), oidcClient.getRedirectUris());
+                Assert.assertThat("grant_types", oidcClient.getGrantTypes(), Matchers.containsInAnyOrder("authorization_code", "client_credentials", "refresh_token", OAuth2Constants.UMA_GRANT_TYPE));
+                Assert.assertEquals("response_types", Arrays.asList("code", "none"), oidcClient.getResponseTypes());
+                Assert.assertEquals("client_name", "My Reg Authz", oidcClient.getClientName());
+                Assert.assertEquals("client_uri", "http://localhost:8980/myapp5", oidcClient.getClientUri());
+
+                client = clients.get(oidcClient.getClientId());
+
+                clientRep = client.toRepresentation();
+                Assert.assertTrue(clientRep.getAuthorizationServicesEnabled());
+
+                settings = client.authorization().getSettings();
+
+                Assert.assertEquals(PolicyEnforcementMode.ENFORCING, settings.getPolicyEnforcementMode());
+                Assert.assertTrue(settings.isAllowRemoteResourceManagement());
+
+                roles = client.roles().list();
+
+                Assert.assertEquals(1, roles.size());
+                Assert.assertEquals("uma_protection", roles.get(0).getName());
+
+                UserRepresentation serviceAccount = realm.users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + clientRep.getClientId()).get(0);
+                Assert.assertNotNull(serviceAccount);
+                List<RoleRepresentation> serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(clientRep.getId()).listAll();
+                Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
+            }
         }
     }
 }
