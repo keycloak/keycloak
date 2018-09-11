@@ -246,6 +246,9 @@ public class DescriptionConverter {
         if (client.isServiceAccountsEnabled()) {
             grantTypes.add(OAuth2Constants.CLIENT_CREDENTIALS);
         }
+        if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
+            grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);
+        }
         grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
         return grantTypes;
     }

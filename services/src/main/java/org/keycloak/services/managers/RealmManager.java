@@ -507,6 +507,23 @@ public class RealmManager {
         }
 
         RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+        List<ClientRepresentation> clients = rep.getClients();
+
+        if (clients != null) {
+            ClientManager clientManager = new ClientManager(new RealmManager(session));
+
+            for (ClientRepresentation client : clients) {
+                ClientModel clientModel = realm.getClientById(client.getId());
+
+                if (clientModel.isServiceAccountsEnabled()) {
+                    clientManager.enableServiceAccount(clientModel);
+                }
+
+                if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                    RepresentationToModel.createResourceServer(clientModel, session, true);
+                }
+            }
+        }
 
         setupAdminConsoleLocaleMapper(realm);
 
