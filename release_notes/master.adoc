@@ -10,6 +10,7 @@ include::topics/templates/document-attributes-product.adoc[]
 
 == {project_name_full} 7.3.CD04
 
+include::topics/4_5_0_final.adoc[leveloffset=2]
 include::topics/4_4_0_final.adoc[leveloffset=2]
 
 == {project_name_full} 7.3.CD03

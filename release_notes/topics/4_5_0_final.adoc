@@ -1,0 +1,22 @@
+= Signature SPI
+
+The Signature SPI makes it possible to plug-in additional signature algorithms. Not only does it enable
+additional signatures, but it also enables changing how signatures are generated. For example this would allow
+using an HSM device to sign tokens.
+
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a signficant part of this work.
+
+= New Signature Algorithms
+
+Alongside the Signature SPI there is now also support for additional signature algorithms.
+
+Keycloak now has support for RS256, RS384, RS512, ES256, ES384, ES512, HS256, HS384 and HS512.
+
+Elliptic Curve Digital Signature Algorithm (ES256/384/512) are very interesting as they provide similar
+security properties as RSA signatures, but uses significantly less CPU.
+
+HMAC (HS256/384/512) are also very useful when you do not want your application to verify the signature itself.
+Since these are symmetric signatures only Keycloak is able to verify the signature, which requires the
+application to use the token introspection endpoint to verify tokens.
+
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a signficant part of this work.
