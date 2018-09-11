@@ -160,12 +160,22 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             metadata = request.getMetadata();
         }
 
+        Permission permission;
+
         if (resource != null) {
             String resourceName = metadata == null || metadata.getIncludeResourceName() ? resource.getName() : null;
-            return new Permission(resource.getId(), resourceName, scopes, claims);
+            permission = new Permission(resource.getId(), resourceName, scopes, claims);
+        } else {
+            permission = new Permission(null, null, scopes, claims);
         }
 
-        return new Permission(null, null, scopes, claims);
+        onGrant(permission);
+
+        return permission;
+    }
+
+    protected void onGrant(Permission permission) {
+
     }
 
     private static boolean isResourcePermission(Policy policy) {
