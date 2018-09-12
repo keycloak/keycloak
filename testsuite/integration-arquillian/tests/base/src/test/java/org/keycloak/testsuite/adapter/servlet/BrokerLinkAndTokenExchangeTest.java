@@ -492,7 +492,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         testExternalExchange();
         testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        //System.out.println("TARGET PATH: " + targetFilePath);
         testingClient.testing().exportImport().setFile(targetFilePath);
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName(CHILD_IDP);
@@ -502,12 +501,10 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().exportImport().runImport();
-        //System.out.println("************* AFTER IMPORT");
+
+        testingClient.testing().exportImport().clear();
+
         testExternalExchange();
-        //Thread.sleep(1000000000l);
-
-
-
     }
 
 
