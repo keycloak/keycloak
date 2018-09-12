@@ -27,10 +27,12 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.ClientPolicyResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -50,7 +52,10 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         return super.createTestRealm()
                 .client(ClientBuilder.create().clientId("Client A"))
                 .client(ClientBuilder.create().clientId("Client B"))
-                .client(ClientBuilder.create().clientId("Client C"));
+                .client(ClientBuilder.create().clientId("Client C"))
+                .client(ClientBuilder.create().clientId("Client D"))
+                .client(ClientBuilder.create().clientId("Client E"))
+                .client(ClientBuilder.create().clientId("Client F"));
     }
 
     @Test
@@ -123,6 +128,51 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
             fail("Permission not removed");
         } catch (NotFoundException ignore) {
 
+        }
+    }
+
+
+    @Test
+    public void testDeleteClient() {
+        AuthorizationResource authorization = getClient().authorization();
+        ClientPolicyRepresentation representation = new ClientPolicyRepresentation();
+
+        representation.setName("Update Test Client Policy");
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.addClient("Client D");
+        representation.addClient("Client E");
+        representation.addClient("Client F");
+
+        assertCreated(authorization, representation);
+
+        ClientsResource clients = getRealm().clients();
+        ClientRepresentation client = clients.findByClientId("Client D").get(0);
+
+        clients.get(client.getId()).remove();
+
+        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(2, representation.getClients().size());
+        Assert.assertFalse(representation.getClients().contains(client.getId()));
+
+        client = clients.findByClientId("Client E").get(0);
+        clients.get(client.getId()).remove();
+
+        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(1, representation.getClients().size());
+        Assert.assertFalse(representation.getClients().contains(client.getId()));
+
+        client = clients.findByClientId("Client F").get(0);
+        clients.get(client.getId()).remove();
+
+        try {
+            authorization.policies().client().findById(representation.getId()).toRepresentation();
+            fail("Client policy should be removed");
+        } catch (NotFoundException nfe) {
+            // ignore
         }
     }
 

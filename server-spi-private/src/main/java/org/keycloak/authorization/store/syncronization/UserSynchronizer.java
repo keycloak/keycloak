@@ -17,8 +17,15 @@
 
 package org.keycloak.authorization.store.syncronization;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -28,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -38,12 +46,45 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
     public void synchronize(UserRemovedEvent event, KeycloakSessionFactory factory) {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
+
+        removeUserResources(event, authorizationProvider);
+        removeFromUserPolicies(event, authorizationProvider);
+    }
+
+    private void removeFromUserPolicies(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        UserModel userModel = event.getUser();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
         PolicyStore policyStore = storeFactory.getPolicyStore();
+        UserModel userModel = event.getUser();
+        Map<String, String[]> attributes = new HashMap<>();
+
+        attributes.put("type", new String[] {"user"});
+        attributes.put("config:users", new String[] {userModel.getId()});
+
+        List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
+
+        for (Policy policy : search) {
+            PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
+            UserPolicyRepresentation representation = UserPolicyRepresentation.class.cast(policyFactory.toRepresentation(policy, authorizationProvider));
+            Set<String> users = representation.getUsers();
+
+            users.remove(userModel.getId());
+
+            if (users.isEmpty()) {
+                policyFactory.onRemove(policy, authorizationProvider);
+                policyStore.delete(policy.getId());
+            } else {
+                policyFactory.onUpdate(policy, representation, authorizationProvider);
+            }
+        }
+    }
+
+    private void removeUserResources(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
         ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
         RealmModel realm = event.getRealm();
+        UserModel userModel = event.getUser();
 
         realm.getClients().forEach(clientModel -> {
             ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
