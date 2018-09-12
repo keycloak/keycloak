@@ -576,15 +576,15 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-fuse70</id>
+            <id>app-server-fuse7x</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>fuse70</value>
+                    <value>fuse7x</value>
                 </property>
             </activation>
             <properties>
-                <app.server>fuse70</app.server> <!--in case the profile is called directly-->
+                <app.server>fuse7x</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
 
                 <!--fuse examples expect auth server on 8080-->
@@ -601,7 +601,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
+                    <artifactId>integration-arquillian-servers-app-server-fuse7x</artifactId>
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>
@@ -615,67 +615,6 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
                     <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
-                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
-                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-fuse71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse71</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>fuse71</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <!--fuse examples expect auth server on 8080-->
-                <auth.server.port.offset>0</auth.server.port.offset>
-                <auth.server.http.port>8080</auth.server.http.port>
-                <auth.server.management.port>9990</auth.server.management.port>
-                <!--fuse examples expect default karaf http port 8181-->
-                <app.server.http.port>8181</app.server.http.port>
-
-                <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>admin</app.server.management.password>
-                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse71</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
                 </dependency>
             </dependencies>
             <build>

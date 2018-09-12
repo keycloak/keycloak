@@ -27,17 +27,17 @@ import org.keycloak.testsuite.utils.arquillian.fuse.CustomFuseContainer;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class Fuse71AppServerProvider implements AppServerContainerProvider {
+public class Fuse7xAppServerProvider implements AppServerContainerProvider {
 
     private Node configuration;
-    private static final String containerName = "fuse71";
+    private static final String containerName = "fuse7x";
 
     private final String appServerHome;
     private final String appServerJavaHome;
     private final String managementUser;
     private final String managementPassword;
 
-    public Fuse71AppServerProvider() {
+    public Fuse7xAppServerProvider() {
         appServerHome = System.getProperty("app.server.home");
         appServerJavaHome = System.getProperty("app.server.java.home");
         managementUser = System.getProperty("app.server.management.user");
