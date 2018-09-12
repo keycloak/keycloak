@@ -137,7 +137,9 @@ public class JPAPolicyStore implements PolicyStore {
         List<Predicate> predicates = new ArrayList();
         querybuilder.select(root.get("id"));
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        if (resourceServerId != null) {
+            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        }
 
         attributes.forEach((name, value) -> {
             if ("permission".equals(name)) {
@@ -156,6 +158,9 @@ public class JPAPolicyStore implements PolicyStore {
                 predicates.add(root.join("resources").get("id").in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
+            } else if (name.startsWith("config:")) {
+                predicates.add(root.joinMap("config").key().in(name.substring("config:".length())));
+                predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + value[0] + "%"));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }
