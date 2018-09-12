@@ -75,8 +75,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE70)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE71)
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
 public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
     @Drone

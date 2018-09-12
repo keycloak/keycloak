@@ -25,16 +25,16 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-fuse7x</artifactId>
     <packaging>jar</packaging>
-    <name>App Server - Fuse 7.0</name>
+    <name>App Server - Fuse 7.x</name>
 
     <properties>
-        <app.server.karaf>fuse70</app.server.karaf>
+        <app.server.karaf>fuse7x</app.server.karaf>
         <app.server.karaf.groupId>org.jboss.fuse</app.server.karaf.groupId>
         <app.server.karaf.artifactId>fuse-karaf</app.server.karaf.artifactId>
-        <app.server.karaf.version>${fuse70.version}</app.server.karaf.version>
-        <app.server.karaf.unpacked.folder.name>fuse-karaf-${fuse70.version}</app.server.karaf.unpacked.folder.name>
+        <app.server.karaf.version>${fuse7x.version}</app.server.karaf.version>
+        <app.server.karaf.unpacked.folder.name>fuse-karaf-${fuse7x.version}</app.server.karaf.unpacked.folder.name>
         <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
     </properties>
 
@@ -73,7 +73,7 @@
                         <configuration>
                             <rules>
                                 <requireProperty>
-                                    <property>fuse70.version</property>
+                                    <property>fuse7x.version</property>
                                 </requireProperty>
                             </rules>
                         </configuration>
