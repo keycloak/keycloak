@@ -267,27 +267,15 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-fuse70</id>
+            <id>app-server-fuse7x</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>fuse70</value>
+                    <value>fuse7x</value>
                 </property>
             </activation>
             <modules>
-                <module>fuse70</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-fuse71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse71</value>
-                </property>
-            </activation>
-            <modules>
-                <module>fuse71</module>
+                <module>fuse7x</module>
             </modules>
         </profile>
     </profiles>

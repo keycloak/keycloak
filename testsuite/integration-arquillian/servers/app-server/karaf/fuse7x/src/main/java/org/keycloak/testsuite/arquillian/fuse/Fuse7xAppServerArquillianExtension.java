@@ -24,7 +24,7 @@ import org.keycloak.testsuite.utils.arquillian.fuse.CustomFuseContainer;
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
-public class Fuse71AppServerArquillianExtension implements LoadableExtension {
+public class Fuse7xAppServerArquillianExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
