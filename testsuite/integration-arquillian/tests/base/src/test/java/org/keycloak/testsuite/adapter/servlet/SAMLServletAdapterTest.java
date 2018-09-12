@@ -166,6 +166,7 @@ import org.xml.sax.SAXException;
 /**
  * @author mhajas
  */
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
@@ -265,10 +266,10 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     protected EcpSP ecpSPPage;
 
     @Page
-    protected MultiTenant1Saml mutiTenant1SamlPage;
+    protected MultiTenant1Saml multiTenant1SamlPage;
     
     @Page
-    protected MultiTenant2Saml mutiTenant2SamlPage;
+    protected MultiTenant2Saml multiTenant2SamlPage;
     
     @Page
     protected SAMLPostLoginTenant1 tenant1RealmSAMLPostLoginPage;
@@ -595,38 +596,50 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void multiTenant1SamlTest() throws Exception {
-        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user1, "user-tenant1");
-        // check the user in the tenant logs in ok
-        assertSuccessfulLogin(mutiTenant1SamlPage, user1, tenant1RealmSAMLPostLoginPage, "principal=user-tenant1");
-        // check the issuer is the correct tenant
-        driver.navigate().to(mutiTenant1SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
-        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant1");
-        // check logout
-        mutiTenant1SamlPage.logout();
-        checkLoggedOut(mutiTenant1SamlPage, tenant1RealmSAMLPostLoginPage);
-        // check a user in the other tenant doesn't login
-        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user2, "user-tenant2");
-        assertFailedLogin(mutiTenant1SamlPage, user2, tenant1RealmSAMLPostLoginPage);
+        multiTenant1SamlPage.setRolesToCheck("user");
+
+        try {
+            UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user1, "user-tenant1");
+            // check the user in the tenant logs in ok
+            assertSuccessfulLogin(multiTenant1SamlPage, user1, tenant1RealmSAMLPostLoginPage, "principal=user-tenant1");
+            // check the issuer is the correct tenant
+            driver.navigate().to(multiTenant1SamlPage.getUriBuilder().clone().path("getAssertionIssuer").build().toASCIIString());
+            waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant1");
+            // check logout
+            multiTenant1SamlPage.logout();
+            checkLoggedOut(multiTenant1SamlPage, tenant1RealmSAMLPostLoginPage);
+            // check a user in the other tenant doesn't login
+            UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user2, "user-tenant2");
+            assertFailedLogin(multiTenant1SamlPage, user2, tenant1RealmSAMLPostLoginPage);
+        } finally {
+            multiTenant1SamlPage.checkRolesEndPoint(false);
+        }
     }
-    
+
     @Test
     public void multiTenant2SamlTest() throws Exception {
-        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user2, "user-tenant2");
-        // check the user in the tenant logs in ok
-        assertSuccessfulLogin(mutiTenant2SamlPage, user2, tenant2RealmSAMLPostLoginPage, "principal=user-tenant2");
-        // check the issuer is the correct tenant
-        driver.navigate().to(mutiTenant2SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
-        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant2");
-        // check logout
-        mutiTenant2SamlPage.logout();
-        checkLoggedOut(mutiTenant2SamlPage, tenant2RealmSAMLPostLoginPage);
-        // check a user in the other tenant doesn't login
-        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user1, "user-tenant1");
-        assertFailedLogin(mutiTenant2SamlPage, user1, tenant2RealmSAMLPostLoginPage);
+        multiTenant2SamlPage.setRolesToCheck("user");
+
+        try {
+            UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user2, "user-tenant2");
+            // check the user in the tenant logs in ok
+            assertSuccessfulLogin(multiTenant2SamlPage, user2, tenant2RealmSAMLPostLoginPage, "principal=user-tenant2");
+            // check the issuer is the correct tenant
+            driver.navigate().to(multiTenant2SamlPage.getUriBuilder().clone().path("getAssertionIssuer").build().toASCIIString());
+            waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant2");
+            // check logout
+            multiTenant2SamlPage.logout();
+            checkLoggedOut(multiTenant2SamlPage, tenant2RealmSAMLPostLoginPage);
+            // check a user in the other tenant doesn't login
+            UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user1, "user-tenant1");
+            assertFailedLogin(multiTenant2SamlPage, user1, tenant2RealmSAMLPostLoginPage);
+        } finally {
+            multiTenant2SamlPage.checkRolesEndPoint(false);
+        }
     }
 
     private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);

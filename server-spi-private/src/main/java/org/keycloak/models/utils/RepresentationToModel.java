@@ -1086,7 +1086,7 @@ public class RepresentationToModel {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles) {
-        logger.debug("Create client: {0}" + resourceRep.getClientId());
+        logger.debugv("Create client: {0}", resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
