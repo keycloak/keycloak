@@ -55,33 +55,35 @@ class SimpleWebXmlParser {
         try {
             DocumentWrapper document = new DocumentWrapper(webXml);
 
-            // SERVLETS
+            if (di.getServlets().get("ResteasyServlet") == null) {
 
-            Map<String, String> servletMappings = new HashMap<>();
-            List<ElementWrapper> sm = document.getElementsByTagName("servlet-mapping");
-            for (ElementWrapper mapping : sm) {
-                String servletName = mapping.getElementByTagName("servlet-name").getText();
-                String path = mapping.getElementByTagName("url-pattern").getText();
-                servletMappings.put(servletName, path);
-            }
+                // SERVLETS
+                Map<String, String> servletMappings = new HashMap<>();
+                List<ElementWrapper> sm = document.getElementsByTagName("servlet-mapping");
+                for (ElementWrapper mapping : sm) {
+                    String servletName = mapping.getElementByTagName("servlet-name").getText();
+                    String path = mapping.getElementByTagName("url-pattern").getText();
+                    servletMappings.put(servletName, path);
+                }
 
-            List<ElementWrapper> servlets = document.getElementsByTagName("servlet");
-            for (ElementWrapper servlet : servlets) {
-                String servletName = servlet.getElementByTagName("servlet-name").getText();
-                ElementWrapper servletClassEw = servlet.getElementByTagName("servlet-class");
-                String servletClass = servletClassEw == null ? servletName : servletClassEw.getText();
-                ElementWrapper loadOnStartupEw = servlet.getElementByTagName("load-on-startup");
-                Integer loadOnStartup = loadOnStartupEw == null ? null : Integer.valueOf(loadOnStartupEw.getText());
+                List<ElementWrapper> servlets = document.getElementsByTagName("servlet");
+                for (ElementWrapper servlet : servlets) {
+                    String servletName = servlet.getElementByTagName("servlet-name").getText();
+                    ElementWrapper servletClassEw = servlet.getElementByTagName("servlet-class");
+                    String servletClass = servletClassEw == null ? servletName : servletClassEw.getText();
+                    ElementWrapper loadOnStartupEw = servlet.getElementByTagName("load-on-startup");
+                    Integer loadOnStartup = loadOnStartupEw == null ? null : Integer.valueOf(loadOnStartupEw.getText());
 
-                Class<? extends Servlet> servletClazz = (Class<? extends Servlet>) Class.forName(servletClass);
-                ServletInfo undertowServlet = new ServletInfo(servletName, servletClazz);
+                    Class<? extends Servlet> servletClazz = (Class<? extends Servlet>) Class.forName(servletClass);
+                    ServletInfo undertowServlet = new ServletInfo(servletName, servletClazz);
 
-                if (servletMappings.containsKey(servletName)) {
-                    undertowServlet.addMapping(servletMappings.get(servletName));
-                    undertowServlet.setLoadOnStartup(loadOnStartup);
-                    di.addServlet(undertowServlet);
-                } else {
-                    log.warnf("Missing servlet-mapping for '%s'", servletName);
+                    if (servletMappings.containsKey(servletName)) {
+                        undertowServlet.addMapping(servletMappings.get(servletName));
+                        undertowServlet.setLoadOnStartup(loadOnStartup);
+                        di.addServlet(undertowServlet);
+                    } else {
+                        log.warnf("Missing servlet-mapping for '%s'", servletName);
+                    }
                 }
             }
 
@@ -180,21 +182,29 @@ class SimpleWebXmlParser {
             ElementWrapper sessionCfg = document.getElementByTagName("session-config");
             if (sessionCfg != null) {
                 ElementWrapper cookieConfig = sessionCfg.getElementByTagName("cookie-config");
-                String httpOnly = cookieConfig.getElementByTagName("http-only").getText();
                 String cookieName = cookieConfig.getElementByTagName("name").getText();
 
                 ServletSessionConfig cfg = new ServletSessionConfig();
-                cfg.setHttpOnly(Boolean.parseBoolean(httpOnly));
+                if (cookieConfig.getElementByTagName("http-only") != null) {
+                    cfg.setHttpOnly(Boolean.parseBoolean(cookieConfig.getElementByTagName("http-only").getText()));
+                }
                 cfg.setName(cookieName);
                 di.setServletSessionConfig(cfg);
             }
             
             // ERROR PAGES
             List<ElementWrapper> errorPages = document.getElementsByTagName("error-page");
-            for (ElementWrapper errorPage : errorPages) {
-                int errorCode = Integer.parseInt(errorPage.getElementByTagName("error-code").getText());
-                String location = errorPage.getElementByTagName("location").getText();
-                di.addErrorPage(new ErrorPage(location, errorCode));
+            for (ElementWrapper errorPageWrapper : errorPages) {
+                String location = errorPageWrapper.getElementByTagName("location").getText();
+
+                ErrorPage errorPage;
+                if (errorPageWrapper.getElementByTagName("error-code") != null) {
+                    errorPage = new ErrorPage(location, Integer.parseInt(errorPageWrapper.getElementByTagName("error-code").getText()));
+                } else {
+                    errorPage = new ErrorPage(location);
+                }
+
+                di.addErrorPage(errorPage);
             }
 
         } catch (ClassNotFoundException cnfe) {
