@@ -29,11 +29,13 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.UserPoliciesResource;
 import org.keycloak.admin.client.resource.UserPolicyResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -52,7 +54,10 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         return super.createTestRealm()
                 .user(UserBuilder.create().username("User A"))
                 .user(UserBuilder.create().username("User B"))
-                .user(UserBuilder.create().username("User C"));
+                .user(UserBuilder.create().username("User C"))
+                .user(UserBuilder.create().username("User D"))
+                .user(UserBuilder.create().username("User E"))
+                .user(UserBuilder.create().username("User F"));
     }
 
     @Test
@@ -124,6 +129,50 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
             fail("Permission not removed");
         } catch (NotFoundException ignore) {
 
+        }
+    }
+
+    @Test
+    public void testDeleteUser() {
+        AuthorizationResource authorization = getClient().authorization();
+        UserPolicyRepresentation representation = new UserPolicyRepresentation();
+
+        representation.setName("Realm User Policy");
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.addUser("User D");
+        representation.addUser("User E");
+        representation.addUser("User F");
+
+        assertCreated(authorization, representation);
+
+        UsersResource users = getRealm().users();
+        UserRepresentation user = users.search("User D").get(0);
+
+        users.get(user.getId()).remove();
+
+        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(2, representation.getUsers().size());
+        Assert.assertFalse(representation.getUsers().contains(user.getId()));
+
+        user = users.search("User E").get(0);
+        users.get(user.getId()).remove();
+
+        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(1, representation.getUsers().size());
+        Assert.assertFalse(representation.getUsers().contains(user.getId()));
+
+        user = users.search("User F").get(0);
+        users.get(user.getId()).remove();
+
+        try {
+            authorization.policies().user().findById(representation.getId()).toRepresentation();
+            fail("User policy should be removed");
+        } catch (NotFoundException nfe) {
+            // ignore
         }
     }
 

@@ -18,13 +18,21 @@
 
 package org.keycloak.authorization.store.syncronization;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.ClientRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -35,16 +43,39 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
     public void synchronize(ClientRemovedEvent event, KeycloakSessionFactory factory) {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
+
+        removeFromClientPolicies(event, authorizationProvider);
+    }
+
+    private void removeFromClientPolicies(ClientRemovedEvent event, AuthorizationProvider authorizationProvider) {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         ResourceServerStore store = storeFactory.getResourceServerStore();
         ResourceServer resourceServer = store.findById(event.getClient().getId());
 
         if (resourceServer != null) {
-            String id = resourceServer.getId();
-            //storeFactory.getResourceStore().findByResourceServer(id).forEach(resource -> storeFactory.getResourceStore().delete(resource.getId()));
-            //storeFactory.getScopeStore().findByResourceServer(id).forEach(scope -> storeFactory.getScopeStore().delete(scope.getId()));
-            //storeFactory.getPolicyStore().findByResourceServer(id).forEach(scope -> storeFactory.getPolicyStore().delete(scope.getId()));
-            storeFactory.getResourceServerStore().delete(id);
+            storeFactory.getResourceServerStore().delete(resourceServer.getId());
+        }
+
+        Map<String, String[]> attributes = new HashMap<>();
+
+        attributes.put("type", new String[] {"client"});
+        attributes.put("config:clients", new String[] {event.getClient().getId()});
+
+        List<Policy> search = storeFactory.getPolicyStore().findByResourceServer(attributes, null, -1, -1);
+
+        for (Policy policy : search) {
+            PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
+            ClientPolicyRepresentation representation = ClientPolicyRepresentation.class.cast(policyFactory.toRepresentation(policy, authorizationProvider));
+            Set<String> clients = representation.getClients();
+
+            clients.remove(event.getClient().getId());
+
+            if (clients.isEmpty()) {
+                policyFactory.onRemove(policy, authorizationProvider);
+                authorizationProvider.getStoreFactory().getPolicyStore().delete(policy.getId());
+            } else {
+                policyFactory.onUpdate(policy, representation, authorizationProvider);
+            }
         }
     }
 }
