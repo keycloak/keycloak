@@ -216,8 +216,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
-        driver.navigate().to(profilePage.getPath() + "?referrer=test-app&referrer_uri=http://localhost:8180/auth/realms/master/app/auth/test%2Ffkrenu%22%3E%3Cscript%3Ealert%281%29%3C%2fscript%3E");
-        Assert.assertTrue(profilePage.isCurrent());
+        driver.navigate().to(profilePage.getPath() + "?referrer=test-app&referrer_uri=http%3A%2F%2Flocalhost%3A8180%2Fauth%2Frealms%2Fmaster%2Fapp%2Fauth%2Ftest%2Ffkrenu%3Fq%3D%2522%253E%253Cscript%253Ealert%25281%2529%253C%252fscript%253E");
+        profilePage.assertCurrent();
 
         assertFalse(driver.getPageSource().contains("<script>alert"));
     }
