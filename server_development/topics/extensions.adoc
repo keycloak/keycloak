@@ -95,6 +95,8 @@ own JPA entities to the {project_name} JPA `EntityManager` .
 To add your own JPA entities, you need to implement `JpaEntityProviderFactory` and `JpaEntityProvider`. The `JpaEntityProvider`
 allows you to return a list of your custom JPA entities and provide the location and id of the Liquibase changelog. An example implementation can look like this:
 
+NOTE: This is an unsupported API, which means you can use it but there is no guarantee that it will not be removed or changed without warning.
+
 [source,java]
 ----
 public class ExampleJpaEntityProvider implements JpaEntityProvider {
