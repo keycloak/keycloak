@@ -165,6 +165,14 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testRelativeUri() throws IOException {
+        oauth.redirectUri("/foo/../bar");
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
     public void testFileUri() throws IOException {
         oauth.redirectUri("file://test");
         oauth.openLoginForm();
