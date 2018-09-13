@@ -28,5 +28,5 @@ When you decode an RPT, you see a payload similar to the following:
 
 From this token you can obtain all permissions granted by the server from the *permissions* claim.
 
-Also note that permissions are directly related with the resources/scopes you are protecting and complete decoupled from
+Also note that permissions are directly related with the resources/scopes you are protecting and completely decoupled from
 the access control methods that were used to actually grant and issue these same permissions.
