@@ -160,10 +160,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>user-storage-properties-example</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-utils</artifactId>
         </dependency>
 

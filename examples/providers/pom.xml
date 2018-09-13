@@ -36,7 +36,5 @@
         <module>authenticator</module>
         <module>rest</module>
         <module>domain-extension</module>
-        <module>user-storage-simple</module>
-        <module>user-storage-jpa</module>
     </modules>
 </project>
