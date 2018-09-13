@@ -1400,11 +1400,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>user-storage-properties-example</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.keycloak.example.demo</groupId>
                 <artifactId>cxf-jaxws-example</artifactId>
                 <version>${project.version}</version>
