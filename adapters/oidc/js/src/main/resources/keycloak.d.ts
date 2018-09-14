@@ -226,6 +226,14 @@ declare namespace Keycloak {
 		resource_access?: string[];
 	}
 
+	interface KeycloakResourceAccess {
+		[key: string]: KeycloakRoles
+	}
+
+	interface KeycloakRoles {
+		roles: string[];
+	}
+
 	// export interface KeycloakUserInfo {}
 
 	/**
@@ -263,12 +271,12 @@ declare namespace Keycloak {
 		/**
 		 * The realm roles associated with the token.
 		 */
-		realmAccess?: { roles: string[] };
+		realmAccess?: KeycloakRoles;
 
 		/**
 		 * The resource roles associated with the token.
 		 */
-		resourceAccess?: string[];
+		resourceAccess?: KeycloakResourceAccess;
 
 		/**
 		 * The base64 encoded token that can be sent in the Authorization header in
