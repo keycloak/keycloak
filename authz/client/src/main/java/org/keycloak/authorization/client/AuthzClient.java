@@ -256,7 +256,14 @@ public class AuthzClient {
         return createPatSupplier(null, null);
     }
 
-    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
+    /**
+     * <p>Creates a {@link TokenCallable} instance which can be used to obtain and transparently refresh an access token.
+     *
+     *
+     * @return a {@link TokenCallable}
+     */
+    // KEYCLOAK-8286
+    public TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
         return new TokenCallable(userName, password, http, configuration, serverConfiguration);
     }
 }
