@@ -248,8 +248,44 @@ public class RSAVerifierTest {
         AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
+            Assert.fail();
         } catch (VerificationException ignored) {
         }
+    }
+
+    @Test
+    public void testAudience() throws Exception {
+        token.addAudience("my-app");
+        token.addAudience("your-app");
+
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
+
+        verifyAudience(encoded, "my-app");
+        verifyAudience(encoded, "your-app");
+
+        try {
+            verifyAudience(encoded, "other-app");
+            Assert.fail();
+        } catch (VerificationException ignored) {
+            System.out.println(ignored.getMessage());
+        }
+
+        try {
+            verifyAudience(encoded, null);
+            Assert.fail();
+        } catch (VerificationException ignored) {
+            System.out.println(ignored.getMessage());
+        }
+    }
+
+    private void verifyAudience(String encodedToken, String expectedAudience) throws VerificationException {
+        TokenVerifier.create(encodedToken, AccessToken.class)
+                .publicKey(idpPair.getPublic())
+                .realmUrl("http://localhost:8080/auth/realm")
+                .audience(expectedAudience)
+                .verify();
     }
 
 

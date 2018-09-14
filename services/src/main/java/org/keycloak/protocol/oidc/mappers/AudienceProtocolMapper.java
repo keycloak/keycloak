@@ -36,7 +36,7 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
-    private static final String INCLUDED_CLIENT_AUDIENCE = "included.client.audience";
+    public static final String INCLUDED_CLIENT_AUDIENCE = "included.client.audience";
     private static final String INCLUDED_CLIENT_AUDIENCE_LABEL = "included.client.audience.label";
     private static final String INCLUDED_CLIENT_AUDIENCE_HELP_TEXT = "included.client.audience.tooltip";
 

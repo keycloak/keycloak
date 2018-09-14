@@ -194,6 +194,13 @@ public class SharedAttributeDefinitons {
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
 
+    protected static final SimpleAttributeDefinition VERIFY_TOKEN_AUDIENCE =
+            new SimpleAttributeDefinitionBuilder("verify-token-audience", ModelType.BOOLEAN, true)
+                    .setXmlName("verify-token-audience")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
         ATTRIBUTES.add(REALM_PUBLIC_KEY);
@@ -222,6 +229,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(AUTODETECT_BEARER_ONLY);
         ATTRIBUTES.add(IGNORE_OAUTH_QUERY_PARAMETER);
         ATTRIBUTES.add(PROXY_URL);
+        ATTRIBUTES.add(VERIFY_TOKEN_AUDIENCE);
     }
 
     /**

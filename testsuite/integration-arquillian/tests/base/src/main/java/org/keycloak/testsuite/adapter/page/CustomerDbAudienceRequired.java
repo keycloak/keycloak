@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +17,18 @@
 
 package org.keycloak.testsuite.adapter.page;
 
+import java.net.URL;
+
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
-import java.net.URL;
-
 /**
- *
- * @author tkyjovsk
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CustomerPortal extends AbstractPageWithInjectedUrl {
+public class CustomerDbAudienceRequired extends AbstractPageWithInjectedUrl {
 
-    public static final String DEPLOYMENT_NAME = "customer-portal";
+    public static final String DEPLOYMENT_NAME = "customer-db-audience-required";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -39,19 +38,4 @@ public class CustomerPortal extends AbstractPageWithInjectedUrl {
     public URL getInjectedUrl() {
         return url;
     }
-    
-    public String logout() {
-        return url + "/logout";
-    }
-
-    public String callCustomerDbAudienceRequiredUrl(boolean attachAudienceScope) {
-        String url = this.url + "/call-customer-db-audience-required";
-
-        if (attachAudienceScope) {
-            url = url + "?scope=customer-db-audience-required";
-        }
-
-        return url;
-    }
-
 }

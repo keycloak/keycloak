@@ -27,6 +27,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -56,11 +57,15 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
     private static final Logger log = Logger.getLogger(DirectAccessGrantsLoginModule.class);
 
+    public static final String SCOPE_OPTION = "scope";
+
     private String refreshToken;
+    private String scope;
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
         super.initialize(subject, callbackHandler, sharedState, options);
+        this.scope = (String)options.get(SCOPE_OPTION);
 
         // This is used just for logout
         Iterator<RefreshTokenHolder> iterator = subject.getPrivateCredentials(RefreshTokenHolder.class).iterator();
@@ -88,6 +93,10 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
         formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
         formparams.add(new BasicNameValuePair("username", username));
         formparams.add(new BasicNameValuePair("password", password));
+
+        if (scope != null) {
+            formparams.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+        }
 
         ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
 
@@ -121,7 +130,8 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
         // refreshToken will be saved to privateCreds of Subject for now
         refreshToken = tokenResponse.getRefreshToken();
 
-        return bearerAuth(tokenResponse.getToken());
+        AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenResponse.getToken(), tokenResponse.getIdToken(), deployment);
+        return postTokenVerification(tokenResponse.getToken(), tokens.getAccessToken());
     }
 
     @Override
