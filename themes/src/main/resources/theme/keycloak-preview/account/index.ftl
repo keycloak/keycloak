@@ -107,14 +107,16 @@
                     document.head.appendChild(script);
                 };
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
-                loadjs("/node_modules/core-js/client/shim.min.js", function(){
-                    loadjs("/node_modules/zone.js/dist/zone.min.js");
-                    loadjs("/node_modules/systemjs/dist/system.src.js", function() {
-                        loadjs("/systemjs.config.js");
-                        System.import('${resourceUrl}/main.js').catch(function (err) {
-                            console.error(err);
+                loadjs("/node_modules/core-js/client/shim.min.js", function() {
+                    loadjs("/node_modules/zone.js/dist/zone.min.js", function() {
+                        loadjs("/node_modules/systemjs/dist/system.src.js", function() {
+                            loadjs("/systemjs.config.js", function() {
+                                System.import('${resourceUrl}/main.js').catch(function (err) {
+                                    console.error(err);
+                                });
+                                if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
+                            });
                         });
-                        if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
                     });
                 });
             }).error(function() {
