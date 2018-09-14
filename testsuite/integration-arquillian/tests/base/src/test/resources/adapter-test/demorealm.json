@@ -134,6 +134,13 @@
             "bearerOnly": true
         },
         {
+            "clientId": "customer-db-audience-required",
+            "enabled": true,
+            "adminUrl": "/customer-db-audience-required",
+            "baseUrl": "/customer-db-audience-required",
+            "bearerOnly": true
+        },
+        {
             "clientId": "customer-portal",
             "enabled": true,
             "adminUrl": "/customer-portal",

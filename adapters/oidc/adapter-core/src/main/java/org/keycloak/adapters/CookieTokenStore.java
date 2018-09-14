@@ -19,7 +19,8 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.TokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -71,7 +72,11 @@ public class CookieTokenStore {
 
         try {
             // Skip check if token is active now. It's supposed to be done later by the caller
-            AccessToken accessToken = AdapterRSATokenVerifier.verifyToken(accessTokenString, deployment, false, true);
+            TokenVerifier<AccessToken> tokenVerifier = AdapterTokenVerifier.createVerifier(accessTokenString, deployment, true, AccessToken.class)
+                    .checkActive(false)
+                    .verify();
+            AccessToken accessToken = tokenVerifier.getToken();
+
             IDToken idToken;
             if (idTokenString != null && idTokenString.length() > 0) {
                 try {

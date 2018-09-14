@@ -31,7 +31,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.UriUtils;
@@ -43,7 +43,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -152,7 +152,8 @@ public class ProductServiceAccountServlet extends HttpServlet {
     private void setTokens(HttpServletRequest req, KeycloakDeployment deployment, AccessTokenResponse tokenResponse) throws IOException, VerificationException {
         String token = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
-        AccessToken tokenParsed = AdapterRSATokenVerifier.verifyToken(token, deployment);
+        AdapterTokenVerifier.VerifiedTokens parsedTokens = AdapterTokenVerifier.verifyTokens(token, tokenResponse.getIdToken(), deployment);
+        AccessToken tokenParsed = parsedTokens.getAccessToken();
         req.getSession().setAttribute(TOKEN, token);
         req.getSession().setAttribute(REFRESH_TOKEN, refreshToken);
         req.getSession().setAttribute(TOKEN_PARSED, tokenParsed);

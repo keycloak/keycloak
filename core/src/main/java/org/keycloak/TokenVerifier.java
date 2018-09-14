@@ -133,6 +133,37 @@ public class TokenVerifier<T extends JsonWebToken> {
         }
     };
 
+
+    public static class AudienceCheck implements Predicate<JsonWebToken> {
+
+        private final String expectedAudience;
+
+        public AudienceCheck(String expectedAudience) {
+            this.expectedAudience = expectedAudience;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (expectedAudience == null) {
+                throw new VerificationException("Missing expectedAudience");
+            }
+
+            String[] audience = t.getAudience();
+            if (audience == null) {
+                throw new VerificationException("No audience in the token");
+            }
+
+            for (String aud : audience) {
+                if (expectedAudience.equals(aud)) {
+                    return true;
+                }
+            }
+
+            throw new VerificationException("Expected audience not available in the token");
+        }
+    };
+
+
     private String tokenString;
     private Class<? extends T> clazz;
     private PublicKey publicKey;
@@ -309,6 +340,16 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> checkRealmUrl(boolean checkRealmUrl) {
         this.checkRealmUrl = checkRealmUrl;
         return replaceCheck(RealmUrlCheck.class, this.checkRealmUrl, new RealmUrlCheck(realmUrl));
+    }
+
+    /**
+     * Add check for verifying that token contains the expectedAudience
+     *
+     * @param expectedAudience Audience, which needs to be in the target token. Can't be null
+     * @return This token verifier
+     */
+    public TokenVerifier<T> audience(String expectedAudience) {
+        return this.replaceCheck(AudienceCheck.class, true, new AudienceCheck(expectedAudience));
     }
 
     public TokenVerifier<T> parse() throws VerificationException {
