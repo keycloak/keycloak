@@ -18,22 +18,39 @@
 package org.keycloak.testsuite.client;
 
 import org.junit.Test;
+import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
+import java.net.URI;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -72,5 +89,38 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         assertEquals(303, response.getStatus());
         client.close();
+    }
+
+    // KEYCLOAK-7707
+    @Test
+    public void testRedirectToDisabledClientRedirectURI() throws Exception {
+        log.debug("Creating disabled-client with redirect uri \"*\"");
+        String clientId;
+        try (Response create = adminClient.realm("test").clients().create(ClientBuilder.create().clientId("disabled-client").enabled(false).redirectUris("*").build())) {
+            clientId = ApiUtil.getCreatedId(create);
+            assertThat(create, statusCodeIs(Status.CREATED));
+        }
+
+        try {
+            log.debug("log in");
+            oauth.doLogin("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+
+            URI logout = KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getBrowserContextRoot().toURI())
+                    .path("auth" + ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                    .queryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM, "http://example.org/redirected")
+                    .build("test");
+
+            log.debug("log out using: " + logout.toURL());
+            driver.navigate().to(logout.toURL());
+            log.debug("Current URL: " + driver.getCurrentUrl());
+
+            log.debug("check logout_error");
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).assertEvent();
+            assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
+        } finally {
+            log.debug("removing disabled-client");
+            adminClient.realm("test").clients().get(clientId).remove();
+        }
     }
 }

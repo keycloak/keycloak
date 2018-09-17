@@ -55,7 +55,7 @@ public class RedirectUtils {
 
     public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-        Set<String> resolveValidRedirects = new HashSet<String>();
+        Set<String> resolveValidRedirects = new HashSet<>();
         for (String validRedirect : validRedirects) {
             resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
@@ -70,7 +70,9 @@ public class RedirectUtils {
     private static Set<String> getValidateRedirectUris(UriInfo uriInfo, RealmModel realm) {
         Set<String> redirects = new HashSet<>();
         for (ClientModel client : realm.getClients()) {
-            redirects.addAll(resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris()));
+            if (client.isEnabled()) {
+                redirects.addAll(resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris()));
+            }
         }
         return redirects;
     }
