@@ -23,6 +23,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.models.ClientModel;
@@ -38,6 +39,8 @@ import org.keycloak.services.Urls;
  *
  * This is server side, which verifies JWT from client_assertion parameter, where the assertion was created on adapter side by
  * org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider
+ *
+ * TODO: Try to create abstract superclass to be shared with {@link JWTClientAuthenticator}. Most of the code can be reused
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -138,8 +141,23 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             }
 
             // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
+            int currentTime = Time.currentTime();
+            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
                 throw new RuntimeException("Token is not active");
+            }
+
+            if (token.getId() == null) {
+                throw new RuntimeException("Missing ID on the token");
+            }
+
+            SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
+            int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
+            if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
+
+                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);
+            } else {
+                logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), clientId);
+                throw new RuntimeException("Token reuse detected");
             }
 
             context.success();
