@@ -43,6 +43,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
@@ -407,12 +408,10 @@ public class SamlProtocol implements LoginProtocol {
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
         ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
 
-        Set<ProtocolMapperModel> mappings = clientSessionCtx.getProtocolMappers();
-        for (ProtocolMapperModel mapping : mappings) {
+        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
+            ProtocolMapperModel mapping = entry.getKey();
+            ProtocolMapper mapper = entry.getValue();
 
-            ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null)
-                continue;
             if (mapper instanceof SAMLAttributeStatementMapper) {
                 attributeStatementMappers.add(new ProtocolMapperProcessor<SAMLAttributeStatementMapper>((SAMLAttributeStatementMapper) mapper, mapping));
             }

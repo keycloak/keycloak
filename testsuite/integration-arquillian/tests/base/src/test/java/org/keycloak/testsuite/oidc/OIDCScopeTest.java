@@ -274,7 +274,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()
@@ -339,7 +339,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, "ThirdParty permissions");
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "ThirdParty permissions");
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()
@@ -369,7 +369,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()

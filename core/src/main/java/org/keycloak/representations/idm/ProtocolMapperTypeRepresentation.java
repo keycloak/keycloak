@@ -28,6 +28,7 @@ public class ProtocolMapperTypeRepresentation {
     protected String name;
     protected String category;
     protected String helpText;
+    protected int priority;
 
     protected List<ConfigPropertyRepresentation> properties;
 
@@ -61,6 +62,14 @@ public class ProtocolMapperTypeRepresentation {
 
     public void setHelpText(String helpText) {
         this.helpText = helpText;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public List<ConfigPropertyRepresentation> getProperties() {

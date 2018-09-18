@@ -145,14 +145,16 @@
             <th>{{:: 'parent-client-scope' | translate}}</th>
             <th>{{:: 'category' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
+            <th>{{:: 'priority-order' | translate}}</th>
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="mapper in protocolMappers | filter:search">
+        <tr ng-repeat="mapper in protocolMappers | filter:search | orderBy:sortMappersByPriority">
             <td><a href="#/realms/{{realm.realm}}/{{mapper.containerType}}s/{{mapper.containerId}}/mappers/{{mapper.mapperId}}">{{mapper.mapperName}}</a></td>
             <td><a href="#/realms/{{realm.realm}}/{{mapper.containerType}}s/{{mapper.containerId}}">{{mapper.containerName}}</a></td>
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
+            <td>{{mapperTypes[mapper.protocolMapper].priority}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>{{:: 'no-mappers-available' | translate}}</td>

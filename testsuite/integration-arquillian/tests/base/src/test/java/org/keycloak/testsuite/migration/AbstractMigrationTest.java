@@ -30,6 +30,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -58,10 +59,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -69,12 +70,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.keycloak.common.Profile;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
-import org.keycloak.testsuite.ProfileAssume;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -227,6 +226,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         if (supportsAuthzService && checkMigrationData) {
             testGroupPolicyTypeFineGrainedAdminPermission();
         }
+
+        // NOTE: Fact that 'roles' and 'web-origins' scope were added was tested in testMigrationTo4_0_0 already
+        testRolesAndWebOriginsScopesAddedToClient();
     }
 
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
@@ -508,6 +510,24 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         if (!found) {
             Assert.fail("Offline_access not found as optional scope of client migration-test-client");
+        }
+
+    }
+
+    private void testRolesAndWebOriginsScopesAddedToClient() {
+        log.infof("Testing roles and web-origins default scopes present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
+
+        List<ClientScopeRepresentation> defaultClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getDefaultClientScopes();
+
+        Set<String> defaultClientScopeNames = defaultClientScopes.stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        if (!defaultClientScopeNames.contains(OIDCLoginProtocolFactory.ROLES_SCOPE)) {
+            Assert.fail("Client scope 'roles' not found as default scope of client migration-test-client");
+        }
+        if (!defaultClientScopeNames.contains(OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE)) {
+            Assert.fail("Client scope 'web-origins' not found as default scope of client migration-test-client");
         }
 
     }

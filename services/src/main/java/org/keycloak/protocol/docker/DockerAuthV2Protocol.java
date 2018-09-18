@@ -16,6 +16,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.docker.mapper.DockerAuthV2AttributeMapper;
 import org.keycloak.representations.docker.DockerResponse;
 import org.keycloak.representations.docker.DockerResponseToken;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 public class DockerAuthV2Protocol implements LoginProtocol {
@@ -110,9 +112,11 @@ public class DockerAuthV2Protocol implements LoginProtocol {
                 .expiration(responseToken.getIssuedAt() + accessTokenLifespan);
 
         // Next, allow mappers to decorate the token to add/remove scopes as appropriate
-        final Set<ProtocolMapperModel> mappings = clientSessionCtx.getProtocolMappers();
-        for (final ProtocolMapperModel mapping : mappings) {
-            final ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+
+        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
+            ProtocolMapperModel mapping = entry.getKey();
+            ProtocolMapper mapper = entry.getValue();
+
             if (mapper instanceof DockerAuthV2AttributeMapper) {
                 final DockerAuthV2AttributeMapper dockerAttributeMapper = (DockerAuthV2AttributeMapper) mapper;
                 if (dockerAttributeMapper.appliesTo(responseToken)) {
