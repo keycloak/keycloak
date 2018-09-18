@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -120,7 +121,13 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
     return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
   }
 
-  protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession) {
+  @Override
+  public int getPriority() {
+    return ProtocolMapperUtils.PRIORITY_SCRIPT_MAPPER;
+  }
+
+  @Override
+  protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
     UserModel user = userSession.getUser();
     String scriptSource = mappingModel.getConfig().get(SCRIPT);

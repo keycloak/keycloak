@@ -18,6 +18,7 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -118,7 +119,11 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
         assertEquals(jsonNode.get("nbf").asInt(), rep.getNotBefore());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
-        assertEquals(jsonNode.get("aud").asText(), rep.getAudience()[0]);
+
+        List<String> audiences = new ArrayList<>();
+        jsonNode.get("aud").forEach(childNode -> audiences.add(childNode.asText()));
+        Assert.assertNames(audiences, rep.getAudience());
+
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
     }
