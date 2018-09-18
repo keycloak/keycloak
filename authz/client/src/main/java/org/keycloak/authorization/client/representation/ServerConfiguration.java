@@ -18,11 +18,13 @@ package org.keycloak.authorization.client.representation;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ServerConfiguration {
 
     @JsonProperty("issuer")
