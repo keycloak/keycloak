@@ -621,10 +621,30 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
+
+    @Test
+    public void testAssertionReuse() throws Exception {
+        String clientJwt = getClient1SignedJWT();
+
+        OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(clientJwt);
+
+        assertEquals(200, response.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        Assert.assertNotNull(accessToken);
+        Assert.assertNull(response.getError());
+
+        // 2nd attempt to reuse same JWT should fail
+        response = doClientCredentialsGrantRequest(clientJwt);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals("unauthorized_client", response.getError());
+    }
+
+
     @Test
     public void testMissingIdClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("id");
-        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+        assertError(response, app1.getClientId(), "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
