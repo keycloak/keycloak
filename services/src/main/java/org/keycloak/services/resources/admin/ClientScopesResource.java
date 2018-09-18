@@ -156,6 +156,8 @@ public class ClientScopesResource {
             consentText = consentText.substring(0, 1).toUpperCase() + consentText.substring(1);
             clientScopeModel.setConsentScreenText(consentText);
 
+            clientScopeModel.setIncludeInTokenScope(true);
+
             // Add audience protocol mapper
             ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
             clientScopeModel.addProtocolMapper(audienceMapper);

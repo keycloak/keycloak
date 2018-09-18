@@ -53,6 +53,13 @@
                 </div>
                 <kc-tooltip>{{:: 'client-scope.consent-screen-text.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="includeInTokenScope">{{:: 'client-scope.include-in-token-scope' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="includeInTokenScope" ng-click="switchChange()" name="displayOnConsentScreen" id="includeInTokenScope" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'client-scope.include-in-token-scope.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">{{:: 'client-scope.gui-order' | translate}} </label>
                 <div class="col-sm-6">

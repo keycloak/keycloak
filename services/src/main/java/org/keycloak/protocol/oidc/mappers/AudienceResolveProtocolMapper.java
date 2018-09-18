@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,45 +17,33 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.utils.RoleResolveUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Add a role to a token
+ * Protocol mapper, which adds all client_ids of "allowed" clients to the audience field of the token. Allowed client means the client
+ * for which user has at least one client role
  *
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
+public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
-    public static final String ROLE_CONFIG = "role";
 
-    static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty();
-        property.setName(ROLE_CONFIG);
-        property.setLabel("Role");
-        property.setHelpText("Role you want added to the token.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To specify an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ProviderConfigProperty.ROLE_TYPE);
-        configProperties.add(property);
-    }
-
-    public static final String PROVIDER_ID = "oidc-hardcoded-role-mapper";
+    public static final String PROVIDER_ID = "oidc-audience-resolve-mapper";
 
 
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -69,7 +57,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getDisplayType() {
-        return "Hardcoded Role";
+        return "Audience Resolve";
     }
 
     @Override
@@ -79,45 +67,34 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getHelpText() {
-        return "Hardcode a role into the access token.";
+        return "Adds all client_ids of \"allowed\" clients to the audience field of the token. Allowed client means the client\n" +
+                " for which user has at least one client role";
     }
 
     @Override
     public int getPriority() {
-        return ProtocolMapperUtils.PRIORITY_HARDCODED_ROLE_MAPPER;
+        return ProtocolMapperUtils.PRIORITY_AUDIENCE_RESOLVE_MAPPER;
     }
 
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        String role = mappingModel.getConfig().get(ROLE_CONFIG);
-        String[] scopedRole = KeycloakModelUtils.parseRole(role);
-        String appName = scopedRole[0];
-        String roleName = scopedRole[1];
-        if (appName != null) {
-            AccessToken.Access access = RoleResolveUtil.getResolvedClientRoles(session, clientSessionCtx, appName, true);
-            access.addRole(roleName);
-        } else {
-            AccessToken.Access access = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, true);
-            access.addRole(role);
+        for (Map.Entry<String, AccessToken.Access> entry : RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx).entrySet()) {
+            AccessToken.Access access = entry.getValue();
+            if (access != null && access.getRoles() != null && !access.getRoles().isEmpty()) {
+                token.addAudience(entry.getKey());
+            }
         }
 
         return token;
     }
 
-    public static ProtocolMapperModel create(String name,
-                                             String role) {
-        String mapperId = PROVIDER_ID;
+    public static ProtocolMapperModel createClaimMapper(String name) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
-        mapper.setProtocolMapper(mapperId);
+        mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
-        config.put(ROLE_CONFIG, role);
-        mapper.setConfig(config);
+        mapper.setConfig(Collections.emptyMap());
         return mapper;
-
     }
-
 }

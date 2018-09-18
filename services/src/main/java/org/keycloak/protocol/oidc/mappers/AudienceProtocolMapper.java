@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -98,7 +99,8 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
         return "Add specified audience to the audience (aud) field of token";
     }
 
-    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession) {
+    @Override
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
         String audienceValue = mappingModel.getConfig().get(INCLUDED_CLIENT_AUDIENCE);
 
         if (audienceValue == null) {

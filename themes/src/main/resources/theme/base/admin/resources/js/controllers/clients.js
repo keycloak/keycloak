@@ -1898,6 +1898,10 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
         });
     };
 
+    $scope.sortMappersByPriority = function(mapper) {
+        return $scope.mapperTypes[mapper.protocolMapper].priority;
+    }
+
     var updateMappers = function() {
         $scope.mappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol});
     };
@@ -2391,6 +2395,10 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
         return $scope.selectedTab === 3;
     }
 
+    $scope.sortMappersByPriority = function(mapper) {
+        return $scope.mapperTypes[mapper.protocolMapper].priority;
+    }
+
 
     // Roles
 
@@ -2693,6 +2701,16 @@ module.controller('ClientScopeDetailCtrl', function($scope, realm, clientScope, 
         } else {
             $scope.displayOnConsentScreen = true;
         }
+
+        if ($scope.clientScope.attributes["include.in.token.scope"]) {
+            if ($scope.clientScope.attributes["include.in.token.scope"] == "true") {
+                $scope.includeInTokenScope = true;
+            } else {
+                $scope.includeInTokenScope = false;
+            }
+        } else {
+            $scope.includeInTokenScope = true;
+        }
     }
 
     if (!$scope.create) {
@@ -2740,6 +2758,12 @@ module.controller('ClientScopeDetailCtrl', function($scope, realm, clientScope, 
             $scope.clientScope.attributes["display.on.consent.screen"] = "true";
         } else {
             $scope.clientScope.attributes["display.on.consent.screen"] = "false";
+        }
+
+        if ($scope.includeInTokenScope == true) {
+            $scope.clientScope.attributes["include.in.token.scope"] = "true";
+        } else {
+            $scope.clientScope.attributes["include.in.token.scope"] = "false";
         }
 
         if ($scope.create) {
@@ -2800,6 +2824,10 @@ module.controller('ClientScopeProtocolMapperListCtrl', function($scope, realm, c
             });
         });
     };
+
+    $scope.sortMappersByPriority = function(mapper) {
+        return $scope.mapperTypes[mapper.protocolMapper].priority;
+    }
 
     var updateMappers = function() {
         $scope.mappers = ClientScopeProtocolMappersByProtocol.query({realm : realm.realm, clientScope : clientScope.id, protocol : clientScope.protocol});
