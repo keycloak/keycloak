@@ -40,6 +40,8 @@ Another small limitation is limited support for Single-Sign Out. It works withou
 application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie. However, back-channel logout initialized from a different application isn't
 propagated by {project_name} to applications using cookie store. Hence it's recommended to use a short value for the access token timeout (for example 1 minute).
 
+NOTE: Some load balancers do not allow any configuration of the sticky session cookie name or contents, such as Amazon ALB. For these, it is recommended to set the `shouldAttachRoute` option to `false`.
+
 ===== Relative URI optimization
 
 In deployment scenarios where {project_name} and the application is hosted on the same domain (through a reverse proxy or load balancer) it can be
