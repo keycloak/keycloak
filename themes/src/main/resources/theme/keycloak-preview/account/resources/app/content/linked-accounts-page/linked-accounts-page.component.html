@@ -1,0 +1,124 @@
+<div class="page-header">
+  <h1 id="pageTitle">{{'linkedAccountsHtmlTitle' | translate}}</h1>
+</div>
+<div class="col-sm-12 card-pf card-linked-account">
+  <div class="card-pf-body row">
+    <div class="col-md-3">
+      <div class="card-pf-subtitle" id="authorizedProvidersSubTitle">
+        {{'authorizedProvider' | translate}}
+      </div>
+      <div class="introMessage" id="authorizedProvidersSubMessage">
+        <p>{{'authorizedProviderMessage' | translate}}</p>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="list-group list-view-pf list-view-pf-view" id="authorizedProvidersList">
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#" data-toggle="modal" data-target="#myModal">{{'doRemove' | translate}}</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-google list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Google
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+                <span class="fa fa-user"> </span>  zhutaoredhat
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="col-sm-12 card-pf card-linked-account">
+  <div class="card-pf-body row">
+    <div class="col-md-3">
+      <div class="card-pf-subtitle" id="identityProviderSubTitle">
+        {{'identityProvider' | translate}}
+      </div>
+      <div class="introMessage" id="identityProviderSubMessage">
+        <p>{{'identityProviderMessage' | translate}}</p>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="list-group list-view-pf list-view-pf-view " id="identityProviderList">
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#">{{'doLink' | translate}}</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-facebook list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Facebook
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-group-item">
+          <div class="list-view-pf-actions">
+            <a href="#">{{'doLink' | translate}}</a>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-left">
+              <span class="fa fa-github list-view-pf-icon-sm"></span>
+            </div>
+            <div class="list-view-pf-body">
+              <div class="list-view-pf-description">
+                <div class="list-group-item-heading">
+                  Github
+                </div>
+                <div class="list-group-item-text">
+                  <span class="label label-primary">{{'socialLogin' | translate}}</span>
+                </div>
+              </div>
+              <div class="list-view-pf-additional-info">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">{{'removeAccess' | translate}}</h4>
+      </div>
+      <div class="modal-body">
+        {{'removeAccessMessage' | translate}}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">{{'doCancel' | translate}}</button>
+        <button type="button" class="btn btn-primary">{{'doRemove' | translate}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Modal -->

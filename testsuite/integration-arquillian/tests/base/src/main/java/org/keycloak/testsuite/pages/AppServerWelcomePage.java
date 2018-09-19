@@ -16,13 +16,15 @@
  */
 package org.keycloak.testsuite.pages;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,9 +34,10 @@ import org.openqa.selenium.support.FindBy;
 public class AppServerWelcomePage extends AppServerContextRoot {
 
     @Page
+    @JavascriptBrowser
     protected OIDCLogin loginPage;
 
-    @FindBy(xpath = "//a[text() = 'Access Control']")
+    @FindBy(xpath = "//span[text() = 'Access Control']")
     private WebElement accessControlLink;
 
     @FindBy(xpath = "//a[text() = 'Manage user profile']")
@@ -45,17 +48,15 @@ public class AppServerWelcomePage extends AppServerContextRoot {
 
     @Override
     public boolean isCurrent() {
-        return driver.getPageSource().contains("Access Control");
+        return DroneUtils.getCurrentDriver().getPageSource().contains("Access Control");
     }
 
     public void navigateToConsole() {
-        WaitUtils.pause(2000);
-        URLUtils.navigateToUri(getInjectedUrl().toString() + "/console", true);
-        waitForPageToLoad();
+        URLUtils.navigateToUri(getInjectedUrl().toString() + "/console");
     }
 
     public void login(String username, String password) {
-        loginPage.form().waitForLoginButtonPresent();
+        assertTrue(loginPage.form().isLoginButtonPresent());
         loginPage.form().login(username, password);
         waitForPageToLoad();
     }

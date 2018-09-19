@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html>
+<head>
+    <title>Authentication Example</title>
+
+    <meta http-equiv="Content-Security-Policy" content="default-src * gap://ready; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+
+    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+    <script type="text/javascript" charset="utf-8" src="keycloak.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var keycloak = new Keycloak();
+
+        keycloak.onAuthSuccess = updateState;
+        keycloak.onAuthRefreshSuccess = updateState;
+        keycloak.onAuthLogout = updateState;
+
+        function updateState() {
+            if (keycloak.authenticated) {
+                document.getElementById('authenticated').style.display = 'block';
+                document.getElementById('not-authenticated').style.display = 'none';
+
+                document.getElementById('subject').innerText = keycloak.subject;
+                document.getElementById('username').innerText = keycloak.idTokenParsed.preferred_username;
+                document.getElementById('tokenExpires').innerText = new Date(keycloak.tokenParsed.exp * 1000).toLocaleString();
+                document.getElementById('tokenRefreshExpires').innerText = new Date(keycloak.refreshTokenParsed.exp * 1000).toLocaleString();
+                document.getElementById('token').innerText = JSON.stringify(keycloak.tokenParsed, null, '  ');
+                document.getElementById('idToken').innerText = JSON.stringify(keycloak.idTokenParsed, null, '  ');
+            } else {
+                document.getElementById('authenticated').style.display = 'none';
+                document.getElementById('not-authenticated').style.display = 'block';
+            }
+        }
+
+        function error() {
+            document.getElementById('authenticated').style.display = 'none';
+            document.getElementById('not-authenticated').style.display = 'block';
+            document.getElementById('error').innerText = 'Failed to initialize Keycloak adapter';
+        }
+
+        document.addEventListener("deviceready", function() {
+            keycloak.init({
+              adapter: 'cordova-native',
+              responseMode: 'query',
+              onLoad: 'check-sso',
+              redirectUri: 'android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login'
+            }).success(updateState).error(error);
+        }, false);
+    </script>
+    <style>
+        td {
+            vertical-align: top;
+        }
+
+        tr.odd td {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+<div id="authenticated" style="display: none;">
+    <div>
+        <button onclick="keycloak.logout()">Log out</button>
+        <button onclick="keycloak.updateToken()">Refresh token</button>
+        <button onclick="keycloak.updateToken(9999)">Force Refresh token</button>
+        <button onclick="keycloak.accountManagement()">Manage account</button>
+    </div>
+    <div>
+        <table>
+            <tr>
+                <td>Subject</td>
+                <td id="subject"></td>
+            </tr>
+            <tr class="odd">
+                <td>Username</td>
+                <td id="username"></td>
+            </tr>
+            <tr>
+                <td>Token expires</td>
+                <td id="tokenExpires"></td>
+            </tr>
+            <tr class="odd">
+                <td>Refresh token expires</td>
+                <td id="tokenRefreshExpires"></td>
+            </tr>
+            <tr>
+                <td>Token</td>
+                <td><pre id="token"></pre></td>
+            </tr>
+            <tr class="odd">
+                <td>ID Token</td>
+                <td><pre id="idToken"></pre></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div id="not-authenticated" style="display: none;">
+    <div>
+        <button onclick="keycloak.login()">Log in</button>
+    </div>
+    <div>
+        <p id="error">Not authenticated</p>
+    </div>
+</div>
+</body>
+</html>
+

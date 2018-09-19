@@ -67,6 +67,12 @@ public class ScriptCache {
 
     public EvaluatableScriptAdapter computeIfAbsent(String id, Function<String, EvaluatableScriptAdapter> function) {
         try {
+            EvaluatableScriptAdapter adapter = removeIfExpired(cache.get(id));
+
+            if (adapter != null) {
+                return adapter;
+            }
+
             if (parkForWriteAndCheckInterrupt()) {
                 return null;
             }
@@ -81,20 +87,6 @@ public class ScriptCache {
         } finally {
             writing.lazySet(false);
         }
-    }
-
-    public EvaluatableScriptAdapter get(String uri) {
-        if (parkForReadAndCheckInterrupt()) {
-            return null;
-        }
-
-        CacheEntry cached = cache.get(uri);
-
-        if (cached != null) {
-            return removeIfExpired(cached);
-        }
-
-        return null;
     }
 
     public void remove(String key) {
@@ -124,16 +116,6 @@ public class ScriptCache {
 
     private boolean parkForWriteAndCheckInterrupt() {
         while (!writing.compareAndSet(false, true)) {
-            LockSupport.parkNanos(1L);
-            if (Thread.interrupted()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean parkForReadAndCheckInterrupt() {
-        while (writing.get()) {
             LockSupport.parkNanos(1L);
             if (Thread.interrupted()) {
                 return true;

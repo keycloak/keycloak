@@ -61,7 +61,7 @@
         "mavenArtifactVersion": "${project.version}",
         "mavenArtifactId": "photoz-authz-policy",
         "sessionName": "MainOwnerSession",
-        "mavenArtifactGroupId": "org.keycloak",
+        "mavenArtifactGroupId": "org.keycloak.testsuite",
         "moduleName": "PhotozAuthzOwnerPolicy",
         "scannerPeriod": "1",
         "scannerPeriodUnit": "Hours"

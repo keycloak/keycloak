@@ -19,6 +19,8 @@ package org.keycloak.protocol;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -66,7 +68,7 @@ public interface LoginProtocol extends Provider {
 
     LoginProtocol setEventBuilder(EventBuilder event);
 
-    Response authenticated(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession);
+    Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx);
 
     Response sendError(AuthenticationSessionModel authSession, Error error);
 
@@ -80,5 +82,17 @@ public interface LoginProtocol extends Provider {
      * @return true if SSO cookie authentication can't be used. User will need to "actively" reauthenticate
      */
     boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession);
+
+    /**
+     * Send not-before revocation policy to the given client.
+     * @param realm
+     * @param resource
+     * @param notBefore
+     * @param managementUrl
+     * @return {@code true} if revocation policy was successfully updated at the client, {@code false} otherwise.
+     */
+    default boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
+        return false;
+    }
 
 }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -44,7 +45,7 @@ public class LoginPasswordUpdatePage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Update password");
+        return PageUtils.getPageTitle(driver).equals("Update password");
     }
 
     public void open() {

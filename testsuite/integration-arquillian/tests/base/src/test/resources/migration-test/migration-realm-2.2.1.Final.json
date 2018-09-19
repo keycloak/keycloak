@@ -134,8 +134,7 @@
                 {
                   "name": "urn:photoz.com:scopes:profile:view"
                 }
-              ],
-              "typedScopes": []
+              ]
             },
             {
               "name": "Album Resource",
@@ -151,8 +150,7 @@
                 {
                   "name": "urn:photoz.com:scopes:album:delete"
                 }
-              ],
-              "typedScopes": []
+              ]
             },
             {
               "name": "Admin Resources",
@@ -162,8 +160,7 @@
                 {
                   "name": "urn:photoz.com:scopes:album:admin:manage"
                 }
-              ],
-              "typedScopes": []
+              ]
             }
           ],
           "policies": [

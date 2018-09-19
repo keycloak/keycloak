@@ -18,6 +18,7 @@
 package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.manager.EmbeddedCacheManager;
 
 /**
@@ -26,13 +27,13 @@ import org.infinispan.manager.EmbeddedCacheManager;
 public class DefaultInfinispanConnectionProvider implements InfinispanConnectionProvider {
 
     private final EmbeddedCacheManager cacheManager;
-    private final String siteName;
-    private final String nodeName;
+    private final RemoteCacheProvider remoteCacheProvider;
+    private final TopologyInfo topologyInfo;
 
-    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, String nodeName, String siteName) {
+    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, RemoteCacheProvider remoteCacheProvider, TopologyInfo topologyInfo) {
         this.cacheManager = cacheManager;
-        this.nodeName = nodeName;
-        this.siteName = siteName;
+        this.remoteCacheProvider = remoteCacheProvider;
+        this.topologyInfo = topologyInfo;
     }
 
     @Override
@@ -41,13 +42,13 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public String getNodeName() {
-        return nodeName;
+    public <K, V> RemoteCache<K, V> getRemoteCache(String cacheName) {
+        return remoteCacheProvider.getRemoteCache(cacheName);
     }
 
     @Override
-    public String getSiteName() {
-        return siteName;
+    public TopologyInfo getTopologyInfo() {
+        return topologyInfo;
     }
 
     @Override

@@ -1,0 +1,11 @@
+set ylabel "% Utilization"
+set title "Processor Utilization"
+plot \
+for [i=5:8:1] \
+    datafile using 3:(sum [col=i:8] column(col)) \
+    title columnheader(i) \
+    with filledcurves x1, \
+for [i=5:8:1] \
+    datafile using 3:(sum [col=i:8] column(col)) \
+    notitle \
+    with lines lc rgb "#000000" lw 1

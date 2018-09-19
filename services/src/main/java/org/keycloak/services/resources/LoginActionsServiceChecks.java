@@ -30,11 +30,14 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jboss.logging.Logger;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
+
 /**
  *
  * @author hmlnarik
@@ -75,7 +78,6 @@ public class LoginActionsServiceChecks {
      * If there is an action required in the session, furthermore it is not the expected one, and the required
      * action is redirection to "required actions", it throws with response performing the redirect to required
      * actions.
-     * @param <T>
      */
     public static class IsActionRequired implements Predicate<JsonWebToken> {
 
@@ -115,7 +117,7 @@ public class LoginActionsServiceChecks {
         }
 
         UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
-        if (userSession != null) {
+        if (userSession != null && userSession.getUser().getRequiredActions().isEmpty()) {
             LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class).setAuthenticationSession(context.getAuthenticationSession())
               .setSuccess(Messages.ALREADY_LOGGED_IN);
 
@@ -250,45 +252,34 @@ public class LoginActionsServiceChecks {
      *
      *  @param <T>
      */
-    public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(ActionTokenContext<T> context, String authSessionIdFromToken) throws VerificationException {
-        if (authSessionIdFromToken == null) {
+    public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(
+            ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionCompoundIdFromToken) throws VerificationException {
+        if (authSessionCompoundIdFromToken == null) {
             return false;
         }
 
-        AuthenticationSessionManager asm = new AuthenticationSessionManager(context.getSession());
-        String authSessionIdFromCookie = asm.getCurrentAuthenticationSessionId(context.getRealm());
 
-        if (authSessionIdFromCookie == null) {
-            return false;
-        }
-
-        AuthenticationSessionModel authSessionFromCookie = context.getSession()
-          .authenticationSessions().getAuthenticationSession(context.getRealm(), authSessionIdFromCookie);
-        if (authSessionFromCookie == null) {    // Cookie contains ID of expired auth session
-            return false;
-        }
-
-        if (Objects.equals(authSessionIdFromCookie, authSessionIdFromToken)) {
+        if (Objects.equals(AuthenticationSessionCompoundId.fromAuthSession(authSessionFromCookie).getEncodedId(), authSessionCompoundIdFromToken)) {
             context.setAuthenticationSession(authSessionFromCookie, false);
             return true;
         }
 
-        String parentSessionId = authSessionFromCookie.getAuthNote(AuthenticationProcessor.FORKED_FROM);
-        if (parentSessionId == null || ! Objects.equals(authSessionIdFromToken, parentSessionId)) {
+        // Check if it's forked session. It would have same parent (rootSession) as our browser authenticationSession
+        String parentTabId = authSessionFromCookie.getAuthNote(AuthenticationProcessor.FORKED_FROM);
+        if (parentTabId == null) {
             return false;
         }
 
-        AuthenticationSessionModel authSessionFromParent = context.getSession()
-          .authenticationSessions().getAuthenticationSession(context.getRealm(), parentSessionId);
 
-        // It's the correct browser. Let's remove forked session as we won't continue
+        AuthenticationSessionModel authSessionFromParent = authSessionFromCookie.getParentSession().getAuthenticationSession(authSessionFromCookie.getClient(), parentTabId);
+        if (authSessionFromParent == null) {
+            return false;
+        }
+
+        // It's the correct browser. We won't continue login
         // from the login form (browser flow) but from the token's flow
         // Don't expire KC_RESTART cookie at this point
-        asm.removeAuthenticationSession(context.getRealm(), authSessionFromCookie, false);
-        LOG.debugf("Removed forked session: %s", authSessionFromCookie.getId());
-
-        // Refresh browser cookie
-        asm.setAuthSessionCookie(parentSessionId, context.getRealm());
+        LOG.debugf("Switched to forked tab: %s from: %s . Root session: %s", authSessionFromParent.getTabId(), authSessionFromCookie.getTabId(), authSessionFromCookie.getParentSession().getId());
 
         context.setAuthenticationSession(authSessionFromParent, false);
         context.setExecutionId(authSessionFromParent.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION));

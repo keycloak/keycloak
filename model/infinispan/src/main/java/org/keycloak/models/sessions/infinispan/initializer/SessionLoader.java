@@ -17,12 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
+import java.io.Serializable;
+
 import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader {
+public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContext> extends Serializable {
 
     /**
      * Will be triggered just once on cluster coordinator node to perform some generic initialization tasks (Eg. update DB before starting load).
@@ -35,23 +37,27 @@ public interface SessionLoader {
 
 
     /**
-     * Will be triggered just once on cluster coordinator node to count the number of sessions
+     *
+     * Will be triggered just once on cluster coordinator node to count the number of segments and other context data specific to the worker task.
+     * Each segment will be then later computed in one "worker" task
+     *
+     * This method could be expensive to call, so the "computed" loaderContext object is passed among workers/loaders and needs to be serializable
      *
      * @param session
      * @return
      */
-    int getSessionsCount(KeycloakSession session);
+    LOADER_CONTEXT computeLoaderContext(KeycloakSession session);
 
 
     /**
      * Will be called on all cluster nodes to load the specified page.
      *
      * @param session
-     * @param first
-     * @param max
+     * @param loaderContext loaderContext object, which was already computed before
+     * @param segment to be computed
      * @return
      */
-    boolean loadSessions(KeycloakSession session, int first, int max);
+    boolean loadSessions(KeycloakSession session, LOADER_CONTEXT loaderContext, int segment);
 
 
     /**
@@ -69,4 +75,15 @@ public interface SessionLoader {
      * @param initializer
      */
     void afterAllSessionsLoaded(BaseCacheInitializer initializer);
+
+
+    /**
+     * Object, which contains some context data to be used by SessionLoader implementation. It's computed just once and then passed
+     * to each {@link SessionLoader}. It needs to be {@link Serializable}
+     */
+    interface LoaderContext extends Serializable {
+
+        int getSegmentsCount();
+
+    }
 }

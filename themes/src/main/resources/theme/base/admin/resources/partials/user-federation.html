@@ -44,6 +44,7 @@
             </tr>
             <tr data-ng-show="instances && instances.length > 0">
                 <th>{{:: 'id' | translate}}</th>
+                <th>{{:: 'enabled' | translate}}</th>
                 <th>{{:: 'provider-name' | translate}}</th>
                 <th>{{:: 'priority' | translate}}</th>
                 <th colspan="2">{{:: 'actions' | translate}}</th>
@@ -52,6 +53,7 @@
         <tbody>
             <tr ng-repeat="instance in instances">
                 <td><a href="#{{getInstanceLink(instance)}}">{{getInstanceName(instance)}}</a></td>
+                <td>{{isProviderEnabled(instance)}}</td>
                 <td>{{getInstanceProvider(instance) | capitalize}}</td>
                 <td>{{getInstancePriority(instance)}}</td>
                 <td class="kc-action-cell" kc-open="{{getInstanceLink(instance)}}">{{:: 'edit' | translate}}</td>

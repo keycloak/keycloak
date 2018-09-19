@@ -16,14 +16,17 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,18 +41,19 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
-import org.keycloak.authorization.client.representation.ResourceRepresentation;
-import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -77,13 +81,14 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     @Before
     public void configureAuthorization() throws Exception {
-        createResourcesAndScopes();
-
         RealmResource realm = getRealm();
         ClientResource client = getClient(realm);
 
-        createPolicies(realm, client);
-        createPermissions(client);
+        if (client.authorization().resources().findByName("Resource A").isEmpty()) {
+            createResourcesAndScopes();
+            createPolicies(realm, client);
+            createPermissions(client);
+        }
     }
 
     /**
@@ -92,24 +97,29 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
      * <p>Scope Read should not be granted for Marta.
      */
     @Test
-    public void testMartaCanAccessResourceAWithExecuteAndWrite() {
-        List<Permission> permissions = getEntitlements("marta", "password");
+    public void testMartaCanAccessResourceAWithExecuteAndWrite() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+        ResourceServerRepresentation settings = authorization.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+
+        authorization.update(settings);
+
+        Collection<Permission> permissions = getEntitlements("marta", "password");
+
+        assertEquals(1, permissions.size());
 
         for (Permission permission : new ArrayList<>(permissions)) {
-            String resourceSetName = permission.getResourceSetName();
+            String resourceSetName = permission.getResourceName();
 
             switch (resourceSetName) {
                 case "Resource A":
-                    assertEquals(2, permission.getScopes().size());
-                    assertTrue(permission.getScopes().contains("execute"));
-                    assertTrue(permission.getScopes().contains("write"));
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write"));
                     permissions.remove(permission);
                     break;
                 case "Resource C":
-                    assertEquals(3, permission.getScopes().size());
-                    assertTrue(permission.getScopes().contains("execute"));
-                    assertTrue(permission.getScopes().contains("write"));
-                    assertTrue(permission.getScopes().contains("read"));
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
                     permissions.remove(permission);
                     break;
                 default:
@@ -120,13 +130,89 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         assertTrue(permissions.isEmpty());
     }
 
-    private List<Permission> getEntitlements(String username, String password) {
+    @Test
+    public void testWithPermissiveMode() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+        ResourceServerRepresentation settings = authorization.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.PERMISSIVE);
+
+        authorization.update(settings);
+
+        Collection<Permission> permissions = getEntitlements("marta", "password");
+
+        assertEquals(3, permissions.size());
+
+        for (Permission permission : new ArrayList<>(permissions)) {
+            String resourceSetName = permission.getResourceName();
+
+            switch (resourceSetName) {
+                case "Resource A":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource C":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource B":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                default:
+                    fail("Unexpected permission for resource [" + resourceSetName + "]");
+            }
+        }
+
+        assertTrue(permissions.isEmpty());
+    }
+
+    @Test
+    public void testWithDisabledMode() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+        ResourceServerRepresentation settings = authorization.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.DISABLED);
+
+        authorization.update(settings);
+
+        Collection<Permission> permissions = getEntitlements("marta", "password");
+
+        assertEquals(3, permissions.size());
+
+        for (Permission permission : new ArrayList<>(permissions)) {
+            String resourceSetName = permission.getResourceName();
+
+            switch (resourceSetName) {
+                case "Resource A":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource C":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource B":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                default:
+                    fail("Unexpected permission for resource [" + resourceSetName + "]");
+            }
+        }
+
+        assertTrue(permissions.isEmpty());
+    }
+
+    private Collection<Permission> getEntitlements(String username, String password) {
         AuthzClient authzClient = getAuthzClient();
-        EntitlementResponse response = authzClient.entitlement(authzClient.obtainAccessToken(username, password).getToken()).getAll("resource-server-test");
+        AuthorizationResponse response = authzClient.authorization(username, password).authorize();
         AccessToken accessToken;
 
         try {
-            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
+            accessToken = new JWSInput(response.getToken()).readJsonContent(AccessToken.class);
         } catch (JWSInputException cause) {
             throw new RuntimeException("Failed to deserialize RPT", cause);
         }
@@ -148,7 +234,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
     }
 
     private void createPermissions(ClientResource client) throws IOException {
-        createResourcePermission("Resource C Only For Marta Permission", "Resource C", Arrays.asList("Only Marta Policy"), client);
+        createResourcePermission("Resource A Only For Marta Permission", "Resource A", Arrays.asList("Only Marta Policy"), client);
         createScopePermission("Resource A Scope Read Only For Marta Permission", "Resource A", Arrays.asList("read"), Arrays.asList("Only Marta Policy"), client);
         createScopePermission("Resource A Scope Read Only For Kolo Permission", "Resource A", Arrays.asList("read"), Arrays.asList("Only Kolo Policy"), client);
     }

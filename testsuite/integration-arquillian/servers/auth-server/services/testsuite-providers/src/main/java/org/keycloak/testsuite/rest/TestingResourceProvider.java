@@ -19,6 +19,8 @@ package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -34,12 +36,14 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -47,9 +51,13 @@ import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
@@ -58,11 +66,14 @@ import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
+import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
+import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
@@ -75,6 +86,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -83,21 +96,27 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimerTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TestingResourceProvider implements RealmResourceProvider {
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
+
+    @Context
+    private HttpRequest request;
 
     @Override
     public Object getResource() {
         return this;
     }
 
-    public TestingResourceProvider(KeycloakSession session) {
+    public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
+        this.suspendedTimerTasks = suspendedTimerTasks;
     }
 
     @POST
@@ -134,9 +153,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/get-user-session")
+    @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
@@ -144,7 +163,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
 
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
             throw new NotFoundException("Session not found");
         }
@@ -543,9 +562,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return details;
     }
 
+    @GET
+    @Path("/get-sso-cookie")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getSSOCookieValue() {
+        Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
+        return cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE).getValue();
+    }
+
+
     @Path("/cache/{cache}")
     public TestCacheResource getCacheResource(@PathParam("cache") String cacheName) {
         return new TestCacheResource(session, cacheName);
+    }
+
+
+    @Path("/ldap/{realm}")
+    public TestLDAPResource ldap(@PathParam("realm") final String realmName) {
+        RealmModel realm = session.realms().getRealmByName(realmName);
+        return new TestLDAPResource(session, realm);
     }
 
 
@@ -659,6 +694,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return reps;
     }
 
+
     @GET
     @Path("/identity-config")
     @Produces(MediaType.APPLICATION_JSON)
@@ -672,6 +708,47 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
         System.setProperty("java.security.krb5.conf", krb5ConfFile);
     }
+
+    @POST
+    @Path("/suspend-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response suspendPeriodicTasks() {
+        suspendTask(ClearExpiredUserSessions.TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_OFFLINE_PERIODIC_TASK_NAME);
+
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/uncaught-error")
+    public Response uncaughtError() {
+        throw new RuntimeException("Uncaught error");
+    }
+
+    private void suspendTask(String taskName) {
+        TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
+
+        if (taskContext != null) {
+            suspendedTimerTasks.put(taskName, taskContext);
+        }
+    }
+
+    @POST
+    @Path("/restore-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response restorePeriodicTasks() {
+        TimerProvider timer = session.getProvider(TimerProvider.class);
+
+        for (Map.Entry<String, TimerProvider.TimerTaskContext> task : suspendedTimerTasks.entrySet()) {
+            timer.schedule(task.getValue().getRunnable(), task.getValue().getIntervalMillis(), task.getKey());
+        }
+
+        suspendedTimerTasks.clear();
+
+        return Response.noContent().build();
+    }
+
 
     @POST
     @Path("/run-on-server")
@@ -694,6 +771,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } catch (Throwable t) {
             return SerializationUtil.encodeException(t);
         }
+    }
+
+    @Path("/javascript")
+    public TestJavascriptResource getJavascriptResource() {
+        return new TestJavascriptResource();
     }
 
     private RealmModel getRealmByName(String realmName) {

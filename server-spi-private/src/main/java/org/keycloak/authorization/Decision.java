@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization;
 
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 
 /**
@@ -37,5 +38,8 @@ public interface Decision<D extends Evaluation> {
     }
 
     default void onComplete() {
+    }
+
+    default void onComplete(ResourcePermission permission) {
     }
 }

@@ -26,13 +26,14 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class KeycloakSamlAdapter implements Serializable {
-    private List<SP> sps = new LinkedList<>();
+    private final List<SP> sps = new LinkedList<>();
 
     public List<SP> getSps() {
         return sps;
     }
 
-    public void setSps(List<SP> sps) {
-        this.sps = sps;
+    public void addSp(SP sp) {
+        sps.add(sp);
     }
+
 }

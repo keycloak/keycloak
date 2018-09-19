@@ -1,0 +1,16 @@
+//
+// Close icons
+// --------------------------------------------------
+
+//this should no longer be needed and be replaced with pficon-close. This is here for legacy. For further info see https://github.com/patternfly/patternfly/pull/781
+
+.close {
+  text-shadow: none;
+  z-index: 1;
+  position: relative;
+  @include opacity(.6);
+  &:hover,
+  &:focus {
+    @include opacity(.9);
+  }
+}

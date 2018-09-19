@@ -20,10 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.TimePolicy;
 
 /**
@@ -32,14 +30,14 @@ import org.keycloak.testsuite.console.page.clients.authorization.policy.TimePoli
 public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
     @Test
-    public void testUpdate() throws InterruptedException {
+    public void testUpdate() {
         authorizationPage.navigateTo();
         TimePolicyRepresentation expected = new TimePolicyRepresentation();
 
         expected.setName("Test Time Policy");
         expected.setDescription("description");
         expected.setNotBefore("2017-01-01 00:00:00");
-        expected.setNotBefore("2018-01-01 00:00:00");
+        expected.setNotOnOrAfter("2018-01-01 00:00:00");
         expected.setDayMonth("1");
         expected.setDayMonthEnd("2");
         expected.setMonth("3");
@@ -59,7 +57,7 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         expected.setDescription("Changed description");
         expected.setLogic(Logic.NEGATIVE);
         expected.setNotBefore("2018-01-01 00:00:00");
-        expected.setNotBefore("2019-01-01 00:00:00");
+        expected.setNotOnOrAfter("2019-01-01 00:00:00");
         expected.setDayMonth("23");
         expected.setDayMonthEnd("25");
         expected.setMonth("11");
@@ -82,14 +80,14 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDelete() throws InterruptedException {
+    public void testDelete() {
         authorizationPage.navigateTo();
         TimePolicyRepresentation expected = new TimePolicyRepresentation();
 
         expected.setName("Test Time Policy");
         expected.setDescription("description");
         expected.setNotBefore("2017-01-01 00:00:00");
-        expected.setNotBefore("2018-01-01 00:00:00");
+        expected.setNotOnOrAfter("2018-01-01 00:00:00");
         expected.setDayMonth("1");
         expected.setDayMonthEnd("2");
         expected.setMonth("3");
@@ -110,14 +108,14 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDeleteFromList() throws InterruptedException {
+    public void testDeleteFromList() {
         authorizationPage.navigateTo();
         TimePolicyRepresentation expected = new TimePolicyRepresentation();
 
         expected.setName("Test Time Policy");
         expected.setDescription("description");
         expected.setNotBefore("2017-01-01 00:00:00");
-        expected.setNotBefore("2018-01-01 00:00:00");
+        expected.setNotOnOrAfter("2018-01-01 00:00:00");
         expected.setDayMonth("1");
         expected.setDayMonthEnd("2");
         expected.setMonth("3");
@@ -148,6 +146,18 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getLogic(), actual.getLogic());
+        assertEquals(expected.getNotBefore(), actual.getNotBefore());
+        assertEquals(expected.getNotOnOrAfter(), actual.getNotOnOrAfter());
+        assertEquals(expected.getDayMonth(), actual.getDayMonth());
+        assertEquals(expected.getDayMonthEnd(), actual.getDayMonthEnd());
+        assertEquals(expected.getHour(), actual.getHour());
+        assertEquals(expected.getHourEnd(), actual.getHourEnd());
+        assertEquals(expected.getMinute(), actual.getMinute());
+        assertEquals(expected.getMinuteEnd(), actual.getMinuteEnd());
+        assertEquals(expected.getMonth(), actual.getMonth());
+        assertEquals(expected.getMonthEnd(), actual.getMonthEnd());
+        assertEquals(expected.getYear(), actual.getYear());
+        assertEquals(expected.getYearEnd(), actual.getYearEnd());
 
         return actual;
     }

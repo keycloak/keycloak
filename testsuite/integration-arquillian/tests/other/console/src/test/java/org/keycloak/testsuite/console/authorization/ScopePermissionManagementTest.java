@@ -18,6 +18,9 @@ package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +31,7 @@ import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -84,30 +88,16 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testUpdateScopeOnly() throws InterruptedException {
+    public void testCreateWithoutPolicies() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
-        expected.setName("Test Scope Only Permission");
+        expected.setName("testCreateWithoutPolicies Permission");
         expected.setDescription("description");
-        expected.addScope("Scope C", "Scope A", "Scope B");
-        expected.addPolicy("Policy C", "Policy A", "Policy B");
+        expected.addResource("Resource A");
+        expected.addScope("Scope A");
 
         expected = createPermission(expected);
-
-        String previousName = expected.getName();
-
-        expected.setName(previousName + "Changed");
-        expected.setDescription("changed");
-        expected.setDecisionStrategy(DecisionStrategy.CONSENSUS);
-        expected.getScopes().clear();
-        expected.addScope("Scope B");
-        expected.getPolicies().clear();
-        expected.addPolicy("Policy C");
-
-        authorizationPage.navigateTo();
-        authorizationPage.authorizationTabs().permissions().update(previousName, expected);
-        assertAlertSuccess();
 
         authorizationPage.navigateTo();
         ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
@@ -115,11 +105,11 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testUpdateResourceScope() throws InterruptedException {
+    public void testUpdateResourceScope() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
-        expected.setName("Test Resource Scope Permission");
+        expected.setName("testUpdateResourceScope Permission");
         expected.setDescription("description");
         expected.addResource("Resource A");
         expected.addScope("Scope A");
@@ -146,14 +136,80 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         authorizationPage.navigateTo();
         ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
         assertPolicy(expected, actual);
+
+        expected.getPolicies().clear();
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
     }
 
     @Test
-    public void testDelete() throws InterruptedException {
+    public void testUpdateWithoutResource() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
-        expected.setName("Test Delete Scope Permission");
+        expected.setName("testUpdateWithoutResource Permission");
+        expected.setDescription("description");
+        expected.addResource("Resource A");
+        expected.addScope("Scope A");
+        expected.addPolicy("Policy C");
+
+        expected = createPermission(expected);
+
+        expected.getResources().clear();
+        expected.addScope("Scope B");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testUpdateScopeOnly() {
+        authorizationPage.navigateTo();
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName("testUpdateScopeOnly Permission");
+        expected.setDescription("description");
+        expected.addScope("Scope C", "Scope A", "Scope B");
+        expected.addPolicy("Policy C", "Policy A", "Policy B");
+
+        expected = createPermission(expected);
+
+        String previousName = expected.getName();
+
+        expected.setName(previousName + "Changed");
+        expected.setDescription("changed");
+        expected.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        expected.getScopes().clear();
+        expected.addScope("Scope B");
+        expected.getPolicies().clear();
+        expected.addPolicy("Policy C");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(previousName, expected);
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testDelete() {
+        authorizationPage.navigateTo();
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName("testDelete Permission");
         expected.setDescription("description");
         expected.addScope("Scope C");
         expected.addPolicy("Policy C");
@@ -167,11 +223,11 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testDeleteFromList() throws InterruptedException {
+    public void testDeleteFromList() {
         authorizationPage.navigateTo();
         ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
 
-        expected.setName("Test Delete Scope Permission");
+        expected.setName("testDeleteFromList Permission");
         expected.setDescription("description");
         expected.addScope("Scope C");
         expected.addPolicy("Policy C");
@@ -183,8 +239,70 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
     }
 
+    @Test
+    public void testCreateUpdateWithChild() {
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName(UUID.randomUUID().toString());
+        expected.setDescription("description");
+        expected.addScope("Scope C");
+        expected.addPolicy("Policy C");
+
+        ScopePermission policy = authorizationPage.authorizationTabs().permissions().create(expected, false);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName(UUID.randomUUID().toString());
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+        policy.form().save();
+        assertAlertSuccess();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+
+        RolePolicyRepresentation childPolicy2 = new RolePolicyRepresentation();
+
+        childPolicy2.setName(UUID.randomUUID().toString());
+        childPolicy2.addRole("Role A");
+
+        policy.createPolicy(childPolicy2);
+        policy.form().save();
+        assertAlertSuccess();
+        expected.addPolicy(childPolicy2.getName());
+
+        authorizationPage.navigateTo();
+        actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+
+        expected.addResource("Resource B");
+        expected.getScopes().clear();
+        expected.addScope("Scope B", "Scope C");
+        expected.getScopes().remove("Policy C");
+
+        RolePolicyRepresentation childPolicy3 = new RolePolicyRepresentation();
+
+        childPolicy3.setName(UUID.randomUUID().toString());
+        childPolicy3.addRole("Role A");
+
+        policy.update(expected, false);
+
+        policy.createPolicy(childPolicy3);
+        policy.form().save();
+        assertAlertSuccess();
+        expected.addPolicy(childPolicy3.getName());
+
+        authorizationPage.navigateTo();
+        actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
     private ScopePermissionRepresentation createPermission(ScopePermissionRepresentation expected) {
-        ScopePermission policy = authorizationPage.authorizationTabs().permissions().create(expected);
+        ScopePermission policy = authorizationPage.authorizationTabs().permissions().create(expected, true);
         assertAlertSuccess();
         return assertPolicy(expected, policy);
     }
@@ -196,7 +314,12 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getDecisionStrategy(), actual.getDecisionStrategy());
 
-        assertEquals(expected.getPolicies().size(), actual.getPolicies().size());
+        if (expected.getPolicies() == null) {
+            assertTrue(actual.getPolicies() == null || actual.getPolicies().isEmpty());
+        } else {
+            assertEquals(expected.getPolicies().size(), actual.getPolicies().size());
+        }
+
         assertEquals(0, actual.getPolicies().stream().filter(actualPolicy -> !expected.getPolicies().stream()
                 .filter(expectedPolicy -> actualPolicy.equals(expectedPolicy))
                 .findFirst().isPresent())

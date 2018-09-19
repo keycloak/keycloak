@@ -28,17 +28,23 @@ public class CachedScope extends AbstractRevisioned implements InResourceServer 
 
     private String resourceServerId;
     private String name;
+    private String displayName;
     private String iconUri;
 
     public CachedScope(Long revision, Scope scope) {
         super(revision, scope.getId());
         this.name = scope.getName();
+        this.displayName = scope.getDisplayName();
         this.iconUri = scope.getIconUri();
         this.resourceServerId = scope.getResourceServer().getId();
     }
 
     public String getName() {
         return this.name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getIconUri() {
@@ -49,5 +55,4 @@ public class CachedScope extends AbstractRevisioned implements InResourceServer 
     public String getResourceServerId() {
         return this.resourceServerId;
     }
-
 }

@@ -1,0 +1,44 @@
+<div id="-secondary" class="nav-pf-secondary-nav">
+  <div class="nav-item-pf-header">
+    <a href="#0" class="secondary-collapse-toggle-pf" data-toggle="collapse-secondary-nav"></a>
+    <span>Ipsum</span>
+  </div>
+  <ul class="list-group">
+    <li class="list-group-item active {% if page.nav-tertiary %}tertiary-nav-item-pf{% endif %}" data-target="#ipsum-intellegam-tertiary">
+      <a href="#0">
+        <span class="list-group-item-value">Intellegam</span>
+      </a>
+      {% if page.nav-tertiary %}
+      {% include widgets/navigation/tertiary-ipsum-intellegam.html %}
+      {% endif %}
+    </li>
+    <li class="list-group-item {% if page.nav-tertiary %}tertiary-nav-item-pf{% endif %}" data-target="#ipsum-copiosae-tertiary">
+      <a href="#0">
+        <span class="list-group-item-value">Copiosae</span>
+      </a>
+      {% if page.nav-tertiary %}
+      {% include widgets/navigation/tertiary-ipsum-copiosae.html %}
+      {% endif %}
+    </li>
+    <li class="list-group-item {% if page.nav-tertiary %}tertiary-nav-item-pf{% endif %}" data-target="#ipsum-patrioque-tertiary">
+      <a href="#0" >
+        <span class="list-group-item-value">Patrioque</span>
+      </a>
+      {% if page.nav-tertiary %}
+      {% include widgets/navigation/tertiary-ipsum-patrioque.html %}
+      {% endif %}
+    </li>
+    {% if page.nav-tertiary %}
+    <li class="list-group-item">
+      <a href="#0">
+        <span class="list-group-item-value">Accumsan</span>
+        {% if page.nav-badges %}
+        <div class="badge-container-pf">
+          <span class="badge">5</span>
+        </div>
+        {% endif %}
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</div>

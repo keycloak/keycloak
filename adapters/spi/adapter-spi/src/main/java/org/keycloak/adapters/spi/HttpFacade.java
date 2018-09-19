@@ -69,6 +69,7 @@ public interface HttpFacade {
         String getHeader(String name);
         List<String> getHeaders(String name);
         InputStream getInputStream();
+        InputStream getInputStream(boolean buffered);
 
         String getRemoteAddr();
         void setError(AuthenticationError error);

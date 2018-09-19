@@ -351,7 +351,6 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
-                .replaceQuery(null)
                 .queryParam(samlParameterName, base64Encoded(document));
         if (relayState != null) {
             builder.queryParam("RelayState", relayState);

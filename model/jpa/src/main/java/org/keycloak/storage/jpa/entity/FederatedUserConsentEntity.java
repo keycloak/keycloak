@@ -40,11 +40,14 @@ import java.util.Collection;
 })
 @NamedQueries({
         @NamedQuery(name="userFederatedConsentByUserAndClient", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId and consent.clientId = :clientId"),
+        @NamedQuery(name="userFederatedConsentByUserAndExternalClient", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId and consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
         @NamedQuery(name="userFederatedConsentsByUser", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId"),
         @NamedQuery(name="deleteFederatedUserConsentsByRealm", query="delete from FederatedUserConsentEntity consent where consent.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUserConsentsByStorageProvider", query="delete from FederatedUserConsentEntity e where e.storageProviderId=:storageProviderId"),
         @NamedQuery(name="deleteFederatedUserConsentsByUser", query="delete from FederatedUserConsentEntity consent where consent.userId = :userId and consent.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedUserConsentsByClient", query="delete from FederatedUserConsentEntity consent where consent.clientId = :clientId"),
+        @NamedQuery(name="deleteFederatedUserConsentsByExternalClient", query="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
+        @NamedQuery(name="deleteFederatedUserConsentsByClientStorageProvider", query="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider"),
 })
 public class FederatedUserConsentEntity {
 
@@ -65,6 +68,12 @@ public class FederatedUserConsentEntity {
     @Column(name="CLIENT_ID")
     protected String clientId;
 
+    @Column(name="CLIENT_STORAGE_PROVIDER")
+    protected String clientStorageProvider;
+
+    @Column(name="EXTERNAL_CLIENT_ID")
+    protected String externalClientId;
+
     @Column(name = "CREATED_DATE")
     private Long createdDate;
 
@@ -74,10 +83,7 @@ public class FederatedUserConsentEntity {
 
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<FederatedUserConsentRoleEntity> grantedRoles = new ArrayList<FederatedUserConsentRoleEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMappers = new ArrayList<FederatedUserConsentProtocolMapperEntity>();
+    Collection<FederatedUserConsentClientScopeEntity> grantedClientScopes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -119,20 +125,28 @@ public class FederatedUserConsentEntity {
         this.clientId = clientId;
     }
 
-    public Collection<FederatedUserConsentRoleEntity> getGrantedRoles() {
-        return grantedRoles;
+    public String getClientStorageProvider() {
+        return clientStorageProvider;
     }
 
-    public void setGrantedRoles(Collection<FederatedUserConsentRoleEntity> grantedRoles) {
-        this.grantedRoles = grantedRoles;
+    public void setClientStorageProvider(String clientStorageProvider) {
+        this.clientStorageProvider = clientStorageProvider;
     }
 
-    public Collection<FederatedUserConsentProtocolMapperEntity> getGrantedProtocolMappers() {
-        return grantedProtocolMappers;
+    public String getExternalClientId() {
+        return externalClientId;
     }
 
-    public void setGrantedProtocolMappers(Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMappers) {
-        this.grantedProtocolMappers = grantedProtocolMappers;
+    public void setExternalClientId(String externalClientId) {
+        this.externalClientId = externalClientId;
+    }
+
+    public Collection<FederatedUserConsentClientScopeEntity> getGrantedClientScopes() {
+        return grantedClientScopes;
+    }
+
+    public void setGrantedClientScopes(Collection<FederatedUserConsentClientScopeEntity> grantedClientScopes) {
+        this.grantedClientScopes = grantedClientScopes;
     }
 
     public Long getCreatedDate() {

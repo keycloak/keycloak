@@ -17,19 +17,23 @@
 
 package org.keycloak.keys;
 
-import java.util.List;
-
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.List;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFactory<AesKeyProvider> implements AesKeyProviderFactory {
+public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyProviderFactory<AbstractGeneratedSecretKeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedAesKeyProviderFactory.class);
 
@@ -52,8 +56,31 @@ public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFa
             .build();
 
     @Override
-    public AesKeyProvider create(KeycloakSession session, ComponentModel model) {
+    public GeneratedAesKeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedAesKeyProvider(model);
+    }
+
+    @Override
+    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
+        if (keyUse.equals(KeyUse.ENC) && algorithm.equals(Algorithm.AES)) {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel generated = new ComponentModel();
+            generated.setName("fallback-" + algorithm);
+            generated.setParentId(realm.getId());
+            generated.setProviderId(ID);
+            generated.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle(Attributes.PRIORITY_KEY, "-100");
+            generated.setConfig(config);
+
+            realm.addComponentModel(generated);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

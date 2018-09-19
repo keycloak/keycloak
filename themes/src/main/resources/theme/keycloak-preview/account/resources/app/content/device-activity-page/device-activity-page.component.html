@@ -1,0 +1,209 @@
+<div class="page-header">
+  <h1 id="pageTitle">{{'deviceActivityHtmlTitle' | translate}}</h1>
+</div>
+
+
+<div class="card-pf">
+  <div class="card-pf-body">
+    <div class="row">
+      <div class="col-sm-12 col-md-8">
+        <h2 class="card-pf-title" id="signedInDevicesTitle">
+          Signed In Devices
+        </h2>
+        <p class="detail-description" id="signedInDevicesDesc">You can find devices that have logged into your account from the list. Log out any of them if the device is unfamiliar or logged in wrong place and time.</p>
+      </div>
+      <div class="col-sm-12 col-md-4">
+        <button class="btn btn-default pull-right pull-right-sm" type="button" data-toggle="modal" data-target="#myModal" id="logoutAllDevicesBtn">Log Out All Devices</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="container-fluid">
+        <div class="list-group list-view-pf list-view-pf-view" id="signedInDevicesList">
+          <div class="list-group-item">
+            <div class="list-group-item-header">
+              <div class="list-view-pf-expand">
+                <span class="fa fa-angle-right"></span>
+              </div>
+
+              <div class="list-view-pf-main-info">
+                <div class="list-view-pf-left">
+                  <span class="fa fa-desktop list-view-pf-icon-sm"></span>
+                </div>
+                <div class="list-view-pf-body">
+                  <div class="list-view-pf-description">
+                    <div class="list-group-item-heading">
+                      Asus A3G
+                    </div>
+                    <div class="list-group-item-text current-color">
+                      Current device
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="list-group-item-container container-fluid hidden">
+              <div class="close">
+                <span class="pficon pficon-close"></span>
+              </div>
+              <div class="activity-item">
+                <ul>
+                  <li><h3><i class="fa fa-firefox"></i> Firefox on OS X 10.11</h3></li>
+                  <li><b>Last accessed in</b> Dalian, China (219.147.95.224) <b>on</b> January 8, 17:33:52</li>
+                  <li><b>Clients</b> security-admin-console, account</li>
+                  <li><span><b>Started at</b> January 8, 3:25:38</span> <span class="m-l block-box"><b>Expires at</b> January 9, 3:25:37</span></li>
+                </ul>
+
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-default btn-logout" data-toggle="modal" data-target="#myModal">Log Out</button>
+                <!-- End Button trigger modal -->
+              </div>
+
+              <div class="activity-item">
+                <ul>
+                  <li><h3><i class="fa fa-chrome"></i> Chrome on OS X 10.11.6</h3></li>
+                  <li><b>Last accessed in</b> Dalian, China (219.147.95.224) <b>on</b> January 8, 17:33:52</li>
+                  <li><b>Clients</b> security-admin-console, account</li>
+                  <li><span><b>Started at</b> January 8, 3:25:38</span> <span class="m-l block-box"><b>Expires at</b> January 9, 3:25:37</span></li>
+                </ul>
+                <button class="btn btn-default btn-logout">Log Out</button>
+              </div>
+            </div>
+          </div>
+          <div class="list-group-item">
+            <div class="list-group-item-header">
+              <div class="list-view-pf-expand">
+                <span class="fa fa-angle-right"></span>
+              </div>
+
+              <div class="list-view-pf-main-info">
+                <div class="list-view-pf-left">
+                  <span class="fa fa-mobile list-view-pf-icon-sm"></span>
+                </div>
+                <div class="list-view-pf-body">
+                  <div class="list-view-pf-description">
+                    <div class="list-group-item-heading">
+                      Asus A3G
+                    </div>
+                    <div class="list-group-item-text">
+                      <b>Last Access</b>
+                      <span>Raleigh, US - January 8, 17:33:52</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="list-group-item-container container-fluid hidden">
+              <div class="close">
+                <span class="pficon pficon-close"></span>
+              </div>
+              <div class="activity-item">
+                <ul>
+                  <li><h3><i class="fa fa-firefox"></i> Firefox on OS X 10.11</h3></li>
+                  <li><b>Last accessed in</b> Dalian, China (219.147.95.224) <b>on</b> January 8, 17:33:52</li>
+                  <li><b>Clients</b> security-admin-console, account</li>
+                  <li><span><b>Started at</b> January 8, 3:25:38</span> <span class="m-l block-box"><b>Expires at</b> January 9, 3:25:37</span></li>
+                </ul>
+                <button class="btn btn-default btn-logout">Log Out</button>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+<div class="card-pf">
+  <div class="card-pf-body">
+    <h2 class="card-pf-title" id="recentlyUsedDevicesTitle">
+      Recently Used Devices
+    </h2>
+    <p class="detail-description" id="recentlyUsedDevicesDesc">You can find devices that you used in the last month, but they have not logged into your account anymore.</p>
+
+    <div class="row">
+      <div class="container-fluid">
+        <div class="list-group list-view-pf list-view-pf-view" id="recentlyUsedDevicesList">
+          <div class="list-group-item">
+            <div class="list-group-item-header">
+              <div class="list-view-pf-expand">
+                <span class="fa fa-angle-right"></span>
+              </div>
+
+              <div class="list-view-pf-main-info">
+                <div class="list-view-pf-left">
+                  <span class="fa fa-mobile list-view-pf-icon-sm"></span>
+                </div>
+                <div class="list-view-pf-body">
+                  <div class="list-view-pf-description">
+                    <div class="list-group-item-heading">
+                      Asus A3G
+                    </div>
+                    <div class="list-group-item-text">
+                      <b>Last Access</b>
+                      <span>Raleigh, US - January 8, 17:33:52</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="list-group-item-container container-fluid hidden">
+            <div class="close">
+              <span class="pficon pficon-close"></span>
+            </div>
+            <div class="activity-item">
+              <ul>
+                <li><h3><i class="fa fa-firefox"></i> Firefox on OS X 10.11</h3></li>
+                <li><b>Last accessed in</b> Dalian, China (219.147.95.224) <b>on</b> January 8, 17:33:52</li>
+              </ul>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Log Out All Devices</h4>
+      </div>
+      <div class="modal-body">
+        Logging Out All Devices will log out all the devices that have signed in to your account, including the current device you are using.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary">Log Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Modal -->
+
+
+<script>
+$(document).ready(function () {
+  // click the list-view heading then expand a row
+  $(".list-group-item-header").click(function(event){
+    if(!$(event.target).is("button, a, input, .fa-ellipsis-v")){
+      $(this).find(".fa-angle-right").toggleClass("fa-angle-down")
+      .end().parent().toggleClass("list-view-pf-expand-active")
+      .find(".list-group-item-container").toggleClass("hidden");
+    } else {
+    }
+  })
+
+  // click the close button, hide the expand row and remove the active status
+  $(".list-group-item-container .close").on("click", function (){
+    $(this).parent().addClass("hidden")
+    .parent().removeClass("list-view-pf-expand-active")
+    .find(".fa-angle-right").removeClass("fa-angle-down");
+  })
+
+});
+</script>

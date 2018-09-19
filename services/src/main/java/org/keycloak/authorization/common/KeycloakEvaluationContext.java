@@ -18,13 +18,14 @@
 
 package org.keycloak.authorization.common;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -33,12 +34,12 @@ public class KeycloakEvaluationContext extends DefaultEvaluationContext {
 
     private final KeycloakIdentity identity;
 
-    public KeycloakEvaluationContext(KeycloakSession keycloakSession) {
-        this(new KeycloakIdentity(keycloakSession), keycloakSession);
+    public KeycloakEvaluationContext(KeycloakIdentity identity, KeycloakSession keycloakSession) {
+        this(identity, null, keycloakSession);
     }
 
-    public KeycloakEvaluationContext(KeycloakIdentity identity, KeycloakSession keycloakSession) {
-        super(identity, keycloakSession);
+    public KeycloakEvaluationContext(KeycloakIdentity identity, Map<String, List<String>> claims, KeycloakSession keycloakSession) {
+        super(identity, claims, keycloakSession);
         this.identity = identity;
     }
 

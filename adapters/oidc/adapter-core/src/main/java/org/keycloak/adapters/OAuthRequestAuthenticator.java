@@ -66,7 +66,7 @@ public class OAuthRequestAuthenticator {
         this.reqAuthenticator = requestAuthenticator;
         this.facade = facade;
         this.deployment = deployment;
-        this.sslRedirectPort = sslRedirectPort;
+        this.sslRedirectPort = deployment.getConfidentialPort() != -1 ? deployment.getConfidentialPort() : sslRedirectPort;
         this.tokenStore = tokenStore;
     }
 
@@ -170,6 +170,9 @@ public class OAuthRequestAuthenticator {
         String maxAge = getQueryParamValue(OAuth2Constants.MAX_AGE);
         url = UriUtils.stripQueryParam(url, OAuth2Constants.MAX_AGE);
 
+        String uiLocales = getQueryParamValue(OAuth2Constants.UI_LOCALES_PARAM);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.UI_LOCALES_PARAM);
+
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
@@ -187,6 +190,9 @@ public class OAuthRequestAuthenticator {
         }
         if (maxAge != null && maxAge.length() > 0) {
             redirectUriBuilder.queryParam(OAuth2Constants.MAX_AGE, maxAge);
+        }
+        if (uiLocales != null && uiLocales.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
 
         scope = TokenUtil.attachOIDCScope(scope);
@@ -344,6 +350,14 @@ public class OAuthRequestAuthenticator {
         tokenString = tokenResponse.getToken();
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
+
+        log.debug("Verifying tokens");
+        if (log.isTraceEnabled()) {
+            logToken("\taccess_token", tokenString);
+            logToken("\tid_token", idTokenString);
+            logToken("\trefresh_token", refreshToken);
+        }
+
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
             if (idTokenString != null) {
@@ -376,7 +390,8 @@ public class OAuthRequestAuthenticator {
     protected String stripOauthParametersFromRedirect() {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(facade.getRequest().getURI())
                 .replaceQueryParam(OAuth2Constants.CODE, null)
-                .replaceQueryParam(OAuth2Constants.STATE, null);
+                .replaceQueryParam(OAuth2Constants.STATE, null)
+                .replaceQueryParam(OAuth2Constants.SESSION_STATE, null);
         return builder.build().toString();
     }
     
@@ -398,4 +413,13 @@ public class OAuthRequestAuthenticator {
         return originalUri;
     }
 
+    private void logToken(String name, String token) {
+        try {
+            JWSInput jwsInput = new JWSInput(token);
+            String wireString = jwsInput.getWireString();
+            log.tracef("\t%s: %s", name, wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+        } catch (JWSInputException e) {
+            log.errorf(e, "Failed to parse %s: %s", name, token);
+        }
+    }
 }

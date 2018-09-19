@@ -16,6 +16,7 @@
  */
 package org.keycloak.broker.saml;
 
+import org.keycloak.Config.Scope;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
@@ -29,6 +30,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
@@ -44,6 +46,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     public static final String PROVIDER_ID = "saml";
 
+    private DestinationValidator destinationValidator;
+
     @Override
     public String getName() {
         return "SAML v2.0";
@@ -51,13 +55,13 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public SAMLIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new SAMLIdentityProvider(session, new SAMLIdentityProviderConfig(model));
+        return new SAMLIdentityProvider(session, new SAMLIdentityProviderConfig(model), destinationValidator);
     }
 
     @Override
     public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
         try {
-            Object parsedObject = new SAMLParser().parse(inputStream);
+            Object parsedObject = SAMLParser.getInstance().parse(inputStream);
             EntityDescriptorType entityType;
 
             if (EntitiesDescriptorType.class.isInstance(parsedObject)) {
@@ -159,4 +163,10 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
         return PROVIDER_ID;
     }
 
+    @Override
+    public void init(Scope config) {
+        super.init(config);
+
+        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
+    }
 }

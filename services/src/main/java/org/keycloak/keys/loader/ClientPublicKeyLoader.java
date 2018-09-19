@@ -17,11 +17,6 @@
 
 package org.keycloak.keys.loader;
 
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Map;
-
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.KeyUtils;
@@ -35,10 +30,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.JWKSUtils;
+
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

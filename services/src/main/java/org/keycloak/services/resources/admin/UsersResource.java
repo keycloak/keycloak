@@ -20,7 +20,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,7 +33,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.*;
+import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -49,6 +49,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +64,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class UsersResource {
+
     private static final Logger logger = Logger.getLogger(UsersResource.class);
+    private static final String SEARCH_ID_PARAMETER = "id:";
 
     protected RealmModel realm;
 
@@ -73,9 +76,6 @@ public class UsersResource {
 
     @Context
     protected ClientConnection clientConnection;
-
-    @Context
-    protected UriInfo uriInfo;
 
     @Context
     protected KeycloakSession session;
@@ -94,13 +94,12 @@ public class UsersResource {
      *
      * Username must be unique.
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
+    public Response createUser(final UserRepresentation rep) {
         auth.users().requireManage();
 
         // Double-check duplicated username and email here due to federation
@@ -116,14 +115,14 @@ public class UsersResource {
             Set<String> emptySet = Collections.emptySet();
 
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
-            RepresentationToModel.createCredentials(rep, session, realm, user);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
+            RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
@@ -180,16 +179,24 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("first") Integer firstResult,
-                                             @QueryParam("max") Integer maxResults) {
+                                             @QueryParam("max") Integer maxResults,
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         auth.users().requireQuery();
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
-        List<UserModel> userModels;
+        List<UserModel> userModels = Collections.emptyList();
         if (search != null) {
-            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                if (userModel != null) {
+                    userModels = Arrays.asList(userModel);
+                }
+            } else {
+                userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+            }
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {
@@ -210,9 +217,12 @@ public class UsersResource {
         }
 
         boolean canViewGlobal = auth.users().canView();
+        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
         for (UserModel user : userModels) {
             if (!canViewGlobal  && !auth.users().canView(user)) continue;
-            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
+            UserRepresentation userRep = briefRepresentationB
+              ? ModelToRepresentation.toBriefRepresentation(user)
+              : ModelToRepresentation.toRepresentation(session, realm, user);
             userRep.setAccess(auth.users().getAccess(user));
             results.add(userRep);
         }

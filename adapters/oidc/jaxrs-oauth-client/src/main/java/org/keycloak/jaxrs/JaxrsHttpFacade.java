@@ -27,6 +27,9 @@ import javax.security.cert.X509Certificate;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.SecurityContext;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -50,6 +53,8 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
     }
 
     protected class RequestFacade implements OIDCHttpFacade.Request {
+
+        private InputStream inputStream;
 
         @Override
         public String getFirstParam(String param) {
@@ -108,6 +113,19 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
 
         @Override
         public InputStream getInputStream() {
+            return getInputStream(false);
+        }
+
+        @Override
+        public InputStream getInputStream(boolean buffered) {
+            if (inputStream != null) {
+                return inputStream;
+            }
+
+            if (buffered) {
+                return inputStream = new BufferedInputStream(requestContext.getEntityStream());
+            }
+
             return requestContext.getEntityStream();
         }
 

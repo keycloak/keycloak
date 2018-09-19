@@ -1,6 +1,6 @@
 package org.keycloak.authorization.policy.provider.client;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -13,15 +13,15 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 
 public class ClientPolicyProvider implements PolicyProvider {
 
-    private final Function<Policy, ClientPolicyRepresentation> representationFunction;
+    private final BiFunction<Policy, AuthorizationProvider, ClientPolicyRepresentation> representationFunction;
 
-    public ClientPolicyProvider(Function<Policy, ClientPolicyRepresentation> representationFunction) {
+    public ClientPolicyProvider(BiFunction<Policy, AuthorizationProvider, ClientPolicyRepresentation> representationFunction) {
         this.representationFunction = representationFunction;
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        ClientPolicyRepresentation representation = representationFunction.apply(evaluation.getPolicy());
+        ClientPolicyRepresentation representation = representationFunction.apply(evaluation.getPolicy(), evaluation.getAuthorizationProvider());
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         EvaluationContext context = evaluation.getContext();

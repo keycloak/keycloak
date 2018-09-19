@@ -55,7 +55,6 @@ public class GroupMappersTest extends AbstractGroupTest {
         mapper.setName("groups");
         mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(false);
         Map<String, String> config = new HashMap<>();
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
@@ -67,7 +66,6 @@ public class GroupMappersTest extends AbstractGroupTest {
         mapper.setName("topAttribute");
         mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(false);
         config = new HashMap<>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, "topAttribute");
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "topAttribute");
@@ -81,7 +79,6 @@ public class GroupMappersTest extends AbstractGroupTest {
         mapper.setName("level2Attribute");
         mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConsentRequired(false);
         config = new HashMap<>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, "level2Attribute");
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "level2Attribute");

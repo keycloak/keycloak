@@ -22,9 +22,9 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -49,20 +49,23 @@ public class Permissions extends Form {
     @Page
     private ScopePermission scopePermission;
 
+    @Page
+    private ModalDialog modalDialog;
+
     public PermissionsTable permissions() {
         return table;
     }
 
-    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected) {
+    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected, boolean save) {
         String type = expected.getType();
 
         createSelect.selectByValue(type);
 
         if ("resource".equals(type)) {
-            resourcePermission.form().populate((ResourcePermissionRepresentation) expected);
+            resourcePermission.form().populate((ResourcePermissionRepresentation) expected, save);
             return (P) resourcePermission;
         } else if ("scope".equals(type)) {
-            scopePermission.form().populate((ScopePermissionRepresentation) expected);
+            scopePermission.form().populate((ScopePermissionRepresentation) expected, save);
             return (P) scopePermission;
         }
 
@@ -70,6 +73,10 @@ public class Permissions extends Form {
     }
 
     public void update(String name, AbstractPolicyRepresentation representation) {
+        update(name, representation, true);
+    }
+
+    public void update(String name, AbstractPolicyRepresentation representation, boolean save) {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
@@ -78,9 +85,9 @@ public class Permissions extends Form {
                 String type = representation.getType();
 
                 if ("resource".equals(type)) {
-                    resourcePermission.form().populate((ResourcePermissionRepresentation) representation);
+                    resourcePermission.form().populate((ResourcePermissionRepresentation) representation, save);
                 } else if ("scope".equals(type)) {
-                    scopePermission.form().populate((ScopePermissionRepresentation) representation);
+                    scopePermission.form().populate((ScopePermissionRepresentation) representation, save);
                 }
 
                 return;
@@ -130,7 +137,7 @@ public class Permissions extends Form {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
                 row.findElements(tagName("td")).get(4).click();
-                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
+                modalDialog.confirmDeletion();
                 return;
             }
         }

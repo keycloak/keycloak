@@ -1,4 +1,15 @@
 {
+
+    "hostname": {
+        "provider": "${keycloak.hostname.provider:request}",
+
+        "fixed": {
+            "hostname": "${keycloak.hostname.fixed.hostname:localhost}",
+            "httpPort": "${keycloak.hostname.fixed.httpPort:-1}",
+            "httpsPort": "${keycloak.hostname.fixed.httpPorts:-1}"
+        }
+    },
+
     "admin": {
         "realm": "master"
     },
@@ -85,7 +96,7 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;MVCC=TRUE}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1}",
             "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
@@ -115,7 +126,7 @@
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
             "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
-            "remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
         }
     },
@@ -143,6 +154,25 @@
                 "http=${auth.server.http.port}",
                 "https=${auth.server.https.port}"
             ]
+	}
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:default}",
+        "default": {
+          "enabled": true
+        },
+        "haproxy": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
         }
     }
 }

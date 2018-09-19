@@ -29,7 +29,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
     @Option(name = "config", description = "Path to the config file (~/.keycloak/kcreg.config by default)", hasValue = true)
     protected String config;
 
-    @Option(name = "no-config", description = "No configuration file should be used, no authentication info should be saved", hasValue = false)
+    @Option(name = "no-config", description = "No configuration file should be used, no authentication info is loaded or saved", hasValue = false)
     protected boolean noconfig;
 
     @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080/auth')", hasValue = true)
@@ -237,8 +237,12 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
             String value = options[++i];
 
             if (value != null) {
-                throw new RuntimeException("Unsupported option: " + name);
+                throw new IllegalArgumentException("Unsupported option: " + name);
             }
         }
+    }
+
+    protected static String booleanOptionForCheck(boolean value) {
+        return value ? "true" : null;
     }
 }

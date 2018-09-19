@@ -16,30 +16,35 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.models.UserModel;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-public class VerifyEmail extends Authenticate {
+public class VerifyEmail extends RequiredActions {
 
-    @FindBy(xpath = "//div[@id='kc-form-wrapper']/p")
+    @FindBy(xpath = "//div[@id='kc-content-wrapper']/p[contains(@class, 'instruction')][1]")
     private WebElement instruction;
 
-    @FindBy(id = "kc-error-message")
-    private WebElement error;
+    @FindBy(xpath = "//div[@id='kc-content-wrapper']/p[contains(@class, 'instruction')][2]/a[text()='Click here']")
+    private WebElement resendLink;
 
-    public String getInstructionMessage() {
-        waitUntilElement(instruction).is().present();
-        return instruction.getText();
+    @Override
+    public String getActionId() {
+        return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
-    public String getErrorMessage() {
-        waitUntilElement(error).is().present();
-        return error.getText();
+    public String getInstructionMessage() {
+        return getTextFromElement(instruction);
+    }
+
+    public void clickResend() {
+        clickLink(resendLink);
     }
 }

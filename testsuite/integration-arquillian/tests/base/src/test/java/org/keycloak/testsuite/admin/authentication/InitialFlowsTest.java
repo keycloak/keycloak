@@ -140,10 +140,14 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         flow = newFlow("clients", "Base authentication for clients", "client-flow", true, true);
         addExecExport(flow, null, false, "client-secret", false, null, ALTERNATIVE, 10);
         addExecExport(flow, null, false, "client-jwt", false, null, ALTERNATIVE, 20);
+        addExecExport(flow, null, false, "client-secret-jwt", false, null, ALTERNATIVE, 30);
+        addExecExport(flow, null, false, "client-x509", false, null, ALTERNATIVE, 40);
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Client Id and Secret", "client-secret", false, 0, 0, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Signed Jwt", "client-jwt", false, 0, 1, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "Signed Jwt with Client Secret", "client-secret-jwt", false, 0, 2, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "X509 Certificate", "client-x509", false, 0, 3, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("direct grant", "OpenID Connect Resource Owner Grant", "basic-flow", true, true);
@@ -179,6 +183,19 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Verify Existing Account by Re-authentication", null, false, 1, 2, ALTERNATIVE, true, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
         addExecInfo(execs, "Username Password Form for identity provider reauthentication", "idp-username-password-form", false, 2, 0, REQUIRED, null, new String[]{REQUIRED});
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, OPTIONAL, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
+        expected.add(new FlowExecutions(flow, execs));
+
+        flow = newFlow("http challenge", "An authentication flow based on challenge-response HTTP Authentication Schemes","basic-flow", true, true);
+        addExecExport(flow, null, false, "no-cookie-redirect", false, null, REQUIRED, 10);
+        addExecExport(flow, null, false, "basic-auth", false, null, REQUIRED, 20);
+        addExecExport(flow, null, false, "basic-auth-otp", false, null, DISABLED, 30);
+        addExecExport(flow, null, false, "auth-spnego", false, null, DISABLED, 40);
+
+        execs = new LinkedList<>();
+        addExecInfo(execs, "Browser Redirect/Refresh", "no-cookie-redirect", false, 0, 0, REQUIRED, null, new String[]{REQUIRED});
+        addExecInfo(execs, "Basic Auth Challenge", "basic-auth", false, 0, 1, REQUIRED, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
+        addExecInfo(execs, "Basic Auth Password+OTP", "basic-auth-otp", false, 0, 2, DISABLED, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
+        addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 3, DISABLED, null, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("registration", "registration flow", "basic-flow", true, true);

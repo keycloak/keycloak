@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -46,7 +47,7 @@ public class LoginPasswordResetPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Forgot Your Password?");
+        return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
     }
 
     public void open() {

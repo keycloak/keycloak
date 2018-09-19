@@ -18,17 +18,19 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.auth.page.account.AccountFields;
-import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
-import org.keycloak.testsuite.auth.page.account.PasswordFields;
+import org.keycloak.testsuite.auth.page.AccountFields;
+import org.keycloak.testsuite.auth.page.PasswordFields;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
- *
  * @author Filip Kiss
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class Registration extends LoginActions {
 
@@ -44,8 +46,8 @@ public class Registration extends LoginActions {
     @Page
     private PasswordFields passwordFields;
 
-    @Page
-    private ContactInfoFields contactInfoFields;
+    @FindBy(xpath = "//a[contains(., 'Back to Login')]")
+    private WebElement backToLoginLink;
 
     public void register(UserRepresentation user) {
         setValues(user);
@@ -62,16 +64,23 @@ public class Registration extends LoginActions {
         passwordFields.setConfirmPassword(confirmPassword);
     }
 
-    public void waitForUsernameInputPresent() {
-        accountFields.waitForUsernameInputPresent();
-    }
-
-    public void waitForUsernameInputNotPresent() {
-        accountFields.waitForUsernameInputNotPresent();
+    public boolean isUsernamePresent() {
+        return accountFields.isUsernamePresent();
     }
     
-    public void waitForConfirmPasswordInputPresent() {
-        passwordFields.waitForConfirmPasswordInputPresent();
+    public boolean isConfirmPasswordPresent() {
+        return passwordFields.isConfirmPasswordPresent();
     }
 
+    public AccountFields accountFields() {
+        return accountFields;
+    }
+
+    public PasswordFields passwordFields() {
+        return passwordFields;
+    }
+
+    public void backToLogin() {
+        clickLink(backToLoginLink);
+    }
 }

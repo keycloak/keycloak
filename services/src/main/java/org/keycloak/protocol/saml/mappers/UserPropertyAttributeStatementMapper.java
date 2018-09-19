@@ -79,10 +79,14 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
         String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
-        if (propertyValue == null) return;
-        AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, propertyValue);
 
+        if (propertyName == null || propertyName.trim().isEmpty()) return;
+
+        String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
+
+        if (propertyValue == null) return;
+
+        AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, propertyValue);
     }
 
     public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute,
@@ -90,7 +94,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
                                                             boolean consentRequired, String consentText) {
         String mapperId = PROVIDER_ID;
         return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, nameFormat, friendlyName,
-                consentRequired, consentText, mapperId);
+                mapperId);
 
     }
 }

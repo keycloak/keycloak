@@ -24,9 +24,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ScopeContainerModel {
-    boolean isFullScopeAllowed();
-
-    void setFullScopeAllowed(boolean value);
 
     Set<RoleModel> getScopeMappings();
 

@@ -28,8 +28,8 @@ public class DefaultProviderLoaderFactory implements ProviderLoaderFactory {
     }
 
     @Override
-    public ProviderLoader create(ClassLoader baseClassLoader, String resource) {
-        return new DefaultProviderLoader(baseClassLoader);
+    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
+        return new DefaultProviderLoader(info, baseClassLoader);
     }
 
 }

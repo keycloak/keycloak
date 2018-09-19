@@ -1,0 +1,29 @@
+{% if include.has-error == true %}{% include widgets/communication/alert-danger.html %}{% endif %}
+<form class="form-horizontal">
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="{{include.id-default}}">Default</label>
+    <div class="col-sm-10">
+      <input type="text" id="{{include.id-default}}" class="form-control">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="{{include.id-disabled}}">Disabled</label>
+    <div class="col-sm-10">
+      <input type="text" id="{{include.id-disabled}}" class="form-control" disabled></div>
+  </div>
+  <div class="form-group {% if include.has-error == true %}has-error{% endif %}">
+    <label class="col-sm-2 control-label" for="{{include.id-error}}">{% if include.has-error == true %}With{% else %}No{% endif %} error</label>
+    <div class="col-sm-10">
+      <input type="text" id="{{include.id-error}}" class="form-control">
+{% if include.has-error == true %}
+      <span class="help-block">Please correct the error</span>
+{% endif %}
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-primary">Primary Action</button>
+      <button type="submit" class="btn btn-default">Secondary Action</button>
+    </div>
+  </div>
+</form>

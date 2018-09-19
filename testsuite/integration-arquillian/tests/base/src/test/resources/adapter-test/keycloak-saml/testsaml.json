@@ -15,6 +15,9 @@
         "host": "localhost",
         "port":"3025"
     },
+    "eventsEnabled" : true,
+    "eventsListeners" : [ "jboss-logging" ],
+    "enabledEventTypes" : [ ],
     "users" : [
         {
             "username" : "bburke",
@@ -29,8 +32,25 @@
             },
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
-                "http://localhost:8081/employee/": [ "employee" ],
-                "http://localhost:8081/employee2/": [ "employee" ]
+                "http://localhost:8280/employee/": [ "employee" ],
+                "http://localhost:8280/employee2/": [ "employee" ]
+            }
+        },
+        {
+            "username" : "bburke-additional-domain",
+            "enabled": true,
+            "email" : "bburke@redhat.com.additional.domain",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"],
+            "applicationRoles": {
+                "http://localhost:8280/employee/": [ "employee" ],
+                "http://localhost:8280/employee2/": [ "employee" ]
             }
         },
         {
@@ -65,11 +85,24 @@
             "groups": [
                 "/top/level2"
             ]
+        },
+        {
+            "username" : "pedroigor",
+            "enabled": true,
+            "email" : "psilva@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"]
         }
     ],
     "clients": [
         {
-            "clientId": "http://localhost:8081/missing-assertion-sig/",
+            "clientId": "http://localhost:8280/missing-assertion-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -91,7 +124,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-assertion-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-assertion-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -108,7 +141,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/input-portal/",
+            "clientId": "http://localhost:8280/input-portal/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -125,7 +158,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-assertion-and-response-sig/",
+            "clientId": "http://localhost:8280/sales-post-assertion-and-response-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -147,7 +180,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post2/",
+            "clientId": "http://localhost:8280/sales-post2/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -164,7 +197,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/different-cookie-name/",
+            "clientId": "http://localhost:8280/different-cookie-name/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -179,7 +212,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post/",
+            "clientId": "http://localhost:8280/sales-post/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -188,12 +221,14 @@
                 "http://localhost:8080/sales-post/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
                 "saml.authnstatement": "true",
                 "saml_idp_initiated_sso_url_name": "sales-post"
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-passive/",
+            "clientId": "http://localhost:8280/sales-post-passive/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -207,7 +242,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig/",
+            "clientId": "http://localhost:8280/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -224,7 +259,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-transient/",
+            "clientId": "http://localhost:8280/sales-post-sig-transient/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -242,7 +277,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-persistent/",
+            "clientId": "http://localhost:8280/sales-post-sig-persistent/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -259,7 +294,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-email/",
+            "clientId": "http://localhost:8280/sales-post-sig-email/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -280,7 +315,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-realm-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-realm-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -297,7 +332,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-client-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-client-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -314,7 +349,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-enc/",
+            "clientId": "http://localhost:8280/sales-post-enc/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -333,7 +368,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-enc-sign-assertions-only/",
+            "clientId": "http://localhost:8280/sales-post-enc-sign-assertions-only/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -352,7 +387,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig/",
+            "clientId": "http://localhost:8280/employee-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -370,7 +405,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-redir-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-redir-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -388,7 +423,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-redir-opt-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-redir-opt-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -407,7 +442,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-post-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-post-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -425,7 +460,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee/",
+            "clientId": "http://localhost:8280/employee/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -475,7 +510,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee-acs/",
+            "clientId": "http://localhost:8280/employee-acs/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -525,7 +560,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee2/",
+            "clientId": "http://localhost:8280/employee2/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -576,7 +611,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-front/",
+            "clientId": "http://localhost:8280/employee-sig-front/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -591,6 +626,27 @@
                 "saml.signature.algorithm": "RSA_SHA1",
                 "saml.authnstatement": "true",
                 "saml.signing.certificate": "MIIB0DCCATkCBgFJH5u0EDANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtc2lnLzAeFw0xNDEwMTcxOTMzNThaFw0yNDEwMTcxOTM1MzhaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBACKyPLGqMX8GsIrCfJU8eVnpaqzTXMglLVo/nTcfAnWe9UAdVe8N3a2PXpDBvuqNA/DEAhVcQgxdlOTWnB6s8/yLTRuH0bZgb3qGdySif+lU+E7zZ/SiDzavAvn+ABqemnzHcHyhYO+hNRGHvUbW5OAii9Vdjhm8BI32YF1NwhKp"
+            }
+        },
+        {
+            "clientId": "http://localhost:8280/ecp-sp/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/ecp-sp",
+            "redirectUris": [
+                "http://localhost:8080/ecp-sp/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/ecp-sp/",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8080/ecp-sp/",
+                "saml_single_logout_service_url_post": "http://localhost:8080/ecp-sp/",
+                "saml_single_logout_service_url_redirect": "http://localhost:8080/ecp-sp/",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
             }
         }
     ],
@@ -627,13 +683,13 @@
             }
         ],
         "application" : {
-            "http://localhost:8081/employee/" : [
+            "http://localhost:8280/employee/" : [
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"
                 }
             ],
-            "http://localhost:8081/employee2/" : [
+            "http://localhost:8280/employee2/" : [
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"

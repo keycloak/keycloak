@@ -132,7 +132,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
         loginPage.login(USER_LOGIN, USER_PASSWORD);
         oauthGrantPage.assertCurrent();
-        WaitUtils.waitUntilElement(By.xpath("//body")).text().contains("Offline access");
+        WaitUtils.waitUntilElement(By.xpath("//body")).text().contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT);
 
         oauthGrantPage.accept();
 
@@ -143,7 +143,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
             Urls.accountApplicationsPage(getAuthServerRoot(), REALM_NAME).toString();
         driver.navigate().to(accountAppPageUrl);
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get(CLIENT_ID);
-        Assert.assertTrue(offlineClient.getRolesGranted().contains("Offline access"));
+        Assert.assertTrue(offlineClient.getClientScopesGranted().contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
         Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail

@@ -24,6 +24,6 @@ public interface ProviderLoaderFactory {
 
     boolean supports(String type);
 
-    ProviderLoader create(ClassLoader baseClassLoader, String resource);
+    ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource);
 
 }

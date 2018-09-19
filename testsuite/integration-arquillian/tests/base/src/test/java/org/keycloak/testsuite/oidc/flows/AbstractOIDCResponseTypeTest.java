@@ -24,6 +24,8 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,10 +33,12 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -42,6 +46,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Abstract test for various values of response_type
@@ -75,12 +81,32 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
 
     @Test
-    public void nonceMatches() {
+    public void nonceAndSessionStateMatches() {
         EventRepresentation loginEvent = loginUser("abcdef123456");
-        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idToken : idTokens) {
             Assert.assertEquals("abcdef123456", idToken.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
+        }
+    }
+
+
+    @Test
+    public void initialSessionStateUsedInRedirect() {
+        EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idToken : idTokens) {
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
 
@@ -169,9 +195,79 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
-    protected abstract List<IDToken> retrieveIDTokens(EventRepresentation loginEvent);
+    protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
+        if (nonce != null) {
+            oauth.nonce(nonce);
+        }
+
+        if (redirectUri != null) {
+            oauth.redirectUri(redirectUri);
+        }
+
+        driver.navigate().to(oauth.getLoginFormUrl());
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    protected abstract boolean isFragment();
+
+    protected abstract List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent);
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
+    }
+
+    private void oidcFlow(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        EventRepresentation loginEvent = loginUser("abcdef123456");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        JWSHeader header = null;
+        String idToken = authzResponse.getIdToken();
+        String accessToken = authzResponse.getAccessToken();
+        if (idToken != null) {
+            header = new JWSInput(idToken).getHeader();
+            assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+        if (accessToken != null) {
+            header = new JWSInput(accessToken).getHeader();
+            assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idt : idTokens) {
+            Assert.assertEquals("abcdef123456", idt.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
+        }
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
+        try {
+            setSignatureAlgorithm("RS384");
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS384");
+            oidcFlow("RS256", "RS384");
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+    private String sigAlgName = "RS256";
+    private void setSignatureAlgorithm(String sigAlgName) {
+        this.sigAlgName = sigAlgName;
+    }
+    protected String getSignatureAlgorithm() {
+        return this.sigAlgName;
     }
 }

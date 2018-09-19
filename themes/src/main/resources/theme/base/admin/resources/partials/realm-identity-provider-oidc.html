@@ -9,9 +9,6 @@
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageIdentityProviders">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <fieldset>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="redirectUri">{{:: 'redirect-uri' | translate}}</label>
@@ -127,6 +124,13 @@
                 </div>
                 <kc-tooltip>{{:: 'loginHint.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="uiLocales">{{:: 'uiLocales' | translate}}</label>
+                <div class="col-sm-4">
+                    <input ng-model="identityProvider.config.uiLocales" id="uiLocales" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'uiLocales.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="tokenUrl"><span class="required">*</span> {{:: 'token-url' | translate}}</label>
                 <div class="col-md-6">
@@ -172,7 +176,7 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="clientSecret" type="password" ng-model="identityProvider.config.clientSecret" required>
+                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" required>
                 </div>
                 <kc-tooltip>{{:: 'client-secret.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -249,6 +253,20 @@
 
             </div>
 
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="allowedClockSkew">{{:: 'allowed-clock-skew' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.allowedClockSkew" id="allowedClockSkew" type="text" class="form-control"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="forwardParameters">{{:: 'forwarded-query-parameters' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="forwardParameters" type="text" ng-model="identityProvider.config.forwardParameters"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.forwarded-query-parameters.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="newIdentityProvider">
             <legend uncollapsed><span class="text">{{:: 'import-external-idp-config' | translate}}</span> <kc-tooltip>{{:: 'import-external-idp-config.tooltip' | translate}}</kc-tooltip></legend>

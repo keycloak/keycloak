@@ -1,0 +1,95 @@
+//
+// Mixins
+// --------------------------------------------------
+// Bootstrap overrides and PatternFly-specific mixins
+
+// Bootstrap overrides
+// -------------------
+
+// Button variants
+.button-variant(@color; @background; @background-image-start; @background-image-stop; @border) {
+  background-color: @background;
+  #gradient > .vertical(@background-image-start, @background-image-stop);
+  border-color: @border;
+  color: @color;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.active,
+  .open .dropdown-toggle& {
+    background-color: @background;
+    background-image: none;
+    border-color: @border;
+    color: @color;
+  }
+  &:active,
+  &.active,
+  .open .dropdown-toggle& {
+    background-image: none;
+    &:hover,
+    &:focus,
+    &.focus {
+      background-color: darken(@background, 5%);
+          border-color: darken(@border, 7%);
+    }
+  }
+  &.disabled,
+  &[disabled],
+  fieldset[disabled] & {
+    &,
+    &:hover,
+    &:focus,
+    &:active,
+    &.active {
+      background-color: @background;
+      border-color: @border;
+    }
+  }
+}
+
+// Form control outline
+.form-control-outline(@color: @input-border-focus) {
+  @color-rgba: rgba(red(@color), green(@color), blue(@color), .6);
+  &:focus {
+    border-color: @color;
+    outline: 0 !important;
+    .box-shadow(~"inset 0 1px 1px rgba(3, 3, 3, 0.075), 0 0 8px @{color-rgba}");
+  }
+}
+
+// Gradients
+#gradient {
+  .striped(@color: fade(@color-pf-black, 15%); @angle: -45deg) {
+    background-image: linear-gradient(@angle, @color 25%, @color 26%, transparent 27%, transparent 49%, @color 50%, @color 51%, transparent 52%, transparent 74%, @color 75%, @color 76%, transparent 77%);
+  }
+}
+
+// Horizontal dividers
+.nav-divider(@color: @color-pf-black-200, @margin: 4px 1px) {
+  background-color: @color;
+  height: 1px;
+  margin: @margin;
+  overflow: hidden;
+}
+
+// Placeholder text
+.placeholder(@color: @input-color-placeholder) {
+  &::placeholder            { color: @color; font-style: italic; }
+}
+
+// PatternFly-specific
+// -------------------
+
+.tab-indicator(@background: @gray-light-pf, @left: 15px, @right: 15px) {
+  &:before {
+    background: @background;
+    bottom: -1px;
+    content: "";
+    display: block;
+    height: 2px;
+    left: @left;
+    position: absolute;
+    right: @right;
+  }
+}

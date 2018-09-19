@@ -34,6 +34,10 @@
             <outputDirectory>content/themes</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>target/keycloak-client-tools/bin</directory>
+            <outputDirectory>content/bin</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>src/main/resources/identity/module</directory>
             <includes>
                 <include>**/**</include>
@@ -60,6 +64,9 @@
         <fileSet>
             <directory>src/main/resources/licenses/${product.slot}</directory>
             <outputDirectory>content/docs/licenses-${product.slot}</outputDirectory>
+            <excludes>
+                <exclude>licenses.xml</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>target/licenses</directory>

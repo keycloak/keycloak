@@ -77,9 +77,11 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     }
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-
         UserModel user = userSession.getUser();
         String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+
+        if (propertyName == null || propertyName.trim().isEmpty()) return;
+
         String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, propertyValue);
     }
@@ -87,11 +89,9 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean consentRequired, String consentText,
                                                         boolean accessToken, boolean idToken) {
         return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
-                consentRequired, consentText,
                 accessToken, idToken,
                 PROVIDER_ID);
     }

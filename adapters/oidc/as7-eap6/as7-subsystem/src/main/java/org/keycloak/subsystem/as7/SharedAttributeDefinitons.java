@@ -166,6 +166,13 @@ class SharedAttributeDefinitons {
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
 
+    protected static final SimpleAttributeDefinition PROXY_URL =
+            new SimpleAttributeDefinitionBuilder("proxy-url", ModelType.STRING, true)
+                    .setXmlName("proxy-url")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
+
 
 
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
@@ -192,6 +199,7 @@ class SharedAttributeDefinitons {
         ATTRIBUTES.add(REGISTER_NODE_PERIOD);
         ATTRIBUTES.add(TOKEN_STORE);
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
+        ATTRIBUTES.add(PROXY_URL);
     }
 
     /**

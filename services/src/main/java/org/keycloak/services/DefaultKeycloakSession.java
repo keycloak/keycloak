@@ -19,13 +19,17 @@ package org.keycloak.services;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.ThemeManager;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -34,8 +38,10 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionProvider;
+import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.theme.DefaultThemeManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,12 +62,15 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
     private UserStorageManager userStorageManager;
+    private ClientStorageManager clientStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
     private KeyManager keyManager;
+    private ThemeManager themeManager;
+    private TokenManager tokenManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -100,6 +109,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public <T> T getAttribute(String attribute, Class<T> clazz) {
+        Object value = getAttribute(attribute);
+        return value != null && clazz.isInstance(value) ? (T) value : null;
+    }
+
+    @Override
     public Object removeAttribute(String attribute) {
         return attributes.remove(attribute);
     }
@@ -131,6 +146,23 @@ public class DefaultKeycloakSession implements KeycloakSession {
     public UserProvider userLocalStorage() {
         return getProvider(UserProvider.class);
     }
+
+    @Override
+    public RealmProvider realmLocalStorage() {
+        return getProvider(RealmProvider.class);
+    }
+
+    @Override
+    public ClientProvider clientLocalStorage() {
+        return realmLocalStorage();
+    }
+
+    @Override
+    public ClientProvider clientStorageManager() {
+        if (clientStorageManager == null) clientStorageManager = new ClientStorageManager(this);
+        return clientStorageManager;
+    }
+
 
     @Override
     public UserProvider userStorageManager() {
@@ -229,6 +261,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return model;
     }
 
+
     @Override
     public UserSessionProvider sessions() {
         if (sessionProvider == null) {
@@ -251,6 +284,22 @@ public class DefaultKeycloakSession implements KeycloakSession {
             keyManager = new DefaultKeyManager(this);
         }
         return keyManager;
+    }
+
+    @Override
+    public ThemeManager theme() {
+        if (themeManager == null) {
+            themeManager = new DefaultThemeManager(this);
+        }
+        return themeManager;
+    }
+
+    @Override
+    public TokenManager tokens() {
+        if (tokenManager == null) {
+            tokenManager = new DefaultTokenManager(this);
+        }
+        return tokenManager;
     }
 
     public void close() {

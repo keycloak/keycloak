@@ -225,7 +225,7 @@ public interface PicketLinkLogger {
      *
      * @return
      */
-    RuntimeException parserUnknownEndElement(String endElementName);
+    RuntimeException parserUnknownEndElement(String endElementName, Location location);
 
     /**
      * @param tag

@@ -21,20 +21,24 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
- * Using class for now to avoid many updates among implementations
+ * Represents the state of the authentication. If the login is requested from different tabs of same browser, every browser
+ * tab has it's own state of the authentication. So there is separate AuthenticationSessionModel for every tab. Whole browser
+ * is represented by {@link RootAuthenticationSessionModel}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface AuthenticationSessionModel extends CommonClientSessionModel {
 
-//
-//    public UserSessionModel getUserSession();
-//    public void setUserSession(UserSessionModel userSession);
+    /**
+     * @return ID of this subsession (in other words, usually browser tab). For lookup the AuthenticationSessionModel, you need:
+     * ID of rootSession (parent), client UUID and tabId. For lookup the ID of the parent, use {@link #getParentSession().getId()}
+     */
+    String getTabId();
 
+    RootAuthenticationSessionModel getParentSession();
 
     Map<String, ExecutionStatus> getExecutionStatus();
     void setExecutionStatus(String authenticator, ExecutionStatus status);
@@ -125,8 +129,14 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
      */
     void clearClientNotes();
 
-    void updateClient(ClientModel client);
+    /**
+     * Get client scope IDs
+     */
+    Set<String> getClientScopes();
 
-    // Will completely restart whole state of authentication session. It will just keep same ID. It will setup it with provided realm and client.
-    void restartSession(RealmModel realm, ClientModel client);
+    /**
+     * Set client scope IDs
+     */
+    void setClientScopes(Set<String> clientScopes);
+
 }

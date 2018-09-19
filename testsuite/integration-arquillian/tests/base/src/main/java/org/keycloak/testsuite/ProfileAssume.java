@@ -46,7 +46,7 @@ public class ProfileAssume {
             ProfileInfoRepresentation profileInfo = adminClient.serverInfo().getInfo().getProfileInfo();
             profile = profileInfo.getName();
             List<String> disabled = profileInfo.getDisabledFeatures();
-            disabledFeatures = Collections.unmodifiableSet(new HashSet(disabled));
+            disabledFeatures = Collections.unmodifiableSet(new HashSet<>(disabled));
             adminClient.close();
         } catch (Exception e) {
             throw new RuntimeException("Failed to obtain profile / features info from serverinfo endpoint of " + authServerContextRoot, e);
@@ -54,7 +54,7 @@ public class ProfileAssume {
     }
 
     public static void assumeFeatureEnabled(Profile.Feature feature) {
-        Assume.assumeTrue("Ignoring test as " + feature.name() + " is not enabled", isFeatureEnabled(feature));
+        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is not enabled", isFeatureEnabled(feature));
     }
 
     public static void assumePreview() {

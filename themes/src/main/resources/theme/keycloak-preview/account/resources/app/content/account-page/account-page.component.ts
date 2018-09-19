@@ -18,7 +18,10 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {Response} from '@angular/http';
 import {FormGroup} from '@angular/forms';
 
+import {Features} from '../../page/features';
 import {AccountServiceClient} from '../../account-service/account.service';
+
+declare const features: Features;
 
 @Component({
     selector: 'app-account-page',
@@ -26,12 +29,13 @@ import {AccountServiceClient} from '../../account-service/account.service';
     styleUrls: ['./account-page.component.css']
 })
 export class AccountPageComponent implements OnInit {
+    private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
+    private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     
     @ViewChild('formGroup') private formGroup: FormGroup;
     
-    // using ordinary variable here
-    // disabled fields not working properly with FormGroup
-    // FormGroup.getRawValue() causes page refresh.  Not sure why?
+    // using ordinary variable here for case where username
+    // is not editable and not controlled by formGroup
     private username: string;
 
     constructor(private accountSvc: AccountServiceClient ) {

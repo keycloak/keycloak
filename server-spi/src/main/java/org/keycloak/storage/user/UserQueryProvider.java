@@ -35,7 +35,24 @@ import java.util.Map;
  */
 public interface UserQueryProvider {
 
+    /**
+     * Returns the number of users, without consider any service account.
+     *
+     * @param realm the realm
+     * @return the number of users
+     */
     int getUsersCount(RealmModel realm);
+
+    /**
+     * Returns the number of users.
+     *
+     * @param realm the realm
+     * @param includeServiceAccount if true, the number of users will also include service accounts. Otherwise, only the number of users.
+     * @return the number of users
+     */
+    default int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        throw new RuntimeException("Not implemented");
+    }
 
     List<UserModel> getUsers(RealmModel realm);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);

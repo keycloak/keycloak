@@ -1,22 +1,23 @@
 package org.keycloak.testsuite.arquillian;
 
 import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.Container.State;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
-import org.jboss.arquillian.container.spi.Container.State;
 
 /**
  *
  * @author tkyjovsk
  */
-public class ContainerInfo {
+public class ContainerInfo implements Comparable<ContainerInfo> {
 
     private URL contextRoot;
+    private URL browserContextRoot;
     private Container arquillianContainer;
-    private boolean adapterLibsInstalled;
 
     public ContainerInfo(Container arquillianContainer) {
         if (arquillianContainer == null) {
@@ -41,8 +42,24 @@ public class ContainerInfo {
         return contextRoot;
     }
 
+    public KeycloakUriBuilder getUriBuilder() {
+        try {
+            return KeycloakUriBuilder.fromUri(getContextRoot().toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void setContextRoot(URL contextRoot) {
         this.contextRoot = contextRoot;
+    }
+
+    public void setBrowserContextRoot(URL browserContextRoot) {
+        this.browserContextRoot = browserContextRoot;
+    }
+
+    public URL getBrowserContextRoot() {
+        return browserContextRoot;
     }
 
     public boolean isUndertow() {
@@ -68,14 +85,6 @@ public class ContainerInfo {
     @Override
     public String toString() {
         return getQualifier();
-    }
-
-    public boolean isAdapterLibsInstalled() {
-        return adapterLibsInstalled;
-    }
-
-    public void setAdapterLibsInstalled(boolean adapterLibsInstalled) {
-        this.adapterLibsInstalled = adapterLibsInstalled;
     }
 
     @Override
@@ -105,6 +114,11 @@ public class ContainerInfo {
 
     public boolean isManual() {
         return Objects.equals(arquillianContainer.getContainerConfiguration().getMode(), "manual");
+    }
+
+    @Override
+    public int compareTo(ContainerInfo o) {
+        return this.getQualifier().compareTo(o.getQualifier());
     }
 
 }

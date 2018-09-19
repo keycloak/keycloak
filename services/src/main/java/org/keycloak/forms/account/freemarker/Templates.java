@@ -40,6 +40,10 @@ public class Templates {
                 return "sessions.ftl";
             case APPLICATIONS:
                 return "applications.ftl";
+            case RESOURCES:
+                return "resources.ftl";
+            case RESOURCE_DETAIL:
+                return "resource-detail.ftl";
             default:
                 throw new IllegalArgumentException();
         }

@@ -27,6 +27,8 @@ import org.keycloak.timer.ScheduledTask;
  */
 public class ClearExpiredUserSessions implements ScheduledTask {
 
+    public static final String TASK_NAME = "ClearExpiredUserSessions";
+
     @Override
     public void run(KeycloakSession session) {
         UserSessionProvider sessions = session.sessions();

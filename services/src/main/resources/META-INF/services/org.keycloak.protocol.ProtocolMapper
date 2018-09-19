@@ -24,6 +24,7 @@ org.keycloak.protocol.oidc.mappers.HardcodedRole
 org.keycloak.protocol.oidc.mappers.RoleNameMapper
 org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
 org.keycloak.protocol.oidc.mappers.GroupMembershipMapper
+org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper
 org.keycloak.protocol.saml.mappers.RoleListMapper
 org.keycloak.protocol.saml.mappers.RoleNameMapper
 org.keycloak.protocol.saml.mappers.HardcodedRole
@@ -32,6 +33,7 @@ org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper
 org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper
 org.keycloak.protocol.saml.mappers.UserSessionNoteStatementMapper
 org.keycloak.protocol.saml.mappers.GroupMembershipMapper
+org.keycloak.protocol.saml.mappers.ScriptBasedMapper
 org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper

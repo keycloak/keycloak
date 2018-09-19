@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Provider Examples</name>
@@ -36,7 +36,5 @@
         <module>authenticator</module>
         <module>rest</module>
         <module>domain-extension</module>
-        <module>user-storage-simple</module>
-        <module>user-storage-jpa</module>
     </modules>
 </project>

@@ -20,23 +20,27 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.TokenCategory;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -44,6 +48,8 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -53,8 +59,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,19 +74,16 @@ public class UserInfoEndpoint {
     private HttpResponse response;
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private KeycloakSession session;
 
     @Context
     private ClientConnection clientConnection;
 
-    private final TokenManager tokenManager;
+    private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
     private final RealmModel realm;
 
-    public UserInfoEndpoint(TokenManager tokenManager, RealmModel realm) {
+    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
@@ -128,12 +129,14 @@ public class UserInfoEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Token not provided", Response.Status.BAD_REQUEST);
         }
 
-        AccessToken token = null;
+        AccessToken token;
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString)
-                    .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-            String kid = verifier.getHeader().getKeyId();
-            verifier.publicKey(session.keys().getRsaPublicKey(realm, kid));
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            verifier.verifierContext(verifierContext);
+
             token = verifier.verify().getToken();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
@@ -145,6 +148,8 @@ public class UserInfoEndpoint {
             event.error(Errors.CLIENT_NOT_FOUND);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
         }
+
+        session.getContext().setClient(clientModel);
 
         event.client(clientModel);
 
@@ -164,12 +169,23 @@ public class UserInfoEndpoint {
         event.user(userModel)
                 .detail(Details.USERNAME, userModel.getUsername());
 
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
+            if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match", Response.Status.UNAUTHORIZED);
+            }
+        }
 
         // Existence of authenticatedClientSession for our client already handled before
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
+        // Retrieve by latest scope parameter
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+
         AccessToken userInfo = new AccessToken();
-        tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
+        tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
 
         Map<String, Object> claims = new HashMap<String, Object>();
         claims.put("sub", userModel.getId());
@@ -179,17 +195,17 @@ public class UserInfoEndpoint {
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
 
         if (cfg.isUserInfoSignatureRequired()) {
-            String issuerUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+            String issuerUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
             String audience = clientModel.getClientId();
             claims.put("iss", issuerUrl);
             claims.put("aud", audience);
 
-            Algorithm signatureAlg = cfg.getUserInfoSignedResponseAlg();
-            PrivateKey privateKey = session.keys().getActiveRsaKey(realm).getPrivateKey();
+            String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.USERINFO);
 
-            String signedUserInfo = new JWSBuilder()
-                    .jsonContent(claims)
-                    .sign(signatureAlg, privateKey);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
+            SignatureSignerContext signer = signatureProvider.signer();
+
+            String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 
             responseBuilder = Response.ok(signedUserInfo).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
 

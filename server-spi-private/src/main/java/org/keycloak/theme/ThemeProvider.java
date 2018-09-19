@@ -27,12 +27,12 @@ import java.util.Set;
  */
 public interface ThemeProvider extends Provider {
 
-    public int getProviderPriority();
+    int getProviderPriority();
 
-    public Theme getTheme(String name, Theme.Type type) throws IOException;
+    Theme getTheme(String name, Theme.Type type) throws IOException;
 
-    public Set<String> nameSet(Theme.Type type);
+    Set<String> nameSet(Theme.Type type);
 
-    public boolean hasTheme(String name, Theme.Type type);
+    boolean hasTheme(String name, Theme.Type type);
 
 }

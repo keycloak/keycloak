@@ -18,21 +18,27 @@ package org.keycloak.authorization.admin.representation;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.admin.PolicyEvaluationService;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
-import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse.PolicyResultRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -47,13 +53,13 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class PolicyEvaluationResponseBuilder {
-    public static PolicyEvaluationResponse build(List<Result> results, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
+    public static PolicyEvaluationResponse build(PolicyEvaluationService.EvaluationDecisionCollector decision, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
         List<PolicyEvaluationResponse.EvaluationResultRepresentation> resultsRep = new ArrayList<>();
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
-        authorizationData.setPermissions(Permissions.permits(results, null, authorization, resourceServer));
+        authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
         ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
@@ -63,6 +69,8 @@ public class PolicyEvaluationResponseBuilder {
         }
 
         response.setRpt(accessToken);
+
+        Collection<Result> results = decision.getResults();
 
         if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
             response.setStatus(DecisionEffect.DENY);
@@ -108,7 +116,13 @@ public class PolicyEvaluationResponseBuilder {
             List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new ArrayList<>();
 
             for (Result.PolicyResult policy : result.getResults()) {
-                policies.add(toRepresentation(policy, authorization));
+                PolicyResultRepresentation policyRep = toRepresentation(policy, authorization);
+
+                if ("resource".equals(policy.getPolicy().getType())) {
+                    policyRep.getPolicy().setScopes(result.getPermission().getResource().getScopes().stream().map(Scope::getName).collect(Collectors.toSet()));
+                }
+
+                policies.add(policyRep);
             }
 
             rep.setPolicies(policies);
@@ -161,33 +175,64 @@ public class PolicyEvaluationResponseBuilder {
         return response;
     }
 
-    private static PolicyEvaluationResponse.PolicyResultRepresentation toRepresentation(Result.PolicyResult policy, AuthorizationProvider authorization) {
+    private static PolicyEvaluationResponse.PolicyResultRepresentation toRepresentation(Result.PolicyResult result, AuthorizationProvider authorization) {
         PolicyEvaluationResponse.PolicyResultRepresentation policyResultRep = new PolicyEvaluationResponse.PolicyResultRepresentation();
 
         PolicyRepresentation representation = new PolicyRepresentation();
+        Policy policy = result.getPolicy();
 
-        representation.setId(policy.getPolicy().getId());
-        representation.setName(policy.getPolicy().getName());
-        representation.setType(policy.getPolicy().getType());
-        representation.setDecisionStrategy(policy.getPolicy().getDecisionStrategy());
+        representation.setId(policy.getId());
+        representation.setName(policy.getName());
+        representation.setType(policy.getType());
+        representation.setDecisionStrategy(policy.getDecisionStrategy());
+        representation.setDescription(policy.getDescription());
 
-        representation.setResources(policy.getPolicy().getResources().stream().map(resource -> resource.getName()).collect(Collectors.toSet()));
+        if ("uma".equals(representation.getType())) {
+            Map<String, String> filters = new HashMap<>();
 
-        Set<String> scopeNames = policy.getPolicy().getScopes().stream().map(scope -> scope.getName()).collect(Collectors.toSet());
+            filters.put(PermissionTicket.POLICY, policy.getId());
+
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, policy.getResourceServer().getId(), -1, 1);
+
+            if (!tickets.isEmpty()) {
+                KeycloakSession keycloakSession = authorization.getKeycloakSession();
+                PermissionTicket ticket = tickets.get(0);
+                UserModel owner = keycloakSession.users().getUserById(ticket.getOwner(), authorization.getRealm());
+                UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), authorization.getRealm());
+
+                representation.setDescription("Resource owner (" + getUserEmailOrUserName(owner) + ") grants access to " + getUserEmailOrUserName(requester));
+            } else {
+                String description = representation.getDescription();
+
+                if (description != null) {
+                    representation.setDescription(description + " (User-Managed Policy)");
+                } else {
+                    representation.setDescription("User-Managed Policy");
+                }
+            }
+        }
+
+        representation.setResources(policy.getResources().stream().map(resource -> resource.getName()).collect(Collectors.toSet()));
+
+        Set<String> scopeNames = policy.getScopes().stream().map(scope -> scope.getName()).collect(Collectors.toSet());
 
         representation.setScopes(scopeNames);
 
         policyResultRep.setPolicy(representation);
 
-        if (policy.getStatus() == Decision.Effect.DENY) {
+        if (result.getEffect() == Decision.Effect.DENY) {
             policyResultRep.setStatus(DecisionEffect.DENY);
             policyResultRep.setScopes(representation.getScopes());
         } else {
             policyResultRep.setStatus(DecisionEffect.PERMIT);
         }
 
-        policyResultRep.setAssociatedPolicies(policy.getAssociatedPolicies().stream().map(result -> toRepresentation(result, authorization)).collect(Collectors.toList()));
+        policyResultRep.setAssociatedPolicies(result.getAssociatedPolicies().stream().map(policy1 -> toRepresentation(policy1, authorization)).collect(Collectors.toList()));
 
         return policyResultRep;
+    }
+
+    private static String getUserEmailOrUserName(UserModel user) {
+        return (user.getEmail() != null ? user.getEmail() : user.getUsername());
     }
 }

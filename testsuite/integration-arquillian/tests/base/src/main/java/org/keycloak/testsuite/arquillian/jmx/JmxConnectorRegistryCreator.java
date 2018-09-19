@@ -19,6 +19,7 @@ package org.keycloak.testsuite.arquillian.jmx;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
@@ -47,24 +48,28 @@ public class JmxConnectorRegistryCreator {
 
                 private volatile ConcurrentMap<JMXServiceURL, JMXConnector> connectors = new ConcurrentHashMap<>();
 
+                private JMXConnector createConnection(JMXServiceURL key) {
+                    try {
+                        final JMXConnector conn = JMXConnectorFactory.newJMXConnector(key, null);
+                        conn.connect();
+                        log.infof("Connected to JMX Service URL: %s", key);
+                        return conn;
+                    } catch (IOException ex) {
+                        throw new RuntimeException("Could not instantiate JMX connector for " + key, ex);
+                    }
+                }
+
                 @Override
                 public JMXConnector getConnection(JMXServiceURL url) {
                     
-                    JMXConnector res = connectors.get(url);
-                    if (res == null) {
-                        try {
-                            final JMXConnector conn = JMXConnectorFactory.newJMXConnector(url, null);
-                            res = connectors.putIfAbsent(url, conn);
-                            if (res == null) {
-                                res = conn;
-                            }
-                            res.connect();
-                            log.infof("Connected to JMX Service URL: %s", url);
-                        } catch (IOException ex) {
-                            //remove conn from connectors in case something goes wrong. The connection will be established on-demand
-                            connectors.remove(url, res);
-                            throw new RuntimeException("Could not instantiate JMX connector for " + url, ex);
-                        }
+                    JMXConnector res = connectors.computeIfAbsent(url, this::createConnection);
+                    // Check connection is alive
+                    try {
+                        res.getMBeanServerConnection().getMBeanCount();
+                    } catch (IOException ex) {
+                        // retry in case connection is not alive
+                        try { res.close(); } catch (IOException e) { }
+                        connectors.replace(url, createConnection(url));
                     }
                     return res;
                 }

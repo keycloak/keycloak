@@ -43,11 +43,14 @@ import java.util.Collection;
 })
 @NamedQueries({
         @NamedQuery(name="userConsentByUserAndClient", query="select consent from UserConsentEntity consent where consent.user.id = :userId and consent.clientId = :clientId"),
+        @NamedQuery(name="userConsentByUserAndExternalClient", query="select consent from UserConsentEntity consent where consent.user.id = :userId and consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
         @NamedQuery(name="userConsentsByUser", query="select consent from UserConsentEntity consent where consent.user.id = :userId"),
         @NamedQuery(name="deleteUserConsentsByRealm", query="delete from UserConsentEntity consent where consent.user IN (select user from UserEntity user where user.realmId = :realmId)"),
         @NamedQuery(name="deleteUserConsentsByRealmAndLink", query="delete from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
         @NamedQuery(name="deleteUserConsentsByUser", query="delete from UserConsentEntity consent where consent.user = :user"),
         @NamedQuery(name="deleteUserConsentsByClient", query="delete from UserConsentEntity consent where consent.clientId = :clientId"),
+        @NamedQuery(name="deleteUserConsentsByExternalClient", query="delete from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
+        @NamedQuery(name="deleteUserConsentsByClientStorageProvider", query="delete from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider"),
 })
 public class UserConsentEntity {
 
@@ -63,11 +66,14 @@ public class UserConsentEntity {
     @Column(name="CLIENT_ID")
     protected String clientId;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<UserConsentRoleEntity> grantedRoles = new ArrayList<UserConsentRoleEntity>();
+    @Column(name="CLIENT_STORAGE_PROVIDER")
+    protected String clientStorageProvider;
+
+    @Column(name="EXTERNAL_CLIENT_ID")
+    protected String externalClientId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<UserConsentProtocolMapperEntity> grantedProtocolMappers = new ArrayList<UserConsentProtocolMapperEntity>();
+    Collection<UserConsentClientScopeEntity> grantedClientScopes = new ArrayList<>();
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
@@ -91,28 +97,12 @@ public class UserConsentEntity {
         this.user = user;
     }
 
-    public String getClientId() {
-        return clientId;
+    public Collection<UserConsentClientScopeEntity> getGrantedClientScopes() {
+        return grantedClientScopes;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
-    public Collection<UserConsentRoleEntity> getGrantedRoles() {
-        return grantedRoles;
-    }
-
-    public void setGrantedRoles(Collection<UserConsentRoleEntity> grantedRoles) {
-        this.grantedRoles = grantedRoles;
-    }
-
-    public Collection<UserConsentProtocolMapperEntity> getGrantedProtocolMappers() {
-        return grantedProtocolMappers;
-    }
-
-    public void setGrantedProtocolMappers(Collection<UserConsentProtocolMapperEntity> grantedProtocolMappers) {
-        this.grantedProtocolMappers = grantedProtocolMappers;
+    public void setGrantedClientScopes(Collection<UserConsentClientScopeEntity> grantedClientScopes) {
+        this.grantedClientScopes = grantedClientScopes;
     }
 
     public Long getCreatedDate() {
@@ -129,6 +119,30 @@ public class UserConsentEntity {
 
     public void setLastUpdatedDate(Long lastUpdatedDate) {
         this.lastUpdatedDate = lastUpdatedDate;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientStorageProvider() {
+        return clientStorageProvider;
+    }
+
+    public void setClientStorageProvider(String clientStorageProvider) {
+        this.clientStorageProvider = clientStorageProvider;
+    }
+
+    public String getExternalClientId() {
+        return externalClientId;
+    }
+
+    public void setExternalClientId(String externalClientId) {
+        this.externalClientId = externalClientId;
     }
 
     @Override

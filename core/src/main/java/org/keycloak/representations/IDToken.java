@@ -18,6 +18,7 @@
 package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.TokenCategory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,6 +51,10 @@ public class IDToken extends JsonWebToken {
     public static final String UPDATED_AT = "updated_at";
     public static final String CLAIMS_LOCALES = "claims_locales";
     public static final String ACR = "acr";
+
+    // Financial API - Part 2: Read and Write API Security Profile
+    // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+    public static final String S_HASH = "s_hash";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
@@ -130,6 +135,11 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(ACR)
     protected String acr;
+
+    // Financial API - Part 2: Read and Write API Security Profile
+    // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+    @JsonProperty(S_HASH)
+    protected String stateHash; 
 
     public String getNonce() {
         return nonce;
@@ -338,4 +348,20 @@ public class IDToken extends JsonWebToken {
     public void setAcr(String acr) {
         this.acr = acr;
     }
+
+    // Financial API - Part 2: Read and Write API Security Profile
+    // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+    public String getStateHash() {
+        return stateHash;
+    }
+
+    public void setStateHash(String stateHash) {
+        this.stateHash = stateHash;
+    }
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.ID;
+    }
+
 }

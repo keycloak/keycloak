@@ -21,6 +21,7 @@ package org.keycloak.testsuite.x509;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -57,6 +58,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -96,8 +98,30 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
+    @Override
     protected boolean isImportAfterEachMethod() {
         return true;
+    }
+
+    @BeforeClass
+    public static void onBeforeTestClass() {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
+            String authServerHome = System.getProperty("auth.server.home");
+
+            if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+                authServerHome = authServerHome + "/standalone/configuration";
+                StringBuilder cliArgs = new StringBuilder();
+
+                cliArgs.append("--ignore-ssl-errors=true ");
+                cliArgs.append("--web-security=false ");
+                cliArgs.append("--ssl-certificates-path=").append(authServerHome).append("/ca.crt ");
+                cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append("/client.crt ");
+                cliArgs.append("--ssl-client-key-file=").append(authServerHome).append("/client.key ");
+                cliArgs.append("--ssl-client-key-passphrase=secret ");
+
+                System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
+            }
+        }
     }
 
     @Before
@@ -194,7 +218,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
-        URI redir = URI.create("https://localhost:" + System.getProperty("app.server.https.port", "8543") + baseUri.getRawPath());
+        URI redir = URI.create("https://localhost:" + System.getProperty("auth.server.https.port", "8543") + baseUri.getRawPath());
         client.getRedirectUris().add(redir.toString());
 
         testRealm.setBruteForceProtected(true);
@@ -299,6 +323,23 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setConfirmationPageAllowed(true)
                 .setMappingSourceType(SUBJECTDN_EMAIL)
                 .setUserIdentityMapperType(USERNAME_EMAIL);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UsernameOrEmailConfig() {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setMappingSourceType(SUBJECTALTNAME_EMAIL)
+                .setUserIdentityMapperType(USERNAME_EMAIL);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithKeyUsage(String keyUsage) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setKeyUsage(keyUsage);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithExtendedKeyUsage(String extendedKeyUsage) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setExtendedKeyUsage(extendedKeyUsage);
     }
 
     protected static X509AuthenticatorConfigModel createLoginSubjectCN2UsernameOrEmailConfig() {

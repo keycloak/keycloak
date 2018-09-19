@@ -98,22 +98,13 @@ public class ClientsResource {
     public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId, @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly) {
         List<ClientRepresentation> rep = new ArrayList<>();
 
-        if (clientId == null) {
+        if (clientId == null || clientId.trim().equals("")) {
             List<ClientModel> clientModels = realm.getClients();
             auth.clients().requireList();
             boolean view = auth.clients().canView();
             for (ClientModel clientModel : clientModels) {
                 if (view || auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
-
-                    if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-                        AuthorizationService authorizationService = getAuthorizationService(clientModel);
-
-                        if (authorizationService.isEnabled()) {
-                            representation.setAuthorizationServicesEnabled(true);
-                        }
-                    }
-
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     rep.add(representation);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                 } else if (!viewableOnly) {
@@ -128,7 +119,7 @@ public class ClientsResource {
             ClientModel clientModel = realm.getClientByClientId(clientId);
             if (clientModel != null) {
                 if (auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
                 } else if (!viewableOnly && auth.clients().canList()){
@@ -155,13 +146,12 @@ public class ClientsResource {
      *
      * Client's client_id must be unique!
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createClient(final @Context UriInfo uriInfo, final ClientRepresentation rep) {
+    public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
         ValidationMessages validationMessages = new ValidationMessages();
@@ -185,7 +175,7 @@ public class ClientsResource {
                 }
             }
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
                 if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
@@ -196,12 +186,12 @@ public class ClientsResource {
                     ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                     if (authorizationSettings != null) {
-                        authorizationService.resourceServer().importSettings(uriInfo, authorizationSettings);
+                        authorizationService.resourceServer().importSettings(authorizationSettings);
                     }
                 }
             }
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }

@@ -65,6 +65,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+        log.debug("Adding test realm for import from testrealm.json");
         RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
 
         testRealms.add(testRealm);

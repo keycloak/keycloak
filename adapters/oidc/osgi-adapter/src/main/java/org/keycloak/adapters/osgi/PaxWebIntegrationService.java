@@ -29,11 +29,12 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import java.net.URL;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Integration with pax-web, which allows to inject custom jetty-web.xml configuration from current bundle classpath into {@link WebContainer}
+ * Integration with pax-web in Fuse 6.3, which allows to inject custom jetty-web.xml configuration from current bundle classpath into {@link WebContainer}
  * and allows to inject custom security constraint for securing resources by Keycloak.
  *
  * <p>It assumes that pax-web {@link WebContainer} is used as implementation of OSGI {@link org.osgi.service.http.HttpService}, which
@@ -47,7 +48,7 @@ public class PaxWebIntegrationService {
 
     private BundleContext bundleContext;
     private String jettyWebXmlLocation;
-    private List<ConstraintMapping> constraintMappings; // Using jetty constraint mapping just because of compatibility with other fuse services
+    private List<Object> constraintMappings;
 
     private ServiceTracker webContainerTracker;
     private HttpContext httpContext;
@@ -68,11 +69,11 @@ public class PaxWebIntegrationService {
         this.jettyWebXmlLocation = jettyWebXmlLocation;
     }
 
-    public List<ConstraintMapping> getConstraintMappings() {
+    public List<Object> getConstraintMappings() {
         return constraintMappings;
     }
 
-    public void setConstraintMappings(List<ConstraintMapping> constraintMappings) {
+    public void setConstraintMappings(List<Object> constraintMappings) {
         this.constraintMappings = constraintMappings;
     }
 
@@ -120,8 +121,25 @@ public class PaxWebIntegrationService {
         if (constraintMappings == null) {
             throw new IllegalStateException("constraintMappings was null!");
         }
-        for (ConstraintMapping constraintMapping : constraintMappings) {
-            addConstraintMapping(service, constraintMapping);
+        List<ConstraintHandler> handlers = new ArrayList<>();
+        try {
+            handlers.add(new JettyConstraintHandler());
+        } catch (Throwable t) {
+            // Ignore
+        }
+        try {
+            handlers.add(new PaxWebConstraintHandler());
+        } catch (Throwable t) {
+            // Ignore
+        }
+        for (Object constraintMapping : constraintMappings) {
+            boolean handled = false;
+            for (ConstraintHandler handler : handlers) {
+                handled |= handler.addConstraintMapping(httpContext, service, constraintMapping);
+            }
+            if (!handled) {
+                log.warnv("Unable to add constraint mapping for constraint of type " + constraintMapping.getClass().toString());
+            }
         }
 
         service.registerLoginConfig("BASIC", "does-not-matter", null, null, httpContext);
@@ -144,6 +162,16 @@ public class PaxWebIntegrationService {
         } else {
             log.debug("Not found jetty-web XML configuration on bundle classpath on " + jettyWebXmlLoc);
         }
+    }
+
+    protected void addConstraintMapping(WebContainer service, PaxWebSecurityConstraintMapping constraintMapping) {
+        String name = constraintMapping.getConstraintName();
+        if (name == null) {
+            name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
+        }
+        log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getUrl() + ", dataConstraint=" + constraintMapping.getDataConstraint() + ", canAuthenticate="
+                + constraintMapping.isAuthentication() + ", roles=" + constraintMapping.getRoles());
+        service.registerConstraintMapping(name, constraintMapping.getUrl(), constraintMapping.getMapping(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
     }
 
     protected void addConstraintMapping(WebContainer service, ConstraintMapping constraintMapping) {
@@ -177,5 +205,72 @@ public class PaxWebIntegrationService {
             service.unregisterLoginConfig(httpContext);
             service.unregisterConstraintMapping(httpContext);
         }
+    }
+
+    private interface ConstraintHandler {
+        boolean addConstraintMapping(HttpContext httpContext, WebContainer service, Object cm);
+    }
+
+    private static class PaxWebConstraintHandler implements ConstraintHandler {
+
+        @Override
+        public boolean addConstraintMapping(HttpContext httpContext, WebContainer service, Object cm) {
+            if (cm instanceof PaxWebSecurityConstraintMapping) {
+                PaxWebSecurityConstraintMapping constraintMapping = (PaxWebSecurityConstraintMapping) cm;
+                String name = constraintMapping.getConstraintName();
+                if (name == null) {
+                    name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
+                }
+                log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getUrl() + ", dataConstraint=" + constraintMapping.getDataConstraint() + ", canAuthenticate="
+                        + constraintMapping.isAuthentication() + ", roles=" + constraintMapping.getRoles());
+                service.registerConstraintMapping(name, constraintMapping.getUrl(), constraintMapping.getMapping(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
+                return true;
+            }
+            return false;
+        }
+
+    }
+
+    private static class JettyConstraintHandler implements ConstraintHandler {
+
+        @Override
+        public boolean addConstraintMapping(HttpContext httpContext, WebContainer service, Object cm) {
+            if (cm instanceof ConstraintMapping) {
+                ConstraintMapping constraintMapping = (ConstraintMapping) cm;
+                Constraint constraint = constraintMapping.getConstraint();
+                String[] roles = constraint.getRoles();
+                // name property is unavailable on constraint object :/
+
+                String name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
+
+                int dataConstraint = constraint.getDataConstraint();
+                String dataConstraintStr;
+                switch (dataConstraint) {
+                    case Constraint.DC_UNSET:
+                        dataConstraintStr = null;
+                        break;
+                    case Constraint.DC_NONE:
+                        dataConstraintStr = "NONE";
+                        break;
+                    case Constraint.DC_CONFIDENTIAL:
+                        dataConstraintStr = "CONFIDENTIAL";
+                        break;
+                    case Constraint.DC_INTEGRAL:
+                        dataConstraintStr = "INTEGRAL";
+                        break;
+                    default:
+                        log.warnv("Unknown data constraint: " + dataConstraint);
+                        dataConstraintStr = "CONFIDENTIAL";
+                }
+                List<String> rolesList = Arrays.asList(roles);
+
+                log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getPathSpec() + ", dataConstraint=" + dataConstraintStr + ", canAuthenticate="
+                        + constraint.getAuthenticate() + ", roles=" + rolesList);
+                service.registerConstraintMapping(name, constraintMapping.getPathSpec(), null, dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
+                return true;
+            }
+            return false;
+        }
+
     }
 }

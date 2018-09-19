@@ -46,10 +46,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -98,7 +96,6 @@ public class IdentityProvidersResource {
     /**
      * Import identity provider from uploaded JSON file
      *
-     * @param uriInfo
      * @param input
      * @return
      * @throws IOException
@@ -107,7 +104,7 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    public Map<String, String> importFrom(MultipartFormDataInput input) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
         if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
@@ -124,7 +121,6 @@ public class IdentityProvidersResource {
     /**
      * Import identity provider from JSON body
      *
-     * @param uriInfo
      * @param data JSON body
      * @return
      * @throws IOException
@@ -133,7 +129,7 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
+    public Map<String, String> importFrom(Map<String, Object> data) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
@@ -177,14 +173,13 @@ public class IdentityProvidersResource {
     /**
      * Create a new identity provider
      *
-     * @param uriInfo
      * @param representation JSON body
      * @return
      */
     @POST
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Context UriInfo uriInfo, IdentityProviderRepresentation representation) {
+    public Response create(IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
         try {
@@ -192,10 +187,10 @@ public class IdentityProvidersResource {
             this.realm.addIdentityProvider(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getAlias())
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
                     .representation(StripSecretsUtils.strip(representation)).success();
             
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }

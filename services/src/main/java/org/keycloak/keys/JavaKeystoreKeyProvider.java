@@ -17,10 +17,10 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.io.FileInputStream;
@@ -33,7 +33,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -42,14 +41,12 @@ import java.security.cert.X509Certificate;
  */
 public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
 
-    private static final Logger logger = Logger.getLogger(JavaKeystoreKeyProvider.class);
-
     public JavaKeystoreKeyProvider(RealmModel realm, ComponentModel model) {
         super(realm, model);
     }
 
     @Override
-    protected Keys loadKeys(RealmModel realm, ComponentModel model) {
+    protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
         try {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(new FileInputStream(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY)), model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_PASSWORD_KEY).toCharArray());
@@ -64,9 +61,7 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 
-            String kid = KeyUtils.createKeyId(keyPair.getPublic());
-
-            return new Keys(kid, keyPair, certificate);
+            return createKeyWrapper(keyPair, certificate);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {

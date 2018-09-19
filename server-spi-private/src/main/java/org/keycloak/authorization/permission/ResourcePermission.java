@@ -22,11 +22,15 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -42,9 +46,23 @@ public class ResourcePermission {
     private Map<String, Set<String>> claims;
 
     public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer) {
+        this(resource, scopes, resourceServer, null);
+    }
+
+    public ResourcePermission(Resource resource, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
+        this(resource, new ArrayList<>(resource.getScopes()), resourceServer, claims);
+    }
+
+    public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
         this.resource = resource;
         this.scopes = scopes;
         this.resourceServer = resourceServer;
+        if (claims != null) {
+            this.claims = new HashMap<>();
+            for (Entry<String, ? extends Collection<String>> entry : claims.entrySet()) {
+                this.claims.computeIfAbsent(entry.getKey(), key -> new LinkedHashSet<>()).addAll(entry.getValue());
+            }
+        }
     }
 
     /**
@@ -111,5 +129,24 @@ public class ResourcePermission {
         if (claims != null) {
             claims.remove(name);
         }
+    }
+
+    public void addScope(Scope scope) {
+        if (resource != null) {
+            if (!resource.getScopes().contains(scope)) {
+                return;
+            }
+        }
+
+        if (!scopes.contains(scope)) {
+            scopes.add(scope);
+        }
+    }
+
+    public void addClaims(Map<String, Set<String>> claims) {
+        if (this.claims == null) {
+            this.claims = new HashMap<>();
+        }
+        this.claims.putAll(claims);
     }
 }

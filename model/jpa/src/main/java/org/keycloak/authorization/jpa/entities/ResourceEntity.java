@@ -20,7 +20,10 @@ package org.keycloak.authorization.jpa.entities;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -30,10 +33,20 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -45,9 +58,10 @@ import java.util.List;
 @NamedQueries(
         {
                 @NamedQuery(name="findResourceIdByOwner", query="select r.id from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :owner"),
-                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.uri = :uri"),
-                @NamedQuery(name="findResourceIdByName", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.name = :name"),
-                @NamedQuery(name="findResourceIdByType", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.type = :type"),
+                @NamedQuery(name="findAnyResourceIdByOwner", query="select r.id from ResourceEntity r where r.owner = :owner"),
+                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and :uri in elements(r.uris)"),
+                @NamedQuery(name="findResourceIdByName", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
+                @NamedQuery(name="findResourceIdByType", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
                 @NamedQuery(name="findResourceIdByScope", query="select r.id from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
                 @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId")
@@ -63,8 +77,13 @@ public class ResourceEntity {
     @Column(name = "NAME")
     private String name;
 
-    @Column(name = "URI")
-    private String uri;
+    @Column(name = "DISPLAY_NAME")
+    private String displayName;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name = "VALUE")
+    @CollectionTable(name = "RESOURCE_URIS", joinColumns = { @JoinColumn(name="RESOURCE_ID") })
+    private Set<String> uris = new HashSet<>();
 
     @Column(name = "TYPE")
     private String type;
@@ -74,6 +93,9 @@ public class ResourceEntity {
 
     @Column(name = "OWNER")
     private String owner;
+
+    @Column(name = "OWNER_MANAGED_ACCESS")
+    private boolean ownerManagedAccess;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
@@ -86,6 +108,11 @@ public class ResourceEntity {
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
     private List<PolicyEntity> policies = new LinkedList<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
+    private Collection<ResourceAttributeEntity> attributes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -103,12 +130,20 @@ public class ResourceEntity {
         this.name = name;
     }
 
-    public String getUri() {
-        return uri;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public Set<String> getUris() {
+        return uris;
+    }
+
+    public void setUris(Set<String> uris) {
+        this.uris = uris;
     }
 
     public String getType() {
@@ -147,6 +182,14 @@ public class ResourceEntity {
         this.owner = owner;
     }
 
+    public void setOwnerManagedAccess(boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
+    public boolean isOwnerManagedAccess() {
+        return ownerManagedAccess;
+    }
+
     public List<PolicyEntity> getPolicies() {
         return this.policies;
     }
@@ -154,6 +197,14 @@ public class ResourceEntity {
 
     public void setPolicies(List<PolicyEntity> policies) {
         this.policies = policies;
+    }
+
+    public Collection<ResourceAttributeEntity> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Collection<ResourceAttributeEntity> attributes) {
+        this.attributes = attributes;
     }
 
     @Override

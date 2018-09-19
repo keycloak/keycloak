@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2018 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <module-name>customer-cookie-portal</module-name>
+
+    <servlet>
+        <servlet-name>Servlet</servlet-name>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.CustomerServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>Error Servlet</servlet-name>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.ErrorServlet</servlet-class>
+    </servlet>
+
+    <filter>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <filter-class>org.keycloak.testsuite.adapter.filter.AdapterActionsFilter</filter-class>
+    </filter>
+
+    <servlet-mapping>
+        <servlet-name>Servlet</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Error Servlet</servlet-name>
+        <url-pattern>/error.html</url-pattern>
+    </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Users</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Errors</web-resource-name>
+            <url-pattern>/error.html</url-pattern>
+        </web-resource-collection>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Unsecured</web-resource-name>
+            <url-pattern>/unsecured/*</url-pattern>
+        </web-resource-collection>
+    </security-constraint>
+
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>demo</realm-name>
+    </login-config>
+
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>

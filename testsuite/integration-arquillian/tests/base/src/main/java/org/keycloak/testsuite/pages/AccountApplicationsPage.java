@@ -80,24 +80,15 @@ public class AccountApplicationsPage extends AbstractAccountPage {
                         }
                         break;
                     case 3:
-                        rolesStr = col.getText();
-                        if (rolesStr.isEmpty()) break;
-                        roles = rolesStr.split(",");
-                        for (String role : roles) {
-                            role = role.trim();
-                            currentEntry.addGrantedRole(role);
+                        String clientScopesStr = col.getText();
+                        if (clientScopesStr.isEmpty()) break;
+                        String[] clientScopes = clientScopesStr.split(",");
+                        for (String clientScope : clientScopes) {
+                            clientScope = clientScope.trim();
+                            currentEntry.addGrantedClientScope(clientScope);
                         }
                         break;
                     case 4:
-                        String protMappersStr = col.getText();
-                        if (protMappersStr.isEmpty()) break;
-                        String[] protMappers = protMappersStr.split(",");
-                        for (String protMapper : protMappers) {
-                            protMapper = protMapper.trim();
-                            currentEntry.addMapper(protMapper);
-                        }
-                        break;
-                    case 5:
                         String additionalGrant = col.getText();
                         if (additionalGrant.isEmpty()) break;
                         String[] grants = additionalGrant.split(",");
@@ -116,8 +107,7 @@ public class AccountApplicationsPage extends AbstractAccountPage {
     public static class AppEntry {
 
         private final List<String> rolesAvailable = new ArrayList<String>();
-        private final List<String> rolesGranted = new ArrayList<String>();
-        private final List<String> protocolMappersGranted = new ArrayList<String>();
+        private final List<String> clientScopesGranted = new ArrayList<String>();
         private final List<String> additionalGrants = new ArrayList<>();
         private String href = null;
 
@@ -125,12 +115,8 @@ public class AccountApplicationsPage extends AbstractAccountPage {
             rolesAvailable.add(role);
         }
 
-        private void addGrantedRole(String role) {
-            rolesGranted.add(role);
-        }
-
-        private void addMapper(String protocolMapper) {
-            protocolMappersGranted.add(protocolMapper);
+        private void addGrantedClientScope(String clientScope) {
+            clientScopesGranted.add(clientScope);
         }
 
         private void addAdditionalGrant(String grant) {
@@ -145,16 +131,12 @@ public class AccountApplicationsPage extends AbstractAccountPage {
             return this.href;
         }
 
-        public List<String> getRolesGranted() {
-            return rolesGranted;
-        }
-
         public List<String> getRolesAvailable() {
             return rolesAvailable;
         }
 
-        public List<String> getProtocolMappersGranted() {
-            return protocolMappersGranted;
+        public List<String> getClientScopesGranted() {
+            return clientScopesGranted;
         }
 
         public List<String> getAdditionalGrants() {

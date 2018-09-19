@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.keycloak.testsuite.performance.PerformanceTest.LOG;
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
+import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *

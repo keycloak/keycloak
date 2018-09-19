@@ -49,7 +49,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
         property1 = new ProviderConfigProperty();
         property1.setName(CLAIM);
         property1.setLabel("Claim");
-        property1.setHelpText("Name of claim to search for in token.  You can reference nested claims using a '.', i.e. 'address.locality'.");
+        property1.setHelpText("Name of claim to search for in token. You can reference nested claims using a '.', i.e. 'address.locality'. To use dot (.) literally, escape it with backslash (\\.)");
         property1.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property1);
         property1 = new ProviderConfigProperty();

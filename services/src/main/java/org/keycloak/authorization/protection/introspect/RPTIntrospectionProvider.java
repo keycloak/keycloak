@@ -17,16 +17,23 @@
  */
 package org.keycloak.authorization.protection.introspect;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.util.JsonSerialization;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 /**
  * Introspects token accordingly with UMA Bearer Token Profile.
@@ -45,28 +52,42 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     public Response introspect(String token) {
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken requestingPartyToken = toAccessToken(token);
-            boolean active = isActive(requestingPartyToken);
+            AccessToken accessToken = verifyAccessToken(token);
+
             ObjectNode tokenMetadata;
 
-            if (active) {
-                LOGGER.debug("Token is active");
-                AccessToken introspect = new AccessToken();
-                introspect.type(requestingPartyToken.getType());
-                introspect.expiration(requestingPartyToken.getExpiration());
-                introspect.issuedAt(requestingPartyToken.getIssuedAt());
-                introspect.audience(requestingPartyToken.getAudience());
-                introspect.notBefore(requestingPartyToken.getNotBefore());
-                introspect.setRealmAccess(null);
-                introspect.setResourceAccess(null);
-                tokenMetadata = JsonSerialization.createObjectNode(introspect);
-                tokenMetadata.putPOJO("permissions", requestingPartyToken.getAuthorization().getPermissions());
+            if (accessToken != null) {
+                AccessToken metadata = new AccessToken();
+
+                metadata.id(accessToken.getId());
+                metadata.setAcr(accessToken.getAcr());
+                metadata.type(accessToken.getType());
+                metadata.expiration(accessToken.getExpiration());
+                metadata.issuedAt(accessToken.getIssuedAt());
+                metadata.audience(accessToken.getAudience());
+                metadata.notBefore(accessToken.getNotBefore());
+                metadata.setRealmAccess(null);
+                metadata.setResourceAccess(null);
+
+                tokenMetadata = JsonSerialization.createObjectNode(metadata);
+                Authorization authorization = accessToken.getAuthorization();
+
+                if (authorization != null) {
+                    Collection permissions;
+
+                    if (authorization.getPermissions() != null) {
+                        permissions = authorization.getPermissions().stream().map(UmaPermissionRepresentation::new).collect(Collectors.toSet());
+                    } else {
+                        permissions = Collections.emptyList();
+                    }
+
+                    tokenMetadata.putPOJO("permissions", permissions);
+                }
             } else {
-                LOGGER.debug("Token is not active");
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
 
-            tokenMetadata.put("active", active);
+            tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
@@ -74,13 +95,30 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
         }
     }
 
-    private boolean isActive(AccessToken requestingPartyToken) {
-        Authorization authorization = requestingPartyToken.getAuthorization();
-        return requestingPartyToken.isActive() && authorization != null && authorization.getPermissions() != null && !authorization.getPermissions().isEmpty();
-    }
-
     @Override
     public void close() {
 
+    }
+
+    //todo: we need to avoid creating this class when processing responses. The only reason for that is that
+    // UMA defines "resource_id" and "resource_scopes" claims but we use "rsid" and "scopes".
+    // To avoid breaking backward compatiblity we are just responding with all these claims.
+    public class UmaPermissionRepresentation extends Permission {
+
+        public UmaPermissionRepresentation(Permission permission) {
+            setResourceId(permission.getResourceId());
+            setResourceName(permission.getResourceName());
+            setScopes(permission.getScopes());
+        }
+
+        @JsonProperty("resource_id")
+        public String getUmaResourceId() {
+            return getResourceId();
+        }
+
+        @JsonProperty("resource_scopes")
+        public Set<String> getUmaResourceScopes() {
+            return getScopes();
+        }
     }
 }

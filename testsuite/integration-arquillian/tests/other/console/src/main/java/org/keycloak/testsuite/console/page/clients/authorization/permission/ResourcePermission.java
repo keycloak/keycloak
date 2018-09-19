@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 
@@ -38,6 +38,10 @@ public class ResourcePermission implements PolicyTypeUI {
     }
 
     public void update(ResourcePermissionRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        form().createPolicy(expected);
     }
 }

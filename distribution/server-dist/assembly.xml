@@ -103,14 +103,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>target/unpacked/keycloak-client-tools</directory>
-            <outputDirectory/>
-            <filtered>false</filtered>
-            <includes>
-                <include>**/*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>target/licenses/content/docs</directory>
             <outputDirectory>docs</outputDirectory>
             <includes>

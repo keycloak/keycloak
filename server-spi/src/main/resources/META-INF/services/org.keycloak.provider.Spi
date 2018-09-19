@@ -32,4 +32,8 @@
 # limitations under the License.
 #
 
+org.keycloak.locale.LocaleSelectorSPI
 org.keycloak.storage.UserStorageProviderSpi
+org.keycloak.theme.ThemeResourceSpi
+org.keycloak.theme.ThemeSelectorSpi
+org.keycloak.urls.HostnameSpi

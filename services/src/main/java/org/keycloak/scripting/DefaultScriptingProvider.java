@@ -72,20 +72,19 @@ public class DefaultScriptingProvider implements ScriptingProvider {
         ScriptEngine engine = createPreparedScriptEngine(scriptModel);
 
         if (engine instanceof Compilable) {
-            try {
-                final CompiledScript compiledScript = ((Compilable) engine).compile(scriptModel.getCode());
-                return new CompiledEvaluatableScriptAdapter(scriptModel, compiledScript);
-            }
-            catch (ScriptException e) {
-                throw new ScriptExecutionException(scriptModel, e);
-            }
+            return new CompiledEvaluatableScriptAdapter(scriptModel, tryCompile(scriptModel, (Compilable) engine));
         }
+
         return new UncompiledEvaluatableScriptAdapter(scriptModel, engine);
     }
 
-    //TODO allow scripts to be maintained independently of other components, e.g. with dedicated persistence
-    //TODO allow script lookup by (scriptId)
-    //TODO allow script lookup by (name, realmName)
+    private CompiledScript tryCompile(ScriptModel scriptModel, Compilable engine) {
+        try {
+            return engine.compile(scriptModel.getCode());
+        } catch (ScriptException e) {
+            throw new ScriptCompilationException(scriptModel, e);
+        }
+    }
 
     @Override
     public ScriptModel createScript(String realmId, String mimeType, String scriptName, String scriptCode, String scriptDescription) {

@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -64,6 +65,8 @@ import java.util.Set;
 public class LDAPOperationManager {
 
     private static final Logger logger = Logger.getLogger(LDAPOperationManager.class);
+
+    private static final Logger perfLogger = Logger.getLogger(LDAPOperationManager.class, "perf");
 
     private final LDAPConfig config;
     private final Map<String, Object> connectionProperties;
@@ -146,6 +149,7 @@ public class LDAPOperationManager {
     public void removeEntry(final String entryDn) {
         try {
             execute(new LdapOperation<SearchResult>() {
+
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
                     if (logger.isTraceEnabled()) {
@@ -154,6 +158,15 @@ public class LDAPOperationManager {
                     destroySubcontext(context, entryDn);
                     return null;
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: remove\n")
+                            .append(" dn: ").append(entryDn)
+                            .toString();
+                }
+
             });
         } catch (NamingException e) {
             throw new ModelException("Could not remove entry from DN [" + entryDn + "]", e);
@@ -173,6 +186,7 @@ public class LDAPOperationManager {
     public String renameEntry(String oldDn, String newDn, boolean fallback) {
         try {
             String newNonConflictingDn = execute(new LdapOperation<String>() {
+
                 @Override
                 public String execute(LdapContext context) throws NamingException {
                     String dn = newDn;
@@ -201,6 +215,16 @@ public class LDAPOperationManager {
 
                     throw new ModelException("Could not rename entry from DN [" + oldDn + "] to new DN [" + newDn + "]. All fallbacks failed");
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: renameEntry\n")
+                            .append(" oldDn: ").append(oldDn).append("\n")
+                            .append(" newDn: ").append(newDn)
+                            .toString();
+                }
+
             });
             return newNonConflictingDn;
         } catch (NamingException e) {
@@ -236,6 +260,20 @@ public class LDAPOperationManager {
 
                     return result;
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: search\n")
+                            .append(" baseDn: ").append(baseDN).append("\n")
+                            .append(" filter: ").append(filter).append("\n")
+                            .append(" searchScope: ").append(searchScope).append("\n")
+                            .append(" returningAttrs: ").append(returningAttributes).append("\n")
+                            .append(" resultSize: ").append(result.size())
+                            .toString();
+                }
+
+
             });
         } catch (NamingException e) {
             logger.errorf(e, "Could not query server using DN [%s] and filter [%s]", baseDN, filter);
@@ -249,6 +287,7 @@ public class LDAPOperationManager {
 
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
+
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
                     try {
@@ -281,6 +320,20 @@ public class LDAPOperationManager {
                         throw new NamingException(ioe.getMessage());
                     }
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: searchPaginated\n")
+                            .append(" baseDn: ").append(baseDN).append("\n")
+                            .append(" filter: ").append(filter).append("\n")
+                            .append(" searchScope: ").append(identityQuery.getSearchScope()).append("\n")
+                            .append(" returningAttrs: ").append(identityQuery.getReturningLdapAttributes()).append("\n")
+                            .append(" limit: ").append(identityQuery.getLimit()).append("\n")
+                            .append(" resultSize: ").append(result.size())
+                            .toString();
+                }
+
             });
         } catch (NamingException e) {
             logger.errorf(e, "Could not query server using DN [%s] and filter [%s]", baseDN, filter);
@@ -308,10 +361,21 @@ public class LDAPOperationManager {
 
             try {
                 Attributes attributes = execute(new LdapOperation<Attributes>() {
+
                     @Override
                     public Attributes execute(LdapContext context) throws NamingException {
                         return context.getAttributes(strObjectGUID);
                     }
+
+
+                    @Override
+                    public String toString() {
+                        return new StringBuilder("LdapOperation: GUIDResolve\n")
+                                .append(" strObjectGUID: ").append(strObjectGUID)
+                                .toString();
+                    }
+
+
                 });
 
                 byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
@@ -340,6 +404,7 @@ public class LDAPOperationManager {
             final SearchControls cons = getSearchControls(returningAttributes, this.config.getSearchScope());
 
             return execute(new LdapOperation<SearchResult>() {
+
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
                     NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
@@ -356,6 +421,18 @@ public class LDAPOperationManager {
 
                     return null;
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: lookupById\n")
+                            .append(" baseDN: ").append(baseDN).append("\n")
+                            .append(" filter: ").append(filter).append("\n")
+                            .append(" searchScope: ").append(cons.getSearchScope()).append("\n")
+                            .append(" returningAttrs: ").append(returningAttributes)
+                            .toString();
+                }
+
             });
         } catch (NamingException e) {
             throw new ModelException("Could not query server using DN [" + baseDN + "] and filter [" + filter + "]", e);
@@ -470,11 +547,23 @@ public class LDAPOperationManager {
             }
 
             execute(new LdapOperation<Void>() {
+
                 @Override
                 public Void execute(LdapContext context) throws NamingException {
                     context.modifyAttributes(dn, mods);
                     return null;
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: modify\n")
+                            .append(" dn: ").append(dn).append("\n")
+                            .append(" modificationsSize: ").append(mods.length)
+                            .toString();
+                }
+
+
             }, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
@@ -512,6 +601,16 @@ public class LDAPOperationManager {
 
                     return null;
                 }
+
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: create\n")
+                            .append(" dn: ").append(name).append("\n")
+                            .append(" attributesSize: ").append(attributes.size())
+                            .toString();
+                }
+
             });
         } catch (NamingException e) {
             throw new ModelException("Error creating subcontext [" + name + "]", e);
@@ -631,8 +730,13 @@ public class LDAPOperationManager {
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
         LdapContext context = null;
+        Long start = null;
 
         try {
+            if (perfLogger.isDebugEnabled()) {
+                start = Time.currentTimeMillis();
+            }
+
             context = createLdapContext();
             if (decorator != null) {
                 decorator.beforeLDAPOperation(context, operation);
@@ -645,6 +749,16 @@ public class LDAPOperationManager {
                     context.close();
                 } catch (NamingException ne) {
                     logger.error("Could not close Ldap context.", ne);
+                }
+            }
+
+            if (perfLogger.isDebugEnabled()) {
+                long took = Time.currentTimeMillis() - start;
+
+                if (took > 100) {
+                    perfLogger.debugf("\n%s\ntook: %d ms\n", operation.toString(), took);
+                } else if (perfLogger.isTraceEnabled()) {
+                    perfLogger.tracef("\n%s\ntook: %d ms\n", operation.toString(), took);
                 }
             }
         }

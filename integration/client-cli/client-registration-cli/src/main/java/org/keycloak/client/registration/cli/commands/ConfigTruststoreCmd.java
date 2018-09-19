@@ -114,7 +114,8 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
                 "--truststore", trustStore,
                 "--keystore", keystore,
                 "--keypass", keyPass,
-                "--alias", alias);
+                "--alias", alias,
+                "--no-config", booleanOptionForCheck(noconfig));
 
         // now update the config
         processGlobalOptions();

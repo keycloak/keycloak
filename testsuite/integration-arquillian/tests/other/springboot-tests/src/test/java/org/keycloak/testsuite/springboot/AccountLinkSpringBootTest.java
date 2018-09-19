@@ -3,6 +3,7 @@ package org.keycloak.testsuite.springboot;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -13,6 +14,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.*;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
@@ -432,8 +434,9 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
             uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
                     .path(uri)
-                    .queryParam(OAuth2Constants.CODE, queryParams.get(OAuth2Constants.CODE))
+                    .queryParam(LoginActionsService.SESSION_CODE, queryParams.get(LoginActionsService.SESSION_CODE))
                     .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))
+                    .queryParam(Constants.TAB_ID, queryParams.get(Constants.TAB_ID))
                     .build().toString();
 
             log.info("hack uri: " + uri);

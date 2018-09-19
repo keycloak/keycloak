@@ -19,6 +19,7 @@ package org.keycloak.saml.processing.core.util;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 
+import org.keycloak.saml.common.util.SecurityActions;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Provider;

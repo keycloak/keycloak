@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.io.IOException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -84,17 +85,16 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
 
         EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
-        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
     }
 
 
     private OAuthClient.AccessTokenResponse doAccessTokenRequestPostAuth(String code, String clientSecret) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
 
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
             parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
@@ -116,8 +116,8 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            oauth.closeClient(client);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

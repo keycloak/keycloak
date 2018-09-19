@@ -9,7 +9,7 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.TransactionMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -251,7 +251,7 @@ public class ConcurrencyVersioningTest {
         invalidationConfigBuilder
                 //.invocationBatching().enable()
                 .transaction().transactionMode(TransactionMode.TRANSACTIONAL)
-                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup())
+                .transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup())
                 .locking().isolationLevel(IsolationLevel.REPEATABLE_READ).writeSkewCheck(true).versioning().enable().scheme(VersioningScheme.SIMPLE);
 
 

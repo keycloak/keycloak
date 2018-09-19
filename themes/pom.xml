@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -47,6 +47,16 @@
                         <directory>src/main/resources-product</directory>
                     </resource>
                 </resources>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/keycloak-preview/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
         
@@ -59,50 +69,49 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>install node and yarn</id>
+                                <id>install node and npm</id>
                                 <goals>
-                                    <goal>install-node-and-yarn</goal>
+                                    <goal>install-node-and-npm</goal>
                                 </goals>
                                 <phase>generate-resources</phase>
                                 <configuration>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
-                                    <nodeVersion>v6.9.1</nodeVersion>
-                                    <yarnVersion>v0.28.4</yarnVersion>
+                                    <nodeVersion>v8.9.4</nodeVersion>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>yarn install keycloak preview</id>
+                                <id>npm install</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
+                                <phase>generate-resources</phase>
                                 <configuration>
-                                    <arguments>install --production=false --frozen-lockfile</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <arguments>install</arguments>
                                 </configuration>
                             </execution>
                             <execution>
                                 <id>compile typescript</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
                                     <arguments>run build</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>yarn remove dev dependencies production=true</id>
+                                <id>npm remove dev dependencies production=true</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
                                 <phase>process-classes</phase>
                                 <configuration>
-                                    <arguments>install --production=true --frozen-lockfile</arguments>
-                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <arguments>install --production=true --no-package-lock</arguments>
                                 </configuration>
                             </execution>
                         </executions>
+                        <configuration>
+                            <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>maven-clean-plugin</artifactId>
@@ -120,52 +129,122 @@
                 </plugins>
             </build>
         </profile>
-    </profiles>
-    
-    <build>
-        <plugins>
-<!-- KEYCLOAK-5391: Commented out until node_modules fetching issue is resolved.
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>install node and yarn</id>
-                        <goals>
-                            <goal>install-node-and-yarn</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                    </execution>
-                    <execution>
-                        <id>yarn install</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
+
+        <profile>
+            <id>npm-update</id>
+            <build>
+                <plugins>
+                    <!-- Clean downloaded packages from NPM -->
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
                         <configuration>
-                                               vvv remove space    vvv remove space on uncomment
-                            <arguments>install - -production=false - -frozen-lockfile</arguments>
+                            <filesets>
+                                <fileset>
+                                    <directory>src/main/resources/node_modules</directory>
+                                </fileset>
+                                <fileset>
+                                    <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
+                                </fileset>
+                            </filesets>
                         </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <nodeVersion>v6.11.1</nodeVersion>
-                    <yarnVersion>v0.27.5</yarnVersion>
-                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
-                    <installDirectory>target</installDirectory>
-                </configuration>
-            </plugin>
--->
-        </plugins>
-    </build>
+                    </plugin>
+                    <!-- Install NPM and download packages -->
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>install-node-and-npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>npm-install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>v8.9.4</nodeVersion>
+                            <workingDirectory>src/main/resources</workingDirectory>
+                        </configuration>
+                    </plugin>
+                    <!-- Copy files from NPM packages -->
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.0.2</version>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+
+                                <configuration>
+                                    <outputDirectory>src/main/resources/theme/keycloak/common/resources/node_modules</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/node_modules</directory>
+                                            <excludes>
+                                                <exclude>minimist/**</exclude>
+                                                <exclude>mkdirp/**</exclude>
+                                                <exclude>**/*.json</exclude>
+                                                <exclude>**/*.json</exclude>
+                                                <exclude>**/*.markdown</exclude>
+                                                <exclude>**/*.swf</exclude>
+                                                <exclude>**/*.sh</exclude>
+                                                <exclude>**/.bin/**</exclude>
+                                                <exclude>**/bin/**</exclude>
+                                                <exclude>**/build/**</exclude>
+                                                <exclude>**/docs/**</exclude>
+                                                <exclude>**/demo/**</exclude>
+                                                <exclude>**/devtools/**</exclude>
+                                                <exclude>**/example/**</exclude>
+                                                <exclude>**/examples/**</exclude>
+                                                <exclude>**/grunt/**</exclude>
+                                                <exclude>**/less/**</exclude>
+                                                <exclude>**/node_modules/**</exclude>
+                                                <exclude>**/sass/**</exclude>
+                                                <exclude>**/scss/**</exclude>
+                                                <exclude>**/src/**</exclude>
+                                                <exclude>**/test/**</exclude>
+                                                <exclude>**/tests/**</exclude>
+                                                <exclude>**/_config.yml</exclude>
+                                                <exclude>**/api.md</exclude>
+                                                <exclude>**/AUTHORS.txt</exclude>
+                                                <exclude>**/CHANGELOG.md</exclude>
+                                                <exclude>**/CONTRIBUTING.md</exclude>
+                                                <exclude>**/HELP-US-OUT.txt</exclude>
+                                                <exclude>**/README.md</exclude>
+                                                <exclude>**/Gruntfile.js</exclude>
+                                                <exclude>**/Gemfile*</exclude>
+                                                <exclude>**/index.js</exclude>
+                                                <exclude>**/.*</exclude>
+                                            </excludes>
+                                        </resource>
+                                        <resource>
+                                            <directory>src/main/node_modules</directory>
+                                            <includes>
+                                                <include>angular-ui-select2/src/select2.js</include>
+                                                <include>filesaver/src/Filesaver.js</include>
+                                                <include>filesaver/src/changename.js</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

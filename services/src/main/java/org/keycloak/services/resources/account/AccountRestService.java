@@ -35,6 +35,7 @@ import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.storage.ReadOnlyException;
 
@@ -50,7 +51,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +62,6 @@ public class AccountRestService {
 
     @Context
     private HttpRequest request;
-    @Context
-    protected UriInfo uriInfo;
     @Context
     protected HttpHeaders headers;
     @Context
@@ -146,27 +144,27 @@ public class AccountRestService {
                 if (usernameChanged) {
                     UserModel existing = session.users().getUserByUsername(userRep.getUsername(), realm);
                     if (existing != null) {
-                        return ErrorResponse.exists(Errors.USERNAME_EXISTS);
+                        return ErrorResponse.exists(Messages.USERNAME_EXISTS);
                     }
 
                     user.setUsername(userRep.getUsername());
                 }
             } else if (usernameChanged) {
-                return ErrorResponse.error(Errors.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
+                return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
             }
 
             boolean emailChanged = userRep.getEmail() != null && !userRep.getEmail().equals(user.getEmail());
             if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByEmail(userRep.getEmail(), realm);
                 if (existing != null) {
-                    return ErrorResponse.exists(Errors.EMAIL_EXISTS);
+                    return ErrorResponse.exists(Messages.EMAIL_EXISTS);
                 }
             }
 
             if (realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByUsername(userRep.getEmail(), realm);
                 if (existing != null) {
-                    return ErrorResponse.exists(Errors.USERNAME_EXISTS);
+                    return ErrorResponse.exists(Messages.USERNAME_EXISTS);
                 }
             }
 
@@ -200,7 +198,7 @@ public class AccountRestService {
 
             return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
         } catch (ReadOnlyException e) {
-            return ErrorResponse.error(Errors.READ_ONLY_USER, Response.Status.BAD_REQUEST);
+            return ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -261,6 +259,11 @@ public class AccountRestService {
         }
 
         return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
+    }
+
+    @Path("/credentials")
+    public AccountCredentialResource credentials() {
+        return new AccountCredentialResource(session, event, user);
     }
 
     // TODO Federated identities

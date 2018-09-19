@@ -20,10 +20,17 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.id;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -69,26 +76,28 @@ public class RulePolicyForm extends Form {
     @FindBy(id = "resolveModule")
     private WebElement resolveModuleButton;
 
-    public void populate(RulePolicyRepresentation expected) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
-        setInputValue(artifactGroupId, expected.getArtifactGroupId());
-        setInputValue(artifactId, expected.getArtifactId());
-        setInputValue(artifactVersion, expected.getArtifactVersion());
+    public void populate(RulePolicyRepresentation expected, boolean save) {
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(artifactGroupId, expected.getArtifactGroupId());
+        UIUtils.setTextInputValue(artifactId, expected.getArtifactId());
+        UIUtils.setTextInputValue(artifactVersion, expected.getArtifactVersion());
 
-        resolveModuleButton.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(resolveModuleButton);
+        waitGui().withTimeout(150, TimeUnit.SECONDS).until().element(id("moduleName")).is().enabled(); // The module load time could be long at some conditions
 
         moduleName.selectByVisibleText(expected.getModuleName());
         WaitUtils.pause(1000);
 
         sessionName.selectByVisibleText(expected.getSessionName());
 
-        setInputValue(scannerPeriod, expected.getScannerPeriod());
+        UIUtils.setTextInputValue(scannerPeriod, expected.getScannerPeriod());
         scannerPeriodUnit.selectByVisibleText(expected.getScannerPeriodUnit());
         logic.selectByValue(expected.getLogic().name());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
@@ -99,15 +108,15 @@ public class RulePolicyForm extends Form {
     public RulePolicyRepresentation toRepresentation() {
         RulePolicyRepresentation representation = new RulePolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
-        representation.setArtifactGroupId(getInputValue(artifactGroupId));
-        representation.setArtifactId(getInputValue(artifactId));
-        representation.setArtifactVersion(getInputValue(artifactVersion));
+        representation.setArtifactGroupId(UIUtils.getTextInputValue(artifactGroupId));
+        representation.setArtifactId(UIUtils.getTextInputValue(artifactId));
+        representation.setArtifactVersion(UIUtils.getTextInputValue(artifactVersion));
         representation.setModuleName(moduleName.getFirstSelectedOption().getText());
         representation.setSessionName(sessionName.getFirstSelectedOption().getText());
-        representation.setScannerPeriod(getInputValue(scannerPeriod));
+        representation.setScannerPeriod(UIUtils.getTextInputValue(scannerPeriod));
         representation.setScannerPeriodUnit(scannerPeriodUnit.getFirstSelectedOption().getText());
 
         return representation;

@@ -26,6 +26,8 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 
@@ -35,11 +37,64 @@ import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static org.hamcrest.Matchers.hasItems;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class ExecutionTest extends AbstractAuthenticationTest {
+
+    // KEYCLOAK-7975
+    @Test
+    public void testUpdateAuthenticatorConfig() {
+        // copy built-in flow so we get a new editable flow
+        HashMap<String, String> params = new HashMap<>();
+        params.put("newName", "new-browser-flow");
+        Response response = authMgmtResource.copy("browser", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        try {
+            Assert.assertEquals("Copy flow", 201, response.getStatus());
+        } finally {
+            response.close();
+        }
+
+        // create Conditional OTP Form execution
+        params.put("provider", "auth-conditional-otp-form");
+        authMgmtResource.addExecution("new-browser-flow", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("new-browser-flow"), params, ResourceType.AUTH_EXECUTION);
+
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("new-browser-flow");
+        AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider("auth-conditional-otp-form", executionReps);
+
+        // create authenticator config for the execution
+        Map<String, String> config = new HashMap<>();
+        config.put("defaultOtpOutcome", "skip");
+        config.put("otpControlAttribute", "test");
+        config.put("forceOtpForHeaderPattern", "");
+        config.put("forceOtpRole", "");
+        config.put("noOtpRequiredForHeaderPattern", "");
+        config.put("skipOtpRole", "");
+
+        AuthenticatorConfigRepresentation authConfigRep = new AuthenticatorConfigRepresentation();
+        authConfigRep.setAlias("conditional-otp-form-config-alias");
+        authConfigRep.setConfig(config);
+        response = authMgmtResource.newExecutionConfig(exec.getId(), authConfigRep);
+
+        try {
+            authConfigRep.setId(ApiUtil.getCreatedId(response));
+        } finally {
+            response.close();
+        }
+
+        // try to update the config adn check
+        config.put("otpControlAttribute", "test-updated");
+        authConfigRep.setConfig(config);
+        authMgmtResource.updateAuthenticatorConfig(authConfigRep.getId(), authConfigRep);
+
+        AuthenticatorConfigRepresentation updated = authMgmtResource.getAuthenticatorConfig(authConfigRep.getId());
+
+        Assert.assertThat(updated.getConfig().values(), hasItems("test-updated", "skip"));
+    }
 
     @Test
     public void testAddRemoveExecution() {

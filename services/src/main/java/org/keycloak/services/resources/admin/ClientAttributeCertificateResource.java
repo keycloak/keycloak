@@ -129,7 +129,6 @@ public class ClientAttributeCertificateResource {
     /**
      * Upload certificate and eventually private key
      *
-     * @param uriInfo
      * @param input
      * @return
      * @throws IOException
@@ -138,7 +137,7 @@ public class ClientAttributeCertificateResource {
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    public CertificateRepresentation uploadJks(MultipartFormDataInput input) throws IOException {
         auth.clients().requireConfigure(client);
 
         try {
@@ -155,7 +154,6 @@ public class ClientAttributeCertificateResource {
     /**
      * Upload only certificate, not private key
      *
-     * @param uriInfo
      * @param input
      * @return information extracted from uploaded certificate - not necessarily the new state of certificate on the server
      * @throws IOException
@@ -164,7 +162,7 @@ public class ClientAttributeCertificateResource {
     @Path("upload-certificate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    public CertificateRepresentation uploadJksCertificate(MultipartFormDataInput input) throws IOException {
         auth.clients().requireConfigure(client);
 
         try {
@@ -189,6 +187,8 @@ public class ClientAttributeCertificateResource {
         List<InputPart> inputParts = uploadForm.get("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+
+            pem = PemUtils.removeBeginEnd(pem);
 
             // Validate format
             KeycloakModelUtils.getCertificate(pem);

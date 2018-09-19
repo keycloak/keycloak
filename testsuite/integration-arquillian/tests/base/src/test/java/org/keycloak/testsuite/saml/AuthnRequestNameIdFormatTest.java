@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.net.URI;
 import java.util.List;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -68,21 +67,21 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testPostLoginNameIdPolicyUnspecified() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.getUri());
         testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, is("bburke"));
     }
 
     @Test
     public void testPostLoginNameIdPolicyEmail() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.getUri());
         testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, is("bburke@redhat.com"));
     }
 
     @Test
     public void testPostLoginNameIdPolicyPersistent() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.getUri());
         testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, startsWith("G-"));
     }
 
@@ -94,21 +93,21 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testRedirectLoginNameIdPolicyUnspecified() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.getUri());
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, is("bburke"));
     }
 
     @Test
     public void testRedirectLoginNameIdPolicyEmail() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.getUri());
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, is("bburke@redhat.com"));
     }
 
     @Test
     public void testRedirectLoginNameIdPolicyPersistent() throws Exception {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
-        nameIdPolicy.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get()));
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.getUri());
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, startsWith("G-"));
     }
 
@@ -120,7 +119,7 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testRedirectLoginNoNameIdPolicyForcePostBinding() throws Exception {
         ClientsResource clients = adminClient.realm(REALM_NAME).clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId("http://localhost:8081/sales-post/");
+        List<ClientRepresentation> foundClients = clients.findByClientId(SAML_CLIENT_ID_SALES_POST);
         assertThat(foundClients, hasSize(1));
         ClientResource clientRes = clients.get(foundClients.get(0).getId());
         ClientRepresentation client = clientRes.toRepresentation();

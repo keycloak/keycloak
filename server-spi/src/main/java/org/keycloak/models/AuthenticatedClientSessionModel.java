@@ -27,6 +27,11 @@ import org.keycloak.sessions.CommonClientSessionModel;
  */
 public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
 
+    String getId();
+
+    int getTimestamp();
+    void setTimestamp(int timestamp);
+
     /**
      * Detaches the client session from its user session.
      */

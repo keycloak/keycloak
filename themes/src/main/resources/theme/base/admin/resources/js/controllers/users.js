@@ -235,6 +235,7 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
         
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
+        $scope.query.briefRepresentation = 'true';
         
         if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
@@ -548,6 +549,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
+                $route.reload();
             });
         }, function() {
             $scope.password = null;
@@ -560,7 +562,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     }
     
     $scope.disableCredentialTypes = function() {
-        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
+        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
                 $route.reload();
                 Notifications.success("Credentials disabled");
@@ -647,6 +649,10 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
         return instance.providerId;
     }
 
+    $scope.isProviderEnabled = function(instance) {
+        return !instance.config['enabled'] || instance.config['enabled'][0] == 'true';
+    }
+
     $scope.getInstancePriority = function(instance) {
         if (!instance.config['priority']) {
             console.log('getInstancePriority is undefined');
@@ -710,6 +716,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
             };
             instance.config['priority'] = ["0"];
+            instance.config['enabled'] = ["true"];
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
@@ -751,6 +758,9 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                     instance.config['changedSyncPeriod'] = ['-1'];
 
                 }
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['cachePolicy']) {
                 instance.config['cachePolicy'] = ['DEFAULT'];
@@ -1060,6 +1070,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             instance.config = {
 
             };
+            instance.config['enabled'] = ["true"];
             instance.config['priority'] = ["0"];
 
             $scope.fullSyncEnabled = false;
@@ -1096,6 +1107,9 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
                 console.log('setting to -1');
                 instance.config['fullSyncPeriod'] = ['-1'];
 
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['changedSyncPeriod']) {
                 console.log('setting to -1');
@@ -1309,7 +1323,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.get(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
@@ -1318,7 +1332,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");

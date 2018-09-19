@@ -41,11 +41,13 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
 
-    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId,
-      String identityProviderUsername, String identityProviderAlias) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
+
+    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId,
+      String identityProviderUsername, String identityProviderAlias, String clientId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
         this.identityProviderAlias = identityProviderAlias;
+        this.issuedFor = clientId;
     }
 
     private IdpVerifyAccountLinkActionToken() {
@@ -67,11 +69,12 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
         this.identityProviderAlias = identityProviderAlias;
     }
 
-    public String getOriginalAuthenticationSessionId() {
+    public String getOriginalCompoundAuthenticationSessionId() {
         return originalAuthenticationSessionId;
     }
 
-    public void setOriginalAuthenticationSessionId(String originalAuthenticationSessionId) {
-        this.originalAuthenticationSessionId = originalAuthenticationSessionId;
+    public void setOriginalCompoundAuthenticationSessionId(String originalCompoundAuthenticationSessionId) {
+        this.originalAuthenticationSessionId = originalCompoundAuthenticationSessionId;
     }
+
 }

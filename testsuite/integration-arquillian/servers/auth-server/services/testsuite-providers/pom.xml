@@ -24,11 +24,16 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-services</artifactId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
     <name>Auth Server Services - Testsuite Providers</name>
+
+    <properties>
+        <js-adapter.version>${project.version}</js-adapter.version>
+        <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
+    </properties>
 
     <dependencies>
 
@@ -81,5 +86,32 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-javascript-adapter</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <version>${js-adapter.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${js-adapter.file.path}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>keycloak.js</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

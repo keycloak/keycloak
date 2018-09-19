@@ -29,7 +29,7 @@ export = Keycloak;
 declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
-	type KeycloakAdapterName = 'cordova'|'default';
+	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
 	type KeycloakOnLoad = 'login-required'|'check-sso';
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
@@ -39,8 +39,17 @@ declare namespace Keycloak {
 		/**
 		 * @private Undocumented.
 		 */
-		adapter?: KeycloakAdapterName;
+		useNonce?: boolean;
 
+		/**
+		 * Allows to use different adapter:
+		 * 
+		 * - {string} default - using browser api for redirects
+		 * - {string} cordova - using cordova plugins 
+		 * - {function} - allows to provide custom function as adapter.
+		 */
+		adapter?: KeycloakAdapterName;
+		
 		/**
 		 * Specifies an action to do on load.
 		 */
@@ -78,7 +87,7 @@ declare namespace Keycloak {
 		 * Set the interval to check login state (in seconds).
 		 * @default 5
 		 */
-		checkLoginIframeInterval?: boolean;
+		checkLoginIframeInterval?: number;
 
 		/**
 		 * Set the OpenID Connect response mode to send to Keycloak upon login.
@@ -88,6 +97,12 @@ declare namespace Keycloak {
 		 *                   recommended over query.
 		 */
 		responseMode?: KeycloakResponseMode;
+
+		/**
+		 * Specifies a default uri to redirect to after login or logout.
+		 * This is currently supported for adapter 'cordova-native' and 'default'
+		 */
+		redirectUri?: string;
 
 		/**
 		 * Set the OpenID Connect flow.
@@ -140,10 +155,26 @@ declare namespace Keycloak {
 		 */
 		idpHint?: string;
 
-		/**
-		 * Specifies the desired locale for the UI.
+	        /**
+		 * Sets the 'ui_locales' query param in compliance with section 3.1.2.1
+                 * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
+                
+                /**
+		 * Specifies the desired Keycloak locale for the UI.  This differs from
+                 * the locale param in that it tells the Keycloak server to set a cookie and update
+                 * the user's profile to a new preferred locale.
+		 */
+		kcLocale?: string;
+
+		/**
+		 * Specifies arguments that are passed to the Cordova in-app-browser (if applicable).
+		 * Options 'hidden' and 'location' are not affected by these arguments.
+		 * All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/.
+		 * Example of use: { zoom: "no", hardwareback: "yes" }
+		 */
+		cordovaOptions?: { [optionName: string]: string };
 	}
 
 	type KeycloakPromiseCallback<T> = (result: T) => void;
@@ -183,6 +214,16 @@ declare namespace Keycloak {
 		emailVerified?: boolean;
 		totp?: boolean;
 		createdTimestamp?: number;
+	}
+
+	interface KeycloakTokenParsed {
+		exp?: number;
+		iat?: number;
+		nonce?: string;
+		sub?: string;
+		session_state?: string;
+		realm_access?: { roles: string[] };
+		resource_access?: string[];
 	}
 
 	// export interface KeycloakUserInfo {}
@@ -238,15 +279,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed token as a JavaScript object.
 		 */
-		tokenParsed?: {
-			exp?: number;
-			iat?: number;
-			nonce?: string;
-			sub?: string;
-			session_state?: string;
-			realm_access?: { roles: string[] };
-			resource_access?: string[];
-		};
+		tokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The base64 encoded refresh token that can be used to retrieve a new token.
@@ -256,7 +289,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed refresh token as a JavaScript object.
 		 */
-		refreshTokenParsed?: { nonce?: string };
+		refreshTokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The base64 encoded ID token.
@@ -266,7 +299,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed id token as a JavaScript object.
 		 */
-		idTokenParsed?: { nonce?: string };
+		idTokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The estimated time difference between the browser time and the Keycloak

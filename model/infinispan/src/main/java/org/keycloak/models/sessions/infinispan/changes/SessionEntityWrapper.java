@@ -185,15 +185,17 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             if (forTransport) {
                 final SessionEntity entity = (SessionEntity) input.readObject();
                 final SessionEntityWrapper res = new SessionEntityWrapper(entity);
-                if (log.isDebugEnabled()) {
-                    log.debugf("Loaded entity from remote store: %s, version=%s, metadata=%s", entity, res.version, res.localMetadata);
+                if (log.isTraceEnabled()) {
+                    log.tracef("Loaded entity from remote store: %s, version=%s, metadata=%s", entity, res.version, res.localMetadata);
                 }
                 return res;
             } else {
                 UUID sessionVersion = new UUID(input.readLong(), input.readLong());
                 HashMap<String, String> map = MarshallUtil.unmarshallMap(input, HashMap::new);
                 final SessionEntity entity = (SessionEntity) input.readObject();
-                log.debugf("Found entity locally: entity=%s, version=%s, metadata=%s", entity, sessionVersion, map);
+                if (log.isTraceEnabled()) {
+                    log.tracef("Found entity locally: entity=%s, version=%s, metadata=%s", entity, sessionVersion, map);
+                }
                 return new SessionEntityWrapper(sessionVersion, map, entity);
             }
         }

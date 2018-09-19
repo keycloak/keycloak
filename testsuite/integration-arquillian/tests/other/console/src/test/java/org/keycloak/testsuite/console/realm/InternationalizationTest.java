@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.console.page.fragment.Dropdown;
+import org.keycloak.testsuite.console.page.fragment.LocaleDropdown;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -30,7 +30,7 @@ public class InternationalizationTest extends AbstractRealmTest {
     private ThemeSettings themeSettingsPage;
 
     @FindBy(id = "kc-locale-dropdown")
-    private Dropdown localeDropdown;
+    private LocaleDropdown localeDropdown;
 
     @Before
     public void beforeInternationalizationTest() {

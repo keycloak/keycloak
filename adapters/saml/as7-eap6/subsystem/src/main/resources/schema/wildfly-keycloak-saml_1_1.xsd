@@ -152,6 +152,11 @@
                 <xs:documentation>SSO endpoint URL</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="assertionConsumerServiceUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Endpoint of Assertion Consumer Service at SP</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="single-logout-type">
         <xs:attribute name="validateRequestSignature" type="xs:boolean" use="optional">

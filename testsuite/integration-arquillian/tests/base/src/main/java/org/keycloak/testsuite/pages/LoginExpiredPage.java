@@ -42,7 +42,7 @@ public class LoginExpiredPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Page has expired");
+        return PageUtils.getPageTitle(driver).equals("Page has expired");
     }
 
     public void open() {

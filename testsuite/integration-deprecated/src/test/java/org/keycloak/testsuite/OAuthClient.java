@@ -378,12 +378,9 @@ public class OAuthClient {
         }
     }
 
-    public RefreshToken verifyRefreshToken(String refreshToken) {
+    public RefreshToken parseRefreshToken(String refreshToken) {
         try {
             JWSInput jws = new JWSInput(refreshToken);
-            if (!RSAProvider.verify(jws, realmPublicKey)) {
-                throw new RuntimeException("Invalid refresh token");
-            }
             return jws.readJsonContent(RefreshToken.class);
         } catch (Exception e) {
             throw new RuntimeException("Invalid refresh token", e);

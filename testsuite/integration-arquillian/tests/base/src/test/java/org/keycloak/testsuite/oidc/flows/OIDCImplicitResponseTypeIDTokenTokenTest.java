@@ -46,17 +46,23 @@ public class OIDCImplicitResponseTypeIDTokenTokenTest extends AbstractOIDCRespon
     }
 
 
-    protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
+    @Override
+    protected boolean isFragment() {
+        return true;
+    }
+
+
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
         Assert.assertEquals(OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
         Assert.assertNotNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
 
         // Validate "at_hash"
         Assert.assertNotNull(idToken.getAccessTokenHash());
-        Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(jwsAlgorithm, authzResponse.getAccessToken()));
+
+        Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getAccessToken()));
         Assert.assertNull(idToken.getCodeHash());
 
         return Collections.singletonList(idToken);

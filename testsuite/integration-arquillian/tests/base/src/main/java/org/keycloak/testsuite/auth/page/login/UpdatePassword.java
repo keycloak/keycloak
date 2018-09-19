@@ -18,21 +18,31 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.auth.page.account.PasswordFields;
+import org.keycloak.models.UserModel;
+import org.keycloak.testsuite.auth.page.PasswordFields;
 
 /**
  *
  * @author tkyjovsk
  */
-public class UpdatePassword extends Authenticate {
+public class UpdatePassword extends RequiredActions {
 
     @Page
     private PasswordFields passwordFields;
+
+    @Override
+    public String getActionId() {
+        return UserModel.RequiredAction.UPDATE_PASSWORD.name();
+    }
 
     public void updatePasswords(String newPassword, String confirmPassword) {
         passwordFields.setNewPassword(newPassword);
         passwordFields.setConfirmPassword(confirmPassword);
         submit();
+    }
+
+    public PasswordFields fields() {
+        return passwordFields;
     }
 
 }

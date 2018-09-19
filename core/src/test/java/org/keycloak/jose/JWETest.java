@@ -19,18 +19,18 @@ package org.keycloak.jose;
 
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.security.spec.KeySpec;
 
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEConstants;
-import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,7 +52,6 @@ public class JWETest {
 
         testDirectEncryptAndDecrypt(aesKey, hmacKey, JWEConstants.A128CBC_HS256, PAYLOAD, true);
     }
-
 
     // Works just on OpenJDK 8. Other JDKs (IBM, Oracle) have restrictions on maximum key size of AES to be 128
     // @Test
@@ -119,9 +118,24 @@ public class JWETest {
     }
 
     @Test
+    public void testPassword() throws Exception {
+        byte[] salt = JWEUtils.generateSecret(8);
+        String encodedSalt = Base64.encodeBytes(salt);
+        String jwe = JWE.encryptUTF8("geheim", encodedSalt, PAYLOAD);
+        String decodedContent = JWE.decryptUTF8("geheim", encodedSalt, jwe);
+        Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+
+
+    @Test
     public void testAesKW_Aes128CbcHmacSha256() throws Exception {
         SecretKey aesKey = new SecretKeySpec(AES_128_KEY, "AES");
 
+        testAesKW_Aes128CbcHmacSha256(aesKey);
+    }
+
+    private void testAesKW_Aes128CbcHmacSha256(SecretKey aesKey) throws UnsupportedEncodingException, JWEException {
         JWEHeader jweHeader = new JWEHeader(JWEConstants.A128KW, JWEConstants.A128CBC_HS256, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
@@ -144,6 +158,15 @@ public class JWETest {
         String decodedContent = new String(jwe.getContent(), "UTF-8");
 
         Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+    @Test
+    public void testSalt() {
+        byte[] random = JWEUtils.generateSecret(8);
+        System.out.print("new byte[] = {");
+        for (byte b : random) {
+            System.out.print(""+Byte.toString(b)+",");
+        }
     }
 
 

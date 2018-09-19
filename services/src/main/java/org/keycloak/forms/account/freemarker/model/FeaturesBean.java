@@ -25,11 +25,13 @@ public class FeaturesBean {
     private final boolean identityFederation;
     private final boolean log;
     private final boolean passwordUpdateSupported;
+    private boolean authorization;
 
-    public FeaturesBean(boolean identityFederation, boolean log, boolean passwordUpdateSupported) {
+    public FeaturesBean(boolean identityFederation, boolean log, boolean passwordUpdateSupported, boolean authorization) {
         this.identityFederation = identityFederation;
         this.log = log;
         this.passwordUpdateSupported = passwordUpdateSupported;
+        this.authorization = authorization;
     }
 
     public boolean isIdentityFederation() {
@@ -42,5 +44,9 @@ public class FeaturesBean {
 
     public boolean isPasswordUpdateSupported() {
         return passwordUpdateSupported;
+    }
+
+    public boolean isAuthorization() {
+        return authorization;
     }
 }

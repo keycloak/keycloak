@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.authz;
 
 import org.junit.BeforeClass;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;

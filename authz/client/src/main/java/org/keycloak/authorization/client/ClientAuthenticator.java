@@ -17,11 +17,12 @@
  */
 package org.keycloak.authorization.client;
 
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface ClientAuthenticator {
-    void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders);
+    void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders);
 }

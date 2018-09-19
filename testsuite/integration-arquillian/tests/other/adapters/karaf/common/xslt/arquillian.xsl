@@ -37,6 +37,7 @@
                     <property name="karafHome">${app.server.home}</property>
                     <property name="javaHome">${app.server.java.home}</property>
                     <property name="javaVmArguments">
+                        ${app.server.karaf.jvm.debug.args}
                         ${adapter.test.props}
                     </property>
                     <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>

@@ -35,6 +35,7 @@ public class AbstractPolicyRepresentation {
     private Set<String> scopes;
     private Logic logic = Logic.POSITIVE;
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
+    private String owner;
 
     public String getId() {
         return this.id;
@@ -99,6 +100,12 @@ public class AbstractPolicyRepresentation {
         this.policies.addAll(Arrays.asList(id));
     }
 
+    public void removePolicy(String policy) {
+        if (policies != null) {
+            policies.remove(policy);
+        }
+    }
+
     public Set<String> getResources() {
         return resources;
     }
@@ -127,6 +134,20 @@ public class AbstractPolicyRepresentation {
             this.scopes = new HashSet<>();
         }
         this.scopes.addAll(Arrays.asList(id));
+    }
+
+    public void removeScope(String scope) {
+        if (scopes != null) {
+            scopes.remove(scope);
+        }
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     @Override

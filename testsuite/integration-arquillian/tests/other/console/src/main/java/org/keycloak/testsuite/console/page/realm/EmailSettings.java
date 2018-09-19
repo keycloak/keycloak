@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -58,15 +59,15 @@ public class EmailSettings extends RealmSettings {
         }
 
         public void setHostInput(String value) {
-            setInputValue(hostInput, value);
+            UIUtils.setTextInputValue(hostInput, value);
         }
 
         public void setPortInput(String value) {
-            setInputValue(portInput, value);
+            UIUtils.setTextInputValue(portInput, value);
         }
 
         public void setFromInput(String value) {
-            setInputValue(fromInput, value);
+            UIUtils.setTextInputValue(fromInput, value);
         }
         
         public void setSmtpServer(Map<String, String> smtpServer) {

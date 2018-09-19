@@ -76,6 +76,8 @@ public interface KeycloakSession {
     Class<? extends Provider> getProviderClass(String providerClassName);
 
     Object getAttribute(String attribute);
+    <T> T getAttribute(String attribute, Class<T> clazz);
+
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
 
@@ -124,6 +126,8 @@ public interface KeycloakSession {
     UserProvider users();
 
 
+    ClientProvider clientStorageManager();
+
     /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
      *
@@ -145,6 +149,15 @@ public interface KeycloakSession {
      */
     UserProvider userLocalStorage();
 
+    RealmProvider realmLocalStorage();
+
+    /**
+     * Keycloak specific local storage for clients.  No cache in front, this api talks directly to database configured for Keycloak
+     *
+     * @return
+     */
+    ClientProvider clientLocalStorage();
+
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
      * No cache in front.
@@ -159,5 +172,19 @@ public interface KeycloakSession {
       * @return
      */
     KeyManager keys();
+
+    /**
+     * Theme manager
+     *
+     * @return
+     */
+    ThemeManager theme();
+
+    /**
+     * Token manager
+     *
+     * @return
+     */
+    TokenManager tokens();
 
 }

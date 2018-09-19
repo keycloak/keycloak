@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -32,6 +33,7 @@ public interface UserSessionProvider extends Provider {
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
 
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
@@ -47,6 +49,15 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);
 
     long getActiveUserSessions(RealmModel realm, ClientModel client);
+
+    /**
+     * Returns a summary of client sessions key is client.getId()
+     *
+     * @param realm
+     * @param offline
+     * @return
+     */
+    Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline);
 
     /** This will remove attached ClientLoginSessionModels too **/
     void removeUserSession(RealmModel realm, UserSessionModel session);

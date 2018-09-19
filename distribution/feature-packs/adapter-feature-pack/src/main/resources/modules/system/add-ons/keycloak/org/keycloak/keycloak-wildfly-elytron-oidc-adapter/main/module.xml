@@ -44,7 +44,7 @@
         <module name="org.keycloak.keycloak-adapter-core"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
-        <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.security.elytron" optional="true"/>
     </dependencies>
 
 </module>

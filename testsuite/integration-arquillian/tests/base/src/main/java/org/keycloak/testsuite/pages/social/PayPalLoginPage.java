@@ -21,6 +21,8 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  * @author Petter Lysne (petterlysne at hotmail dot com)
  */
@@ -34,6 +36,9 @@ public class PayPalLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "btnLogin")
     private WebElement loginButton;
 
+    @FindBy(name = "btnNext")
+    private WebElement nextButton;
+
     @FindBy(name = "continueLogin")
     private WebElement continueLoginButton;
 
@@ -42,11 +47,20 @@ public class PayPalLoginPage extends AbstractSocialLoginPage {
         try {
             usernameInput.clear(); // to remove pre-filled email
             usernameInput.sendKeys(user);
+
+            try {
+                clickLink(nextButton);  // sometimes the login process is just a one step,
+                                        // sometimes it's two steps so we need to click the 'Next' button
+            }
+            catch (NoSuchElementException e) {
+                // one step login process, no need to click the 'Next' button
+            }
+
             passwordInput.sendKeys(password);
-            loginButton.click();
+            clickLink(loginButton);
         }
         catch (NoSuchElementException e) {
-            continueLoginButton.click(); // already logged in, just need to confirm it
+            clickLink(continueLoginButton); // already logged in, just need to confirm it
         }
     }
 }

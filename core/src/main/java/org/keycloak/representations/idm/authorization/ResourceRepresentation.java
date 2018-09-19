@@ -20,11 +20,16 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -39,46 +44,59 @@ public class ResourceRepresentation {
     private String id;
 
     private String name;
-    private String uri;
+
+    @JsonProperty("uris")
+    private Set<String> uris;
     private String type;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("scopes")
     private Set<ScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")
     private String iconUri;
     private ResourceOwnerRepresentation owner;
+    private Boolean ownerManagedAccess;
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<PolicyRepresentation> policies;
-    private List<ScopeRepresentation> typedScopes;
+    private String displayName;
+
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    private Map<String, List<String>> attributes;
 
     /**
      * Creates a new instance.
      *
      * @param name a human-readable string describing a set of one or more resources
-     * @param uri a {@link URI} that provides the network location for the resource set being registered
+     * @param uris a {@link List} of {@link URI} that provides network locations for the resource set being registered
      * @param type a string uniquely identifying the semantics of the resource set
      * @param scopes the available scopes for this resource set
      * @param iconUri a {@link URI} for a graphic icon representing the resource set
      */
-    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type, String iconUri) {
         this.name = name;
         this.scopes = scopes;
-        this.uri = uri;
+        this.uris = uris;
         this.type = type;
         this.iconUri = iconUri;
+    }
+
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
+        this(name, scopes, Collections.singleton(uri), type, iconUri);
     }
 
     /**
      * Creates a new instance.
      *
      * @param name a human-readable string describing a set of one or more resources
-     * @param uri a {@link URI} that provides the network location for the resource set being registered
+     * @param uris a {@link List} of {@link URI} that provides the network location for the resource set being registered
      * @param type a string uniquely identifying the semantics of the resource set
      * @param scopes the available scopes for this resource set
      */
+    public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type) {
+        this(name, scopes, uris, type, null);
+    }
+
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type) {
-        this(name, scopes, uri, type, null);
+        this(name, scopes, Collections.singleton(uri), type, null);
     }
 
     /**
@@ -89,7 +107,7 @@ public class ResourceRepresentation {
      * @param scopes the available scopes for this resource set
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes) {
-        this(name, scopes, null, null, null);
+        this(name, scopes, (Set<String>) null, null, null);
     }
 
     public ResourceRepresentation(String name, String... scopes) {
@@ -106,7 +124,7 @@ public class ResourceRepresentation {
      *
      */
     public ResourceRepresentation() {
-        this(null, null, null, null, null);
+        this(null, null, (Set<String>) null, null, null);
     }
 
     public void setId(String id) {
@@ -121,8 +139,22 @@ public class ResourceRepresentation {
         return this.name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    @Deprecated
+    @JsonIgnore
     public String getUri() {
-        return this.uri;
+        if (this.uris == null || this.uris.isEmpty()) {
+            return null;
+        }
+
+        return this.uris.iterator().next();
+    }
+
+    public Set<String> getUris() {
+        return this.uris;
     }
 
     public String getType() {
@@ -145,15 +177,48 @@ public class ResourceRepresentation {
         this.name = name;
     }
 
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    @Deprecated
+    @JsonSetter("uri")
     public void setUri(String uri) {
-        this.uri = uri;
+        if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
+            this.uris = Collections.singleton(uri);
+        }
+    }
+
+    public void setUris(Set<String> uris) {
+        if (uris != null) {
+            Set<String> resultSet = new HashSet<>();
+            for (String uri : uris) {
+                if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
+                    resultSet.add(uri);
+                }
+            }
+
+            this.uris = resultSet;
+        }
     }
 
     public void setType(String type) {
-        this.type = type;
+        if (type != null && !"".equalsIgnoreCase(type.trim())) {
+            this.type = type;
+        }
     }
 
     public void setScopes(Set<ScopeRepresentation> scopes) {
+        this.scopes = scopes;
+    }
+
+    /**
+     * TODO: This is a workaround to allow deserialization of UMA resource representation. Jackson 2.19+ support aliases, once we upgrade, change this.
+     *
+     * @param scopes
+     */
+    @JsonSetter("resource_scopes")
+    private void setScopesUma(Set<ScopeRepresentation> scopes) {
         this.scopes = scopes;
     }
 
@@ -165,16 +230,48 @@ public class ResourceRepresentation {
         return this.owner;
     }
 
+    @JsonProperty
     public void setOwner(ResourceOwnerRepresentation owner) {
         this.owner = owner;
     }
 
-    public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
-        this.typedScopes = typedScopes;
+    @JsonIgnore
+    public void setOwner(String ownerId) {
+        if (ownerId == null) {
+            owner = null;
+            return;
+        }
+
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+        }
+
+        owner.setId(ownerId);
     }
 
-    public List<ScopeRepresentation> getTypedScopes() {
-        return typedScopes;
+    public Boolean getOwnerManagedAccess() {
+        return ownerManagedAccess;
+    }
+
+    public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
+    public void addScope(String... scopeNames) {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
+        for (String scopeName : scopeNames) {
+            scopes.add(new ScopeRepresentation(scopeName));
+        }
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 
     public boolean equals(Object o) {

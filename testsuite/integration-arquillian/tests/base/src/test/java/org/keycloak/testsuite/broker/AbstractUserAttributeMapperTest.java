@@ -37,6 +37,8 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
 
     private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").build();
     private static final Map<String, String> ATTRIBUTE_NAME_TRANSLATION = ImmutableMap.<String, String>builder()
+      .put("dotted.email", "dotted.email")
+      .put("nested.email", "nested.email")
       .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, MAPPED_ATTRIBUTE_FRIENDLY_NAME)
       .put(ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
       .build();
@@ -198,9 +200,13 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     public void testBasicMappingEmail() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
           .put("email", ImmutableList.<String>builder().add(bc.getUserEmail()).build())
+          .put("nested.email", ImmutableList.<String>builder().add(bc.getUserEmail()).build())
+          .put("dotted.email", ImmutableList.<String>builder().add(bc.getUserEmail()).build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
           .put("email", ImmutableList.<String>builder().add("other_email@redhat.com").build())
+          .put("nested.email", ImmutableList.<String>builder().add("other_email@redhat.com").build())
+          .put("dotted.email", ImmutableList.<String>builder().add("other_email@redhat.com").build())
           .build()
         );
     }

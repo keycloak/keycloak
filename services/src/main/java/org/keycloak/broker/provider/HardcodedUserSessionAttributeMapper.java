@@ -85,20 +85,27 @@ public class HardcodedUserSessionAttributeMapper extends AbstractIdentityProvide
 
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String attribute = mapperModel.getConfig().get(ATTRIBUTE);
-        String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
-        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
+        setHardcodedUserSessionAttribute(mapperModel, context);
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String attribute = mapperModel.getConfig().get(ATTRIBUTE);
-        String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
-        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
+        setHardcodedUserSessionAttribute(mapperModel, context);
+    }
+
+    @Override
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        setHardcodedUserSessionAttribute(mapperModel, context);
     }
 
     @Override
     public String getHelpText() {
         return "When user is imported from provider, hardcode a value to a specific user session attribute.";
+    }
+
+    private void setHardcodedUserSessionAttribute(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        String attribute = mapperModel.getConfig().get(ATTRIBUTE);
+        String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
+        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
     }
 }

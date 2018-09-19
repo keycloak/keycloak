@@ -222,6 +222,46 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertFalse(kcClientRep.isPublicClient());
     }
 
+    // KEYCLOAK-6771 Certificate Bound Token
+    // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+    @Test
+    public void testMtlsHoKTokenEnabled() throws Exception {
+        // create (no specification)
+        OIDCClientRepresentation clientRep = createRep();
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(Boolean.FALSE, response.getTlsClientCertificateBoundAccessTokens());
+        Assert.assertNotNull(response.getClientSecret());
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(!config.isUseMtlsHokToken());
+
+        // update (true)
+        reg.auth(Auth.token(response));
+        response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+        assertTrue(updated.getTlsClientCertificateBoundAccessTokens().booleanValue());
+
+        // Test Keycloak representation
+        kcClient = getClient(updated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(config.isUseMtlsHokToken());
+
+        // update (false)
+        reg.auth(Auth.token(updated));
+        updated.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
+        OIDCClientRepresentation reUpdated = reg.oidc().update(updated);
+        assertTrue(!reUpdated.getTlsClientCertificateBoundAccessTokens().booleanValue());
+
+        // Test Keycloak representation
+        kcClient = getClient(reUpdated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(!config.isUseMtlsHokToken());
+
+    }
+
     private ClientRepresentation getKeycloakClient(String clientId) {
         return ApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
     }

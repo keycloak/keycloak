@@ -56,6 +56,8 @@ public class OsUtil {
             return new OsArch("sunos5", "x86_64");
         } else if (os.startsWith("mac os x")) {
             return new OsArch("osx", "x86_64");
+        } else if (os.startsWith("freebsd")) {
+            return new OsArch("freebsd", arch);
         }
 
         // unsupported platform

@@ -19,9 +19,8 @@ package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -35,6 +34,7 @@ import org.keycloak.models.*;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +44,7 @@ import javax.ws.rs.core.*;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
+public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -106,6 +106,14 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         return this;
     }
 
+
+    @Override
+    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
+        if (displayType == null) return this;
+        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
+        return ConsoleVerifyEmail.SINGLETON;
+    }
+
     @Override
     public void init(Config.Scope config) {
 
@@ -131,17 +139,20 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         RealmModel realm = session.getContext().getRealm();
         UriInfo uriInfo = session.getContext().getUri();
 
-        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan();
+        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(VerifyEmailActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
-        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, authSession.getId(), user.getEmail());
-        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+        String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
+        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, authSessionEncodedId, user.getEmail(), authSession.getClient().getClientId());
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                authSession.getClient().getClientId(), authSession.getTabId());
         String link = builder.build(realm.getName()).toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 
         try {
             session
               .getProvider(EmailTemplateProvider.class)
+              .setAuthenticationSession(authSession)
               .setRealm(realm)
               .setUser(user)
               .sendVerifyEmail(link, expirationInMinutes);

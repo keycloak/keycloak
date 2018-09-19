@@ -28,6 +28,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
@@ -72,10 +73,32 @@ public interface RoleResource {
     @Path("composites")
     @Consumes(MediaType.APPLICATION_JSON)
     void deleteComposites(List<RoleRepresentation> rolesToRemove);
-    
+
+    /**
+     * Get role members
+     * <p/>
+     * Returns users that have the given role
+     *
+     * @return a list of users with the given role
+     */
     @GET
     @Path("users")
     @Produces(MediaType.APPLICATION_JSON)
     Set<UserRepresentation> getRoleUserMembers();
+
+    /**
+     * Get role members
+     * <p/>
+     * Returns users that have the given role, paginated according to the query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @return a list of users with the given role
+     */
+    @GET
+    @Path("users")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<UserRepresentation> getRoleUserMembers(@QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults);
 
 }

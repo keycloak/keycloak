@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -65,11 +66,11 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setMaxLoginFailures(String value) {
-            setInputValue(maxLoginFailures, value);
+            UIUtils.setTextInputValue(maxLoginFailures, value);
         }
 
         public void setWaitIncrementInput(String value) {
-            setInputValue(waitIncrementInput, value);
+            UIUtils.setTextInputValue(waitIncrementInput, value);
         }
 
         public void setWaitIncrementSelect(TimeSelectValues value) {
@@ -77,11 +78,11 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setQuickLoginCheckInput(String value) {
-            setInputValue(quickLoginCheckInput, value);
+            UIUtils.setTextInputValue(quickLoginCheckInput, value);
         }
 
         public void setMinQuickLoginWaitInput(String value) {
-            setInputValue(minQuickLoginWaitInput, value);
+            UIUtils.setTextInputValue(minQuickLoginWaitInput, value);
         }
 
         public void setMinQuickLoginWaitSelect(TimeSelectValues value) {
@@ -89,7 +90,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setMaxWaitInput(String value) {
-            setInputValue(maxWaitInput, value);
+            UIUtils.setTextInputValue(maxWaitInput, value);
         }
 
         public void setMaxWaitSelect(TimeSelectValues value) {
@@ -97,7 +98,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setFailureResetTimeInput(String value) {
-            setInputValue(failureResetTimeInput, value);
+            UIUtils.setTextInputValue(failureResetTimeInput, value);
         }
 
         public void setFailureResetTimeSelect(TimeSelectValues value) {

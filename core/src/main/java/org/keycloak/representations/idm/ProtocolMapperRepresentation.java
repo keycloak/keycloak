@@ -29,7 +29,11 @@ public class ProtocolMapperRepresentation {
     protected String name;
     protected String protocol;
     protected String protocolMapper;
+
+    @Deprecated // backwards compatibility only
     protected boolean consentRequired;
+
+    @Deprecated // backwards compatibility only
     protected String consentText;
     protected Map<String, String> config = new HashMap<String, String>();
 
@@ -74,19 +78,14 @@ public class ProtocolMapperRepresentation {
         this.config = config;
     }
 
+    @Deprecated
     public boolean isConsentRequired() {
         return consentRequired;
     }
 
-    public void setConsentRequired(boolean consentRequired) {
-        this.consentRequired = consentRequired;
-    }
-
+    @Deprecated
     public String getConsentText() {
         return consentText;
     }
 
-    public void setConsentText(String consentText) {
-        this.consentText = consentText;
-    }
 }

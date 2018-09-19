@@ -105,7 +105,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
         assertEquals("You need to verify your email address to activate your account.",
-                testRealmVerifyEmailPage.getFeedbackText());
+                testRealmVerifyEmailPage.feedbackMessage().getText());
 
         String verifyEmailUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, user.getEmail(),
                 "Someone has created a Test account with this email address.", true);
@@ -159,6 +159,6 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
         assertEquals("You need to verify your email address to activate your account.",
-                testRealmVerifyEmailPage.getFeedbackText());
+                testRealmVerifyEmailPage.feedbackMessage().getText());
     }
 }

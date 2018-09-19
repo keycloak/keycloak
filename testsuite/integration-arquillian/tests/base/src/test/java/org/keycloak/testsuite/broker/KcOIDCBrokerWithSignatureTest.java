@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -89,7 +90,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
 
                 Response resp = providerRealm.clients().create(client);
                 resp.close();
@@ -100,7 +101,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
                 Response resp = consumerRealm.clients().create(client);
                 resp.close();
@@ -293,7 +294,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
 
     private void rotateKeys() {
-        String activeKid = providerRealm().keys().getKeyMetadata().getActive().get("RSA");
+        String activeKid = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
 
         // Rotate public keys on the parent broker
         String realmId = providerRealm().toRepresentation().getId();
@@ -308,7 +309,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         assertEquals(201, response.getStatus());
         response.close();
 
-        String updatedActiveKid = providerRealm().keys().getKeyMetadata().getActive().get("RSA");
+        String updatedActiveKid = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
         assertNotEquals(activeKid, updatedActiveKid);
     }
 

@@ -15,6 +15,6 @@
   ~ limitations under the License.
   -->
 
-<Context path="/customer-portal">
+<Context path="/product-portal">
     <Valve className="org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve"/>
 </Context>

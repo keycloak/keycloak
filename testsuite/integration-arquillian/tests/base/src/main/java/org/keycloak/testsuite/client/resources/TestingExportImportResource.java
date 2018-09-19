@@ -96,4 +96,9 @@ public interface TestingExportImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getExportImportTestDirectory();
 
+    @GET
+    @Path("/clear")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clear();
+
 }

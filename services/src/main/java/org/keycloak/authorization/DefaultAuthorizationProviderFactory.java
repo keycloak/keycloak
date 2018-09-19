@@ -23,13 +23,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
+import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.provider.ProviderFactory;
 
 /**
@@ -38,6 +38,7 @@ import org.keycloak.provider.ProviderFactory;
 public class DefaultAuthorizationProviderFactory implements AuthorizationProviderFactory {
 
     private Map<String, PolicyProviderFactory> policyProviderFactories;
+    private PolicyEvaluator policyEvaluator = new DefaultPolicyEvaluator();
 
     @Override
     public AuthorizationProvider create(KeycloakSession session) {
@@ -65,7 +66,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
-        return new AuthorizationProvider(session, realm, policyProviderFactories);
+        return new AuthorizationProvider(session, realm, policyProviderFactories, policyEvaluator);
     }
 
     private Map<String, PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSessionFactory keycloakSessionFactory) {

@@ -33,59 +33,67 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>3.4.1.Final-SNAPSHOT</version>
+    <version>4.5.0.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.2.0.ER1</product.rhsso.version>
+        <product.rhsso.version>7.3.0.CD03</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>11.0.0.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
-        <eap.version>7.1.0.GA-redhat-11</eap.version>
-        <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
-        <wildfly.core.version>3.0.8.Final</wildfly.core.version>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
+        <wildfly.version>13.0.0.Final</wildfly.version>
+        <wildfly.build-tools.version>1.2.10.Final</wildfly.build-tools.version>
+        <eap.version>7.2.0.CD13-redhat-4</eap.version>
+        <eap.build-tools.version>1.2.10.Final</eap.build-tools.version>
+        <wildfly.core.version>5.0.0.Final</wildfly.core.version>
+        <wildfly10.core.version>2.0.10.Final</wildfly10.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
 
-        <aesh.version>0.66.15</aesh.version>
-        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
+        <jboss.aesh.version>0.66.19</jboss.aesh.version>
+        <aesh.version>1.4</aesh.version>
+        <aesh.readline.version>1.7</aesh.readline.version>
+        <apache.httpcomponents.version>4.5.2</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.4</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
-        <jboss.dmr.version>1.3.0.Final</jboss.dmr.version>
+        <jboss.dmr.version>1.4.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.56</bouncycastle.version>
-        <cxf.version>3.1.5</cxf.version>
+        <cxf.version>3.2.0</cxf.version>
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
-        <h2.version>1.3.173</h2.version>
-        <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
+        <h2.version>1.4.193</h2.version>
+        <hibernate.entitymanager.version>5.1.15.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.2.8.Final</infinispan.version>
-        <jackson.version>2.5.4</jackson.version>
-        <javax.mail.version>1.5.5</javax.mail.version>
-        <jboss.logging.version>3.3.0.Final</jboss.logging.version>
-        <jboss.logging.tools.version>2.0.1.Final</jboss.logging.tools.version>
+        <infinispan.version>9.2.4.Final</infinispan.version>
+        <jackson.version>2.8.11</jackson.version>
+        <jackson.databind.version>2.8.11.1</jackson.databind.version>
+        <javax.mail.version>1.5.6</javax.mail.version>
+        <jboss.logging.version>3.3.1.Final</jboss.logging.version>
+        <jboss.logging.tools.version>2.1.0.Final</jboss.logging.tools.version>
         <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
-        <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
-        <jboss-transaction-api_1.2_spec>1.0.0.Final</jboss-transaction-api_1.2_spec>
+        <jboss-jaxrs-api_2.1_spec>1.0.0.Final</jboss-jaxrs-api_2.1_spec>
+        <jboss-transaction-api_1.2_spec>1.0.1.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
-        <log4j.version>1.2.16</log4j.version>
-        <resteasy.version>3.0.24.Final</resteasy.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <log4j.version>1.2.17</log4j.version>
+        <resteasy.version>3.5.1.Final</resteasy.version>
+        <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
+        <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.4.18.Final</undertow.version>
-        <elytron.version>1.1.6.Final</elytron.version>
+        <undertow.version>2.0.9.Final</undertow.version>
+        <elytron.version>1.3.3.Final</elytron.version>
         <elytron.undertow-server.version>1.0.1.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
-        <xmlsec.version>2.0.5</xmlsec.version>
+        <xmlsec.version>2.0.9</xmlsec.version>
         <glassfish.json.version>1.0.4</glassfish.json.version>
+        <wildfly.common.version>1.4.0.Final</wildfly.common.version>
 
         <!-- Authorization Drools Policy Provider -->
-        <version.org.drools>6.4.0.Final</version.org.drools>
-        <version.jboss-integration-platform>6.0.10.Final</version.jboss-integration-platform>
+        <version.org.drools>6.5.0.Final</version.org.drools>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M21</apacheds.version>
@@ -97,10 +105,10 @@
         <google.guava.version>20.0</google.guava.version>
 
         <jetty9.version>9.1.0.v20131115</jetty9.version>
-        <liquibase.version>3.4.1</liquibase.version>
+        <liquibase.version>3.5.5</liquibase.version>
         <mysql.version>5.1.29</mysql.version>
         <osgi.version>4.2.0</osgi.version>
-        <pax.web.version>4.2.4</pax.web.version>
+        <pax.web.version>7.1.0</pax.web.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <mariadb.version>1.3.7</mariadb.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -255,8 +263,8 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
-                <version>${jboss-jaxrs-api_2.0_spec}</version>
+                <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                <version>${jboss-jaxrs-api_2.1_spec}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
@@ -311,7 +319,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -364,6 +372,11 @@
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -648,6 +661,11 @@
                 <version>${elytron.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
                 <version>${elytron.undertow-server.version}</version>
@@ -688,9 +706,24 @@
                 <version>${pax.web.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.ops4j.pax.web</groupId>
+                <artifactId>pax-web-spi</artifactId>
+                <version>${pax.web.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.aesh</groupId>
                 <artifactId>aesh</artifactId>
+                <version>${jboss.aesh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aesh</groupId>
+                <artifactId>aesh</artifactId>
                 <version>${aesh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aesh</groupId>
+                <artifactId>aesh-readline</artifactId>
+                <version>${aesh.readline.version}</version>
             </dependency>
 
             <!-- keycloak -->
@@ -874,7 +907,17 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-spring-boot-adapter-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-boot-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-spring-boot-2-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1357,11 +1400,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>user-storage-properties-example</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.keycloak.example.demo</groupId>
                 <artifactId>cxf-jaxws-example</artifactId>
                 <version>${project.version}</version>
@@ -1391,6 +1429,17 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-cli-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>kcinit</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>kcinit-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1534,112 +1583,17 @@
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
                 </plugin>
-                <!-- License Data -->
                 <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
+                    <version>${project.version}</version>
                     <executions>
                         <execution>
-                            <id>licenses-copy-common</id>
+                            <id>process-licenses</id>
                             <goals>
-                                <goal>copy-resources</goal>
+                                <goal>process</goal>
                             </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <outputDirectory>${project.build.directory}/licenses</outputDirectory>
-                                <resources>
-                                    <!-- Commmon -->
-                                    <resource>
-                                        <directory>${project.basedir}/src/main/resources/licenses/common</directory>
-                                        <includes>
-                                            <include>licenses.xsl</include>
-                                            <include>licenses.css</include>
-                                        </includes>
-                                    </resource>
-                                    <!-- Slot-specific XML -->
-                                    <resource>
-                                        <directory>${project.basedir}/src/main/resources/licenses/${product.slot}</directory>
-                                        <includes>
-                                            <include>licenses.xml</include>
-                                            <!-- Do not use maven-resources-plugin to copy symlinks! -->
-                                        </includes>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.gmaven</groupId>
-                    <artifactId>groovy-maven-plugin</artifactId>
-                    <version>2.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy-all</artifactId>
-                            <version>2.4.12</version>
-                        </dependency>
-                    </dependencies>
-                    <executions>
-                        <execution>
-                            <id>licenses-append-product</id>
-                            <goals>
-                                <goal>execute</goal>
-                            </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <source>${project.basedir}/src/main/resources/licenses/common/append-product-licenses.groovy</source>
-                                <properties>
-                                    <groupId>org.keycloak</groupId>
-                                    <xmlFile>${project.build.directory}/licenses/licenses.xml</xmlFile>
-                                    <licenseName>Apache Software License 2.0</licenseName>
-                                    <licenseUrl>https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/License.html</licenseUrl>
-                                    <licenseFile>${project.basedir}/src/main/resources/licenses/common/keycloak-components-license.html</licenseFile>
-                                </properties>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>xml-maven-plugin</artifactId>
-                    <version>1.0.1</version>
-                    <executions>
-                        <execution>
-                            <id>licenses-generate-html</id>
-                            <goals>
-                                <goal>transform</goal>
-                            </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <transformationSets>
-                                    <transformationSet>
-                                        <dir>${project.build.directory}/licenses</dir>
-                                        <includes>
-                                            <include>licenses.xml</include>
-                                        </includes>
-                                        <stylesheet>${project.build.directory}/licenses/licenses.xsl</stylesheet>
-                                        <outputDir>${project.build.directory}/licenses</outputDir>
-                                        <fileMappers>
-                                            <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
-                                                <targetExtension>.html</targetExtension>
-                                            </fileMapper>
-                                        </fileMappers>
-                                        <parameters>
-                                            <parameter>
-                                                <name>productname</name>
-                                                <value>${product.name.full}</value>
-                                            </parameter>
-                                            <parameter>
-                                                <name>version</name>
-                                                <value>${project.version}</value>
-                                            </parameter>
-                                        </parameters>
-                                    </transformationSet>
-                                </transformationSets>
-                            </configuration>
+                            <phase>process-resources</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -1684,8 +1638,32 @@
                 <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
                 <product.version>${product.rhsso.version}</product.version>
                 <product.default-profile>product</product.default-profile>
-                <product.filename.version>7.2</product.filename.version>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>set-product-filename-version</id>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <name>product.filename.version</name>
+                                    <value>${product.rhsso.version}</value>
+                                    <regex>^(\d+\.\d+).*$</regex>
+                                    <replacement>$1</replacement>
+                                    <failIfNoMatch>true</failIfNoMatch>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

@@ -46,7 +46,7 @@ import org.wildfly.security.http.Scope;
  */
 class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticationMechanism {
 
-    static Logger LOGGER = Logger.getLogger(KeycloakHttpServerAuthenticationMechanismFactory.class);
+    static Logger LOGGER = Logger.getLogger(KeycloakHttpServerAuthenticationMechanism.class);
     static final String NAME = "KEYCLOAK";
 
     private final Map<String, ?> properties;
@@ -126,7 +126,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
     private AdapterDeploymentContext getDeploymentContext(HttpServerRequest request) {
         if (this.deploymentContext == null) {
-            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE);
+            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON);
         }
 
         return this.deploymentContext;

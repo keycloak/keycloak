@@ -20,6 +20,7 @@ package org.keycloak.testsuite.pages.x509;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.pages.AbstractPage;
+import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,7 +31,7 @@ import org.openqa.selenium.support.FindBy;
  * @since 10/24/2016
  */
 
-public class X509IdentityConfirmationPage extends AbstractPage {
+public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;

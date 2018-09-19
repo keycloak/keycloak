@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.junit.Assert;
+import org.keycloak.testsuite.PageUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -162,7 +163,7 @@ public class RegisterPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Register with test");
+        return PageUtils.getPageTitle(driver).equals("Register");
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -56,14 +57,16 @@ public class UserPolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(UserPolicyRepresentation expected) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+    public void populate(UserPolicyRepresentation expected, boolean save) {
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
         usersInput.update(expected.getUsers());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
@@ -74,8 +77,8 @@ public class UserPolicyForm extends Form {
     public UserPolicyRepresentation toRepresentation() {
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
         representation.setUsers(usersInput.getSelected());
 

@@ -22,6 +22,7 @@
 package org.keycloak.testsuite.console.page.authentication.otppolicy;
 
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -55,14 +56,14 @@ public class OTPPolicyForm extends Form {
         this.otpHashAlg.selectByValue(otpHashAlg.getName());
         this.digits.selectByVisibleText("" + digits.getName());
 
-        setInputValue(this.lookAhead, lookAhead);
+        UIUtils.setTextInputValue(this.lookAhead, lookAhead);
         
         switch (otpType) {
             case TIME_BASED:
-                setInputValue(period, periodOrCounter);
+                UIUtils.setTextInputValue(period, periodOrCounter);
                 break;
             case COUNTER_BASED:
-                setInputValue(counter, periodOrCounter);
+                UIUtils.setTextInputValue(counter, periodOrCounter);
                 break;
         }
         save();

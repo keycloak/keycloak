@@ -83,11 +83,10 @@ public class HardcodedAttributeMapper extends AbstractSAMLProtocolMapper impleme
     }
 
     public static ProtocolMapperModel create(String name,
-                                             String samlAttributeName, String nameFormat, String friendlyName, String value,
-                                             boolean consentRequired, String consentText) {
+                                             String samlAttributeName, String nameFormat, String friendlyName, String value) {
         String mapperId = PROVIDER_ID;
         ProtocolMapperModel model = AttributeStatementHelper.createAttributeMapper(name, null, samlAttributeName, nameFormat, friendlyName,
-                consentRequired, consentText, mapperId);
+                mapperId);
         model.getConfig().put(ATTRIBUTE_VALUE, value);
         return model;
 

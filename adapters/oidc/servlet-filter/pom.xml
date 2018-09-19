@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -29,6 +29,17 @@
     <artifactId>keycloak-servlet-filter-adapter</artifactId>
     <name>Keycloak Servlet Filter Adapter Integration</name>
     <description/>
+
+    <properties>
+        <keycloak.osgi.export>
+            org.keycloak.adapters.servlet.*
+        </keycloak.osgi.export>
+        <keycloak.osgi.import>
+            javax.servlet.*;version="[2.5,4)";resolution:=optional,
+            org.keycloak.*;version="${project.version}",
+            *;resolution:=optional
+        </keycloak.osgi.import>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -92,6 +103,39 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <instructions>
+                        <Bundle-ClassPath>.</Bundle-ClassPath>
+                        <Bundle-Name>${project.name}</Bundle-Name>
+                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+                        <Import-Package>${keycloak.osgi.import}</Import-Package>
+                        <Export-Package>${keycloak.osgi.export}</Export-Package>
+                    </instructions>
                 </configuration>
             </plugin>
         </plugins>

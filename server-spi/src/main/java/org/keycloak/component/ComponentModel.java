@@ -84,6 +84,11 @@ public class ComponentModel implements Serializable {
         return config.getFirst(key);
     }
 
+    public String get(String key, String defaultValue) {
+        String s = config.getFirst(key);
+        return s != null ? s : defaultValue;
+    }
+
     public int get(String key, int defaultValue) {
         String s = config.getFirst(key);
         return s != null ? Integer.parseInt(s) : defaultValue;

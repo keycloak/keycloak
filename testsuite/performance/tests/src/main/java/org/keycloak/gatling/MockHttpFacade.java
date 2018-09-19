@@ -120,6 +120,11 @@ public class MockHttpFacade implements HttpFacade {
       public void setError(LogoutError error) {
          throw new UnsupportedOperationException();
       }
+
+      @Override
+      public InputStream getInputStream(boolean buffered) {
+        throw new UnsupportedOperationException();
+      }
    }
 
    static class Response implements HttpFacade.Response {

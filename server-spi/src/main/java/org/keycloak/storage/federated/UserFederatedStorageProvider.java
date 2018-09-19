@@ -19,6 +19,7 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -54,6 +55,8 @@ public interface UserFederatedStorageProvider extends Provider,
     void preRemove(RealmModel realm, ClientModel client);
 
     void preRemove(ProtocolMapperModel protocolMapper);
+
+    void preRemove(ClientScopeModel clientScope);
 
     void preRemove(RealmModel realm, UserModel user);
 

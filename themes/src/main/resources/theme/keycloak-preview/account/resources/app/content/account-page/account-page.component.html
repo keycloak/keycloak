@@ -1,67 +1,51 @@
 <div class="page-header">
-    <h1>{{'editAccountHtmlTitle' | translate}}</h1>
+    <h1 id="pageTitle">{{'personalInfoHtmlTitle' | translate}}</h1>
 </div>
 
-<div class="col-sm-9 content-area">
+<div class="col-sm-12 card-pf">
+  <div class="card-pf-body row">
+      <div class="col-sm-4 col-md-4">
+          <div class="card-pf-subtitle" id="personalSubTitle">
+              {{'personalSubTitle' | translate}}
+          </div>
+          <div class="introMessage" id="personalSubMessage">
+            <p>{{'personalSubMessage' | translate}}</p>
+          </div>
+          <div class="subtitle" id="requiredFieldMessage"><span class="required">*</span> {{'requiredFields' | translate}}</div>
+      </div>
+      <div class="col-sm-6 col-md-6">
 
-    <div class="row">
-        <div class="col-md-10">
-        </div>
-        <div class="col-md-2 subtitle">
-            <span class="subtitle"><span class="required">*</span> {{'requiredFields' | translate}}</span>
-        </div>
-        <hr/>
+        <form #formGroup="ngForm" (ngSubmit)="saveAccount()" class="form-horizontal">
+
+          <div *ngIf="!isRegistrationEmailAsUsername" class="form-group ">
+              <label for="username" class="control-label">{{'username' | translate}}</label><span *ngIf="isEditUserNameAllowed" class="required">*</span>
+              <input *ngIf="isEditUserNameAllowed" type="text" class="form-control" required ngModel id="username" name="username" value="{{username}}" >
+              <div class="non-edit" *ngIf="!isEditUserNameAllowed" id="username">{{ username }}</div>
+          </div>
+
+          <div class="form-group ">
+            <label for="email" class="control-label">{{'email' | translate }}</label> <span class="required">*</span>
+            <input type="email" class="form-control" id="email" name="email" required autofocus="" ngModel type="text">
+          </div>
+
+          <div class="form-group ">
+            <label for="firstName" class="control-label">{{'firstName' | translate}}</label> <span class="required">*</span>
+            <input class="form-control" id="firstName" required name="firstName" ngModel type="text">
+          </div>
+
+          <div class="form-group ">
+            <label for="lastName" class="control-label">{{'lastName' | translate}}</label> <span class="required">*</span>
+            <input class="form-control" id="lastName" required name="lastName" ngModel type="text">
+          </div>
+
+          <div class="form-group">
+            <div id="kc-form-buttons" class="submit">
+              <div class="">
+                <button type="submit" [disabled]="!formGroup.valid || !formGroup.dirty" class="btn btn-primary btn-lg" name="submitAction">{{'doSave' | translate}}</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
-
-    <form #formGroup="ngForm" (ngSubmit)="saveAccount()" class="form-horizontal">
-
-        <div class="form-group ">
-            <div class="col-sm-2 col-md-2">
-                <label for="username" class="control-label">{{'username' | translate}}</label>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="username" name="username" disabled value="{{username}}" >
-            </div>
-        </div>
-
-        <div class="form-group ">
-            <div class="col-sm-2 col-md-2">
-                <label for="email" class="control-label">{{'email' | translate }}</label> <span class="required">*</span>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="email" class="form-control" id="email" name="email" required autofocus="" ngModel type="text">
-            </div>
-        </div>
-
-        <div class="form-group ">
-            <div class="col-sm-2 col-md-2">
-                <label for="firstName" class="control-label">{{'firstName' | translate}}</label> <span class="required">*</span>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input class="form-control" id="firstName" required name="firstName" ngModel type="text">
-            </div>
-        </div>
-
-        <div class="form-group ">
-            <div class="col-sm-2 col-md-2">
-                <label for="lastName" class="control-label">{{'lastName' | translate}}</label> <span class="required">*</span>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input class="form-control" id="lastName" required name="lastName" ngModel type="text">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
-                <div class="">
-                    <button type="submit" [disabled]="!formGroup.valid || !formGroup.dirty" class="btn btn-primary btn-lg" name="submitAction">{{'doSave' | translate}}</button>
-                </div>
-            </div>
-        </div>
-    </form>
-
-</div>
+  </div>

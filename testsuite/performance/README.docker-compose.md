@@ -1,35 +1,20 @@
-# Keycloak Performance Testsuite - Docker Compose
+# Keycloak Performance Testsuite - Docker Compose Provisioner
 
-## Requirements:
-- Maven 3.1.1+
-- Unpacked Keycloak server distribution in `keycloak/target` folder.
-- Docker 1.13+
-- Docker Compose 1.14+
+## Supported Deployments
 
-### Keycloak Server Distribution
-To unpack the current Keycloak server distribution into `keycloak/target` folder:
-1. Build and install the distribution by running `mvn install -Pdistribution` from the root of the Keycloak project.
-2. Unpack the installed artifact by running `mvn process-resources` from the Performance Testsuite module.
+| Deployment   | Available Operations                                  | Orchestration Template          |
+| ------------ | ----------------------------------------------------- | ------------------------------- |
+| `singlenode` | `provision`, `teardown`, `export-dump`, `import-dump` | `docker-compose.yml`            |
+| `cluster`    | `provision`, `teardown`, `export-dump`, `import-dump` | `docker-compose-cluster.yml`*   |
+| `crossdc`    | `provision`, `teardown`, `export-dump`, `import-dump` | `docker-compose-crossdc.yml`*   |
+| `monitoring` | `provision`, `teardown`                               | `docker-compose-monitoring.yml` |
 
-## Deployments
+The docker-compose orchestration templates are located in `tests/src/main/docker-compose` directory.
 
-### Singlenode Deployment
-- Build / rebuild: `docker-compose build`
-- Start services: `docker-compose up -d --build`
-  Note: The `--build` parameter triggers a rebuild/restart of changed services if they are already running.
-- Stop services: `docker-compose down -v`. If you wish to keep the container volumes skip the `-v` option.
-
-### Keycloak Cluster Deployment
-- Build / rebuild: `docker-compose -f docker-compose-cluster.yml build`
-- Start services: `docker-compose -f docker-compose-cluster.yml up -d --build`
-- Scaling KC nodes: `docker-compose -f docker-compose-cluster.yml up -d --build --scale keycloak=2`
-- Stop services: `docker-compose -f docker-compose-cluster.yml down -v`. If you wish to keep the container volumes skip the `-v` option.
-
-### Cross-DC Deployment
-- Build / rebuild: `docker-compose -f docker-compose-crossdc.yml build`
-- Start services: `docker-compose -f docker-compose-crossdc.yml up -d --build`
-- Scaling KC nodes: `docker-compose -f docker-compose-crossdc.yml up -d --build --scale keycloak_dc1=2 --scale keycloak_dc2=3`
-- Stop services: `docker-compose -f docker-compose-crossdc.yml down -v`. If you wish to keep the container volumes skip the `-v` option.
+**[*]** The cluster and crossdc templates are generated dynamically during the `provision` operation based on provided `cpusets` parameter.
+One Keycloak service entry is generated for each cpuset. This is a workaround for limitations of the default docker-compose scaling mechanism 
+which only allows setting `cpuset` per service, not per container. For more predictable performance results it is necessary for each 
+Keycloak server to have an exclusive access to specific CPU cores.
 
 ## Debugging docker containers:
 - List started containers: `docker ps`. It's useful to watch continuously: `watch docker ps`.

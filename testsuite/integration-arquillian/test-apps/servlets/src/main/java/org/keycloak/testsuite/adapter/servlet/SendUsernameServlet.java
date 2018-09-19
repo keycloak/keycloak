@@ -205,4 +205,14 @@ public class SendUsernameServlet extends HttpServlet {
 
         return output;
     }
+
+    @GET
+    @Path("getAssertionIssuer")
+    public Response getAssertionIssuer() throws IOException {
+        sentPrincipal = httpServletRequest.getUserPrincipal();
+        SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
+        return Response.ok(principal.getAssertion().getIssuer().getValue())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
+    }
+
 }

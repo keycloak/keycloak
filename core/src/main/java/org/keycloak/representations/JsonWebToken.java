@@ -23,11 +23,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +38,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JsonWebToken implements Serializable {
+public class JsonWebToken implements Serializable, Token {
     @JsonProperty("jti")
     protected String id;
     @JsonProperty("exp")
@@ -91,10 +94,9 @@ public class JsonWebToken implements Serializable {
         return this;
     }
 
-
     @JsonIgnore
-    public boolean isNotBefore() {
-        return Time.currentTime() >= notBefore;
+    public boolean isNotBefore(int allowedTimeSkew) {
+        return Time.currentTime() + allowedTimeSkew >= notBefore;
     }
 
     /**
@@ -104,7 +106,12 @@ public class JsonWebToken implements Serializable {
      */
     @JsonIgnore
     public boolean isActive() {
-        return (!isExpired() || expiration == 0) && (isNotBefore() || notBefore == 0);
+        return isActive(0);
+    }
+
+    @JsonIgnore
+    public boolean isActive(int allowedTimeSkew) {
+        return (!isExpired() || expiration == 0) && (isNotBefore(allowedTimeSkew) || notBefore == 0);
     }
 
     public int getIssuedAt() {
@@ -152,6 +159,24 @@ public class JsonWebToken implements Serializable {
 
     public JsonWebToken audience(String... audience) {
         this.audience = audience;
+        return this;
+    }
+
+    public JsonWebToken addAudience(String audience) {
+        if (this.audience == null) {
+            this.audience = new String[] { audience };
+        } else {
+            // Check if audience is already there
+            for (String aud : this.audience) {
+                if (audience.equals(aud)) {
+                    return this;
+                }
+            }
+
+            String[] newAudience = Arrays.copyOf(this.audience, this.audience.length + 1);
+            newAudience[this.audience.length] = audience;
+            this.audience = newAudience;
+        }
         return this;
     }
 
@@ -204,5 +229,10 @@ public class JsonWebToken implements Serializable {
     @JsonAnySetter
     public void setOtherClaims(String name, Object value) {
         otherClaims.put(name, value);
+    }
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.INTERNAL;
     }
 }

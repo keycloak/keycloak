@@ -323,6 +323,20 @@ module.factory('RequiredActions', function($resource) {
     });
 });
 
+module.factory('RequiredActionRaisePriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias/raise-priority', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('RequiredActionLowerPriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias/lower-priority', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
 module.factory('UnregisteredRequiredActions', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/unregistered-required-actions', {
         realm : '@realm'
@@ -335,8 +349,18 @@ module.factory('RegisterRequiredAction', function($resource) {
     });
 });
 
-module.factory('RealmLDAPConnectionTester', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
+module.factory('RealmLDAPConnectionTester', function($resource, $httpParamSerializer) {
+    return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection', {
+        realm : '@realm'
+    }, {
+        save: {
+            method: 'POST',
+            headers : { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            transformRequest: function (data) {
+                return $httpParamSerializer(data)
+            }
+        }
+    });
 });
 
 module.factory('RealmSMTPConnectionTester', function($resource) {
@@ -425,10 +449,10 @@ module.factory('ClientProtocolMapper', function($resource) {
     });
 });
 
-module.factory('ClientTemplateProtocolMapper', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/protocol-mappers/models/:id', {
+module.factory('ClientScopeProtocolMapper', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/protocol-mappers/models/:id', {
         realm : '@realm',
-        template: '@template',
+        clientScope: '@clientScope',
         id : "@id"
     }, {
         update : {
@@ -459,6 +483,20 @@ module.service('UserSearchState', function() {
 // Service tracks the last flow selected in Authentication-->Flows tab
 module.service('LastFlowSelected', function() {
     this.alias = null;
+});
+
+module.service('RealmRoleRemover', function() {
+   this.remove = function (role, realm, Dialog, $location, Notifications) {
+        Dialog.confirmDelete(role.name, 'role', function () {
+            role.$remove({
+                realm: realm.realm,
+                role: role.id
+            }, function () {
+                $location.url("/realms/" + realm.realm + "/roles");
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
 });
 
 module.factory('UserSessionStats', function($resource) {
@@ -840,6 +878,7 @@ function roleControl($scope, realm, role, roles, clients,
                 }
             }
             $scope.selectedClientRoles = [];
+            Notifications.success("Client role added.");
         });
     };
 
@@ -856,6 +895,7 @@ function roleControl($scope, realm, role, roles, clients,
                 }
             }
             $scope.selectedClientMappings = [];
+            Notifications.success("Client role removed.");
         });
     };
 
@@ -929,15 +969,68 @@ module.factory('ClientRole', function($resource) {
     });
 });
 
-module.factory('ClientClaims', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients/:client/claims', {
+module.factory('ClientDefaultClientScopes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/default-client-scopes/:clientScopeId', {
         realm : '@realm',
-        client : "@client"
-    },  {
+        client : "@client",
+        clientScopeId : '@clientScopeId'
+    }, {
         update : {
             method : 'PUT'
         }
     });
+});
+
+module.factory('ClientOptionalClientScopes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/optional-client-scopes/:clientScopeId', {
+        realm : '@realm',
+        client : "@client",
+        clientScopeId : '@clientScopeId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('ClientEvaluateProtocolMappers', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/evaluate-scopes/protocol-mappers?scope=:scopeParam', {
+        realm : '@realm',
+        client : "@client",
+        scopeParam : "@scopeParam"
+    });
+});
+
+module.factory('ClientEvaluateGrantedRoles', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/evaluate-scopes/scope-mappings/:roleContainer/granted?scope=:scopeParam', {
+        realm : '@realm',
+        client : "@client",
+        roleContainer : "@roleContainer",
+        scopeParam : "@scopeParam"
+    });
+});
+
+module.factory('ClientEvaluateNotGrantedRoles', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/evaluate-scopes/scope-mappings/:roleContainer/not-granted?scope=:scopeParam', {
+        realm : '@realm',
+        client : "@client",
+        roleContainer : "@roleContainer",
+        scopeParam : "@scopeParam"
+    });
+});
+
+module.factory('ClientEvaluateGenerateExampleToken', function($resource) {
+    var url = authUrl + '/admin/realms/:realm/clients/:client/evaluate-scopes/generate-example-access-token?scope=:scopeParam&userId=:userId';
+    return {
+        url : function(parameters)
+        {
+            return url
+                .replace(':realm', parameters.realm)
+                .replace(':client', parameters.client)
+                .replace(':scopeParam', parameters.scopeParam)
+                .replace(':userId', parameters.userId);
+        }
+    }
 });
 
 module.factory('ClientProtocolMappersByProtocol', function($resource) {
@@ -948,55 +1041,55 @@ module.factory('ClientProtocolMappersByProtocol', function($resource) {
     });
 });
 
-module.factory('ClientTemplateProtocolMappersByProtocol', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/protocol-mappers/protocol/:protocol', {
+module.factory('ClientScopeProtocolMappersByProtocol', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/protocol-mappers/protocol/:protocol', {
         realm : '@realm',
-        template : "@template",
+        clientScope : "@clientScope",
         protocol : "@protocol"
     });
 });
 
-module.factory('ClientTemplateRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm', {
+module.factory('ClientScopeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/realm', {
         realm : '@realm',
-        template : '@template'
+        clientScope : '@clientScope'
     });
 });
 
-module.factory('ClientTemplateAvailableRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/available', {
+module.factory('ClientScopeAvailableRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/realm/available', {
         realm : '@realm',
-        template : '@template'
+        clientScope : '@clientScope'
     });
 });
 
-module.factory('ClientTemplateCompositeRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/composite', {
+module.factory('ClientScopeCompositeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/realm/composite', {
         realm : '@realm',
-        template : '@template'
+        clientScope : '@clientScope'
     });
 });
 
-module.factory('ClientTemplateClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient', {
+module.factory('ClientScopeClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/clients/:targetClient', {
         realm : '@realm',
-        template : '@template',
+        clientScope : '@clientScope',
         targetClient : '@targetClient'
     });
 });
 
-module.factory('ClientTemplateAvailableClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/available', {
+module.factory('ClientScopeAvailableClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/clients/:targetClient/available', {
         realm : '@realm',
-        template : '@template',
+        clientScope : '@clientScope',
         targetClient : '@targetClient'
     });
 });
 
-module.factory('ClientTemplateCompositeClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/composite', {
+module.factory('ClientScopeCompositeClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope/scope-mappings/clients/:targetClient/composite', {
         realm : '@realm',
-        template : '@template',
+        clientScope : '@clientScope',
         targetClient : '@targetClient'
     });
 });
@@ -1117,11 +1210,40 @@ module.factory('Client', function($resource) {
     });
 });
 
-module.factory('ClientTemplate', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template', {
+module.factory('ClientScopeGenerateAudienceClientScope', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/generate-audience-client-scope?clientId=:clientId', {
         realm : '@realm',
-        template : '@template'
+        clientId : "@clientId"
+    });
+});
+
+module.factory('ClientScope', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope', {
+        realm : '@realm',
+        clientScope : '@clientScope'
     },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('RealmDefaultClientScopes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/default-default-client-scopes/:clientScopeId', {
+        realm : '@realm',
+        clientScopeId : '@clientScopeId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('RealmOptionalClientScopes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/default-optional-client-scopes/:clientScopeId', {
+        realm : '@realm',
+        clientScopeId : '@clientScopeId'
+    }, {
         update : {
             method : 'PUT'
         }
@@ -1282,23 +1404,29 @@ module.factory('TimeUnit2', function() {
     var t = {};
 
     t.asUnit = function(time) {
-        var unit = 'Minutes';
-        if (time) {
-            if (time < 60) {
-                time = 60;
-            }
 
-            if (time % 60 == 0) {
-                unit = 'Minutes';
-                time = time / 60;
-            }
-            if (time % 60 == 0) {
-                unit = 'Hours';
-                time = time / 60;
-            }
-            if (time % 24 == 0) {
-                unit = 'Days'
-                time = time / 24;
+        var unit = 'Minutes';
+
+        if (time) {
+            if (time == -1) {
+                time = -1;
+            } else {
+                if (time < 60) {
+                    time = 60;
+                }
+
+                if (time % 60 == 0) {
+                    unit = 'Minutes';
+                    time = time / 60;
+                }
+                if (time % 60 == 0) {
+                    unit = 'Hours';
+                    time = time / 60;
+                }
+                if (time % 24 == 0) {
+                    unit = 'Days'
+                    time = time / 24;
+                }
             }
         }
 
@@ -1790,6 +1918,16 @@ module.factory('UserStorageOperations', function($resource) {
         componentId : '@componentId'
     });
     object.simpleName = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/name', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+    return object;
+});
+
+
+module.factory('ClientStorageOperations', function($resource) {
+    var object = {}
+    object.simpleName = $resource(authUrl + '/admin/realms/:realm/client-storage/:componentId/name', {
         realm : '@realm',
         componentId : '@componentId'
     });

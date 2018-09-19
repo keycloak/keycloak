@@ -32,6 +32,7 @@ import java.util.function.Function;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import static org.junit.Assert.assertThat;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
  *
@@ -47,13 +48,17 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        findTestApp(testRealm).setDirectAccessGrantsEnabled(true);
+        log.debug("Configuring test realm '" + testRealm.getRealm() + "'. Enabling direct access grant.");
+        ClientRepresentation testApp = findTestApp(testRealm);
+        if (testApp == null) {
+            throw new IllegalStateException("Couldn't find the 'test-app' within the realm '" + testRealm.getRealm() + "'");
+        }
+        testApp.setDirectAccessGrantsEnabled(true);
     }
-
-
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+        log.debug("--DC: AbstractAdminCrossDCTest.addTestRealms - adding realm: " + REALM_NAME);
         super.addTestRealms(testRealms);
 
         RealmRepresentation adminRealmRep = new RealmRepresentation();
@@ -76,6 +81,7 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
 
     @Before
     public void setRealm() {
+        log.debug("--DC: AbstractAdminCrossDCTest.setRealm");
         realm = adminClient.realm(REALM_NAME);
         realmId = realm.toRepresentation().getId();
     }

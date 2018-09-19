@@ -35,8 +35,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
-import static org.keycloak.testsuite.util.IOUtil.documentToString;
-import static org.keycloak.testsuite.util.IOUtil.setDocElementAttributeValue;
+import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
+import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
@@ -144,7 +144,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
           CloseableHttpResponse response = client.execute(post)) {
-            assertThat(response, statusCodeIsHC(Response.Status.INTERNAL_SERVER_ERROR));
+            assertThat(response, statusCodeIsHC(Status.BAD_REQUEST));
         }
     }
 
@@ -161,7 +161,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
     @Test
     public void testWrongPortInDestination() throws Exception {
-        testWithOverriddenPort(123, Response.Status.INTERNAL_SERVER_ERROR, containsString("Invalid Request"));
+        testWithOverriddenPort(123, Status.BAD_REQUEST, containsString("Invalid Request"));
     }
 
     private void testWithOverriddenPort(int port, Response.Status expectedHttpCode, Matcher<String> pageTextMatcher) throws Exception {

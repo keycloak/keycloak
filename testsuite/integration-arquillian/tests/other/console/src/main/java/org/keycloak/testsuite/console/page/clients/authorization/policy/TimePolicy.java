@@ -36,6 +36,6 @@ public class TimePolicy implements PolicyTypeUI {
     }
 
     public void update(TimePolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

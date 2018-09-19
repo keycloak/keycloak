@@ -17,7 +17,7 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:5.0"
+                xmlns:j="urn:jboss:domain:7.0"
                 xmlns:ds="urn:jboss:domain:datasources:5.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.1"
                 xmlns:sec="urn:jboss:domain:security:2.0"
@@ -81,12 +81,12 @@
 
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $inf)]">
         <xsl:copy>
-            <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+            <cache-container name="keycloak">
                 <local-cache name="realms">
-                    <eviction max-entries="10000" strategy="LRU"/>
+                    <object-memory size="10000"/>
                 </local-cache>
                 <local-cache name="users">
-                    <eviction max-entries="10000" strategy="LRU"/>
+                    <object-memory size="10000"/>
                 </local-cache>
                 <local-cache name="sessions"/>
                 <local-cache name="authenticationSessions"/>
@@ -95,12 +95,12 @@
                 <local-cache name="offlineClientSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="authorization">
-                    <eviction max-entries="10000" strategy="LRU"/>
+                    <object-memory size="10000"/>
                 </local-cache>
                 <local-cache name="actionTokens"/>
                 <local-cache name="work"/>
                 <local-cache name="keys">
-                    <eviction max-entries="1000" strategy="LRU"/>
+                    <object-memory size="1000"/>
                     <expiration max-idle="3600000" />
                 </local-cache>
             </cache-container>

@@ -53,6 +53,7 @@ public class ResourceManagementTest extends AbstractAuthorizationSettingsTest {
         String previousName = expected.getName();
 
         expected.setName("changed");
+        expected.setDisplayName("changed");
         expected.setType("changed");
         expected.setUri("changed");
         expected.setScopes(Arrays.asList("Scope A", "Scope B", "Scope C").stream().map(name -> new ScopeRepresentation(name)).collect(Collectors.toSet()));
@@ -93,6 +94,7 @@ public class ResourceManagementTest extends AbstractAuthorizationSettingsTest {
         ResourceRepresentation expected = new ResourceRepresentation();
 
         expected.setName("Test Resource");
+        expected.setDisplayName("Test Display Name");
         expected.setType("Test Type");
         expected.setUri("/test/resource");
 
@@ -112,6 +114,9 @@ public class ResourceManagementTest extends AbstractAuthorizationSettingsTest {
         assertEquals(expected.getIconUri(), actual.getIconUri());
 
         ResourceRepresentation resource = authorizationPage.authorizationTabs().resources().name(expected.getName()).toRepresentation();
+
+        assertEquals(expected.getDisplayName(), resource.getDisplayName());
+
         Set<ScopeRepresentation> associatedScopes = resource.getScopes();
 
         if (expected.getScopes() != null) {

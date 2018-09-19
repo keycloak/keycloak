@@ -225,4 +225,20 @@ public class RealmBuilder {
         rep.getGroups().add(group);
         return this;
     }
+
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    public RealmBuilder offlineSessionIdleTimeout(int offlineSessionIdleTimeout) {
+        rep.setOfflineSessionIdleTimeout(offlineSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder offlineSessionMaxLifespan(int offlineSessionMaxLifespan) {
+        rep.setOfflineSessionMaxLifespan(offlineSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder offlineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+        rep.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+        return this;
+    }
 }

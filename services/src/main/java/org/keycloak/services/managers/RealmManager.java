@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -26,7 +27,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -35,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -43,6 +44,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -118,7 +120,8 @@ public class RealmManager {
         setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
-        setupOfflineTokens(realm);
+        setupOfflineTokens(realm, null);
+        createDefaultClientScopes(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
 
@@ -135,8 +138,27 @@ public class RealmManager {
         if (realm.getRequiredActionProviders().size() == 0) DefaultRequiredActions.addActions(realm);
     }
 
-    protected void setupOfflineTokens(RealmModel realm) {
-        KeycloakModelUtils.setupOfflineTokens(realm);
+    private void setupOfflineTokens(RealmModel realm, RealmRepresentation realmRep) {
+        RoleModel offlineRole = KeycloakModelUtils.setupOfflineRole(realm);
+
+        if (realmRep != null && hasRealmRole(realmRep, Constants.OFFLINE_ACCESS_ROLE)) {
+            // Case when realmRep had the offline_access role, but not the offline_access client scope. Need to manually remove the role
+            List<RoleRepresentation> realmRoles = realmRep.getRoles().getRealm();
+            for (RoleRepresentation role : realmRoles) {
+                if (Constants.OFFLINE_ACCESS_ROLE.equals(role.getName())) {
+                    realmRoles.remove(role);
+                    break;
+                }
+            }
+        }
+
+        if (realmRep == null || !hasClientScope(realmRep, Constants.OFFLINE_ACCESS_ROLE)) {
+            DefaultClientScopes.createOfflineAccessClientScope(realm, offlineRole);
+        }
+    }
+
+    protected void createDefaultClientScopes(RealmModel realm) {
+        DefaultClientScopes.createDefaultClientScopes(session, realm, true);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -150,15 +172,6 @@ public class RealmManager {
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        RoleModel adminRole;
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRole = realm.getRole(AdminRoles.ADMIN);
-        } else {
-            String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-            adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-        }
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -184,15 +197,6 @@ public class RealmManager {
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
             adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-            RoleModel adminRole;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                adminRole = realm.getRole(AdminRoles.ADMIN);
-            } else {
-                String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-                ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-                adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-            }
         }
 
     }
@@ -315,13 +319,11 @@ public class RealmManager {
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
             createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
-            createRealmRole.setScopeParamRequired(false);
         } else {
             adminRealm = model.getRealm(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
-        adminRole.setScopeParamRequired(false);
 
         ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
         // No localized name for now
@@ -332,7 +334,6 @@ public class RealmManager {
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
             role.setDescription("${role_"+r+"}");
-            role.setScopeParamRequired(false);
             adminRole.addCompositeRole(role);
         }
         addQueryCompositeRoles(realmAdminApp);
@@ -364,7 +365,6 @@ public class RealmManager {
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
         adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
-        adminRole.setScopeParamRequired(false);
         realmAdminClient.setBearerOnly(true);
         realmAdminClient.setFullScopeAllowed(false);
         realmAdminClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -378,7 +378,6 @@ public class RealmManager {
     private void addAndSetAdminRole(String roleName, ClientModel parentClient, RoleModel parentRole) {
         RoleModel role = parentClient.addRole(roleName);
         role.setDescription("${role_" + roleName + "}");
-        role.setScopeParamRequired(false);
         parentRole.addCompositeRole(role);
     }
 
@@ -389,6 +388,12 @@ public class RealmManager {
         String realmAdminClientId = getRealmAdminClientId(realm);
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         RoleModel adminRole = realmAdminClient.getRole(AdminRoles.REALM_ADMIN);
+
+        // if realm-admin role isn't in the realm model, create it
+        if (adminRole == null) {
+            adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
+            adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+        }
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel found = realmAdminClient.getRole(r);
@@ -417,11 +422,9 @@ public class RealmManager {
                 client.addDefaultRole(role);
                 RoleModel roleModel = client.getRole(role);
                 roleModel.setDescription("${role_" + role + "}");
-                roleModel.setScopeParamRequired(false);
             }
             RoleModel manageAccountLinks = client.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
-            manageAccountLinks.setScopeParamRequired(false);
             RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
             manageAccount.addCompositeRole(manageAccountLinks);
         }
@@ -443,7 +446,6 @@ public class RealmManager {
             for (String role : Constants.BROKER_SERVICE_ROLES) {
                 RoleModel roleModel = client.addRole(role);
                 roleModel.setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
-                roleModel.setScopeParamRequired(false);
             }
         }
     }
@@ -496,9 +498,32 @@ public class RealmManager {
             }
         }
 
-        if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
+        if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE) || !hasClientScope(rep, Constants.OFFLINE_ACCESS_ROLE)) {
+            setupOfflineTokens(realm, rep);
+        }
+
+        if (rep.getClientScopes() == null) {
+            createDefaultClientScopes(realm);
+        }
 
         RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+        List<ClientRepresentation> clients = rep.getClients();
+
+        if (clients != null) {
+            ClientManager clientManager = new ClientManager(new RealmManager(session));
+
+            for (ClientRepresentation client : clients) {
+                ClientModel clientModel = realm.getClientById(client.getId());
+
+                if (clientModel.isServiceAccountsEnabled()) {
+                    clientManager.enableServiceAccount(clientModel);
+                }
+
+                if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                    RepresentationToModel.createResourceServer(clientModel, session, true);
+                }
+            }
+        }
 
         setupAdminConsoleLocaleMapper(realm);
 
@@ -533,6 +558,10 @@ public class RealmManager {
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+
+        if (rep.getKeycloakVersion() != null) {
+            MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
+        }
 
         fireRealmPostCreate(realm);
 
@@ -603,6 +632,20 @@ public class RealmManager {
 
         for (RoleRepresentation role : rep.getRoles().getRealm()) {
             if (roleName.equals(role.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasClientScope(RealmRepresentation rep, String clientScopeName) {
+        if (rep.getClientScopes() == null) {
+            return false;
+        }
+
+        for (ClientScopeRepresentation clientScope : rep.getClientScopes()) {
+            if (clientScopeName.equals(clientScope.getName())) {
                 return true;
             }
         }

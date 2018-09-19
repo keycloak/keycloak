@@ -31,6 +31,8 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+
 import java.security.PrivilegedExceptionAction;
 
 /**
@@ -59,6 +61,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
 
     @Override
+    @SuppressWarnings("deprecation")
     public AuthScheme newInstance(HttpParams params) {
         return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
     }
@@ -73,7 +76,19 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
         @Override
         protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer, Credentials credentials) throws GSSException {
-            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig) {
+
+                // Disable strict check for the configured kerberos realm, which is on super-method
+                @Override
+                protected String getKerberosPrincipal(String username) throws LoginException {
+                    if (username.contains("@")) {
+                        return username;
+                    } else {
+                        return username + "@" + config.getKerberosRealm();
+                    }
+                }
+            };
+
             try {
                 Subject clientSubject = authenticator.authenticateSubject(username, password);
 
@@ -108,7 +123,8 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
                     token = new byte[0];
                 }
                 GSSManager manager = getManager();
-                GSSName serverName = manager.createName("HTTP/" + authServer + "@" + kerberosConfig.getKerberosRealm(), null);
+                String httPrincipal = kerberosConfig.getServerPrincipal().replaceFirst("/.*@", "/" + authServer + "@");
+                GSSName serverName = manager.createName(httPrincipal, null);
                 GSSContext gssContext = manager.createContext(
                         serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);

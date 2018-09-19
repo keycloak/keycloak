@@ -27,8 +27,8 @@ import javax.ws.rs.core.Response;
  */
 public class ErrorPage {
 
-    public static Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, String message, Object... parameters) {
-        return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession).setError(message, parameters).createErrorPage();
+    public static Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
+        return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession).setError(message, parameters).createErrorPage(status);
     }
 
 

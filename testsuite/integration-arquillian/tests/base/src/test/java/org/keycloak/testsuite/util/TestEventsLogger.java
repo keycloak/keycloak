@@ -25,6 +25,7 @@ import org.openqa.selenium.WebDriver;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  *
@@ -75,7 +76,7 @@ public class TestEventsLogger extends RunListener {
             if (driver != null && driver.getPageSource() != null) {
                 String pageSourceLocation = System.getProperty("page.source.location", "target/failed-tests/page-source/");
                 FileUtils.writeStringToFile(new File(pageSourceLocation + d.getTestClass().getSimpleName() + "/" + d.getMethodName() + ".html"), 
-                        driver.getPageSource());
+                        driver.getPageSource(), Charset.forName("UTF-8"));
             }
         } catch (IllegalStateException ex) {
             Logger.getLogger(TestEventsLogger.class).warn(ex.getMessage());

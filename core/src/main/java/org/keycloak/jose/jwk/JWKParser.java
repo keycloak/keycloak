@@ -18,12 +18,18 @@
 package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Map;
 
@@ -66,17 +72,58 @@ public class JWKParser {
 
     public PublicKey toPublicKey() {
         String keyType = jwk.getKeyType();
-        if (isKeyTypeSupported(keyType)) {
-            BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
-            BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
+        if (keyType.equals(KeyType.RSA)) {
+            return createRSAPublicKey();
+        } else if (keyType.equals(KeyType.EC)) {
+            return createECPublicKey();
 
-            try {
-                return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         } else {
             throw new RuntimeException("Unsupported keyType " + keyType);
+        }
+    }
+
+    private PublicKey createECPublicKey() {
+        String crv = (String) jwk.getOtherClaims().get(ECPublicJWK.CRV);
+        BigInteger x = new BigInteger(1, Base64Url.decode((String) jwk.getOtherClaims().get(ECPublicJWK.X)));
+        BigInteger y = new BigInteger(1, Base64Url.decode((String) jwk.getOtherClaims().get(ECPublicJWK.Y)));
+
+        String name;
+        switch (crv) {
+            case "P-256" :
+                name = "secp256r1";
+                break;
+            case "P-384" :
+                name = "secp384r1";
+                break;
+            case "P-521" :
+                name = "secp521r1";
+                break;
+            default :
+                throw new RuntimeException("Unsupported curve");
+        }
+
+        try {
+            ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
+            ECNamedCurveSpec params = new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+            ECPoint point = new ECPoint(x, y);
+            ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
+
+            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            return kf.generatePublic(pubKeySpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PublicKey createRSAPublicKey() {
+        BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
+        BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
+
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            return kf.generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

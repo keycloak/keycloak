@@ -40,7 +40,7 @@ public class KerberosUsernamePasswordAuthenticator {
 
     private static final Logger logger = Logger.getLogger(KerberosUsernamePasswordAuthenticator.class);
 
-    private final CommonKerberosConfig config;
+    protected final CommonKerberosConfig config;
     private LoginContext loginContext;
 
     public KerberosUsernamePasswordAuthenticator(CommonKerberosConfig config) {

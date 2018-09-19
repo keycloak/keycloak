@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -53,6 +55,7 @@ public class AuthenticationFlowEntity {
     @Column(name="PROVIDER_ID")
     protected String providerId;
 
+    @Nationalized
     @Column(name="DESCRIPTION")
     protected String description;
 

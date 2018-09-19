@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -32,17 +32,10 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.jboss.integration-platform</groupId>
-                <artifactId>jboss-integration-platform-bom</artifactId>
-                <type>pom</type>
-                <scope>import</scope>
-                <version>${version.jboss-integration-platform}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.drools</groupId>
+                <groupId>org.keycloak</groupId>
                 <artifactId>drools-bom</artifactId>
                 <type>pom</type>
-                <version>${version.org.drools}</version>
+                <version>${project.version}</version>
                 <scope>import</scope>
             </dependency>
         </dependencies>
@@ -72,6 +65,16 @@
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>owasp-java-html-sanitizer</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -591,7 +594,28 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-themes</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-server-subsystem</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-client-cli-dist</artifactId>
+            <type>zip</type>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -700,6 +724,16 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
@@ -728,8 +762,33 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cli</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-client-cli-dist</artifactId>
+                                    <type>zip</type>
+                                    <outputDirectory>target/</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
+                <version>${wildfly.build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>feature-pack-build</id>
@@ -767,38 +826,9 @@
                 </executions>
             </plugin>
 
-            <!-- License Data -->
-
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>licenses-copy-common</id>
-                        <phase>process-resources</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>groovy-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>licenses-append-product</id>
-                        <phase>process-resources</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>licenses-generate-html</id>
-                        <phase>process-resources</phase>
-                    </execution>
-                </executions>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

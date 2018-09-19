@@ -24,7 +24,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -90,22 +91,22 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getType().equals(AlgorithmType.HMAC.name())) {
+            if (k.getAlgorithm().equals(Algorithm.HS256)) {
                 key = k;
                 break;
             }
         }
 
         assertEquals(id, key.getProviderId());
-        assertEquals(AlgorithmType.HMAC.name(), key.getType());
+        assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
-        assertEquals(32, Base64Url.decode(component.getConfig().getFirst("secret")).length);
+        assertEquals(64, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
     @Test
-    public void largeKeysize() throws Exception {
+    public void largeKeysize() {
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createRep("valid", GeneratedHmacKeyProviderFactory.ID);
@@ -125,14 +126,14 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getType().equals(AlgorithmType.HMAC.name())) {
+            if (k.getAlgorithm().equals(Algorithm.HS256)) {
                 key = k;
                 break;
             }
         }
 
         assertEquals(id, key.getProviderId());
-        assertEquals(AlgorithmType.HMAC.name(), key.getType());
+        assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
@@ -152,7 +153,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         response.close();
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
-        assertEquals(32, Base64Url.decode(component.getConfig().getFirst("secret")).length);
+        assertEquals(64, Base64Url.decode(component.getConfig().getFirst("secret")).length);
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         createdRep.getConfig().putSingle("secretSize", "512");

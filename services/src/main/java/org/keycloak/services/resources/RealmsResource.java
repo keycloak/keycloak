@@ -36,6 +36,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.account.AccountLoader;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.utils.MediaTypeMatcher;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 
@@ -69,9 +70,6 @@ public class RealmsResource {
 
     @Context
     private HttpRequest request;
-
-    @Context
-    private UriInfo uriInfo;
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -162,7 +160,7 @@ public class RealmsResource {
         if (client.getRootUrl() != null && (client.getBaseUrl() == null || client.getBaseUrl().isEmpty())) {
             targetUri = KeycloakUriBuilder.fromUri(client.getRootUrl()).build();
         } else {
-            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
+            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
         }
 
         return Response.seeOther(targetUri).build();

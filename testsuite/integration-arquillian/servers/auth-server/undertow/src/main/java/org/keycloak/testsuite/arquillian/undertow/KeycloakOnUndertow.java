@@ -47,6 +47,8 @@ import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
+import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
@@ -164,6 +166,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     @Override
     public void start() throws LifecycleException {
+        log.info("Starting auth server on undertow.");
         if (isRemoteMode()) {
             log.info("Skip bootstrap undertow. We are in remote mode");
             return;
@@ -194,7 +197,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
         setupDevConfig();
 
-        log.info("Auth server started in " + (System.currentTimeMillis() - start) + " ms\n");
+        log.infof("Auth server started in %dms on http://%s:%d/auth", (System.currentTimeMillis() - start), configuration.getBindAddress(), configuration.getBindHttpPort());
     }
 
 

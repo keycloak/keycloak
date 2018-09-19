@@ -25,12 +25,12 @@ import org.keycloak.models.RealmProvider;
  */
 public interface CacheRealmProvider extends RealmProvider {
     void clear();
-    RealmProvider getDelegate();
+    RealmProvider getRealmDelegate();
 
     void registerRealmInvalidation(String id, String name);
 
     void registerClientInvalidation(String id, String clientId, String realmId);
-    void registerClientTemplateInvalidation(String id);
+    void registerClientScopeInvalidation(String id);
 
     void registerRoleInvalidation(String id, String roleName, String roleContainerId);
 

@@ -154,6 +154,27 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_DEBUG)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_INITSIZE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_MAXSIZE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_PREFSIZE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_PROTOCOL)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING_TIMEOUT)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
                 .property().name(LDAPConstants.CONNECTION_TIMEOUT)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
@@ -540,7 +561,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                     LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
-                                session.userCache().evict(currentRealm, currentUser);
+                                UserCache userCache = session.userCache();
+                                if (userCache != null) {
+                                    userCache.evict(currentRealm, currentUser);
+                                }
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                                 syncResult.increaseUpdated();
                             } else {

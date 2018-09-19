@@ -42,6 +42,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -131,23 +132,29 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            ProtocolMapperRepresentation mapper = createAddressMapper(true, true);
+            ProtocolMapperRepresentation mapper = createAddressMapper(true, true, true);
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.REGION), "region_some");
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.COUNTRY), "country_some");
             mapper.getConfig().remove(AddressMapper.getModelPropertyName(AddressClaimSet.POSTAL_CODE)); // Even if we remove protocolMapper config property, it should still default to postal_code
             app.getProtocolMappers().createMapper(mapper).close();
 
-            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
+            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", true, true);
             app.getProtocolMappers().createMapper(hard).close();
-            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("dotted phone", "phone", "home\\.phone", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username")).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
+            response.close();
         }
 
         {
@@ -164,6 +171,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(idToken.getOtherClaims().get("home_phone"));
             assertThat((List<String>) idToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
+            assertNotNull(idToken.getOtherClaims().get("home.phone"));
+            assertThat((List<String>) idToken.getOtherClaims().get("home.phone"), hasItems("617-777-6666"));
             assertEquals("coded", idToken.getOtherClaims().get("hard"));
             Map nested = (Map) idToken.getOtherClaims().get("nested");
             assertEquals("coded-nested", nested.get("hard"));
@@ -202,6 +211,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
+            assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
             oauth.openLogout();
         }
 
@@ -214,6 +224,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard")
                         || model.getName().equals("hard-nested")
                         || model.getName().equals("custom phone")
+                        || model.getName().equals("dotted phone")
                         || model.getName().equals("departments")
                         || model.getName().equals("firstDepartment")
                         || model.getName().equals("nested phone")
@@ -257,8 +268,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, true, false)).close();
         }
 
         {
@@ -270,7 +281,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Object nulll = idToken.getOtherClaims().get("null");
             assertNull(nulll);
 
-            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            oauth.verifyToken(response.getAccessToken());
             oauth.openLogout();
         }
 
@@ -535,8 +546,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         rep.setName(name);
         rep.setProtocolMapper(mapperType);
         rep.setConfig(config);
-        rep.setConsentRequired(true);
-        rep.setConsentText("Test Consent Text");
         return rep;
     }
 

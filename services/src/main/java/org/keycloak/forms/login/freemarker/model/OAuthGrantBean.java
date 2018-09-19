@@ -16,107 +16,70 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.OrderedModel;
 
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
 public class OAuthGrantBean {
 
-    private final String accessRequestMessage;
-    private List<RoleModel> realmRolesRequested;
-    private MultivaluedMap<String, ClientRoleEntry> resourceRolesRequested;
+    private static OrderedModel.OrderedModelComparator<ClientScopeEntry> COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
+
+    private List<ClientScopeEntry> clientScopesRequested = new ArrayList<>();
     private String code;
     private ClientModel client;
-    private List<String> claimsRequested;
 
-    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
-                          List<ProtocolMapperModel> protocolMappersRequested, String accessRequestMessage) {
+    public OAuthGrantBean(String code, ClientModel client, List<ClientScopeModel> clientScopesRequested) {
         this.code = code;
         this.client = client;
-        this.realmRolesRequested = realmRolesRequested;
-        if (resourceRolesRequested != null) {
-            this.resourceRolesRequested = new MultivaluedMapImpl<String, ClientRoleEntry>();
-            for (List<RoleModel> clientRoles : resourceRolesRequested.values()) {
-                for (RoleModel role : clientRoles) {
-                    ClientModel currentClient = (ClientModel) role.getContainer();
-                    ClientRoleEntry roleEntry = new ClientRoleEntry(currentClient.getClientId(), currentClient.getName(), role.getName(), role.getDescription());
-                    this.resourceRolesRequested.add(currentClient.getClientId(), roleEntry);
-                }
-            }
-        }
 
-        this.accessRequestMessage = accessRequestMessage;
-
-        List<String> claims = new LinkedList<String>();
-        if (protocolMappersRequested != null) {
-            for (ProtocolMapperModel model : protocolMappersRequested) {
-                claims.add(model.getConsentText());
-            }
+        for (ClientScopeModel clientScope : clientScopesRequested) {
+            this.clientScopesRequested.add(new ClientScopeEntry(clientScope.getConsentScreenText(), clientScope.getGuiOrder()));
         }
-        if (claims.size() > 0) this.claimsRequested = claims;
+        this.clientScopesRequested.sort(COMPARATOR_INSTANCE);
     }
 
     public String getCode() {
         return code;
     }
 
-    public MultivaluedMap<String, ClientRoleEntry> getResourceRolesRequested() {
-        return resourceRolesRequested;
-    }
-
-    public List<RoleModel> getRealmRolesRequested() {
-        return realmRolesRequested;
-    }
 
     public String getClient() {
         return client.getClientId();
     }
 
-    public List<String> getClaimsRequested() {
-        return claimsRequested;
+
+    public List<ClientScopeEntry> getClientScopesRequested() {
+        return clientScopesRequested;
     }
 
-    public String getAccessRequestMessage() {
-        return this.accessRequestMessage;
-    }
 
-    // Same class used in ConsentBean in account as well. Maybe should be merged into common-freemarker...
-    public static class ClientRoleEntry {
+    // Converting ClientScopeModel due the freemarker limitations. It's not able to read "getConsentScreenText" default method defined on interface
+    public static class ClientScopeEntry implements OrderedModel {
 
-        private final String clientId;
-        private final String clientName;
-        private final String roleName;
-        private final String roleDescription;
+        private final String consentScreenText;
+        private final String guiOrder;
 
-        public ClientRoleEntry(String clientId, String clientName, String roleName, String roleDescription) {
-            this.clientId = clientId;
-            this.clientName = clientName;
-            this.roleName = roleName;
-            this.roleDescription = roleDescription;
+        private ClientScopeEntry(String consentScreenText, String guiOrder) {
+            this.consentScreenText = consentScreenText;
+            this.guiOrder = guiOrder;
         }
 
-        public String getClientId() {
-            return clientId;
+        public String getConsentScreenText() {
+            return consentScreenText;
         }
 
-        public String getClientName() {
-            return clientName;
-        }
-
-        public String getRoleName() {
-            return roleName;
-        }
-
-        public String getRoleDescription() {
-            return roleDescription;
+        @Override
+        public String getGuiOrder() {
+            return guiOrder;
         }
     }
 }

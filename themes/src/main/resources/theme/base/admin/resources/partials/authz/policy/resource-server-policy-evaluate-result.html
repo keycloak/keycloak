@@ -41,12 +41,18 @@
                     <div>
                         <div>
                             <li data-ng-repeat="policyResult in result.policies">
-                                <strong><a
-                                        href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policyResult.policy.type}}/{{policyResult.policy.id}}">{{policyResult.policy.name}}</a></strong>
+                                <strong>
+                                    <a data-ng-show="policyResult.policy.type != 'uma'"
+                                        href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policyResult.policy.type}}/{{policyResult.policy.id}}">{{policyResult.policy.name}}</a>
+                                    <a data-ng-show="policyResult.policy.type == 'uma'"
+                                       href="">
+                                        {{policyResult.policy.description}}
+                                    </a>
+                                </strong>
                                 decision was <span style="color: green" data-ng-show="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
                                 <span style="color: red" data-ng-hide="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
                                 by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision. {{policyResult.policy.scopes.length > 0 ? (policyResult.status == 'DENY' ? 'Denied Scopes:' : 'Granted Scopes:') : ''}} <span data-ng-repeat="scope in policyResult.policy.scopes"><strong style="color: {{(policyResult.status == 'DENY' ? 'red' : 'green')}}">{{scope}}{{$last ? '' : ', '}}</strong></span>{{policyResult.policy.scopes.length > 0 ? '.' : ''}}
-                                <ul>
+                                <ul data-ng-show="policyResult.policy.type != 'uma'">
                                     <li data-ng-repeat="subPolicy in policyResult.associatedPolicies">
                                         <strong><a
                                                 href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{subPolicy.policy.type}}/{{subPolicy.policy.id}}">{{subPolicy.policy.name}}</a></strong>

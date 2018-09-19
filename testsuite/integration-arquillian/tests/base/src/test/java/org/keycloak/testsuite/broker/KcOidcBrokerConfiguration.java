@@ -65,7 +65,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         emailMapper.setName("email");
         emailMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         emailMapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
-        emailMapper.setConsentRequired(false);
 
         Map<String, String> emailMapperConfig = emailMapper.getConfig();
         emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
@@ -75,11 +74,36 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         emailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         emailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
 
+        ProtocolMapperRepresentation nestedAttrMapper = new ProtocolMapperRepresentation();
+        nestedAttrMapper.setName("attribute - nested claim");
+        nestedAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        nestedAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+
+        Map<String, String> nestedEmailMapperConfig = nestedAttrMapper.getConfig();
+        nestedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "nested.email");
+        nestedEmailMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "nested.email");
+        nestedEmailMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+        nestedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        nestedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        nestedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+
+        ProtocolMapperRepresentation dottedAttrMapper = new ProtocolMapperRepresentation();
+        dottedAttrMapper.setName("attribute - claim with dot in name");
+        dottedAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        dottedAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+
+        Map<String, String> dottedEmailMapperConfig = dottedAttrMapper.getConfig();
+        dottedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "dotted.email");
+        dottedEmailMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "dotted\\.email");
+        dottedEmailMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+        dottedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        dottedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        dottedEmailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+
         ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
         userAttrMapper.setName("attribute - name");
         userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        userAttrMapper.setConsentRequired(false);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
         userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
@@ -90,14 +114,27 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
         userAttrMapperConfig.put(ProtocolMapperUtils.MULTIVALUED, "true");
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper));
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, nestedAttrMapper, dottedAttrMapper));
 
         return Collections.singletonList(client);
     }
 
     @Override
     public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-        return null;
+        ClientRepresentation client = new ClientRepresentation();
+        client.setId("broker-app");
+        client.setClientId("broker-app");
+        client.setName("broker-app");
+        client.setSecret("broker-app-secret");
+        client.setEnabled(true);
+
+        client.setRedirectUris(Collections.singletonList(getAuthRoot(suiteContext) +
+                "/auth/*"));
+
+        client.setBaseUrl(getAuthRoot(suiteContext) +
+                "/auth/realms/" + REALM_CONS_NAME + "/app");
+
+        return Collections.singletonList(client);
     }
 
     @Override

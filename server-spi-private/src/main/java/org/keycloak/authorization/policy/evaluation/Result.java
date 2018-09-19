@@ -22,8 +22,10 @@ import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -31,33 +33,29 @@ import java.util.List;
 public class Result {
 
     private final ResourcePermission permission;
-    private List<PolicyResult> results = new ArrayList<>();
-    private Effect status;
+    private final Map<String, PolicyResult> results = new LinkedHashMap<>();
+    private final Evaluation evaluation;
+    private Effect status = Effect.DENY;
 
-    public Result(ResourcePermission permission) {
+    public Result(ResourcePermission permission, Evaluation evaluation) {
         this.permission = permission;
+        this.evaluation = evaluation;
     }
 
     public ResourcePermission getPermission() {
         return permission;
     }
 
-    public List<PolicyResult> getResults() {
-        return results;
+    public Collection<PolicyResult> getResults() {
+        return results.values();
+    }
+
+    public Evaluation getEvaluation() {
+        return evaluation;
     }
 
     public PolicyResult policy(Policy policy) {
-        for (PolicyResult result : this.results) {
-            if (result.getPolicy().equals(policy)) {
-                return result;
-            }
-        }
-
-        PolicyResult policyResult = new PolicyResult(policy);
-
-        this.results.add(policyResult);
-
-        return policyResult;
+        return results.computeIfAbsent(policy.getId(), id -> new PolicyResult(policy));
     }
 
     public void setStatus(final Effect status) {
@@ -68,35 +66,34 @@ public class Result {
         return status;
     }
 
+    public PolicyResult getPolicy(Policy policy) {
+        return results.get(policy.getId());
+    }
+
     public static class PolicyResult {
 
         private final Policy policy;
-        private List<PolicyResult> associatedPolicies = new ArrayList<>();
-        private Effect status;
+        private final Map<String, PolicyResult> associatedPolicies = new HashMap<>();
+        private Effect effect = Effect.DENY;
+
+        public PolicyResult(Policy policy, Effect status) {
+            this.policy = policy;
+            this.effect = status;
+        }
 
         public PolicyResult(Policy policy) {
-            this.policy = policy;
+            this(policy, Effect.DENY);
         }
 
-        public PolicyResult status(Effect status) {
-            this.status = status;
-            return this;
-        }
+        public PolicyResult policy(Policy policy, Effect effect) {
+            PolicyResult policyResult = associatedPolicies.get(policy.getId());
 
-        public PolicyResult policy(Policy policy) {
-            return getPolicy(policy, this.associatedPolicies);
-        }
-
-        private PolicyResult getPolicy(Policy policy, List<PolicyResult> results) {
-            for (PolicyResult result : results) {
-                if (result.getPolicy().equals(policy)) {
-                    return result;
-                }
+            if (policyResult == null) {
+                policyResult = new PolicyResult(policy, effect);
+                associatedPolicies.put(policy.getId(), policyResult);
+            } else {
+                policyResult.setEffect(effect);
             }
-
-            PolicyResult policyResult = new PolicyResult(policy);
-
-            results.add(policyResult);
 
             return policyResult;
         }
@@ -105,16 +102,16 @@ public class Result {
             return policy;
         }
 
-        public List<PolicyResult> getAssociatedPolicies() {
-            return associatedPolicies;
+        public Collection<PolicyResult> getAssociatedPolicies() {
+            return associatedPolicies.values();
         }
 
-        public Effect getStatus() {
-            return status;
+        public Effect getEffect() {
+            return effect;
         }
 
-        public void setStatus(final Effect status) {
-            this.status = status;
+        public void setEffect(final Effect status) {
+            this.effect = status;
         }
     }
 }

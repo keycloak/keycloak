@@ -33,6 +33,9 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
 import java.io.InputStream;
+import java.util.regex.Pattern;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import org.w3c.dom.Node;
@@ -43,7 +46,7 @@ import org.w3c.dom.Node;
  * @author Anil.Saldhana@redhat.com
  * @since Oct 12, 2010
  */
-public abstract class AbstractParser implements ParserNamespaceSupport {
+public abstract class AbstractParser implements StaxParser {
 
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
@@ -78,15 +81,15 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
     /**
      * Parse an InputStream for payload
      *
-     * @param configStream
+     * @param stream
      *
      * @return
      *
      * @throws {@link IllegalArgumentException}
      * @throws {@link IllegalArgumentException} when the configStream is null
      */
-    public Object parse(InputStream configStream) throws ParsingException {
-        XMLEventReader xmlEventReader = createEventReader(configStream);
+    public Object parse(InputStream stream) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(stream);
         return parse(xmlEventReader);
     }
 
@@ -99,19 +102,13 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         return parse(new DOMSource(node));
     }
 
-    public XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
+    public static XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
         if (configStream == null)
             throw logger.nullArgumentError("InputStream");
 
         XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(configStream);
 
-        try {
-            xmlEventReader = filterWhitespaces(xmlEventReader);
-        } catch (XMLStreamException e) {
-            throw logger.parserException(e);
-        }
-
-        return xmlEventReader;
+        return filterWhitespaces(xmlEventReader);
     }
 
     public XMLEventReader createEventReader(Source source) throws ParsingException {
@@ -120,36 +117,39 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
 
         XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(source);
 
-        try {
-            xmlEventReader = filterWhitespaces(xmlEventReader);
-        } catch (XMLStreamException e) {
-            throw logger.parserException(e);
-        }
-
-        return xmlEventReader;
+        return filterWhitespaces(xmlEventReader);
     }
 
-    protected XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws XMLStreamException {
+    private static final Pattern WHITESPACE_ONLY = Pattern.compile("\\s*");
+
+    /**
+     * Creates a derived {@link XMLEventReader} that ignores all events except for: {@link StartElement},
+     * {@link EndElement}, and non-empty and non-whitespace-only {@link Characters}.
+     * 
+     * @param xmlEventReader Original {@link XMLEventReader}
+     * @return Derived {@link XMLEventReader}
+     * @throws XMLStreamException
+     */
+    private static XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws ParsingException {
         XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
 
-        xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
-            public boolean accept(XMLEvent xmlEvent) {
-                // We are going to disregard characters that are new line and whitespace
-                if (xmlEvent.isCharacters()) {
-                    Characters chars = xmlEvent.asCharacters();
-                    String data = chars.getData();
-                    data = valid(data) ? data.trim() : null;
-                    return valid(data);
-                } else {
-                    return xmlEvent.isStartElement() || xmlEvent.isEndElement();
+        try {
+            xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
+                @Override
+                public boolean accept(XMLEvent xmlEvent) {
+                    // We are going to disregard characters that are new line and whitespace
+                    if (xmlEvent.isCharacters()) {
+                        Characters chars = xmlEvent.asCharacters();
+                        String data = chars.getData();
+                        return data != null && ! WHITESPACE_ONLY.matcher(data).matches();
+                    } else {
+                        return xmlEvent.isStartElement() || xmlEvent.isEndElement();
+                    }
                 }
-            }
-
-            private boolean valid(String str) {
-                return str != null && ! str.isEmpty();
-            }
-
-        });
+            });
+        } catch (XMLStreamException ex) {
+            throw logger.parserException(ex);
+        }
 
         // Handle IBM JDK bug with Stax parsing when EventReader presented
         if (Environment.IS_IBM_JAVA) {

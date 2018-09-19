@@ -20,16 +20,26 @@
 
     <ul class="nav nav-tabs nav-tabs-pf">
         <li><a href="#/realms/{{realm.realm}}/keys">{{:: 'active' | translate}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/keys/list">{{:: 'all' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys/passive">{{:: 'passive' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys/disabled">{{:: 'disabled' | translate}}</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/keys/providers">{{:: 'providers' | translate}}</a></li>
     </ul>
 
     <table class="table table-striped table-bordered">
         <thead>
-        <tr ng-show="providers.length > 0 && access.manageRealm">
-            <th colspan="7" class="kc-table-actions">
-                <div class="pull-right">
-                    <div>
+        <tr>
+            <th class="kc-table-actions" colspan="7">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search" class="form-control search">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pull-right" data-ng-show="access.manageClients">
                         <select class="form-control" ng-model="selectedProvider"
                                 ng-options="p.id for p in providers"
                                 data-ng-change="addProvider(selectedProvider); selectedProvider = null">
@@ -40,20 +50,18 @@
             </th>
         </tr>
         <tr data-ng-show="instances && instances.length > 0">
-            <th>{{:: 'type' | translate}}</th>
             <th>{{:: 'name' | translate}}</th>
-            <th>{{:: 'id' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
+            <th>{{:: 'providerHelpText' | translate}}</th>
             <th>{{:: 'priority' | translate}}</th>
             <th colspan="2">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="instance in instances">
-            <td>{{instance.provider.metadata.algorithmType}}</td>
-            <td>{{instance.name}}</td>
-            <td><a href="#/realms/{{realm.realm}}/keys/providers/{{instance.providerId}}/{{instance.id}}">{{instance.id}}</a></td>
+        <tr ng-repeat="instance in instances | filter:search">
+            <td><a href="#/realms/{{realm.realm}}/keys/providers/{{instance.providerId}}/{{instance.id}}">{{instance.name}}</a></td>
             <td>{{instance.providerId}}</td>
+            <td>{{instance.provider.helpText}}</td>
             <td>{{instance.config['priority'][0]}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/keys/providers/{{instance.providerId}}/{{instance.id}}">{{:: 'edit' | translate}}</td>
             <td class="kc-action-cell" ng-show="instances.length > 1" data-ng-click="removeInstance(instance)">{{:: 'delete' | translate}}</td>

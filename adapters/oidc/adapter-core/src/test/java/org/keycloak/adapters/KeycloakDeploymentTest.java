@@ -17,7 +17,9 @@
 package org.keycloak.adapters;
 
 import org.junit.Test;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -46,4 +48,21 @@ public class KeycloakDeploymentTest {
 
         assertTrue(keycloakDeployment.isOAuthQueryParameterEnabled());
     }
+
+    @Test
+    public void stripDefaultPorts() {
+        KeycloakDeployment keycloakDeployment = new KeycloakDeployment();
+        keycloakDeployment.setRealm("test");
+        AdapterConfig config = new AdapterConfig();
+        config.setAuthServerUrl("http://localhost:80/auth");
+        keycloakDeployment.setAuthServerBaseUrl(config);
+
+        assertEquals("http://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
+
+        config.setAuthServerUrl("https://localhost:443/auth");
+        keycloakDeployment.setAuthServerBaseUrl(config);
+
+        assertEquals("https://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
+    }
+
 }

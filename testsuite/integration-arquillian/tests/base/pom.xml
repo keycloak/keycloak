@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -43,8 +43,10 @@
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
         <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
         <exclude.x509>**/x509/*Test.java</exclude.x509>
-        <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
-        <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
+        <!-- KEYCLOAK-6771 exclude Mutual TLS Holder of Key Token x509 tests by default, enabled by 'ssl' profile -->
+        <exclude.HoK>**/hok/**/*Test.java</exclude.HoK>
+        <!-- see include-CORS-tests profile -->
+        <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
     
     <dependencies>
@@ -112,8 +114,33 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.2.1</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>photoz-restful-api</artifactId>
+            <type>war</type>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     
@@ -154,8 +181,9 @@
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.crossdc}</exclude>
-                        <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
+                        <exclude>${exclude.cors.tests}</exclude>
+                        <exclude>${exclude.HoK}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -164,7 +192,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-arquillian-xml-and-password-blacklists</id>
+                        <id>copy-common-dependencies</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -177,6 +205,7 @@
                                     <includes>
                                         <include>arquillian.xml</include>
                                         <include>password-blacklists/**</include>
+                                        <include>log4j.properties</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
@@ -224,7 +253,44 @@
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
                                 </artifactItem>
-                            </artifactItems>
+                             </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.1.6</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>1.9.2</goVersion>
+                    <useMavenProxy>true</useMavenProxy>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>get-mousetrap</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/inconshreveable/mousetrap</package>
+                            </packages>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>get-kcinit</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>github.com/keycloak/kcinit</package>
+                            </packages>
+                            <goPath>${project.build.directory}/gopath</goPath>
+                            <tag>0.5</tag>
                         </configuration>
                     </execution>
                 </executions>
@@ -236,9 +302,406 @@
 
     <profiles>
         <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.igormaznitsa</groupId>
+                        <artifactId>mvn-golang-wrapper</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-wildfly</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>wildfly</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>wildfly</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-wildfly-deprecated</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>wildfly-deprecated</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>wildfly-deprecated</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <arquillian-wildfly-container.version>${wildfly.deprecated.arquillian.wildfly.container}</arquillian-wildfly-container.version>
+                <infinispan.version>${wildfly.deprecated.infinispan.version}</infinispan.version>    <!-- KEYCLOAK-5302 -->
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-wildfly-deprecated</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.deprecated.wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-eap</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>eap</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-eap71</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap71</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>eap71</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-eap</app.server.artifactId><!-- Need to override -->
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-eap6</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap6</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>eap6</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
+                <infinispan.version>8.2.5.Final</infinispan.version>    <!-- KEYCLOAK-5302 -->
+
+                <app.server.management.protocol>remote</app.server.management.protocol>
+                <app.server.management.port>10199</app.server.management.port>
+                <app.server.1.management.port>10299</app.server.1.management.port>
+                <app.server.2.management.port>10399</app.server.2.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly10.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-fuse63</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse63</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>fuse63</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <!--fuse examples expect auth server on 8080-->
+                <auth.server.port.offset>0</auth.server.port.offset>
+                <auth.server.http.port>8080</auth.server.http.port>
+                <auth.server.management.port>9990</auth.server.management.port>
+                <!--fuse examples expect default karaf http port 8181-->
+                <app.server.http.port>8181</app.server.http.port>
+
+                <app.server.management.user>admin</app.server.management.user>
+                <app.server.management.password>admin</app.server.management.password>
+                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-fuse63</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-container-karaf-managed</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
+                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
+                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-fuse70</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse70</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>fuse70</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <!--fuse examples expect auth server on 8080-->
+                <auth.server.port.offset>0</auth.server.port.offset>
+                <auth.server.http.port>8080</auth.server.http.port>
+                <auth.server.management.port>9990</auth.server.management.port>
+                <!--fuse examples expect default karaf http port 8181-->
+                <app.server.http.port>8181</app.server.http.port>
+
+                <app.server.management.user>admin</app.server.management.user>
+                <app.server.management.password>admin</app.server.management.password>
+                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-fuse70</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-container-karaf-managed</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
+                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
+                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-fuse71</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>fuse71</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>fuse71</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+
+                <!--fuse examples expect auth server on 8080-->
+                <auth.server.port.offset>0</auth.server.port.offset>
+                <auth.server.http.port>8080</auth.server.http.port>
+                <auth.server.management.port>9990</auth.server.management.port>
+                <!--fuse examples expect default karaf http port 8181-->
+                <app.server.http.port>8181</app.server.http.port>
+
+                <app.server.management.user>admin</app.server.management.user>
+                <app.server.management.password>admin</app.server.management.password>
+                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-fuse71</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-container-karaf-managed</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
+                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
+                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
+                <exclude.crossdc>-</exclude.crossdc>
             </properties>
         </profile>
         <profile>
@@ -246,6 +709,26 @@
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
+                <exclude.crossdc>-</exclude.crossdc>
+            </properties>
+        </profile>
+        <profile>
+            <id>include-CORS-tests</id>
+            <!--
+            If you want to run CORS tests it is necessary to put
+
+            127.0.0.1 localhost-auth
+            127.0.0.1 localhost-db
+
+            to your /etc/hosts file
+            -->
+            <activation>
+                <property>
+                    <name>includeCorsTests</name>
+                </property>
+            </activation>
+            <properties>
+                <exclude.cors.tests>-</exclude.cors.tests>
             </properties>
         </profile>
     </profiles>

@@ -17,8 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +30,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.jgroups.JChannel;
 import org.keycloak.common.util.Time;
@@ -71,12 +69,10 @@ public class DistributedCacheWriteSkewTest {
         session.setStarted(Time.currentTime());
         session.setLastSessionRefresh(Time.currentTime());
 
-        AuthenticatedClientSessionEntity clientSession = new AuthenticatedClientSessionEntity();
+        AuthenticatedClientSessionEntity clientSession = new AuthenticatedClientSessionEntity(UUID.randomUUID());
         clientSession.setAuthMethod("saml");
         clientSession.setAction("something");
         clientSession.setTimestamp(1234);
-        clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
-        clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
         session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         cache1.put("123", session);
@@ -206,7 +202,7 @@ public class DistributedCacheWriteSkewTest {
 
            // distConfigBuilder.invocationBatching().enable();
             //distConfigBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-            distConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+            distConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
             distConfigBuilder.transaction().lockingMode(LockingMode.OPTIMISTIC);
         }
         Configuration distConfig = distConfigBuilder.build();

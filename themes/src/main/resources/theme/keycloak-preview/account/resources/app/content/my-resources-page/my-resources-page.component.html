@@ -1,0 +1,233 @@
+<div class="page-header">
+  <h1 id="pageTitle">{{'resources' | translate}}</h1>
+</div>
+<div class="col-sm-12 card-pf resources-list">
+  <div class="card-pf-body row">
+    <ul class="nav nav-tabs">
+      <li class="active"><a href="#">{{'myResources' | translate}}</a></li>
+      <li><a href="#">{{'sharedwithMe' | translate}}</a></li>
+    </ul>
+    <div class="m-t">
+      <div id="pf-list-var3" class="list-group list-view-pf list-view-resources">
+        <div class="list-group-item pfng-list-heading list-head-labels list-view-pf-stacked list-view-pf-top-align">
+          <div class="list-view-pf-actions">
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-body row">
+              <div class="col-md-4">
+                {{'resource' | translate}}
+              </div>
+              <div class="col-md-3">
+                {{'application' | translate}}
+              </div>
+              <div class="col-md-3">
+                {{'date' | translate}}
+              </div>
+              <div class="col-md-2">
+                {{'sharedwith' | translate}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-group-item list-view-pf-stacked list-view-pf-top-align">
+          <div class="list-view-pf-actions">
+            <button class="btn btn-default" data-toggle="modal" data-target="#myModal">{{'share' | translate}}</button>
+            <div class="dropdown pull-right dropdown-kebab-pf">
+              <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="fa fa-ellipsis-v"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight3">
+                <li><a href="#">{{'remove' | translate}}</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-body row">
+              <div class="col-md-4 list-group-item-heading">
+                <span class="fa fa-file"></span> <a href="#">Alice Family</a>
+              </div>
+              <div class="col-md-3">
+                <a href="#">photoz-rest-api</a>
+              </div>
+              <div class="col-md-3">
+                2018/05/15 16:32
+              </div>
+              <div class="col-md-2">
+                <label class="resource-list-label">{{'sharedwith' | translate}}</label> <a href="#"> 3 {{'people' | translate}}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-group-item list-view-pf-stacked list-view-pf-top-align">
+          <div class="list-view-pf-actions">
+            <button class="btn btn-default" data-toggle="modal" data-target="#myModal">{{'share' | translate}}</button>
+            <div class="dropdown pull-right dropdown-kebab-pf">
+              <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="fa fa-ellipsis-v"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight3">
+                <li><a href="#">{{'remove' | translate}}</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-body row">
+              <div class="col-md-4 list-group-item-heading">
+                <span class="fa fa-file"></span> <a href="#">Patternfly 4</a>
+              </div>
+              <div class="col-md-3">
+                <a href="#">photoz-rest</a>
+              </div>
+              <div class="col-md-3">
+                2018/05/15 12:32
+              </div>
+              <div class="col-md-2">
+                <label class="resource-list-label">{{'sharedwith' | translate}}</label> <a href="#"> 12 {{'people' | translate}}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-group-item list-view-pf-stacked list-view-pf-top-align">
+          <div class="list-view-pf-actions">
+            <button class="btn btn-default" data-toggle="modal" data-target="#myModal">{{'share' | translate}}</button>
+            <div class="dropdown pull-right dropdown-kebab-pf">
+              <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="fa fa-ellipsis-v"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight3">
+                <li><a href="#">{{'remove' | translate}}</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="list-view-pf-main-info">
+            <div class="list-view-pf-body row">
+              <div class="col-md-4 list-group-item-heading">
+                <span class="fa fa-file"></span> <a href="#">Patternfly document update</a>
+              </div>
+              <div class="col-md-3">
+                <a href="#">photoz-rest-api</a>
+              </div>
+              <div class="col-md-3">
+                2018/05/10 11:32
+              </div>
+              <div class="col-md-2">
+                <label class="resource-list-label">{{'sharedwith' | translate}}</label> <a href="#"> 8 {{'people' | translate}}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form class="content-view-pf-pagination table-view-pf-pagination clearfix" id="pagination1">
+          <div class="form-group">
+            <select class="selectpicker pagination-pf-pagesize">
+              <option value="6">6</option>
+              <option value="10" >10</option>
+              <option value="15" selected="selected">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <span>{{'perPage' | translate}}</span>
+          </div>
+          <div class="form-group">
+            <span><span class="pagination-pf-items-current">1-15</span> of <span class="pagination-pf-items-total">75</span></span>
+            <ul class="pagination pagination-pf-back">
+              <li class="disabled"><a href="#" title="First Page"><span class="i fa fa-angle-double-left"></span></a></li>
+              <li class="disabled"><a href="#" title="Previous Page"><span class="i fa fa-angle-left"></span></a></li>
+            </ul>
+            <label for="pagination1-page" class="sr-only">{{'currentPage' | translate}}</label>
+            <input class="pagination-pf-page" type="text" value="1" id="pagination1-page"/>
+            <span>of <span class="pagination-pf-pages">5</span></span>
+            <ul class="pagination pagination-pf-forward">
+              <li><a href="#" title="Next Page"><span class="i fa fa-angle-right"></span></a></li>
+              <li><a href="#" title="Last Page"><span class="i fa fa-angle-double-right"></span></a></li>
+            </ul>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">{{'sharetheResource' | translate}}-<span> Alice Family </span></h4>
+      </div>
+      <div class="modal-body">
+        <ul id="myTab" class="nav nav-tabs">
+          <li class="active">
+            <a href="#home" data-toggle="tab">
+              <span class="fa fa-user"></span> {{'user' | translate}}
+            </a>
+          </li>
+          <li>
+            <a href="#team" data-toggle="tab">
+              <span class="fa fa-users"></span> Group
+            </a>
+          </li>
+        </ul>
+        <div id="myTabContent" class="tab-content resource-share-content">
+          <div class="tab-pane fade in active" id="home">
+            <form class="form-horizontal">
+              <div class="form-group">
+                <label class="col-sm-12" for="textInput-modal-markup">{{'addPeople' | translate}}</label>
+                <div class="col-sm-12">
+                  <input type="text" id="textInput-modal-markup" class="form-control" placeholder="Username or email">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-md-12" for="boostrapSelect">{{'selectPermission' | translate}}</label>
+                <div class="col-md-12">
+                  <select class="selectpicker" multiple data-selected-text-format="count>3" id="boostrapSelect">
+                    <option>Mustard</option>
+                    <option>Ketchup</option>
+                    <option>Relish</option>
+                    <option>Onions</option>
+                    <option>Mushrooms</option>
+                    <option>Pickles</option>
+                    <option>Mayonnaise</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="tab-pane fade" id="team">
+            <form class="form-horizontal">
+              <div class="form-group">
+                <label class="col-sm-12" for="textInput-modal-markup">{{'addTeam' | translate}}</label>
+                <div class="col-sm-12">
+                  <input type="text" id="textInput-modal-markup" class="form-control" placeholder="Team name">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-md-12" for="boostrapSelect">{{'selectPermission' | translate}}</label>
+                <div class="col-md-12">
+                  <select class="selectpicker" multiple data-selected-text-format="count>3" id="boostrapSelect">
+                    <option>Mustard</option>
+                    <option>Ketchup</option>
+                    <option>Relish</option>
+                    <option>Onions</option>
+                    <option>Mushrooms</option>
+                    <option>Pickles</option>
+                    <option>Mayonnaise</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Done</button>
+        <button type="button" class="btn btn-primary">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Modal -->

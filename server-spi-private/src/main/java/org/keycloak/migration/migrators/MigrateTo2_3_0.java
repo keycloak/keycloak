@@ -20,9 +20,10 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,14 +35,23 @@ public class MigrateTo2_3_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
-            for (ClientModel client : realm.getClients()) {
-                MigrationUtils.updateProtocolMappers(client);
-            }
-
-            for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-                MigrationUtils.updateProtocolMappers(clientTemplate);
-            }
+            migrateRealm(realm);
         }
+    }
+
+    protected void migrateRealm(RealmModel realm) {
+        for (ClientModel client : realm.getClients()) {
+            MigrationUtils.updateProtocolMappers(client);
+        }
+
+        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+            MigrationUtils.updateProtocolMappers(clientScope);
+        }
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateRealm(realm);
     }
 
     @Override

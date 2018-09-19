@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.1.Final-SNAPSHOT</version>
+        <version>4.5.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -126,7 +126,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
@@ -135,6 +135,10 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>owasp-java-html-sanitizer</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -174,6 +178,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.icegreen</groupId>
             <artifactId>greenmail</artifactId>
             <scope>test</scope>
@@ -204,27 +213,6 @@
     <profiles>
         <profile>
             <id>jboss-release</id>
-
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>central</id>
-                    <name>bintray</name>
-                    <url>https://jcenter.bintray.com</url>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>central</id>
-                    <name>bintray</name>
-                    <url>https://jcenter.bintray.com</url>
-                </pluginRepository>
-            </pluginRepositories>
 
             <build>
                 <plugins>
@@ -288,6 +276,28 @@
                         <groupId>io.github.swagger2markup</groupId>
                         <artifactId>swagger2markup-maven-plugin</artifactId>
                         <version>1.1.0</version>
+
+                        <!-- Replace the dependencies that aren't in Maven Central -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>ca.szc.thirdparty.nl.jworks.markdown_to_asciidoc</groupId>
+                                <artifactId>markdown_to_asciidoc</artifactId>
+                                <!-- Keep in sync with markup-document-builder's dependency -->
+                                <version>1.0</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>io.github.swagger2markup</groupId>
+                                <artifactId>swagger2markup</artifactId>
+                                <!-- Keep in sync with swagger2markup-maven-plugin's dependency -->
+                                <version>1.1.0</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>nl.jworks.markdown_to_asciidoc</groupId>
+                                        <artifactId>markdown_to_asciidoc</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
 
                         <executions>
                             <execution>

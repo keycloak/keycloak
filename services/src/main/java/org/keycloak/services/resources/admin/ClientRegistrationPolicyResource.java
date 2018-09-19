@@ -17,16 +17,6 @@
 
 package org.keycloak.services.resources.admin;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -38,6 +28,14 @@ import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyFactory;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Registration Policy
@@ -51,9 +49,6 @@ public class ClientRegistrationPolicyResource {
 
     @Context
     protected KeycloakSession session;
-
-    @Context
-    protected UriInfo uriInfo;
 
     public ClientRegistrationPolicyResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;

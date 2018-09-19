@@ -26,67 +26,30 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { KeycloakService } from './keycloak-service/keycloak.service';
 import { KEYCLOAK_HTTP_PROVIDER } from './keycloak-service/keycloak.http';
+import {KeycloakGuard} from './keycloak-service/keycloak.guard';
 
-import {ResponsivenessService} from './responsiveness-service/responsiveness.service'
+import {ResponsivenessService} from './responsiveness-service/responsiveness.service';
+import {KeycloakNotificationService} from './notification/keycloak-notification.service';
 
 import { AccountServiceClient } from './account-service/account.service';
 import {TranslateUtil} from './ngx-translate/translate.util';
 
 import { DeclaredVarTranslateLoader } from './ngx-translate/declared.var.translate.loader';
 import { AppComponent } from './app.component';
-import { TopNavComponent } from './top-nav/top-nav.component';
-import { NotificationComponent } from './top-nav/notification.component';
-import { ToastNotifier } from './top-nav/toast.notifier';
-import { SideNavComponent } from './side-nav/side-nav.component';
-import { AccountPageComponent } from './content/account-page/account-page.component';
-import { PasswordPageComponent } from './content/password-page/password-page.component';
-import { PageNotFoundComponent } from './content/page-not-found/page-not-found.component';
+import {VerticalNavComponent} from './vertical-nav/vertical-nav.component';
+import {InlineNotification} from './notification/inline-notification-component';
 
-import { AuthenticatorPageComponent } from './content/authenticator-page/authenticator-page.component';
+import { VerticalNavigationModule } from 'patternfly-ng/navigation';
+import {InlineNotificationModule} from 'patternfly-ng/notification/inline-notification';
 
-import { SessionsPageComponent } from './content/sessions-page/sessions-page.component';
-import { LargeSessionCardComponent } from './content/sessions-page/large-session-card.component';
-import { SmallSessionCardComponent } from './content/sessions-page/small-session-card.component';
 
-import { ApplicationsPageComponent } from './content/applications-page/applications-page.component';
-import { LargeAppCardComponent } from './content/applications-page/large-app-card.component';
-import { SmallAppCardComponent } from './content/applications-page/small-app-card.component';
-import { RowAppCardComponent } from './content/applications-page/row-app-card.component';
-
-import { ToolbarComponent } from './content/widgets/toolbar.component';
-
-import {OrderbyPipe} from './pipes/orderby.pipe';
-import {FilterbyPipe} from './pipes/filterby.pipe';
-
-const routes: Routes = [
-    { path: 'account', component: AccountPageComponent },
-    { path: 'password', component: PasswordPageComponent },
-    { path: 'authenticator', component: AuthenticatorPageComponent },
-    { path: 'sessions', component: SessionsPageComponent },
-    { path: 'applications', component: ApplicationsPageComponent },
-    { path: '', redirectTo: '/account', pathMatch: 'full' },
-    { path: '**', component: PageNotFoundComponent}
-];
+/* Routing Module */
+import { AppRoutingModule } from './app-routing.module';
 
 const decs = [
     AppComponent,
-    TopNavComponent,
-    NotificationComponent,
-    SideNavComponent,
-    AccountPageComponent,
-    PasswordPageComponent,
-    PageNotFoundComponent,
-    AuthenticatorPageComponent,
-    SessionsPageComponent,
-    LargeSessionCardComponent,
-    SmallSessionCardComponent,
-    ApplicationsPageComponent,
-    LargeAppCardComponent,
-    SmallAppCardComponent,
-    RowAppCardComponent,
-    ToolbarComponent,
-    OrderbyPipe,
-    FilterbyPipe
+    VerticalNavComponent,
+    InlineNotification,
 ];
 
 export const ORIGINAL_INCOMING_URL: Location = window.location;
@@ -97,18 +60,21 @@ export const ORIGINAL_INCOMING_URL: Location = window.location;
     BrowserModule,
     FormsModule,
     HttpModule,
+    VerticalNavigationModule,
+    InlineNotificationModule,
     TranslateModule.forRoot({
         loader: {provide: TranslateLoader, useClass: DeclaredVarTranslateLoader}
     }),
-    RouterModule.forRoot(routes)
+    AppRoutingModule,
   ],
   providers: [
     KeycloakService,
+    KeycloakGuard,
     KEYCLOAK_HTTP_PROVIDER,
     ResponsivenessService,
+    KeycloakNotificationService,
     AccountServiceClient,
     TranslateUtil,
-    ToastNotifier,
     { provide: LocationStrategy, useClass: HashLocationStrategy }
   ],
   bootstrap: [AppComponent]

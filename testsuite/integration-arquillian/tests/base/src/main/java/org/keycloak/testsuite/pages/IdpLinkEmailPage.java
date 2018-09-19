@@ -30,7 +30,7 @@ public class IdpLinkEmailPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().startsWith("Link ");
+        return PageUtils.getPageTitle(driver).startsWith("Link ");
     }
 
     @Override

@@ -53,6 +53,7 @@ class TestCacheManagerFactory {
         Configuration invalidationCacheConfiguration = getCacheBackedByRemoteStore(threadId, cacheName, builderClass);
 
         cacheManager.defineConfiguration(cacheName, invalidationCacheConfiguration);
+        cacheManager.defineConfiguration("local", new ConfigurationBuilder().build());
         return cacheManager;
 
     }
@@ -75,6 +76,8 @@ class TestCacheManagerFactory {
                 .rawValues(true)
                 .forceReturnValues(false)
                 .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
+                //.protocolVersion(ProtocolVersion.PROTOCOL_VERSION_26)
+                //.maxBatchSize(5)
                 .addServer()
                     .host(host)
                     .port(port)

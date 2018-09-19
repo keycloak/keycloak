@@ -1,1 +1,0 @@
-commons-codec,commons-codec,1.9,Apache Software License 2.0.txt

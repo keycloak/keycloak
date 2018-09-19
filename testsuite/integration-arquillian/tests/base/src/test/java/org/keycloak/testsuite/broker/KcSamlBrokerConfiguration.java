@@ -56,9 +56,14 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
+        String clientId = getIDPClientIdInProviderRealm(suiteContext);
+        return Arrays.asList(createProviderClient(suiteContext, clientId));
+    }
+
+    private ClientRepresentation createProviderClient(SuiteContext suiteContext, String clientId) {
         ClientRepresentation client = new ClientRepresentation();
 
-        client.setClientId(getIDPClientIdInProviderRealm(suiteContext));
+        client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
@@ -85,7 +90,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         emailMapper.setName("email");
         emailMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         emailMapper.setProtocolMapper(UserPropertyAttributeStatementMapper.PROVIDER_ID);
-        emailMapper.setConsentRequired(false);
 
         Map<String, String> emailMapperConfig = emailMapper.getConfig();
         emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
@@ -93,11 +97,30 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
         emailMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "email");
 
+        ProtocolMapperRepresentation dottedAttrMapper = new ProtocolMapperRepresentation();
+        dottedAttrMapper.setName("email - dotted");
+        dottedAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        dottedAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+
+        Map<String, String> dottedEmailMapperConfig = dottedAttrMapper.getConfig();
+        dottedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "dotted.email");
+        dottedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "dotted.email");
+        dottedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+
+        ProtocolMapperRepresentation nestedAttrMapper = new ProtocolMapperRepresentation();
+        nestedAttrMapper.setName("email - nested");
+        nestedAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        nestedAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+
+        Map<String, String> nestedEmailMapperConfig = nestedAttrMapper.getConfig();
+        nestedEmailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "nested.email");
+        nestedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "nested.email");
+        nestedEmailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+
         ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
         userAttrMapper.setName("attribute - name");
         userAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         userAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
-        userAttrMapper.setConsentRequired(false);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
         userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
@@ -109,7 +132,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userFriendlyAttrMapper.setName("attribute - friendly name");
         userFriendlyAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         userFriendlyAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
-        userFriendlyAttrMapper.setConsentRequired(false);
 
         Map<String, String> userFriendlyAttrMapperConfig = userFriendlyAttrMapper.getConfig();
         userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
@@ -117,9 +139,9 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userFriendlyAttrMapper));
+        client.setProtocolMappers(Arrays.asList(emailMapper, dottedAttrMapper, nestedAttrMapper, userAttrMapper, userFriendlyAttrMapper));
 
-        return Collections.singletonList(client);
+        return client;
     }
 
     @Override
@@ -134,6 +156,25 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .addRedirectUri("http://localhost:8080/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build(),
+          ClientBuilder.create()
+            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted")
+            .enabled(true)
+            .fullScopeEnabled(true)
+            .protocol(SamlProtocol.LOGIN_PROTOCOL)
+            .baseUrl("http://localhost:8080/sales-post")
+            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build(),
+          ClientBuilder.create()
+            .id("broker-app")
+            .clientId("broker-app")
+            .name("broker-app")
+            .secret("broker-app-secret")
+            .enabled(true)
+            .addRedirectUri(getAuthRoot(suiteContext) + "/auth/*")
+            .baseUrl(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()
         );
     }

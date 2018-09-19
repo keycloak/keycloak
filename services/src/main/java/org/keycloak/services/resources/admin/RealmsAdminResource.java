@@ -28,6 +28,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -48,7 +49,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,13 +124,12 @@ public class RealmsAdminResource {
      *
      * Imports a realm from a full representation of that realm.  Realm name must be unique.
      *
-     * @param uriInfo
      * @param rep JSON representation of the realm
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
+    public Response importRealm(final RealmRepresentation rep) {
         RealmManager realmManager = new RealmManager(session);
         realmManager.setContextPath(keycloak.getContextPath());
         AdminPermissions.realms(session, auth).requireCreateRealm();
@@ -141,13 +140,17 @@ public class RealmsAdminResource {
             RealmModel realm = realmManager.importRealm(rep);
             grantPermissionsToRealmCreator(realm);
 
-            URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
+            URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             logger.error("Conflict detected", e);
             return ErrorResponse.exists("Conflict detected. See logs for details");
+        } catch (PasswordPolicyNotMetException e) {
+            logger.error("Password policy not met for user " + e.getUsername(), e);
+            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
+            return ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
         }
     }
 

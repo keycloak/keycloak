@@ -27,7 +27,6 @@
                     "name": "role list",
                     "protocol": "saml",
                     "protocolMapper": "saml-role-list-mapper",
-                    "consentRequired": false,
                     "config": {
                         "attribute.name": "Role",
                         "attribute.nameformat": "Basic",
@@ -39,7 +38,6 @@
                     "name": "mobile",
                     "protocol": "saml",
                     "protocolMapper": "saml-user-attribute-mapper",
-                    "consentRequired": false,
                     "config": {
                         "user.attribute": "mobile",
                         "attribute.name": "mobile",
@@ -50,7 +48,6 @@
                     "name": "email",
                     "protocol": "saml",
                     "protocolMapper": "saml-user-property-mapper",
-                    "consentRequired": false,
                     "config": {
                         "user.attribute": "email",
                         "attribute.name": "urn:oid:1.2.840.113549.1.9.1",

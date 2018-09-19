@@ -23,6 +23,7 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
@@ -30,19 +31,19 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.w3c.dom.NodeList;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.crypto.dsig.XMLSignature;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -57,16 +58,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.xml.crypto.dsig.XMLSignature;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.Matchers.*;
-import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
-import org.w3c.dom.NodeList;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -449,6 +453,72 @@ public class IdentityProviderTest extends AbstractAdminTest {
         }
     }
 
+    // KEYCLOAK-4962
+    @Test
+    public void testUpdateProtocolMappers() {
+        create(createRep("google2", "google"));
+
+        IdentityProviderResource provider = realm.identityProviders().get("google2");
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias("google2");
+        mapper.setName("my_mapper");
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", "");
+        mapper.setConfig(config);
+
+        Response response = provider.addMapper(mapper);
+        String mapperId = ApiUtil.getCreatedId(response);
+
+
+        List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals(0, mappers.get(0).getConfig().size());
+
+        mapper = provider.getMapperById(mapperId);
+        mapper.getConfig().put("role", "offline_access");
+
+        provider.update(mapperId, mapper);
+
+        mappers = provider.getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals(1, mappers.get(0).getConfig().size());
+        assertEquals("offline_access", mappers.get(0).getConfig().get("role"));
+    }
+
+    // KEYCLOAK-7872
+    @Test
+    public void testDeleteProtocolMappersAfterDeleteIdentityProvider() {
+        create(createRep("google3", "google"));
+
+        IdentityProviderResource provider = realm.identityProviders().get("google3");
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias("google3");
+        mapper.setName("my_mapper");
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", "offline_access");
+        mapper.setConfig(config);
+
+        Response response = provider.addMapper(mapper);
+
+        List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
+        assertThat(mappers, hasSize(1));
+
+        assertAdminEvents.clear();
+
+        provider.remove();
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("google3"), ResourceType.IDENTITY_PROVIDER);
+
+        create(createRep("google3", "google"));
+
+        IdentityProviderResource newProvider = realm.identityProviders().get("google3");
+
+        assertThat(newProvider.getMappers(), empty());
+    }
+
     @Test
     public void testInstalledIdentityProviders() {
         Response response = realm.identityProviders().getIdentityProviders("oidc");
@@ -562,8 +632,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
     private void assertSamlExport(String body) throws ParsingException, URISyntaxException {
         //System.out.println(body);
 
-        Object entBody = new SAMLEntityDescriptorParser().parse(StaxParserUtil.getXMLEventReader(
-                new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8")))));
+        Object entBody = SAMLParser.getInstance().parse(
+                new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8"))));
 
         Assert.assertEquals("Parsed export type", EntityDescriptorType.class, entBody.getClass());
         EntityDescriptorType entity = (EntityDescriptorType) entBody;
@@ -582,12 +652,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         Assert.assertTrue("AuthnRequestsSigned", desc.isAuthnRequestsSigned());
 
-        Set<String> expected = new HashSet(Arrays.asList(
+        Set<String> expected = new HashSet<>(Arrays.asList(
                 "urn:oasis:names:tc:SAML:2.0:protocol",
                 "urn:oasis:names:tc:SAML:1.1:protocol",
                 "http://schemas.xmlsoap.org/ws/2003/07/secext"));
 
-        Set<String> actual = new HashSet(desc.getProtocolSupportEnumeration());
+        Set<String> actual = new HashSet<>(desc.getProtocolSupportEnumeration());
 
         Assert.assertEquals("ProtocolSupportEnumeration", expected, actual);
 

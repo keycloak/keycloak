@@ -20,6 +20,7 @@ package org.keycloak.migration.migrators;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,13 +36,22 @@ public class MigrateTo1_9_2 implements Migration {
 
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
-            if (realm.getBrowserSecurityHeaders() != null) {
+            migrateRealm(realm);
+        }
+    }
 
-                Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
-                browserSecurityHeaders.put("xContentTypeOptions", "nosniff");
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateRealm(realm);
+    }
 
-                realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
-            }
+    protected void migrateRealm(RealmModel realm) {
+        if (realm.getBrowserSecurityHeaders() != null) {
+
+            Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
+            browserSecurityHeaders.put("xContentTypeOptions", "nosniff");
+
+            realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
         }
     }
 

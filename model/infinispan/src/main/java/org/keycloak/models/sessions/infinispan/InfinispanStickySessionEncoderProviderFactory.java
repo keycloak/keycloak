@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -30,22 +31,26 @@ import org.keycloak.sessions.StickySessionEncoderProviderFactory;
  */
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory {
 
+    private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);
+
+
+    private boolean shouldAttachRoute;
 
     @Override
     public StickySessionEncoderProvider create(KeycloakSession session) {
-        String myNodeName = InfinispanUtil.getMyAddress(session);
-
-        if (myNodeName != null && myNodeName.startsWith(InfinispanConnectionProvider.NODE_PREFIX)) {
-
-            // Node name was randomly generated. We won't use anything for sticky sessions in this case
-            myNodeName = null;
-        }
-
-        return new InfinispanStickySessionEncoderProvider(session, myNodeName);
+        return new InfinispanStickySessionEncoderProvider(session, shouldAttachRoute);
     }
 
     @Override
     public void init(Config.Scope config) {
+        this.shouldAttachRoute = config.getBoolean("shouldAttachRoute", true);
+        log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
+
+    }
+
+    // Used for testing
+    public void setShouldAttachRoute(boolean shouldAttachRoute) {
+        this.shouldAttachRoute = shouldAttachRoute;
     }
 
     @Override

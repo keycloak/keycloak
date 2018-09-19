@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.adapter.page;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
 import java.net.URL;
@@ -30,7 +30,7 @@ import java.net.URL;
 public class AppServerContextRoot extends AbstractPageWithInjectedUrl {
 
     @ArquillianResource
-    @AppServerContext
+    @AppServerBrowserContext
     private URL appServerContextRoot;
 
     @Override

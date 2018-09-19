@@ -17,13 +17,16 @@
 
 package org.keycloak.keys;
 
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
@@ -31,110 +34,52 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractRsaKeyProvider implements RsaKeyProvider {
+public abstract class AbstractRsaKeyProvider implements KeyProvider {
 
-    private final boolean enabled;
-
-    private final boolean active;
+    private final KeyStatus status;
 
     private final ComponentModel model;
 
-    private final Keys keys;
+    private final KeyWrapper key;
+
+    private final String algorithm;
 
     public AbstractRsaKeyProvider(RealmModel realm, ComponentModel model) {
         this.model = model;
+        this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
+        this.algorithm = model.get(Attributes.ALGORITHM_KEY, Algorithm.RS256);
 
-        this.enabled = model.get(Attributes.ENABLED_KEY, true);
-        this.active = model.get(Attributes.ACTIVE_KEY, true);
-
-        if (model.hasNote(Keys.class.getName())) {
-            keys = model.getNote(Keys.class.getName());
+        if (model.hasNote(KeyWrapper.class.getName())) {
+            key = model.getNote(KeyWrapper.class.getName());
         } else {
-            keys = loadKeys(realm, model);
-            model.setNote(Keys.class.getName(), keys);
+            key = loadKey(realm, model);
+            model.setNote(KeyWrapper.class.getName(), key);
         }
     }
 
-    protected abstract Keys loadKeys(RealmModel realm, ComponentModel model);
+    protected abstract KeyWrapper loadKey(RealmModel realm, ComponentModel model);
 
     @Override
-    public final String getKid() {
-        return isActive() ? keys.getKid() : null;
+    public List<KeyWrapper> getKeys() {
+        return Collections.singletonList(key);
     }
 
-    @Override
-    public final PrivateKey getPrivateKey() {
-        return isActive() ? keys.getKeyPair().getPrivate() : null;
-    }
+    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate) {
+        KeyWrapper key = new KeyWrapper();
 
-    @Override
-    public final PublicKey getPublicKey(String kid) {
-        return isEnabled() && kid.equals(keys.getKid()) ? keys.getKeyPair().getPublic() : null;
-    }
+        key.setProviderId(model.getId());
+        key.setProviderPriority(model.get("priority", 0l));
 
-    @Override
-    public X509Certificate getCertificate(String kid) {
-        return isEnabled() && kid.equals(keys.getKid()) ? keys.getCertificate() : null;
-    }
+        key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+        key.setUse(KeyUse.SIG);
+        key.setType(KeyType.RSA);
+        key.setAlgorithm(algorithm);
+        key.setStatus(status);
+        key.setSignKey(keyPair.getPrivate());
+        key.setVerifyKey(keyPair.getPublic());
+        key.setCertificate(certificate);
 
-    @Override
-    public final List<RsaKeyMetadata> getKeyMetadata() {
-        String kid = keys.getKid();
-        PublicKey publicKey = keys.getKeyPair().getPublic();
-        if (kid != null && publicKey != null) {
-            RsaKeyMetadata k = new RsaKeyMetadata();
-            k.setProviderId(model.getId());
-            k.setProviderPriority(model.get(Attributes.PRIORITY_KEY, 0l));
-            k.setKid(kid);
-            if (isActive()) {
-                k.setStatus(KeyMetadata.Status.ACTIVE);
-            } else if (isEnabled()) {
-                k.setStatus(KeyMetadata.Status.PASSIVE);
-            } else {
-                k.setStatus(KeyMetadata.Status.DISABLED);
-            }
-            k.setPublicKey(publicKey);
-            k.setCertificate(keys.getCertificate());
-            return Collections.singletonList(k);
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
-    public void close() {
-    }
-
-    private boolean isEnabled() {
-        return keys != null && enabled;
-    }
-
-    private boolean isActive() {
-        return isEnabled() && active;
-    }
-
-    public static class Keys {
-        private String kid;
-        private KeyPair keyPair;
-        private X509Certificate certificate;
-
-        public Keys(String kid, KeyPair keyPair, X509Certificate certificate) {
-            this.kid = kid;
-            this.keyPair = keyPair;
-            this.certificate = certificate;
-        }
-
-        public String getKid() {
-            return kid;
-        }
-
-        public KeyPair getKeyPair() {
-            return keyPair;
-        }
-
-        public X509Certificate getCertificate() {
-            return certificate;
-        }
+        return key;
     }
 
 }

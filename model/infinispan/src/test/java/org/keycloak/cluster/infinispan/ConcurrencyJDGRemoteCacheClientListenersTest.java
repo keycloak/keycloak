@@ -19,6 +19,8 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.infinispan.Cache;
@@ -41,7 +43,7 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
  * Test that hotrod ClientListeners are correctly executed as expected
  *
  * STEPS TO REPRODUCE:
- * - Unzip infinispan-server-8.2.6.Final to some locations ISPN1 and ISPN2
+ * - Unzip infinispan-server-9.2.4.Final to some locations ISPN1 and ISPN2
  *
  * - Edit both ISPN1/standalone/configuration/clustered.xml and ISPN2/standalone/configuration/clustered.xml . Configure cache in container "clustered"
  *
@@ -55,7 +57,7 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
  ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true -Djboss.socket.binding.port-offset=1010 -Djboss.default.multicast.address=234.56.78.99 -Djboss.node.name=cache-server
 
     - Run server2
- ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true -Djboss.socket.binding.port-offset=2010 -Djboss.default.multicast.address=234.56.78.99 -Djboss.node.name=cache-server-dc-2
+ ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true -Djboss.socket.binding.port-offset=2010 -Djboss.default.multicast.address=234.56.78.100 -Djboss.node.name=cache-server-dc-2
 
     - Run this test as main class from IDE
  *
@@ -145,10 +147,12 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
         private final RemoteCache<String, Integer> remoteCache;
         private final int threadId;
+        private Executor executor;
 
         public HotRodListener(Cache<String, Integer> cache, int threadId) {
             this.remoteCache = InfinispanUtil.getRemoteCache(cache);
             this.threadId = threadId;
+            this.executor = Executors.newCachedThreadPool();
         }
 
         //private AtomicInteger listenerCount = new AtomicInteger(0);
@@ -156,7 +160,12 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         @ClientCacheEntryCreated
         public void created(ClientCacheEntryCreatedEvent event) {
             String cacheKey = (String) event.getKey();
-            event(cacheKey, event.getVersion(), true);
+
+            executor.execute(() -> {
+
+                event(cacheKey, event.getVersion(), true);
+
+            });
 
         }
 
@@ -164,7 +173,11 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         @ClientCacheEntryModified
         public void updated(ClientCacheEntryModifiedEvent event) {
             String cacheKey = (String) event.getKey();
-            event(cacheKey, event.getVersion(), false);
+            executor.execute(() -> {
+
+                event(cacheKey, event.getVersion(), false);
+
+            });
         }
 
 
@@ -174,7 +187,7 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
             totalListenerCalls.incrementAndGet();
 
-            VersionedValue<Integer> versionedVal = remoteCache.getVersioned(cacheKey);
+            VersionedValue<Integer> versionedVal = remoteCache.getWithMetadata(cacheKey);
 
             if (versionedVal.getVersion() < version) {
                 System.err.println("INCOMPATIBLE VERSION. event version: " + version + ", entity version: " + versionedVal.getVersion());

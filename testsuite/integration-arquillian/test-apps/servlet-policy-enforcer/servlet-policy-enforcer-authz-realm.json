@@ -62,64 +62,68 @@
                 "resources": [
                     {
                         "name": "Welcome Resource",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 1",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 2",
-                        "uri": "/resource/resource-a",
-                        "typedScopes": []
+                        "uri": "/resource/resource-a"
                     },
                     {
                         "name": "Pattern 3",
-                        "uri": "/resource/resource-b/test",
-                        "typedScopes": []
+                        "uri": "/resource/resource-b/test"
                     },
                     {
                         "name": "Pattern 4",
-                        "uri": "/resource-c",
-                        "typedScopes": []
+                        "uri": "/resource-c"
                     },
                     {
                         "name": "Pattern 5",
-                        "uri": "/resource/d/resource-d",
-                        "typedScopes": []
+                        "uri": "/resource/d/resource-d"
                     },
                     {
                         "name": "Pattern 6",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
                         "name": "Pattern 7",
-                        "uri": "",
-                        "typedScopes": []
+                        "uri": ""
                     },
                     {
-                        "name": "Pattern 8",
-                        "typedScopes": []
+                        "name": "Pattern 8"
                     },
                     {
-                        "name": "Pattern 9",
-                        "typedScopes": []
+                        "name": "Pattern 9"
                     },
                     {
-                        "name": "Pattern 10",
-                        "typedScopes": []
+                        "name": "Pattern 10"
                     },
                     {
-                        "name": "Pattern 11",
-                        "typedScopes": []
+                        "name": "Pattern 11"
                     },
                     {
                         "name": "Pattern 12",
-                        "uri": "/realm_uri",
-                        "typedScopes": []
+                        "uri": "/realm_uri"
+                    },
+                    {
+                        "name": "Pattern 13",
+                        "uri": "/keycloak-6623/*"
+                    },
+                    {
+                        "name": "Pattern 14",
+                        "uri": "/keycloak-6623/sub-resource/*"
+                    },
+                    {
+                        "name": "Pattern 15",
+                        "type": "pattern-15",
+                        "uri": "/keycloak-7148/{id}"
+                    },
+                    {
+                        "name": "Pattern 16",
+                        "uris": ["/keycloak-7269/sub-resource1", "/keycloak-7269/sub-resource2/*", "/keycloak-7269/sub-resource1/{test-pattern}/specialSuffix"]
                     }
                 ],
                 "policies": [
@@ -269,6 +273,47 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "resources": "[\"Pattern 12\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 13 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 13\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 14 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 14\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 15 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "pattern-15",
+                            "default": "true",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 16 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 16\"]",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }

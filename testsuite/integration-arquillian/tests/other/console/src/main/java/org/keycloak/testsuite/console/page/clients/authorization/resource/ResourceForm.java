@@ -25,9 +25,11 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -40,11 +42,17 @@ public class ResourceForm extends Form {
     @FindBy(id = "name")
     private WebElement name;
 
+    @FindBy(id = "displayName")
+    private WebElement displayName;
+
     @FindBy(id = "type")
     private WebElement type;
 
-    @FindBy(id = "uri")
-    private WebElement uri;
+    @FindBy(id = "newUri")
+    private WebElement newUri;
+
+    @FindBy(xpath = "//*[@id=\"view\"]/div[1]/form/fieldset/div[5]/div/div/div/button")
+    private WebElement addUriButton;
 
     @FindBy(id = "iconUri")
     private WebElement iconUri;
@@ -62,10 +70,25 @@ public class ResourceForm extends Form {
     private ScopesInput scopesInput;
 
     public void populate(ResourceRepresentation expected) {
-        setInputValue(name, expected.getName());
-        setInputValue(type, expected.getType());
-        setInputValue(uri, expected.getUri());
-        setInputValue(iconUri, expected.getIconUri());
+        while (true) {
+            try {
+                WebElement e = driver.findElement(By.xpath("//button[@data-ng-click='deleteUri($index)']"));
+                e.click();
+            } catch (NoSuchElementException e) {
+                break;
+            }
+        }
+
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(displayName, expected.getDisplayName());
+        UIUtils.setTextInputValue(type, expected.getType());
+
+        for (String uri : expected.getUris()) {
+            UIUtils.setTextInputValue(newUri, uri);
+            addUriButton.click();
+        }
+
+        UIUtils.setTextInputValue(iconUri, expected.getIconUri());
 
         Set<ScopeRepresentation> scopes = expected.getScopes();
 
@@ -101,10 +124,17 @@ public class ResourceForm extends Form {
     public ResourceRepresentation toRepresentation() {
         ResourceRepresentation representation = new ResourceRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setType(getInputValue(type));
-        representation.setUri(getInputValue(uri));
-        representation.setIconUri(getInputValue(iconUri));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDisplayName(UIUtils.getTextInputValue(displayName));
+        representation.setType(UIUtils.getTextInputValue(type));
+
+        Set<String> uris = new HashSet<>();
+        for (WebElement uriInput : driver.findElements(By.xpath("//input[@ng-model='resource.uris[i]']"))) {
+            uris.add(UIUtils.getTextInputValue(uriInput));
+        }
+        representation.setUris(uris);
+
+        representation.setIconUri(UIUtils.getTextInputValue(iconUri));
         representation.setScopes(scopesInput.getSelected());
 
         return representation;
@@ -125,7 +155,7 @@ public class ResourceForm extends Form {
         private List<WebElement> selection;
 
         public void select(String name) {
-            setInputValue(search, name);
+            UIUtils.setTextInputValue(search, name);
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

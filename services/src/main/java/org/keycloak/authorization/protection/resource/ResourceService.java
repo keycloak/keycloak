@@ -17,10 +17,7 @@
  */
 package org.keycloak.authorization.protection.resource;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.BiFunction;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -36,18 +33,15 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.keycloak.authorization.AuthorizationProvider;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
-import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 
 /**
@@ -57,189 +51,89 @@ public class ResourceService {
 
     private final ResourceServer resourceServer;
     private final ResourceSetService resourceManager;
+    private final KeycloakSession session;
     private final Identity identity;
-    private final AuthorizationProvider authorization;
 
-    public ResourceService(ResourceServer resourceServer, Identity identity, ResourceSetService resourceManager, AuthorizationProvider authorization) {
+    public ResourceService(KeycloakSession session, ResourceServer resourceServer, Identity identity, ResourceSetService resourceManager) {
+        this.session = session;
         this.identity = identity;
         this.resourceServer = resourceServer;
         this.resourceManager = resourceManager;
-        this.authorization = authorization;
     }
 
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(@Context  UriInfo uriInfo, UmaResourceRepresentation umaResource) {
+    public Response create(UmaResourceRepresentation resource) {
         checkResourceServerSettings();
-        ResourceRepresentation resource = toResourceRepresentation(umaResource);
-        Response response = this.resourceManager.create(uriInfo, resource);
-
-        if (response.getEntity() instanceof ResourceRepresentation) {
-            return Response.status(Status.CREATED).entity(toUmaRepresentation((ResourceRepresentation) response.getEntity())).build();
-        }
-
-        return response;
-    }
-
-    @Path("{id}")
-    @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
-    public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, UmaResourceRepresentation representation) {
-        ResourceRepresentation resource = toResourceRepresentation(representation);
-        Response response = this.resourceManager.update(uriInfo, id, resource);
-
-        if (response.getEntity() instanceof ResourceRepresentation) {
-            return Response.noContent().build();
-        }
-
-        return response;
-    }
-
-    @Path("/{id}")
-    @DELETE
-    public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
-        checkResourceServerSettings();
-        return this.resourceManager.delete(uriInfo, id);
-    }
-
-    @Path("/{id}")
-    @GET
-    @Produces("application/json")
-    public RegistrationResponse findById(@PathParam("id") String id) {
-        Response response = this.resourceManager.findById(id);
-        UmaResourceRepresentation resource = toUmaRepresentation((ResourceRepresentation) response.getEntity());
 
         if (resource == null) {
-            throw new ErrorResponseException("not_found", "Resource with id [" + id + "] not found.", Status.NOT_FOUND);
+            return Response.status(Status.BAD_REQUEST).build();
         }
 
-        return new RegistrationResponse(resource);
-    }
+        ResourceOwnerRepresentation owner = resource.getOwner();
 
-    @GET
-    @Produces("application/json")
-    public Set<String> find(@QueryParam("filter") String filter) {
-        if (filter == null) {
-            return findAll();
-        } else {
-            return findByFilter(filter);
-        }
-    }
-
-    private Set<String> findAll() {
-        Response response = this.resourceManager.find(null, null, null, null, null, null, true, -1, -1);
-        List<ResourceRepresentation> resources = (List<ResourceRepresentation>) response.getEntity();
-        return resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet());
-    }
-
-    private Set<String> findByFilter(String filter) {
-        Set<ResourceRepresentation> resources = new HashSet<>();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-
-        if (filter != null) {
-            for (String currentFilter : filter.split("&")) {
-                String[] parts = currentFilter.split("=");
-                String filterType = parts[0];
-                final String filterValue;
-
-                if (parts.length > 1) {
-                    filterValue = parts[1];
-                } else {
-                    filterValue = null;
-                }
-
-
-                if ("name".equals(filterType)) {
-                    Resource resource = storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId());
-
-                    if (resource != null) {
-                        resources.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorization));
-                    }
-                } else if ("type".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("uri".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByUri(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                } else if ("owner".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByOwner(filterValue, this.resourceServer.getId()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
-                }
-            }
-        } else {
-            resources = storeFactory.getResourceStore().findByOwner(identity.getId(), resourceServer.getId()).stream()
-                    .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                    .collect(Collectors.toSet());
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            resource.setOwner(owner);
         }
 
-        return resources.stream()
-                .map(ResourceRepresentation::getId)
-                .collect(Collectors.toSet());
-    }
-
-    private ResourceRepresentation toResourceRepresentation(UmaResourceRepresentation umaResource) {
-        ResourceRepresentation resource = new ResourceRepresentation();
-
-        resource.setId(umaResource.getId());
-        resource.setIconUri(umaResource.getIconUri());
-        resource.setName(umaResource.getName());
-        resource.setUri(umaResource.getUri());
-        resource.setType(umaResource.getType());
-
-        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
-        String ownerId = umaResource.getOwner();
+        String ownerId = owner.getId();
 
         if (ownerId == null) {
             ownerId = this.identity.getId();
         }
 
         owner.setId(ownerId);
-        resource.setOwner(owner);
 
-        resource.setScopes(umaResource.getScopes().stream().map(representation -> {
-            ScopeRepresentation scopeRepresentation = new ScopeRepresentation();
+        ResourceRepresentation newResource = resourceManager.create(resource);
 
-            scopeRepresentation.setId(representation.getId());
-            scopeRepresentation.setName(representation.getName());
-            scopeRepresentation.setIconUri(representation.getIconUri());
+        resourceManager.audit(resource, resource.getId(), OperationType.CREATE);
 
-            return scopeRepresentation;
-        }).collect(Collectors.toSet()));
-
-        return resource;
+        return Response.status(Status.CREATED).entity(new UmaResourceRepresentation(newResource)).build();
     }
 
-    private UmaResourceRepresentation toUmaRepresentation(ResourceRepresentation representation) {
-        if (representation == null) {
-            return null;
+    @Path("{id}")
+    @PUT
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+        return this.resourceManager.update(id, resource);
+    }
+
+    @Path("/{id}")
+    @DELETE
+    public Response delete(@PathParam("id") String id) {
+        checkResourceServerSettings();
+        return this.resourceManager.delete(id);
+    }
+
+    @Path("/{id}")
+    @GET
+    @Produces("application/json")
+    public Response findById(@PathParam("id") String id) {
+        return this.resourceManager.findById(id, UmaResourceRepresentation::new);
+    }
+
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Response find(@QueryParam("_id") String id,
+                         @QueryParam("name") String name,
+                         @QueryParam("uri") String uri,
+                         @QueryParam("owner") String owner,
+                         @QueryParam("type") String type,
+                         @QueryParam("scope") String scope,
+                         @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("deep") Boolean deep,
+                         @QueryParam("first") Integer firstResult,
+                         @QueryParam("max") Integer maxResult) {
+
+        if(deep != null && deep) {
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult);
+        } else {
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
         }
-
-        UmaResourceRepresentation resource = new UmaResourceRepresentation();
-
-        resource.setId(representation.getId());
-        resource.setIconUri(representation.getIconUri());
-        resource.setName(representation.getName());
-        resource.setUri(representation.getUri());
-        resource.setType(representation.getType());
-
-        if (representation.getOwner() != null) {
-            resource.setOwner(representation.getOwner().getId());
-        }
-
-        resource.setScopes(representation.getScopes().stream().map(scopeRepresentation -> {
-            UmaScopeRepresentation umaScopeRep = new UmaScopeRepresentation();
-            umaScopeRep.setId(scopeRepresentation.getId());
-            umaScopeRep.setName(scopeRepresentation.getName());
-            umaScopeRep.setIconUri(scopeRepresentation.getIconUri());
-            return umaScopeRep;
-        }).collect(Collectors.toSet()));
-
-        return resource;
     }
 
     private void checkResourceServerSettings() {

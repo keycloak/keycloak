@@ -65,11 +65,11 @@ public class PermissionsTable extends DataTable {
     public PolicyRepresentation toRepresentation(WebElement row) {
         PolicyRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+        if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
             representation = new PolicyRepresentation();
-            representation.setName(tds.get(0).getText());
-            representation.setDescription(tds.get(1).getText());
-            representation.setType(tds.get(2).getText());
+            representation.setName(tds.get(1).getText());
+            representation.setDescription(tds.get(2).getText());
+            representation.setType(tds.get(3).getText());
         }
         return representation;
     }

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.drone;
 
 import java.util.concurrent.TimeUnit;
 
+import io.appium.java_client.AppiumDriver;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.drone.spi.DroneContext;
 import org.jboss.arquillian.drone.spi.DronePoint;
@@ -44,11 +45,11 @@ public class KeycloakDronePostSetup {
         Object drone = droneContext.get(dronePoint).getInstance();
 
 
-        if (drone instanceof WebDriver) {
+        if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
             WebDriver webDriver = (WebDriver) drone;
             configureDriverSettings(webDriver);
         } else {
-            log.warn("Drone is not instanceof WebDriver! Drone is " + drone);
+            log.warn("Drone is not instanceof WebDriver for a desktop browser! Drone is " + drone);
         }
 
         if (drone instanceof GrapheneProxyInstance) {

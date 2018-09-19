@@ -17,15 +17,21 @@
 package org.keycloak.models.cache.infinispan.authorization;
 
 import org.keycloak.authorization.model.CachedModel;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResource;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +39,7 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 public class ResourceAdapter implements Resource, CachedModel<Resource> {
+
     protected CachedResource cached;
     protected StoreFactoryCacheSession cacheSession;
     protected Resource updated;
@@ -45,7 +52,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public Resource getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+            cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUris(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
             updated = cacheSession.getResourceStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -94,9 +101,21 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setName(String name) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUris(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setName(name);
+    }
 
+    @Override
+    public String getDisplayName() {
+        if (isUpdated()) return updated.getDisplayName();
+        return cached.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        getDelegateForUpdate();
+        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUris(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        updated.setDisplayName(name);
     }
 
     @Override
@@ -118,16 +137,16 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public String getUri() {
-        if (isUpdated()) return updated.getUri();
-        return cached.getUri();
+    public Set<String> getUris() {
+        if (isUpdated()) return updated.getUris();
+        return cached.getUris();
     }
 
     @Override
-    public void setUri(String uri) {
+    public void updateUris(Set<String> uris) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), uri, cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
-        updated.setUri(uri);
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), uris, cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        updated.updateUris(uris);
     }
 
     @Override
@@ -139,7 +158,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setType(String type) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), type, cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), type, cached.getUris(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setType(type);
 
     }
@@ -165,10 +184,87 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public void updateScopes(Set<Scope> scopes) {
+    public boolean isOwnerManagedAccess() {
+        if (isUpdated()) return updated.isOwnerManagedAccess();
+        return cached.isOwnerManagedAccess();
+    }
+
+    @Override
+    public void setOwnerManagedAccess(boolean ownerManagedAccess) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), scopes.stream().map(scope1 -> scope1.getId()).collect(Collectors.toSet()), cached.getResourceServerId(), cached.getOwner());
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUris(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        updated.setOwnerManagedAccess(ownerManagedAccess);
+    }
+
+    @Override
+    public void updateScopes(Set<Scope> scopes) {
+        Resource updated = getDelegateForUpdate();
+
+        for (Scope scope : updated.getScopes()) {
+            if (!scopes.contains(scope)) {
+                PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStore();
+                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer().getId());
+
+                for (PermissionTicket permission : permissions) {
+                    permissionStore.delete(permission.getId());
+                }
+            }
+        }
+
+        PolicyStore policyStore = cacheSession.getPolicyStore();
+
+        for (Scope scope : updated.getScopes()) {
+            if (!scopes.contains(scope)) {
+                policyStore.findByResource(getId(), getResourceServer().getId(), policy -> policy.removeScope(scope));
+            }
+        }
+
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUris(), scopes.stream().map(scope1 -> scope1.getId()).collect(Collectors.toSet()), cached.getResourceServerId(), cached.getOwner());
         updated.updateScopes(scopes);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        if (updated != null) return updated.getAttributes();
+        return cached.getAttributes();
+    }
+
+    @Override
+    public String getSingleAttribute(String name) {
+        if (updated != null) return updated.getSingleAttribute(name);
+
+        List<String> values = cached.getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.get(0);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        if (updated != null) return updated.getAttribute(name);
+
+        List<String> values = cached.getAttributes().getOrDefault(name, Collections.emptyList());
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return Collections.unmodifiableList(values);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, values);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
     }
 
     @Override

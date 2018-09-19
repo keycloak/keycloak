@@ -77,19 +77,38 @@ TODO: Add info about Wildfly logging
 
 ## Run adapter tests
 
+### Undertow
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
-
     
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml clean install \
-       -Pauth-server-wildfly \
-       -Papp-server-wildfly
-
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/wildfly/pom.xml \
+    mvn -f testsuite/integration-arquillian/pom.xml \
+       clean install \
+       -Papp-server-wildfly \
+       -Dtest=org.keycloak.testsuite.adapter.**
+       
+### Wildfly with legacy non-elytron adapter
+    
+    mvn -f testsuite/integration-arquillian/pom.xml \
+       clean install \
+       -Dskip.elytron.adapter.installation=true \
+       -Dskip.adapter.offline.installation=false \
+       -Papp-server-wildfly \
+       -Dtest=org.keycloak.testsuite.adapter.**
+       
+       
+### Wildfly deprecated
+
+This is usually previous version of WildFly application server right before current version.
+See the property `wildfly.deprecated.version` in the file [pom.xml](pom.xml) ) .
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
        clean install \
        -Pauth-server-wildfly \
-       -Papp-server-wildfly
+       -Papp-server-wildfly-deprecated \
+       -Dtest=org.keycloak.testsuite.adapter.**
     
 
 ### JBoss Fuse 6.3
@@ -112,22 +131,57 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 
     # Prepare Fuse server
-    mvn -f testsuite/integration-arquillian/servers \
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
-      -Pauth-server-wildfly \
       -Papp-server-fuse63 \
       -Dfuse63.version=6.3.0.redhat-229 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://download.eng.bos.redhat.com/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
       -Dmaven.repo.local=$HOME/.m2/repository
  
     # Run the Fuse adapter tests
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse63/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
-      -Dfuse63.version=6.3.0.redhat-229
+      -Dtest=Fuse*AdapterTest
+
+
+### JBoss Fuse 7.0
+
+1) Download JBoss Fuse 7.0 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
+Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
+
+2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
+
+
+    mvn install:install-file \
+      -DgroupId=org.jboss.fuse \
+      -DartifactId=fuse-karaf \
+      -Dversion=7.0.0.fuse-000202 \
+      -Dpackaging=zip \
+      -Dfile=/mydownloads/fuse-karaf-7.0.0.fuse-000202.zip
+
+
+3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
+
+
+    # Prepare Fuse server
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+      clean install \
+      -Papp-server-fuse70 \
+      -Dfuse70.version=7.0.0.fuse-000202 \
+      -Dapp.server.karaf.update.config=true \
+      -Dmaven.local.settings=$HOME/.m2/settings.xml \
+      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
+      -Dmaven.repo.local=$HOME/.m2/repository
+ 
+    # Run the Fuse adapter tests
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+      clean test \
+      -Papp-server-fuse70 \
+      -Dtest=Fuse*AdapterTest
 
 
 ### EAP6 with Hawtio
@@ -255,10 +309,21 @@ This will start latest Keycloak and import the realm JSON file, which was previo
       -Dmigrated.auth.server.version=1.9.8.Final
 
 
-## UI tests
+## Server configuration migration test
+This will compare if Wildfly configuration files (standalone.xml, standalone-ha.xml, domain.xml) 
+are correctly migrated from previous version
+
+    mvn -f testsuite/integration-arquillian/tests/other/server-config-migration/pom.xml \
+      clean install \
+      -Dmigrated.version=1.9.8.Final-redhat-1
+      
+For the available versions, take a look at the directory [tests/other/server-config-migration/src/test/resources/standalone](tests/other/server-config-migration/src/test/resources/standalone) 
+
+      
+## Admin Console UI tests
 The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox, Google Chrome and Internet Explorer. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
-The UI tests are focused on the Admin Console as well as on some login scenarios. They are placed in the `console` module and are disabled by default.
+The UI tests are focused on the Admin Console. They are placed in the `console` module and are disabled by default.
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
@@ -272,21 +337,29 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
     -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
 ```
 
+## Base UI tests
+Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
+They are designed to work with mobile browsers (alongside the standard desktop browsers). For details on the supported browsers and their configuration please refer to [Different Browsers chapter](#different-browsers).
+#### Execution example
+```
+mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
+    clean test \
+    -Pandroid \
+    -Dappium.avd=Nexus_5X_API_27
+```
+
 ## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.json` switch. So that they are disabled by default and are meant to be run separately.
+The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
 
 
     # Prepare servers
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly \
-        -Papp-server-wildfly
+        -Pauth-server-wildfly
 
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
         clean test \
-        -Dtest=WelcomePageTest \
-        -Dskip.add.user.json \
         -Pauth-server-wildfly
 
 
@@ -295,8 +368,10 @@ The social login tests require setup of all social networks including an example
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
    
 To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft, PayPal and 
-StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
-sample user that can login to the social network.
+StackOverflow. See the server administration guide for details on how to do that. You have to use URLs like 
+`http://localhost:8180/auth/realms/social/broker/google/endpoint` (with `google` replaced by the name 
+of given provider) as an authorized redirect URL when configuring the client. Further, you also need to create a sample user 
+that can login to the social network.
  
 The details should be added to a standard properties file. For some properties you can use shared common properties and
 override when needed. Or you can specify these for all providers. All providers require at least clientId and 
@@ -318,7 +393,8 @@ An example social.properties file looks like:
     facebook.profile.lastName=Test
 
 In the example above the common username, password and profile are shared for all providers, but Facebook has a 
-different last name.
+different last name. Profile informations are used for assertion after login, so you have to set them to be same as 
+user profile information returned by given social login provider for used sample user. 
 
 Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.
 
@@ -331,32 +407,72 @@ To run the tests run:
           -Dbrowser=chrome \
           -Dsocial.config=/path/to/social.properties
 
+To run individual social provider test only you can use option like `-Dtest=SocialLoginTest#linkedinLogin`
 
 ## Different Browsers
- 
-#### Mozilla Firefox
-* **Supported version:** [latest ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
-* **Driver download required:** no (using the old legacy Firefox driver)
-* **Run with:** `-Dbrowser=firefox`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
+You can use many different real-world browsers to run the integration tests.
+Although technically they can be run with almost every test in the testsuite, they can fail with some of them as the tests often require specific optimizations for given browser. Therefore, only some of the test modules have support to be run with specific browsers.
+
+#### Mozilla Firefox with legacy driver
+* **Supported test modules:** `console`
+* **Supported version:** [52 ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
+* **Driver download required:** no
+* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=true`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
 
 #### Mozilla Firefox with GeckoDriver
-You can also use Firefox automation with modern Marionette protocol and GeckoDriver. However, this is **highly experimental** and the testsuite may not work as expected.
+* **Supported test modules:** `base-ui`
 * **Supported version:** as latest as possible (Firefox has better support for Marionette with each version released)
 * **Driver download required:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
 * **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=false -Dwebdriver.gecko.driver=path/to/geckodriver`
 
 #### Google Chrome
+* **Supported test modules:** `console`, `base-ui`
 * **Supported version:** latest stable
-* **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) which corresponds with your version of the browser
+* **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
 * **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
 
 #### Internet Explorer
+* **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
 * **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
 
+#### Apple Safari
+* **Supported test modules:** `base-ui`
+* **Supported version:** latest stable
+* **Driver download required:** no (the driver is bundled with macOS)
+* **Run with:** `-Dbrowser=safari`
+
 #### Automatic driver downloads
 You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
+
+#### Mobile browsers
+The support for testing with the mobile browsers is implemented using the [Appium](http://appium.io/) project.
+This means the tests can be run with a real mobile browser in a real mobile OS. However, only emulators/simulators of mobile devices are supported at the moment (no physical devices) in our testsuite.
+
+First, you need to install the Appium server. If you have Node.js and npm installed on your machine, you can do that with: `npm install -g appium`. For further details and requirements please refer to the [official Appium documentation](http://appium.io/docs/en/about-appium/intro/).
+The tests will try to start the Appium server automatically but you can do it manually as well (just by executing `appium`).
+
+To use a mobile browser you need to create a virtual device. The most convenient way to do so is to install the desired platform's IDE - either [Android Studio](https://developer.android.com/studio/) (for Android devices) or [Xcode](https://developer.apple.com/xcode/) (for iOS devices) - then you can create a device (smartphone/tablet) there. For details please refer to documentation of those IDEs.
+
+#### Google Chrome on Android
+* **Supported test modules:** `base-ui`
+* **Supported host OS:** Windows, Linux, macOS
+* **Supported browser version:** latest stable
+* **Supported mobile OS version:** Android 7.x, 8.x
+* **Run with:** `mvn clean test -Pandroid -Dappium.avd=name_of_the_AVD` where AVD is the name of your Android Virtual Device (e.g. `Nexus_5X_API_27`)
+
+**Tips & tricks:**
+* If the AVD name contains any spaces, you need to replace them with underscores when specifying the `-Dappium.avd=...`.
+* It's probable that a freshly created device will contain an outdated Chrome version. To update to the latest version (without using the Play Store) you need to download an `.apk` for Chrome and install it with `adb install -r path/to/chrome.apk`.
+* Chrome on Android uses ChromeDriver similarly to regular desktop Chrome. The ChromeDriver is bundled with the Appium server. To use a newer ChromeDriver please follow the [Appium documentation](http://appium.io/docs/en/writing-running-appium/web/chromedriver/).
+
+#### Apple Safari on iOS
+* **Supported test modules:** `base-ui`
+* **Supported host OS:** macOS
+* **Supported browser version:** _depends on the mobile OS version_
+* **Supported mobile OS version:** iOS 11.x
+* **Run with:** `mvn clean test -Pios -Dappium.deviceName=device_name` where the device name is your device identification (e.g. `iPhone X`)
 
 ## Run X.509 tests
 
@@ -368,7 +484,29 @@ To run the X.509 client certificate authentication tests:
 	  -Dauth.server.ssl.required \
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
-	  
+
+## Run Mutual TLS Client Certificate Bound Access Tokens tests
+
+To run the Mutual TLS Client Certificate Bound Access Tokens tests:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+      -Pauth-server-wildfly \
+      -Dauth.server.ssl.required \
+      -Dbrowser=phantomjs \
+      -Dtest=org.keycloak.testsuite.hok.HoKTest
+
+## Run Mutual TLS for the Client tests
+
+To run the Mutual TLS test for the client:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+      -Pauth-server-wildfly \
+      -Dauth.server.ssl.required \
+      -Dbrowser=phantomjs \
+      -Dtest=org.keycloak.testsuite.client.MutualTLSClientTest
+
 ## Cluster tests
 
 Cluster tests use 2 backend servers (Keycloak on Wildfly/EAP) and 1 frontend loadbalancer server node. Invalidation tests don't use loadbalancer. 
@@ -536,11 +674,21 @@ First we will manually download, configure and run infinispan servers. Then we c
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
 1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [../../misc/CrossDataCenter.md](../../misc/CrossDataCenter.md) and the `Infinispan Server Setup` part.
+from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
-Assume you have both Infinispan/JDG servers up and running.
+The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 
-**TODO:** Change this once CrossDataCenter.md is removed and converted to the proper docs.
+* The TCPPING hosts should be like this:
+
+```xml
+<property name="initial_hosts">localhost[8610],localhost[9610]"</property>
+``` 
+
+* The port offset when starting node `jdg1` should be like: `-Djboss.socket.binding.port-offset=1010` and when 
+starting the `jdg2` server, then `-Djboss.socket.binding.port-offset=2010` . In both cases, the bind address should be just
+default `localhost` (In other words, the `-b` switch can be omitted).   
+
+So assume you have both Infinispan/JDG servers up and running.
 
 2) Setup MySQL database or some other shared database.  
 

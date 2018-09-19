@@ -5,7 +5,7 @@ function run-server-tests() {
     mvn install -B -nsu -Pauth-server-wildfly -DskipTests
 
     cd tests/base
-    mvn test -B -nsu -Pauth-server-wildfly -Dtest=$1 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
+    mvn test -B -nsu -Pauth-server-wildfly -Dtest=$1 $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 }
 
@@ -25,12 +25,16 @@ function should-tests-run() {
 ## You can define a precondition for running a particular test group by defining function should-tests-run-<test-group-name>.
 ## Its return value determines whether the test group should run.
 
-function should-tests-run-crossdc() {
+function should-tests-run-crossdc-server() {
     # If this is not a pull request, it is build as a branch update. In that case test everything
     [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
 
     git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
         egrep -i 'crossdc|infinispan'
+}
+
+function should-tests-run-crossdc-adapter() {
+    should-tests-run-crossdc-server
 }
 
 if ! should-tests-run; then
@@ -50,17 +54,18 @@ if [ $1 == "old" ]; then
     mvn test -B -nsu -f integration-deprecated
     mvn test -B -nsu -f jetty
     mvn test -B -nsu -f proxy
-    mvn test -B -nsu -f tomcat6
     mvn test -B -nsu -f tomcat7
     mvn test -B -nsu -f tomcat8
 fi
 
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
+    # Generate documentation to catch potential issues earlier than during the release
+    mvn test -B -nsu -f services -Pjboss-release
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.ad*.**.*Test,!**/adapter/undertow/**/*Test
+    run-server-tests org.keycloak.testsuite.ad*.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then
@@ -72,27 +77,29 @@ if [ $1 == "server-group3" ]; then
 fi
 
 if [ $1 == "server-group4" ]; then
-    run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test
+    run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test,org.keycloak.testsuite.u*.**.*Test
 fi
 
-if [ $1 == "crossdc" ]; then
+if [ $1 == "crossdc-server" ]; then
     cd testsuite/integration-arquillian
     mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
 
     cd tests/base
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.**.* 2>&1 |
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
-    BASE_TESTS_STATUS=${PIPESTATUS[0]}
+    exit ${PIPESTATUS[0]}
+fi
 
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.manual.* -Dmanual.mode=true 2>&1 |
+if [ $1 == "crossdc-adapter" ]; then
+    cd testsuite/integration-arquillian
+    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
+
+    cd tests/base
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
-    MANUAL_TESTS_STATUS=${PIPESTATUS[0]}
+    exit ${PIPESTATUS[0]}
+fi
 
-    echo "BASE_TESTS_STATUS=$BASE_TESTS_STATUS, MANUAL_TESTS_STATUS=$MANUAL_TESTS_STATUS";
-    if [ $BASE_TESTS_STATUS -eq 0 -a $MANUAL_TESTS_STATUS -eq 0 ]; then
-        exit 0;
-    else
-        exit 1;
-    fi;
-
+if [ $1 == "ssl" ]; then
+    run-server-tests org.keycloak.testsuite.client.MutualTLSClientTest,org.keycloak.testsuite.hok.HoKTest "-Dauth.server.ssl.required -Dbrowser=phantomjs"
 fi

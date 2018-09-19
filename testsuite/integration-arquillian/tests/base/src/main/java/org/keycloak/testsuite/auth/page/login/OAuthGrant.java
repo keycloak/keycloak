@@ -16,30 +16,56 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public class OAuthGrant extends LoginActions {
-
+public class OAuthGrant extends RequiredActions {
     @FindBy(css = "input[name=\"accept\"]")
     private WebElement acceptButton;
+
     @FindBy(css = "input[name=\"cancel\"]")
     private WebElement cancelButton;
 
+    @FindBy(xpath = "//div[@id='kc-oauth']/ul/li/span")
+    private List<WebElement> scopesToApprove;
+
+    @Override
+    public String getActionId() {
+        return AuthenticatedClientSessionModel.Action.OAUTH_GRANT.name();
+    }
 
     public void accept() {
-        acceptButton.click();
+        clickLink(acceptButton);
     }
 
     public void cancel() {
-        cancelButton.click();
+        clickLink(cancelButton);
     }
 
-    @Override
-    public boolean isCurrent() {
-        return driver.getPageSource().contains("Do you grant these access privileges");
+    public boolean isCurrent(WebDriver driver1) {
+        DroneUtils.addWebDriver(driver1);
+        boolean ret = super.isCurrent();
+        DroneUtils.removeWebDriver();
+        return ret;
+    }
+
+    public void assertClientScopes(List<String> expectedScopes) {
+        List<String> actualScopes = scopesToApprove.stream().map(WebElement::getText).collect(Collectors.toList());
+        assertTrue("Expected and actual Client Scopes to approve don't match",
+                CollectionUtil.collectionEquals(expectedScopes, actualScopes)); // order of scopes doesn't matter
     }
 }

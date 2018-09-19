@@ -88,7 +88,7 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
 
         expected.setName(name);
         expected.setDescription("description");
-        expected.setArtifactGroupId("org.keycloak");
+        expected.setArtifactGroupId("org.keycloak.testsuite");
         expected.setArtifactId("photoz-authz-policy");
         expected.setArtifactVersion(Version.VERSION);
         expected.setModuleName("PhotozAuthzOwnerPolicy");

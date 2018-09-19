@@ -18,26 +18,30 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.EntitlementRequest;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
+import org.keycloak.authorization.client.resource.PermissionResource;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.common.util.Base64;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -74,7 +78,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
 
         if (newAuthorization != null) {
-            authorization.getPermissions().addAll(newAuthorization.getPermissions());
+            Collection<Permission> grantedPermissions = authorization.getPermissions();
+            Collection<Permission> newPermissions = newAuthorization.getPermissions();
+
+            for (Permission newPermission : newPermissions) {
+                if (!grantedPermissions.contains(newPermission)) {
+                    grantedPermissions.add(newPermission);
+                }
+            }
         }
 
         original.setAuthorization(authorization);
@@ -83,8 +94,29 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
-        handleAccessDenied(facade);
+    protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
+        if (isBearerAuthorization(httpFacade)) {
+            HttpFacade.Response response = httpFacade.getResponse();
+            AuthzClient authzClient = getAuthzClient();
+            String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient, httpFacade);
+
+            if (ticket != null) {
+                response.setStatus(401);
+                response.setHeader("WWW-Authenticate", new StringBuilder("UMA realm=\"").append(authzClient.getConfiguration().getRealm()).append("\"").append(",as_uri=\"")
+                        .append(authzClient.getServerConfiguration().getIssuer()).append("\"").append(",ticket=\"").append(ticket).append("\"").toString());
+            } else {
+                response.setStatus(403);
+            }
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Sending challenge");
+            }
+
+            return true;
+        }
+
+        handleAccessDenied(httpFacade);
+
         return true;
     }
 
@@ -102,51 +134,87 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
-        try {
-            String accessToken = httpFacade.getSecurityContext().getTokenString();
-            AuthzClient authzClient = getAuthzClient();
-            KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
-
-            if (getEnforcerConfig().getUserManagedAccess() != null) {
-                LOGGER.debug("Obtaining authorization for authenticated user.");
-                PermissionRequest permissionRequest = new PermissionRequest();
-
-                permissionRequest.setResourceSetId(pathConfig.getId());
-                permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
-
-                PermissionResponse permissionResponse = authzClient.protection().permission().forResource(permissionRequest);
-                AuthorizationRequest authzRequest = new AuthorizationRequest(permissionResponse.getTicket());
-                AuthorizationResponse authzResponse = authzClient.authorization(accessToken).authorize(authzRequest);
-
-                if (authzResponse != null) {
-                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
-                }
-
-                return null;
-            } else {
-                LOGGER.debug("Obtaining entitlements for authenticated user.");
-                AccessToken token = httpFacade.getSecurityContext().getToken();
-
-                if (token.getAuthorization() == null) {
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getResource());
-                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
-                } else {
-                    EntitlementRequest request = new EntitlementRequest();
-                    PermissionRequest permissionRequest = new PermissionRequest();
-                    permissionRequest.setResourceSetId(pathConfig.getId());
-                    permissionRequest.setResourceSetName(pathConfig.getName());
-                    permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
-                    LOGGER.debugf("Sending entitlements request: resource_set_id [%s], resource_set_name [%s], scopes [%s].", permissionRequest.getResourceSetId(), permissionRequest.getResourceSetName(), permissionRequest.getScopes());
-                    request.addPermission(permissionRequest);
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getResource(), request);
-                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
-                }
-            }
-        } catch (AuthorizationDeniedException e) {
-            LOGGER.debug("Authorization denied", e);
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
             return null;
+        }
+
+        try {
+            KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
+            String accessTokenString = securityContext.getTokenString();
+            KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
+            AccessToken accessToken = securityContext.getToken();
+            AuthorizationRequest authzRequest = new AuthorizationRequest();
+
+            if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
+                authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
+            }
+
+            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
+
+            if (!claims.isEmpty()) {
+                authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
+                authzRequest.setClaimToken(Base64.encodeBytes(JsonSerialization.writeValueAsBytes(claims)));
+            }
+
+            if (accessToken.getAuthorization() != null) {
+                authzRequest.setRpt(accessTokenString);
+            }
+
+            LOGGER.debug("Obtaining authorization for authenticated user.");
+            AuthorizationResponse authzResponse;
+
+            if (isBearerAuthorization(httpFacade)) {
+                authzRequest.setSubjectToken(accessTokenString);
+                authzResponse = getAuthzClient().authorization().authorize(authzRequest);
+            } else {
+                authzResponse = getAuthzClient().authorization(accessTokenString).authorize(authzRequest);
+            }
+
+            if (authzResponse != null) {
+                return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
+            }
+        } catch (AuthorizationDeniedException ignore) {
+            LOGGER.debug("Authorization denied", ignore);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error during authorization request.", e);
         }
+
+        return null;
+    }
+
+    private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient, OIDCHttpFacade httpFacade) {
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
+            ProtectionResource protection = authzClient.protection();
+            PermissionResource permission = protection.permission();
+            PermissionRequest permissionRequest = new PermissionRequest();
+
+            permissionRequest.setResourceId(pathConfig.getId());
+            permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
+
+            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
+
+            if (!claims.isEmpty()) {
+                permissionRequest.setClaims(claims);
+            }
+
+            return permission.create(permissionRequest).getTicket();
+        }
+
+        return null;
+    }
+
+    private boolean isBearerAuthorization(OIDCHttpFacade httpFacade) {
+        List<String> authHeaders = httpFacade.getRequest().getHeaders("Authorization");
+
+        if (authHeaders != null) {
+            for (String authHeader : authHeaders) {
+                String[] split = authHeader.trim().split("\\s+");
+                if (split == null || split.length != 2) continue;
+                if (!split[0].equalsIgnoreCase("Bearer")) continue;
+                return true;
+            }
+        }
+
+        return getPolicyEnforcer().getDeployment().isBearerOnly();
     }
 }

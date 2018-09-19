@@ -40,6 +40,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -55,6 +56,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class PolicyResourceService {
 
+    @Context
+    private KeycloakSession session;
     private final Policy policy;
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
@@ -73,8 +76,10 @@ public class PolicyResourceService {
     @Consumes("application/json")
     @Produces("application/json")
     @NoCache
-    public Response update(@Context UriInfo uriInfo,String payload) {
-        this.auth.realm().requireManageAuthorization();
+    public Response update(String payload) {
+        if (auth != null) {
+            this.auth.realm().requireManageAuthorization();
+        }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
 
@@ -87,14 +92,16 @@ public class PolicyResourceService {
         RepresentationToModel.toModel(representation, authorization, policy);
 
 
-        audit(uriInfo, representation, OperationType.UPDATE);
+        audit(representation, OperationType.UPDATE);
 
         return Response.status(Status.CREATED).build();
     }
 
     @DELETE
-    public Response delete(@Context UriInfo uriInfo) {
-        this.auth.realm().requireManageAuthorization();
+    public Response delete() {
+        if (auth != null) {
+            this.auth.realm().requireManageAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -109,7 +116,7 @@ public class PolicyResourceService {
         policyStore.delete(policy.getId());
 
         if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(uriInfo, toRepresentation(policy, authorization), OperationType.DELETE);
+            audit(toRepresentation(policy, authorization), OperationType.DELETE);
         }
 
         return Response.noContent().build();
@@ -119,7 +126,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response findById() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -137,7 +146,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getDependentPolicies() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -161,7 +172,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getScopes() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -182,7 +195,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getResources() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -203,7 +218,9 @@ public class PolicyResourceService {
     @Produces("application/json")
     @NoCache
     public Response getAssociatedPolicies() {
-        this.auth.realm().requireViewAuthorization();
+        if (auth != null) {
+            this.auth.realm().requireViewAuthorization();
+        }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -215,6 +232,7 @@ public class PolicyResourceService {
             representation1.setId(policy.getId());
             representation1.setName(policy.getName());
             representation1.setType(policy.getType());
+            representation1.setDescription(policy.getDescription());
 
             return representation1;
         }).collect(Collectors.toList())).build();
@@ -240,9 +258,9 @@ public class PolicyResourceService {
         return policy;
     }
 
-    private void audit(@Context UriInfo uriInfo, AbstractPolicyRepresentation policy, OperationType operation) {
+    private void audit(AbstractPolicyRepresentation policy, OperationType operation) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
-            adminEvent.operation(operation).resourcePath(uriInfo).representation(policy).success();
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(policy).success();
         }
     }
 }

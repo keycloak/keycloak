@@ -247,6 +247,18 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
+    public void testCredentialsWithNoConfig() {
+        /*
+         *  Test with --no-config specified which is not supported
+         */
+        KcRegExec exe = KcRegExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
+
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+    }
+
+    @Test
     public void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client

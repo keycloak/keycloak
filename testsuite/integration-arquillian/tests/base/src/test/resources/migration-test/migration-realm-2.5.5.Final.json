@@ -2776,7 +2776,63 @@
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
     "useTemplateMappers" : false
-  } ],
+  },
+  {
+    "id": "70e8e897-82d4-49ab-82c9-c37e1a48b6bb",
+    "clientId": "authz-servlet",
+    "adminUrl": "http://localhost:8080/authz-servlet",
+    "baseUrl": "http://localhost:8080/authz-servlet",
+    "surrogateAuthRequired": false,
+    "enabled": true,
+    "clientAuthenticatorType": "client-secret",
+    "secret": "**********",
+    "redirectUris": [
+      "http://localhost:8080/authz-servlet/*"
+    ],
+    "webOrigins": [
+      "http://localhost:8080"
+    ],
+    "notBefore": 0,
+    "bearerOnly": false,
+    "consentRequired": false,
+    "standardFlowEnabled": true,
+    "implicitFlowEnabled": false,
+    "directAccessGrantsEnabled": false,
+    "serviceAccountsEnabled": true,
+    "authorizationServicesEnabled": true,
+    "publicClient": false,
+    "frontchannelLogout": false,
+    "protocol": "openid-connect",
+    "fullScopeAllowed": true,
+    "nodeReRegistrationTimeout": -1,
+    "authorizationSettings": {
+      "resources": [
+        {
+          "name": "Admin Resource",
+          "uri": "/protected/admin/*",
+          "type": "http://servlet-authz/protected/admin",
+          "_id": "af06c58d-32b6-44d2-9057-2673ced120eb"
+        },
+        {
+          "name": "Protected Resource",
+          "uri": "/*",
+          "type": "http://servlet-authz/protected/resource",
+          "_id": "d8ec89d2-7fc3-416c-9584-f242e8a6f827"
+        },
+        {
+          "name": "Premium Resource",
+          "uri": "/protected/premium/*",
+          "type": "urn:servlet-authz:protected:resource",
+          "_id": "9c4dd55d-b7a1-45a5-a379-d2ae48b7b309"
+        },
+        {
+          "name": "Main Page",
+          "type": "urn:servlet-authz:protected:resource",
+          "_id": "01394f0e-8b06-4ae8-a1cb-9f6ff7eeb6b4"
+        }
+      ]
+    }
+  }],
   "clientTemplates" : [ ],
   "browserSecurityHeaders" : {
     "xContentTypeOptions" : "nosniff",

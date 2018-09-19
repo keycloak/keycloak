@@ -1,0 +1,64 @@
+<ol class="breadcrumb" id="breadcrumbs">
+  <li>{{'accountSecurityTitle' | translate}}</li>
+  <li>
+    <a href="#">{{'authenticatorTitle' | translate}}</a>
+  </li>
+  <li><strong>{{'authenticatorMobileSetupTitle' | translate}}</strong></li>
+</ol>
+
+<div class="col-sm-12 card-pf ">
+    <div class="card-pf-body row">
+        <div class="col-sm-12 col-md-6">
+          <div class="card-pf-subtitle" id="authenticatorMobileSetupTitle">
+              {{'authenticatorMobileSetupTitle' | translate}}
+          </div>
+          <div class="introMessage">
+            <ol class="setup-message">
+              <li id="authenticatorAppsList">{{'mobileSetupStep1' | translate}}
+                <ul>
+                  <li><a href="javascript:void(0)">FreeOTP</a></li>
+                  <li><a href="javascript:void(0)">Google Authenticator</a></li>
+                </ul>
+              </li>
+              <li>{{'mobileSetupStep2' | translate}}</li>
+              <li>{{'mobileSetupStep3' | translate}}</li>
+            </ol>
+          </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <div class="row">
+                <div class="col-sm-12 col-md-4">
+                  <div class="qrcode-img">
+                    <img src="${resourceUrl}/app/assets/img/QRCode.png" id="authenticatorQrCode">
+                  </div>
+                  <div class="qrcode-code">
+                    <div class="input-group">
+                      <input class="form-control" type="text" value="2AEB 293G OQ3D 1O23 09UW WOIE WO30 FAL2" disabled id="authenticatorKey">
+                      <span class="input-group-btn">
+                        <button class="btn btn-default" type="button" id="authenticatorCopyBtn">{{'doCopy' | translate}}</button>
+                      </span>
+                    </div>
+                    <div class="link-right">
+                      <a href="#" id="scanBarCode">{{'scanBarCode' | translate}}</a>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="col-sm-12 col-md-8">
+                  <form role="form">
+                    <div class="form-group">
+                      <label class="control-label" for="input11">{{'enterBarCode' | translate}}</label>
+                      <input class="form-control" type="text" id="input11">
+                    </div>
+                    <div class="form-group">
+                      <button type="submit" class="btn btn-default" disabled="" id="authenticatorFinishBtn">{{'doFinish' | translate}}</button>
+                      <button type="submit" class="btn btn-default" id="authenticatorCancelBtn">{{'doCancel' | translate}}</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

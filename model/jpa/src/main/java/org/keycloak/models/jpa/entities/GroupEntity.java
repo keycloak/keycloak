@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.Nationalized;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +42,7 @@ public class GroupEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
+    @Nationalized
     @Column(name = "NAME")
     protected String name;
 

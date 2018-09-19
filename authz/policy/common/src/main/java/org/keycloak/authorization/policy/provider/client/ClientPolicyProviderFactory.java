@@ -30,7 +30,7 @@ import org.keycloak.util.JsonSerialization;
 
 public class ClientPolicyProviderFactory implements PolicyProviderFactory<ClientPolicyRepresentation> {
 
-    private ClientPolicyProvider provider = new ClientPolicyProvider(policy -> toRepresentation(policy));
+    private ClientPolicyProvider provider = new ClientPolicyProvider(this::toRepresentation);
 
     @Override
     public String getName() {
@@ -48,7 +48,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     }
 
     @Override
-    public ClientPolicyRepresentation toRepresentation(Policy policy) {
+    public ClientPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ClientPolicyRepresentation representation = new ClientPolicyRepresentation();
         representation.setClients(new HashSet<>(Arrays.asList(getClients(policy))));
         return representation;
@@ -75,12 +75,12 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     }
 
     @Override
-    public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
-        ClientPolicyRepresentation userRep = toRepresentation(policy);
+    public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        ClientPolicyRepresentation userRep = toRepresentation(policy, authorization);
         Map<String, String> config = new HashMap<>();
 
         try {
-            RealmModel realm = authorizationProvider.getRealm();
+            RealmModel realm = authorization.getRealm();
             config.put("clients", JsonSerialization.writeValueAsString(userRep.getClients().stream().map(id -> realm.getClientById(id).getClientId()).collect(Collectors.toList())));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);

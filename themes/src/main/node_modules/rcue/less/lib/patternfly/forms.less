@@ -1,0 +1,61 @@
+//
+// Forms
+// --------------------------------------------------
+.chars-remaining-pf span {
+  font-weight: 600;
+  padding-right: 5px;
+}
+
+.chars-warn-remaining-pf {
+  color: @brand-danger;
+}
+
+.form-control {
+  &[disabled],
+  &[readonly],
+  fieldset[disabled] & {
+    .box-shadow(none);
+    color: @color-pf-black-500;
+    &:hover {
+      border-color: @input-border;
+    }
+  }
+  &:hover {
+    border-color: @input-border-hover;
+    .has-error & {
+      border-color: darken(@state-danger-text, 10%);
+    }
+    .has-success & {
+      border-color: darken(@state-success-text, 10%);
+    }
+    .has-warning & {
+      border-color: darken(@state-warning-text, 10%);
+    }
+  }
+}
+
+.has-error, .has-success, .has-warning {
+  .checkbox,
+  .checkbox-inline,
+  .control-label,
+  .radio,
+  .radio-inline,
+  &.checkbox label,
+  &.checkbox-inline label,
+  &.radio label,
+  &.radio-inline label {
+    color: @text-color;
+  }
+}
+
+.help-block {
+  margin-bottom: 0px;
+}
+
+.input-group .input-group-btn .btn {
+  .box-shadow(none);
+}
+
+label {
+  font-weight: 600;
+}

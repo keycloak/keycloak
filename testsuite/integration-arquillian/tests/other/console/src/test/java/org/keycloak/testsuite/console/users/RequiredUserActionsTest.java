@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.auth.page.account.Account;
+import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
@@ -13,9 +14,12 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.model.RequiredUserAction.*;
+import static org.keycloak.testsuite.model.RequiredUserAction.TERMS_AND_CONDITIONS;
+import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PASSWORD;
+import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PROFILE;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
@@ -38,6 +42,9 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Page
     private RequiredActions requiredActionsPage;
+
+    @Page
+    private TermsAndConditions termsAndConditionsPage;
 
     @FindBy(css = "kc-feedback-text")
     protected WebElement feedbackText;
@@ -134,7 +141,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
         testRealmLoginPage.form().login(testUser);
 
-        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
+        assertTrue(termsAndConditionsPage.isCurrent());
     }
 
 

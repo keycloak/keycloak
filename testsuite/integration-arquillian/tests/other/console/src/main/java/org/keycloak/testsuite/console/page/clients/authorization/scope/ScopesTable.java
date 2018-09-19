@@ -65,9 +65,9 @@ public class ScopesTable extends DataTable {
     public ScopeRepresentation toRepresentation(WebElement row) {
         ScopeRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+        if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
             representation = new ScopeRepresentation();
-            representation.setName(tds.get(0).getText());
+            representation.setName(tds.get(1).getText());
         }
         return representation;
     }

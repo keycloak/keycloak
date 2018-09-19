@@ -24,6 +24,22 @@ public class SamlUserAttributeMapperTest extends AbstractUserAttributeMapperTest
           .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
           .build());
 
+        IdentityProviderMapperRepresentation attrMapperNestedEmail = new IdentityProviderMapperRepresentation();
+        attrMapperNestedEmail.setName("nested-attribute-mapper-email");
+        attrMapperNestedEmail.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        attrMapperNestedEmail.setConfig(ImmutableMap.<String,String>builder()
+          .put(UserAttributeMapper.ATTRIBUTE_NAME, "nested.email")
+          .put(UserAttributeMapper.USER_ATTRIBUTE, "nested.email")
+          .build());
+
+        IdentityProviderMapperRepresentation attrMapperDottedEmail = new IdentityProviderMapperRepresentation();
+        attrMapperDottedEmail.setName("dotted-attribute-mapper-email");
+        attrMapperDottedEmail.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        attrMapperDottedEmail.setConfig(ImmutableMap.<String,String>builder()
+          .put(UserAttributeMapper.ATTRIBUTE_NAME, "dotted.email")
+          .put(UserAttributeMapper.USER_ATTRIBUTE, "dotted.email")
+          .build());
+
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("attribute-mapper");
         attrMapper1.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
@@ -40,7 +56,7 @@ public class SamlUserAttributeMapperTest extends AbstractUserAttributeMapperTest
           .put(UserAttributeMapper.USER_ATTRIBUTE, MAPPED_ATTRIBUTE_FRIENDLY_NAME)
           .build());
 
-        return Lists.newArrayList(attrMapperEmail, attrMapper1, attrMapper2);
+        return Lists.newArrayList(attrMapperEmail, attrMapper1, attrMapper2, attrMapperDottedEmail, attrMapperNestedEmail);
     }
 
 }

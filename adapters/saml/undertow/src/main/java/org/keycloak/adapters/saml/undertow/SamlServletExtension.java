@@ -120,13 +120,12 @@ public class SamlServletExtension implements ServletExtension {
         SamlDeploymentContext deploymentContext = null;
         if (configResolverClass != null) {
             try {
-                throw new RuntimeException("Not implemented yet");
-                //configResolver = (SamlConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
-                //deploymentContext = new AdapterDeploymentContext(configResolver);
-                //log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+                configResolver = (SamlConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new SamlDeploymentContext(configResolver);
+                log.infov("Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
             } catch (Exception ex) {
                 log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: " + ex.getMessage());
-                //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                deploymentContext = new SamlDeploymentContext(new DefaultSamlDeployment());
             }
         } else {
             InputStream is = getConfigInputStream(servletContext);

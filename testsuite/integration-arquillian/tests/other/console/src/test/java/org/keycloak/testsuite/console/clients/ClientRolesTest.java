@@ -74,7 +74,6 @@ public class ClientRolesTest extends AbstractClientTest {
         RoleRepresentation role = clientRoles.get(0);
         assertEquals(TEST_CLIENT_ROLE_NAME, role.getName());
         assertEquals("description", role.getDescription());
-        assertFalse(role.isScopeParamRequired());
         assertFalse(role.isComposite());
         assertNull(role.getComposites());
         

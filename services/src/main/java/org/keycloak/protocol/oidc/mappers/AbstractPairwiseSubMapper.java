@@ -51,7 +51,7 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
      *
      * @param session
      * @param realm
-     * @param mapperContainer client or clientTemplate
+     * @param mapperContainer client or clientScope
      * @param mapperModel
      * @throws ProtocolMapperConfigException if configuration provided in mapperModel is not valid
      */

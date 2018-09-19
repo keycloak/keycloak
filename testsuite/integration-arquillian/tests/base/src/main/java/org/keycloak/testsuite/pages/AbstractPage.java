@@ -21,6 +21,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.net.URI;
@@ -45,7 +46,7 @@ public abstract class AbstractPage {
 
     protected URI getAuthServerRoot() {
         try {
-            return KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getContextRoot().toURI()).path("/auth/").build();
+            return KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getBrowserContextRoot().toURI()).path("/auth/").build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

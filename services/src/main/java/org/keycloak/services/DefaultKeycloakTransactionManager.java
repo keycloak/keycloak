@@ -41,6 +41,8 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     private boolean rollback;
     private KeycloakSession session;
     private JTAPolicy jtaPolicy = JTAPolicy.REQUIRES_NEW;
+    // Used to prevent double committing/rollback if there is an uncaught exception
+    protected boolean completed;
 
     public DefaultKeycloakTransactionManager(KeycloakSession session) {
         this.session = session;
@@ -90,6 +92,8 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
              throw new IllegalStateException("Transaction already active");
         }
 
+        completed = false;
+
         if (jtaPolicy == JTAPolicy.REQUIRES_NEW) {
             JtaTransactionManagerLookup jtaLookup = session.getProvider(JtaTransactionManagerLookup.class);
             if (jtaLookup != null) {
@@ -109,6 +113,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void commit() {
+        if (completed) {
+            return;
+        } else {
+            completed = true;
+        }
+
         RuntimeException exception = null;
         for (KeycloakTransaction tx : prepare) {
             try {
@@ -156,6 +166,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void rollback() {
+        if (completed) {
+            return;
+        } else {
+            completed = true;
+        }
+
         RuntimeException exception = null;
         rollback(exception);
     }

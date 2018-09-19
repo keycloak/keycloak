@@ -18,8 +18,10 @@
 import {Injectable} from '@angular/core';
 import {Http, Response, RequestOptionsArgs} from '@angular/http';
 
-import {ToastNotifier, ToastNotification} from '../top-nav/toast.notifier';
+import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
+
+import {NotificationType} from 'patternfly-ng/notification';
  
  /**
  *
@@ -31,8 +33,8 @@ export class AccountServiceClient {
     private accountUrl: string;
 
     constructor(protected http: Http,
-        protected kcSvc: KeycloakService,
-        protected notifier: ToastNotifier) {
+                protected kcSvc: KeycloakService,
+                protected kcNotifySvc: KeycloakNotificationService) {
         this.accountUrl = kcSvc.authServerUrl() + 'realms/' + kcSvc.realm() + '/account';
     }
     
@@ -56,7 +58,7 @@ export class AccountServiceClient {
     private handleAccountUpdated(responseHandler: Function, res: Response, successMessage?: string) {
         let message: string = "Your account has been updated.";
         if (successMessage) message = successMessage;
-        this.notifier.emit(new ToastNotification(message, "success"));
+        this.kcNotifySvc.notify(message, NotificationType.SUCCESS);
         responseHandler(res);
     } 
     
@@ -102,8 +104,8 @@ export class AccountServiceClient {
         if (not500Error && response.json().hasOwnProperty('error_description')) {
             message = response.json().error_description;
         }
-
-        this.notifier.emit(new ToastNotification(message, "error"));
+        
+        this.kcNotifySvc.notify(message, NotificationType.DANGER, response.json().params);
     }
 }
 

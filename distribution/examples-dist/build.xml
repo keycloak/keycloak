@@ -118,12 +118,6 @@
                 <exclude name="**/README.md"/>
             </fileset>
         </copy>
-        <copy todir="target/examples/fuse" overwrite="true">
-            <fileset dir="../../examples/fuse">
-                <exclude name="**/target/**"/>
-                <exclude name="**/*.iml"/>
-            </fileset>
-        </copy>
         <copy todir="target/examples/ldap" overwrite="true">
             <fileset dir="../../examples/ldap">
                 <exclude name="**/target/**"/>
@@ -134,14 +128,6 @@
             <fileset dir="../../examples/kerberos">
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
-            </fileset>
-        </copy>
-        <copy todir="target/examples/authz" overwrite="true">
-            <fileset dir="../../examples/authz">
-                <exclude name="**/target/**"/>
-                <exclude name="**/*.iml"/>
-                <exclude name="**/*.unconfigured"/>
-                <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
         <copy file="../../examples/pom.xml" tofile="target/examples/pom.xml"/>

@@ -44,9 +44,9 @@ public class Sessions extends AccountManagement {
     }
 
     public List<List<String>> getSessions() {
-        List<List<String>> table = new LinkedList<List<String>>();
+        List<List<String>> table = new LinkedList<>();
         for (WebElement r : driver.findElements(By.tagName("tr"))) {
-            List<String> row = new LinkedList<String>();
+            List<String> row = new LinkedList<>();
             for (WebElement col : r.findElements(By.tagName("td"))) {
                 row.add(col.getText());
             }

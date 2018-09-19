@@ -66,6 +66,9 @@ public class RequiredActionProviderEntity {
     @Column(name="DEFAULT_ACTION")
     protected boolean defaultAction;
 
+    @Column(name="PRIORITY")
+    protected int priority;
+
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -134,6 +137,14 @@ public class RequiredActionProviderEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     @Override

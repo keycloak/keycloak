@@ -68,6 +68,9 @@ import java.util.Map;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -215,7 +218,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(profilePage.getPath() + "?referrer=test-app&referrer_uri=http://localhost:8180/auth/realms/master/app/auth/test%2Ffkrenu%22%3E%3Cscript%3Ealert%281%29%3C%2fscript%3E");
         Assert.assertTrue(profilePage.isCurrent());
 
-        Assert.assertFalse(driver.getPageSource().contains("<script>alert"));
+        assertFalse(driver.getPageSource().contains("<script>alert"));
     }
 
     @Test
@@ -567,11 +570,47 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertFalse(driver.findElements(By.id("username")).size() > 0);
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
 
         // Revert
         setRegistrationEmailAsUsername(false);
 
+    }
+
+    // KEYCLOAK-5443
+    @Test
+    public void changeProfileEmailAsUsernameAndEditUsernameEnabled() throws Exception {
+        setEditUsernameAllowed(true);
+        setRegistrationEmailAsUsername(true);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
+
+        profilePage.updateProfile("New First", "New Last", "new-email@email");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("New First", profilePage.getFirstName());
+        Assert.assertEquals("New Last", profilePage.getLastName());
+        Assert.assertEquals("new-email@email", profilePage.getEmail());
+
+        List<UserRepresentation> list = adminClient.realm("test").users().search(null, null, null, "new-email@email", null, null);
+        assertEquals(1, list.size());
+
+        UserRepresentation user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        // Revert
+
+        user.setUsername("test-user@localhost");
+        user.setFirstName("Tom");
+        user.setLastName("Brady");
+        user.setEmail("test-user@localhost");
+        adminClient.realm("test").users().get(user.getId()).update(user);
+
+        setRegistrationEmailAsUsername(false);
+        setEditUsernameAllowed(false);
     }
 
     private void setEditUsernameAllowed(boolean allowed) {
@@ -767,7 +806,40 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertTrue(totpPage.isCurrent());
 
-        Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
+        assertFalse(driver.getPageSource().contains("Remove Google"));
+
+        String pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
+        assertTrue(pageSource.contains("FreeOTP"));
+        assertTrue(pageSource.contains("Google Authenticator"));
+
+        assertTrue(pageSource.contains("Open the application and scan the barcode"));
+        assertFalse(pageSource.contains("Open the application and enter the key"));
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+
+        totpPage.clickManual();
+
+        pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
+        assertTrue(pageSource.contains("FreeOTP"));
+        assertTrue(pageSource.contains("Google Authenticator"));
+
+        assertFalse(pageSource.contains("Open the application and scan the barcode"));
+        assertTrue(pageSource.contains("Open the application and enter the key"));
+
+        assertFalse(pageSource.contains("Unable to scan?"));
+        assertTrue(pageSource.contains("Scan barcode?"));
+
+        assertTrue(driver.findElement(By.id("kc-totp-secret-key")).getText().matches("[\\w]{4}( [\\w]{4}){7}"));
+
+        assertEquals("Type: Time-based", driver.findElement(By.id("kc-totp-type")).getText());
+        assertEquals("Algorithm: SHA1", driver.findElement(By.id("kc-totp-algorithm")).getText());
+        assertEquals("Digits: 6", driver.findElement(By.id("kc-totp-digits")).getText());
+        assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
 
         // Error with false code
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret() + "123"));
@@ -785,6 +857,10 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         totpPage.removeTotp();
 
         events.expectAccount(EventType.REMOVE_TOTP).assertEvent();
+
+        accountPage.logOut();
+
+        assertFalse(errorPage.isCurrent());
     }
 
     @Test
@@ -873,7 +949,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         // Create second session
         try {
             OAuthClient oauth2 = new OAuthClient();
-            oauth2.init(adminClient, driver2);
+            oauth2.init(driver2);
             oauth2.doLogin("view-sessions", "password");
 
             EventRepresentation login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();
@@ -914,46 +990,43 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
-        Assert.assertEquals(3, accountEntry.getRolesAvailable().size());
+        Assert.assertEquals(4, accountEntry.getRolesAvailable().size());
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account links in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
-        Assert.assertEquals(1, accountEntry.getRolesGranted().size());
-        Assert.assertTrue(accountEntry.getRolesGranted().contains("Full Access"));
-        Assert.assertEquals(1, accountEntry.getProtocolMappersGranted().size());
-        Assert.assertTrue(accountEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Offline access"));
+        Assert.assertEquals(1, accountEntry.getClientScopesGranted().size());
+        Assert.assertTrue(accountEntry.getClientScopesGranted().contains("Full Access"));
         Assert.assertEquals("http://localhost:8180/auth/realms/test/account", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
         Assert.assertEquals(5, testAppEntry.getRolesAvailable().size());
         Assert.assertTrue(testAppEntry.getRolesAvailable().contains("Offline access"));
-        Assert.assertTrue(testAppEntry.getRolesGranted().contains("Full Access"));
-        Assert.assertTrue(testAppEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertTrue(testAppEntry.getClientScopesGranted().contains("Full Access"));
         Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", testAppEntry.getHref());
 
         AccountApplicationsPage.AppEntry thirdPartyEntry = apps.get("third-party");
-        Assert.assertEquals(2, thirdPartyEntry.getRolesAvailable().size());
+        Assert.assertEquals(3, thirdPartyEntry.getRolesAvailable().size());
         Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have User privileges"));
         Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have Customer User privileges in test-app"));
-        Assert.assertEquals(0, thirdPartyEntry.getRolesGranted().size());
-        Assert.assertEquals(0, thirdPartyEntry.getProtocolMappersGranted().size());
+        Assert.assertEquals(0, thirdPartyEntry.getClientScopesGranted().size());
         Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", thirdPartyEntry.getHref());
-        
+
         AccountApplicationsPage.AppEntry testAppNamed = apps.get("Test App Named - ${client_account}");
         Assert.assertEquals("http://localhost:8180/varnamedapp/base", testAppNamed.getHref());
-        
+
         AccountApplicationsPage.AppEntry rootUrlClient = apps.get("root-url-client");
         Assert.assertEquals("http://localhost:8180/foo/bar/baz", rootUrlClient.getHref());
-        
+
         AccountApplicationsPage.AppEntry authzApp = apps.get("test-app-authz");
         Assert.assertEquals("http://localhost:8180/test-app-authz", authzApp.getHref());
-        
+
         AccountApplicationsPage.AppEntry namedApp = apps.get("My Named Test App");
         Assert.assertEquals("http://localhost:8180/namedapp/base", namedApp.getHref());
-        
+
         AccountApplicationsPage.AppEntry testAppScope = apps.get("test-app-scope");
         Assert.assertNull(testAppScope.getHref());
     }
