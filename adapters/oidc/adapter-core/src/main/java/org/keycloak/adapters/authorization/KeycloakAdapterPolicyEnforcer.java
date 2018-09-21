@@ -55,14 +55,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean isAuthorized(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AccessToken accessToken, OIDCHttpFacade httpFacade) {
+    protected boolean isAuthorized(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AccessToken accessToken, OIDCHttpFacade httpFacade, Map<String, List<String>> claims) {
         AccessToken original = accessToken;
 
-        if (super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade)) {
+        if (super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade, claims)) {
             return true;
         }
 
-        accessToken = requestAuthorizationToken(pathConfig, methodConfig, httpFacade);
+        accessToken = requestAuthorizationToken(pathConfig, methodConfig, httpFacade, claims);
 
         if (accessToken == null) {
             return false;
@@ -90,7 +90,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
         original.setAuthorization(authorization);
 
-        return super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade);
+        return super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade, claims);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         }
     }
 
-    private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
+    private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade, Map<String, List<String>> claims) {
         if (getEnforcerConfig().getUserManagedAccess() != null) {
             return null;
         }
@@ -148,8 +148,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
                 authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
             }
-
-            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
 
             if (!claims.isEmpty()) {
                 authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
