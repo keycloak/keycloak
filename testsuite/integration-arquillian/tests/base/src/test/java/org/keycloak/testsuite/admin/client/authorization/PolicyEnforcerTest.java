@@ -33,8 +33,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -151,6 +154,34 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         context = policyEnforcer.enforce(httpFacade);
         assertFalse(context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+    }
+
+    @Test
+    public void testResolvingClaimsOnce() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token, new Function<String, String>() {
+            AtomicBoolean resolved = new AtomicBoolean();
+
+            @Override
+            public String apply(String s) {
+                Assert.assertTrue(resolved.compareAndSet(false, true));
+                return "claim-value";
+            }
+        });
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertTrue(context.isGranted());
     }
 
     @Test
@@ -308,6 +339,10 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment) {
+        return createHttpFacade(path, method, token, headers, parameters, requestBody, deployment, null);
+    }
+
+    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment, Function<String, String> parameterFunction) {
         return new OIDCHttpFacade() {
             Request request;
             Response response;
@@ -329,7 +364,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             @Override
             public Request getRequest() {
                 if (request == null) {
-                    request = createHttpRequest(path, method, headers, parameters, requestBody);
+                    request = createHttpRequest(path, method, headers, parameters, requestBody, parameterFunction);
                 }
                 return request;
             }
@@ -357,11 +392,27 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         return createHttpFacade(path, null, null, new HashMap<>(), new HashMap<>(), null, null);
     }
 
+    private OIDCHttpFacade createHttpFacade(String path, String token, Function<String, String> parameterFunction) {
+        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null, null, parameterFunction);
+    }
+
     private Response createHttpResponse(Map<String, List<String>> headers) {
         return new TestResponse(headers);
     }
 
-    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody) {
+    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, Function<String, String> parameterFunction) {
+        if (parameterFunction == null) {
+            parameterFunction = param -> {
+                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
+
+                if (!values.isEmpty()) {
+                    return values.get(0);
+                }
+
+                return null;
+            };
+        }
+        Function<String, String> finalParameterFunction = parameterFunction;
         return new Request() {
 
             private InputStream inputStream;
@@ -388,13 +439,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
             @Override
             public String getFirstParam(String param) {
-                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
-
-                if (!values.isEmpty()) {
-                    return values.get(0);
-                }
-
-                return null;
+                return finalParameterFunction.apply(param);
             }
 
             @Override
