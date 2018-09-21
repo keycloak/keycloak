@@ -27,7 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
@@ -171,7 +171,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             }
 
             if (authzResponse != null) {
-                return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
+                return AdapterTokenVerifier.verifyToken(authzResponse.getToken(), deployment);
             }
         } catch (AuthorizationDeniedException ignore) {
             LOGGER.debug("Authorization denied", ignore);

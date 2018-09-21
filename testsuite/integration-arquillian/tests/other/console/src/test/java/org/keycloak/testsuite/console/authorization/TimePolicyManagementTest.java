@@ -77,6 +77,13 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         TimePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
 
         assertPolicy(expected, actual);
+
+        expected.setNotBefore("");
+        expected.setNotOnOrAfter("");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().update(expected.getName(), expected);
+        assertAlertSuccess();
     }
 
     @Test

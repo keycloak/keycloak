@@ -40,6 +40,10 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint")
     private String tokenEndpoint;
 
+    /**
+     * The name 'token_introspection_endpoint' is deprecated and will be replaced by 'introspection_endpoint' as defined by RFC-8414.
+     * Until there, we just add {@code getIntrospectionEndpoint} claim to avoid breaking backward compatibility.
+     */
     @JsonProperty("token_introspection_endpoint")
     private String tokenIntrospectionEndpoint;
 
@@ -140,6 +144,16 @@ public class OIDCConfigurationRepresentation {
 
     public String getTokenIntrospectionEndpoint() {
         return this.tokenIntrospectionEndpoint;
+    }
+
+    /**
+     * See KEYCLOAK-8308. This method should be removed once the standard name is used to advertise the introspection endpoint.
+     * @return
+     */
+    @Deprecated
+    @JsonProperty("introspection_endpoint")
+    private String getIntrospectionEndpoint() {
+        return getTokenIntrospectionEndpoint();
     }
 
     public void setTokenIntrospectionEndpoint(String tokenIntrospectionEndpoint) {

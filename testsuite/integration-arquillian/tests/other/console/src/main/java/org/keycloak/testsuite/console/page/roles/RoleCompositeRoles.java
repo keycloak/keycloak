@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -116,7 +117,7 @@ public class RoleCompositeRoles extends Form {
     public static Set<String> getSelectValues(Select select) {
         Set<String> roles = new HashSet<>();
         for (WebElement option : select.getOptions()) {
-            roles.add(option.getText());
+            roles.add(getTextFromElement(option));
         }
         return roles;
     }

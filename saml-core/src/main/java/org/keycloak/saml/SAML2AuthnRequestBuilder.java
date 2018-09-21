@@ -18,7 +18,6 @@ package org.keycloak.saml;
 
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -56,11 +55,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
     }
 
     public SAML2AuthnRequestBuilder() {
-        try {
-            this.authnRequestType = new AuthnRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
-        } catch (ConfigurationException e) {
-            throw new RuntimeException("Could not create SAML AuthnRequest builder.", e);
-        }
+        this.authnRequestType = new AuthnRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
     }
 
     public SAML2AuthnRequestBuilder assertionConsumerUrl(String assertionConsumerUrl) {

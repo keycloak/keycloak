@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,10 @@ public class KeycloakBaseSpringBootConfiguration {
         KeycloakSpringBootConfigResolver.setAdapterConfig(keycloakProperties);
     }
 
+    @Autowired (required = false)
+    public void setKeycloakConfigResolvers(KeycloakConfigResolver configResolver) {
+        KeycloakSpringBootConfigResolver.setDelegateConfigResolver(configResolver);
+    }
 
     static class KeycloakBaseUndertowDeploymentInfoCustomizer  {
 

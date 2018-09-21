@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.valueOf;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.scrollElementIntoView;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -97,12 +99,13 @@ public class TokenSettings extends RealmSettings {
             selectOperation(tokenType);
 
             return actionTokenAttributeTime.getAttribute("value").equals(Integer.toString(timeout)) &&
-                    actionTokenAttributeUnit.getFirstSelectedOption().getText().equals(capitalize(unit.name().toLowerCase()));
+                    UIUtils.getTextFromElement(actionTokenAttributeUnit.getFirstSelectedOption()).equals(capitalize(unit.name().toLowerCase()));
         }
 
         public void resetActionToken(String tokenType) {
             selectOperation(tokenType);
-            resetButton.click();
+            scrollElementIntoView(resetButton);
+            clickLink(resetButton);
         }
 
         public void selectOperation(String tokenType) {

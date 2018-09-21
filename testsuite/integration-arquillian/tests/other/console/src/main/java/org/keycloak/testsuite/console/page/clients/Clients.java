@@ -26,6 +26,7 @@ import org.openqa.selenium.support.FindBy;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 
@@ -110,9 +111,9 @@ public class Clients extends AdminConsoleRealm {
             if (row.isDisplayed()) {
                 client = new ClientRepresentation();
                 List<WebElement> tds = row.findElements(tagName("td"));
-                client.setClientId(tds.get(0).getText());
+                client.setClientId(getTextFromElement(tds.get(0)));
                 List<String> redirectUris = new ArrayList<>();
-                redirectUris.add(tds.get(2).getText()); // FIXME there can be more than 1 redirect uri
+                redirectUris.add(getTextFromElement(tds.get(2))); // FIXME there can be more than 1 redirect uri
                 client.setRedirectUris(redirectUris);
             }
             return client;

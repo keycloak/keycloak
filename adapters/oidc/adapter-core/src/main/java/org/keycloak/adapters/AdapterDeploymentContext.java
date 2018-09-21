@@ -482,6 +482,16 @@ public class AdapterDeploymentContext {
         public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
             delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
         }
+
+        @Override
+        public boolean isVerifyTokenAudience() {
+            return delegate.isVerifyTokenAudience();
+        }
+
+        @Override
+        public void setVerifyTokenAudience(boolean verifyTokenAudience) {
+            delegate.setVerifyTokenAudience(verifyTokenAudience);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

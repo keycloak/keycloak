@@ -250,6 +250,29 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         assertEquals(expectedStatus, status);
     }
 
+    public void testDeleteSessions() throws IOException {
+        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
+        oauth.doLogin("view-account-access", "password");
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(2, sessions.size());
+        int status = SimpleHttp.doDelete(getAccountUrl("sessions?current=false"), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        assertEquals(200, status);
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(1, sessions.size());
+    }
+
+    @Test
+    public void testDeleteSession() throws IOException {
+        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
+        String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(2, sessions.size());
+        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        assertEquals(200, status);
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(1, sessions.size());
+    }
+
     private String getAccountUrl(String resource) {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
     }

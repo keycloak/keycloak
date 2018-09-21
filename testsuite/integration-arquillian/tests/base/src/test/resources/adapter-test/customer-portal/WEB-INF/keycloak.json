@@ -1,7 +1,7 @@
 {
     "realm": "demo",
     "resource": "customer-portal",
-    "auth-server-url": "http://localhostt:8180/auth",
+    "auth-server-url": "http://localhost:8180/auth",
     "ssl-required" : "external",
     "expose-token": true,
     "min-time-between-jwks-requests": 120,

@@ -22,13 +22,17 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.util.JsonSerialization;
@@ -64,6 +68,10 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             rep.setCredentials(adapterConfig);
         }
 
+        if (showVerifyTokenAudience(client)) {
+            rep.setVerifyTokenAudience(true);
+        }
+
         configureAuthorizationSettings(session, client, rep);
 
         String json = null;
@@ -92,6 +100,24 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         }
 
         return true;
+    }
+
+
+    // Check if there is audience client scope created for particular client. If yes, admin wants verifying token audience
+    static boolean showVerifyTokenAudience(ClientModel client) {
+        String clientId = client.getClientId();
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), clientId);
+        if (clientScope == null) {
+            return false;
+        }
+
+        for (ProtocolMapperModel protocolMapper : clientScope.getProtocolMappers()) {
+            if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) && (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

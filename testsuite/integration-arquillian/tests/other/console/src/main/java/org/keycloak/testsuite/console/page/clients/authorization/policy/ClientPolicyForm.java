@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.List;
@@ -79,7 +80,7 @@ public class ClientPolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setClients(clientsInput.getSelected());
 
         return representation;
@@ -99,8 +100,8 @@ public class ClientPolicyForm extends Form {
             return (webElement, name) -> {
                 List<WebElement> tds = webElement.findElements(tagName("td"));
 
-                if (!tds.get(0).getText().isEmpty()) {
-                    if (tds.get(0).getText().equals(name)) {
+                if (!UIUtils.getTextFromElement(tds.get(0)).isEmpty()) {
+                    if (UIUtils.getTextFromElement(tds.get(0)).equals(name)) {
                         tds.get(1).findElement(By.tagName("button")).click();
                         return true;
                     }
@@ -112,7 +113,7 @@ public class ClientPolicyForm extends Form {
 
         @Override
         protected Function<WebElement, String> representation() {
-            return webElement -> webElement.findElements(tagName("td")).get(0).getText();
+            return webElement -> getTextFromElement(webElement.findElements(tagName("td")).get(0));
         }
     }
 }

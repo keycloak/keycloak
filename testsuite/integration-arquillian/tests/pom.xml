@@ -151,7 +151,7 @@
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
-        <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <chromeBinary/>
         <chromeArguments/>
 

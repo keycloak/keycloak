@@ -68,6 +68,11 @@ public class DeploymentBuilder {
         SP sp = adapter.getSps().get(0);
         deployment.setConfigured(true);
         deployment.setEntityID(sp.getEntityID());
+        try {
+            URI.create(sp.getEntityID());
+        } catch (IllegalArgumentException ex) {
+            log.warnf("Entity ID is not an URI, assertion that restricts audience will fail. Update Entity ID to be URI.", sp.getEntityID());
+        }
         deployment.setForceAuthentication(sp.isForceAuthentication());
         deployment.setIsPassive(sp.isIsPassive());
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());

@@ -36,6 +36,6 @@ public interface ContainerConstants {
     public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
 
     public static final String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
-    public static final String APP_SERVER_FUSE70 = APP_SERVER_PREFIX + "fuse70";
-    public static final String APP_SERVER_FUSE71 = APP_SERVER_PREFIX + "fuse71";
+    public static final String APP_SERVER_FUSE7X = APP_SERVER_PREFIX + "fuse7x";
+
 }

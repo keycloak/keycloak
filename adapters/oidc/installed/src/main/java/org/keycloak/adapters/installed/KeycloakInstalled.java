@@ -24,16 +24,13 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
@@ -537,15 +534,9 @@ public class KeycloakInstalled {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
 
-        token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
-        if (idTokenString != null) {
-            try {
-                JWSInput input = new JWSInput(idTokenString);
-                idToken = input.readJsonContent(IDToken.class);
-            } catch (JWSInputException e) {
-                throw new VerificationException();
-            }
-        }
+        AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+        token = tokens.getAccessToken();
+        idToken = tokens.getIdToken();
     }
 
     public AccessToken getToken() {
