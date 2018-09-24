@@ -18,6 +18,9 @@
     <description>KeyCloak AuthZ: Client API</description>
 
     <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <keycloak.osgi.export>
             org.keycloak.authorization.client.*
         </keycloak.osgi.export>
@@ -45,7 +48,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
         </dependency>
 
         <dependency>
@@ -72,14 +74,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-		    <source>${maven.compiler.source}</source>
-		    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

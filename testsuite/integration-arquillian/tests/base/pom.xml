@@ -376,7 +376,6 @@
                 <app.server.skip.unpack>false</app.server.skip.unpack>
 
                 <arquillian-wildfly-container.version>${wildfly.deprecated.arquillian.wildfly.container}</arquillian-wildfly-container.version>
-                <infinispan.version>${wildfly.deprecated.infinispan.version}</infinispan.version>    <!-- KEYCLOAK-5302 -->
             </properties>
             <dependencies>
                 <dependency>
@@ -464,7 +463,7 @@
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
-                    <version>${wildfly.core.version}</version>
+                    <version>3.0.10.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -490,7 +489,8 @@
                 <app.server.skip.unpack>false</app.server.skip.unpack>
 
                 <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-                <infinispan.version>8.2.5.Final</infinispan.version>    <!-- KEYCLOAK-5302 -->
+                <!--TODO: check it when KEYCLOAK-8529 is resolved-->
+                <!--<infinispan.version>8.2.5.Final</infinispan.version>     KEYCLOAK-5302 -->
 
                 <app.server.management.protocol>remote</app.server.management.protocol>
                 <app.server.management.port>10199</app.server.management.port>
@@ -509,7 +509,7 @@
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
-                    <version>${wildfly10.core.version}</version>
+                    <version>2.0.10.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -648,6 +648,7 @@
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <exclude.crossdc>-</exclude.crossdc>
+                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
             </properties>
         </profile>
         <profile>
@@ -656,6 +657,7 @@
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
                 <exclude.crossdc>-</exclude.crossdc>
+                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
             </properties>
         </profile>
         <profile>

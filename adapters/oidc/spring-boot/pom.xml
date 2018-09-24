@@ -31,6 +31,8 @@
   <description/>
 
   <properties>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.7</maven.compiler.source>
     <spring-boot.version>1.4.0.RELEASE</spring-boot.version>
     <spring.version>4.1.6.RELEASE</spring.version>
     <mockito.version>1.9.5</mockito.version>
@@ -125,16 +127,5 @@
         <version>${spring-boot.version}</version>
      </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+
 </project>

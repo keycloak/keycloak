@@ -92,6 +92,12 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
         param.setParamValue(configService.getConfig().toString());
         contextParams.add(param);
 
+        // Prefer ResteasyJackson2Provider over JsonBindingProvider
+        param = new ParamValueMetaData();
+        param.setParamName("resteasy.preferJacksonOverJsonB"); // Corresponds to ResteasyContextParameters.RESTEASY_PREFER_JACKSON_OVER_JSONB
+        param.setParamValue(Boolean.TRUE.toString());
+        contextParams.add(param);
+
         webMetaData.setContextParams(contextParams);
     }
 

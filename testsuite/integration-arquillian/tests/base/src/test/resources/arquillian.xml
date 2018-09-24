@@ -143,7 +143,7 @@
     <group qualifier="auth-server-${auth.server}-cluster">
         <container qualifier="auth-server-${auth.server}-backend1" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -167,7 +167,7 @@
         </container>
         <container qualifier="auth-server-${auth.server}-backend2" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${auth.server.backend2.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -203,7 +203,9 @@
                 <property name="route">node1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.nodeName": "node1"
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
             </configuration>
@@ -218,7 +220,9 @@
                 <property name="route">node2</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.nodeName": "node2"
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node2",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
             </configuration>
@@ -226,7 +230,7 @@
 
         <container qualifier="auth-server-balancer-undertow" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="enabled">${auth.server.cluster}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
@@ -319,6 +323,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -342,6 +347,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -366,6 +372,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -389,6 +396,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -410,8 +418,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc01.jvm.debug.args}
                 </property>
@@ -436,8 +446,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc02.jvm.debug.args}
                 </property>
@@ -463,8 +475,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc11.jvm.debug.args}
                 </property>
@@ -489,8 +503,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc12.jvm.debug.args}
                 </property>
@@ -501,27 +517,6 @@
             </configuration>
         </container>
     </group>
-    
-
-    <container qualifier="auth-server-balancer-wildfly" mode="suite" >
-        <configuration>
-            <property name="enabled">${auth.server.cluster}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${auth.server.balancer.home}</property>
-            <property name="jbossArguments">
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
-                -Dauth.server.truststore=${auth.server.truststore}
-                -Dauth.server.truststore.password=${auth.server.truststore.password}
-            </property>
-            <property name="javaVmArguments">
-                -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
-                -Djava.net.preferIPv4Stack=true
-            </property>
-            <property name="outputToConsole">${frontend.console.output}</property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
-        </configuration>
-    </container>
     
     <container qualifier="auth-server-remote" mode="suite" >
         <configuration>

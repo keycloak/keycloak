@@ -17,11 +17,6 @@
     <name>KeyCloak AuthZ: Provider Parent</name>
     <description>KeyCloak AuthZ: Provider Parent</description>
 
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-
     <modules>
         <module>common</module>
         <module>drools</module>

@@ -45,4 +45,32 @@
         <cache.server.worker.task-max-threads>${cache.default.worker.task-max-threads}</cache.server.worker.task-max-threads>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cache-server</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${cache.server.jboss.groupId}</groupId>
+                                    <artifactId>${cache.server.jboss.artifactId}</artifactId>
+                                    <version>${cache.server.jboss.version}</version>
+                                    <type>zip</type>
+                                    <classifier>bin</classifier>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

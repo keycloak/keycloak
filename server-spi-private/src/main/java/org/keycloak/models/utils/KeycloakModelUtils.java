@@ -613,9 +613,7 @@ public final class KeycloakModelUtils {
             if (suspended != null) {
                 try {
                     lookup.getTransactionManager().resume(suspended);
-                } catch (InvalidTransactionException e) {
-                    throw new RuntimeException(e);
-                } catch (SystemException e) {
+                } catch (InvalidTransactionException | SystemException e) {
                     throw new RuntimeException(e);
                 }
             }

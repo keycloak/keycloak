@@ -30,6 +30,11 @@
     <artifactId>keycloak-as7-integration-pom</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

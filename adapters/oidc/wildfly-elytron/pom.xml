@@ -31,11 +31,6 @@
     <name>Keycloak Wildfly Elytron OIDC Adapter</name>
     <description/>
 
-    <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.wildfly.common</groupId>
@@ -55,7 +50,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

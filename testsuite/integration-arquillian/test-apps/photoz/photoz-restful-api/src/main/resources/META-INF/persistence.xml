@@ -5,7 +5,7 @@
         http://java.sun.com/xml/ns/persistence
         http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
 	<persistence-unit name="primary" transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.ejb.HibernatePersistence</provider>
+                <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
 		<class>org.keycloak.example.photoz.entity.Album</class>
 		<class>org.keycloak.example.photoz.entity.Photo</class>
