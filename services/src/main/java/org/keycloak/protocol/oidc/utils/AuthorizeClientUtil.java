@@ -17,10 +17,12 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -40,6 +42,8 @@ import java.util.Map;
  */
 public class AuthorizeClientUtil {
 
+    private static final Logger logger = Logger.getLogger(AuthorizeClientUtil.class);
+
     public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event) {
         AuthenticationProcessor processor = getAuthenticationProcessor(session, event);
 
@@ -50,7 +54,18 @@ public class AuthorizeClientUtil {
 
         ClientModel client = processor.getClient();
         if (client == null) {
-            throw new ErrorResponseException("invalid_client", "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
+        }
+
+        String protocol = client.getProtocol();
+        if (protocol == null) {
+            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration", client.getClientId());
+            protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
+        }
+
+        if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            event.error(Errors.INVALID_CLIENT);
+            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
         }
 
         session.getContext().setClient(client);
