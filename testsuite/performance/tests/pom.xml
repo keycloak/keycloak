@@ -48,9 +48,6 @@
         <db.dump.download.site>https://downloads.jboss.org/keycloak-qe/${server.version}</db.dump.download.site>
         <numOfWorkers>1</numOfWorkers>
 
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
         <scala.version>2.11.7</scala.version>
         <gatling.version>2.1.7</gatling.version>
         <gatling-plugin.version>2.2.1</gatling-plugin.version>

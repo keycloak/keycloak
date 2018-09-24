@@ -436,16 +436,23 @@ end-if
 
 # Migrate from 4.4.0 to 4.5.0
 if (outcome == failed) of /subsystem=core-management/:read-resource
-    try
-        echo Trying to add core-management extension
-        /extension=org.wildfly.extension.core-management/:add
-        echo
-    catch
-        echo Wasn't able to add core-management extension, it should be already added by migrate-domain-standalone.cli
-        echo
-    end-try
+    echo Adding core-management extension
+    /extension=org.wildfly.extension.core-management/:add
     echo Adding subsystem core-management
     /subsystem=core-management/:add
+    echo
+end-if
+
+# Migrate from 4.5.0 to 4.6.0
+if (outcome == success) of /subsystem=elytron/http-authentication-factory=application-http-authentication/:read-resource
+    echo Removing application-http-authentication from elytron subsystem
+    /subsystem=elytron/http-authentication-factory=application-http-authentication:remove
+    echo
+end-if
+
+if (result == undefined) of /subsystem=transactions/:read-attribute(name=node-identifier,include-defaults=false)
+    echo Setting node-identifier attribute of core-environment element in transactions subsystem
+    /subsystem=transactions/:write-attribute(name=node-identifier,value=expression "${jboss.tx.node.id:1}")
     echo
 end-if
 

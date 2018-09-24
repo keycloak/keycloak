@@ -42,9 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>11.0.0.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>3.0.8.Final</wildfly.deprecated.wildfly.core.version>
-        <wildfly.deprecated.infinispan.version>8.2.8.Final</wildfly.deprecated.infinispan.version>
+        <wildfly.deprecated.version>13.0.0.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>5.0.0.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.0.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -73,11 +72,6 @@
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
         <migration.72.version>3.4.3.Final</migration.72.version>
-
-        <google.guava.version>23.0</google.guava.version>
-        
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
 
     <dependencyManagement>
@@ -248,6 +242,11 @@
                     <groupId>org.commonjava.maven.plugins</groupId>
                     <artifactId>directory-maven-plugin</artifactId>
                     <version>0.3.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>1.4.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>

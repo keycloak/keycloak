@@ -675,16 +675,6 @@
         </dependency>
         <dependency>
             <groupId>org.kie.soup</groupId>
-            <artifactId>kie-soup-maven-support</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.kie.soup</groupId>
             <artifactId>kie-soup-maven-integration</artifactId>
             <exclusions>
                 <exclusion>
@@ -818,13 +808,6 @@
                             </artifactItems>
                         </configuration>
                     </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
                     <execution>
                         <id>unpack-cli</id>
                         <phase>validate</phase>

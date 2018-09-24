@@ -540,4 +540,35 @@ if (outcome == success) of /socket-binding-group=$clusteredProfile-sockets/socke
   /profile=$clusteredProfile/socket-binding-group=$clusteredProfile-sockets/socket-binding=modcluster:undefine-attribute(name=port)
 end-if
 
+# Migrate from 4.5.0 to 4.6.0
+if (outcome == success) of /profile=$clusteredProfile/subsystem=elytron/http-authentication-factory=application-http-authentication/:read-resource
+    echo Removing application-http-authentication from elytron subsystem
+    /profile=$clusteredProfile/subsystem=elytron/http-authentication-factory=application-http-authentication:remove
+    echo
+end-if
+
+if (result == undefined) of /profile=$clusteredProfile/subsystem=transactions/:read-attribute(name=node-identifier,include-defaults=false)
+    echo Setting node-identifier attribute of core-environment element in transactions subsystem
+    /profile=$clusteredProfile/subsystem=transactions/:write-attribute(name=node-identifier,value=expression "${jboss.tx.node.id:1}")
+    echo
+end-if
+
+if (outcome == success) of /profile=$clusteredProfile/subsystem=jgroups/stack=udp/transport=UDP/property=port_range:read-attribute(name=value)
+    try
+        /profile=$clusteredProfile/subsystem=jgroups/stack=udp/transport=UDP/property=port_range:remove
+        echo Remove port_range property from UDP transport type of udp stack
+    catch
+        echo
+    end-try
+end-if
+
+if (outcome == success) of /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:read-attribute(name=value)
+    try
+        /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:remove
+        echo Remove port_range property from TCP transport type of tcp stack
+    catch
+        echo
+    end-try
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***

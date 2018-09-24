@@ -99,14 +99,12 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Built-in Authorization Drools Policy Provider-->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-drools</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <!-- Drools -->
         <dependency>

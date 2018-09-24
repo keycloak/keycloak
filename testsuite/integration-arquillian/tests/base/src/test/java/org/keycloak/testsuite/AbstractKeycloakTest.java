@@ -81,6 +81,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -364,6 +367,17 @@ public abstract class AbstractKeycloakTest {
             importRealm(testRealm);
         }
     }
+
+
+    protected void removeAllRealmsDespiteMaster() {
+        // remove all realms (accidentally left by other tests) except for master
+        adminClient.realms().findAll().stream()
+                .map(RealmRepresentation::getRealm)
+                .filter(realmName -> ! realmName.equals("master"))
+                .forEach(this::removeRealm);
+        assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
+    }
+
 
     private UserRepresentation createAdminUserRepresentation() {
         UserRepresentation adminUserRep = new UserRepresentation();

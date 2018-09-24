@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.client.hotrod.ProtocolVersion;
@@ -31,7 +30,6 @@ import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -202,11 +200,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 throw new RuntimeException("Invalid value for sessionsMode");
             }
 
+            int owners = config.getInt("sessionsOwners", 2);
+            logger.debugf("Session owners: %d", owners);
+
             int l1Lifespan = config.getInt("l1Lifespan", 600000);
             boolean l1Enabled = l1Lifespan > 0;
             sessionConfigBuilder.clustering()
                     .hash()
-                        .numOwners(config.getInt("sessionsOwners", 2))
+                        .numOwners(owners)
                         .numSegments(config.getInt("sessionsSegments", 60))
                     .l1()
                         .enabled(l1Enabled)
@@ -354,7 +355,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    //.protocolVersion(ProtocolVersion.PROTOCOL_VERSION_26)
+                    .protocolVersion(getHotrodVersion())
                     .addServer()
                         .host(jdgServer)
                         .port(jdgPort)
@@ -382,13 +383,25 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    //.protocolVersion(ProtocolVersion.PROTOCOL_VERSION_26)
+                    .protocolVersion(getHotrodVersion())
                     .addServer()
                         .host(jdgServer)
                         .port(jdgPort)
                     .async()
                         .enabled(async);
 
+    }
+
+    private ProtocolVersion getHotrodVersion() {
+        String hotrodVersionStr = config.get("hotrodProtocolVersion", ProtocolVersion.DEFAULT_PROTOCOL_VERSION.toString());
+        ProtocolVersion hotrodVersion = ProtocolVersion.parseVersion(hotrodVersionStr);
+        if (hotrodVersion == null) {
+            hotrodVersion = ProtocolVersion.DEFAULT_PROTOCOL_VERSION;
+        }
+
+        logger.debugf("HotRod protocol version: %s", hotrodVersion);
+
+        return hotrodVersion;
     }
 
     protected Configuration getKeysCacheConfig() {

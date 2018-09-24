@@ -31,6 +31,9 @@
     <packaging>bundle</packaging>
 
     <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <keycloak.osgi.export>
             org.keycloak.adapters.camel.undertow;version="${project.version}"
         </keycloak.osgi.export>
@@ -98,15 +101,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

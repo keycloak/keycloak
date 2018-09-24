@@ -81,12 +81,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
-        // remove all realms (accidentally left by other tests) except for master
-        adminClient.realms().findAll().stream()
-                .map(RealmRepresentation::getRealm)
-                .filter(realmName -> ! realmName.equals("master"))
-                .forEach(this::removeRealm);
-        assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
+        removeAllRealmsDespiteMaster();
     }
 
     private void setEventsConfig(RealmRepresentation realm) {
