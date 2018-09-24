@@ -175,6 +175,13 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
             }
+
+            if (!isClientProtocolCorrect(client)) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_CLIENT);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
+            }
+
             session.getContext().setClient(client);
             logger.debug("logout response");
             Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
@@ -224,6 +231,11 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.STANDARD_FLOW_DISABLED);
+            }
+            if (!isClientProtocolCorrect(client)) {
+                event.event(EventType.LOGIN);
+                event.error(Errors.INVALID_CLIENT);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
             }
 
             session.getContext().setClient(client);
@@ -607,6 +619,14 @@ public class SamlService extends AuthorizationEndpointBase {
           key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, false));
     }
 
+    private boolean isClientProtocolCorrect(ClientModel clientModel) {
+        if (SamlProtocol.LOGIN_PROTOCOL.equals(clientModel.getProtocol())) {
+            return true;
+        }
+
+        return false;
+    }
+
     @GET
     @Path("clients/{client}")
     @Produces(MediaType.TEXT_HTML_UTF_8)
@@ -630,6 +650,10 @@ public class SamlService extends AuthorizationEndpointBase {
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
+        }
+        if (!isClientProtocolCorrect(client)) {
+            event.error(Errors.INVALID_CLIENT);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
         }
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
             logger.error("SAML assertion consumer url not set up");

@@ -36,15 +36,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Map;
 
@@ -62,11 +60,13 @@ public class ClientRegistrationAuth {
     private ClientInitialAccessModel initialAccessModel;
     private String kid;
     private String token;
+    private String endpoint;
 
-    public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event) {
+    public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event, String endpoint) {
         this.session = session;
         this.provider = provider;
         this.event = event;
+        this.endpoint = endpoint;
     }
 
     private void init() {
@@ -129,6 +129,8 @@ public class ClientRegistrationAuth {
         RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
 
         if (isBearerToken()) {
+            checkClientProtocol();
+
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
                 registrationAuth = RegistrationAuth.AUTHENTICATED;
             } else {
@@ -162,6 +164,8 @@ public class ClientRegistrationAuth {
         init();
 
         if (isBearerToken()) {
+            checkClientProtocol();
+
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS)) {
                 if (client == null) {
                     throw notFound();
@@ -224,10 +228,26 @@ public class ClientRegistrationAuth {
         }
     }
 
+    private void checkClientProtocol() {
+        ClientModel client = session.getContext().getRealm().getClientByClientId(jwt.getIssuedFor());
+
+        checkClientProtocol(client);
+    }
+
+    private void checkClientProtocol(ClientModel client) {
+        if (endpoint.equals("openid-connect") || endpoint.equals("saml2-entity-descriptor")) {
+            if (client != null && !endpoint.contains(client.getProtocol())) {
+                throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
     private RegistrationAuth requireUpdateAuth(ClientModel client) {
         init();
 
         if (isBearerToken()) {
+            checkClientProtocol();
+
             if (hasRole(AdminRoles.MANAGE_CLIENTS)) {
                 if (client == null) {
                     throw notFound();
@@ -343,6 +363,8 @@ public class ClientRegistrationAuth {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
             throw unauthorized("Different client authenticated");
         }
+
+        checkClientProtocol(authClient);
 
         return true;
     }

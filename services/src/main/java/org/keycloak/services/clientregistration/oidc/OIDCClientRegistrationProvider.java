@@ -100,8 +100,11 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOIDC(@PathParam("clientId") String clientId) {
-        ClientRepresentation client = get(clientId);
-        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, client, session.getContext().getUri().getRequestUri());
+        ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
+
+        ClientRepresentation clientRepresentation = get(client);
+
+        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, session.getContext().getUri().getRequestUri());
         return Response.ok(clientOIDC).build();
     }
 
@@ -175,5 +178,4 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         }
         rep.setProtocolMappers(mappings);
     }
-
 }

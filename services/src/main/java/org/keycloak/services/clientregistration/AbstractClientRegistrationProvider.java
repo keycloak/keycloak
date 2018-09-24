@@ -100,10 +100,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
     }
 
-    public ClientRepresentation get(String clientId) {
+    public ClientRepresentation get(ClientModel client) {
         event.event(EventType.CLIENT_INFO);
 
-        ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireView(client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);

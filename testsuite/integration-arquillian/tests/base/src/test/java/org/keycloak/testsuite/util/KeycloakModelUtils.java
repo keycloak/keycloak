@@ -23,6 +23,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.keycloak.models.utils.KeycloakModelUtils.getDefaultClientAuthenticatorType;
 
 /**
@@ -37,7 +40,12 @@ public class KeycloakModelUtils {
         ClientRepresentation app = new ClientRepresentation();
         app.setName(name);
         app.setClientId(name);
-        realm.getClients().add(app);
+        List<ClientRepresentation> clients = realm.getClients();
+        if (clients != null) {
+            clients.add(app);
+        } else {
+            realm.setClients(Arrays.asList(app));
+        }
         app.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
         generateSecret(app);
         app.setFullScopeAllowed(true);
