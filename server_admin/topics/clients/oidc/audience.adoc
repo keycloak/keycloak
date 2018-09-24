@@ -1,0 +1,111 @@
+[[_audience]]
+
+==== Audience Support
+
+The typical environment where the {project_name} is deployed generally consists of a set of _confidential_ or _public_ client
+applications (frontend client applications) which use {project_name} for authentication.
+
+There are also _services_ (called _Resource Servers_ in the OAuth 2 specification), which serve requests from frontend client
+applications and provide resources. These services typically require an _Access token_ (Bearer token) to be sent to them to
+authenticate for a particular request. This token was previously obtained by the frontend application when it tries to log in
+against {project_name}.
+
+In the environment where the trust among services is low, you may encounter this scenario:
+
+. A frontend client called `my-app` is required to be authenticated against {project_name}.
+
+. A user is authenticated in {project_name}. {project_name} then issued tokens to the `my-app` application.
+
+. The application `my-app` used the token to invoke the service `evil-service`. The application needs to invoke `evil-service` as
+  the service is able to serve some very useful data.
+
+. The `evil-service` application returned the response to `my-app`. However, at the same time, it kept the token previously sent to it.
+
+. The `evil-service` application then invoked another service called `good-service` with the previously kept token. The invocation
+  was successful and `good-service` returned the data. This results in broken security as the `evil-service` misused the token to
+  access other services on behalf of the client `my-app`.
+
+This flow may not be an issue in many environments with the high level of trust among services. However in other environments, where
+the trust among services is lower, this can be problematic.
+
+NOTE: In some environments, this example work flow may be even requested behavior as the `evil-service` may need to retrieve
+      additional data from `good-service` to be able to properly return the requested data to the original caller (my-app client).
+      You may notice similarities with the Kerberos Credential Delegation. As with the Kerberos Credential Delegation, an unlimited
+      audience is a mixed blessing as it is only useful when a high level of trust exists among services. Otherwise, it is
+      recommended to limit audience as described next. You can limit audience and at the same time allow the `evil-service` to
+      retrieve required data from the `good-service`. In this case, you need to ensure that both the `evil-service` and `good-service`
+      are added as audiences to the token.
+
+To prevent any misuse of the access token as in the example above, it is recommended to limit _Audience_ on the token and configure
+your services to verify the audience on the token. If this is done, the flow above will change, like this:
+
+. A frontend client called `my-app` is required to be authenticated against {project_name}.
+
+. A user is authenticated in {project_name}. {project_name} then issued tokens to the `my-app` application. The client application
+  already knows that it will need to invoke service `evil-service`, so it used `scope=evil-service` in the authentication request
+  sent to the {project_name} server. See <<_client_scopes, Client Scopes section>> for more details about the _scope_ parameter.
+  The token issued to the `my-app` client contains the audience, as in `"audience": [ "evil-service" ]`, which declares that the
+  client wants to use this access token to invoke just the service `evil-service`.
+
+. The `evil-service` application served the request to the `my-app`. At the same time, it kept the token previously sent to it.
+
+. The `evil-service` application then invoked the `good-service` with the previously kept token. Invocation was not successful
+  because `good-service` checks the audience on the token and it sees that audience is only `evil-service`. This is expected behavior
+  and security is not broken.
+
+If the client wants to invoke the `good-service` later, it will need to obtain another token by issuing the SSO login with the
+`scope=good-service`. The returned token will then contain `good-service` as an audience:
+
+[source,json]
+----
+"audience": [ "good-service" ]
+----
+and can be used to invoke `good-service`.
+
+===== Setup
+
+To properly set up audience checking:
+
+* Ensure that services are configured to check audience on the access token sent to them by adding the flag _verify-token-audience_
+  in the adapter configuration. See link:{adapterguide_link}#_java_adapter_config[Adapter configuration] for details.
+
+* Ensure that when an access token is issued by {project_name}, it contains all requested audiences and does not contain any
+  audiences that are not needed. This is described below in more details.
+
+As an example, let us assume that you have a bearer-only client `good-service`. Set up {project_name} for audience support like this:
+
+* Log in to the admin console. Go to the _Client Scopes_ tab on the left and click _Create_.
+
+* Choose the _Audience template_.
+
+* Select `good-service` as the requested audience
+
+.Creating Audience Client Scope
+image:{project_images}/audience_client-scope-creating.png[]
+
+* When the client scope is created, you should confirm that it contains:
+** An audience protocol mapper, which is used for adding the `good-service` as an audience to the access token. See the figure below.
+** Role scope mappings for all the client roles of `good-service` client.
+
+.Audience Protocol Mapper
+image:{project_images}/audience_mapper.png[]
+
+* From the <<_client_installation, Installation tab>> of the `good-service` client, you can generate the adapter
+  configuration and you can confirm that _verify-token-audience_ option will be set to true. This indicates that the adapter will
+  require verifying the audience if you use this generated configuration.
+
+* Finally, you need to ensure that the `my-app` frontend client is able to request `good-service` as an audience in its tokens.
+  On the `my-app` client, click the _Client Scopes_ tab. Then assign `good-service` as an optional (or default) client scope. See
+  <<_client_scopes_linking, Client Scopes Linking section>> for more details.
+
+* You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> and generate an example access token. If you do, notice
+  that `good-service` will be added to the audience of the generated access token only if `good-service` is included in the _scope_
+  parameter in the case you assigned it as an optional client scope.
+
+* In your `my-app` application, you must ensure that _scope_ parameter is used with the value `good-service` always included when
+  you want to issue the token for accessing the `good-service`.
+  See the link:{adapterguide_link}#_params_forwarding[parameters forwarding section], if your application uses the servlet
+  adapter, or the link:{adapterguide_link}#_javascript_adapter[javascript adapter section], if your application uses the
+  javascript adapter.
+
+

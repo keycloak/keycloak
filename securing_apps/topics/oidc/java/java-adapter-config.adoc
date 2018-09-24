@@ -21,6 +21,7 @@ This is what one might look like:
   "bearer-only" : false,
   "enable-basic-auth" : false,
   "expose-token" : true,
+  "verify-token-audience" : true,
    "credentials" : {
       "secret" : "234234-234234-234234"
    },
@@ -249,3 +250,9 @@ ignore-oauth-query-parameter::
 redirect-rewrite-rules::
   If needed, specify the Redirect URI rewrite rule. This is an object notation where the key is the regular expression to which the Redirect URI is to be matched and the value is the replacement String.
   `$` character can be used for backreferences in the replacement String.
+
+verify-token-audience::
+  If set to `true`, then during authentication with the bearer token, the adapter will verify whether the token contains this
+  client name (resource) as an audience. The option is especially useful for services, which primarily serve requests authenticated
+  by the bearer token. This is set to `false` by default, however for improved security, it is recommended to enable this.
+  See link:{adminguide_link}#_audience[Audience Support] for more details about audience support.

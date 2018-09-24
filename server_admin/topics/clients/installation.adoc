@@ -1,3 +1,4 @@
+[[_client_installation]]
 
 === Generating Client Adapter Config
 

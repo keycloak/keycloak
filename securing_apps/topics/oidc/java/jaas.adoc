@@ -29,3 +29,7 @@ keycloak-config-file::
     Configure alternative class for Role principals attached to JAAS Subject.
     Default value is `org.keycloak.adapters.jaas.RolePrincipal`. Note: The class is required to have a constructor with a single `String` argument.
 
+`scope`::
+    This option is only applicable to the `DirectAccessGrantsLoginModule`. The specified value will be used as the OAuth2 `scope`
+    parameter in the Resource Owner Password Credentials Grant request.
+
