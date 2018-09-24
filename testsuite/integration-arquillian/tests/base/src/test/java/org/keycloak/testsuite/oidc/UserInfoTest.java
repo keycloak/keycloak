@@ -29,7 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
@@ -86,11 +86,15 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
-        testRealms.add(realm.build());
+        RealmRepresentation testRealm = realm.build();
+        testRealms.add(testRealm);
 
+        ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "saml-client");
+        samlApp.setSecret("secret");
+        samlApp.setServiceAccountsEnabled(true);
+        samlApp.setDirectAccessGrantsEnabled(true);
     }
 
     @Test
@@ -346,6 +350,35 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
 
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUserInfoRequestWithSamlClient() throws Exception {
+        // obtain an access token
+        String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", null, "saml-client", "secret").getAccessToken();
+
+        // change client's protocol
+        ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
+        samlClient.setProtocol("saml");
+        adminClient.realm("test").clients().get(samlClient.getId()).update(samlClient);
+
+        Client client = ClientBuilder.newClient();
+        try {
+            events.clear();
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessToken);
+            response.close();
+
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            events.expect(EventType.USER_INFO_REQUEST)
+                    .error(Errors.INVALID_CLIENT)
+                    .client((String) null)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
         } finally {
             client.close();
         }
