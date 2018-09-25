@@ -1,7 +1,26 @@
 == Get Started
 
 === Using the {project_openshift_product_name} Image Streams and Application Templates
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the Red Hat Registry: link:https://access.redhat.com/containers/[registry.access.redhat.com]. To update to the latest {project_openshift_product_name} images, run the following commands:
+
+[IMPORTANT]
+====
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the secured Red Hat Registry: link:https://access.redhat.com/containers/[registry.redhat.io], which requires authentication. To retrieve content, you will need to log into the registry using the Red Hat account.
+
+To consume container images from *_registry.redhat.io_* in shared environments such as OpenShift, it is recommended for an administrator to use a Registry Service Account, also referred to as authentication tokens, in place of an individual person's Red Hat Customer Portal credentials.
+
+To create a Registry Service Account, navigate to the link:https://access.redhat.com/terms-based-registry/[Registry Service Account Management Application], and log in if necessary.
+
+. From the *_Registry Service Accounts_* page, click *_Create Service Account_*.
+. Provide a name for the Service Account, for example *_registry.redhat.io-sa_*. It will be prepended with a fixed, random string.
+.. Enter a description for the Service Account, for example *_Service account to consume container images from registry.redhat.io._*.
+.. Click *_Create_*.
+. After the Service Account was created, click the *_registry.redhat.io-sa_* link in the *_Account name_* column of the table presented on the *_Registry Service Accounts_* page.
+. Finally, click the *_OpenShift Secret_* tab, and perform all steps listed on that page.
+
+See the link:https://access.redhat.com/RegistryAuthentication[Red Hat Container Registry Authentication] article for more information.
+====
+
+To update to the latest {project_openshift_product_name} images, run the following commands:
 
 . On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
 +
@@ -13,19 +32,22 @@ $ oc login -u system:admin
 ----
 $ for resource in sso72-image-stream.json \
   sso72-https.json \
-  sso72-mysql-persistent.json \
   sso72-mysql.json \
+  sso72-mysql-persistent.json \
+  sso72-postgresql.json \
   sso72-postgresql-persistent.json \
-  sso72-postgresql.json
+  sso72-x509-https.json \
+  sso72-x509-mysql-persistent.json \
+  sso72-x509-postgresql-persistent.json
 do
   oc replace -n openshift --force -f \
-  https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.9/sso/${resource}
+  https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.16/sso/${resource}
 done
 ----
 . Run the following command to install the RH-SSO 7.2 OpenShift image streams in the `openshift` project:
 +
 ----
-$ oc -n openshift import-image redhat-sso72-openshift:1.0
+$ oc -n openshift import-image redhat-sso72-openshift:1.2
 ----
 
 === Preparing and Deploying the {project_openshift_product_name} Application Templates
