@@ -795,6 +795,8 @@ $ kcadm.sh remove-roles -r demorealm --rname testrole --cclientid realm-manageme
 Use a dedicated [command]`add-roles` command that can be used for adding realm roles and client roles.
 
 The following example adds the roles defined on the client [command]`realm-management` - `create-client` role and the [command]`view-users` role to the [command]`Group` group (via the [command]`--gname` option). The group can alternatively be specified by ID (via the [command]`--gid` option).
+
+See <<_group_operations, Group operations>> for more operations that can be performed to groups.
 [options="nowrap"]
 ----
 $ kcadm.sh add-roles -r demorealm --gname Group --cclientid realm-management --rolename create-client --rolename view-users
@@ -806,6 +808,8 @@ $ kcadm.sh add-roles -r demorealm --gname Group --cclientid realm-management --r
 Use a dedicated [command]`remove-roles` command to remove client roles from a group.
 
 Use the following example to remove two roles defined on the client [command]`realm management` - `create-client` role and the [command]`view-users` role from the [command]`Group` group.
+
+See <<_group_operations, Group operations>> for more operations that can be performed to groups.
 [options="nowrap"]
 ----
 $ kcadm.sh remove-roles -r demorealm --gname Group --cclientid realm-management --rolename create-client --rolename view-users
@@ -1183,6 +1187,7 @@ $ kcadm.sh create users/6da5ab89-3397-4205-afaa-e201ff638f9e/logout -r demorealm
 ----
 
 
+[[_group_operations]]
 === Group operations
 
 [discrete]
