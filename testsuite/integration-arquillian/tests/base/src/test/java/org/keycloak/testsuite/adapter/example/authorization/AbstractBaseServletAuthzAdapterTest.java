@@ -55,9 +55,6 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
     protected static final String REALM_NAME = "servlet-authz";
     protected static final String RESOURCE_SERVER_ID = "servlet-authz-app";
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @ArquillianResource
     private Deployer deployer;
 

@@ -128,8 +128,6 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testOidcBearerOnlyWithAuthzJson() {
-        ProfileAssume.assumePreview();
-
         oidcBearerOnlyClientWithAuthzId = createOidcBearerOnlyClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
         oidcBearerOnlyClientWithAuthz = findClientResource(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
 

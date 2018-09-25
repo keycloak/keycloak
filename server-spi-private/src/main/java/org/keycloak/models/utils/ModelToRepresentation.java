@@ -547,13 +547,11 @@ public class ModelToRepresentation {
             rep.setProtocolMappers(mappings);
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
 
-            if (resourceServer != null) {
-                rep.setAuthorizationServicesEnabled(true);
-            }
+        if (resourceServer != null) {
+            rep.setAuthorizationServicesEnabled(true);
         }
 
         return rep;

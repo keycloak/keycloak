@@ -63,9 +63,6 @@ public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
     protected static final String REALM_NAME = "servlet-policy-enforcer-authz";
     protected static final String RESOURCE_SERVER_ID = "servlet-policy-enforcer";
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @ArquillianResource
     private Deployer deployer;
 

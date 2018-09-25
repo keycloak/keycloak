@@ -606,8 +606,6 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
-        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
-
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
@@ -691,12 +689,10 @@ public class ClientResource {
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                authorization().enable(false);
-            } else {
-                authorization().disable();
-            }
+        if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            authorization().enable(false);
+        } else {
+            authorization().disable();
         }
     }
 }

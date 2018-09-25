@@ -122,9 +122,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         testRealmPage.setAuthRealm(REALM_NAME);
     }
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @Before
     public void beforePhotozExampleAdapterTest() throws Exception {
         DroneUtils.addWebDriver(jsDriver);

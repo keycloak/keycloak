@@ -57,9 +57,6 @@ public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
     private static final String REALM_NAME = "hello-world-authz";
     private static final String RESOURCE_SERVER_ID = "hello-world-authz-service";
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @ArquillianResource
     private Deployer deployer;
 
