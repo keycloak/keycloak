@@ -2,8 +2,6 @@
 = Overview
 
 :tech_feature_name: Authorization Services
-include::templates/techpreview.adoc[]
-include::templates/authz-service-deprecated-features.adoc[]
 
 {project_name} supports fine-grained authorization policies and is able to combine different access control
 mechanisms such as:
