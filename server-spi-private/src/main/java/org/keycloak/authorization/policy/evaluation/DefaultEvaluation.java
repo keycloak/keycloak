@@ -263,8 +263,7 @@ public class DefaultEvaluation implements Evaluation {
 
             @Override
             public Map<String, List<String>> getUserAttributes(String id) {
-                Map<String, List<String>> attributes = getUser(id, authorizationProvider.getKeycloakSession()).getAttributes();
-                return attributes;
+                return Collections.unmodifiableMap(getUser(id, authorizationProvider.getKeycloakSession()).getAttributes());
             }
         };
     }
