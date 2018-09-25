@@ -177,17 +177,15 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
-            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-                if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                    AuthorizationService authorizationService = getAuthorizationService(clientModel);
+            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
-                    authorizationService.enable(true);
+                authorizationService.enable(true);
 
-                    ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+                ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
-                    if (authorizationSettings != null) {
-                        authorizationService.resourceServer().importSettings(authorizationSettings);
-                    }
+                if (authorizationSettings != null) {
+                    authorizationService.resourceServer().importSettings(authorizationSettings);
                 }
             }
 

@@ -86,11 +86,6 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
 
-    @BeforeClass
-    public static void onBeforeClass() {
-        ProfileAssume.assumePreview();
-    }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name(REALM_NAME)

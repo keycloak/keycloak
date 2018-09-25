@@ -109,7 +109,7 @@ public class AccountConsole {
             
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
-            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+            map.put("isAuthorizationEnabled", true);
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

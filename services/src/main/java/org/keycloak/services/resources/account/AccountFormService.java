@@ -172,7 +172,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             account.setUser(auth.getUser());
         }
 
-        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, Profile.isFeatureEnabled(Feature.AUTHORIZATION));
+        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, true);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {

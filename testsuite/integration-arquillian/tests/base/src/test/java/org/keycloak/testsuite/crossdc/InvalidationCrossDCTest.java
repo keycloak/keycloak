@@ -182,8 +182,6 @@ public class InvalidationCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void authzResourceInvalidationTest() throws Exception {
-        ProfileAssume.assumePreview();
-        
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 

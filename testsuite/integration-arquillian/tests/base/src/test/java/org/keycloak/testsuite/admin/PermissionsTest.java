@@ -809,8 +809,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
-        ProfileAssume.assumePreview();
-
         ClientRepresentation newClient = new ClientRepresentation();
         newClient.setClientId("foo-authz");
         adminClient.realms().realm(REALM_NAME).clients().create(newClient);
