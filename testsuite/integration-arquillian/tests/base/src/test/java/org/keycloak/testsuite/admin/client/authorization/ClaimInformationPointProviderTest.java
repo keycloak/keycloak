@@ -75,7 +75,6 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void onBeforeClass() {
-        ProfileAssume.assumePreview();
         httpService = Undertow.builder().addHttpListener(8989, "localhost").setHandler(exchange -> {
             if (exchange.isInIoThread()) {
                 try {

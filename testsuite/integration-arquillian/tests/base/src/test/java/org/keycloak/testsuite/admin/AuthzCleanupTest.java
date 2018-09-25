@@ -50,11 +50,6 @@ import org.keycloak.util.JsonSerialization;
  */
 public class AuthzCleanupTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create();

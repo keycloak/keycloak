@@ -355,8 +355,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testResourceWithMultipleUris() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-        
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
         ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);

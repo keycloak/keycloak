@@ -64,11 +64,6 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     public static final String EXECUTION_ID = "scriptAuth";
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
 
