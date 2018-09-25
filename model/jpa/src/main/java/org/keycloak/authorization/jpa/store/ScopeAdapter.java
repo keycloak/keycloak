@@ -17,6 +17,7 @@
 package org.keycloak.authorization.jpa.store;
 
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
+import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
@@ -28,12 +29,13 @@ import javax.persistence.EntityManager;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ScopeAdapter implements Scope, JpaModel<ScopeEntity> {
+public class ScopeAdapter extends AbstractAuthorizationModel implements Scope, JpaModel<ScopeEntity> {
     private ScopeEntity entity;
     private EntityManager em;
     private StoreFactory storeFactory;
 
     public ScopeAdapter(ScopeEntity entity, EntityManager em, StoreFactory storeFactory) {
+        super(storeFactory);
         this.entity = entity;
         this.em = em;
         this.storeFactory = storeFactory;
@@ -56,6 +58,7 @@ public class ScopeAdapter implements Scope, JpaModel<ScopeEntity> {
 
     @Override
     public void setName(String name) {
+        throwExceptionIfReadonly();
         entity.setName(name);
 
     }
@@ -67,6 +70,7 @@ public class ScopeAdapter implements Scope, JpaModel<ScopeEntity> {
 
     @Override
     public void setDisplayName(String name) {
+        throwExceptionIfReadonly();
         entity.setDisplayName(name);
     }
 
@@ -77,6 +81,7 @@ public class ScopeAdapter implements Scope, JpaModel<ScopeEntity> {
 
     @Override
     public void setIconUri(String iconUri) {
+        throwExceptionIfReadonly();
         entity.setIconUri(iconUri);
 
     }

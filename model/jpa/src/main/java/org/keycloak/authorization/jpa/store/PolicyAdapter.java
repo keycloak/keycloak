@@ -19,6 +19,7 @@ package org.keycloak.authorization.jpa.store;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
+import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -39,12 +40,13 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
+public class PolicyAdapter extends AbstractAuthorizationModel implements Policy, JpaModel<PolicyEntity> {
     private PolicyEntity entity;
     private EntityManager em;
     private StoreFactory storeFactory;
 
     public PolicyAdapter(PolicyEntity entity, EntityManager em, StoreFactory storeFactory) {
+        super(storeFactory);
         this.entity = entity;
         this.em = em;
         this.storeFactory = storeFactory;
@@ -72,6 +74,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        throwExceptionIfReadonly();
         entity.setDecisionStrategy(decisionStrategy);
 
     }
@@ -83,6 +86,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void setLogic(Logic logic) {
+        throwExceptionIfReadonly();
         entity.setLogic(logic);
     }
 
@@ -95,6 +99,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void setConfig(Map<String, String> config) {
+        throwExceptionIfReadonly();
         if (entity.getConfig() == null) {
             entity.setConfig(new HashMap<>());
         } else {
@@ -105,6 +110,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void removeConfig(String name) {
+        throwExceptionIfReadonly();
         if (entity.getConfig() == null) {
             return;
         }
@@ -113,6 +119,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void putConfig(String name, String value) {
+        throwExceptionIfReadonly();
         if (entity.getConfig() == null) {
             entity.setConfig(new HashMap<>());
         }
@@ -127,6 +134,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void setName(String name) {
+        throwExceptionIfReadonly();
         entity.setName(name);
 
     }
@@ -138,6 +146,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void setDescription(String description) {
+        throwExceptionIfReadonly();
         entity.setDescription(description);
 
     }
@@ -176,38 +185,45 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
 
     @Override
     public void addScope(Scope scope) {
+        throwExceptionIfReadonly();
         entity.getScopes().add(ScopeAdapter.toEntity(em, scope));
     }
 
     @Override
     public void removeScope(Scope scope) {
+        throwExceptionIfReadonly();
         entity.getScopes().remove(ScopeAdapter.toEntity(em, scope));
 
     }
 
     @Override
     public void addAssociatedPolicy(Policy associatedPolicy) {
+        throwExceptionIfReadonly();
         entity.getAssociatedPolicies().add(toEntity(em, associatedPolicy));
     }
 
     @Override
     public void removeAssociatedPolicy(Policy associatedPolicy) {
+        throwExceptionIfReadonly();
         entity.getAssociatedPolicies().remove(toEntity(em, associatedPolicy));
 
     }
 
     @Override
     public void addResource(Resource resource) {
+        throwExceptionIfReadonly();
         entity.getResources().add(ResourceAdapter.toEntity(em, resource));
     }
 
     @Override
     public void removeResource(Resource resource) {
+        throwExceptionIfReadonly();
         entity.getResources().remove(ResourceAdapter.toEntity(em, resource));
     }
 
     @Override
     public void setOwner(String owner) {
+        throwExceptionIfReadonly();
         entity.setOwner(owner);
     }
 

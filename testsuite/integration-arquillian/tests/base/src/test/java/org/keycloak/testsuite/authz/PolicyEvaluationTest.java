@@ -19,8 +19,10 @@ package org.keycloak.testsuite.authz;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,11 +30,9 @@ import java.util.stream.Collectors;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -40,9 +40,10 @@ import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
-import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
@@ -57,6 +58,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -630,6 +632,52 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
+    @Test
+    public void testCheckReadOnlyInstances() {
+        testingClient.server().run(PolicyEvaluationTest::testCheckReadOnlyInstances);
+    }
+
+    public static void testCheckReadOnlyInstances(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
+
+        policyRepresentation.setName("testCheckReadOnlyInstances");
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("$evaluation.getPermission().getResource().setName('test')");
+
+        policyRepresentation.setCode(builder.toString());
+
+        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+
+        Resource resource = storeFactory.getResourceStore().create("Resource A", resourceServer, resourceServer.getId());
+        Scope scope = storeFactory.getScopeStore().create("Scope A", resourceServer);
+
+        resource.updateScopes(new HashSet<>(Arrays.asList(scope)));
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("testCheckReadOnlyInstances permission");
+        permission.addPolicy(policy.getId());
+        permission.addResource(resource.getId());
+
+        storeFactory.getPolicyStore().create(permission, resourceServer);
+
+        session.getTransactionManager().commit();
+
+        PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
+
+        try {
+            evaluator.evaluate(resourceServer, null);
+            Assert.fail("Instances should be marked as read-only");
+        } catch (Exception ignore) {
+        }
+    }
+
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy) {
         return createEvaluation(session, authorization, null, resourceServer, policy);
     }
@@ -641,7 +689,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization,
                                                       Resource resource, ResourceServer resourceServer, Policy policy,
                                                       Map<String, Collection<String>> contextAttributes) {
-        return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), new DefaultEvaluationContext(new Identity() {
+        return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), createEvaluationContext(session, contextAttributes), policy, evaluation -> {}, authorization, null);
+    }
+
+    private static DefaultEvaluationContext createEvaluationContext(KeycloakSession session, Map<String, Collection<String>> contextAttributes) {
+        return new DefaultEvaluationContext(new Identity() {
             @Override
             public String getId() {
                 return null;
@@ -664,6 +716,6 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 }
                 return baseAttributes;
             }
-        }, policy, evaluation -> {}, authorization, null);
+        };
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.authorization.jpa.store;
 import org.keycloak.authorization.jpa.entities.ResourceAttributeEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
+import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -43,13 +44,14 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
+public class ResourceAdapter extends AbstractAuthorizationModel implements Resource, JpaModel<ResourceEntity> {
 
     private ResourceEntity entity;
     private EntityManager em;
     private StoreFactory storeFactory;
 
     public ResourceAdapter(ResourceEntity entity, EntityManager em, StoreFactory storeFactory) {
+        super(storeFactory);
         this.entity = entity;
         this.em = em;
         this.storeFactory = storeFactory;
@@ -77,6 +79,7 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void setDisplayName(String name) {
+        throwExceptionIfReadonly();
         entity.setDisplayName(name);
     }
 
@@ -87,11 +90,13 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void updateUris(Set<String> uri) {
+        throwExceptionIfReadonly();
         entity.setUris(uri);
     }
 
     @Override
     public void setName(String name) {
+        throwExceptionIfReadonly();
         entity.setName(name);
 
     }
@@ -103,6 +108,7 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void setType(String type) {
+        throwExceptionIfReadonly();
         entity.setType(type);
 
     }
@@ -124,6 +130,7 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void setIconUri(String iconUri) {
+        throwExceptionIfReadonly();
         entity.setIconUri(iconUri);
 
     }
@@ -145,11 +152,13 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void setOwnerManagedAccess(boolean ownerManagedAccess) {
+        throwExceptionIfReadonly();
         entity.setOwnerManagedAccess(ownerManagedAccess);
     }
 
     @Override
     public void updateScopes(Set<Scope> toUpdate) {
+        throwExceptionIfReadonly();
         Set<String> ids = new HashSet<>();
         for (Scope scope : toUpdate) {
             ids.add(scope.getId());
@@ -171,7 +180,7 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
         for (ResourceAttributeEntity attr : entity.getAttributes()) {
             result.add(attr.getName(), attr.getValue());
         }
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 
     @Override
@@ -213,6 +222,7 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
 
     @Override
     public void removeAttribute(String name) {
+        throwExceptionIfReadonly();
         Query query = em.createNamedQuery("deleteResourceAttributesByNameAndResource");
 
         query.setParameter("name", name);
