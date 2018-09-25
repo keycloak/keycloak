@@ -2,7 +2,6 @@
 :project_product: true
 :project_product_cd: true
 :project_name: Red Hat Single Sign-On
-:project_version: 7.3.0.CD04
 :project_versionMvn: 4.5.0.Final-redhat-00001
 :project_versionNpm: 4.5.0.Final-redhat-00001
 :project_images: rhsso-images
@@ -10,6 +9,7 @@
 
 ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On
+:project_version: 7.3.0.GA
 :project_versionDoc: 7.3
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/ga/
@@ -17,7 +17,8 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
-:project_versionDoc: 7.3.0.cd03
+:project_version: 7.3.0.CD04
+:project_versionDoc: 7.3.0.cd04
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]
