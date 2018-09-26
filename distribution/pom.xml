@@ -50,7 +50,6 @@
             <id>jboss-release</id>
             <modules>
                 <module>api-docs-dist</module>
-                <module>demo-dist</module>
                 <module>examples-dist</module>
                 <module>proxy-dist</module>
                 <module>downloads</module>
