@@ -194,4 +194,16 @@ public final class TestContext {
         customContext.put(key, value);
     }
 
+    public String getAppServerContainerName() {
+        if (isAdapterContainerEnabled()) { //standalone app server
+            return getAppServerInfo().getArquillianContainer().getName();
+
+        } else if (isAdapterContainerEnabledCluster()) { //clustered app server
+
+            return getAppServerBackendsInfo().stream()
+                .map(ContainerInfo::getQualifier)
+                .collect(Collectors.joining(";"));
+        }
+        return null;
+    }
 }
