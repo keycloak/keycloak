@@ -102,19 +102,29 @@ public class URLProvider extends URLResourceProvider {
                 return suiteContext.get().getAuthServerInfo().getContextRoot();
             }
             if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
+                //standalone
                 ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
                 if (appServerInfo != null) return appServerInfo.getContextRoot();
-                
+
+                //cluster
                 List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
                 if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
-                
+
                 return appServerBackendsInfo.get(0).getContextRoot();
             }
             if (AuthServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
                 return suiteContext.get().getAuthServerInfo().getBrowserContextRoot();
             }
             if (AppServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
-                return testContext.get().getAppServerInfo().getBrowserContextRoot();
+                //standalone
+                ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
+                if (appServerInfo != null) return appServerInfo.getBrowserContextRoot();
+
+                //cluster
+                List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
+                if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
+
+                return appServerBackendsInfo.get(0).getBrowserContextRoot();
             }
         }
 
