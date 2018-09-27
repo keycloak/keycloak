@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.cli;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.mail.internet.MimeMessage;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -26,17 +33,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.*;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowBindings;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -46,27 +58,13 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.testsuite.authentication.PushButtonAuthenticator;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.forms.PassThroughAuthenticator;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.TotpUtils;
 import org.openqa.selenium.By;
-
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Test that clients can override auth flows
@@ -111,7 +109,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
             ClientModel kcinit = realm.addClient(KCINIT_CLIENT);
             kcinit.setEnabled(true);
-            kcinit.addRedirectUri("http://localhost:*");
+            kcinit.addRedirectUri("*");
             kcinit.setPublicClient(true);
             kcinit.removeRole(realm.getRole(OAuth2Constants.OFFLINE_ACCESS));
 
@@ -239,7 +237,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
                     .executeAsync();
             exe.waitForStderr("Open browser and continue login? [y/n]");
             exe.sendLine("y");
-            exe.waitForStdout("http://");
+            exe.waitForStdout("http");
 
             // the --fake-browser skips launching a browser and outputs url to stdout
             String redirect = exe.stdoutString().trim();
@@ -312,7 +310,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
         exe.waitForStderr("Open browser and continue login? [y/n]");
         exe.sendLine("y");
-        exe.waitForStdout("http://");
+        exe.waitForStdout("http");
 
         // the --fake-browser skips launching a browser and outputs url to stdout
         String redirect = exe.stdoutString().trim();
@@ -348,7 +346,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         //exe.waitForStderr("(y/n):");
         //exe.sendLine("n");
         exe.waitForStderr("Authentication server URL [http://localhost:8080/auth]:");
-        exe.sendLine(OAuthClient.AUTH_SERVER_ROOT);
+        exe.sendLine(oauth.AUTH_SERVER_ROOT);
         //System.out.println(exe.stderrString());
         exe.waitForStderr("Name of realm [master]:");
         exe.sendLine("test");

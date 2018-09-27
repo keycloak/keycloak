@@ -39,9 +39,19 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
+import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
+import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -50,6 +60,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 
@@ -71,6 +82,8 @@ public class AuthServerTestEnricher {
     private Event<StartContainer> startContainerEvent;
     @Inject
     private Event<StopContainer> stopContainerEvent;
+
+    protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "true"));
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
     public static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
@@ -114,9 +127,8 @@ public class AuthServerTestEnricher {
         int httpPort = Integer.parseInt(System.getProperty("auth.server.http.port")); // property must be set
         int httpsPort = Integer.parseInt(System.getProperty("auth.server.https.port")); // property must be set
 
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
-        String scheme = sslRequired ? "https" : "http";
-        int port = sslRequired ? httpsPort : httpPort;
+        String scheme = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
+        int port = AUTH_SERVER_SSL_REQUIRED ? httpsPort : httpPort;
 
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
@@ -322,7 +334,56 @@ public class AuthServerTestEnricher {
         testContextProducer.set(testContext);
     }
 
-    public void initializeOAuthClient(@Observes(precedence = 3) BeforeClass event) {
+    public void initializeTLS(@Observes(precedence = 3) BeforeClass event) throws Exception {
+        // TLS for Undertow is configured in KeycloakOnUndertow since it requires
+        // SSLContext while initializing HTTPS handlers
+        if (AUTH_SERVER_SSL_REQUIRED && isAuthServerJBossBased() && !suiteContext.isAuthServerCrossDc()) {
+            log.info("\n\n### Setting up TLS ##\n\n");
+
+            try {
+                OnlineManagementClient client = getManagementClient();
+                enableTLS(client);
+                client.close();
+            } catch (Exception e) {
+                log.warn("Failed to set up TLS. This may lead to unexpected behavior unless the test" +
+                      " sets it up manually", e);
+            }
+        }
+    }
+
+    protected static void enableTLS(OnlineManagementClient client) throws Exception {
+        Administration administration = new Administration(client);
+        Operations operations = new Operations(client);
+
+        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
+            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
+
+            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                  .forDefaultServer());
+
+            administration.reloadIfRequired();
+
+            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                  .securityRealm("UndertowRealm")
+                  .verifyClient(SslVerifyClient.REQUESTED)
+                  .build());
+
+            administration.reloadIfRequired();
+        } else {
+            log.info("## The Auth Server has already configured TLS. Skipping... ##");
+        }
+    }
+
+    protected boolean isAuthServerJBossBased() {
+        return containerRegistry.get().getContainers().stream()
+              .map(ContainerInfo::new)
+              .filter(ci -> ci.isJBossBased())
+              .findFirst().isPresent();
+    }
+
+    public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
         OAuthClient oAuthClient = new OAuthClient();

@@ -20,7 +20,6 @@ package org.keycloak.testsuite.arquillian.undertow.lb;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,8 @@ import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
+
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
 
@@ -56,19 +57,20 @@ public class SimpleUndertowLoadBalancer {
 
     private static final Logger log = Logger.getLogger(SimpleUndertowLoadBalancer.class);
 
-    static final String DEFAULT_NODES = "node1=http://localhost:8181,node2=http://localhost:8182";
+    static final String DEFAULT_NODES_HTTP = "node1=http://localhost:8181,node2=http://localhost:8182";
 
     private final String host;
-    private final int port;
+    private final int httpPort;
+    private final int httpsPort;
     private final Map<String, URI> backendNodes;
     private Undertow undertow;
     private LoadBalancingProxyClient lb;
 
 
     public static void main(String[] args) throws Exception {
-        String nodes = System.getProperty("keycloak.nodes", DEFAULT_NODES);
+        String nodes = System.getProperty("keycloak.nodes", DEFAULT_NODES_HTTP);
 
-        SimpleUndertowLoadBalancer lb = new SimpleUndertowLoadBalancer("localhost", 8180, nodes);
+        SimpleUndertowLoadBalancer lb = new SimpleUndertowLoadBalancer("localhost", 8180, 8543, nodes);
         lb.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -82,9 +84,10 @@ public class SimpleUndertowLoadBalancer {
     }
 
 
-    public SimpleUndertowLoadBalancer(String host, int port, String nodesString) {
+    public SimpleUndertowLoadBalancer(String host, int httpPort, int httpsPort, String nodesString) {
         this.host = host;
-        this.port = port;
+        this.httpPort = httpPort;
+        this.httpsPort = httpsPort;
         this.backendNodes = parseNodes(nodesString);
         log.infof("Keycloak nodes: %s", backendNodes);
     }
@@ -95,12 +98,13 @@ public class SimpleUndertowLoadBalancer {
             HttpHandler proxyHandler = createHandler();
 
             undertow = Undertow.builder()
-                    .addHttpListener(port, host)
+                    .addHttpListener(httpPort, host)
+                    .addHttpsListener(httpsPort, host, TLSUtils.initializeTLS())
                     .setHandler(proxyHandler)
                     .build();
             undertow.start();
 
-            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d ####", host, port);
+            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d, http://%s:%d ####", host, httpPort, host, httpsPort);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

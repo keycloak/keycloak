@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -210,7 +209,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
     // KEYCLOAK-5581
     @Test
     public void loginUserAllNamespacesInTopElement() {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
 
         Document doc;
         try {

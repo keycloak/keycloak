@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -208,6 +209,10 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String configFile) {
-        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
+        try {
+            return AuthzClient.create(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to create authz client", cause);
+        }
     }
 }

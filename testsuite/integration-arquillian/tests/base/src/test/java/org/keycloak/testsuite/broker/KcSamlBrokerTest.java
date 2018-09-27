@@ -138,7 +138,7 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
     // KEYCLOAK-6106
     @Test
     public void loginClientWithDotsInName() throws Exception {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
 

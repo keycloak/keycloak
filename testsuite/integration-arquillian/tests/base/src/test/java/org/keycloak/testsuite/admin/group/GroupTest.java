@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -540,7 +541,7 @@ public class GroupTest extends AbstractGroupTest {
         createUser(realmName, userName, "pwd");
 
         try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             expectedException.expect(ClientErrorException.class);
             expectedException.expectMessage(String.valueOf(Response.Status.FORBIDDEN.getStatusCode()));
@@ -569,7 +570,7 @@ public class GroupTest extends AbstractGroupTest {
         mappings.realmLevel().add(Collections.singletonList(adminRole));
 
         Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID);
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
 
         assertThat(userClient.realms().findAll(),  // Any admin operation will do
           not(empty()));
@@ -601,7 +602,7 @@ public class GroupTest extends AbstractGroupTest {
             realm.users().get(userId).joinGroup(groupId);
         }
         try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             assertThat(userClient.realms().findAll(),  // Any admin operation will do
                 not(empty()));
@@ -636,7 +637,7 @@ public class GroupTest extends AbstractGroupTest {
             mappings.realmLevel().add(Collections.singletonList(adminRole));
         }
         try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             assertThat(userClient.realms().findAll(),  // Any admin operation will do
                 not(empty()));

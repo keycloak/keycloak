@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -76,7 +79,8 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId("more-uris-client");
         client.setEnabled(true);
-        client.setRedirectUris(Arrays.asList("http://localhost:8180/auth/realms/master/app/auth", "http://localhost:8180/foo"));
+        client.setRedirectUris(Arrays.asList("http://localhost:8180/auth/realms/master/app/auth", "http://localhost:8180/foo",
+              "https://localhost:8543/auth/realms/master/app/auth", "https://localhost:8543/foo"));
         client.setBaseUrl("http://localhost:8180/auth/realms/master/app/auth");
 
         testRealm.getClients().add(client);
@@ -85,6 +89,15 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
                 .filter(cl -> cl.getClientId().equals("test-app"))
                 .findFirst().get();
         testApp.setImplicitFlowEnabled(true);
+        trimRedirectUris(testApp);
+    }
+
+    // testMissingRedirectUri requires only one redirection url defined in the client. We need to trim the other one.
+    private final void trimRedirectUris(ClientRepresentation testApp) {
+        List<String> filteredUris = testApp.getRedirectUris().stream()
+              .filter(uri -> AUTH_SERVER_SSL_REQUIRED ? uri.startsWith("https://") : uri.startsWith("http://"))
+              .collect(Collectors.toList());
+        testApp.setRedirectUris(filteredUris);
     }
 
     @Before
@@ -93,7 +106,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         /*
          * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
          * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
-         * will faile and the clientID will always be "sample-public-client
+         * will fail and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.init(driver);

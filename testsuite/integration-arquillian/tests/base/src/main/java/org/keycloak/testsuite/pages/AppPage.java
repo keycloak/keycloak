@@ -29,20 +29,17 @@ import javax.ws.rs.core.UriBuilder;
  */
 public class AppPage extends AbstractPage {
 
-    public static final String AUTH_SERVER_URL = "http://localhost:8180/auth";
-    public static final String baseUrl = "http://localhost:8180/auth/realms/master/app/auth";
-
     @FindBy(id = "account")
     private WebElement accountLink;
 
     @Override
     public void open() {
-        driver.navigate().to(baseUrl);
+        driver.navigate().to(oauth.APP_AUTH_ROOT);
     }
 
     @Override
     public boolean isCurrent() {
-        return driver.getCurrentUrl().startsWith(baseUrl);
+        return driver.getCurrentUrl().startsWith(oauth.APP_AUTH_ROOT);
     }
 
     public RequestType getRequestType() {
@@ -58,10 +55,9 @@ public class AppPage extends AbstractPage {
     }
 
     public void logout() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
-                .queryParam(OAuth2Constants.REDIRECT_URI,baseUrl).build("test").toString();
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
+                .queryParam(OAuth2Constants.REDIRECT_URI, oauth.APP_AUTH_ROOT).build("test").toString();
         driver.navigate().to(logoutUri);
-
     }
 
 }

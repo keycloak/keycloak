@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -61,7 +62,7 @@ public class CrossRealmPermissionsTest extends AbstractKeycloakTest {
                 .addPassword("password"));
         testRealms.add(builder.build());
 
-        realm1 = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret").realm(REALM_NAME);
+        realm1 = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret", TLSUtils.initializeTLS()).realm(REALM_NAME);
 
         builder = RealmBuilder.create().name(REALM2_NAME).testMail();
         builder.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
@@ -73,7 +74,7 @@ public class CrossRealmPermissionsTest extends AbstractKeycloakTest {
 
         testRealms.add(builder.build());
 
-        realm2 = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM2_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret").realm(REALM2_NAME);
+        realm2 = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM2_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret", TLSUtils.initializeTLS()).realm(REALM2_NAME);
     }
 
     @Test

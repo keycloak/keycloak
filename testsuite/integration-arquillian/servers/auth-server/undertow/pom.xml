@@ -28,8 +28,11 @@
     <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
     <name>Auth Server - Undertow</name>
 
-    <dependencies>
+    <properties>
+        <common.resources>${basedir}/../jboss/common</common.resources>
+    </properties>
 
+    <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-utils</artifactId>
@@ -76,5 +79,16 @@
             <artifactId>keycloak-servlet-filter-adapter</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${common.resources}/keystore</directory>
+            </resource>
+        </resources>
+    </build>
 
 </project>

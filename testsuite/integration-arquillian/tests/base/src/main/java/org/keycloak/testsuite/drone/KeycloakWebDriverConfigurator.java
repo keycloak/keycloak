@@ -28,6 +28,7 @@ import org.jboss.arquillian.drone.webdriver.spi.BrowserCapabilitiesRegistry;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.util.Arrays;
@@ -53,9 +54,15 @@ public class KeycloakWebDriverConfigurator {
         updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
         updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
         configurePhantomJSDriver(webDriverCfg, capabilitiesToAdd);
+        acceptAllSSLCerts(capabilitiesToAdd);
 
         BrowserCapabilities browserCap = registryInstance.get().getEntryFor(webDriverCfg.getBrowser());
         webDriverCfg.setBrowserInternal(new KcBrowserCapabilities(capabilitiesToAdd, browserCap));
+    }
+
+    private void acceptAllSSLCerts(DesiredCapabilities capabilitiesToAdd) {
+        capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+        capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
     }
 
     private void configurePhantomJSDriver(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
