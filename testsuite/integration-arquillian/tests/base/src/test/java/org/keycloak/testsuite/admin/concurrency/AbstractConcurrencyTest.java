@@ -23,6 +23,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
+
 import java.util.LinkedList;
 import java.util.Collection;
 import java.util.List;
@@ -68,7 +70,7 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
         ThreadLocal<Keycloak> keycloaks = new ThreadLocal<Keycloak>() {
             @Override
             protected Keycloak initialValue() {
-                return Keycloak.getInstance(testImpl.getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
+                return Keycloak.getInstance(testImpl.getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
             }
         };
 

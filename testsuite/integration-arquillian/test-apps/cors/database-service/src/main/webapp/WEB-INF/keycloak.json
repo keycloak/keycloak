@@ -5,6 +5,7 @@
   "auth-server-url": "http://localhost-auth:8180/auth",
   "bearer-only" : true,
   "ssl-required": "external",
+  "disable-trust-manager" : "true",
   "enable-cors": true,
   "cors-exposed-headers": "X-Custom1",
   "credentials": {

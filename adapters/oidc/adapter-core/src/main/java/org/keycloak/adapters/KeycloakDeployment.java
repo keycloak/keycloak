@@ -282,6 +282,13 @@ public class KeycloakDeployment {
         this.sslRequired = sslRequired;
     }
 
+    public boolean isSSLEnabled() {
+        if (SslRequired.NONE == sslRequired) {
+            return false;
+        }
+        return true;
+    }
+
     public int getConfidentialPort() {
         return confidentialPort;
     }

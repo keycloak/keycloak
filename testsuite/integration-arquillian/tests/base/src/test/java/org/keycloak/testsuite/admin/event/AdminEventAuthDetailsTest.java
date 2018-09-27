@@ -34,6 +34,7 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -128,7 +129,7 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
 
     private void testClient(String realmName, String username, String password, String clientId, String expectedRealmId, String expectedClientUuid, String expectedUserId) {
         try (Keycloak keycloak = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                realmName, username, password, clientId)) {
+                realmName, username, password, clientId, TLSUtils.initializeTLS())) {
             UserRepresentation rep = UserBuilder.create().id(appUserId).username("app-user").email("foo@email.org").build();
             keycloak.realm("test").users().get(appUserId).update(rep);
 

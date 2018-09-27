@@ -153,7 +153,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .addRedirectUri("http://localhost:8180/sales-post/*")
+            .addRedirectUri("https://localhost:8543/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),
@@ -163,7 +164,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .addRedirectUri("http://localhost:8180/sales-post/*")
+            .addRedirectUri("https://localhost:8543/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),

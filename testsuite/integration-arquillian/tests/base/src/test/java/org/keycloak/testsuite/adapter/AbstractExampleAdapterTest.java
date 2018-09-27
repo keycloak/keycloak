@@ -23,11 +23,14 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  *
@@ -55,13 +58,37 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         EXAMPLES_WEB_XML = EXAMPLES_HOME + "/web.xml";
     }
 
-    protected static WebArchive exampleDeployment(String name) throws IOException {
-        return ShrinkWrap.createFromZipFile(WebArchive.class,
-                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
-                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+    protected static WebArchive exampleDeployment(String name) {
+        return exampleDeployment(name, webArchive -> {});
+    }
+
+    protected static WebArchive exampleDeployment(String name, Consumer<WebArchive> additionalResources) {
+        WebArchive webArchive = ShrinkWrap.createFromZipFile(WebArchive.class,
+              new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
+              .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+
+        additionalResources.accept(webArchive);
+
+        modifyOIDCAdapterConfig(webArchive);
+
+        return webArchive;
+    }
+
+    protected static void modifyOIDCAdapterConfig(WebArchive webArchive) {
+        if (webArchive.contains(DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH)) {
+            DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(webArchive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH);
+        }
+
+        if (webArchive.contains(DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH_JS)) {
+            DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(webArchive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH_JS);
+        }
     }
 
     protected static WebArchive exampleDeployment(String name, String contextPath) throws IOException {
+        return exampleDeployment(name, contextPath, webArchive -> {});
+    }
+
+    protected static WebArchive exampleDeployment(String name, String contextPath, Consumer<WebArchive> additionalResources) throws IOException {
         URL webXML = Paths.get(EXAMPLES_WEB_XML).toUri().toURL();
         String webXmlContent = IOUtils.toString(webXML.openStream(), "UTF-8")
                 .replace("%CONTEXT_PATH%", contextPath);
@@ -69,12 +96,12 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
                 new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML)
                 .add(new StringAsset(webXmlContent), "/WEB-INF/web.xml");
-        return webArchive;
-    }
 
-    protected static JavaArchive exampleJarDeployment(String name) {
-        return ShrinkWrap.createFromZipFile(JavaArchive.class,
-                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".jar"));
+        additionalResources.accept(webArchive);
+
+        modifyOIDCAdapterConfig(webArchive);
+
+        return webArchive;
     }
 
 }

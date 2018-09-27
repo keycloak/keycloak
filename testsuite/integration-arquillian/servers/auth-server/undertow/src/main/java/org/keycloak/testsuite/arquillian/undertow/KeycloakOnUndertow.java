@@ -51,10 +51,19 @@ import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
 import org.keycloak.util.JsonSerialization;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -180,12 +189,13 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         if (undertow == null) {
             undertow = new UndertowJaxrsServer();
         }
+
         undertow.start(Undertow.builder()
                         .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
+                        .addHttpsListener(configuration.getBindHttpsPort(), configuration.getBindAddress(), TLSUtils.initializeTLS())
                         .setWorkerThreads(configuration.getWorkerThreads())
                         .setIoThreads(configuration.getWorkerThreads() / 8)
         );
-
         if (configuration.getRoute() != null) {
             log.info("Using route: " + configuration.getRoute());
         }
@@ -199,7 +209,6 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
         log.infof("Auth server started in %dms on http://%s:%d/auth", (System.currentTimeMillis() - start), configuration.getBindAddress(), configuration.getBindHttpPort());
     }
-
 
     protected void setupDevConfig() {
         KeycloakSession session = sessionFactory.create();

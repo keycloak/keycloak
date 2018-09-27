@@ -61,8 +61,7 @@ public class MailAssert {
 
             assertTrue(errorMessage, messageContent.contains(content));
             for (String string : messageContent.split("\n")) {
-                if (string.contains("http://")) {
-
+                if (string.startsWith("http")) {
                     // Ampersand escaped in the text version. Needs to be replaced to have correct URL
                     string = string.replace("&amp;", "&");
                     return string;

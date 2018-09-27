@@ -57,6 +57,7 @@ import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -194,31 +195,31 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         clients.put(AdminRoles.REALM_ADMIN,
                 Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
-                        "secret"));
+                        "secret", TLSUtils.initializeTLS()));
 
         clients.put("none",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret"));
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret", TLSUtils.initializeTLS()));
 
         clients.put("multi",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret"));
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret", TLSUtils.initializeTLS()));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client"));
+            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client", TLSUtils.initializeTLS()));
         }
 
-        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client"));
+        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client", TLSUtils.initializeTLS()));
 
         clients.put("master-admin", adminClient);
 
         clients.put("master-none",
                 Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
-                        Constants.ADMIN_CLI_CLIENT_ID));
+                        Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
 
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
             clients.put("master-" + role,
                     Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-" + role, "password",
-                            Constants.ADMIN_CLI_CLIENT_ID));
+                            Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
         }
     }
 

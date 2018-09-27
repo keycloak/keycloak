@@ -109,8 +109,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
     @Test
     public void basicTest() {
-        Review r = new Review().invoke()
-                .assertSuccess();
+        Review r = new Review().invoke();
 
         String userId = testRealm().users().search(r.username).get(0).getId();
 

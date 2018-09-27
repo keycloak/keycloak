@@ -91,6 +91,7 @@ public class OAuthClient {
     public static String SERVER_ROOT;
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
+    public static String APP_AUTH_ROOT;
     private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     static {
@@ -102,6 +103,7 @@ public class OAuthClient {
         SERVER_ROOT = serverRoot;
         AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
         APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+        APP_AUTH_ROOT = APP_ROOT + "/auth";
     }
 
     private WebDriver driver;
@@ -659,7 +661,7 @@ public class OAuthClient {
 
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            return SimpleHttp.doGet(AUTH_SERVER_ROOT + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+            return SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
