@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -205,6 +206,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessions() {
+        checkAccount2Enabled();
         List<SessionRepresentation> reps = new LinkedList<>();
 
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
@@ -242,6 +244,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
+        checkAccount2Enabled();
         UserSessionModel userSession = auth.getSession();
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
@@ -265,6 +268,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessionLogout(@QueryParam("id") String id) {
+        checkAccount2Enabled();
         UserSessionModel userSession = session.sessions().getUserSession(realm, id);
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
@@ -274,11 +278,22 @@ public class AccountRestService {
 
     @Path("/credentials")
     public AccountCredentialResource credentials() {
+        checkAccount2Enabled();
         return new AccountCredentialResource(session, event, user);
     }
 
    // TODO Federated identities
     // TODO Applications
     // TODO Logs
+    
+    private static void checkAccount2Enabled() {
+        if (!isAccount2Enabled()) {
+            throw new BadRequestException(Messages.INVALID_REQUEST);
+        }
+    }
+    
+    private static boolean isAccount2Enabled() {
+        return System.getProperty("keycloak.profile.feature.account2", "disabled").equalsIgnoreCase("enabled");
+    }
 
 }
