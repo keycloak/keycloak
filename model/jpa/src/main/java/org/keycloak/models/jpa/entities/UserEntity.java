@@ -42,10 +42,10 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
-        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
+        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.createdTimestamp desc"),
+        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order u.createdTimestamp desc"),
         @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
-                "( u.username like :search or u.firstName like :search or u.email like :search ) order by u.username"),
+                "( u.username like :search or u.firstName like :search or u.email like :search ) order by u.createdTimestamp desc"),
         @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
