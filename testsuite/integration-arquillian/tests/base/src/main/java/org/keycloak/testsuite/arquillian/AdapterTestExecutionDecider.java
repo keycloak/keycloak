@@ -75,7 +75,6 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
     }
 
     private AppServerContainer getCorrespondingAnnotation(Method method) {
-        String appServerContainerName = testContextInstance.get().getAppServerInfo().getArquillianContainer().getName();
 
         AppServerContainers multipleAnnotations = method.getAnnotation(AppServerContainers.class);
 
@@ -87,13 +86,12 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         }
 
         return appServerContainers.stream()
-            .filter(annotation -> annotation.value().equals(appServerContainerName))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
+                .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
     }
 
     private AppServerContainer getCorrespondingAnnotation(Class testClass) {
-        String appServerContainerName = testContextInstance.get().getAppServerInfo().getArquillianContainer().getName();
 
         Class<?> annotatedClass = AppServerTestEnricher.getNearestSuperclassWithAppServerAnnotation(testClass);
 
@@ -105,10 +103,11 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         } else {// single @AppServerContainer annotation
             appServerContainers = Arrays.asList(annotatedClass.getAnnotation(AppServerContainer.class));
         }
+
         return appServerContainers.stream()
-            .filter(annotation -> annotation.value().equals(appServerContainerName))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
+                .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
     }
 
     private ExecutionDecision execute(Method method, Boolean execute, String message) {
