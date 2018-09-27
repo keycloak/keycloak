@@ -34,7 +34,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +67,12 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected void postAfterAbstractKeycloak() {
+        // trigger reimport of realm for next test to reset data
+        testContext.getTestRealmReps().clear();
     }
 
     @Override
@@ -144,6 +149,8 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
         user.setUsername("updatedUsername2");
         updateError(user, 400, Messages.READ_ONLY_USERNAME);
+
+
     }
 
     // KEYCLOAK-7572
