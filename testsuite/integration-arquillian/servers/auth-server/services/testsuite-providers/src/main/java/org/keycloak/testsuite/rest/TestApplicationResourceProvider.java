@@ -143,7 +143,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         }
         sb.append("<br>");
 
-        UriBuilder base = UriBuilder.fromUri("http://localhost:8180/auth");
+        UriBuilder base = UriBuilder.fromUri("/auth");
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
@@ -165,7 +165,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><title>" + title + "</title></head><body>");
-        UriBuilder base = UriBuilder.fromUri("http://localhost:8180/auth");
+        UriBuilder base = UriBuilder.fromUri("/auth");
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");

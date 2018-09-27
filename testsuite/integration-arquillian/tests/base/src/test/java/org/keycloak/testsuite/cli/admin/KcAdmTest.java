@@ -577,6 +577,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client secret.
          */
+        //non-TLS endpoint
+        oauth.baseUrl(serverUrl);
         oauth.realm("master");
         oauth.clientId("admin-cli");
         String token = oauth.doGrantAccessTokenRequest("", "admin", "admin").getAccessToken();

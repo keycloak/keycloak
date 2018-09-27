@@ -352,7 +352,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     public void conditionalOTPRequestHeaderSkip() {
         //prepare config - request header skip, default to force
         Map<String, String> config = new HashMap<>();
-        String port = System.getProperty("auth.server.http.port", "8180");
+        String port = AUTH_SERVER_PORT;
         config.put(SKIP_OTP_FOR_HTTP_HEADER, "Host: localhost:" + port);
         config.put(DEFAULT_OTP_OUTCOME, FORCE);
 
@@ -368,7 +368,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     public void conditionalOTPRequestHeaderForce() {
         //prepare config - equest header force, default to skip
         Map<String, String> config = new HashMap<>();
-        String port = System.getProperty("auth.server.http.port", "8180");
+        String port = AUTH_SERVER_PORT;
         config.put(FORCE_OTP_FOR_HTTP_HEADER, "Host: localhost:" + port);
         config.put(DEFAULT_OTP_OUTCOME, SKIP);
 

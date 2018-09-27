@@ -103,7 +103,3 @@ if [ $1 == "crossdc-adapter" ]; then
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 fi
-
-if [ $1 == "ssl" ]; then
-    run-server-tests org.keycloak.testsuite.client.MutualTLSClientTest,org.keycloak.testsuite.hok.HoKTest "-Dauth.server.ssl.required -Dbrowser=phantomjs"
-fi

@@ -75,7 +75,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                         .directAccessGrants()
                         .serviceAccountsEnabled(true))
                 .client(ClientBuilder.create().clientId("test-app")
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth", "https://localhost:8543/auth/realms/master/app/auth")
                         .publicClient())
                 .build());
     }
@@ -165,7 +165,11 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     }
 
     protected AuthzClient getAuthzClient() {
-        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak-uma2.json"));
+        try {
+            return AuthzClient.create(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak-uma2.json")));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to create authz client", cause);
+        }
     }
 
     protected void assertPermissions(Collection<Permission> permissions, String expectedResource, String... expectedScopes) {

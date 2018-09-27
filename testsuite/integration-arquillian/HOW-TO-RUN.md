@@ -41,6 +41,10 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
  
    
     -Dmaven.surefire.debug=true
+    
+Or slightly longer version (that allows you to specify debugging port as well as wait till you attach the debugger):
+    
+    -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5006 -Xnoagent -Djava.compiler=NONE"
    
    
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those. 
@@ -486,27 +490,17 @@ To run the X.509 client certificate authentication tests:
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
 
-## Run Mutual TLS Client Certificate Bound Access Tokens tests
+## Disabling TLS (SSL) in the tests
 
-To run the Mutual TLS Client Certificate Bound Access Tokens tests:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-          clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.hok.HoKTest
-
-## Run Mutual TLS for the Client tests
-
-To run the Mutual TLS test for the client:
+All tests are executed with TLS by default. In order to disable it, you need to switch the `auth.server.ssl.required` property off.
+Here's an example:
 
     mvn -f testsuite/integration-arquillian/pom.xml \
           clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.client.MutualTLSClientTest
+      -Dauth.server.ssl.required=false
+
+NOTE: You can also do it ad-hoc from your IDE, however some tests (like AuthZ or JS Adapter tests) require rebuilt test applications.
+so please make sure you rebuild all `testsuite/integration-arquillian` child modules.
 
 ## Cluster tests
 

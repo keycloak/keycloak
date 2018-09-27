@@ -31,7 +31,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
@@ -72,6 +74,11 @@ public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest i
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
         return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+    }
+
+    @BeforeClass
+    public static void assumeTLSEnabled() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
     }
 
     @Before

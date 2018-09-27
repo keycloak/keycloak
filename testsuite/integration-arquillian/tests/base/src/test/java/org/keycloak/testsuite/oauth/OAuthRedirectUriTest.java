@@ -144,7 +144,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         realm.client(installedApp7);
 
         ClientBuilder installedApp8 = ClientBuilder.create().id("test-fragment").name("test-fragment")
-                .redirectUris("http://localhost/*")
+                .redirectUris("http://localhost/*", "https://localhost:8543/*")
                 .secret("password");
         realm.client(installedApp8);
 

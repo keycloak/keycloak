@@ -88,9 +88,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String title = PageUtils.getPageTitle(driver);
         Assert.assertEquals("Success code", title);
 
-        String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
+        driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
 
-        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8180/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
+        events.expectLogin().detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
     }

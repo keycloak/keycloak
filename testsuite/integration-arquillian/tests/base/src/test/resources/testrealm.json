@@ -142,7 +142,8 @@
       "enabled": true,
       "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
       "redirectUris": [
-        "http://localhost:8180/auth/realms/master/app/auth/*"
+        "http://localhost:8180/auth/realms/master/app/auth/*",
+        "https://localhost:8543/auth/realms/master/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
       "secret": "password"
@@ -154,7 +155,8 @@
       "adminUrl": "http://localhost:8180/foo/bar",
       "baseUrl": "/baz",
       "redirectUris": [
-        "http://localhost:8180/foo/bar/*"
+        "http://localhost:8180/foo/bar/*",
+        "https://localhost:8543/foo/bar/*"
       ],
       "secret": "password"
     },
@@ -163,7 +165,8 @@
       "enabled": true,
 
       "redirectUris": [
-        "http://localhost:8180/auth/realms/master/app/*"
+        "http://localhost:8180/auth/realms/master/app/*",
+        "https://localhost:8543/auth/realms/master/app/*"
       ],
       "secret": "password",
       "fullScopeAllowed": "false"
@@ -175,7 +178,8 @@
 
       "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
       "redirectUris": [
-        "http://localhost:8180/auth/realms/master/app/*"
+        "http://localhost:8180/auth/realms/master/app/*",
+        "https://localhost:8543/auth/realms/master/app/*"
       ],
       "secret": "password"
     },
@@ -343,7 +347,8 @@
       "enabled": true,
       "baseUrl": "http://localhost:8180/namedapp/base",
       "redirectUris": [
-        "http://localhost:8180/namedapp/base/*"
+        "http://localhost:8180/namedapp/base/*",
+        "https://localhost:8543/namedapp/base/*"
       ],
       "adminUrl": "http://localhost:8180/namedapp/base/admin",
       "secret": "password"
@@ -354,7 +359,8 @@
       "enabled": true,
       "baseUrl": "http://localhost:8180/varnamedapp/base",
       "redirectUris": [
-        "http://localhost:8180/varnamedapp/base/*"
+        "http://localhost:8180/varnamedapp/base/*",
+        "https://localhost:8543/varnamedapp/base/*"
       ],
       "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
       "secret": "password"

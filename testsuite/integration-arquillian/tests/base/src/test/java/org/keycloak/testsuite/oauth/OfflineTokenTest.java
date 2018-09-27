@@ -51,6 +51,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountFormServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -514,7 +515,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // Use accessToken to admin REST request
         try (Keycloak offlineTokenAdmin = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken())) {
+                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken(), TLSUtils.initializeTLS())) {
             RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
             Assert.assertNotNull(testRealm);
         }
@@ -560,7 +561,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Go to account mgmt applications page
         applicationsPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expectLogin().client("account").detail(Details.REDIRECT_URI, AccountFormServiceTest.ACCOUNT_REDIRECT + "?path=applications").assertEvent();
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=applications").assertEvent();
         assertTrue(applicationsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
         assertTrue(apps.containsKey("offline-client-2"));
