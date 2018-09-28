@@ -142,9 +142,6 @@ public class JpaRealmProvider implements RealmProvider {
             removeClient(client, adapter);
         }
 
-        num = em.createNamedQuery("deleteDefaultClientScopeRealmMappingByRealm")
-                .setParameter("realm", realm).executeUpdate();
-
         for (ClientScopeEntity a : new LinkedList<>(realm.getClientScopes())) {
             adapter.removeClientScope(a.getId());
         }
@@ -219,24 +216,18 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    @Deprecated
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
-        return addClientRole(realm, client, KeycloakModelUtils.generateId(), name);
+        return client.addRole(name);
     }
+
     @Override
+    @Deprecated
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
         if (getClientRole(realm, client, name) != null) {
             throw new ModelDuplicateException();
         }
-        ClientEntity clientEntity = em.getReference(ClientEntity.class, client.getId());
-        RoleEntity roleEntity = new RoleEntity();
-        roleEntity.setId(id);
-        roleEntity.setName(name);
-        roleEntity.setClient(clientEntity);
-        roleEntity.setClientRole(true);
-        roleEntity.setRealmId(realm.getId());
-        em.persist(roleEntity);
-        RoleAdapter adapter = new RoleAdapter(session, realm, em, roleEntity);
-        return adapter;
+        return client.addRole(id, name);
     }
 
     @Override
@@ -254,27 +245,16 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    @Deprecated
     public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
-        TypedQuery<String> query = em.createNamedQuery("getClientRoleIdByName", String.class);
-        query.setParameter("name", name);
-        query.setParameter("client", client.getId());
-        List<String> roles = query.getResultList();
-        if (roles.isEmpty()) return null;
-        return session.realms().getRoleById(roles.get(0), realm);
+        return client.getRole(name);
     }
 
 
     @Override
+    @Deprecated
     public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        Set<RoleModel> list = new HashSet<>();
-        TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
-        query.setParameter("client", client.getId());
-        List<String> roles = query.getResultList();
-        for (String id : roles) {
-            list.add(session.realms().getRoleById(id, realm));
-        }
-        return list;
-
+        return client.getRoles();
     }
 
     @Override
@@ -570,9 +550,6 @@ public class JpaRealmProvider implements RealmProvider {
             }
         });
 
-        int countRemoved = em.createNamedQuery("deleteClientScopeClientMappingByClient")
-                .setParameter("client", clientEntity)
-                .executeUpdate();
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping
 
         try {

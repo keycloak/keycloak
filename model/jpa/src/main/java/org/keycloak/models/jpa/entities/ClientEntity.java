@@ -32,6 +32,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -51,7 +52,7 @@ import java.util.Set;
 @Entity
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
-        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
+        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm.id = :realm"),
         @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realm.id = :realm"),
         @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realm.id = :realm"),
         @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
@@ -152,13 +153,22 @@ public class ClientEntity {
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
+    Collection<RoleEntity> clientRoles = new ArrayList<>();
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+    Collection<RoleEntity> defaultRoles = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Set<RoleEntity> scopeMapping = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name="CLIENT_SCOPE_CLIENT", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    @MapKeyJoinColumn(name="SCOPE_ID")
+    @Column(name="DEFAULT_SCOPE")
+    private Map<ClientScopeEntity, Boolean> clientScopes = new HashMap<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -350,6 +360,14 @@ public class ClientEntity {
         this.managementUrl = managementUrl;
     }
 
+    public Collection<RoleEntity> getClientRoles() {
+        return clientRoles;
+    }
+
+    public void setClientRoles(Collection<RoleEntity> clientRoles) {
+        this.clientRoles = clientRoles;
+    }
+
     public Collection<RoleEntity> getDefaultRoles() {
         return defaultRoles;
     }
@@ -428,6 +446,14 @@ public class ClientEntity {
 
     public void setScopeMapping(Set<RoleEntity> scopeMapping) {
         this.scopeMapping = scopeMapping;
+    }
+
+    public Map<ClientScopeEntity, Boolean> getClientScopes() {
+        return clientScopes;
+    }
+
+    public void setClientScopes(Map<ClientScopeEntity, Boolean> clientScopes) {
+        this.clientScopes = clientScopes;
     }
 
     @Override

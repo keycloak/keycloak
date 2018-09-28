@@ -25,16 +25,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
-import org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -227,46 +224,22 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
 
     @Override
     public Set<RoleModel> getScopeMappings() {
-        TypedQuery<String> query = em.createNamedQuery("clientScopeRoleMappingIds", String.class);
-        query.setParameter("clientScope", getEntity());
-        List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String roleId : ids) {
-            RoleModel role = realm.getRoleById(roleId);
-            if (role == null) continue;
-            roles.add(role);
+        for(RoleEntity role : getEntity().getRoleMapping()) {
+            roles.add(new RoleAdapter(session, realm, em, role));
         }
         return roles;
     }
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        if (hasScope(role)) return;
-        ClientScopeRoleMappingEntity entity = new ClientScopeRoleMappingEntity();
-        entity.setClientScope(getEntity());
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        entity.setRole(roleEntity);
-        em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!hasScope(role))
+            getEntity().getRoleMapping().add(RoleAdapter.toRoleEntity(role, em));
     }
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        TypedQuery<ClientScopeRoleMappingEntity> query = getRealmScopeMappingQuery(role);
-        List<ClientScopeRoleMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return;
-        for (ClientScopeRoleMappingEntity entity : results) {
-            em.remove(entity);
-        }
-    }
-
-    protected TypedQuery<ClientScopeRoleMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
-        TypedQuery<ClientScopeRoleMappingEntity> query = em.createNamedQuery("clientScopeHasRole", ClientScopeRoleMappingEntity.class);
-        query.setParameter("clientScope", getEntity());
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        query.setParameter("role", roleEntity);
-        return query;
+        getEntity().getRoleMapping().remove(RoleAdapter.toRoleEntity(role, em));
     }
 
     @Override

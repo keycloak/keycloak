@@ -59,6 +59,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String managementUrl;
     protected String rootUrl;
     protected String baseUrl;
+    protected List<String> clientRoleIds = new LinkedList<String>();
     protected List<String> defaultRoles = new LinkedList<String>();
     protected boolean bearerOnly;
     protected boolean consentRequired;
@@ -100,7 +101,13 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
         baseUrl = model.getBaseUrl();
+
+        clientRoleIds = new LinkedList<>();
+        for (RoleModel role : model.getRoles()) {
+            clientRoleIds.add(role.getId());
+        }
         defaultRoles.addAll(model.getDefaultRoles());
+
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
         standardFlowEnabled = model.isStandardFlowEnabled();
@@ -207,6 +214,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public String getBaseUrl() {
         return baseUrl;
+    }
+
+    public List<String> getClientRoleIds() {
+        return clientRoleIds;
     }
 
     public List<String> getDefaultRoles() {

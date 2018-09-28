@@ -26,8 +26,6 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
@@ -35,14 +33,10 @@ import javax.persistence.Table;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@NamedQueries({
-        @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScope.id from ClientScopeClientMappingEntity m where m.client = :client and m.defaultScope = :defaultScope"),
-        @NamedQuery(name="deleteClientScopeClientMapping", query="delete from ClientScopeClientMappingEntity where client = :client and clientScope = :clientScope"),
-        @NamedQuery(name="deleteClientScopeClientMappingByClient", query="delete from ClientScopeClientMappingEntity where client = :client")
-})
 @Entity
 @Table(name="CLIENT_SCOPE_CLIENT")
 @IdClass(ClientScopeClientMappingEntity.Key.class)
+@Deprecated
 public class ClientScopeClientMappingEntity {
 
     @Id

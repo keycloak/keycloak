@@ -29,6 +29,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
@@ -37,7 +38,9 @@ import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,8 +59,14 @@ public class ClientScopeEntity {
     @Nationalized
     @Column(name = "DESCRIPTION")
     private String description;
+
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
     Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+
+    @OneToMany
+    @JoinTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    protected Set<RoleEntity> roleMapping = new HashSet<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
@@ -118,6 +127,14 @@ public class ClientScopeEntity {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public Set<RoleEntity> getRoleMapping() {
+        return roleMapping;
+    }
+
+    public void setRoleMapping(Set<RoleEntity> roleMapping) {
+        this.roleMapping = roleMapping;
     }
 
     public Map<String, String> getAttributes() {

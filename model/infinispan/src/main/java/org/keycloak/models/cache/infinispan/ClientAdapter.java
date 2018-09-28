@@ -578,28 +578,42 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public Set<RoleModel> getRoles() {
+        if (isUpdated()) return updated.getRoles();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cached.getClientRoleIds()) {
+            roles.add(cacheSession.getRoleById(id, getRealm()));
+        }
+        return roles;
+    }
+
+    @Override
     public RoleModel getRole(String name) {
-        return cacheSession.getClientRole(getRealm(), this, name);
+        if (isUpdated()) return updated.getRole(name);
+        for (RoleModel role : getRoles()) {
+            if(role.getName() != null && role.getName().equals(name)) {
+                return role;
+            }
+        }
+        return null;
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return cacheSession.addClientRole(getRealm(), this, name);
+        getDelegateForUpdate();
+        return updated.addRole(name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        return cacheSession.addClientRole(getRealm(), this, id, name);
+        getDelegateForUpdate();
+        return updated.addRole(id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return cacheSession.removeRole(cachedRealm, role);
-    }
-
-    @Override
-    public Set<RoleModel> getRoles() {
-        return cacheSession.getClientRoles(cachedRealm, this);
+        getDelegateForUpdate();
+        return updated.removeRole(role);
     }
 
     @Override

@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -146,6 +147,12 @@ public class RealmEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientScopeEntity> clientScopes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name="DEFAULT_CLIENT_SCOPE", joinColumns={ @JoinColumn(name="REALM_ID") })
+    @MapKeyJoinColumn(name="SCOPE_ID")
+    @Column(name="DEFAULT_SCOPE")
+    private Map<ClientScopeEntity, Boolean> defaultScopes = new HashMap<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -763,6 +770,14 @@ public class RealmEntity {
 
     public void setClientScopes(Collection<ClientScopeEntity> clientScopes) {
         this.clientScopes = clientScopes;
+    }
+
+    public Map<ClientScopeEntity, Boolean> getDefaultScopes() {
+        return defaultScopes;
+    }
+
+    public void setDefaultScopes(Map<ClientScopeEntity, Boolean> defaultScopes) {
+        this.defaultScopes = defaultScopes;
     }
 
     public void setAllowUserManagedAccess(boolean allowUserManagedAccess) {
