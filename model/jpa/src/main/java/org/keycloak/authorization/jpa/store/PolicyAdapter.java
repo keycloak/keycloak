@@ -151,8 +151,7 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
     public Set<Policy> getAssociatedPolicies() {
         Set<Policy> result = new HashSet<>();
         for (PolicyEntity policy : entity.getAssociatedPolicies()) {
-            Policy p = storeFactory.getPolicyStore().findById(policy.getId(), entity.getResourceServer().getId());
-            result.add(p);
+            result.add(new PolicyAdapter(policy, em, storeFactory));
         }
         return Collections.unmodifiableSet(result);
     }
@@ -239,6 +238,8 @@ public class PolicyAdapter implements Policy, JpaModel<PolicyEntity> {
         }
     }
 
-
-
+    @Override
+    public boolean isFetched(String association) {
+        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(entity, association);
+    }
 }

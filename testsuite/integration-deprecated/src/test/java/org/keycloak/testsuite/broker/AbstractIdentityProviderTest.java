@@ -235,12 +235,8 @@ public abstract class AbstractIdentityProviderTest {
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         IDToken idToken = userSessionStatus.getIdToken();
         KeycloakSession samlServerSession = brokerServerRule.startSession();
-        try {
-            RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
-            return samlServerSession.users().getUserById(idToken.getSubject(), brokerRealm);
-        } finally {
-            brokerServerRule.stopSession(samlServerSession, false);
-        }
+        RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
+        return samlServerSession.users().getUserById(idToken.getSubject(), brokerRealm);
     }
 
     protected void doAfterProviderAuthentication() {

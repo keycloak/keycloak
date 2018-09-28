@@ -77,6 +77,15 @@ public interface KeycloakSession {
 
     Object getAttribute(String attribute);
     <T> T getAttribute(String attribute, Class<T> clazz);
+    default <T> T getAttributeOrDefault(String attribute, T defaultValue) {
+        T value = (T) getAttribute(attribute);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        return value;
+    }
 
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);

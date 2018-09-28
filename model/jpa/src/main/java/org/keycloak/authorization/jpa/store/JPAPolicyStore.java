@@ -40,6 +40,7 @@ import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
@@ -90,23 +91,25 @@ public class JPAPolicyStore implements PolicyStore {
             return null;
         }
 
-        PolicyEntity entity = entityManager.find(PolicyEntity.class, id);
-        if (entity == null) return null;
+        PolicyEntity policyEntity = entityManager.find(PolicyEntity.class, id);
 
-        return new PolicyAdapter(entity, entityManager, provider.getStoreFactory());
+        if (policyEntity == null) {
+            return null;
+        }
+
+        return new PolicyAdapter(policyEntity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public Policy findByName(String name, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByName", String.class);
+        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByName", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
 
         try {
-            String id = query.getSingleResult();
-            return provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            return new PolicyAdapter(query.getSingleResult(), entityManager, provider.getStoreFactory());
         } catch (NoResultException ex) {
             return null;
         }
@@ -203,17 +206,16 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByResource", String.class);
+        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResource", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("resourceId", resourceId);
         query.setParameter("serverId", resourceServerId);
 
-        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
         query.getResultList().stream()
-                .map(id -> policyStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(entity -> new PolicyAdapter(entity, entityManager, storeFactory))
                 .forEach(consumer::accept);
     }
 
@@ -228,17 +230,14 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public void findByResourceType(String resourceType, String resourceServerId, Consumer<Policy> consumer) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByResourceType", String.class);
+        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", resourceType);
         query.setParameter("serverId", resourceServerId);
 
-        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
-
         query.getResultList().stream()
-                .map(id -> policyStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(id -> new PolicyAdapter(id, entityManager, provider.getStoreFactory()))
                 .forEach(consumer::accept);
     }
 
@@ -249,20 +248,19 @@ public class JPAPolicyStore implements PolicyStore {
         }
 
         // Use separate subquery to handle DB2 and MSSSQL
-        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByScope", String.class);
+        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByScope", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopeIds);
         query.setParameter("serverId", resourceServerId);
 
-        List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
-        for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
-            if (Objects.nonNull(policy)) {
-                list.add(policy);
-            }
+        StoreFactory storeFactory = provider.getStoreFactory();
+
+        for (PolicyEntity entity : query.getResultList()) {
+            list.add(new PolicyAdapter(entity, entityManager, storeFactory));
         }
+
         return list;
     }
 
@@ -278,12 +276,12 @@ public class JPAPolicyStore implements PolicyStore {
     @Override
     public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
         // Use separate subquery to handle DB2 and MSSSQL
-        TypedQuery<String> query;
+        TypedQuery<PolicyEntity> query;
 
         if (resourceId == null) {
-            query = entityManager.createNamedQuery("findPolicyIdByNullResourceScope", String.class);
+            query = entityManager.createNamedQuery("findPolicyIdByNullResourceScope", PolicyEntity.class);
         } else {
-            query = entityManager.createNamedQuery("findPolicyIdByResourceScope", String.class);
+            query = entityManager.createNamedQuery("findPolicyIdByResourceScope", PolicyEntity.class);
             query.setParameter("resourceId", resourceId);
         }
 
@@ -291,11 +289,10 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("scopeIds", scopeIds);
         query.setParameter("serverId", resourceServerId);
 
-        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
         query.getResultList().stream()
-                .map(id -> policyStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(id -> new PolicyAdapter(id, entityManager, storeFactory))
                 .forEach(consumer::accept);
     }
 
