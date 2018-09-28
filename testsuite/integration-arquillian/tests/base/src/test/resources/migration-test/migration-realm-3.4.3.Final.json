@@ -858,7 +858,33 @@
     } ],
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
-    "useTemplateMappers" : false
+    "useTemplateMappers" : false,
+    "serviceAccountsEnabled": true,
+    "authorizationServicesEnabled": true,
+    "authorizationSettings": {
+      "resources": [
+        {
+          "name": "group.resource.a",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.b",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.c",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.d",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.e",
+          "scopes": ["view-members"]
+        }
+      ]
+    }
   }, {
     "id" : "35d39054-e7e5-4dbb-8948-1738094679e8",
     "clientId" : "security-admin-console",

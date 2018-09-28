@@ -22,6 +22,7 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -116,7 +117,7 @@ public class JPAResourceStore implements ResourceStore {
             queryName = "findAnyResourceIdByOwner";
         }
 
-        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery(queryName, ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
@@ -125,11 +126,10 @@ public class JPAResourceStore implements ResourceStore {
             query.setParameter("serverId", resourceServerId);
         }
 
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
         query.getResultList().stream()
-                .map(id -> resourceStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(id -> new ResourceAdapter(id, entityManager, storeFactory))
                 .forEach(consumer);
     }
 
@@ -247,17 +247,16 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByScope", String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByScope", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopes);
         query.setParameter("serverId", resourceServerId);
 
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
         query.getResultList().stream()
-                .map(id -> resourceStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(id -> new ResourceAdapter(id, entityManager, storeFactory))
                 .forEach(consumer);
     }
 
@@ -268,16 +267,14 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByName", String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByName", ResourceEntity.class);
 
-        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
         query.setParameter("ownerId", ownerId);
 
         try {
-            String id = query.getSingleResult();
-            return provider.getStoreFactory().getResourceStore().findById(id, resourceServerId);
+            return new ResourceAdapter(query.getSingleResult(), entityManager, provider.getStoreFactory());
         } catch (NoResultException ex) {
             return null;
         }
@@ -294,18 +291,17 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByType", String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByType", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
         query.setParameter("ownerId", resourceServerId);
         query.setParameter("serverId", resourceServerId);
 
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
         query.getResultList().stream()
-                .map(id -> resourceStore.findById(id, resourceServerId))
-                .filter(Objects::nonNull)
+                .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
                 .forEach(consumer);
     }
 }

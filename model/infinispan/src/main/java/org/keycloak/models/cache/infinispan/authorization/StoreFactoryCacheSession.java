@@ -407,7 +407,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
     }
 
-    private boolean modelMightExist(String id) {
+    boolean modelMightExist(String id) {
         return invalidations.contains(id) || cache.get(id, NonExistentItem.class) == null;
     }
 
@@ -712,11 +712,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
         }
 
-        private <R, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
+        private <R extends Resource, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
             return cacheQuery(cacheKey, queryType, resultSupplier, querySupplier, resourceServerId, null);
         }
 
-        private <R, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {
+        private <R extends Resource, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {
             Q query = cache.get(cacheKey, queryType);
             if (query != null) {
                 logger.tracev("cache hit for key: {0}", cacheKey);
@@ -730,7 +730,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {
                     for (R resource : model) {
-                        consumer.accept(resource);
+                        consumer.andThen(r -> cacheResource(resource)).accept(resource);
                     }
                 }
                 return model;
@@ -799,9 +799,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 logger.tracev("by id cache hit: {0}", cached.getId());
             }
             if (cached == null) {
-                Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
                 Policy model = getPolicyStoreDelegate().findById(id, resourceServerId);
+                Long loaded = cache.getCurrentRevision(id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -922,7 +922,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             return getPolicyStoreDelegate().findDependentPolicies(id, resourceServerId);
         }
 
-        private <R, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {
+        private <R extends Policy, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {
             Q query = cache.get(cacheKey, queryType);
             if (query != null) {
                 logger.tracev("cache hit for key: {0}", cacheKey);
@@ -936,7 +936,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {
                     for (R policy: model) {
-                        consumer.accept(policy);
+                        consumer.andThen(r -> cachePolicy(policy)).accept(policy);
                     }
                 }
                 return model;
@@ -1080,4 +1080,46 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
     }
 
+    void cachePolicy(Policy model) {
+        String id = model.getId();
+        if (cache.getCache().containsKey(id)) {
+            return;
+        }
+        if (!modelMightExist(id)) {
+            return;
+        }
+        if (invalidations.contains(id)) return;
+        cache.addRevisioned(createCachedPolicy(model, id), startupRevision);
+    }
+
+    CachedPolicy createCachedPolicy(Policy model, String id) {
+        Long loaded = cache.getCurrentRevision(id);
+        return new CachedPolicy(loaded, model);
+    }
+
+    void cacheResource(Resource model) {
+        String id = model.getId();
+        if (cache.getCache().containsKey(id)) {
+            return;
+        }
+        Long loaded = cache.getCurrentRevision(id);
+        if (!modelMightExist(id)) {
+            return;
+        }
+        if (invalidations.contains(id)) return;
+        cache.addRevisioned(new CachedResource(loaded, model), startupRevision);
+    }
+
+    void cacheScope(Scope model) {
+        String id = model.getId();
+        if (cache.getCache().containsKey(id)) {
+            return;
+        }
+        Long loaded = cache.getCurrentRevision(id);
+        if (!modelMightExist(id)) {
+            return;
+        }
+        if (invalidations.contains(id)) return;
+        cache.addRevisioned(new CachedScope(loaded, model), startupRevision);
+    }
 }

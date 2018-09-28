@@ -22,32 +22,35 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CachedUser extends AbstractExtendableRevisioned implements InRealm  {
-    private String realm;
-    private String username;
-    private Long createdTimestamp;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private boolean emailVerified;
-    private boolean enabled;
-    private String federationLink;
-    private String serviceAccountClientLink;
-    private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
-    private Set<String> requiredActions = new HashSet<>();
-    private Set<String> roleMappings = new HashSet<>();
-    private Set<String> groups = new HashSet<>();
-    private int notBefore;
 
-
+    private final String realm;
+    private final String username;
+    private final Long createdTimestamp;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    private final boolean emailVerified;
+    private final boolean enabled;
+    private final String federationLink;
+    private final String serviceAccountClientLink;
+    private final int notBefore;
+    private final LazyLoader<UserModel, Set<String>> requiredActions;
+    private final LazyLoader<UserModel, MultivaluedHashMap<String, String>> attributes;
+    private final LazyLoader<UserModel, Set<String>> roleMappings;
+    private final LazyLoader<UserModel, Set<String>> groups;
 
     public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
@@ -56,23 +59,16 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.createdTimestamp = user.getCreatedTimestamp();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
-        this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
-        this.requiredActions.addAll(user.getRequiredActions());
-        for (RoleModel role : user.getRoleMappings()) {
-            roleMappings.add(role.getId());
-        }
-        Set<GroupModel> groupMappings = user.getGroups();
-        if (groupMappings != null) {
-            for (GroupModel group : groupMappings) {
-                groups.add(group.getId());
-            }
-        }
         this.notBefore = notBefore;
+        this.requiredActions = new DefaultLazyLoader<>(UserModel::getRequiredActions, Collections::emptySet);
+        this.attributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new);
+        this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroups().stream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
     }
 
     public String getRealm() {
@@ -107,16 +103,16 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return enabled;
     }
 
-    public MultivaluedHashMap<String, String> getAttributes() {
-        return attributes;
+    public MultivaluedHashMap<String, String> getAttributes(Supplier<UserModel> userModel) {
+        return attributes.get(userModel);
     }
 
-    public Set<String> getRequiredActions() {
-        return requiredActions;
+    public Set<String> getRequiredActions(Supplier<UserModel> userModel) {
+        return this.requiredActions.get(userModel);
     }
 
-    public Set<String> getRoleMappings() {
-        return roleMappings;
+    public Set<String> getRoleMappings(Supplier<UserModel> userModel) {
+        return roleMappings.get(userModel);
     }
 
     public String getFederationLink() {
@@ -127,8 +123,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return serviceAccountClientLink;
     }
 
-    public Set<String> getGroups() {
-        return groups;
+    public Set<String> getGroups(Supplier<UserModel> userModel) {
+        return groups.get(userModel);
     }
 
     public int getNotBefore() {
