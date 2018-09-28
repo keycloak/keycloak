@@ -44,7 +44,7 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>
         }
         if (value instanceof CachedGroup) {
             CachedGroup cachedRole = (CachedGroup)value;
-            if (cachedRole.getRoleMappings().contains(role)) return true;
+            if (cachedRole.getRoleMappings(null).contains(role)) return true;
         }
         if (value instanceof RoleQuery) {
             RoleQuery roleQuery = (RoleQuery)value;

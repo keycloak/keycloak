@@ -180,4 +180,6 @@ public interface Resource {
     void setAttribute(String name, List<String> values);
 
     void removeAttribute(String name);
+
+    boolean isFetched(String association);
 }
