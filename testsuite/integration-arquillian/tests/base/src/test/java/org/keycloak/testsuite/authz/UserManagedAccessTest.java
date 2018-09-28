@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -99,6 +100,82 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         } catch (AuthorizationDeniedException ade) {
 
         }
+    }
+
+    @Test
+    public void testOnlyOwnerCanAccessPermissionsToScope() throws Exception {
+        resource = addResource("Resource A", "marta", true, "ScopeA", "ScopeB");
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(resource.getName() + " Scope A Permission");
+        permission.addScope("ScopeA");
+        permission.addPolicy("Only Owner Policy");
+
+        getClient(getRealm()).authorization().permissions().scope().create(permission).close();
+
+        permission = new ScopePermissionRepresentation();
+
+        permission.setName(resource.getName() + " Scope B Permission");
+        permission.addScope("ScopeB");
+        permission.addPolicy("Only Owner Policy");
+
+        getClient(getRealm()).authorization().permissions().scope().create(permission).close();
+
+        AuthorizationResponse response = authorize("marta", "password", resource.getName(), new String[] {"ScopeA", "ScopeB"});
+        String rpt = response.getToken();
+
+        assertNotNull(rpt);
+        assertFalse(response.isUpgraded());
+
+        AccessToken accessToken = toAccessToken(rpt);
+        AccessToken.Authorization authorization = accessToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        Collection<Permission> permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+
+        try {
+            response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
+            fail("User should not have access to resource from another user");
+        } catch (AuthorizationDeniedException ade) {
+        }
+
+        List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, null, null, null);
+
+        for (PermissionTicketRepresentation ticket : tickets) {
+            ticket.setGranted(true);
+            getAuthzClient().protection().permission().update(ticket);
+        }
+
+        try {
+            response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
+        } catch (AuthorizationDeniedException ade) {
+            fail("User should have access to resource from another user");
+        }
+
+        rpt = response.getToken();
+        accessToken = toAccessToken(rpt);
+        authorization = accessToken.getAuthorization();
+        permissions = authorization.getPermissions();
+        assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+
+        try {
+            response = authorize("marta", "password", resource.getId(), new String[] {"ScopeB"});
+        } catch (AuthorizationDeniedException ade) {
+            fail("User should have access to his own resources");
+        }
+
+        rpt = response.getToken();
+        accessToken = toAccessToken(rpt);
+        authorization = accessToken.getAuthorization();
+        permissions = authorization.getPermissions();
+        assertPermissions(permissions, resource.getName(), "ScopeB");
+        assertTrue(permissions.isEmpty());
     }
 
     /**
@@ -176,13 +253,6 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
-
-        try {
-            response = authorize("kolo", "password", resourceB.getId(), new String[] {"ScopeA", "ScopeB"});
-            fail("User should not have access to resource from another user");
-        } catch (AuthorizationDeniedException ade) {
-
-        }
     }
 
     @Test
@@ -364,7 +434,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testUserGrantsAccessToScope() throws Exception {
+    public void testScopePermissionsToScopeOnly() throws Exception {
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resource = addResource("Resource A", "marta", true, "ScopeA", "ScopeB");
 

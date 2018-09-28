@@ -16,9 +16,30 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
+import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.Evaluation;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class UMAPolicyProvider extends AbstractPermissionProvider {
 
+    @Override
+    public void evaluate(Evaluation evaluation) {
+        ResourcePermission permission = evaluation.getPermission();
+        Resource resource = permission.getResource();
+
+        if (resource != null) {
+            Identity identity = evaluation.getContext().getIdentity();
+
+            // no need to evaluate UMA permissions to resource owner resources
+            if (resource.getOwner().equals(identity.getId())) {
+                return;
+            }
+        }
+
+        super.evaluate(evaluation);
+    }
 }
