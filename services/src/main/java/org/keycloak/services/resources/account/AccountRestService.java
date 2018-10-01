@@ -47,6 +47,7 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.common.Profile;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -205,6 +206,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessions() {
+        checkAccount2Enabled();
         List<SessionRepresentation> reps = new LinkedList<>();
 
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
@@ -242,6 +244,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
+        checkAccount2Enabled();
         UserSessionModel userSession = auth.getSession();
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
@@ -265,6 +268,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessionLogout(@QueryParam("id") String id) {
+        checkAccount2Enabled();
         UserSessionModel userSession = session.sessions().getUserSession(realm, id);
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
@@ -274,11 +278,17 @@ public class AccountRestService {
 
     @Path("/credentials")
     public AccountCredentialResource credentials() {
+        checkAccount2Enabled();
         return new AccountCredentialResource(session, event, user);
     }
 
    // TODO Federated identities
     // TODO Applications
     // TODO Logs
-
+    
+    private static void checkAccount2Enabled() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
+            throw new NotFoundException();
+        }
+    }
 }
