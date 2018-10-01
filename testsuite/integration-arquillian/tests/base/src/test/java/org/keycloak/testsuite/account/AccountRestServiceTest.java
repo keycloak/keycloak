@@ -34,7 +34,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +41,9 @@ import java.util.List;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.services.messages.Messages;
+
+import static org.keycloak.common.Profile.Feature.ACCOUNT2;
+import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -187,6 +189,8 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetSessions() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
         assertEquals(1, sessions.size());
@@ -194,11 +198,15 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetPasswordDetails() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         getPasswordDetails();
     }
 
     @Test
     public void testPostPasswordUpdate() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         //Get the time of lastUpdate
         AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
 
@@ -222,6 +230,8 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     
     @Test
     public void testPasswordConfirmation() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
         
         updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 200);
@@ -263,6 +273,8 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDeleteSession() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
