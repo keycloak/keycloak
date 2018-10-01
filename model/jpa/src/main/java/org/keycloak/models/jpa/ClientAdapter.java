@@ -320,6 +320,9 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        if (getClientScopes(defaultScope, false).containsKey(clientScope.getName())) return;
+        if (getClientScopes(!defaultScope, false).containsKey(clientScope.getName())) throw new ModelDuplicateException();
+
         entity.getClientScopes().put(ClientScopeAdapter.toClientScopeEntity(clientScope, em) , defaultScope);
     }
 
@@ -627,7 +630,13 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public boolean removeRole(RoleModel roleModel) {
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
-        return entity.getClientRoles().remove(role);
+    	realm.getClients().forEach(c -> c.deleteScopeMapping(roleModel));
+        if(role != null && entity.getClientRoles().remove(role)) {
+            em.remove(role);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
