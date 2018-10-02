@@ -5,6 +5,7 @@
 
 include::topics/templates/document-attributes-community.adoc[]
 
+:authorization_services_guide:
 
 = {authorizationguide_name}
 

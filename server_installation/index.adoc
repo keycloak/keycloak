@@ -4,4 +4,9 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-community.adoc[]
+
+:server_installation_and_configuration_guide:
+
+= {installguide_name}
+
 include::topics.adoc[]

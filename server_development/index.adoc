@@ -4,4 +4,9 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-community.adoc[]
+
+:server_developer_guide:
+
+= {developerguide_name}
+
 include::topics.adoc[]

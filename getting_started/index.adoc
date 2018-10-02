@@ -4,4 +4,9 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-community.adoc[]
+
+:getting_started_guide:
+
+= {gettingstarted_name}
+
 include::topics.adoc[]

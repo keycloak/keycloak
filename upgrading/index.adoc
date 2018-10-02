@@ -4,4 +4,9 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-community.adoc[]
+
+:upgrading_guide:
+
+= {upgradingguide_name}
+
 include::topics.adoc[]

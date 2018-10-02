@@ -4,4 +4,9 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]
+
+:openshift:
+
+= {openshift_name}
+
 include::topics.adoc[]
