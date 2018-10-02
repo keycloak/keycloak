@@ -23,6 +23,10 @@
         <artifact name="${org.kie:kie-api}"/>
         <artifact name="${org.kie:kie-ci}"/>
         <artifact name="${org.kie:kie-internal}"/>
+        <artifact name="${org.kie.soup:kie-soup-maven-support}"/>
+        <artifact name="${org.kie.soup:kie-soup-maven-integration}"/>
+        <artifact name="${org.kie.soup:kie-soup-commons}"/>
+        <artifact name="${org.kie.soup:kie-soup-project-datamodel-commons}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
@@ -46,10 +50,19 @@
         <module name="org.apache.maven"/>
         <module name="org.apache.maven.wagon"/>
         <module name="org.codehouse.plexus"/>
-        <module name="org.drools"/>
+        <!-- Kie requires access to kie.conf files from META-INF -->
+        <module name="org.drools" export="true">
+            <imports>
+                <include path="META-INF"/>
+            </imports>
+            <exports>
+                <include path="META-INF"/>
+            </exports>
+        </module>
         <module name="org.eclipse.aether" slot="kie"/>
         <module name="org.eclipse.sisu"/>
         <module name="org.sonatype.plexus"/>
         <module name="org.sonatype.sisu"/>
+        <module name="org.mvel"/>
     </dependencies>
 </module>

@@ -93,7 +93,7 @@
         <wildfly.common.version>1.4.0.Final</wildfly.common.version>
 
         <!-- Authorization Drools Policy Provider -->
-        <version.org.drools>6.5.0.Final</version.org.drools>
+        <version.org.drools>7.11.0.Final</version.org.drools>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M21</apacheds.version>
