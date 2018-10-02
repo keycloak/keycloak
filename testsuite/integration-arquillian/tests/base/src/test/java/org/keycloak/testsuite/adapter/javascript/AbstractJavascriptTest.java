@@ -17,6 +17,8 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
+import org.keycloak.testsuite.util.javascript.ResponseValidator;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;

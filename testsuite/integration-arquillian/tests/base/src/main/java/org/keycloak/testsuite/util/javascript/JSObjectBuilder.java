@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.javascript;
+package org.keycloak.testsuite.util.javascript;
 
 import java.util.HashMap;
 import java.util.Map;
