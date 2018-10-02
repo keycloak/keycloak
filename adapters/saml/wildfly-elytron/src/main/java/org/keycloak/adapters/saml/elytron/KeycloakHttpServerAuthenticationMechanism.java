@@ -79,7 +79,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             return;
         }
 
-        if (httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
+        if (deployment.getLogoutPage() != null && httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
             LOGGER.debugf("Ignoring request for [%s] and logout page [%s].", request.getRequestURI(), deployment.getLogoutPage());
             httpFacade.authenticationCompleteAnonymous();
             return;
