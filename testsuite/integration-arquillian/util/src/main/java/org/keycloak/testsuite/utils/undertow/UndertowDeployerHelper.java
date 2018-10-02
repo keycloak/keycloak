@@ -75,7 +75,7 @@ public class UndertowDeployerHelper {
                 di = new DeploymentInfo();
             }
 
-            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(UndertowDeployerHelper.class.getClassLoader(), archive);
+            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(Thread.currentThread().getContextClassLoader(), archive);
             di.setClassLoader(classLoader);
 
             di.setDeploymentName(archiveName);

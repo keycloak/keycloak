@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.javascript;
+package org.keycloak.testsuite.util.javascript;
 
 import org.openqa.selenium.JavascriptExecutor;
 
@@ -26,6 +26,10 @@ public class XMLHttpRequest {
         return this;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     public XMLHttpRequest method(String method) {
         this.method = method;
         return this;
@@ -46,6 +50,16 @@ public class XMLHttpRequest {
         return this;
     }
 
+    public XMLHttpRequest includeBearerToken() {
+        addHeader("Authorization", "Bearer ' + keycloak.token + '");
+        return this;
+    }
+
+    public XMLHttpRequest includeRpt() {
+        addHeader("Authorization", "Bearer ' + authorization.rpt + '");
+        return this;
+    }
+
     public Map<String, Object> send(JavascriptExecutor jsExecutor) {
         String requestCode = "var callback = arguments[arguments.length - 1];" +
                         "var req = new XMLHttpRequest();" +
@@ -53,7 +67,7 @@ public class XMLHttpRequest {
                         getHeadersString() +
                         "        req.onreadystatechange = function () {" +
                         "            if (req.readyState == 4) {" +
-                        "                callback({\"status\" : req.status, \"reponseText\" : req.reponseText, \"responseHeaders\" : req.getAllResponseHeaders().toLowerCase(), \"res\" : req.response})" +
+                        "                callback({\"status\" : req.status, \"responseHeaders\" : req.getAllResponseHeaders(), \"res\" : req.response, \"req\" : req})" +
                         "            }" +
                         "        };" +
                         "        req.send(" + content + ");";

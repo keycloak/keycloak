@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.javascript;
+package org.keycloak.testsuite.util.javascript;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -9,23 +9,25 @@ import org.openqa.selenium.WebElement;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
 
 /**
  * @author mhajas
  */
 public class JavascriptTestExecutor {
-    private WebDriver jsDriver;
-    private JavascriptExecutor jsExecutor;
+    protected WebDriver jsDriver;
+    protected JavascriptExecutor jsExecutor;
     private WebElement output;
-    private WebElement events;
+    protected WebElement events;
     private OIDCLogin loginPage;
-    private boolean configured;
+    protected boolean configured;
 
     public static JavascriptTestExecutor create(WebDriver driver, OIDCLogin loginPage) {
         return new JavascriptTestExecutor(driver, loginPage);
     }
 
-    private JavascriptTestExecutor(WebDriver driver, OIDCLogin loginPage) {
+    protected JavascriptTestExecutor(WebDriver driver, OIDCLogin loginPage) {
         this.jsDriver = driver;
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         jsExecutor = (JavascriptExecutor) driver;
@@ -49,6 +51,7 @@ public class JavascriptTestExecutor {
         else {
             jsExecutor.executeScript("keycloak.login(" + options + ")");
         }
+        waitForPageToLoad();
 
         if (validator != null) {
             validator.validate(jsDriver, output, events);
@@ -65,6 +68,7 @@ public class JavascriptTestExecutor {
 
     public JavascriptTestExecutor loginForm(UserRepresentation user, JavascriptStateValidator validator) {
         loginPage.form().login(user);
+        waitForPageToLoad();
 
         if (validator != null) {
             validator.validate(jsDriver, null, events);
@@ -174,6 +178,20 @@ public class JavascriptTestExecutor {
         return this;
     }
 
+    public JavascriptTestExecutor openAccountPage(JavascriptStateValidator validator) {
+        jsExecutor.executeScript("window.keycloak.accountManagement()");
+        waitForPageToLoad();
+
+        // Leaving page -> loosing keycloak variable
+        configured = false;
+
+        if (validator != null) {
+            validator.validate(jsDriver, null, null);
+        }
+
+        return this;
+    }
+
     public JavascriptTestExecutor getProfile() {
         return getProfile(null);
     }
@@ -233,6 +251,12 @@ public class JavascriptTestExecutor {
         }
 
         return this;
+    }
+
+    public boolean isLoggedIn() {
+        return (boolean) jsExecutor.executeScript("if (typeof keycloak !== 'undefined') {" +
+                "return keycloak.authenticated" +
+                "} else { return false}");
     }
 
     public JavascriptTestExecutor executeAsyncScript(String script) {
