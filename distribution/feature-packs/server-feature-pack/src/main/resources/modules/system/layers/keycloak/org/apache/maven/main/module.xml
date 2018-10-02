@@ -30,6 +30,7 @@
         <artifact name="${org.apache.maven:maven-repository-metadata}"/>
         <artifact name="${org.apache.maven:maven-settings}"/>
         <artifact name="${org.apache.maven:maven-settings-builder}"/>
+        <artifact name="${org.apache.maven:maven-builder-support}"/>
     </resources>
     <dependencies>
         <module name="com.google.guava"/>
@@ -41,5 +42,6 @@
         <module name="org.eclipse.sisu"/>
         <module name="org.sonatype.plexus"/>
         <module name="org.sonatype.sisu"/>
+        <module name="org.apache.commons.lang3"/>
     </dependencies>
 </module>

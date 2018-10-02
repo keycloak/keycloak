@@ -20,7 +20,7 @@
         <property name="jboss.api" value="private"/>
     </properties>
     <resources>
-        <artifact name="${org.sonatype.sisu:sisu-guice::no_aop}"/>
+        <artifact name="${com.google.inject:guice::no_aop}"/>
     </resources>
     <dependencies>
         <module name="aopalliance"/>

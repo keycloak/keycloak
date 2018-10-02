@@ -104,7 +104,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
 
     @Override
     public void init(Config.Scope config) {
-        this.ks = Factory.get();
+        this.ks = KieServices.get();
     }
 
     @Override

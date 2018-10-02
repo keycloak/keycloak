@@ -18,23 +18,22 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <xstream.version>1.4.9</xstream.version>
-        <antlr-runtime.version>3.5</antlr-runtime.version>
-        <ant.version>1.8.3</ant.version>
-        <maven.version>3.2.5</maven.version>
-        <wagon.version>2.6</wagon.version>
+        <xstream.version>1.4.10</xstream.version>
+        <antlr-runtime.version>3.5.2</antlr-runtime.version>
+        <ant.version>1.8.4</ant.version>
+        <maven.version>3.3.9</maven.version>
+        <wagon.version>3.0.0</wagon.version>
         <plexus-classworlds.version>2.5.2</plexus-classworlds.version>
-        <plexus-component-annotations.version>1.5.5</plexus-component-annotations.version>
+        <plexus-component-annotations.version>1.6</plexus-component-annotations.version>
         <plexus-interpolation.version>1.21</plexus-interpolation.version>
-        <plexus-utils.version>3.0.20</plexus-utils.version>
-        <aether.version>1.0.0.v20140518</aether.version>
-        <sisu.version>0.3.0.M1</sisu.version>
-        <mvel2.version>2.2.8.Final</mvel2.version>
+        <plexus-utils.version>3.0.22</plexus-utils.version>
+        <aether.version>1.1.0</aether.version>
+        <org.eclipse.sisu>0.3.2</org.eclipse.sisu>
+        <mvel2.version>2.4.0.Final</mvel2.version>
         <plexus-cipher.version>1.7</plexus-cipher.version>
         <plexus-sec-dispatcher.version>1.3</plexus-sec-dispatcher.version>
-        <sisu-guice.version>3.2.3</sisu-guice.version>
+        <sisu-guice.version>4.0</sisu-guice.version>
         <ecj.version>4.4.2</ecj.version>
-        <itext.version>2.1.2</itext.version>
     </properties>
 
     <dependencyManagement>
@@ -42,6 +41,13 @@
             <dependency>
                 <groupId>org.drools</groupId>
                 <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.kie.soup</groupId>
+                <artifactId>kie-soup-bom</artifactId>
                 <type>pom</type>
                 <version>${version.org.drools}</version>
                 <scope>import</scope>
@@ -123,6 +129,11 @@
                 <version>${maven.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-builder-support</artifactId>
+                <version>${maven.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-http</artifactId>
                 <version>${wagon.version}</version>
@@ -200,12 +211,12 @@
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.inject</artifactId>
-                <version>${sisu.version}</version>
+                <version>${org.eclipse.sisu}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>${sisu.version}</version>
+                <version>${org.eclipse.sisu}</version>
             </dependency>
             <dependency>
                 <groupId>org.mvel</groupId>
@@ -223,13 +234,19 @@
                 <version>${plexus-sec-dispatcher.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.sonatype.sisu.inject</groupId>
+                <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-servlet</artifactId>
                 <version>${sisu-guice.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.inject</groupId>
+                        <artifactId>guice</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.sonatype.sisu</groupId>
-                <artifactId>sisu-guice</artifactId>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
                 <classifier>no_aop</classifier>
                 <version>${sisu-guice.version}</version>
             </dependency>
@@ -237,21 +254,6 @@
                 <groupId>org.eclipse.jdt.core.compiler</groupId>
                 <artifactId>ecj</artifactId>
                 <version>${ecj.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.lowagie</groupId>
-                <artifactId>itext</artifactId>
-                <version>${itext.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>bouncycastle</groupId>
-                        <artifactId>bcmail-jdk14</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>bouncycastle</groupId>
-                        <artifactId>bcprov-jdk14</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
