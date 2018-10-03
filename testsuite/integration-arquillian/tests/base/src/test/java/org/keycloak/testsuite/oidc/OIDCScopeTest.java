@@ -27,6 +27,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -35,6 +36,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
@@ -357,7 +359,40 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertPhone(idToken, false);
 
         // Revert
+        thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
+        thirdParty.update(thirdPartyRep);
+    }
+
+
+    // KEYCLOAK-7855
+    @Test
+    public void testClientDisplayedOnConsentScreenWithEmptyConsentText() throws Exception {
+        // Add "displayOnConsentScreen" to client
+        ClientResource thirdParty = ApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
+        thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "");
+        thirdParty.update(thirdPartyRep);
+
+        // Change consent text on profile scope
+        ClientScopeResource profileScope = ApiUtil.findClientScopeByName(testRealm(), OAuth2Constants.SCOPE_PROFILE);
+        ClientScopeRepresentation profileScopeRep = profileScope.toRepresentation();
+        profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, " ");
+        profileScope.update(profileScopeRep);
+
+        // Login. ConsentTexts are empty for the client and for the "profile" scope, so it should fallback to name/clientId
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("john", "password");
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants("profile", OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "third-party");
+        grantPage.accept();
+
+        // Revert
+        profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, OIDCLoginProtocolFactory.PROFILE_SCOPE_CONSENT_TEXT);
+        profileScope.update(profileScopeRep);
+
+        thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
         thirdParty.update(thirdPartyRep);
     }
 
