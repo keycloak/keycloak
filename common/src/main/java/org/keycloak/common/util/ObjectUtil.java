@@ -42,7 +42,38 @@ public class ObjectUtil {
         return str1.equals(str2);
     }
 
+
     public static String capitalize(String str) {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+
+    /**
+     * Forked from apache-commons StringUtils
+     *
+     * <p>Checks if a CharSequence is whitespace, empty ("") or null.</p>
+     *
+     * <pre>
+     * ObjectUtil.isBlank(null)      = true
+     * ObjectUtil.isBlank("")        = true
+     * ObjectUtil.isBlank(" ")       = true
+     * ObjectUtil.isBlank("bob")     = false
+     * ObjectUtil.isBlank("  bob  ") = false
+     * </pre>
+     *
+     * @param cs
+     * @return {@code true} if the CharSequence is null, empty or whitespace
+     */
+    public static boolean isBlank(final CharSequence cs) {
+        int strLen;
+        if (cs == null || (strLen = cs.length()) == 0) {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }
