@@ -46,7 +46,8 @@ import java.util.List;
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
 
-    public static final List<String> DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.none.toString(), Algorithm.RS256.toString());
+    // KEYCLOAK-8460 Request Object Signature Verification Other Than RS256
+    public static final List<String> DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.none.toString(), Algorithm.RS256.toString(), Algorithm.RS384.toString(), Algorithm.RS512.toString(), Algorithm.ES256.toString(), Algorithm.ES384.toString(), Algorithm.ES512.toString());
 
     public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS);
 

@@ -17,6 +17,8 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
 import org.keycloak.provider.Provider;
 
 public interface SignatureProvider extends Provider {
@@ -24,6 +26,9 @@ public interface SignatureProvider extends Provider {
     SignatureSignerContext signer() throws SignatureException;
 
     SignatureVerifierContext verifier(String kid) throws VerificationException;
+
+    // KEYCLOAK-8460 client signed signature verification
+    SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException;
 
     @Override
     default void close() {

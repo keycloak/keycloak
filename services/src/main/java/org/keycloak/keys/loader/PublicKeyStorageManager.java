@@ -19,6 +19,7 @@ package org.keycloak.keys.loader;
 
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -46,6 +47,19 @@ public class PublicKeyStorageManager {
         return keyStorage.getPublicKey(modelKey, kid, loader);
     }
 
+    // KEYCLOAK-8460 client signed signature verification
+    // key is wrapped by KeyWrapper in order to use refactored token signature verification mechanism
+    public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWSInput input) {
+        String kid = input.getHeader().getKeyId();
+        PublicKey verifyKey = getClientPublicKey(session, client, input);
+        if (verifyKey == null) return null;
+
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setKid(kid);
+        keyWrapper.setAlgorithm(input.getHeader().getAlgorithm().name());
+        keyWrapper.setVerifyKey(verifyKey);
+        return keyWrapper;
+    }
 
     public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
         boolean keyIdSetInConfiguration = idpConfig.getPublicKeySignatureVerifierKeyId() != null

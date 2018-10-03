@@ -17,6 +17,8 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
 public class MacSecretSignatureProvider implements SignatureProvider {
@@ -37,6 +39,12 @@ public class MacSecretSignatureProvider implements SignatureProvider {
     @Override
     public SignatureVerifierContext verifier(String kid) throws VerificationException {
         return new ServerMacSignatureVerifierContext(session, kid, algorithm);
+    }
+
+    @Override
+    public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
+        // HMAC is not supported for client signed signature verification
+        return null;
     }
 
 }

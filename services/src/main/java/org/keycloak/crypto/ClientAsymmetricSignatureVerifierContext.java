@@ -18,32 +18,22 @@ package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
-public class AsymmetricSignatureProvider implements SignatureProvider {
+public class ClientAsymmetricSignatureVerifierContext extends AsymmetricSignatureVerifierContext {
 
-    private final KeycloakSession session;
-    private final String algorithm;
-
-    public AsymmetricSignatureProvider(KeycloakSession session, String algorithm) {
-        this.session = session;
-        this.algorithm = algorithm;
+    // KEYCLOAK-8460 client signed signature verification
+    public ClientAsymmetricSignatureVerifierContext(KeycloakSession session, ClientModel client, JWSInput input) throws VerificationException {
+        super(getKey(session, client, input));
     }
 
-    @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerAsymmetricSignatureSignerContext(session, algorithm);
+    private static KeyWrapper getKey(KeycloakSession session, ClientModel client, JWSInput input) throws VerificationException {
+        KeyWrapper key = PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, input);
+        if (key == null) {
+            throw new VerificationException("Key not found");
+        }
+        return key;
     }
-
-    @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
-        return new ServerAsymmetricSignatureVerifierContext(session, kid, algorithm);
-    }
-
-    @Override
-    public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
-        return new ClientAsymmetricSignatureVerifierContext(session, client, input);
-    }
-
 }
