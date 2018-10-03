@@ -114,6 +114,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
                 .addPassword("password"));
 
+        builder.user(UserBuilder.create()
+                .username("multi")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS)
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM)
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS)
+                .addPassword("password"));
+
         builder.user(UserBuilder.create().username("none").addPassword("password"));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
@@ -192,6 +199,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         clients.put("none",
                 Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret"));
+
+        clients.put("multi",
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret"));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
             clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client"));
@@ -1604,6 +1614,35 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.components().component("nosuch").remove();
             }
         }, Resource.REALM, true);
+    }
+
+    @Test
+    public void partialExport() {
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, false);
+            }
+        }, clients.get("view-realm"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(true, true);
+            }
+        }, clients.get("multi"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(true, false);
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, true);
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, false);
+            }
+        }, clients.get("none"), false);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {
