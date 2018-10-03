@@ -28,7 +28,8 @@ Once you have created new realm, you can see that there is a list of pre-defined
 
 * For the SAML protocol, there is one builtin client scope, `roles_list`, which contains one protocol mapper for showing the roles
 list in the SAML assertion.
-* For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone` and `offline_access` .
+* For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone`, `offline_access`, `roles` and
+`web-origins`.
 
 The client scope, `offline_access`, is useful when client wants to obtain offline tokens. Learn about offline tokens in the
 <<_offline-access, Offline Access section>> or in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification],
@@ -50,6 +51,13 @@ the user has a defined phone number.
 
 Builtin client scopes contain exactly the protocol mappers as defined per the specification,
 however you are free to edit client scopes and create/update/remove any protocol mappers (or role scope mappings).
+
+The client scope `roles` is not defined in the OpenID Connect specification and it is also not added automatically to the `scope`
+claim in the access token. This client scope has some mappers, which are used to add roles of the user to the access token and
+possibly add some audiences for the clients with at least one client role as described in the <<_audience_resolve, Audience section>>.
+
+The client scope `web-origins` is also not defined in the OpenID Connect specification and not added to the `scope` claim. This is used
+to add allowed web origins to the access token `allowed-origins` claim.
 
 ==== Consent related settings
 

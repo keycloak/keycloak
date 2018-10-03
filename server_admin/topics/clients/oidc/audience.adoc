@@ -108,4 +108,25 @@ image:{project_images}/audience_mapper.png[]
   adapter, or the link:{adapterguide_link}#_javascript_adapter[javascript adapter section], if your application uses the
   javascript adapter.
 
+[[_audience_resolve]]
+===== Automatically add audience
+
+There is another way that the audience can be added to the token. In the default client scope _roles_, there is an _Audience Resolve_
+protocol mapper defined. This protocol mapper will check all the clients for which current token has at least one client role
+available. Then the client ID of each of those clients will be added as an audience automatically. This is especially useful if
+your service (usually bearer-only) clients rely on client roles. In the example in previous section, if all of those are true:
+
+* The `good-service` client has any client role defined on itself
+
+* Target user has this client role assigned
+
+* Client `my-app` has the role scope mappings for this role
+
+then the `good-service` will be automatically added as an audience. In this case, you do not need to set up the audience client
+scope as described in the previous section.
+
+NOTE: If you are unsure what the correct audience and roles in the token will be, it is always a good idea to
+<<_client_scopes_evaluate, Evaluate Client Scopes>> in the admin console and do some testing around it.
+
+
 
