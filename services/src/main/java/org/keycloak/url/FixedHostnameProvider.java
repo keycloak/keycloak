@@ -10,14 +10,21 @@ public class FixedHostnameProvider implements HostnameProvider {
 
     private final KeycloakSession session;
     private final String globalHostname;
+    private final String scheme;
     private final int httpPort;
     private final int httpsPort;
 
-    public FixedHostnameProvider(KeycloakSession session, String globalHostname, int httpPort, int httpsPort) {
+    public FixedHostnameProvider(KeycloakSession session, String scheme, String globalHostname, int httpPort, int httpsPort) {
         this.session = session;
+        this.scheme = scheme;
         this.globalHostname = globalHostname;
         this.httpPort = httpPort;
         this.httpsPort = httpsPort;
+    }
+
+    @Override
+    public String getScheme(UriInfo originalUriInfo) {
+        return scheme != null ? scheme : originalUriInfo.getRequestUri().getScheme();
     }
 
     @Override
