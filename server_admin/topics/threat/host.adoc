@@ -87,6 +87,11 @@ By default the `httpPort` and `httpsPort` are received from the request. As long
 it should not be necessary to change this. It is possible to configure fixed ports if necessary by setting the `httpPort` and
 `httpsPort` properties on the fixed provider.
 
+In most cases the scheme should be set correctly. This may not be true if the reverse proxy is unable to set the `X-Forwarded-For` header
+correctly, or if there is an internal application using non-https to invoke {project_name}. The latter is not recommended
+and you should strive to use `https` always. In this case you can set a fixed scheme as well by setting the `scheme`
+property to `https`.
+
 ==== Custom provider
 
 To develop a custom hostname provider you need to implement `org.keycloak.urls.HostnameProviderFactory` and
