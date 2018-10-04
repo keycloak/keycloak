@@ -246,7 +246,7 @@ public class OIDCLoginProtocolService {
 
     /**
      * For KeycloakInstalled and kcinit login where command line login is delegated to a browser.
-     * This clears login cookies and outputs login success or failure messages.
+     * This outputs login success or failure messages.
      *
      * @param error
      * @return
@@ -254,8 +254,6 @@ public class OIDCLoginProtocolService {
     @GET
     @Path("delegated")
     public Response kcinitBrowserLoginComplete(@QueryParam("error") boolean error) {
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
-        AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
         if (error) {
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms

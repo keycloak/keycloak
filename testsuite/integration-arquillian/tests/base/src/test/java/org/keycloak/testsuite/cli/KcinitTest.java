@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.cli;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -26,8 +27,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -36,7 +35,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -46,23 +44,17 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.testsuite.authentication.PushButtonAuthenticator;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.forms.PassThroughAuthenticator;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.TotpUtils;
 import org.openqa.selenium.By;
 
 import javax.mail.internet.MimeMessage;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -155,6 +147,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
             user.setEnabled(true);
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            user = session.users().addUser(realm, "mkanis");
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
+            user.setEnabled(true);
 
             // Parent flow
             AuthenticationFlowModel browser = new AuthenticationFlowModel();
@@ -681,7 +676,233 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(0, exe.exitCode());
     }
 
+    @Test
+    public void testSSO() throws Exception {
+        // test that we can continue in the middle of a console login that doesn't support console display mode
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+            AuthenticationFlowModel flow = realm.getFlowByAlias("no-console-flow");
+            kcinit.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, flow.getId());
+        });
 
+        try {
+            testInstall();
 
+            KcinitExec.Builder kcinit = KcinitExec.newBuilder();
+            KcinitExec exe = kcinit.argsLine("login --fake-browser") // --fake-browser is a hidden command so that this test can execute
+                    .executeAsync();
+            exe.waitForStderr("Open browser and continue login? [y/n]");
+            exe.sendLine("y");
+            exe.waitForStdout("http://");
 
+            // the --fake-browser skips launching a browser and outputs url to stdout
+            String redirect = exe.stdoutString().trim();
+
+            driver.navigate().to(redirect);
+
+            Assert.assertEquals("PushTheButton", driver.getTitle());
+
+            // Push the button. I am redirected to username+password form
+            driver.findElement(By.name("submit1")).click();
+            loginPage.assertCurrent();
+
+            oauth.fillLoginForm("wburke", "password");
+
+            exe.waitForStderr("Login successful");
+            exe.waitCompletion();
+            Assert.assertEquals(0, exe.exitCode());
+            Assert.assertThat(driver.getPageSource(), Matchers.containsString("Login Successful"));
+
+            // go to account page - sso should work
+            accountPage.setAuthRealm(AuthRealm.TEST);
+            accountPage.navigateTo();
+            accountPage.assertCurrent();
+            Assert.assertThat(driver.getPageSource(), Matchers.containsString("wburke"));
+
+            // force re-login, the browser should maintain the logged-in session
+            KcinitExec exe2 = kcinit.argsLine("login -f --fake-browser").executeAsync();
+
+            exe2.waitForStderr("Open browser and continue login? [y/n]");
+            exe2.sendLine("y");
+            exe2.waitForStdout("http://");
+
+            // the --fake-browser skips launching a browser and outputs url to stdout
+            redirect = exe2.stdoutString().trim();
+            driver.navigate().to(redirect);
+
+            Assert.assertEquals("PushTheButton", driver.getTitle());
+
+            driver.findElement(By.name("submit1")).click();
+
+            // we are already logged in
+            exe2.waitForStderr("Login successful");
+            exe2.waitCompletion();
+            Assert.assertEquals(0, exe2.exitCode());
+            Assert.assertThat(driver.getPageSource(), Matchers.containsString("Login Successful"));
+
+            // go to account page - sso should work
+            accountPage.navigateTo();
+            accountPage.assertCurrent();
+            Assert.assertThat(driver.getPageSource(), Matchers.containsString("wburke"));
+        } finally {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+                kcinit.removeAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
+            });
+        }
+    }
+
+    @Test
+    public void testSSOWithConsoleLoginAndBrowserLogin() throws Exception {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("wburke", realm);
+            user.addRequiredAction("dummy");
+        });
+
+        testInstall();
+        KcinitExec.Builder kcinit = KcinitExec.newBuilder();
+        KcinitExec exe = kcinit.argsLine("login --fake-browser") // --fake-browser is a hidden command so that this test can execute
+                .executeAsync();
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Username:");
+        exe.sendLine("wburke");
+        //System.out.println(exe.stderrString());
+        exe.waitForStderr("Password:");
+        exe.sendLine("password");
+
+        exe.waitForStderr("Open browser and continue login? [y/n]");
+        exe.sendLine("y");
+        exe.waitForStdout("http://");
+
+        // the --fake-browser skips launching a browser and outputs url to stdout
+        String redirect = exe.stdoutString().trim();
+
+        driver.navigate().to(redirect.trim());
+
+        exe.waitForStderr("Login successful");
+        exe.waitCompletion();
+        Assert.assertEquals(0, exe.exitCode());
+        Assert.assertTrue(driver.getPageSource().contains("Login Successful"));
+
+        accountPage.setAuthRealm(AuthRealm.TEST);
+        accountPage.navigateTo();
+        accountPage.assertCurrent();
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("wburke"));
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel client = realm.getClientByClientId(KCINIT_CLIENT);
+            AuthenticationFlowModel flow = realm.getFlowByAlias("no-console-flow");
+            client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, flow.getId());
+        });
+
+        KcinitExec exe2 = kcinit.argsLine("login -f --fake-browser").executeAsync();
+        exe2.waitForStderr("Open browser and continue login? [y/n]");
+        exe2.sendLine("y");
+        exe2.waitForStdout("http://");
+
+        // the --fake-browser skips launching a browser and outputs url to stdout
+        redirect = exe2.stdoutString().trim();
+        driver.navigate().to(redirect);
+
+        Assert.assertEquals("PushTheButton", driver.getTitle());
+
+        // Push the button. I am redirected to username+password form
+        driver.findElement(By.name("submit1")).click();
+
+        exe2.waitForStderr("Login successful");
+        exe2.waitCompletion();
+        Assert.assertEquals(0, exe2.exitCode());
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("Login Successful"));
+
+        // go to account page - sso should work
+        accountPage.navigateTo();
+        accountPage.assertCurrent();
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("wburke"));
+    }
+
+    @Test
+    public void testLoginWithTwoUsers() throws Exception {
+        // test that we can continue in the middle of a console login that doesn't support console display mode
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel kcinit = realm.getClientByClientId(KCINIT_CLIENT);
+            AuthenticationFlowModel flow = realm.getFlowByAlias("no-console-flow");
+            kcinit.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, flow.getId());
+        });
+
+        testInstall();
+
+        KcinitExec.Builder kcinit = KcinitExec.newBuilder();
+        KcinitExec exe = kcinit.argsLine("login --fake-browser") // --fake-browser is a hidden command so that this test can execute
+                .executeAsync();
+        exe.waitForStderr("Open browser and continue login? [y/n]");
+        exe.sendLine("y");
+        exe.waitForStdout("http://");
+
+        // the --fake-browser skips launching a browser and outputs url to stdout
+        String redirect = exe.stdoutString().trim();
+
+        driver.navigate().to(redirect);
+
+        Assert.assertEquals("PushTheButton", driver.getTitle());
+
+        // Push the button. I am redirected to username+password form
+        driver.findElement(By.name("submit1")).click();
+        loginPage.assertCurrent();
+
+        oauth.fillLoginForm("wburke", "password");
+
+        exe.waitForStderr("Login successful");
+        exe.waitCompletion();
+        Assert.assertEquals(0, exe.exitCode());
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("Login Successful"));
+
+        // go to account page - sso should work
+        accountPage.setAuthRealm(AuthRealm.TEST);
+        accountPage.navigateTo();
+        accountPage.assertCurrent();
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("wburke"));
+
+        // back to console login with finishing in the browser
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel client = realm.getClientByClientId(KCINIT_CLIENT);
+            client.removeAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
+
+            UserModel user = session.users().getUserByUsername("mkanis", realm);
+            user.addRequiredAction("dummy");
+        });
+
+        // force re-login
+        KcinitExec exe2 = kcinit.argsLine("login -f --fake-browser").executeAsync();
+
+        // login as different user
+        exe2.waitForStderr("Username:");
+        exe2.sendLine("mkanis");
+        exe2.waitForStderr("Password:");
+        exe2.sendLine("password");
+
+        exe2.waitForStderr("Open browser and continue login? [y/n]");
+        exe2.sendLine("y");
+        exe2.waitForStdout("http://");
+
+        // the --fake-browser skips launching a browser and outputs url to stdout
+        redirect = exe2.stdoutString().trim();
+
+        driver.navigate().to(redirect);
+
+        exe.waitForStderr("Login successful");
+        exe.waitCompletion();
+        Assert.assertEquals(0, exe.exitCode());
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("Login Successful"));
+
+        // we should be logged in as mkanis
+        accountPage.navigateTo();
+        accountPage.assertCurrent();
+        Assert.assertThat(driver.getPageSource(), Matchers.containsString("mkanis"));
+    }
 }
