@@ -32,10 +32,10 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,9 +55,9 @@ public class KeycloakBaseSpringBootConfiguration {
         KeycloakSpringBootConfigResolver.setAdapterConfig(keycloakProperties);
     }
 
-    @Autowired (required = false)
-    public void setKeycloakConfigResolvers(KeycloakConfigResolver configResolver) {
-        KeycloakSpringBootConfigResolver.setDelegateConfigResolver(configResolver);
+    @Autowired
+    public void setApplicationContext(ApplicationContext context) {
+        KeycloakSpringBootConfigResolverWrapper.setApplicationContext(context);
     }
 
     static class KeycloakBaseUndertowDeploymentInfoCustomizer  {
@@ -75,7 +75,7 @@ public class KeycloakBaseSpringBootConfiguration {
 
             deploymentInfo.setLoginConfig(loginConfig);
 
-            deploymentInfo.addInitParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolver.class.getName());
+            deploymentInfo.addInitParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolverWrapper.class.getName());
             deploymentInfo.addSecurityConstraints(getSecurityConstraints());
 
             deploymentInfo.addServletExtension(new KeycloakServletExtension());
@@ -117,7 +117,7 @@ public class KeycloakBaseSpringBootConfiguration {
         public void customize(Server server) {
 
             KeycloakJettyAuthenticator keycloakJettyAuthenticator = new KeycloakJettyAuthenticator();
-            keycloakJettyAuthenticator.setConfigResolver(new KeycloakSpringBootConfigResolver());
+            keycloakJettyAuthenticator.setConfigResolver(new KeycloakSpringBootConfigResolverWrapper());
 
             /* see org.eclipse.jetty.webapp.StandardDescriptorProcessor#visitSecurityConstraint for an example
                on how to map servlet spec to Constraints */
@@ -268,7 +268,7 @@ public class KeycloakBaseSpringBootConfiguration {
                 context.addConstraint(tomcatConstraint);
             }
 
-            context.addParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolver.class.getName());
+            context.addParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolverWrapper.class.getName());
         }
     }
 }
