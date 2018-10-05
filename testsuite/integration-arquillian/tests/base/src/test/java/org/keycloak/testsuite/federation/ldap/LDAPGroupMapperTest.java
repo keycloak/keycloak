@@ -128,6 +128,21 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 UserModel johnDb = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
                 Set<GroupModel> johnDbGroups = johnDb.getGroups();
                 Assert.assertEquals(2, johnDbGroups.size());
+
+                Set<GroupModel> johnDbGroupsWithGr = johnDb.getGroups("Gr", 0, 10);
+                Assert.assertEquals(2, johnDbGroupsWithGr.size());
+
+                Set<GroupModel> johnDbGroupsWithGr2 = johnDb.getGroups("Gr", 1, 10);
+                Assert.assertEquals(1, johnDbGroupsWithGr2.size());
+
+                Set<GroupModel> johnDbGroupsWithGr3 = johnDb.getGroups("Gr", 0, 1);
+                Assert.assertEquals(1, johnDbGroupsWithGr3.size());
+
+                Set<GroupModel> johnDbGroupsWith12 = johnDb.getGroups("12", 0, 10);
+                Assert.assertEquals(1, johnDbGroupsWith12.size());
+
+                long dbGroupCount = johnDb.getGroupsCount();
+                Assert.assertEquals(2, dbGroupCount);
             });
         }
 
@@ -145,9 +160,23 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             Set<GroupModel> johnGroups = john.getGroups();
             Assert.assertEquals(2, johnGroups.size());
+            long groupCount = john.getGroupsCount();
+            Assert.assertEquals(2, groupCount);
             Assert.assertTrue(johnGroups.contains(group1));
             Assert.assertFalse(johnGroups.contains(group11));
             Assert.assertTrue(johnGroups.contains(group12));
+
+            Set<GroupModel> johnGroupsWithGr = john.getGroups("gr", 0, 10);
+            Assert.assertEquals(2, johnGroupsWithGr.size());
+
+            Set<GroupModel> johnGroupsWithGr2 = john.getGroups("gr", 1, 10);
+            Assert.assertEquals(1, johnGroupsWithGr2.size());
+
+            Set<GroupModel> johnGroupsWithGr3 = john.getGroups("gr", 0, 1);
+            Assert.assertEquals(1, johnGroupsWithGr3.size());
+
+            Set<GroupModel> johnGroupsWith12 = john.getGroups("12", 0, 10);
+            Assert.assertEquals(1, johnGroupsWith12.size());
 
             // 4 - Check through userProvider
             List<UserModel> group1Members = session.users().getGroupMembers(appRealm, group1, 0, 10);
@@ -170,6 +199,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             johnGroups = john.getGroups();
             Assert.assertEquals(0, johnGroups.size());
+            
+            groupCount = john.getGroupsCount();
+            Assert.assertEquals(0, groupCount);
         });
     }
 
@@ -211,6 +243,21 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertTrue(maryGroups.contains(group1));
             Assert.assertTrue(maryGroups.contains(group11));
             Assert.assertTrue(maryGroups.contains(group12));
+
+            long groupCount = mary.getGroupsCount();
+            Assert.assertEquals(5, groupCount);
+
+            Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
+            Assert.assertEquals(5, maryGroupsWithGr.size());
+
+            Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
+            Assert.assertEquals(4, maryGroupsWithGr2.size());
+
+            Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
+            Assert.assertEquals(1, maryGroupsWithGr3.size());
+
+            Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
+            Assert.assertEquals(2, maryGroupsWith12.size());
         });
 
         // Assert that access through DB will have just DB mapped groups
@@ -229,6 +276,21 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 Assert.assertFalse(maryDBGroups.contains(group1));
                 Assert.assertFalse(maryDBGroups.contains(group11));
                 Assert.assertTrue(maryDBGroups.contains(group12));
+
+                Set<GroupModel> maryDBGroupsWithGr = maryDB.getGroups("Gr", 0, 10);
+                Assert.assertEquals(3, maryDBGroupsWithGr.size());
+
+                Set<GroupModel> maryDBGroupsWithGr2 = maryDB.getGroups("Gr", 1, 10);
+                Assert.assertEquals(2, maryDBGroupsWithGr2.size());
+
+                Set<GroupModel> maryDBGroupsWithGr3 = maryDB.getGroups("Gr", 0, 1);
+                Assert.assertEquals(1, maryDBGroupsWithGr3.size());
+
+                Set<GroupModel> maryDBGroupsWith12 = maryDB.getGroups("12", 0, 10);
+                Assert.assertEquals(2, maryDBGroupsWith12.size());
+
+                long dbGroupCount = maryDB.getGroupsCount();
+                Assert.assertEquals(3, dbGroupCount);
 
                 // Test the group mapping available for group12
                 List<UserModel> group12Members = session.users().getGroupMembers(appRealm, group12, 0, 10);
@@ -320,6 +382,21 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertFalse(robGroups.contains(group1));
             Assert.assertTrue(robGroups.contains(group11));
             Assert.assertTrue(robGroups.contains(group12));
+
+            Set<GroupModel> robGroupsWithGr = rob.getGroups("Gr", 0, 10);
+            Assert.assertEquals(4, robGroupsWithGr.size());
+
+            Set<GroupModel> robGroupsWithGr2 = rob.getGroups("Gr", 1, 10);
+            Assert.assertEquals(3, robGroupsWithGr2.size());
+
+            Set<GroupModel> robGroupsWithGr3 = rob.getGroups("Gr", 0, 1);
+            Assert.assertEquals(1, robGroupsWithGr3.size());
+
+            Set<GroupModel> robGroupsWith12 = rob.getGroups("12", 0, 10);
+            Assert.assertEquals(2, robGroupsWith12.size());
+
+            long dbGroupCount = rob.getGroupsCount();
+            Assert.assertEquals(4, dbGroupCount);
 
             // Delete some group mappings in LDAP and check that it doesn't have any effect and user still has groups
             LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group11");
@@ -510,6 +587,24 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertTrue(groups.contains(group31));
             Assert.assertTrue(groups.contains(group32));
             Assert.assertTrue(groups.contains(group4));
+
+            long groupsCount = john.getGroupsCount();
+            Assert.assertEquals(4, groupsCount);
+
+            Set<GroupModel> groupsWith3v1 = john.getGroups("3", 0, 10);
+            Assert.assertEquals(2, groupsWith3v1.size());
+
+            Set<GroupModel> groupsWith3v2 = john.getGroups("3", 1, 10);
+            Assert.assertEquals(1, groupsWith3v2.size());
+
+            Set<GroupModel> groupsWith3v3 = john.getGroups("3", 1, 1);
+            Assert.assertEquals(1, groupsWith3v3.size());
+
+            Set<GroupModel> groupsWith3v4 = john.getGroups("3", 1, 0);
+            Assert.assertEquals(0, groupsWith3v4.size());
+
+            Set<GroupModel> groupsWithKeycloak = john.getGroups("Keycloak", 0, 10);
+            Assert.assertEquals(0, groupsWithKeycloak.size());
         });
     }
 

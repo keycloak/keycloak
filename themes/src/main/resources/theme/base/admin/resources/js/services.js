@@ -1943,5 +1943,20 @@ module.factory('LDAPMapperSync', function($resource) {
 });
 
 
-
+module.factory('UserGroupMembershipCount', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups/count', {
+            realm : '@realm',
+            userId : '@userId'
+        },
+        {
+            query: {
+                isArray: false,
+                method: 'GET',
+                params: {},
+                transformResponse: function (data) {
+                    return angular.fromJson(data)
+                }
+            }
+        });
+});
 
