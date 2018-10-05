@@ -62,6 +62,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public static final String PROVIDER_ID = "client-jwt";
     public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
+    public static final String NOTE_CLIENT_ASSERTION = "client-assertion";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
@@ -151,6 +152,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
                 throw new RuntimeException("Token is not active");
             }
+
+            //save the assertion as a note so mappers can use it if desired.
+            context.getClientAuthAttributes().put(NOTE_CLIENT_ASSERTION, clientAssertion);
 
             context.success();
         } catch (Exception e) {
