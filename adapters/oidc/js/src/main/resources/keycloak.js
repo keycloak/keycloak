@@ -73,6 +73,12 @@
                     loginIframe.interval = initOptions.checkLoginIframeInterval;
                 }
 
+                if (initOptions.promiseType === 'native') {
+                    kc.useNativePromise = typeof Promise === "function";
+                } else {
+                    kc.useNativePromise = false;
+                }
+
                 if (initOptions.onLoad === 'login-required') {
                     kc.loginRequired = true;
                 }
@@ -119,9 +125,9 @@
                 kc.flow = 'standard';
             }
 
-            var promise = createPromise();
+            var promise = createPromise(false);
 
-            var initPromise = createPromise();
+            var initPromise = createPromise(true);
             initPromise.promise.success(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
@@ -362,7 +368,7 @@
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-            var promise = createPromise();
+            var promise = createPromise(false);
 
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
@@ -387,7 +393,7 @@
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-            var promise = createPromise();
+            var promise = createPromise(false);
 
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
@@ -423,7 +429,7 @@
         }
 
         kc.updateToken = function(minValidity) {
-            var promise = createPromise();
+            var promise = createPromise(false);
 
             if (!kc.refreshToken) {
                 promise.setError();
@@ -620,7 +626,7 @@
         }
 
         function loadConfig(url) {
-            var promise = createPromise();
+            var promise = createPromise(true);
             var configUrl;
 
             if (!config) {
@@ -979,8 +985,8 @@
             return result;
         }
 
-        function createPromise() {
-            if (typeof Promise === "function") {
+        function createPromise(internal) {
+            if (!internal && kc.useNativePromise) {
                 return createNativePromise();
             } else {
                 return createLegacyPromise();
@@ -992,12 +998,10 @@
             // interface of the custom promise type previously used by the API
             var p = {
                 setSuccess: function(result) {
-                    p.success = true;
                     p.resolve(result);
                 },
 
                 setError: function(result) {
-                    p.success = false;
                     p.reject(result);
                 }
             };
@@ -1005,14 +1009,6 @@
                 p.resolve = resolve;
                 p.reject = reject;
             });
-            p.promise.success = function(callback) {
-                p.promise.then(callback);
-                return p.promise;
-            }
-            p.promise.error = function(callback) {
-                p.promise.catch(callback);
-                return p.promise;
-            }
             return p;
         }
 
@@ -1057,7 +1053,7 @@
         }
 
         function setupCheckLoginIframe() {
-            var promise = createPromise();
+            var promise = createPromise(true);
 
             if (!loginIframe.enable) {
                 promise.setSuccess();
@@ -1129,7 +1125,7 @@
         }
 
         function checkLoginIframe() {
-            var promise = createPromise();
+            var promise = createPromise(true);
 
             if (loginIframe.iframe && loginIframe.iframeOrigin ) {
                 var msg = kc.clientId + ' ' + kc.sessionId;
@@ -1170,7 +1166,7 @@
                         } else {
                             throw "Not supported by the OIDC server";
                         }
-                        return createPromise().promise;
+                        return createPromise(false).promise;
                     },
 
                     redirectUri: function(options, encodeHash) {
@@ -1229,7 +1225,7 @@
 
                 return {
                     login: function(options) {
-                        var promise = createPromise();
+                        var promise = createPromise(false);
 
                         var cordovaOptions = createCordovaOptions(options);
                         var loginUrl = kc.createLoginUrl(options);
@@ -1277,7 +1273,7 @@
                     },
 
                     logout: function(options) {
-                        var promise = createPromise();
+                        var promise = createPromise(false);
                         
                         var logoutUrl = kc.createLogoutUrl(options);
                         var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
@@ -1347,7 +1343,7 @@
 
                 return {
                     login: function(options) {
-                        var promise = createPromise();
+                        var promise = createPromise(false);
                         var loginUrl = kc.createLoginUrl(options);
 
                         universalLinks.subscribe('keycloak', function(event) {
@@ -1362,7 +1358,7 @@
                     },
 
                     logout: function(options) {
-                        var promise = createPromise();
+                        var promise = createPromise(false);
                         var logoutUrl = kc.createLogoutUrl(options);
 
                         universalLinks.subscribe('keycloak', function(event) {
@@ -1377,7 +1373,7 @@
                     },
 
                     register : function(options) {
-                        var promise = createPromise();
+                        var promise = createPromise(false);
                         var registerUrl = kc.createRegisterUrl(options);
                         universalLinks.subscribe('keycloak' , function(event) {
                             universalLinks.unsubscribe('keycloak');
