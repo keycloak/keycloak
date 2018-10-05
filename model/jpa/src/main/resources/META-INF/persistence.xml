@@ -31,6 +31,7 @@
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
+        <class>org.keycloak.models.jpa.entities.RoleAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.FederatedIdentityEntity</class>
         <class>org.keycloak.models.jpa.entities.MigrationModelEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>

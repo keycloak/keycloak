@@ -388,8 +388,8 @@ public class UserStorageRestTest extends AbstractAdminTest {
         String id2 = createUserFederationProvider(dummyRep2);
 
         // Assert provider instances available
-        assertFederationProvider(userFederation().get(id1).toRepresentation(), id1, id1, "dummy", 2, 1000, 500, 123);
-        assertFederationProvider(userFederation().get(id2).toRepresentation(), id2, "dn1", "dummy", 1, -1, -1, -1, "prop1", "prop1Val", "prop2", "true");
+        assertFederationProvider(userFederation().get(id1).toBriefRepresentation(), id1, id1, "dummy", 2, 1000, 500, 123);
+        assertFederationProvider(userFederation().get(id2).toBriefRepresentation(), id2, "dn1", "dummy", 1, -1, -1, -1, "prop1", "prop1Val", "prop2", "true");
 
         // Assert sorted
         List<UserFederationProviderRepresentation> providerInstances = userFederation().getProviderInstances();
@@ -411,7 +411,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
     @Test (expected = NotFoundException.class)
     public void testLookupNotExistentProvider() {
-        userFederation().get("not-existent").toRepresentation();
+        userFederation().get("not-existent").toBriefRepresentation();
     }
 
 
@@ -433,7 +433,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         }
 
         // Assert sync didn't happen
-        Assert.assertEquals(-1, userFederation().get(id1).toRepresentation().getLastSync());
+        Assert.assertEquals(-1, userFederation().get(id1).toBriefRepresentation().getLastSync());
 
         // Sync and assert it happened
         SynchronizationResultRepresentation syncResult = userFederation().get(id1).syncUsers("triggerFullSync");
@@ -443,7 +443,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         eventRep.put("action", "triggerFullSync");
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync", eventRep, ResourceType.USER_FEDERATION_PROVIDER);
 
-        int fullSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
+        int fullSyncTime = userFederation().get(id1).toBriefRepresentation().getLastSync();
         Assert.assertTrue(fullSyncTime > 0);
 
         // Changed sync
@@ -454,7 +454,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync", eventRep, ResourceType.USER_FEDERATION_PROVIDER);
 
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
-        int changedSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
+        int changedSyncTime = userFederation().get(id1).toBriefRepresentation().getLastSync();
         Assert.assertTrue(fullSyncTime + 50 <= changedSyncTime);
 
         // Cleanup

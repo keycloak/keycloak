@@ -685,12 +685,14 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
     $scope.changed = $scope.create;
 
     $scope.save = function() {
+        convertAttributeValuesToLists();
         if ($scope.create) {
             ClientRole.save({
                 realm: realm.realm,
                 client : client.id
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.role);
                 role = angular.copy($scope.role);
 
                 ClientRole.get({ realm: realm.realm, client : client.id, role: role.name }, function(role) {
@@ -721,6 +723,34 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
         $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/roles");
     };
 
+    $scope.addAttribute = function() {
+        $scope.role.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+        delete $scope.newAttribute;
+    }
+
+    $scope.removeAttribute = function(key) {    
+        delete $scope.role.attributes[key];
+    }
+
+    function convertAttributeValuesToLists() {
+        var attrs = $scope.role.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "string") {
+                var attrVals = attrs[attribute].split("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
+
+    function convertAttributeValuesToString(role) {
+        var attrs = role.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "object") {
+                var attrVals = attrs[attribute].join("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
 
     roleControl($scope, realm, role, roles, clients,
         ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,

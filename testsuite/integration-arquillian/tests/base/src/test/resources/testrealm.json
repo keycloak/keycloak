@@ -386,6 +386,16 @@
         "description": "Sample realm role"
       },
       {
+        "name": "attribute-role",
+        "description": "has attributes assigned",
+        "attributes": {
+          "hello": [
+            "world",
+            "keycloak"
+          ]
+        }
+      },
+      {
         "name": "realm-composite-role",
         "description": "Realm composite role containing client role",
         "composite" : true,

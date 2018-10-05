@@ -31,6 +31,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -58,6 +59,19 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role) {
         role.setName(rep.getName());
         role.setDescription(rep.getDescription());
+
+        if (rep.getAttributes() != null) {
+            Set<String> attrsToRemove = new HashSet<>(role.getAttributes().keySet());
+            attrsToRemove.removeAll(rep.getAttributes().keySet());
+
+            for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
+                role.setAttribute(attr.getKey(), attr.getValue());
+            }
+
+            for (String attr : attrsToRemove) {
+                role.removeAttribute(attr);
+            }
+        }
     }
 
     protected void addComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
@@ -84,7 +98,7 @@ public abstract class RoleResource {
 
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());
         for (RoleModel composite : role.getComposites()) {
-            composites.add(ModelToRepresentation.toRepresentation(composite));
+            composites.add(ModelToRepresentation.toBriefRepresentation(composite));
         }
         return composites;
     }
@@ -95,7 +109,7 @@ public abstract class RoleResource {
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());
         for (RoleModel composite : role.getComposites()) {
             if (composite.getContainer() instanceof RealmModel)
-                composites.add(ModelToRepresentation.toRepresentation(composite));
+                composites.add(ModelToRepresentation.toBriefRepresentation(composite));
         }
         return composites;
     }
@@ -106,7 +120,7 @@ public abstract class RoleResource {
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());
         for (RoleModel composite : role.getComposites()) {
             if (composite.getContainer().equals(app))
-                composites.add(ModelToRepresentation.toRepresentation(composite));
+                composites.add(ModelToRepresentation.toBriefRepresentation(composite));
         }
         return composites;
     }
