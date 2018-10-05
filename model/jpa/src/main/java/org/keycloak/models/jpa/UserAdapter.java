@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
@@ -36,12 +37,20 @@ import org.keycloak.models.utils.RoleUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -289,20 +298,76 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         user.setEmailVerified(verified);
     }
 
-    @Override
-    public Set<GroupModel> getGroups() {
+    private TypedQuery<String> createGetGroupsQuery(String search, Integer first, Integer max) {
         // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
-        TypedQuery<String> query = em.createNamedQuery("userGroupIds", String.class);
-        query.setParameter("user", getEntity());
-        List<String> ids = query.getResultList();
-        Set<GroupModel> groups = new HashSet<>();
-        for (String groupId : ids) {
-            GroupModel group = realm.getGroupById(groupId);
-            if (group == null) continue;
-            groups.add(group);
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(root.get("user"), getEntity()));
+        Join<UserGroupMembershipEntity, GroupEntity> join = root.join("group");
+        if (Objects.nonNull(search) && !search.isEmpty()) {
+            predicates.add(builder.like(builder.lower(join.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+        }
+
+        queryBuilder.select(root.get("groupId"));
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(join.get("name")));
+
+        TypedQuery<String> query = em.createQuery(queryBuilder);
+        if (Objects.nonNull(first) && Objects.nonNull(max)) {
+            query.setFirstResult(first).setMaxResults(max);
+        }
+        return query;
+    }
+
+    private TypedQuery<Long> createCountGroupsQuery(String search) {
+        // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
+        // even if we're getting just the id.
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(root.get("user"), getEntity()));
+        if (Objects.nonNull(search) && !search.isEmpty()) {
+            Join<UserGroupMembershipEntity, GroupEntity> join = root.join("group");
+            predicates.add(builder.like(join.get("name"), builder.literal("%" + search + "%")));
+        }
+
+        queryBuilder.select(builder.count(root));
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        return em.createQuery(queryBuilder);
+    }
+
+    private Set<GroupModel> getGroupModels(Collection<String> groupIds) {
+        Set<GroupModel> groups = new LinkedHashSet<>();
+        for (String id : groupIds) {
+            groups.add(realm.getGroupById(id));
         }
         return groups;
+    }
+
+    @Override
+    public Set<GroupModel> getGroups() {
+        return getGroupModels(createGetGroupsQuery(null, null, null).getResultList());
+    }
+
+    @Override
+    public Set<GroupModel> getGroups(String search, int first, int max) {
+        return getGroupModels(createGetGroupsQuery(search, first, max).getResultList());
+    }
+
+    @Override
+    public long getGroupsCount() {
+        return createCountGroupsQuery(null).getSingleResult();
+    }
+
+    @Override
+    public long getGroupsCountByNameContaining(String search) {
+        return createCountGroupsQuery(search).getSingleResult();
     }
 
     @Override
@@ -354,7 +419,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
         return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+                || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
@@ -431,9 +496,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel)container;
+                ClientModel appModel = (ClientModel) container;
                 if (appModel.getId().equals(app.getId())) {
-                   roles.add(role);
+                    roles.add(role);
                 }
             }
         }
@@ -474,7 +539,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
 
 
 }
