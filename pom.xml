@@ -407,6 +407,12 @@
                 <version>${hibernate.entitymanager.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-c3p0</artifactId>
+                <version>${hibernate.entitymanager.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${freemarker.version}</version>
