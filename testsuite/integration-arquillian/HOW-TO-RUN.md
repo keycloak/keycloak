@@ -413,17 +413,11 @@ To run individual social provider test only you can use option like `-Dtest=Soci
 You can use many different real-world browsers to run the integration tests.
 Although technically they can be run with almost every test in the testsuite, they can fail with some of them as the tests often require specific optimizations for given browser. Therefore, only some of the test modules have support to be run with specific browsers.
 
-#### Mozilla Firefox with legacy driver
-* **Supported test modules:** `console`
-* **Supported version:** [52 ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
-* **Driver download required:** no
-* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=true`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
-
-#### Mozilla Firefox with GeckoDriver
-* **Supported test modules:** `base-ui`
-* **Supported version:** as latest as possible (Firefox has better support for Marionette with each version released)
+#### Mozilla Firefox
+* **Supported test modules:** `console`, `base-ui`
+* **Supported version:** latest stable
 * **Driver download required:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
-* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=false -Dwebdriver.gecko.driver=path/to/geckodriver`
+* **Run with:** `-Dbrowser=firefox -Dwebdriver.gecko.driver=path/to/geckodriver`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
 
 #### Google Chrome
 * **Supported test modules:** `console`, `base-ui`
@@ -442,6 +436,12 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Supported version:** latest stable
 * **Driver download required:** no (the driver is bundled with macOS)
 * **Run with:** `-Dbrowser=safari`
+
+#### [DEPRECATED] Mozilla Firefox with legacy driver
+* **Supported test modules:** `console`
+* **Supported version:** [52 ESR](http://ftp.mozilla.org/pub/firefox/releases/52.9.0esr/) ([Extended Support Release](https://www.mozilla.org/en-US/firefox/organizations/))
+* **Driver download required:** no
+* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=true -Dfirefox_binary=path/to/firefox-52-esr/binary`
 
 #### Automatic driver downloads
 You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.

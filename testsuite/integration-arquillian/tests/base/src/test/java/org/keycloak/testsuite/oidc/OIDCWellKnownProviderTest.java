@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oidc;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
@@ -26,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -42,6 +44,7 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -99,7 +102,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
     public void testDiscovery() {
         Client client = ClientBuilder.newClient();
         try {
-            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryConfiguration(client);
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client);
 
             // URIs are filled
             assertEquals(oidcConfig.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
@@ -137,7 +140,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Scopes supported
             Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
-                    OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS);
+                    OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS,
+                    OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE);
 
             // Request and Request_Uri
             Assert.assertTrue(oidcConfig.getRequestParameterSupported());
@@ -165,7 +169,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
         Client client = ClientBuilder.newClient();
         try {
-            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryConfiguration(client);
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client);
 
             // assert issuer matches
             assertEquals(idToken.getIssuer(), oidcConfig.getIssuer());
@@ -200,7 +204,26 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         assertEquals(2, jsonWebKeySet.getKeys().length);
     }
 
-    private OIDCConfigurationRepresentation getOIDCDiscoveryConfiguration(Client client) {
+    @Test
+    public void testIntrospectionEndpointClaim() throws IOException {
+        Client client = ClientBuilder.newClient();
+        try {
+            ObjectNode oidcConfig = JsonSerialization.readValue(getOIDCDiscoveryConfiguration(client), ObjectNode.class);
+            assertEquals(oidcConfig.get("introspection_endpoint").asText(), getOIDCDiscoveryRepresentation(client).getTokenIntrospectionEndpoint());
+        } finally {
+            client.close();
+        }
+    }
+
+    private OIDCConfigurationRepresentation getOIDCDiscoveryRepresentation(Client client) {
+        try {
+            return JsonSerialization.readValue(getOIDCDiscoveryConfiguration(client), OIDCConfigurationRepresentation.class);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to parse OIDC configuration", cause);
+        }
+    }
+
+    private String getOIDCDiscoveryConfiguration(Client client) {
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", OIDCWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
@@ -209,7 +232,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
         assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders().getFirst("Cache-Control"));
 
-        return response.readEntity(OIDCConfigurationRepresentation.class);
+        return response.readEntity(String.class);
     }
 
     private void assertContains(List<String> actual, String... expected) {

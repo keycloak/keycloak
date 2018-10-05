@@ -30,6 +30,7 @@ import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -158,6 +159,24 @@ public class JsonWebToken implements Serializable, Token {
 
     public JsonWebToken audience(String... audience) {
         this.audience = audience;
+        return this;
+    }
+
+    public JsonWebToken addAudience(String audience) {
+        if (this.audience == null) {
+            this.audience = new String[] { audience };
+        } else {
+            // Check if audience is already there
+            for (String aud : this.audience) {
+                if (audience.equals(aud)) {
+                    return this;
+                }
+            }
+
+            String[] newAudience = Arrays.copyOf(this.audience, this.audience.length + 1);
+            newAudience[this.audience.length] = audience;
+            this.audience = newAudience;
+        }
         return this;
     }
 

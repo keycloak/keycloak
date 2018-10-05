@@ -257,6 +257,7 @@ public class ServerInfoAdminResource {
             rep.setName(mapper.getDisplayType());
             rep.setHelpText(mapper.getHelpText());
             rep.setCategory(mapper.getDisplayCategory());
+            rep.setPriority(mapper.getPriority());
             rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
             List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
             rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));

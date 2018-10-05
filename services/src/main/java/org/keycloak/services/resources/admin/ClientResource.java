@@ -170,11 +170,8 @@ public class ClientResource {
     public ClientRepresentation getClient() {
         auth.clients().requireView(client);
 
-        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            representation.setAuthorizationServicesEnabled(authorization().isEnabled());
-        }
         representation.setAccess(auth.clients().getAccess(client));
 
         return representation;
@@ -253,7 +250,7 @@ public class ClientResource {
 
         String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, client, RegistrationAuth.AUTHENTICATED);
 
-        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         rep.setRegistrationAccessToken(token);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -609,8 +606,6 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
-        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
-
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
@@ -694,12 +689,10 @@ public class ClientResource {
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                authorization().enable(false);
-            } else {
-                authorization().disable();
-            }
+        if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            authorization().enable(false);
+        } else {
+            authorization().disable();
         }
     }
 }

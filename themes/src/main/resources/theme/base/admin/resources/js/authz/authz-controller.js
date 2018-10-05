@@ -1985,6 +1985,16 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
 });
 
 module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route, $location, realm, PolicyController, client) {
+
+    function clearEmptyStrings() {
+        if ($scope.policy.notBefore != undefined && $scope.policy.notBefore.trim() == '') {
+            $scope.policy.notBefore = null;
+        }
+        if ($scope.policy.notOnOrAfter != undefined && $scope.policy.notOnOrAfter.trim() == '') {
+            $scope.policy.notOnOrAfter = null;
+        }
+    }
+
     PolicyController.onInit({
         getPolicyType : function() {
             return "time";
@@ -2028,6 +2038,7 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onUpdate : function() {
+            clearEmptyStrings();
             delete $scope.policy.config;
         },
 
@@ -2035,6 +2046,7 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onCreate : function() {
+            clearEmptyStrings();
             delete $scope.policy.config;
         }
     }, realm, client, $scope);

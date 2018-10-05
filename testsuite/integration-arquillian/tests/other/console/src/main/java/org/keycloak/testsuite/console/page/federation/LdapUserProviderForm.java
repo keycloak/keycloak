@@ -12,6 +12,8 @@ import org.openqa.selenium.support.ui.Select;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -227,7 +229,7 @@ public class LdapUserProviderForm extends Form {
         List<String> vendorsString = new ArrayList<>();
 
         for (WebElement vendorElement : vendorsElements) {
-            String text = vendorElement.getText();
+            String text = getTextFromElement(vendorElement);
             if (text.equals("")) {continue;}
             vendorsString.add(text);
         }
@@ -314,15 +316,15 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void testConnection() {
-        testConnectionButton.click();
+        clickLink(testConnectionButton);
     }
 
     public void testAuthentication() {
-        testAuthenticationButton.click();
+        clickLink(testAuthenticationButton);
     }
 
     public void synchronizeAllUsers() {
         waitUntilElement(synchronizeAllUsersButton).is().present();
-        synchronizeAllUsersButton.click();
+        clickLink(synchronizeAllUsersButton);
     }
 }

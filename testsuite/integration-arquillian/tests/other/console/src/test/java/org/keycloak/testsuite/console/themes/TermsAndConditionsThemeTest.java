@@ -46,6 +46,7 @@ public class TermsAndConditionsThemeTest extends AbstractConsoleTest {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(REALM);
         testRealmAdminConsolePage.setAdminRealm(REALM);
+        termsAndConditionsPage.setAuthRealm(testRealmPage);
     }
     
     @Override

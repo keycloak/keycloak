@@ -35,30 +35,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserAdapter implements CachedUserModel {
+
+    private final Supplier<UserModel> modelSupplier;
+    protected final CachedUser cached;
+    protected final UserCacheSession userProviderCache;
+    protected final KeycloakSession keycloakSession;
+    protected final RealmModel realm;
     protected volatile UserModel updated;
-    protected CachedUser cached;
-    protected UserCacheSession userProviderCache;
-    protected KeycloakSession keycloakSession;
-    protected RealmModel realm;
 
     public UserAdapter(CachedUser cached, UserCacheSession userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
         this.userProviderCache = userProvider;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
+        this.modelSupplier = this::getUserModel;
     }
 
     @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
-            updated = userProviderCache.getDelegate().getUserById(getId(), realm);
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -147,26 +151,26 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public String getFirstAttribute(String name) {
         if (updated != null) return updated.getFirstAttribute(name);
-        return cached.getAttributes().getFirst(name);
+        return cached.getAttributes(modelSupplier).getFirst(name);
     }
 
     @Override
     public List<String> getAttribute(String name) {
         if (updated != null) return updated.getAttribute(name);
-        List<String> result = cached.getAttributes().get(name);
+        List<String> result = cached.getAttributes(modelSupplier).get(name);
         return (result == null) ? Collections.<String>emptyList() : result;
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
         if (updated != null) return updated.getAttributes();
-        return cached.getAttributes();
+        return cached.getAttributes(modelSupplier);
     }
 
     @Override
     public Set<String> getRequiredActions() {
         if (updated != null) return updated.getRequiredActions();
-        return cached.getRequiredActions();
+        return cached.getRequiredActions(modelSupplier);
     }
 
     @Override
@@ -301,7 +305,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         if (updated != null) return updated.hasRole(role);
-        if (cached.getRoleMappings().contains(role.getId())) return true;
+        if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
 
         Set<RoleModel> mappings = getRoleMappings();
         for (RoleModel mapping: mappings) {
@@ -320,7 +324,7 @@ public class UserAdapter implements CachedUserModel {
     public Set<RoleModel> getRoleMappings() {
         if (updated != null) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRoleMappings()) {
+        for (String id : cached.getRoleMappings(modelSupplier)) {
             RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
             if (roleById == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
@@ -343,7 +347,7 @@ public class UserAdapter implements CachedUserModel {
     public Set<GroupModel> getGroups() {
         if (updated != null) return updated.getGroups();
         Set<GroupModel> groups = new HashSet<GroupModel>();
-        for (String id : cached.getGroups()) {
+        for (String id : cached.getGroups(modelSupplier)) {
             GroupModel groupModel = keycloakSession.realms().getGroupById(id, realm);
             if (groupModel == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
@@ -372,7 +376,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
-        if (cached.getGroups().contains(group.getId())) return true;
+        if (cached.getGroups(modelSupplier).contains(group.getId())) return true;
         Set<GroupModel> roles = getGroups();
         return RoleUtils.isMember(roles, group);
     }
@@ -391,7 +395,7 @@ public class UserAdapter implements CachedUserModel {
         return getId().hashCode();
     }
 
-
-
-
+    private UserModel getUserModel() {
+        return userProviderCache.getDelegate().getUserById(cached.getId(), realm);
+    }
 }

@@ -95,6 +95,12 @@ abstract class AbstractAdapterConfigurationDefinition extends SimpleResourceDefi
                     .setValidator(new IntRangeValidator(-1, true))
                     .setAllowExpression(true)
                     .build();
+    protected static final SimpleAttributeDefinition PUBLIC_KEY_CACHE_TTL =
+            new SimpleAttributeDefinitionBuilder("public-key-cache-ttl", ModelType.INT, true)
+                    .setXmlName("public-key-cache-ttl")
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .build();
 
     static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
 
@@ -108,6 +114,7 @@ abstract class AbstractAdapterConfigurationDefinition extends SimpleResourceDefi
         DEPLOYMENT_ONLY_ATTRIBUTES.add(TURN_OFF_CHANGE_SESSION);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(TOKEN_MINIMUM_TIME_TO_LIVE);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(MIN_TIME_BETWEEN_JWKS_REQUESTS);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_KEY_CACHE_TTL);
     }
 
     static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList();

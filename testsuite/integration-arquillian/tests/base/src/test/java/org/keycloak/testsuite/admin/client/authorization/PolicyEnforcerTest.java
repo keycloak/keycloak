@@ -20,6 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import javax.security.cert.X509Certificate;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.HttpHeaders;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,19 +33,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.security.cert.X509Certificate;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
+import org.keycloak.adapters.CorsHeaders;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
@@ -78,11 +85,6 @@ import org.keycloak.util.JsonSerialization;
 public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
-
-    @BeforeClass
-    public static void onBeforeClass() {
-        ProfileAssume.assumePreview();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -150,6 +152,34 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testResolvingClaimsOnce() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token, new Function<String, String>() {
+            AtomicBoolean resolved = new AtomicBoolean();
+
+            @Override
+            public String apply(String s) {
+                Assert.assertTrue(resolved.compareAndSet(false, true));
+                return "claim-value";
+            }
+        });
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertTrue(context.isGranted());
+    }
+
+    @Test
     public void testOnDenyRedirectTo() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-on-deny-redirect.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
@@ -209,6 +239,24 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         httpFacade = createHttpFacade("/api/resource/public", token);
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testDefaultWWWAuthenticateCorsHeader() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
+
+        deployment.setCors(true);
+        Map<String, List<String>> headers = new HashMap<>();
+
+        headers.put(CorsHeaders.ORIGIN,Arrays.asList("http://localhost:8180"));
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), null).getAccessToken();
+        OIDCHttpFacade httpFacade = createHttpFacade("http://server/api/resource/public", HttpMethod.OPTIONS, token, headers, Collections.emptyMap(), null, deployment);
+        new AuthenticatedActionsHandler(deployment, httpFacade).handledRequest();
+        assertEquals(HttpHeaders.WWW_AUTHENTICATE, headers.get(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS).get(0));
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
@@ -285,7 +333,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         return clients.get(representation.getId());
     }
 
-    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody) {
+    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment) {
+        return createHttpFacade(path, method, token, headers, parameters, requestBody, deployment, null);
+    }
+
+    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment, Function<String, String> parameterFunction) {
         return new OIDCHttpFacade() {
             Request request;
             Response response;
@@ -299,7 +351,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
                     } catch (JWSInputException cause) {
                         throw new RuntimeException(cause);
                     }
-                    return new KeycloakSecurityContext(token, accessToken, null, null);
+                    return new RefreshableKeycloakSecurityContext(deployment, null, token, accessToken, null, null, null);
                 }
                 return null;
             }
@@ -307,7 +359,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             @Override
             public Request getRequest() {
                 if (request == null) {
-                    request = createHttpRequest(path, method, headers, parameters, requestBody);
+                    request = createHttpRequest(path, method, headers, parameters, requestBody, parameterFunction);
                 }
                 return request;
             }
@@ -328,18 +380,34 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     private OIDCHttpFacade createHttpFacade(String path, String token) {
-        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null);
+        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null, null);
     }
 
     private OIDCHttpFacade createHttpFacade(String path) {
-        return createHttpFacade(path, null, null, new HashMap<>(), new HashMap<>(), null);
+        return createHttpFacade(path, null, null, new HashMap<>(), new HashMap<>(), null, null);
+    }
+
+    private OIDCHttpFacade createHttpFacade(String path, String token, Function<String, String> parameterFunction) {
+        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null, null, parameterFunction);
     }
 
     private Response createHttpResponse(Map<String, List<String>> headers) {
-        return new TestResponse();
+        return new TestResponse(headers);
     }
 
-    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody) {
+    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, Function<String, String> parameterFunction) {
+        if (parameterFunction == null) {
+            parameterFunction = param -> {
+                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
+
+                if (!values.isEmpty()) {
+                    return values.get(0);
+                }
+
+                return null;
+            };
+        }
+        Function<String, String> finalParameterFunction = parameterFunction;
         return new Request() {
 
             private InputStream inputStream;
@@ -366,13 +434,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
             @Override
             public String getFirstParam(String param) {
-                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
-
-                if (!values.isEmpty()) {
-                    return values.get(0);
-                }
-
-                return null;
+                return finalParameterFunction.apply(param);
             }
 
             @Override
@@ -450,8 +512,12 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     private class TestResponse implements Response {
 
-        private final Map<String, List<String>> headers = new HashMap<>();
+        private final Map<String, List<String>> headers;
         private int status;
+
+        public TestResponse(Map<String, List<String>> headers) {
+            this.headers = headers;
+        }
 
         @Override
         public void setStatus(int status) {

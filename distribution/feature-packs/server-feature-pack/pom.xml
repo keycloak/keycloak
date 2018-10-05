@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>4.5.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -215,6 +215,16 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-settings-builder</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-builder-support</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -654,6 +664,56 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.kie.soup</groupId>
+            <artifactId>kie-soup-maven-support</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kie.soup</groupId>
+            <artifactId>kie-soup-maven-support</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kie.soup</groupId>
+            <artifactId>kie-soup-maven-integration</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kie.soup</groupId>
+            <artifactId>kie-soup-commons</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kie.soup</groupId>
+            <artifactId>kie-soup-project-datamodel-commons</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
             <exclusions>
@@ -694,7 +754,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.sonatype.sisu.inject</groupId>
+            <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-servlet</artifactId>
             <exclusions>
                 <exclusion>
@@ -704,8 +764,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.sonatype.sisu</groupId>
-            <artifactId>sisu-guice</artifactId>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
             <classifier>no_aop</classifier>
             <exclusions>
                 <exclusion>

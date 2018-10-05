@@ -104,16 +104,7 @@ public class ClientsResource {
             boolean view = auth.clients().canView();
             for (ClientModel clientModel : clientModels) {
                 if (view || auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
-
-                    if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-                        AuthorizationService authorizationService = getAuthorizationService(clientModel);
-
-                        if (authorizationService.isEnabled()) {
-                            representation.setAuthorizationServicesEnabled(true);
-                        }
-                    }
-
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     rep.add(representation);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                 } else if (!viewableOnly) {
@@ -128,7 +119,7 @@ public class ClientsResource {
             ClientModel clientModel = realm.getClientByClientId(clientId);
             if (clientModel != null) {
                 if (auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
                 } else if (!viewableOnly && auth.clients().canList()){
@@ -186,17 +177,15 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
-            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-                if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                    AuthorizationService authorizationService = getAuthorizationService(clientModel);
+            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
-                    authorizationService.enable(true);
+                authorizationService.enable(true);
 
-                    ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+                ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
-                    if (authorizationSettings != null) {
-                        authorizationService.resourceServer().importSettings(authorizationSettings);
-                    }
+                if (authorizationSettings != null) {
+                    authorizationService.resourceServer().importSettings(authorizationSettings);
                 }
             }
 

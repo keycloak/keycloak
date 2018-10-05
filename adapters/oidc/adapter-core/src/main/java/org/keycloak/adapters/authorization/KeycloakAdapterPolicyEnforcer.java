@@ -27,7 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
@@ -55,14 +55,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean isAuthorized(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AccessToken accessToken, OIDCHttpFacade httpFacade) {
+    protected boolean isAuthorized(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AccessToken accessToken, OIDCHttpFacade httpFacade, Map<String, List<String>> claims) {
         AccessToken original = accessToken;
 
-        if (super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade)) {
+        if (super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade, claims)) {
             return true;
         }
 
-        accessToken = requestAuthorizationToken(pathConfig, methodConfig, httpFacade);
+        accessToken = requestAuthorizationToken(pathConfig, methodConfig, httpFacade, claims);
 
         if (accessToken == null) {
             return false;
@@ -90,7 +90,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
         original.setAuthorization(authorization);
 
-        return super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade);
+        return super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade, claims);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         }
     }
 
-    private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
+    private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade, Map<String, List<String>> claims) {
         if (getEnforcerConfig().getUserManagedAccess() != null) {
             return null;
         }
@@ -148,8 +148,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             if (isBearerAuthorization(httpFacade) || accessToken.getAuthorization() != null) {
                 authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
             }
-
-            Map<String, List<String>> claims = resolveClaims(pathConfig, httpFacade);
 
             if (!claims.isEmpty()) {
                 authzRequest.setClaimTokenFormat("urn:ietf:params:oauth:token-type:jwt");
@@ -171,7 +169,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             }
 
             if (authzResponse != null) {
-                return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
+                return AdapterTokenVerifier.verifyToken(authzResponse.getToken(), deployment);
             }
         } catch (AuthorizationDeniedException ignore) {
             LOGGER.debug("Authorization denied", ignore);

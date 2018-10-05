@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.5.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -151,7 +151,7 @@
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
-        <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <chromeBinary/>
         <chromeArguments/>
 

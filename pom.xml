@@ -33,7 +33,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>4.5.0.Final-SNAPSHOT</version>
+    <version>4.6.0.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -93,7 +93,7 @@
         <wildfly.common.version>1.4.0.Final</wildfly.common.version>
 
         <!-- Authorization Drools Policy Provider -->
-        <version.org.drools>6.5.0.Final</version.org.drools>
+        <version.org.drools>7.11.0.Final</version.org.drools>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M21</apacheds.version>
@@ -1399,11 +1399,6 @@
                 <classifier>classes</classifier>
             </dependency>
 
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>user-storage-properties-example</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.keycloak.example.demo</groupId>
                 <artifactId>cxf-jaxws-example</artifactId>

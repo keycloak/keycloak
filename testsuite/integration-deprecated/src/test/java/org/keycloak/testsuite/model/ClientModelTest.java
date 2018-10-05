@@ -179,7 +179,7 @@ public class ClientModelTest extends AbstractModelTest {
 
     @Test
     public void json() {
-        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
         representation.setId(null);
         for (ProtocolMapperRepresentation protocolMapper : representation.getProtocolMappers()) {
             protocolMapper.setId(null);

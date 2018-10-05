@@ -35,6 +35,14 @@ public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper
     String getDisplayType();
 
     /**
+     * Priority of this protocolMapper implementation. Lower goes first.
+     * @return
+     */
+    default int getPriority() {
+        return 0;
+    }
+
+    /**
      * Called when instance of mapperModel is created/updated for this protocolMapper through admin endpoint
      *
      * @param session

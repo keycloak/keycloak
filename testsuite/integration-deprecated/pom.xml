@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.5.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -160,10 +160,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>user-storage-properties-example</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-utils</artifactId>
         </dependency>
 
@@ -277,7 +273,7 @@
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-test-apps-servlets</artifactId>
-            <version>4.5.0.Final-SNAPSHOT</version>
+            <version>4.6.0.Final-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>

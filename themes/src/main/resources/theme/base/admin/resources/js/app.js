@@ -1419,7 +1419,19 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientDetailCtrl'
         })
-        .when('/create/client-scope/:realm', {
+        .when('/create/client-scope/step-1/:realm', {
+            templateUrl : resourceUrl + '/partials/client-scope-create-step-1.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
+            },
+            controller : 'ClientScopeCreateStep1Ctrl'
+        })
+        .when('/create/client-scope/step-2/:realm', {
             templateUrl : resourceUrl + '/partials/client-scope-detail.html',
             resolve : {
                 realm : function(RealmLoader) {

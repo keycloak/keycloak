@@ -76,6 +76,7 @@ import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbAudienceRequired;
 import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
 import org.keycloak.testsuite.adapter.page.CustomerPortal;
 import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
@@ -211,6 +212,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
         return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+    }
+
+    @Deployment(name = CustomerDbAudienceRequired.DEPLOYMENT_NAME)
+    protected static WebArchive customerDbAudienceRequired() {
+        return servletDeployment(CustomerDbAudienceRequired.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
@@ -835,6 +841,50 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmResource().update(demoRealmRep);
         }
     }
+
+
+    @Test
+    public void testVerifyTokenAudience() {
+        // Generate audience client scope
+        Response resp = adminClient.realm("demo").clientScopes().generateAudienceClientScope("customer-db-audience-required");
+        String clientScopeId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("demo"), "customer-portal");
+        client.addOptionalClientScope(clientScopeId);
+
+        // Login without audience scope. Invoke service should end with failure
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Service returned: 401"));
+        Assert.assertFalse(pageSource.contains("Stian Thorgersen"));
+
+        // Logout TODO: will be good to not request logout to force adapter to use additional scope (and other request parameters)
+        driver.navigate().to(customerPortal.logout());
+        waitForPageToLoad();
+
+        // Login with requested audience
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(true));
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+
+        pageSource = driver.getPageSource();
+        Assert.assertFalse(pageSource.contains("Service returned: 401"));
+        assertLogged();
+
+        // logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
 
     @Test
     public void testBasicAuth() {

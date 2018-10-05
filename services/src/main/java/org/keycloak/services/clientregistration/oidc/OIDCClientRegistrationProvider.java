@@ -17,6 +17,7 @@
 package org.keycloak.services.clientregistration.oidc;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -72,6 +73,12 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
+            List<String> grantTypes = clientOIDC.getGrantTypes();
+
+            if (grantTypes != null && grantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE)) {
+                client.setAuthorizationServicesEnabled(true);
+            }
+
             OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = create(oidcContext);
 
@@ -93,8 +100,11 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOIDC(@PathParam("clientId") String clientId) {
-        ClientRepresentation client = get(clientId);
-        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, client, session.getContext().getUri().getRequestUri());
+        ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
+
+        ClientRepresentation clientRepresentation = get(client);
+
+        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, session.getContext().getUri().getRequestUri());
         return Response.ok(clientOIDC).build();
     }
 
@@ -168,5 +178,4 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         }
         rep.setProtocolMappers(mappings);
     }
-
 }

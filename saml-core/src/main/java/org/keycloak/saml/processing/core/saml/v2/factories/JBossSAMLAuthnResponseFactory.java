@@ -164,8 +164,7 @@ public class JBossSAMLAuthnResponseFactory {
      *
      * @throws ConfigurationException
      */
-    public static ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, AssertionType assertionType)
-            throws ConfigurationException {
+    public static ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, AssertionType assertionType) {
         XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
         ResponseType responseType = new ResponseType(ID, issueInstant);
 
@@ -195,8 +194,7 @@ public class JBossSAMLAuthnResponseFactory {
      *
      * @throws ConfigurationException
      */
-    public static ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, Element encryptedAssertion)
-            throws ConfigurationException {
+    public static ResponseType createResponseType(String ID, IssuerInfoHolder issuerInfo, Element encryptedAssertion) {
         ResponseType responseType = new ResponseType(ID, XMLTimeUtil.getIssueInstant());
 
         // Issuer

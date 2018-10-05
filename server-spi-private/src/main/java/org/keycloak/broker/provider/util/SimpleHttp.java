@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import org.apache.http.client.methods.HttpDelete;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -70,6 +71,14 @@ public class SimpleHttp {
         this.client = client;
         this.url = url;
         this.method = method;
+    }
+
+    public static SimpleHttp doDelete(String url, KeycloakSession session) {
+        return doDelete(url, session.getProvider(HttpClientProvider.class).getHttpClient());
+    }
+
+    public static SimpleHttp doDelete(String url, HttpClient client) {
+        return new SimpleHttp(url, "DELETE", client);
     }
 
     public static SimpleHttp doGet(String url, KeycloakSession session) {
@@ -157,10 +166,15 @@ public class SimpleHttp {
     private Response makeRequest() throws IOException {
         boolean get = method.equals("GET");
         boolean post = method.equals("POST");
+        boolean delete = method.equals("DELETE");
 
         HttpRequestBase httpRequest = new HttpPost(url);
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
+        }
+
+        if (delete) {
+            httpRequest = new HttpDelete(appendParameterToUrl(url));
         }
 
         if (post) {

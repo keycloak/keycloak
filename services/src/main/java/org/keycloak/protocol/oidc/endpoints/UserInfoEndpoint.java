@@ -41,6 +41,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -147,6 +148,11 @@ public class UserInfoEndpoint {
         if (clientModel == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+        }
+
+	    if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            event.error(Errors.INVALID_CLIENT);
+            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
         }
 
         session.getContext().setClient(clientModel);

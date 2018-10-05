@@ -46,8 +46,7 @@ import org.hamcrest.Matchers;
  * @author tkyjovsk
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE70)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE71)
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
 public class FuseExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page

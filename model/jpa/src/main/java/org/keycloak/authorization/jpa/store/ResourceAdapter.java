@@ -231,6 +231,11 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
         entity.getAttributes().removeAll(toRemove);
     }
 
+    @Override
+    public boolean isFetched(String association) {
+        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this, association);
+    }
+
 
     public static ResourceEntity toEntity(EntityManager em, Resource resource) {
         if (resource instanceof ResourceAdapter) {

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.5.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -35,6 +35,7 @@
             org.keycloak.adapters.undertow.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
+            io.undertow.*;version="[1.4,3)",
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>

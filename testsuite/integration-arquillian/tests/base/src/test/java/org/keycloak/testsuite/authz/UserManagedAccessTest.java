@@ -39,8 +39,10 @@ import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -439,5 +441,41 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         }
 
         assertEquals(1, permissionTickets.size());
+    }
+
+    @Test
+    public void testPermissiveModePermissions() throws Exception {
+        resource = addResource("Resource A");
+
+        try {
+            authorize("kolo", "password", resource.getId(), null);
+            fail("Access should be denied, server in enforcing mode");
+        } catch (AuthorizationDeniedException ade) {
+
+        }
+
+        AuthorizationResource authorizationResource = getClient(getRealm()).authorization();
+        ResourceServerRepresentation settings = authorizationResource.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.PERMISSIVE);
+
+        authorizationResource.update(settings);
+
+        AuthorizationResponse response = authorize("marta", "password", "Resource A", null);
+        String rpt = response.getToken();
+
+        assertNotNull(rpt);
+        assertFalse(response.isUpgraded());
+
+        AccessToken accessToken = toAccessToken(rpt);
+        AccessToken.Authorization authorization = accessToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        Collection<Permission> permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, "Resource A");
+        assertTrue(permissions.isEmpty());
     }
 }

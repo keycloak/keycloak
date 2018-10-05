@@ -34,7 +34,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +41,9 @@ import java.util.List;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.services.messages.Messages;
+
+import static org.keycloak.common.Profile.Feature.ACCOUNT2;
+import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -144,6 +146,31 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
         user.setUsername("updatedUsername2");
         updateError(user, 400, Messages.READ_ONLY_USERNAME);
+
+
+    }
+
+    // KEYCLOAK-7572
+    @Test
+    public void testUpdateProfileWithRegistrationEmailAsUsername() throws IOException {
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        realmRep.setRegistrationEmailAsUsername(true);
+        adminClient.realm("test").update(realmRep);
+
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), client).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        String originalFirstname = user.getFirstName();
+
+        try {
+            user.setFirstName("Homer1");
+
+            user = updateAndGet(user);
+
+            assertEquals("Homer1", user.getFirstName());
+        } finally {
+            user.setFirstName(originalFirstname);
+            int status = SimpleHttp.doPost(getAccountUrl(null), client).auth(tokenUtil.getToken()).json(user).asStatus();
+            assertEquals(200, status);
+        }
     }
 
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
@@ -187,6 +214,8 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetSessions() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
         assertEquals(1, sessions.size());
@@ -194,11 +223,15 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetPasswordDetails() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         getPasswordDetails();
     }
 
     @Test
     public void testPostPasswordUpdate() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         //Get the time of lastUpdate
         AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
 
@@ -219,13 +252,15 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         //Change the password back
         updatePassword("Str0ng3rP4ssw0rd", "password", 200);
    }
-    
+
     @Test
     public void testPasswordConfirmation() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
-        
+
         updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 200);
-        
+
         //Change the password back
         updatePassword("Str0ng3rP4ssw0rd", "password", 200);
     }
@@ -240,7 +275,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     private void updatePassword(String currentPass, String newPass, int expectedStatus) throws IOException {
         updatePassword(currentPass, newPass, null, expectedStatus);
     }
-        
+
     private void updatePassword(String currentPass, String newPass, String confirmation, int expectedStatus) throws IOException {
         AccountCredentialResource.PasswordUpdate passwordUpdate = new AccountCredentialResource.PasswordUpdate();
         passwordUpdate.setCurrentPassword(currentPass);
@@ -248,6 +283,31 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         passwordUpdate.setConfirmation(confirmation);
         int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
         assertEquals(expectedStatus, status);
+    }
+
+    public void testDeleteSessions() throws IOException {
+        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
+        oauth.doLogin("view-account-access", "password");
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(2, sessions.size());
+        int status = SimpleHttp.doDelete(getAccountUrl("sessions?current=false"), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        assertEquals(200, status);
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(1, sessions.size());
+    }
+
+    @Test
+    public void testDeleteSession() throws IOException {
+        assumeFeatureEnabled(ACCOUNT2);
+        
+        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
+        String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(2, sessions.size());
+        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        assertEquals(200, status);
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(1, sessions.size());
     }
 
     private String getAccountUrl(String resource) {

@@ -8,6 +8,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
@@ -40,7 +41,7 @@ public class CreateClientForm extends Form {
 
     public String getProtocol() {
         waitUntilElement(protocolSelect.getFirstSelectedOption()).is().present();
-        return protocolSelect.getFirstSelectedOption().getText();
+        return getTextFromElement(protocolSelect.getFirstSelectedOption());
     }
 
     public void setProtocol(String protocol) {

@@ -57,11 +57,6 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
         return "authz-test";
     }
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(createTestRealm().build());

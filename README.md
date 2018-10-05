@@ -44,6 +44,7 @@ To start Keycloak during development first build as specified above, then run:
 
     mvn -f testsuite/utils/pom.xml exec:java -Pkeycloak-server 
 
+When running testsuite, by default an account with username `admin` and password `admin` will be created within the master realm at start.
 
 To start Keycloak from the server distribution first build the distribution it as specified above, then run:
 

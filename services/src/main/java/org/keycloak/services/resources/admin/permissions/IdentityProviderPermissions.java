@@ -189,7 +189,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
                 }
 
             };
-            return root.evaluatePermission(resource, scope, server, context);
+            return root.evaluatePermission(resource, server, context, scope);
         }
         return true;
     }

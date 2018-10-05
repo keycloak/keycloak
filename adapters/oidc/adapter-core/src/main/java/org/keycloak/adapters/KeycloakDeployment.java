@@ -92,10 +92,11 @@ public class KeycloakDeployment {
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
     protected boolean ignoreOAuthQueryParameter;
-    
+
     protected Map<String, String> redirectRewriteRules;
 
     protected boolean delegateBearerErrorResponseSending = false;
+    protected boolean verifyTokenAudience = false;
 
     public KeycloakDeployment() {
     }
@@ -476,5 +477,13 @@ public class KeycloakDeployment {
 
     public void setDelegateBearerErrorResponseSending(boolean delegateBearerErrorResponseSending) {
         this.delegateBearerErrorResponseSending = delegateBearerErrorResponseSending;
+    }
+
+    public boolean isVerifyTokenAudience() {
+        return verifyTokenAudience;
+    }
+
+    public void setVerifyTokenAudience(boolean verifyTokenAudience) {
+        this.verifyTokenAudience = verifyTokenAudience;
     }
 }

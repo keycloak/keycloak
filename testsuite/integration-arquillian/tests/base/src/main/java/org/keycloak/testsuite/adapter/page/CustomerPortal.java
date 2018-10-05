@@ -44,4 +44,14 @@ public class CustomerPortal extends AbstractPageWithInjectedUrl {
         return url + "/logout";
     }
 
+    public String callCustomerDbAudienceRequiredUrl(boolean attachAudienceScope) {
+        String url = this.url + "/call-customer-db-audience-required";
+
+        if (attachAudienceScope) {
+            url = url + "?scope=customer-db-audience-required";
+        }
+
+        return url;
+    }
+
 }

@@ -49,6 +49,11 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
         }
         buffer.append("    <ssl-required>").append(realm.getSslRequired().name()).append("</ssl-required>\n");
         buffer.append("    <resource>").append(client.getClientId()).append("</resource>\n");
+
+        if (KeycloakOIDCClientInstallation.showVerifyTokenAudience(client)) {
+            buffer.append("    <verify-token-audience>true</verify-token-audience>\n");
+        }
+
         String cred = client.getSecret();
         if (KeycloakOIDCClientInstallation.showClientCredentialsAdapterConfig(client)) {
             Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client);

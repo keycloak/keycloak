@@ -201,6 +201,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, authenticationSession, Response.Status.FORBIDDEN, Messages.BEARER_ONLY);
         }
 
+        String protocol = client.getProtocol();
+        if (protocol == null) {
+            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration", clientId);
+            protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
+        }
+        if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            event.error(Errors.INVALID_CLIENT);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, "Wrong client protocol.");
+        }
+
         session.getContext().setClient(client);
     }
 

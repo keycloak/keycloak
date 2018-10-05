@@ -42,6 +42,16 @@ and https port, optionally setting the truststore.
         -Djavax.net.ssl.keyStorePassword=CHANGEME \
         -Dkeycloak.port.https=8443
 
+### Default admin account
+
+The default admin within the master realm are created with credentials:
+* Username: `admin`
+* Password: `admin`
+
+The Keycloak test suite server will automatically create the new master realm user when the following conditions are met
+* Property `keycloak.createAdminUser` is set to `true` (defaults to `true` if not present)
+* There is no existing user within the master realm
+
 ### Live edit of html and styles
 
 The Keycloak test server can load resources directly from the filesystem instead of the classpath. This allows editing html, styles and updating images without restarting the server. To make the server use resources from the filesystem start with:

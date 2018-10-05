@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+
 /**
  * Created by fkiss.
  */
@@ -35,8 +37,8 @@ public class UserRoleMappingsForm extends RoleCompositeRoles {
             roleNames.add(role.getName());
         }
         for (WebElement role : select.getOptions()) {
-            roleNames.contains(role.getText());
-            roleNames.remove(role.getText());
+            roleNames.contains(getTextFromElement(role));
+            roleNames.remove(getTextFromElement(role));
         }
         log.info(Arrays.toString(roles));
         log.info(roleNames);

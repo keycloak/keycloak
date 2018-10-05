@@ -35,6 +35,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -47,7 +49,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base resource for managing users
@@ -181,12 +184,13 @@ public class UsersResource {
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("briefRepresentation") Boolean briefRepresentation) {
-        auth.users().requireQuery();
+        UserPermissionEvaluator userPermissionEvaluator = auth.users();
+
+        userPermissionEvaluator.requireQuery();
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
-        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = Collections.emptyList();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
@@ -198,7 +202,7 @@ public class UsersResource {
                 userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
             }
         } else if (last != null || first != null || email != null || username != null) {
-            Map<String, String> attributes = new HashMap<String, String>();
+            Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
             }
@@ -211,22 +215,12 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
             }
-            userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
+            return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
         } else {
-            userModels = session.users().getUsers(realm, firstResult, maxResults, false);
+            return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
         }
 
-        boolean canViewGlobal = auth.users().canView();
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
-        for (UserModel user : userModels) {
-            if (!canViewGlobal  && !auth.users().canView(user)) continue;
-            UserRepresentation userRep = briefRepresentationB
-              ? ModelToRepresentation.toBriefRepresentation(user)
-              : ModelToRepresentation.toRepresentation(session, realm, user);
-            userRep.setAccess(auth.users().getAccess(user));
-            results.add(userRep);
-        }
-        return results;
+        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
 
     @Path("count")
@@ -237,5 +231,43 @@ public class UsersResource {
         auth.users().requireView();
 
         return session.users().getUsersCount(realm);
+    }
+
+    private List<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
+        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts);
+
+        if (!auth.users().canView()) {
+            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
+
+            if (!groupModels.isEmpty()) {
+                session.setAttribute(UserModel.GROUPS, groupModels);
+            }
+        }
+
+        List<UserModel> userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
+
+        return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
+    }
+
+    private List<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, List<UserModel> userModels) {
+        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        List<UserRepresentation> results = new ArrayList<>();
+        boolean canViewGlobal = usersEvaluator.canView();
+
+        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+
+        for (UserModel user : userModels) {
+            if (!canViewGlobal) {
+                if (!usersEvaluator.canView(user)) {
+                    continue;
+                }
+            }
+            UserRepresentation userRep = briefRepresentationB
+                    ? ModelToRepresentation.toBriefRepresentation(user)
+                    : ModelToRepresentation.toRepresentation(session, realm, user);
+            userRep.setAccess(usersEvaluator.getAccess(user));
+            results.add(userRep);
+        }
+        return results;
     }
 }

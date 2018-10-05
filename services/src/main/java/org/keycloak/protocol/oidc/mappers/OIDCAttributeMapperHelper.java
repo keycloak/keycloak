@@ -56,8 +56,8 @@ public class OIDCAttributeMapperHelper {
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
 
-        if (attributeValue instanceof List) {
-            List<Object> valueAsList = (List<Object>) attributeValue;
+        if (attributeValue instanceof Collection) {
+            Collection<Object> valueAsList = (Collection<Object>) attributeValue;
             if (valueAsList.isEmpty()) return null;
 
             if (isMultivalued(mappingModel)) {
@@ -71,7 +71,7 @@ public class OIDCAttributeMapperHelper {
                     ServicesLogger.LOGGER.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
                 }
 
-                attributeValue = valueAsList.get(0);
+                attributeValue = valueAsList.iterator().next();
             }
         }
 

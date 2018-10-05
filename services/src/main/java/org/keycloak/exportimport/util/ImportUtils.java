@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
@@ -261,7 +262,9 @@ public class ImportUtils {
     private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
         for (UserRepresentation user : userReps) {
-            RepresentationToModel.createUser(session, realm, user);
+            if (!user.getUsername().startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX)) {
+                RepresentationToModel.createUser(session, realm, user);
+            }
         }
     }
 

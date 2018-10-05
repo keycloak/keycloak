@@ -1,23 +1,19 @@
 package org.keycloak.procotol.docker.installation;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider.ROOT_DIR;
 
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -25,16 +21,22 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.fail;
-import static org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider.ROOT_DIR;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider;
 
 public class DockerComposeYamlInstallationProviderTest {
 
@@ -87,11 +89,17 @@ public class DockerComposeYamlInstallationProviderTest {
     }
 
     public void shouldIncludeDockerComposeYamlInZip(ZipInputStream zipInput) throws Exception {
-        final Optional<String> dockerComposeFileContents = getFileContents(zipInput, ROOT_DIR + "docker-compose.yaml");
+        final Optional<String> actualDockerComposeFileContents = getFileContents(zipInput, ROOT_DIR + "docker-compose.yaml");
 
-        assertThat("Could not find docker-compose.yaml file in zip archive response", dockerComposeFileContents.isPresent(), equalTo(true));
-        final boolean zipFileContentEqualsTestFile = IOUtils.contentEquals(new ByteArrayInputStream(dockerComposeFileContents.get().getBytes()), new FileInputStream("src/test/resources/docker-compose-expected.yaml"));
-        assertThat("Invalid docker-compose file contents: \n" + dockerComposeFileContents.get(), zipFileContentEqualsTestFile, equalTo(true));
+        assertThat("Could not find docker-compose.yaml file in zip archive response", actualDockerComposeFileContents.isPresent(), equalTo(true));
+
+        List<String> expectedDockerComposeAsStringLines = FileUtils.readLines(new File("src/test/resources/docker-compose-expected.yaml"), Charset.defaultCharset());
+        String[] actualDockerComposeAsStringLines = actualDockerComposeFileContents.get().split("\n");
+
+        String messageIfTestFails = "Invalid docker-compose file contents: \n" + actualDockerComposeFileContents.get();
+        for (int i = 0; i < expectedDockerComposeAsStringLines.size(); i++) {
+            assertEquals(messageIfTestFails, expectedDockerComposeAsStringLines.get(i), actualDockerComposeAsStringLines[i]);
+        }
     }
 
     public void shouldIncludeReadmeInZip(ZipInputStream zipInput) throws Exception {

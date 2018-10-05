@@ -52,7 +52,7 @@ public class ClientRegistrationService {
         }
 
         provider.setEvent(event);
-        provider.setAuth(new ClientRegistrationAuth(session, provider, event));
+        provider.setAuth(new ClientRegistrationAuth(session, provider, event, providerId));
         return provider;
     }
 

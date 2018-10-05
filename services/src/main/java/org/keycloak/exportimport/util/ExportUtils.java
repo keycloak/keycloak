@@ -299,7 +299,7 @@ public class ExportUtils {
      * @return full ApplicationRepresentation
      */
     public static ClientRepresentation exportClient(KeycloakSession session, ClientModel client) {
-        ClientRepresentation clientRep = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation clientRep = ModelToRepresentation.toRepresentation(client, session);
         clientRep.setSecret(client.getSecret());
         clientRep.setAuthorizationSettings(exportAuthorizationSettings(session,client));
         return clientRep;

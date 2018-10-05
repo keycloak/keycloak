@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.models.GroupModel;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -45,17 +46,17 @@ public interface GroupPermissionEvaluator {
 
     void requireView();
 
-    boolean canViewMembers(GroupModel group);
+    boolean getGroupsWithViewPermission(GroupModel group);
 
     void requireViewMembers(GroupModel group);
 
     boolean canManageMembers(GroupModel group);
-
-    void requireManageMembers(GroupModel group);
 
     boolean canManageMembership(GroupModel group);
 
     void requireManageMembership(GroupModel group);
 
     Map<String, Boolean> getAccess(GroupModel group);
+
+    Set<String> getGroupsWithViewPermission();
 }

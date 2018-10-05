@@ -359,6 +359,7 @@ public class KeycloakServer {
                 session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
+                    log.info("Created master user with credentials admin:admin");
                 }
                 session.getTransactionManager().commit();
             } finally {

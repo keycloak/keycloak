@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 /**
@@ -111,12 +112,12 @@ public class Users extends AdminConsoleRealm {
         public UserRepresentation getUserFromTableRow(WebElement row) {
             UserRepresentation user = null;
             List<WebElement> tds = row.findElements(tagName("td"));
-            if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+            if (!(tds.isEmpty() || getTextFromElement(tds.get(0)).isEmpty())) {
                 user = new UserRepresentation();
-                user.setUsername(tds.get(0).getText());
-                user.setLastName(tds.get(1).getText());
-                user.setFirstName(tds.get(2).getText());
-                user.setEmail(tds.get(3).getText());
+                user.setUsername(getTextFromElement(tds.get(0)));
+                user.setLastName(getTextFromElement(tds.get(1)));
+                user.setFirstName(getTextFromElement(tds.get(2)));
+                user.setEmail(getTextFromElement(tds.get(3)));
             }
             return user;
         }

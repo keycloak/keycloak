@@ -21,7 +21,6 @@
     <SP entityID="http://localhost:8280/employee-acs/"
         sslPolicy="EXTERNAL"
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
-        logoutPage="/logout.jsp"
         forceAuthentication="false">
         <PrincipalNameMapping policy="FROM_NAME_ID"/>
         <RoleIdentifiers>

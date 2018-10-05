@@ -13,7 +13,7 @@
       "enabled": true,
       "fullScopeAllowed": true,
       "secret": "secret",
-      "defaultClientScopes": [],
+      "defaultClientScopes": [ "roles", "web-origins" ],
       "redirectUris": [
         "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp-property-mappers/endpoint/*"
       ],
