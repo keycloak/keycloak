@@ -147,6 +147,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     }
 
     public void close() {
+        if (delegate != null) {
+            delegate.close();
+        }
     }
 
     private KeycloakTransaction getPrepareTransaction() {
@@ -193,10 +196,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             @Override
             public void commit() {
                 try {
-                    if (getDelegate() == null) return;
-                    if (clearAll) {
-                        cache.clear();
-                    }
                     runInvalidations();
                     transactionActive = false;
                 } finally {
