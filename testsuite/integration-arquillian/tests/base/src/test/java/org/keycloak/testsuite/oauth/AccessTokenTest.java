@@ -615,10 +615,23 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 userResource.update(userRepresentation);
             }
 
+            // good password is 400 => Account is not fully set up
+            try (Response response = executeGrantAccessTokenRequest(grantTarget)) {
+                assertEquals(400, response.getStatus());
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(response.readEntity(String.class));
+                assertEquals("invalid_grant", jsonNode.get("error").asText());
+                assertEquals("Account is not fully set up", jsonNode.get("error_description").asText());
+            }
 
-            Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(401, response.getStatus());
-            response.close();
+            // wrong password is 401 => Invalid user credentials
+            try (Response response = executeGrantAccessTokenRequestWrongPassword(grantTarget)) {
+                assertEquals(401, response.getStatus());
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(response.readEntity(String.class));
+                assertEquals("invalid_grant", jsonNode.get("error").asText());
+                assertEquals("Invalid user credentials", jsonNode.get("error_description").asText());
+            }
 
             {
                 UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -1016,6 +1029,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String username = "test-user@localhost";
         String password = "password";
         return executeGrantRequest(grantTarget, username, password);
+    }
+
+    protected Response executeGrantAccessTokenRequestWrongPassword(WebTarget grantTarget) {
+        return executeGrantRequest(grantTarget, "test-user@localhost", "bad-password");
     }
 
     protected Response executeGrantRequest(WebTarget grantTarget, String username, String password) {

@@ -555,7 +555,7 @@ public class TokenEndpoint {
         UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid user credentials", Response.Status.UNAUTHORIZED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
 
         }
 

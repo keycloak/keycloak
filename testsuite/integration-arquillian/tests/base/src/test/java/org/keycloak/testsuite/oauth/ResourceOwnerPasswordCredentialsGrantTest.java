@@ -331,6 +331,34 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
 
+        assertEquals(400, response.getStatusCode());
+
+        assertEquals("invalid_grant", response.getError());
+        assertEquals("Account is not fully set up", response.getErrorDescription());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.RESOLVE_REQUIRED_ACTIONS)
+                .user((String) null)
+                .assertEvent();
+
+        RealmManager.realm(realmResource).verifyEmail(false);
+        UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
+
+    }
+    
+    @Test
+    public void grantAccessTokenVerifyEmailInvalidPassword() throws Exception {
+
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).verifyEmail(true);
+
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "bad-password");
+
         assertEquals(401, response.getStatusCode());
 
         assertEquals("invalid_grant", response.getError());
@@ -339,9 +367,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         events.expectLogin()
                 .client("resource-owner")
                 .session((String) null)
-                .clearDetails()
-                .error(Errors.RESOLVE_REQUIRED_ACTIONS)
-                .user((String) null)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
 
         RealmManager.realm(realmResource).verifyEmail(false);
@@ -362,10 +392,10 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
             OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
 
-            assertEquals(401, response.getStatusCode());
+            assertEquals(400, response.getStatusCode());
 
             assertEquals("invalid_grant", response.getError());
-            assertEquals("Invalid user credentials", response.getErrorDescription());
+            assertEquals("Account is not fully set up", response.getErrorDescription());
 
             setTimeOffset(0);
 
@@ -375,6 +405,40 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .clearDetails()
                     .error(Errors.RESOLVE_REQUIRED_ACTIONS)
                     .user((String) null)
+                    .assertEvent();
+        } finally {
+            RealmManager.realm(realmResource).passwordPolicy("");
+            UserManager.realm(realmResource).username("test-user@localhost")
+                    .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        }
+    }
+    
+    @Test
+    public void grantAccessTokenExpiredPasswordInvalidPassword() throws Exception {
+
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
+
+        try {
+            setTimeOffset(60 * 60 * 48);
+
+            oauth.clientId("resource-owner");
+
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "bad-password");
+
+            assertEquals(401, response.getStatusCode());
+
+            assertEquals("invalid_grant", response.getError());
+            assertEquals("Invalid user credentials", response.getErrorDescription());
+
+            events.expectLogin()
+                    .client("resource-owner")
+                    .session((String) null)
+                    .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                    .removeDetail(Details.CODE_ID)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .removeDetail(Details.CONSENT)
+                    .error(Errors.INVALID_USER_CREDENTIALS)
                     .assertEvent();
         } finally {
             RealmManager.realm(realmResource).passwordPolicy("");
@@ -392,6 +456,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(401, response.getStatusCode());
 
         assertEquals("invalid_grant", response.getError());
+        assertEquals("Invalid user credentials", response.getErrorDescription());
 
         events.expectLogin()
                 .client("resource-owner")
