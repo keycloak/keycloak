@@ -274,6 +274,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         List<ComponentRepresentation> components = adminClient.realm("test").components().query();
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
         String sampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
+        Map<String, List<String>> roleAttributes = adminClient.realm("test").roles().get("attribute-role").toRepresentation().getAttributes();
         String testAppId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
         String sampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
 
@@ -308,6 +309,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         String importedSampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
         assertEquals(sampleRealmRoleId, importedSampleRealmRoleId);
+
+        Map<String, List<String>> importedRoleAttributes = adminClient.realm("test").roles().get("attribute-role").toRepresentation().getAttributes();
+        assertEquals(roleAttributes, importedRoleAttributes);
 
         String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
         assertEquals(sampleClientRoleId, importedSampleClientRoleId);

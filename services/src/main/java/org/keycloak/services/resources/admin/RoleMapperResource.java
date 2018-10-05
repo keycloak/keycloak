@@ -119,7 +119,7 @@ public class RoleMapperResource {
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
-                realmRep.add(ModelToRepresentation.toRepresentation(roleModel));
+                realmRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
             all.setRealmMappings(realmRep);
         }
@@ -136,7 +136,7 @@ public class RoleMapperResource {
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
-                        roles.add(ModelToRepresentation.toRepresentation(role));
+                        roles.add(ModelToRepresentation.toBriefRepresentation(role));
                     }
                     appMappings.put(client.getClientId(), mappings);
                     all.setClientMappings(appMappings);
@@ -161,7 +161,7 @@ public class RoleMapperResource {
         Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
+            realmMappingsRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return realmMappingsRep;
     }
@@ -184,7 +184,7 @@ public class RoleMapperResource {
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (roleMapper.hasRole(roleModel)) {
-               realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
+               realmMappingsRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
         }
         return realmMappingsRep;
@@ -253,7 +253,7 @@ public class RoleMapperResource {
             for (RoleModel roleModel : roleModels) {
                 auth.roles().requireMapRole(roleModel);
                 roleMapper.deleteRoleMapping(roleModel);
-                roles.add(ModelToRepresentation.toRepresentation(roleModel));
+                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
 
         } else {
