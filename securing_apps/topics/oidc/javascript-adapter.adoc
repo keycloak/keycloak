@@ -395,7 +395,7 @@ For example:
 [source,javascript]
 ----
 keycloak.loadUserProfile().then(function(profile) {
-        alert(JSON.stringify(test, null, "  "));
+        alert(JSON.stringify(profile, null, "  "));
     }).catch(function() {
         alert('Failed to load user profile');
     });
