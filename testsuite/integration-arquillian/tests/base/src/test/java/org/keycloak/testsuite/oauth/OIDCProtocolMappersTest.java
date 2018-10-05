@@ -37,6 +37,7 @@ import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -105,10 +106,14 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     private void deleteMappers(ProtocolMappersResource protocolMappers) {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "Realm roles mapper");
-        protocolMappers.delete(mapper.getId());
+        if (mapper != null) {
+            protocolMappers.delete(mapper.getId());
+        }
 
         mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "Client roles mapper");
-        protocolMappers.delete(mapper.getId());
+        if (mapper != null) {
+            protocolMappers.delete(mapper.getId());
+        }
     }
 
     @Override
@@ -522,6 +527,42 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         rep = client.toRepresentation();
         rep.setFullScopeAllowed(true);
         client.update(rep);
+    }
+
+
+    // KEYCLOAK-8148 -- Test the scenario where:
+    // -- user is member of 2 groups
+    // -- both groups have same role "customer-user" assigned
+    // -- User login. Role will appear just once in the token (not twice)
+    @Test
+    public void testRoleMapperWithRoleInheritedFromMoreGroups() throws Exception {
+        // Create client-mapper
+        String clientId = "test-app";
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app", true, true);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(clientMapper));
+
+        // Add user 'level2GroupUser' to the group 'level2Group2'
+        GroupRepresentation level2Group2 = adminClient.realm("test").getGroupByPath("/topGroup/level2group2");
+        UserResource level2GroupUser = ApiUtil.findUserByUsernameId(adminClient.realm("test"), "level2GroupUser");
+        level2GroupUser.joinGroup(level2Group2.getId());
+
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "level2GroupUser", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled AND it is filled only once
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder(clientId));
+        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        assertRolesString(testAppScopeMappings,
+                "customer-user"      // from assignment to level2group or level2group2. It is filled just once
+        );
+
+        // Revert
+        level2GroupUser.leaveGroup(level2Group2.getId());
+        deleteMappers(protocolMappers);
     }
 
 
