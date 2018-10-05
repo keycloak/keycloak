@@ -21,12 +21,12 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 ====
 This guide assumes the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
 
-* *_sso72-mysql_*
-* *_sso72-mysql-persistent_*
-* *_sso72-postgresql_*
-* *_sso72-postgresql-persistent_*
-* *_sso72-x509-mysql-persistent_*
-* *_sso72-x509-postgresql-persistent_*
+* *_{project_templates_version}-mysql_*
+* *_{project_templates_version}-mysql-persistent_*
+* *_{project_templates_version}-postgresql_*
+* *_{project_templates_version}-postgresql-persistent_*
+* *_{project_templates_version}-x509-mysql-persistent_*
+* *_{project_templates_version}-x509-postgresql-persistent_*
 ====
 
 ===== Create RH-SSO Realm, Roles, and User for the EAP 6.4 / 7.0 JSP Application
@@ -79,6 +79,7 @@ Use the following steps to automatically migrate the database schema:
 
 . Identify existing deployment config for RH-SSO 7.1 containers.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
@@ -86,30 +87,35 @@ deploymentconfig/sso-postgresql
 ----
 . Stop all RH-SSO 7.1 containers in the current namespace.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=0 dc/sso
 deploymentconfig "sso" scaled
 ----
 . Update the image change trigger in the existing deployment config to reference the RH-SSO 7.2 image.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-sso72-openshift:1.1"}]'
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new RH-SSO 7.2 images based on the latest image defined in the image change triggers.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
 . Deploy RH-SSO 7.2 containers using the modified deployment config.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
 ----
 . (Optional) Verify the database has been successfully updated.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get pods --selector=application=sso
 NAME                     READY     STATUS    RESTARTS   AGE
@@ -117,6 +123,7 @@ sso-4-vg21r              1/1       Running   0          1h
 sso-postgresql-1-t871r   1/1       Running   0          2h
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc logs sso-4-vg21r | grep 'Updating'
 11:23:45,160 INFO  [org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider] (ServerService Thread Pool -- 58) Updating database. Using changelog META-INF/jpa-changelog-master.xml
@@ -142,118 +149,153 @@ The database migration process handles the data schema update and performs manip
 
 This guide assumes the RH-SSO 7.1 for OpenShift image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
 
-* *_sso71-mysql_*
-* *_sso71-postgresql_*
-* *_sso71-mysql-persistent_*
-* *_sso71-postgresql-persistent_*
+* *_{project_previous_templates_version}-mysql_*
+* *_{project_previous_templates_version}-mysql-persistent_*
+* *_{project_previous_templates_version}-postgresql_*
+* *_{project_previous_templates_version}-postgresql-persistent_*
+* *_{project_previous_templates_version}-x509-mysql-persistent_*
+* *_{project_previous_templates_version}-x509-postgresql-persistent_*
 
 Perform the following to generate and get the SQL migration file for the database:
 
 . Prepare template of OpenShift link:https://docs.openshift.com/container-platform/latest/dev_guide/jobs.html[database migration job] to generate the SQL file.
 +
+[source,yaml,subs="verbatim,macros,attributes"]
 ----
-$ cat sso71-to-sso72-db-migrate-job.yaml.orig
+$ cat {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml.orig
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sso71-to-sso72-db-migrate-job
+  name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
 spec:
   autoSelector: true
   parallelism: 0
   completions: 1
   template:
     metadata:
-      name: sso71-to-sso72-db-migrate-job
+      name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
     spec:
       containers:
       - env:
         - name: DB_SERVICE_PREFIX_MAPPING
-          value: <<DB_SERVICE_PREFIX_MAPPING_VALUE>>
-        - name: <<PREFIX>>_JNDI
-          value: <<PREFIX_JNDI_VALUE>>
-        - name: <<PREFIX>>_USERNAME
-          value: <<PREFIX_USERNAME_VALUE>>
-        - name: <<PREFIX>>_PASSWORD
-          value: <<PREFIX_PASSWORD_VALUE>>
-        - name: <<PREFIX>>_DATABASE
-          value: <<PREFIX_DATABASE_VALUE>>
+          value: pass:[&lt;&lt;DB_SERVICE_PREFIX_MAPPING_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;PREFIX&gt;&gt;]_JNDI
+          value: pass:[&lt;&lt;PREFIX_JNDI_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;PREFIX&gt;&gt;]_USERNAME
+          value: pass:[&lt;&lt;PREFIX_USERNAME_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;PREFIX&gt;&gt;]_PASSWORD
+          value: pass:[&lt;&lt;PREFIX_PASSWORD_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;PREFIX&gt;&gt;]_DATABASE
+          value: pass:[&lt;&lt;PREFIX_DATABASE_VALUE&gt;&gt;]
         - name: TX_DATABASE_PREFIX_MAPPING
-          value: <<TX_DATABASE_PREFIX_MAPPING_VALUE>>
-        - name: <<SERVICE_HOST>>
-          value: <<SERVICE_HOST_VALUE>>
-        - name: <<SERVICE_PORT>>
-          value: <<SERVICE_PORT_VALUE>>
-        image: <<SSO_IMAGE_VALUE>>
+          value: pass:[&lt;&lt;TX_DATABASE_PREFIX_MAPPING_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;SERVICE_HOST&gt;&gt;]
+          value: pass:[&lt;&lt;SERVICE_HOST_VALUE&gt;&gt;]
+        - name: pass:[&lt;&lt;SERVICE_PORT&gt;&gt;]
+          value: pass:[&lt;&lt;SERVICE_PORT_VALUE&gt;&gt;]
+        image: pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]
         imagePullPolicy: Always
-        name: sso71-to-sso72-db-migrate-job
-        # Keep the pod running after SQL migration file has been generated,
-        # so we can retrieve it
-        command: ["/bin/bash", "-c", "/opt/eap/bin/openshift-launch.sh || sleep 600"]
+        name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
+        # Keep the pod running after the SQL migration
+        # file was generated, so we can retrieve it
+        command:
+          - "/bin/bash"
+          - "-c"
+          - "/opt/eap/bin/openshift-launch.sh || sleep 600"
       restartPolicy: Never
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ cp sso71-to-sso72-db-migrate-job.yaml.orig sso71-to-sso72-db-migrate-job.yaml
+$ cp {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml.orig \
+     {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
 ----
 . Copy the datasource definition and database access credentials from RH-SSO 7.1 deployment config to appropriate places in database job migration template.
 +
-Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `sso71-to-sso72-db-migrate-job.yaml`.
+Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml`.
 +
 [NOTE]
 ====
 Although the `DB_SERVICE_PREFIX_MAPPING` environment variable allows a link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/red_hat_jboss_enterprise_application_platform_for_openshift/#datasources[comma-separated list of *<name>-<database_type>=<PREFIX>* triplets] as its value, this example script accepts only one datasource triplet definition for demonstration purposes. You can modify the script for handling multiple datasource definition triplets.
 ====
 +
+[source,bash,subs="verbatim,macros,attributes"]
 ----
 $ cat mirror_sso_dc_db_vars.sh
 #!/bin/bash
 
 # IMPORTANT:
 #
-# If the name of the SSO deployment config differs from 'sso' or if the file name of the
-# YAML definition of the migration job is different, update the following two variables
+# If the name of the SSO deployment config differs from 'sso'
+# or if the file name of the YAML definition of the migration
+# job is different, update the following two variables
 SSO_DC_NAME="sso"
-JOB_MIGRATION_YAML="sso71-to-sso72-db-migrate-job.yaml"
+JOB_MIGRATION_YAML="{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml"
 
-# Get existing variables of the $SSO_DC_NAME deployment config in an array
-declare -a SSO_DC_VARS=($(oc set env dc/${SSO_DC_NAME} --list | sed '/^#/d'))
+# Get existing variables of the $SSO_DC_NAME deployment config
+# in an array
+declare -a SSO_DC_VARS=( \
+  $(oc set env dc/${SSO_DC_NAME} --list \
+  | sed '/^#/d') \
+)
 
 # Get the PREFIX used in the names of environment variables
-PREFIX=$(grep -oP 'DB_SERVICE_PREFIX_MAPPING=[^ ]+' <<< "${SSO_DC_VARS[@]}")
+PREFIX=$( \
+  grep -oP 'DB_SERVICE_PREFIX_MAPPING=\[^ ]++' \
+  <<< "${SSO_DC_VARS[@]}" \
+)
 PREFIX=${PREFIX##*=}
 
-# Substitute (the order in which replacements are made is important):
+# Substitute:
 # * <<PREFIX>> with actual $PREFIX value and
 # * <<PREFIX with "<<$PREFIX" value
+# The order in which these replacements are made is important!
 sed -i "s#<<PREFIX>>#${PREFIX}#g" ${JOB_MIGRATION_YAML}
 sed -i "s#<<PREFIX#<<${PREFIX}#g" ${JOB_MIGRATION_YAML}
 
-# Construct the array of environment variables specific to the datasource
+# Construct the array of environment variables
+# specific to the datasource
 declare -a DB_VARS=(JNDI USERNAME PASSWORD DATABASE)
 
 # Prepend $PREFIX to each item of the datasource array
 DB_VARS=( "${DB_VARS[@]/#/${PREFIX}_}" )
 
-# Add DB_SERVICE_PREFIX_MAPPING and TX_DATABASE_PREFIX_MAPPING variables
-# to datasource array
-DB_VARS=( "${DB_VARS[@]}" DB_SERVICE_PREFIX_MAPPING TX_DATABASE_PREFIX_MAPPING )
+# Add DB_SERVICE_PREFIX_MAPPING and TX_DATABASE_PREFIX_MAPPING
+# variables to datasource array
+DB_VARS=( \
+  "${DB_VARS[@]}" \
+  DB_SERVICE_PREFIX_MAPPING \
+  TX_DATABASE_PREFIX_MAPPING \
+)
 
 # Construct the SERVICE from DB_SERVICE_PREFIX_MAPPING
-SERVICE=$(grep -oP 'DB_SERVICE_PREFIX_MAPPING=[^ ]+' <<< "${SSO_DC_VARS[@]}")
+SERVICE=$( \
+  grep -oP 'DB_SERVICE_PREFIX_MAPPING=[^ ]+' \
+  <<< "${SSO_DC_VARS[@]}" \
+)
 SERVICE=${SERVICE#*=}
 SERVICE=${SERVICE%=*}
 SERVICE=${SERVICE^^}
 SERVICE=${SERVICE//-/_}
 
-# If the deployment config contains <<SERVICE>>_SERVICE_HOST and
-# <<SERVICE>>_SERVICE_PORT variables, add them to the datasource array.
-# Their values also need to be propagated into yaml definition of the migration job.
-if grep -Pq "${SERVICE}_SERVICE_HOST=[^ ]+" <<< "${SSO_DC_VARS[@]}" &&
-   grep -Pq "${SERVICE}_SERVICE_PORT=[^ ]+" <<< "${SSO_DC_VARS[@]}"
+# If the deployment config contains pass:[&lt;&lt;SERVICE&gt;&gt;]_SERVICE_HOST
+# and pass:[&lt;&lt;SERVICE&gt;&gt;]_SERVICE_PORT variables, add them to the
+# datasource array. Their values also need to be propagated into
+# yaml definition of the migration job.
+HOST_PATTERN="${SERVICE}_SERVICE_HOST=\[^ ]+"
+PORT_PATTERN="${SERVICE}_SERVICE_PORT=[^ ]+"
+if
+  grep -Pq "${HOST_PATTERN}" <<< "${SSO_DC_VARS[@]}" &&
+  grep -Pq "${PORT_PATTERN}" <<< "${SSO_DC_VARS[@]}"
 then
-  DB_VARS=( "${DB_VARS[@]}" ${SERVICE}_SERVICE_HOST ${SERVICE}_SERVICE_PORT )
-# If they are not defined, delete their placeholder rows in yaml definition file
-# (since if not defined they are not expanded which make the yaml definition invalid).
+  DB_VARS=( \
+    "${DB_VARS[@]}" \
+    "${SERVICE}_SERVICE_HOST" \
+    "${SERVICE}_SERVICE_PORT" \
+  )
+# If they are not defined, delete their placeholder rows in
+# yaml definition file (since if not defined they are not
+# expanded which make the yaml definition invalid).
 else
   for KEY in "HOST" "PORT"
   do
@@ -261,19 +303,23 @@ else
   done
 fi
 
-# Substitute (the order in which replacements are made is important):
-# * <<SERVICE_HOST>> with ${SERVICE}_SERVICE_HOST and
-# * <<SERVICE_HOST_VALUE>> with "<<${SERVICE}_SERVICE_HOST_VALUE>>"
+# Substitute:
+# * pass:[&lt;&lt;SERVICE_HOST&gt;&gt;] with ${SERVICE}_SERVICE_HOST and
+# * pass:[&lt;&lt;SERVICE_HOST_VALUE&gt;&gt;] with pass:[&lt;&lt;${SERVICE}_SERVICE_HOST_VALUE&gt;&gt;]
+# The order in which replacements are made is important!
 # Do this for both "HOST" and "PORT"
 for KEY in "HOST" "PORT"
 do
-  sed -i "s#<<SERVICE_${KEY}>>#${SERVICE}_SERVICE_${KEY}#g" ${JOB_MIGRATION_YAML}
-  sed -i "s#<<SERVICE_${KEY}_VALUE>>#<<${SERVICE}_SERVICE_${KEY}_VALUE>>#g" \
-    ${JOB_MIGRATION_YAML}
+  PATTERN_1=pass:["&lt;&lt;SERVICE_${KEY}&gt;&gt;"]
+  REPL_1="${SERVICE}_SERVICE_${KEY}"
+  sed -i "s#${PATTERN_1}#${REPL_1}#g" ${JOB_MIGRATION_YAML}
+  PATTERN_2=pass:["&lt;&lt;SERVICE_${KEY}_VALUE&gt;&gt;"]
+  REPL_2="<<${SERVICE}_SERVICE_${KEY}_VALUE>>"
+  sed -i "s#${PATTERN_2}#${REPL_2}#g" ${JOB_MIGRATION_YAML}
 done
 
-# Propagate the values of the datasource array items into yaml definition of the
-# migration job
+# Propagate the values of the datasource array items into
+# yaml definition of the migration job
 for VAR in "${SSO_DC_VARS[@]}"
 do
   IFS=$'=' read KEY VALUE <<< $VAR
@@ -289,14 +335,17 @@ do
       sed -i "s#<<${KEY}>>#${VALUE}#g" ${JOB_MIGRATION_YAML}
     fi
     # Verify that the value has been successfully propagated.
-    if grep -q '(JNDI|USERNAME|PASSWORD|DATABASE)' <<< "${KEY}" &&
-       grep -q "<<PREFIX${KEY#${PREFIX}}" ${JOB_MIGRATION_YAML} ||
-       grep -q "<<${KEY}>>" ${JOB_MIGRATION_YAML}
+    if
+      grep -q '(JNDI|USERNAME|PASSWORD|DATABASE)' <<< "${KEY}" &&
+      pass:[grep -q "&lt;&lt;PREFIX${KEY#${PREFIX}}"] ${JOB_MIGRATION_YAML} ||
+      grep -q "<<${KEY}>>" ${JOB_MIGRATION_YAML}
     then
       echo "Failed to update value of ${KEY%_VALUE}! Aborting."
       exit 1
     else
-      printf '%-60s%-40s\n' "Successfully updated ${KEY%_VALUE} to:" "$VALUE"
+      printf '%-60s%-40s\n' \
+             "Successfully updated ${KEY%_VALUE} to:" \
+             "$VALUE"
     fi
   fi
 done
@@ -305,6 +354,7 @@ done
 [[get-db-credentials]]
 Run the script.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ chmod +x ./mirror_sso_dc_db_vars.sh
 $ ./mirror_sso_dc_db_vars.sh
@@ -317,14 +367,16 @@ Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
 ----
 . Build the RH-SSO 7.2 database migration image using the link:https://github.com/iankko/openshift-examples/tree/sso_manual_db_migration[pre-configured source] and wait for the build to finish.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc get is -n openshift | grep sso72 | cut -d ' ' -f1
-redhat-sso72-openshift
+$ oc get is -n openshift | grep {project_templates_version} | cut -d ' ' -f1
+redhat-{project_templates_version}-openshift
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc new-build redhat-sso72-openshift:1.1~https://github.com/jboss-openshift/openshift-examples --context-dir=sso-manual-db-migration --name=sso72-db-migration-image
---> Found image bf45ac2 (7 days old) in image stream "openshift/redhat-sso72-openshift" under tag "1.1" for "redhat-sso72-openshift:1.1"
+$ oc new-build redhat-{project_templates_version}-openshift:{project_latest_image_tag}~https://github.com/jboss-openshift/openshift-examples --context-dir=sso-manual-db-migration --name={project_templates_version}-db-migration-image
+--> Found image bf45ac2 (7 days old) in image stream "openshift/redhat-{project_templates_version}-openshift" under tag "{project_latest_image_tag}" for "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"
 
     Red Hat SSO 7.2
     ---------------
@@ -333,40 +385,44 @@ $ oc new-build redhat-sso72-openshift:1.1~https://github.com/jboss-openshift/ope
     Tags: sso, sso7, keycloak
 
     * A source build using source code from https://github.com/jboss-openshift/openshift-examples will be created
-      * The resulting image will be pushed to image stream "sso72-db-migration-image:latest"
+      * The resulting image will be pushed to image stream "{project_templates_version}-db-migration-image:latest"
       * Use 'start-build' to trigger a new build
 
---> Creating resources with label build=sso72-db-migration-image ...
-    imagestream "sso72-db-migration-image" created
-    buildconfig "sso72-db-migration-image" created
+--> Creating resources with label build={project_templates_version}-db-migration-image ...
+    imagestream "{project_templates_version}-db-migration-image" created
+    buildconfig "{project_templates_version}-db-migration-image" created
 --> Success
-    Build configuration "sso72-db-migration-image" created and build triggered.
-    Run 'oc logs -f bc/sso72-db-migration-image' to stream the build progress.
+    Build configuration "{project_templates_version}-db-migration-image" created and build triggered.
+    Run 'oc logs -f bc/{project_templates_version}-db-migration-image' to stream the build progress.
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc logs -f bc/sso72-db-migration-image --follow
+$ oc logs -f bc/{project_templates_version}-db-migration-image --follow
 Cloning "https://github.com/iankko/openshift-examples.git" ...
 ...
 Push successful
 ----
-. Update the template of the database migration job (`sso71-to-sso72-db-migrate-job.yaml`) with reference to the built `sso72-db-migration-image` image.
+. Update the template of the database migration job (`{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml`) with reference to the built `{project_templates_version}-db-migration-image` image.
 .. Get the docker pull reference for the image.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ PULL_REF=$(oc get istag -n $(oc project -q) --no-headers | grep sso72-db-migration-image | tr -s ' ' | cut -d ' ' -f 2)
+$ PULL_REF=$(oc get istag -n $(oc project -q) --no-headers | grep {project_templates_version}-db-migration-image | tr -s ' ' | cut -d ' ' -f 2)
 ----
-.. Replace the \<<SSO_IMAGE_VALUE>> field in the job template with the pull specification.
+.. Replace the pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;] field in the job template with the pull specification.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ sed -i "s#<<SSO_IMAGE_VALUE>>#$PULL_REF#g" sso71-to-sso72-db-migrate-job.yaml
+$ sed -i "s#pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]#$PULL_REF#g" {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
 ----
 .. Verify that the field is updated.
 . Instantiate database migration job from the job template.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc create -f sso71-to-sso72-db-migrate-job.yaml
-job "sso71-to-sso72-db-migrate-job" created
+$ oc create -f {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
+job "{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job" created
 ----
 +
 [IMPORTANT]
@@ -376,6 +432,7 @@ The database migration process handles the data schema update and performs manip
 +
 . Identify existing deployment config for RH-SSO 7.1 containers.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
@@ -383,29 +440,33 @@ deploymentconfig/sso-postgresql
 ----
 . Stop all RH-SSO 7.1 containers in the current namespace.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=0 dc/sso
 deploymentconfig "sso" scaled
 ----
 . Run the database migration job and wait for the pod to be running correctly.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get jobs
 NAME                            DESIRED   SUCCESSFUL   AGE
-sso71-to-sso72-db-migrate-job   1         0            3m
+{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job   1         0            3m
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc scale --replicas=1 job/sso71-to-sso72-db-migrate-job
-job "sso71-to-sso72-db-migrate-job" scaled
+$ oc scale --replicas=1 job/{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
+job "{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job" scaled
 ----
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
 sso-postgresql-1-n5p16                1/1       Running     1          19h
-sso71-to-sso72-db-migrate-job-b87bb   1/1       Running     0          1m
-sso72-db-migration-image-1-build      0/1       Completed   0          27m
+{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-b87bb   1/1       Running     0          1m
+{project_templates_version}-db-migration-image-1-build      0/1       Completed   0          27m
 ----
 +
 [NOTE]
@@ -414,9 +475,10 @@ By default, the database migration job terminates automatically after `600 secon
 ====
 . Get the dynamically generated SQL database migration file from the pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ mkdir -p ./db-update
-$ oc rsync sso71-to-sso72-db-migrate-job-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
+$ oc rsync {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
 receiving incremental file list
 keycloak-database-update.sql
 
@@ -425,9 +487,10 @@ total size is 29,621  speedup is 1.00
 ----
 . Inspect the `keycloak-database-update.sql` file for changes to be performed within manual RH-SSO 7.2 database update.
 . Apply the database update manually.
-* Run the following commands for *_sso71-postgresql_* and *_sso71-postgresql-persistent_* templates (PostgreSQL database):
+* Run the following commands for *_{project_previous_templates_version}-postgresql_* and *_{project_previous_templates_version}-postgresql-persistent_* templates (PostgreSQL database):
 ... Copy the generated SQL migration file to the PostgreSQL pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rsync --no-perms=true ./db-update/ sso-postgresql-1-n5p16:/tmp
 sending incremental file list
@@ -437,12 +500,14 @@ total size is 26,333  speedup is 299.24
 ----
 ... Start a shell session to the PostgreSQL pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rsh sso-postgresql-1-n5p16
 sh-4.2$
 ----
 ... Use the `psql` tool to apply database update manually.
 +
+[subs="verbatim,macros,attributes"]
 ----
 sh-4.2$ alias psql="/opt/rh/rh-postgresql95/root/bin/psql"
 sh-4.2$ psql --version
@@ -459,18 +524,20 @@ INSERT 0 1
 Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
 ====
 ... Close the shell session to the PostgreSQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
-* Run the following commands for *_sso71-mysql_* and *_sso71-mysql-persistent_* templates (MySQL database):
+* Run the following commands for *_{project_previous_templates_version}-mysql_* and *_{project_previous_templates_version}-mysql-persistent_* templates (MySQL database):
 ... Given pod situation similar to the following:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
 sso-mysql-1-zvhk3                     1/1       Running     0          1h
-sso71-to-sso72-db-migrate-job-m202t   1/1       Running     0          11m
-sso72-db-migration-image-1-build      0/1       Completed   0          13m
+{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-m202t   1/1       Running     0          11m
+{project_templates_version}-db-migration-image-1-build      0/1       Completed   0          13m
 ----
 ... Copy the generated SQL migration file to the MySQL pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rsync --no-perms=true ./db-update/ sso-mysql-1-zvhk3:/tmp
 sending incremental file list
@@ -481,12 +548,14 @@ total size is 24,594  speedup is 0.99
 ----
 ... Start a shell session to the MySQL pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rsh sso-mysql-1-zvhk3
 sh-4.2$
 ----
 ... Use the `mysql` tool to apply database update manually.
 +
+[subs="verbatim,macros,attributes"]
 ----
 sh-4.2$ alias mysql="/opt/rh/rh-mysql57/root/bin/mysql"
 sh-4.2$ mysql --version
@@ -507,18 +576,21 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 [start=12]
 . Update image change trigger in the existing deployment config of RH-SSO 7.1 to reference the RH-SSO 7.2 image.
 +
+[subs="verbatim,macros,attributes"]
 ----
-$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-sso72-openshift:1.1"}]'
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new RH-SSO 7.2 images based on the latest image defined in the image change triggers.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
 . Deploy RH-SSO 7.2 containers using the modified deployment config.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
@@ -532,7 +604,7 @@ This tutorial focuses on migrating the Red Hat Single Sign-On server database fr
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to project* to list the default image streams and templates.
 . Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
-. Select *_sso72-mysql_* RH-SSO application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
+. Select *_{project_templates_version}-mysql_* RH-SSO application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
 +
 [IMPORTANT]
 ====
@@ -568,6 +640,7 @@ Upon their creation xref:sso-export-the-database[the database can be exported.]
 
 . Get the RH-SSO deployment config and scale it down to zero.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get dc -o name
 deploymentconfig/sso
@@ -578,17 +651,20 @@ deploymentconfig "sso" scaled
 ----
 . Instruct the RH-SSO 7.2 server deployed on {project_openshift_product_name} image to perform database export at RH-SSO server boot time.
 +
+[subs="verbatim,macros,attributes"]
 ----
 oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/tmp/demorealm-export.json"
 ----
 . Scale the RH-SSO deployment config back up. This will start the RH-SSO server and export its database.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=1 dc sso
 deploymentconfig "sso" scaled
 ----
 . (Optional) Verify that the export was successful.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get pods
 NAME                READY     STATUS    RESTARTS   AGE
@@ -604,6 +680,7 @@ $ oc logs sso-4-ejr0k | grep 'Export'
 
 . Retrieve the JSON file of the RH-SSO database from the pod.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc get pods
 NAME                READY     STATUS    RESTARTS   AGE
@@ -701,6 +778,7 @@ Log in to the OpenShift master CLI. You must have the required permissions to ed
 
 . Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. The OpenShift master, which was deployed using the OpenShift Primer, is configured with HTPassword and shows the following:
 +
+[subs="verbatim,macros,attributes"]
 ----
 identityProviders:
 - challenge: true
@@ -714,7 +792,7 @@ identityProviders:
 +
 Add RH-SSO as a secondary identity provider with content similar to the following snippet:
 +
-[subs="verbatim,macros"]
+[subs="verbatim,macros,attributes"]
 ----
 - name: rh_sso
   challenge: false
@@ -743,7 +821,7 @@ Add RH-SSO as a secondary identity provider with content similar to the followin
 .. The RH-SSO *Secret* hash for the *clientSecret* can be found in the RH-SSO web console: *Clients* -> *_openshift-demo_* -> *Credentials*
 .. The endpoints for the *urls* can be found by making a request with the RH-SSO application. For example:
 +
-[subs="verbatim,macros"]
+[subs="verbatim,macros,attributes"]
 ----
 <pass:quotes[_curl -k https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/.well-known/openid-configuration | python -m json.tool_]>
 ----
@@ -753,6 +831,7 @@ The response includes the *authorization_endpoint*, *token_endpoint*, and *useri
 .. This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. For this reason, the *ca* is provided as <pass:quotes[_ca: xpaas.crt_]>. This CA certificate must also be copied into the */etc/origin/master* folder. This is not necessary if using a certificate purchased from a verified Certificate Authority.
 . Save the configuration and restart the OpenShift master:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ systemctl restart atomic-openshift-master
 ----
@@ -764,6 +843,7 @@ Navigate to the OpenShift web console, which in this example is _https://openshi
 Select *rh-sso* and log in to OpenShift with the _testuser_ user created earlier in RH-SSO. No projects are visible to _testuser_ until they are added in the OpenShift CLI. This is the only way to provide user privileges in OpenShift because it currently does not accept external role mapping.
 
 To provide _testuser_ `view` privileges for the _sso-app-demo_, use the OpenShift CLI:
+[subs="verbatim,macros,attributes"]
 ----
 $ oadm policy add-role-to-user view testuser -n sso-app-demo
 ----
@@ -782,16 +862,19 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc new-project eap-app-demo
 ----
 //. Create a service account to be used for the RH-SSO deployment:
 //+
+//[subs="verbatim,macros,attributes"]
 //----
 //$ oc create serviceaccount eap-service-account
 //----
 . Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
@@ -799,22 +882,26 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
 .. Generate a secure key for the SSL keystore:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
 ----
 .. Generate a secure key for the JGroups keystore:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 ----
 . Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc secret new eap-ssl-secret eapkeystore.jks
 $ oc secret new eap-jgroup-secret eapjgroups.jceks
 ----
 . Add the EAP secret to the `default` service account:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
@@ -1023,16 +1110,19 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc new-project eap-app-demo
 ----
 //. Create a service account to be used for the SSO deployment:
 //+
+//[subs="verbatim,macros,attributes"]
 //----
 //$ oc create serviceaccount app-service-account
 //----
 . Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
@@ -1041,22 +1131,26 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
 .. Generate a secure key for the SSL keystore:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
 ----
 .. Generate a secure key for the JGroups keystore:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 ----
 . Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc secret new eap-ssl-secret eapkeystore.jks
 $ oc secret new eap-jgroup-secret eapjgroups.jceks
 ----
 . Add the EAP application secret to the EAP service account created earlier:
 +
+[subs="verbatim,macros,attributes"]
 ----
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
@@ -1071,6 +1165,7 @@ The *keycloak-saml-subsystem.xml*, exported from the RH-SSO client in a previous
 . Replace the *SPECIFY YOUR LOGOUT PAGE!* value of the *logout page* tag with the url to redirect users when they log out of the application. This example uses */index.jsp*.
 . Delete the *<PrivateKeyPem>* and *<CertificatePem>* tags and keys and replace it with keystore information:
 +
+[subs="verbatim,macros,attributes"]
 ----
 ...
 <Keys>
@@ -1087,6 +1182,7 @@ The mount path of the *keystore-saml.jks* (in this example *_/etc/eap-secret-vol
 The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the RH-SSO client.
 . Delete the second *<CertificatePem>* tag and key and replace it with the the realm certificate information:
 +
+[subs="verbatim,macros,attributes"]
 ----
 ...
 <Keys>
@@ -1107,6 +1203,7 @@ The certificate alias and password were configured when the SAML Keys were expor
 The client type must also be specified by the *<auth-method>* key in the application *web.xml*. This file is read by the image at deployment.
 
 Open the application *web.xml* file and ensure it includes the following:
+[subs="verbatim,macros,attributes"]
 ----
 ...
 <login-config>

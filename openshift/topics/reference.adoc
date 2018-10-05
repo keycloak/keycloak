@@ -30,20 +30,23 @@ build configuration of the application as follows:
 . Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
   variable against:
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc get bc -o name
+$ oc get bc -o name
 buildconfig/sso
 ----
 . Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
+$ oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
 buildconfig "sso" updated
 ----
 . Verify the setting
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc env bc/sso --list
+$ oc env bc/sso --list
 # buildconfigs sso
 MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
 ----
@@ -80,20 +83,23 @@ build configuration of the application as follows:
 . Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
   variable against:
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc get bc -o name
+$ oc get bc -o name
 buildconfig/sso
 ----
 . Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
+$ oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
 buildconfig "sso" updated
 ----
 . Verify the setting
 +
+[subs="verbatim,macros,attributes"]
 ----
-oc env bc/sso --list
+$ oc env bc/sso --list
 # buildconfigs sso
 MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
 ----
@@ -473,7 +479,7 @@ if this environment variable is provided.
 |The password for the truststore and certificate.
 |===
 
-==== Template variables specific to *_sso72-mysql_*, *_sso72-mysql-persistent_*, and *_sso72-x509-mysql-persistent_*
+==== Template variables specific to *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, and *_{project_templates_version}-x509-mysql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -507,7 +513,7 @@ broken.
 |The maximum permitted number of simultaneous client connections.
 |===
 
-==== Template variables specific to *_sso72-postgresql_*, *_sso72-postgresql-persistent_*, and *_sso72-x509-postgresql-persistent_*
+==== Template variables specific to *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
@@ -532,7 +538,7 @@ number of prepared transactions.
 |Configures how much memory is dedicated to PostgreSQL for caching data.
 |===
 
-==== Template variables specific to *_sso72-mysql-persistent_*, *_sso72-x509-mysql-persistent_*, *_sso72-postgresql-persistent_*, and *_sso72-x509-postgresql-persistent_*
+==== Template variables specific to *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
 
 .Configuration Variables Specific To RH-SSO-enabled MySQL / PostgreSQL Applications With Persistent Storage
 [cols="2*", options="header"]
@@ -651,7 +657,7 @@ is provided.
 |*_SSO_USERNAME_*
 |The username used to access the RH-SSO service. This is used to create the
 application client(s) within the specified RH-SSO realm. This should match the
-*_SSO_SERVICE_USERNAME_* specified through one of the *sso72-* templates.
+*_SSO_SERVICE_USERNAME_* specified through one of the *{project_templates_version}-* templates.
 
 |*_SSO_PASSWORD_*
 |The password for the RH-SSO service user.
