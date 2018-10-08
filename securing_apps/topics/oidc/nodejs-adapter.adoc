@@ -80,6 +80,11 @@ object, rather than the `keycloak.json` file:
     let keycloak = new Keycloak({ store: memoryStore }, kcConfig);
 ----
 
+Applications can also redirect users to their preferred identity provider by using:
+[source,javascript]
+----
+    let keycloak = new Keycloak({ store: memoryStore, idpHint: myIdP }, kcConfig);
+----
 
 Configuring a web session store::
 
