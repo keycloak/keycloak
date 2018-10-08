@@ -370,7 +370,7 @@
                         kc.profile = JSON.parse(req.responseText);
                         promise.setSuccess(kc.profile);
                     } else {
-                        promise.setError();
+                        promise.setError('Failed loading user profile. Response code ' + req.status + '.');
                     }
                 }
             }
@@ -395,7 +395,7 @@
                         kc.userInfo = JSON.parse(req.responseText);
                         promise.setSuccess(kc.userInfo);
                     } else {
-                        promise.setError();
+                        promise.setError('Failed loading user info. Response code ' + req.status + '.');
                     }
                 }
             }
@@ -426,7 +426,7 @@
             var promise = createPromise();
 
             if (!kc.refreshToken) {
-                promise.setError();
+                promise.setError('Unable to update token. No refresh token present.');
                 return promise.promise;
             }
 
@@ -504,7 +504,7 @@
                 iframePromise.success(function() {
                     exec();
                 }).error(function() {
-                    promise.setError();
+                    promise.setError('Error in Iframe login.');
                 });
             } else {
                 exec();
@@ -589,7 +589,7 @@
                             authSuccess(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], kc.flow === 'standard');
                         } else {
                             kc.onAuthError && kc.onAuthError();
-                            promise && promise.setError();
+                            promise && promise.setError('Failed requesting tokens from authorization code. Response code ' + req.status + '.');
                         }
                     }
                 };
@@ -608,7 +608,7 @@
 
                     console.info('[KEYCLOAK] Invalid nonce, clearing token');
                     kc.clearToken();
-                    promise && promise.setError();
+                    promise && promise.setError('Invalid nonce. Token cleared.');
                 } else {
                     if (fulfillPromise) {
                         kc.onAuthSuccess && kc.onAuthSuccess();
@@ -705,7 +705,7 @@
                             setupOidcEndoints(null);
                             promise.setSuccess();
                         } else {
-                            promise.setError();
+                            promise.setError('Failed loading config. Response code ' + req.status + '.');
                         }
                     }
                 };
@@ -757,7 +757,7 @@
                                     setupOidcEndoints(oidcProviderConfig);
                                     promise.setSuccess();
                                 } else {
-                                    promise.setError();
+                                    promise.setError('Failed loading openid configuration. Response code ' + req.status + '.');
                                 }
                             }
                         };
@@ -1111,7 +1111,7 @@
                     if (event.data == 'unchanged') {
                         promise.setSuccess();
                     } else {
-                        promise.setError();
+                        promise.setError('Message callback from iframe responded with ' + event.data + '.');
                     }
                 }
             };
