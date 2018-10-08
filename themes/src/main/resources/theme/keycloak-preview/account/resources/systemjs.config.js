@@ -12,41 +12,12 @@
     map: {
       // our app is within the app folder
       'app': resourceUrl + '/app',
+      'resources': resourceUrl,
 
-      // angular bundles
-      '@angular/core': 'npm:@angular/core/bundles/core.umd.min.js',
-      '@angular/common': 'npm:@angular/common/bundles/common.umd.min.js',
-      '@angular/compiler': 'npm:@angular/compiler/bundles/compiler.umd.min.js',
-      '@angular/platform-browser': 'npm:@angular/platform-browser/bundles/platform-browser.umd.min.js',
-      '@angular/platform-browser-dynamic': 'npm:@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.min.js',
-      '@angular/http': 'npm:@angular/http/bundles/http.umd.min.js',
-      '@angular/router': 'npm:@angular/router/bundles/router.umd.min.js',
-      '@angular/forms': 'npm:@angular/forms/bundles/forms.umd.min.js',
+      'react': 'npm:react/umd/react.development.js',
+      'react-dom': 'npm:react-dom/umd/react-dom.development.js',
+      'react-router-dom': 'npm:react-router-dom/umd/react-router-dom.js',
       
-      // other libraries
-      '@ngx-translate/core':       'npm:@ngx-translate/core/bundles/core.umd.min.js',
-      'angular-in-memory-web-api': 'npm:angular-in-memory-web-api/bundles/in-memory-web-api.umd.js',
-      'lodash': 'npm:lodash/lodash.js',
-      
-      // patternfly-ng
-      'patternfly-ng/navigation': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
-      'patternfly-ng/utilities': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
-      'patternfly-ng/notification': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
-      'patternfly-ng/notification/inline-notification': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
-      'patternfly-ng/notification/notification-service': 'npm:patternfly-ng/bundles/patternfly-ng.umd.min.js',
-      
-      // unused patternfly-ng dependencies
-      'angular-tree-component': '@empty',
-      'ng2-dragula': '@empty',
-      '@swimlane/ngx-datatable': '@empty',
-      'd3': '@empty',
-      'c3': '@empty',
-  
-      // ngx-bootstrap
-      'ngx-bootstrap': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
-      'ngx-bootstrap/dropdown': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
-      'ngx-bootstrap/popover': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
-      'ngx-bootstrap/tooltip': 'npm:ngx-bootstrap/bundles/ngx-bootstrap.umd.min.js',
     },
     
     bundles: {
@@ -69,18 +40,14 @@
         defaultExtension: 'js',
         meta: {
           './*.js': {
-            loader: resourceUrl + '/systemjs-angular-loader.js'
           }
         }
       },
-      '@ngx-translate/core': {
-          defaultExtension: 'js'
-      },
+      
       rxjs: {
         defaultExtension: false
       },
       
-      'lodash': { defaultExtension: 'js' },
     }
   });
 })(this);

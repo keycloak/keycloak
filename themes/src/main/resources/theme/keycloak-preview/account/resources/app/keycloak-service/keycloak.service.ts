@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Injectable} from '@angular/core';
 import {KeycloakLoginOptions} from './keycloak.d';
 
 // If using a local keycloak.js, uncomment this import.  With keycloak.js fetched
@@ -27,10 +26,20 @@ import * as Keycloak from './keycloak';
 export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;
 
-@Injectable()
-export class KeycloakService {
-    static keycloakAuth: KeycloakClient;
+declare const keycloak: KeycloakClient;
 
+export class KeycloakService {
+    private static keycloakAuth: KeycloakClient = keycloak;
+    private static instance: KeycloakService = new KeycloakService();
+
+    private constructor() {
+        
+    }
+    
+    public static get Instance(): KeycloakService  {
+        return this.instance;
+    }
+    
     /**
      * Configure and initialize the Keycloak adapter.
      *
@@ -54,10 +63,6 @@ export class KeycloakService {
         });
     }
     
-    static setKeycloakAuth(kc:KeycloakClient) {
-        this.keycloakAuth = kc;
-    }
-
     authenticated(): boolean {
         return KeycloakService.keycloakAuth.authenticated;
     }
