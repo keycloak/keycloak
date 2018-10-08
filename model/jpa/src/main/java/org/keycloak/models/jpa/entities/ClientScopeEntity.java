@@ -121,20 +121,20 @@ public class ClientScopeEntity {
         this.protocolMappers = protocolMappers;
     }
 
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
     public Set<RoleEntity> getRoleMapping() {
         return roleMapping;
     }
 
     public void setRoleMapping(Set<RoleEntity> roleMapping) {
         this.roleMapping = roleMapping;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public Map<String, String> getAttributes() {
