@@ -193,7 +193,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             @Override
             public void commit() {
                 try {
-                    if (getDelegate() == null) return;
                     if (clearAll) {
                         cache.clear();
                     }
