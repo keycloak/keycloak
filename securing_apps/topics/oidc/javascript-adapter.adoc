@@ -214,17 +214,14 @@ There is an example app that shows how to use the native-mode: https://github.co
 
 ==== Earlier Browsers
 
-The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API.
+The JavaScript adapter depends on Base64 (window.btoa and window.atob), HTML5 History API and optionally the Promise API.
 If you need to support browsers that do not have these available (for example, IE9) you need to add polyfillers.
 
 Example polyfill libraries:
 
-* https://github.com/davidchambers/Base64.js
-* https://github.com/devote/HTML5-History-API
-
-If available, the JavaScript adapter will use native Promise instances as return values from functions documented as returning promises.  To retain backwards compatibility, the `success()` and `error()` functions from previous versions of the adapter are retained.  These remain available whether or not native Promises are provided by the browser.  Promise API polyfills are available for browsers without support:
-
-* https://github.com/stefanpenner/es6-promise
+* Base64 - https://github.com/davidchambers/Base64.js
+* HTML5 History - https://github.com/devote/HTML5-History-API
+* Promise - https://github.com/stefanpenner/es6-promise
 
 ==== JavaScript Adapter Reference
 
@@ -307,6 +304,7 @@ Options is an Object, where:
 * checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
 * responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are query or fragment . Default value is fragment, which means that after successful authentication will {project_name} redirect to javascript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
 * flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
+* promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
 
 Returns promise to set functions to be invoked on success or error.
 
