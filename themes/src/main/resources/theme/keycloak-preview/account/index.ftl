@@ -41,7 +41,7 @@
                 var l18n_msg = {};
             </#if>
         </script>
-
+        
         <base href="${baseUrl}/">
 
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
@@ -72,7 +72,6 @@
               media="screen, print">
         <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
               media="screen, print">
-        <link rel="stylesheet" href="${resourceUrl}/node_modules/patternfly-ng/dist/css/patternfly-ng.min.css" media="screen, print">
 
         <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js"></script>
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -107,11 +106,11 @@
                     document.head.appendChild(script);
                 };
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
-                loadjs("/node_modules/core-js/client/shim.min.js", function() {
-                    loadjs("/node_modules/zone.js/dist/zone.min.js", function() {
+                loadjs("/node_modules/react/umd/react.development.js", function() {
+                    loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
                         loadjs("/node_modules/systemjs/dist/system.src.js", function() {
                             loadjs("/systemjs.config.js", function() {
-                                System.import('${resourceUrl}/main.js').catch(function (err) {
+                                System.import('${resourceUrl}/Main.js').catch(function (err) {
                                     console.error(err);
                                 });
                                 if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
@@ -124,7 +123,9 @@
             });
         </script>
 
+<div id="main_react_container"></div>
 
+<div id="welcomeScreen">
 <!-- Top Navigation -->
         <nav class="navbar navbar-pf-alt">
 
@@ -166,7 +167,7 @@
 
 <!-- Home Page -->
 
-    <div class="cards-pf" id="welcomeScreen">
+    <div class="cards-pf">
         <div class="text-center" id="welcomeMsg">
           <h1>${msg("accountManagementWelcomeMessage")}</h1>
         </div>
@@ -181,7 +182,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("personalInfoHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("personalInfoIntroMessage")}</p>
-                              <h3 id="personalInfoLink"><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                              <h3 id="personalInfoLink"><a href="${baseUrl}/#/app/account">${msg("personalInfoHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -195,10 +196,10 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("accountSecurityTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
-                              <h3 id="changePasswordLink"><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                              <h3 id="authenticatorLink"><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
-                              <h3 id="deviceActivityLink"><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
+                              <h3 id="changePasswordLink"><a href="${baseUrl}/#/app/password">${msg("changePasswordHtmlTitle")}</a></h3>
+                              <h3 id="authenticatorLink"><a href="${baseUrl}/#/app/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3 id="deviceActivityLink"><a href="${baseUrl}/#/app/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
+                              <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/app/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -212,7 +213,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("applicationsHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("applicationsIntroMessage")}</p>
-                              <h3 id="applicationsLink"><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                              <h3 id="applicationsLink"><a href="${baseUrl}/#/app/applications">${msg("applicationsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -226,7 +227,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("myResources")}</h2>
                               <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
-                              <h3 id="myResourcesLink"><a href="${baseUrl}/#/my-resources">${msg("myResources")}</a></h3>
+                              <h3 id="myResourcesLink"><a href="${baseUrl}/#/app/my-resources">${msg("myResources")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -235,22 +236,35 @@
             </div>
         </div>
     </div>
+</div>
 
+        <script>
+            var isWelcomePage = function() {
+                var winHash = window.location.hash;
+                return winHash.indexOf('#/app') !== 0;
+            }
+                
+            var toggleReact = function() {
+                if (!isWelcomePage()) {
+                    document.getElementById("welcomeScreen").style.display='none';
+                    document.getElementById("main_react_container").style.display='block';
+                } else {
+                    document.getElementById("welcomeScreen").style.display='block';
+                    document.getElementById("main_react_container").style.display='none';
+                }
+            };
+        </script>
         <script>
             if (!features.isLinkedAccountsEnabled) {
                 document.getElementById("linkedAccountsLink").style.display='none';
-            }
+            };
                 
             if (!features.isMyResourcesEnabled) {
                 document.getElementById("myResourcesCard").style.display='none';
-            }
+            };
                 
-            var winHash = window.location.hash;
-            if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
-                document.getElementById("welcomeScreen").style.display='none';
-            }
+            toggleReact(); 
         </script>
 
-        <app-root></app-root>
     </body>
 </html>
