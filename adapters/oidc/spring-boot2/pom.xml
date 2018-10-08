@@ -31,7 +31,7 @@
   <description/>
 
   <properties>
-    <spring-boot.version>2.0.3.RELEASE</spring-boot.version>
+    <spring-boot.version>2.0.5.RELEASE</spring-boot.version>
     <spring.version>5.0.2.RELEASE</spring.version>
     <mockito.version>1.9.5</mockito.version>
   </properties>
