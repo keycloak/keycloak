@@ -26,7 +26,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -34,7 +33,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -324,13 +322,6 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         if (hasClientScope(clientScope, !defaultScope)) throw new ModelDuplicateException();
 
         entity.getClientScopes().put(ClientScopeAdapter.toClientScopeEntity(clientScope, em) , defaultScope);
-//        ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
-//        entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
-//        entity.setClient(getEntity());
-//        entity.setDefaultScope(defaultScope);
-//        em.persist(entity);
-//        em.flush();
-//        em.detach(entity);
     }
 
     protected boolean hasClientScope(ClientScopeModel clientScope, boolean defaultScope) {
@@ -345,23 +336,12 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
-//        TypedQuery<String> query = em.createNamedQuery("clientScopeClientMappingIdsByClient", String.class);
-//        query.setParameter("client", getEntity());
-//        query.setParameter("defaultScope", defaultScope);
-//        List<String> ids = query.getResultList();
         Map<ClientScopeEntity, Boolean> clientScopeEntities = entity.getClientScopes();
 
         // Defaults to openid-connect
         String clientProtocol = getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : getProtocol();
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
-//        for (String clientScopeId : ids) {
-//            ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
-//            if (clientScope == null) continue;
-//            if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
-//                clientScopes.put(clientScope.getName(), clientScope);
-//            }
-//        }
         for (ClientScopeEntity clientScopeEntity : clientScopeEntities.keySet()) {
             // Check default selector
             if(clientScopeEntities.get(clientScopeEntity).equals(defaultScope)) {
@@ -380,11 +360,6 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void removeClientScope(ClientScopeModel clientScope) {
         entity.getClientScopes().remove(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
-//        int numRemoved = em.createNamedQuery("deleteClientScopeClientMapping")
-//                .setParameter("clientScope", ClientScopeAdapter.toClientScopeEntity(clientScope, em))
-//                .setParameter("client", getEntity())
-//                .executeUpdate();
-//        em.flush();
     }
 
     public static boolean contains(String str, String[] array) {

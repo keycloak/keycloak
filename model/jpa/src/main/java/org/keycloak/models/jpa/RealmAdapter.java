@@ -28,7 +28,6 @@ import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -1878,13 +1877,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (hasDefaultClientScope(clientScope, !defaultScope)) throw new ModelDuplicateException();
 
         getEntity().getDefaultScopes().put(ClientScopeAdapter.toClientScopeEntity(clientScope, em) , defaultScope);
-//        DefaultClientScopeRealmMappingEntity entity = new DefaultClientScopeRealmMappingEntity();
-//        entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
-//        entity.setRealm(getEntity());
-//        entity.setDefaultScope(defaultScope);
-//        em.persist(entity);
-//        em.flush();
-//        em.detach(entity);
     }
 
     protected boolean hasDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
@@ -1913,29 +1905,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             }
         }
         return defaultScopes;
-        
-//        TypedQuery<String> query = em.createNamedQuery("defaultClientScopeRealmMappingIdsByRealm", String.class);
-//        query.setParameter("realm", getEntity());
-//        query.setParameter("defaultScope", defaultScope);
-//        List<String> ids = query.getResultList();
-//
-//        List<ClientScopeModel>  clientScopes = new LinkedList<>();
-//        for (String clientScopeId : ids) {
-//            ClientScopeModel clientScope = getClientScopeById(clientScopeId);
-//            if (clientScope == null) continue;
-//            clientScopes.add(clientScope);
-//        }
-//        return clientScopes;
     }
 
     @Override
     public void removeDefaultClientScope(ClientScopeModel clientScope) {
         getEntity().getDefaultScopes().remove(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
-//        int numRemoved = em.createNamedQuery("deleteDefaultClientScopeRealmMapping")
-//                .setParameter("clientScope", ClientScopeAdapter.toClientScopeEntity(clientScope, em))
-//                .setParameter("realm", getEntity())
-//                .executeUpdate();
-//        em.flush();
     }
 
     @Override
