@@ -29,6 +29,7 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.RealmRepresentationUtils;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+
 
 /**
  * <code>@AppServerContainer</code> is needed for stopping recursion in 
@@ -108,6 +110,8 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
                 tr.setSslRequired("all");
             }
+
+            RealmRepresentationUtils.replaceGeneratedCertificates(tr);
         }
     }
 

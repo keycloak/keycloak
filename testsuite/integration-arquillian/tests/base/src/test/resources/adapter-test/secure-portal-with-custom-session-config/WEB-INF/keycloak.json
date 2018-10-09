@@ -5,12 +5,12 @@
   "resource": "secure-portal-with-custom-session-config",
   "credentials": {
     "jwt": {
+      "token-timeout": 10,
       "client-key-password": "password",
       "client-keystore-file": "classpath:keystore.jks",
       "client-keystore-password": "password",
-      "client-key-alias": "secure-portal",
-      "token-timeout": 10,
-      "client-keystore-type": "jks"
+      "client-key-alias": "secure-portal-with-custom-session-config",
+      "client-keystore-type": "pkcs12"
     }
   }
 }
