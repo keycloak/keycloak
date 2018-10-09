@@ -6,8 +6,8 @@
         "fixed": {
             "hostname": "${keycloak.hostname.fixed.hostname:localhost}",
             "httpPort": "${keycloak.hostname.fixed.httpPort:-1}",
-            "httpsPort": "${keycloak.hostname.fixed.httpPorts:-1}",
-            "scheme": "${keycloak.hostname.fixed.scheme:}"
+            "httpsPort": "${keycloak.hostname.fixed.httpsPort:-1}",
+            "alwaysHttps": "${keycloak.hostname.fixed.alwaysHttps:false}"
         }
     },
 
