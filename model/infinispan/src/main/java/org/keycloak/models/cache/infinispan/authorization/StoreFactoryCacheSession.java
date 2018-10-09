@@ -146,7 +146,20 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return permissionTicketCache;
     }
 
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        getDelegate().setReadOnly(readOnly);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return getDelegate().isReadOnly();
+    }
+
     public void close() {
+        if (delegate != null) {
+            delegate.close();
+        }
     }
 
     private KeycloakTransaction getPrepareTransaction() {
@@ -193,10 +206,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             @Override
             public void commit() {
                 try {
-                    if (getDelegate() == null) return;
-                    if (clearAll) {
-                        cache.clear();
-                    }
                     runInvalidations();
                     transactionActive = false;
                 } finally {
@@ -725,7 +734,14 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 Long loaded = cache.getCurrentRevision(cacheKey);
                 List<R> model = resultSupplier.get();
                 if (model == null) return null;
-                if (invalidations.contains(cacheKey)) return model;
+                if (invalidations.contains(cacheKey)) {
+                    if (consumer != null) {
+                        for (R policy: model) {
+                            consumer.accept(policy);
+                        }
+                    }
+                    return model;
+                };
                 query = querySupplier.apply(loaded, model);
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {
@@ -931,7 +947,14 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 Long loaded = cache.getCurrentRevision(cacheKey);
                 List<R> model = resultSupplier.get();
                 if (model == null) return null;
-                if (invalidations.contains(cacheKey)) return model;
+                if (invalidations.contains(cacheKey)) {
+                    if (consumer != null) {
+                        for (R policy: model) {
+                            consumer.accept(policy);
+                        }
+                    }
+                    return model;
+                };
                 query = querySupplier.apply(loaded, model);
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {

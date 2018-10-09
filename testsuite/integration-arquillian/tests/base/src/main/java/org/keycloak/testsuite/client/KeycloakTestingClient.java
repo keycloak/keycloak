@@ -133,6 +133,21 @@ public class KeycloakTestingClient {
             }
         }
 
+
+        public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {
+            String result = testing(realm != null ? realm : "master").runModelTestOnServer(testClassName, testMethodName);
+
+            if (result != null && !result.isEmpty() && result.trim().startsWith("EXCEPTION:")) {
+                Throwable t = SerializationUtil.decodeException(result);
+
+                if (t instanceof AssertionError) {
+                    throw (AssertionError) t;
+                } else {
+                    throw new RunOnServerException(t);
+                }
+            }
+        }
+
     }
 
     public void close() {

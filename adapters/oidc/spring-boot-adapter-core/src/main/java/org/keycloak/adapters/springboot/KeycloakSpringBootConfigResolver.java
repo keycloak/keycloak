@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.springboot;
 
-import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -25,31 +24,22 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 
 public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.KeycloakConfigResolver {
 
-    private static AdapterConfig adapterConfig;
-    private static KeycloakConfigResolver delegateConfigResolver;
-
     private KeycloakDeployment keycloakDeployment;
+
+    private static AdapterConfig adapterConfig;
 
     @Override
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
-        if (delegateConfigResolver == null) {
-            if (keycloakDeployment != null) {
-                return keycloakDeployment;
-            }
-
-            keycloakDeployment = KeycloakDeploymentBuilder.build(KeycloakSpringBootConfigResolver.adapterConfig);
-
+        if (keycloakDeployment != null) {
             return keycloakDeployment;
         }
 
-        return delegateConfigResolver.resolve(request);
+        keycloakDeployment = KeycloakDeploymentBuilder.build(KeycloakSpringBootConfigResolver.adapterConfig);
+
+        return keycloakDeployment;
     }
 
     static void setAdapterConfig(AdapterConfig adapterConfig) {
         KeycloakSpringBootConfigResolver.adapterConfig = adapterConfig;
-    }
-
-    static void setDelegateConfigResolver(KeycloakConfigResolver configResolver) {
-        KeycloakSpringBootConfigResolver.delegateConfigResolver = configResolver;
     }
 }

@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import java.util.Map;
 
+import org.keycloak.common.util.ObjectUtil;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -63,7 +65,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     // Fallback to name if consentScreenText attribute is null
     default String getConsentScreenText() {
         String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
-        if (consentScreenText == null) {
+        if (ObjectUtil.isBlank(consentScreenText)) {
             consentScreenText = getName();
         }
         return consentScreenText;
