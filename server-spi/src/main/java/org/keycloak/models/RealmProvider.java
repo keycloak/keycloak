@@ -96,4 +96,12 @@ public interface RealmProvider extends Provider, ClientProvider {
      * @return
      */
     List<GroupModel> getRoleGroups(RealmModel realm, RoleModel role);
+
+    /**
+     * 按名称查询组
+     * @param realm
+     * @param groupName
+     * @return
+     */
+    GroupModel getGroupByName(RealmModel realm, String groupName);
 }

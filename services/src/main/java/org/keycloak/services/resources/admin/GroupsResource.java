@@ -204,6 +204,18 @@ public class GroupsResource {
         return results;
     }
 
+    @Path("name/{group-name}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public GroupRepresentation getGroup(@QueryParam("group-name") String groupName){
+        GroupModel group = realm.getGroupByName(realm,groupName);
+        if (group == null) {
+            throw new NotFoundException("Could not find group by name");
+        }
+        return ModelToRepresentation.toRepresentation(group,true);
+    }
+
 
 
 }

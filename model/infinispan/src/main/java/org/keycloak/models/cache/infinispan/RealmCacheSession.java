@@ -1264,4 +1264,30 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         return list;
     }
+
+
+    @Override
+    public GroupModel getGroupByName(RealmModel realm, String groupName) {
+        CachedGroup cached = cache.get(groupName, CachedGroup.class);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
+        if (cached == null) {
+            Long loaded = cache.getCurrentRevision(groupName);
+            GroupModel model = getRealmDelegate().getGroupByName(realm,groupName);
+            if (model == null) return null;
+            if (invalidations.contains(groupName)) return model;
+            cached = new CachedGroup(loaded, realm, model);
+            cache.addRevisioned(cached, startupRevision);
+
+        } else if (invalidations.contains(groupName)) {
+            return getRealmDelegate().getGroupByName(realm,groupName);
+        } else if (managedGroups.containsKey(groupName)) {
+            return managedGroups.get(groupName);
+        }
+        GroupAdapter adapter = new GroupAdapter(cached, this, session, realm);
+        managedGroups.put(groupName, adapter);
+        return adapter;
+    }
 }

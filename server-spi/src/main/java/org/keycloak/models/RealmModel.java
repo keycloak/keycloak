@@ -463,4 +463,13 @@ public interface RealmModel extends RoleContainerModel {
 
     List<GroupModel> getGroupsByParent(String parent);
 
+    /**
+     * 按名称查询组
+     * @param realm
+     * @param groupName
+     * @return
+     */
+    GroupModel getGroupByName(RealmModel realm, String groupName);
+
+
 }
