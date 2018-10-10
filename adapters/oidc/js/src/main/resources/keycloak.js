@@ -41,7 +41,7 @@
         }
 
         var useNonce = true;
-        
+
         kc.init = function (initOptions) {
             kc.authenticated = false;
 
@@ -148,11 +148,15 @@
                     case 'check-sso':
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
-                                checkLoginIframe().success(function () {
+                                return checkLoginIframe().success(function () {
                                     doLogin(false);
                                 }).error(function () {
                                     initPromise.setSuccess();
                                 });
+                            }).finally(() => {
+                                if (!wasPromiseResolved(initPromise)) {
+                                    initPromise.setError('[KEYCLOAK] Issue connecting to endpoint');
+                                }
                             });
                         } else {
                             doLogin(false);
@@ -294,7 +298,7 @@
             if (options && options.locale) {
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
-            
+
             if (options && options.kcLocale) {
                 url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
             }
@@ -1056,6 +1060,10 @@
             return p;
         }
 
+        function wasPromiseResolved(promiseObject) {
+            return promiseObject.hasOwnProperty('success');
+        }
+
         function setupCheckLoginIframe() {
             var promise = createPromise();
 
@@ -1223,7 +1231,7 @@
                     cordovaOptions.location = 'no';
                     if (userOptions && userOptions.prompt == 'none') {
                         cordovaOptions.hidden = 'yes';
-                    }                    
+                    }
                     return formatCordovaOptions(cordovaOptions);
                 };
 
@@ -1235,7 +1243,7 @@
                         var loginUrl = kc.createLoginUrl(options);
                         var ref = cordovaOpenWindowWrapper(loginUrl, '_blank', cordovaOptions);
                         var completed = false;
-                        
+
                         var closed = false;
                         var closeBrowser = function() {
                             closed = true;
@@ -1278,7 +1286,7 @@
 
                     logout: function(options) {
                         var promise = createPromise();
-                        
+
                         var logoutUrl = kc.createLogoutUrl(options);
                         var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
 
