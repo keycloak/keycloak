@@ -34,6 +34,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="groupsInRole", query="select m from GroupRoleMappingEntity m where m.roleId = :roleId"),
         @NamedQuery(name="groupHasRole", query="select m from GroupRoleMappingEntity m where m.group = :group and m.roleId = :roleId"),
         @NamedQuery(name="groupRoleMappings", query="select m from GroupRoleMappingEntity m where m.group = :group"),
         @NamedQuery(name="groupRoleMappingIds", query="select m.roleId from GroupRoleMappingEntity m where m.group = :group"),

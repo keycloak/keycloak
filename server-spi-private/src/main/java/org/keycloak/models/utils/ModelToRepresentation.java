@@ -186,6 +186,11 @@ public class ModelToRepresentation {
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
 
+        List<String> groups = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            groups.add(group.getName());
+        }
+        rep.setGroups(groups);
         return rep;
     }
 

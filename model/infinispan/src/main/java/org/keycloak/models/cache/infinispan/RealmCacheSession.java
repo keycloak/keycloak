@@ -1225,4 +1225,43 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         return list;
     }
+
+    @Override
+    public List<GroupModel> getRoleGroups(RealmModel realm, RoleModel role) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + role.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + role.getId());
+        if (queryDB) {
+            return getRealmDelegate().getRoleGroups(realm,role);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("getRoleGroups cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getRealmDelegate().getRoleGroups(realm,role);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getRoleGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (Objects.isNull(group)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().getRoleGroups(realm,role);
+            }
+            list.add(group);
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return list;
+    }
 }

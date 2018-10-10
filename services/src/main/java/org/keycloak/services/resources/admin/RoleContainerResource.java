@@ -21,15 +21,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -401,5 +395,29 @@ public class RoleContainerResource extends RoleResource {
         }
         return results; 
         
-    }    
+    }
+
+
+    @Path("{role-name}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
+                                                      @QueryParam("first") Integer firstResult,
+                                                      @QueryParam("max") Integer maxResults) {
+
+        auth.roles().requireView(roleContainer);
+        firstResult = firstResult != null ? firstResult : 0;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
+        RoleModel role = roleContainer.getRole(roleName);
+        List<GroupRepresentation> results = new ArrayList<GroupRepresentation>();
+        List<GroupModel> groupModels = session.realms().getRoleGroups(realm,role);
+
+        for (GroupModel group : groupModels) {
+            results.add(ModelToRepresentation.toRepresentation(group, false));
+        }
+        return results;
+
+    }
 }

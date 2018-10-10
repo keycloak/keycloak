@@ -88,4 +88,12 @@ public interface RealmProvider extends Provider, ClientProvider {
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
 
     List<GroupModel> getGroupsByParent(RealmModel realm, String parent);
+
+    /**
+     * 查询角色下的组
+     * @param realm
+     * @param role
+     * @return
+     */
+    List<GroupModel> getRoleGroups(RealmModel realm, RoleModel role);
 }
