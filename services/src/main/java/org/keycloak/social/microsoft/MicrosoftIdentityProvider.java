@@ -19,7 +19,6 @@ package org.keycloak.social.microsoft;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
@@ -28,20 +27,15 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ErrorResponseException;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import org.keycloak.services.validation.Validation;
 
 /**
  * 
- * Identity provider for Microsoft account. Uses OAuth 2 protocol of Windows Live Services as documented at <a href="https://msdn.microsoft.com/en-us/library/hh243647.aspx">https://msdn.microsoft.com/en-us/library/hh243647.aspx</a>  
+ * Identity provider for Microsoft account. Uses OAuth 2 protocol of Microsoft Graph as documented at
+ * <a href="https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/graph-oauth">https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/graph-oauth</a>
  * 
  * @author Vlastimil Elias (velias at redhat dot com)
  */
@@ -49,10 +43,10 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
 
     private static final Logger log = Logger.getLogger(MicrosoftIdentityProvider.class);
 
-    public static final String AUTH_URL = "https://login.live.com/oauth20_authorize.srf";
-    public static final String TOKEN_URL = "https://login.live.com/oauth20_token.srf";
-    public static final String PROFILE_URL = "https://apis.live.net/v5.0/me";
-    public static final String DEFAULT_SCOPE = "wl.basic,wl.emails";
+    public static final String AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"; // authorization code endpoint
+    public static final String TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"; // token endpoint
+    public static final String PROFILE_URL = "https://graph.microsoft.com/v1.0/me/"; // user profile service endpoint
+    public static final String DEFAULT_SCOPE = "User.read"; // the User.read scope should be sufficient to obtain all necessary user info
 
     public MicrosoftIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
@@ -72,52 +66,36 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     }
 
     @Override
-    protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
-        String URL = null;
-        try {
-            URL = PROFILE_URL + "?access_token=" + URLEncoder.encode(subjectToken, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        return SimpleHttp.doGet(URL, session);
-    }
-
-    @Override
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
-            String URL = PROFILE_URL + "?access_token=" + URLEncoder.encode(accessToken, "UTF-8");
-            if (log.isDebugEnabled()) {
-                log.debug("Microsoft Live user profile request to: " + URL);
-            }
-            JsonNode profile = SimpleHttp.doGet(URL, session).asJson();
-
+            JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).auth(accessToken).asJson();
             return extractIdentityFromProfile(null, profile);
         } catch (Exception e) {
-            throw new IdentityBrokerException("Could not obtain user profile from Microsoft Live ID.", e);
+            throw new IdentityBrokerException("Could not obtain user profile from Microsoft Graph", e);
         }
     }
 
     @Override
     protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
         String id = getJsonProperty(profile, "id");
-
-        String email = null;
-        if (profile.has("emails")) {
-            email = getJsonProperty(profile.get("emails"), "preferred");
-        }
-
         BrokeredIdentityContext user = new BrokeredIdentityContext(id);
 
+        String email = getJsonProperty(profile, "mail");
+        if (email == null && profile.has("userPrincipalName")) {
+            String username = getJsonProperty(profile, "userPrincipalName");
+            if (Validation.isEmailValid(username)) {
+                email = username;
+            }
+        }
         user.setUsername(email != null ? email : id);
-        user.setFirstName(getJsonProperty(profile, "first_name"));
-        user.setLastName(getJsonProperty(profile, "last_name"));
+        user.setFirstName(getJsonProperty(profile, "givenName"));
+        user.setLastName(getJsonProperty(profile, "surname"));
         if (email != null)
             user.setEmail(email);
         user.setIdpConfig(getConfig());
         user.setIdp(this);
 
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
         return user;
     }
 
