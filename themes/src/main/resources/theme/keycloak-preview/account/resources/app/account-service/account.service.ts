@@ -15,22 +15,22 @@
  * the License.
  */
  
-import {Injectable} from '@angular/core';
+/*import {Injectable} from '@angular/core';
 import {Http, Response, RequestOptionsArgs} from '@angular/http';
 
 import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 
-import {NotificationType} from 'patternfly-ng/notification';
+import {NotificationType} from 'patternfly-ng/notification';*/
  
  /**
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2017 Red Hat Inc.
  */
-@Injectable()
+//@Injectable()
 export class AccountServiceClient {
 
-    private accountUrl: string;
+ /*   private accountUrl: string;
 
     constructor(protected http: Http,
                 protected kcSvc: KeycloakService,
@@ -106,7 +106,7 @@ export class AccountServiceClient {
         }
         
         this.kcNotifySvc.notify(message, NotificationType.DANGER, response.json().params);
-    }
+    } */
 }
 
 

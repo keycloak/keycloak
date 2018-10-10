@@ -24,6 +24,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -74,16 +75,10 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         role1.setName("role1");
         testRealm.getRoles().getClient().put("service-client", Arrays.asList(role1));
 
-        // Create client scope 'audience-scope' and add as optional scope to the 'test-app' client
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("audience-scope");
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        testRealm.setClientScopes(Arrays.asList(clientScope));
-
+        // Disable FullScopeAllowed for the 'test-app' client
         ClientRepresentation testApp = testRealm.getClients().stream().filter((ClientRepresentation client) -> {
             return "test-app".equals(client.getClientId());
         }).findFirst().get();
-        testApp.setOptionalClientScopes(Arrays.asList("audience-scope"));
 
         testApp.setFullScopeAllowed(false);
 
@@ -103,6 +98,26 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         testRealm.getUsers().add(user);
     }
 
+    @Before
+    public void beforeTest() {
+        // Check if already exists
+        ClientScopeResource clientScopeRes = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        if (clientScopeRes != null) {
+            return;
+        }
+
+        // Create client scope 'audience-scope' and add as optional scope to the 'test-app' client
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("audience-scope");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response resp = testRealm().clientScopes().create(clientScope);
+        String clientScopeId = ApiUtil.getCreatedId(resp);
+        resp.close();
+
+        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        client.addOptionalClientScope(clientScopeId);
+    }
+
 
     @Test
     public void testAudienceProtocolMapperWithClientAudience() throws Exception {
@@ -120,7 +135,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid audience-scope", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
         // TODO: Frontend client itself should not be in the audiences of access token. Will be fixed in the future
         assertAudiences(tokens.accessToken, "test-app", "service-client");
         assertAudiences(tokens.idToken, "test-app");
@@ -152,7 +167,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid audience-scope", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
         // TODO: Frontend client itself should not be in the audiences of access token. Will be fixed in the future
         assertAudiences(tokens.accessToken, "test-app", "http://host/service/ctx1", "http://host/service/ctx2");
         assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");
@@ -176,7 +191,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email", "test-app");
         assertAudiences(tokens.accessToken, "test-app");
         assertAudiences(tokens.idToken, "test-app");
         Assert.assertFalse(tokens.accessToken.getResourceAccess().containsKey("service-client"));
@@ -199,7 +214,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, userId,"openid service-client", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid profile email service-client", "test-app");
         assertAudiences(tokens.accessToken, "test-app", "service-client");
         assertAudiences(tokens.idToken, "test-app");
         Assert.assertTrue(tokens.accessToken.getResourceAccess().containsKey("service-client"));

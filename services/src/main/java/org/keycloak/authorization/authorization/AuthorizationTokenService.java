@@ -42,12 +42,13 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.common.KeycloakEvaluationContext;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -92,7 +93,7 @@ public class AuthorizationTokenService {
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
+    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
@@ -103,7 +104,7 @@ public class AuthorizationTokenService {
                 try {
                     Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
                     authorizationRequest.setClaims(claims);
-                    return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
+                    return new DefaultEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
                 } catch (IOException cause) {
                     throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
                 }
@@ -114,7 +115,6 @@ public class AuthorizationTokenService {
         SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                RealmModel realm = authorization.getRealm();
                 String accessToken = authorizationRequest.getSubjectToken();
 
                 if (accessToken == null) {
@@ -122,7 +122,7 @@ public class AuthorizationTokenService {
                 }
 
                 IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, accessToken);
-                return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
+                return new DefaultEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
             } catch (OAuthErrorException cause) {
                 throw new RuntimeException("Failed to verify ID token", cause);
             }
@@ -151,7 +151,7 @@ public class AuthorizationTokenService {
             request.setClaims(ticket.getClaims());
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
-            KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
+            EvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
             Collection<Permission> permissions;
 
@@ -213,21 +213,21 @@ public class AuthorizationTokenService {
         return request.getClaimToken() != null && request.getKeycloakSession().getContext().getClient().isPublicClient() && request.getTicket() == null;
     }
 
-    private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
                 .evaluate(resourceServer, request);
     }
 
-    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
                 .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
     }
 
-    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(Permissions.all(resourceServer, identity, authorization, request), evaluationContext)
@@ -340,14 +340,14 @@ public class AuthorizationTokenService {
         return resourceServer;
     }
 
-    private KeycloakEvaluationContext createEvaluationContext(KeycloakAuthorizationRequest request) {
+    private EvaluationContext createEvaluationContext(KeycloakAuthorizationRequest request) {
         String claimTokenFormat = request.getClaimTokenFormat();
 
         if (claimTokenFormat == null) {
             claimTokenFormat = CLAIM_TOKEN_FORMAT_ID_TOKEN;
         }
 
-        BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
+        BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);

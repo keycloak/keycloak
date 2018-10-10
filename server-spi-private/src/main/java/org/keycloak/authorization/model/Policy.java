@@ -163,4 +163,6 @@ public interface Policy {
     void addResource(Resource resource);
 
     void removeResource(Resource resource);
+
+    boolean isFetched(String association);
 }

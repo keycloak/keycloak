@@ -99,7 +99,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.accept();
 
@@ -148,7 +148,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.cancel();
 
@@ -202,7 +202,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Open login form again and assert grant Page is shown
         oauth.openLoginForm();
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
     }
 
     @Test
@@ -346,7 +346,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, "foo-addr");
+        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "foo-addr");
         grantPage.accept();
 
         events.expectLogin()

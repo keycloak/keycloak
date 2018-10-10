@@ -224,6 +224,16 @@ public final class AuthorizationProvider implements Provider {
             public void close() {
                 storeFactory.close();
             }
+
+            @Override
+            public void setReadOnly(boolean readOnly) {
+                storeFactory.setReadOnly(readOnly);
+            }
+
+            @Override
+            public boolean isReadOnly() {
+                return storeFactory.isReadOnly();
+            }
         };
     }
 

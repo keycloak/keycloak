@@ -38,6 +38,7 @@ public class JPAStoreFactory implements StoreFactory {
     private final ResourceStore resourceStore;
     private final ScopeStore scopeStore;
     private final JPAPermissionTicketStore permissionTicketStore;
+    private boolean readOnly;
 
     public JPAStoreFactory(EntityManager entityManager, AuthorizationProvider provider) {
         policyStore = new JPAPolicyStore(entityManager, provider);
@@ -75,5 +76,15 @@ public class JPAStoreFactory implements StoreFactory {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
     }
 }

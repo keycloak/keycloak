@@ -65,7 +65,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     @Test
     public void migration2_5_5Test() throws Exception {
         testMigrationTo3_x();
-        testMigrationTo4_x();
+        testMigrationTo4_x(true, false);
     }
 
  }

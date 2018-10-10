@@ -72,8 +72,6 @@ import org.keycloak.util.JsonSerialization;
  */
 public class PolicyService {
 
-    @Context
-    private KeycloakSession session;
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
     protected final AdminPermissionEvaluator auth;
@@ -111,7 +109,7 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(String payload) {
+    public Response create(String payload, @Context KeycloakSession session) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
         }
@@ -121,7 +119,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(representation, representation.getId(), OperationType.CREATE);
+        audit(representation, representation.getId(), OperationType.CREATE, session);
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -328,7 +326,7 @@ public class PolicyService {
         });
     }
 
-    private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation) {
+    private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation, KeycloakSession session) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
             if (id != null) {
                 adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();

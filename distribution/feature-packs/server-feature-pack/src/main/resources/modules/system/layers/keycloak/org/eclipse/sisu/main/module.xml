@@ -22,7 +22,7 @@
     <resources>
         <artifact name="${org.eclipse.sisu:org.eclipse.sisu.inject}"/>
         <artifact name="${org.eclipse.sisu:org.eclipse.sisu.plexus}"/>
-        <artifact name="${org.sonatype.sisu.inject:guice-servlet}"/>
+        <artifact name="${com.google.inject.extensions:guice-servlet}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>

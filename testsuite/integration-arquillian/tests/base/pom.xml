@@ -142,6 +142,10 @@
             <type>war</type>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-c3p0</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -185,6 +189,9 @@
                         <exclude>${exclude.cors.tests}</exclude>
                         <exclude>${exclude.HoK}</exclude>
                     </excludes>
+                    <systemPropertyVariables>
+                        <com.mchange.v2.c3p0.VMID>testsuiteVmId</com.mchange.v2.c3p0.VMID>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         

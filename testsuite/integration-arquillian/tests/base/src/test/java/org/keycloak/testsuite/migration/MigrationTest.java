@@ -88,7 +88,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigratedData(false);
         testMigrationTo2_x();
         testMigrationTo3_x();
-        testMigrationTo4_x(false);
+        testMigrationTo4_x(false, false);
     }
 
     @Test

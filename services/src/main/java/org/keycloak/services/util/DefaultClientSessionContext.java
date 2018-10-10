@@ -141,6 +141,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 continue;
             }
 
+            if (!clientScope.isIncludeInTokenScope()) {
+                continue;
+            }
+
             if (first) {
                 first = false;
             } else {

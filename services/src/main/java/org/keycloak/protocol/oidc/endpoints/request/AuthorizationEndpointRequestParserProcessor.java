@@ -68,10 +68,11 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (requestParam != null) {
                 new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
-                InputStream is = session.getProvider(HttpClientProvider.class).get(requestUriParam);
-                String retrievedRequest = StreamUtil.readString(is);
+                try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUriParam)) {
+                    String retrievedRequest = StreamUtil.readString(is);
 
-                new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
+                    new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
+                }
             }
 
             return request;
