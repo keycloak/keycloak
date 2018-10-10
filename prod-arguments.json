@@ -16,7 +16,6 @@
       "dependencyOverride.org.infinispan:infinispan-core@org.keycloak:keycloak-saml-as7-adapter": "5.2.23.Final-redhat-1",
       "dependencyExclusion.org.osgi:org.osgi.core@*": "5.0.0",
       "dependencyExclusion.org.jboss.spec.javax.servlet:jboss-servlet-api_3.0_spec@*": "$EAP6SUPPORTED_ORG_JBOSS_SPEC_JAVAX_SERVLET_JBOSS_SERVLET_API_3_0_SPEC",
-      "dependencyExclusion.org.drools:drools-bom@*": "6.5.0.Final-redhat-19",
       "dependencyExclusion.org.jboss:jboss-parent@*": "19.0.0.redhat-2",
       "dependencyExclusion.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
       "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": ""
