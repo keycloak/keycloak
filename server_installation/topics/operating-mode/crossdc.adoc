@@ -400,6 +400,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="work" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </replicated-cache>
 ```
@@ -412,6 +415,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="sessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 ```
@@ -424,6 +430,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="offlineSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -431,6 +440,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="clientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -438,6 +450,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="offlineClientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -445,6 +460,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="loginFailures" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -454,6 +472,9 @@ In production you will likely need to have a separate database server in every d
     <remote-store cache="actionTokens" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="true" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+ifeval::[{project_product}==true]
+        <property name="protocolVersion">2.6</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 ```
@@ -862,3 +883,23 @@ which is caused by cache items not being properly expired. In that case, update 
 +
 you can just ignore them. To avoid the warning, the caches on {jdgserver_name} server side could be changed to transactional caches, but this is not recommended as it can cause some
 other issues caused by the bug https://issues.jboss.org/browse/ISPN-9323. So for now, the warnings just need to be ignored.
+
+* If you see errors in the {jdgserver_name} server log like:
++
+```
+12:08:32,921 ERROR [org.infinispan.server.hotrod.CacheDecodeContext] (HotRod-ServerWorker-7-11) ISPN005003: Exception reported: org.infinispan.server.hotrod.InvalidMagicIdException: Error reading magic byte or message id: 7
+	at org.infinispan.server.hotrod.HotRodDecoder.readHeader(HotRodDecoder.java:184)
+	at org.infinispan.server.hotrod.HotRodDecoder.decodeHeader(HotRodDecoder.java:133)
+	at org.infinispan.server.hotrod.HotRodDecoder.decode(HotRodDecoder.java:92)
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:411)
+	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:248)
+```
++
+and you see some similar errors in the {project_name} log, it can indicate that there are incompatible versions of the HotRod protocol being used.
+This is likely happen when you try to use {project_name} with the JDG 7.2 server or an old version of the Infinispan server. It
+will help if you add the `protocolVersion` property as an additional property to the `remote-store` element in the {project_name}
+configuration file. For example:
++
+```xml
+<property name="protocolVersion">2.6</property>
+```

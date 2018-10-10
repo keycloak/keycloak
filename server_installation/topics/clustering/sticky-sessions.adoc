@@ -33,11 +33,16 @@ over the `AUTH_SESSION_ID` cookie. How exactly do this is dependent on your load
 
 It is recommended on the {project_name} side to use the system property `jboss.node.name` during startup, with the value corresponding
 to the name of your route. For example, `-Djboss.node.name=node1` will use `node1` to identify the route. This route will be used by
-Infinispan caches and will be attached to the AUTH_SESSION_ID cookie when the node is the owner of the particular key. An example of the
-start up command with this system property can be seen in <<_example-setup-with-mod-cluster,Mod Cluster Example>>.
+Infinispan caches and will be attached to the AUTH_SESSION_ID cookie when the node is the owner of the particular key. Here is
+an example of the start up command using this system property:
+[source]
+----
+cd $RHSSO_NODE1
+./standalone.sh -c standalone-ha.xml -Djboss.socket.binding.port-offset=100 -Djboss.node.name=node1
+----
 
-Typically, the route name should be the same name as your backend host, but it is not necessary. You can use a different route name,
-for example if you want to hide the host name of your {project_name} server inside your private network.
+Typically in production environment the route name should use the same name as your backend host, but it is not required. You can
+use a different route name. For example, if you want to hide the host name of your {project_name} server inside your private network.
 
 ==== Disable adding the route
 
@@ -62,114 +67,3 @@ into your `RHSSO_HOME/standalone/configuration/standalone-ha.xml` file in the {p
 
 </subsystem>
 ----
-
-[[_example-setup-with-mod-cluster]]
-==== Example cluster setup with mod_cluster
-
-In the example, we will use link:http://mod-cluster.jboss.org/[Mod Cluster] as load balancer. One of the key features of mod cluster is, that there is not much
-configuration on the load balancer side. Instead it requires support on the backend node side. Backend nodes communicate with the load balancer through the
-dedicated protocol called MCMP and they notify loadbalancer about various events (eg. node joined or left cluster, new application was deployed etc).
-
-Example setup will consist of the one {appserver_name} {appserver_version} load balancer node and two {project_name} nodes.
-
-Clustering example require MULTICAST to be enabled on machine's loopback network interface. This can be done by running the following commands under root privileges (on Linux):
-
-[source]
-----
-route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
-ifconfig lo multicast
-----
-
-
-===== Load Balancer Configuration
-
-Unzip the {appserver_name} {appserver_version} server somewhere. Assumption is location `EAP_LB`
-
-Edit `EAP_LB/standalone/configuration/standalone.xml` file. In the undertow subsystem add the mod_cluster configuration under filters like this:
-
-[source,xml,subs="attributes+"]
-----
-<subsystem xmlns="{subsystem_undertow_xml_urn}">
- ...
- <filters>
-  ...
-  <mod-cluster name="modcluster" advertise-socket-binding="modcluster"
-      advertise-frequency="${modcluster.advertise-frequency:2000}"
-      management-socket-binding="http" enable-http2="true"/>
- </filters>
-----
-
-and `filter-ref` under `default-host` like this:
-
-[source,xml]
-----
-<host name="default-host" alias="localhost">
-    ...
-    <filter-ref name="modcluster"/>
-</host>
-----
-
-Then under `socket-binding-group` add this group:
-
-[source,xml]
-----
-<socket-binding name="modcluster" port="0"
-    multicast-address="${jboss.modcluster.multicast.address:224.0.1.105}"
-    multicast-port="23364"/>
-----
-
-Save the file and run the server:
-
-[source]
-----
-cd $WILDFLY_LB/bin
-./standalone.sh
-----
-
-
-===== Backend node configuration
-
-Unzip the {project_name} server distribution to some location. Assuming location is `RHSSO_NODE1` .
-
-Edit `RHSSO_NODE1/standalone/configuration/standalone-ha.xml` and configure datasource against the shared database.
-See <<_rdbms-setup-checklist, Database chapter >> for more details.
-
-In the undertow subsystem, add the `session-config` under the `servlet-container` element:
-
-[source,xml]
-----
-<servlet-container name="default">
-    <session-cookie name="AUTH_SESSION_ID" http-only="true" />
-    ...
-</servlet-container>
-----
-  
-WARNING: Use the `session-config` only with the mod_cluster load balancer. In other cases, configure sticky session over the `AUTH_SESSION_ID` cookie directly in a load balancer.
-
-Then you can configure `proxy-address-forwarding` as described in the chapter <<_setting-up-a-load-balancer-or-proxy, Load Balancer >> .
-Note that mod_cluster uses AJP connector by default, so you need to configure that one.
-
-That's all as mod_cluster is already configured.
-
-The node name of the {project_name} can be detected automatically based on the hostname of current server. However for more fine grained control,
-it is recommended to use system property `jboss.node.name` to specify the node name directly. It is especially useful in case that you test with 2 backend nodes on
-same physical server etc. So you can run the startup command like this:
-
-[source]
-----
-cd $RHSSO_NODE1
-./standalone.sh -c standalone-ha.xml -Djboss.socket.binding.port-offset=100 -Djboss.node.name=node1
-----
-
-Configure the second backend server in same way and run with different port offset and node name.
-
-[source]
-----
-cd $RHSSO_NODE2
-./standalone.sh -c standalone-ha.xml -Djboss.socket.binding.port-offset=200 -Djboss.node.name=node2
-----
-
-Access the server on `http://localhost:8080/auth` . Creation of admin user is possible just from local address and without load balancer (proxy) access,
-so you first need to access backend node directly on `http://localhost:8180/auth` to create admin user.
-
-WARNING: When using mod_cluster you should always access the cluster through the load balancer and not directly through the backend node.
