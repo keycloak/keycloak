@@ -25,6 +25,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.IdcardUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -148,6 +149,18 @@ public class UserResource {
     public Response updateUser(final UserRepresentation rep) {
 
         auth.users().requireManage(user);
+
+        if (rep.getIdcard() != null) {
+            if (!IdcardUtil.validateCard(rep.getIdcard())) {
+                return ErrorResponse.exists("User idcard is not validate ");
+            }
+
+            UserModel userModel = session.users().getUserByIdcard(rep.getIdcard(), realm);
+            if (userModel != null && !userModel.getId().equals(rep.getId())) {
+                return ErrorResponse.exists("User exists with same idcard ");
+            }
+        }
+
         try {
             Set<String> attrsToRemove;
             if (rep.getAttributes() != null) {
@@ -173,7 +186,7 @@ public class UserResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("User exists with same username or email");
+            return ErrorResponse.exists("User exists with same username or email or idcard");
         } catch (ReadOnlyException re) {
             return ErrorResponse.exists("User is read only!");
         } catch (ModelException me) {
@@ -202,6 +215,9 @@ public class UserResource {
         if (rep.getFederationLink() != null) user.setFederationLink(rep.getFederationLink());
 
         List<String> reqActions = rep.getRequiredActions();
+
+        if (rep.getIdcard() != null) user.setIdcard(rep.getIdcard());
+        user.setModifyTimestamp(System.currentTimeMillis());
 
         if (reqActions != null) {
             Set<String> allActions = new HashSet<>();

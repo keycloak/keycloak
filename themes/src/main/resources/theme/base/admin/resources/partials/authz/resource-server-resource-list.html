@@ -14,7 +14,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="6">
+            <th class="kc-table-actions" colspan="7">
                 <div class="form-inline">
                     {{:: 'filter' | translate}}:&nbsp;&nbsp;
                     <div class="form-group">
@@ -25,6 +25,14 @@
                             <div class="input-group-addon">
                                 <i class="fa fa-search" id="resourceSearch" type="submit"
                                    data-ng-click="firstPage()"></i>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'displayname' | translate}}" data-ng-model="query.type"
+                                   class="form-control search"
+                                   onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
                             </div>
                         </div>
                         <div class="input-group">
@@ -71,6 +79,7 @@
         <tr data-ng-hide="resources.length == 0">
             <th width="1%"></th>
             <th>{{:: 'name' | translate}}</th>
+            <th>{{:: 'displayName' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
             <th>{{:: 'authz-uris' | translate}}</th>
             <th>{{:: 'authz-owner' | translate}}</th>
@@ -79,7 +88,7 @@
         </thead>
         <tfoot data-ng-show="resources && (resources.length >= query.max || query.first > 0)">
         <tr>
-            <td colspan="6">
+            <td colspan="7">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' |
                         translate}}
@@ -103,6 +112,7 @@
             <td>
                 <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a>
             </td>
+            <td>{{resource.displayName}}</td>
             <td>
                 <span data-ng-show="resource.type">{{resource.type}}</span>
                 <span data-ng-show="!resource.type">{{:: 'authz-no-type-defined' | translate}}</span>

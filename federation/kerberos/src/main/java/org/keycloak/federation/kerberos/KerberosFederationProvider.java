@@ -272,4 +272,9 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
         return validate(realm, user);
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

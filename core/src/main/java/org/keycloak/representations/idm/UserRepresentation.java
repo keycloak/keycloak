@@ -57,6 +57,7 @@ public class UserRepresentation {
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
     protected Integer notBefore;
+    protected String idcard;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -282,5 +283,13 @@ public class UserRepresentation {
 
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
+    }
+
+    public String getIdcard() {
+        return idcard;
+    }
+
+    public void setIdcard(String idcard) {
+        this.idcard = idcard;
     }
 }

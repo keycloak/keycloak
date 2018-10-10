@@ -308,7 +308,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertUserRegistered(String userId, String username, String email) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+        events.expectLogin().detail("username", username).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);

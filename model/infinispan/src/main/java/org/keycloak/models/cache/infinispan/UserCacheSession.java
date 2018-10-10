@@ -107,7 +107,7 @@ public class UserCacheSession implements UserCache {
         return delegate;
     }
 
-    public void registerUserInvalidation(RealmModel realm,CachedUser user) {
+    public void registerUserInvalidation(RealmModel realm, CachedUser user) {
         cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), user.getRealm(), invalidations);
         invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), user.getRealm()));
     }
@@ -117,7 +117,7 @@ public class UserCacheSession implements UserCache {
         if (!transactionActive) throw new IllegalStateException("Cannot call evict() without a transaction");
         getDelegate(); // invalidations need delegate set
         if (user instanceof CachedUserModel) {
-            ((CachedUserModel)user).invalidate();
+            ((CachedUserModel) user).invalidate();
         } else {
             cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), realm.getId(), invalidations);
             invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), realm.getId()));
@@ -234,7 +234,6 @@ public class UserCacheSession implements UserCache {
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         logger.tracev("getUserByUsername: {0}", username);
-        username = username.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
             logger.tracev("realmInvalidations");
             return getDelegate().getUserByUsername(username, realm);
@@ -357,8 +356,8 @@ public class UserCacheSession implements UserCache {
     }
 
     private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
-        ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
-        ((OnUserCache)session.userCredentialManager()).onCache(realm, adapter, delegate);
+        ((OnUserCache) getDelegate()).onCache(realm, adapter, delegate);
+        ((OnUserCache) session.userCredentialManager()).onCache(realm, adapter, delegate);
     }
 
     @Override
@@ -465,8 +464,8 @@ public class UserCacheSession implements UserCache {
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembers(realm, role);
-    }    
-    
+    }
+
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
@@ -482,7 +481,6 @@ public class UserCacheSession implements UserCache {
     public UserModel findServiceAccount(ClientModel client) {
         String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
         logger.tracev("getServiceAccount: {0}", username);
-        username = username.toLowerCase();
         RealmModel realm = client.getRealm();
         if (realmInvalidations.contains(realm.getId())) {
             logger.tracev("realmInvalidations");
@@ -531,8 +529,6 @@ public class UserCacheSession implements UserCache {
     }
 
 
-
-
     @Override
     public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
         return getDelegate().getUsers(realm, includeServiceAccounts);
@@ -560,7 +556,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-         return getUsers(realm, firstResult, maxResults, false);
+        return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -784,7 +780,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-         fullyInvalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 
@@ -834,6 +830,7 @@ public class UserCacheSession implements UserCache {
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, role);
     }
+
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
@@ -860,7 +857,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
-        if (!component.getProviderType().equals(UserStorageProvider.class.getName()) && !component.getProviderType().equals(ClientStorageProvider.class.getName())) return;
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName()) && !component.getProviderType().equals(ClientStorageProvider.class.getName()))
+            return;
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, component);
 
@@ -886,4 +884,57 @@ public class UserCacheSession implements UserCache {
         invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));
     }
 
+
+    static String getUserByIdcardCacheKey(String realmId, String idcard) {
+        return realmId + ".idcard." + idcard;
+    }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        logger.tracev("getUserByIdcard: {0}", idcard);
+        if (realmInvalidations.contains(realm.getId())) {
+            logger.tracev("realmInvalidations");
+            return getDelegate().getUserByIdcard(idcard, realm);
+        }
+        String cacheKey = getUserByIdcardCacheKey(realm.getId(), idcard);
+        if (invalidations.contains(cacheKey)) {
+            logger.tracev("invalidations");
+            return getDelegate().getUserByIdcard(idcard, realm);
+        }
+        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
+
+        String userId = null;
+        if (query == null) {
+            logger.tracev("query null");
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            UserModel model = getDelegate().getUserByIdcard(idcard, realm);
+            if (model == null) {
+                logger.tracev("model from delegate null");
+                return null;
+            }
+            userId = model.getId();
+            if (invalidations.contains(userId)) return model;
+            if (managedUsers.containsKey(userId)) {
+                logger.tracev("return managed user");
+                return managedUsers.get(userId);
+            }
+
+            UserModel adapter = getUserAdapter(realm, userId, loaded, model);
+            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
+                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
+                cache.addRevisioned(query, startupRevision);
+            }
+            managedUsers.put(userId, adapter);
+            return adapter;
+        } else {
+            userId = query.getUsers().iterator().next();
+            if (invalidations.contains(userId)) {
+                logger.tracev("invalidated cache return delegate");
+                return getDelegate().getUserByIdcard(idcard, realm);
+
+            }
+            logger.trace("return getUserById");
+            return getUserById(userId, realm);
+        }
+    }
 }

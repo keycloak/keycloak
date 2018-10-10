@@ -86,7 +86,6 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             public void setUsername(String username) {
                 throw new RuntimeException("Unsupported");
             }
-
         };
     }
 
@@ -184,5 +183,11 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public void close() {
         closings.incrementAndGet();
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
+
 
 }

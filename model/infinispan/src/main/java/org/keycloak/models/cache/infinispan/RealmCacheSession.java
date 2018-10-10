@@ -1186,4 +1186,43 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
         getRealmDelegate().decreaseRemainingCount(realm, clientInitialAccess);
     }
+
+    @Override
+    public List<GroupModel> getGroupsByParent(RealmModel realm, String parent) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + parent);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + parent);
+        if (queryDB) {
+            return getRealmDelegate().getGroupsByParent(realm, parent);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("getGroupsByParent cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getRealmDelegate().getGroupsByParent(realm, parent);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getGroupsByParent cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (Objects.isNull(group)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().getGroupsByParent(realm, parent);
+            }
+            list.add(group);
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return list;
+    }
 }

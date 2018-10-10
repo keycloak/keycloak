@@ -46,6 +46,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private Set<String> roleMappings = new HashSet<>();
     private Set<String> groups = new HashSet<>();
     private int notBefore;
+    private String idcard;
+    private Long modifyTimestamp;
 
 
 
@@ -73,6 +75,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
             }
         }
         this.notBefore = notBefore;
+        this.idcard=user.getIdcard();
+        this.modifyTimestamp=user.getModifyTimestamp();
     }
 
     public String getRealm() {
@@ -133,5 +137,21 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public int getNotBefore() {
         return notBefore;
+    }
+
+    public String getIdcard() {
+        return idcard;
+    }
+
+    public void setIdcard(String idcard) {
+        this.idcard = idcard;
+    }
+
+    public Long getModifyTimestamp() {
+        return modifyTimestamp;
+    }
+
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        this.modifyTimestamp = modifyTimestamp;
     }
 }

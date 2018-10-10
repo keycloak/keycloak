@@ -63,6 +63,8 @@ public class InMemoryUserAdapter implements UserModel {
     private RealmModel realm;
     private String id;
     private boolean readonly;
+    private String idcard;
+    private Long modifyTimestamp;
 
     public InMemoryUserAdapter(KeycloakSession session, RealmModel realm, String id) {
         this.session = session;
@@ -102,7 +104,7 @@ public class InMemoryUserAdapter implements UserModel {
     @Override
     public void setUsername(String username) {
         checkReadonly();
-        this.username = username.toLowerCase();
+        this.username = username;
 
     }
 
@@ -360,6 +362,29 @@ public class InMemoryUserAdapter implements UserModel {
     public void deleteRoleMapping(RoleModel role) {
         roleIds.remove(role.getId());
 
+    }
+
+
+    @Override
+    public String getIdcard() {
+        return this.idcard;
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        checkReadonly();
+        this.idcard = idcard;
+    }
+
+    @Override
+    public Long getModifyTimestamp() {
+        return this.modifyTimestamp;
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        checkReadonly();
+        this.modifyTimestamp=modifyTimestamp;
     }
 
     @Override

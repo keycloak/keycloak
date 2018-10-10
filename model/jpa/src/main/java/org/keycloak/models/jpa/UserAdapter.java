@@ -77,7 +77,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setUsername(String username) {
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         user.setUsername(username);
     }
 
@@ -354,7 +353,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
         return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+                || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
@@ -431,9 +430,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel)container;
+                ClientModel appModel = (ClientModel) container;
                 if (appModel.getId().equals(app.getId())) {
-                   roles.add(role);
+                    roles.add(role);
                 }
             }
         }
@@ -462,6 +461,26 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
 
     @Override
+    public String getIdcard() {
+        return user.getIdcard();
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        user.setIdcard(idcard);
+    }
+
+    @Override
+    public Long getModifyTimestamp() {
+        return user.getModifyTimestamp();
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        user.setModifyTimestamp(modifyTimestamp);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;
@@ -474,7 +493,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
 
 
 }

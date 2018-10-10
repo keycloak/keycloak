@@ -1545,4 +1545,8 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getAttributes();
     }
 
+    @Override
+    public List<GroupModel> getGroupsByParent(String parent) {
+        return cacheSession.getGroupsByParent(this, parent);
+    }
 }

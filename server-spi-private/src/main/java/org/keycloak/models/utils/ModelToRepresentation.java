@@ -149,6 +149,7 @@ public class ModelToRepresentation {
         rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP));
         rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
+        rep.setIdcard(user.getIdcard());
 
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
 
@@ -163,6 +164,13 @@ public class ModelToRepresentation {
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }
+
+        List<String> groups = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            groups.add(group.getName());
+        }
+        rep.setGroups(groups);
+
         return rep;
     }
 
@@ -876,4 +884,53 @@ public class ModelToRepresentation {
 
         return representation;
     }
+
+
+    public static List<GroupRepresentation> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max, boolean full) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
+        if (Objects.isNull(groups)) return result;
+        for (GroupModel group : groups) {
+            GroupRepresentation rep = toGroupHierarchy(group, full);
+            result.add(rep);
+        }
+        return result;
+    }
+
+    /**
+     * 查询顶级group
+     *
+     * @param realm
+     * @param first
+     * @param max
+     * @return
+     */
+    public static List<GroupRepresentation> toTopLevelGroup(RealmModel realm, Integer first, Integer max) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.getTopLevelGroups(first, max);
+        if (Objects.isNull(result)) return result;
+        for (GroupModel group : groups) {
+            result.add(toRepresentation(group, true));
+        }
+        return result;
+    }
+
+
+    /**
+     * 查询子级goups
+     *
+     * @param realm
+     * @param parent
+     * @return
+     */
+    public static List<GroupRepresentation> toSubGroupsByParent(RealmModel realm, String parent) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.getGroupsByParent(parent);
+        if (Objects.isNull(result)) return result;
+        for (GroupModel group : groups) {
+            result.add(toRepresentation(group, false));
+        }
+        return result;
+    }
+
 }

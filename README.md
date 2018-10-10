@@ -23,6 +23,8 @@ First clone the Keycloak repository:
 To build Keycloak run:
 
     mvn install
+
+    mvn -Dmaven.test.skip clean install
     
 This will build all modules and run the testsuite. 
 

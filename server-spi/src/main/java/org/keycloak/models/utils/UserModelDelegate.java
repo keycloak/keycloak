@@ -212,14 +212,14 @@ public class UserModelDelegate implements UserModel {
     public UserModel getDelegate() {
         return delegate;
     }
-    
+
     @Override
-    public Long getCreatedTimestamp(){
+    public Long getCreatedTimestamp() {
         return delegate.getCreatedTimestamp();
     }
-    
+
     @Override
-    public void setCreatedTimestamp(Long timestamp){
+    public void setCreatedTimestamp(Long timestamp) {
         delegate.setCreatedTimestamp(timestamp);
     }
 
@@ -243,6 +243,27 @@ public class UserModelDelegate implements UserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         return delegate.isMemberOf(group);
+    }
+
+    @Override
+    public String getIdcard() {
+        return delegate.getIdcard();
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        delegate.setIdcard(idcard);
+    }
+
+
+    @Override
+    public Long getModifyTimestamp() {
+        return delegate.getModifyTimestamp();
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        delegate.setModifyTimestamp(modifyTimestamp);
     }
 
     @Override

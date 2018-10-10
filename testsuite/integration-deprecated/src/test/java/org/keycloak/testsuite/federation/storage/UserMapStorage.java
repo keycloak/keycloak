@@ -169,4 +169,10 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         closings.incrementAndGet();
 
     }
+
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

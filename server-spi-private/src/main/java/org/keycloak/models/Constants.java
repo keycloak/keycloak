@@ -71,7 +71,7 @@ public interface Constants {
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     String GENERATE = "GENERATE";
 
-    int DEFAULT_MAX_RESULTS = 100;
+    int DEFAULT_MAX_RESULTS = 20;
 
     String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
 }

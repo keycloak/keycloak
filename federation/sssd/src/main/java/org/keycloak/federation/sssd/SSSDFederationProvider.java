@@ -206,4 +206,9 @@ public class SSSDFederationProvider implements UserStorageProvider,
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
         return Collections.EMPTY_SET;
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

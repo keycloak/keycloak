@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.IdcardUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -110,6 +111,15 @@ public class UsersResource {
             return ErrorResponse.exists("User exists with same email");
         }
 
+        if(rep.getIdcard()!=null && !IdcardUtil.validateCard(rep.getIdcard())){
+            return ErrorResponse.exists("User idcard is not validate ");
+        }
+
+        if(rep.getIdcard()!=null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null){
+            return ErrorResponse.exists("User exists with same idcard ");
+        }
+
+
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             Set<String> emptySet = Collections.emptySet();
@@ -178,6 +188,7 @@ public class UsersResource {
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
+                                             @QueryParam("idcard") String idcard,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("briefRepresentation") Boolean briefRepresentation) {
@@ -211,6 +222,9 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
             }
+            if (idcard != null) {
+                attributes.put(UserModel.IDCARD, idcard);
+            }
             userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
         } else {
             userModels = session.users().getUsers(realm, firstResult, maxResults, false);
@@ -238,4 +252,18 @@ public class UsersResource {
 
         return session.users().getUsersCount(realm);
     }
+
+    @Path("username/{username}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByUsername(final @PathParam("username") String username) {
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            else throw new ForbiddenException();
+        }
+        return ModelToRepresentation.toRepresentation(session, realm, user);
+    }
+
 }

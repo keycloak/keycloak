@@ -697,4 +697,22 @@ public class JpaRealmProvider implements RealmProvider {
         model.setTimestamp(entity.getTimestamp());
         return model;
     }
+
+    @Override
+    public List<GroupModel> getGroupsByParent(RealmModel realm, String parent) {
+        GroupEntity groupEntity = em.find(GroupEntity.class, parent);
+        List<String> groupIds = em.createNamedQuery("getGroupIdsByParent", String.class)
+                .setParameter("parent", groupEntity).getResultList();
+        List<GroupModel> list = new ArrayList<>();
+        if (Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
+            for (String id : groupIds) {
+                GroupModel group = getGroupById(id, realm);
+                list.add(group);
+            }
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return Collections.unmodifiableList(list);
+    }
 }

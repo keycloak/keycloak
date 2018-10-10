@@ -62,6 +62,8 @@ public class ResourceRepresentation {
     @JsonDeserialize(using = StringListMapDeserializer.class)
     private Map<String, List<String>> attributes;
 
+    private Set<ResourceRepresentation> subResources;
+
     /**
      * Creates a new instance.
      *
@@ -272,6 +274,14 @@ public class ResourceRepresentation {
 
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
+    }
+
+    public Set<ResourceRepresentation> getSubResources() {
+        return subResources;
+    }
+
+    public void setSubResources(Set<ResourceRepresentation> subResources) {
+        this.subResources = subResources;
     }
 
     public boolean equals(Object o) {

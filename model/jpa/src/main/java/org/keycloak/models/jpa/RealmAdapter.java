@@ -2074,4 +2074,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return entityToModel(c);
     }
 
+    @Override
+    public List<GroupModel> getGroupsByParent(String parent) {
+        return session.realms().getGroupsByParent(this, parent);
+    }
 }

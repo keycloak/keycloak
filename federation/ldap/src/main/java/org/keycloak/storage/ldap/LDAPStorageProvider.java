@@ -765,5 +765,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return ldapUser;
     }
 
-
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

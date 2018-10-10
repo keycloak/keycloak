@@ -70,6 +70,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     private static final String USERNAME = "username";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
+    private static final String IDCARD = "idcard";
 
     private final KeycloakSession session;
     protected EntityManager em;
@@ -88,7 +89,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity entity = new UserEntity();
         entity.setId(id);
         entity.setCreatedTimestamp(System.currentTimeMillis());
-        entity.setUsername(username.toLowerCase());
+        entity.setUsername(username);
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
@@ -115,7 +116,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username, true, true);
     }
 
     @Override
@@ -487,7 +488,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -521,7 +522,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
-        query.setParameter("username", username.toLowerCase());
+        query.setParameter("username", username);
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
@@ -534,11 +535,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
-        
+
         if (results.isEmpty()) return null;
-        
+
         ensureEmailConstraint(results, realm);
-        
+
         return new UserAdapter(session, realm, em, results.get(0));
     }
 
@@ -651,7 +652,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -705,23 +706,26 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             String attribute = null;
             String parameterName = null;
             if (entry.getKey().equals(UserModel.USERNAME)) {
-                attribute = "lower(u.username)";
+                attribute = "u.username";
                 parameterName = JpaUserProvider.USERNAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                attribute = "lower(u.firstName)";
+                attribute = "u.firstName";
                 parameterName = JpaUserProvider.FIRST_NAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                attribute = "lower(u.lastName)";
+                attribute = "u.lastName";
                 parameterName = JpaUserProvider.LAST_NAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                attribute = "lower(u.email)";
+                attribute = "u.email";
                 parameterName = JpaUserProvider.EMAIL;
+            }else if (entry.getKey().equalsIgnoreCase(UserModel.IDCARD)) {
+                attribute = "u.idcard";
+                parameterName = JpaUserProvider.IDCARD;
             }
             if (attribute == null) continue;
             builder.append(" and ");
             builder.append(attribute).append(" like :").append(parameterName);
         }
-        builder.append(" order by u.username");
+        builder.append(" order by u.createdTimestamp desc");
         String q = builder.toString();
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         query.setParameter("realmId", realm.getId());
@@ -735,6 +739,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 parameterName = JpaUserProvider.LAST_NAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
                 parameterName = JpaUserProvider.EMAIL;
+            }else if (entry.getKey().equalsIgnoreCase(UserModel.IDCARD)) {
+                parameterName = JpaUserProvider.IDCARD;
             }
             if (parameterName == null) continue;
             query.setParameter(parameterName, "%" + entry.getValue().toLowerCase() + "%");
@@ -1003,28 +1009,38 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
-        
+
         if (users.size() > 1) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them
             // but duplicates haven't been removed.
             throw new ModelDuplicateException("Multiple users with email '" + user.getEmail() + "' exist in Keycloak.");
         }
-        
+
         if (realm.isDuplicateEmailsAllowed()) {
             return;
         }
-     
+
         if (user.getEmail() != null && !user.getEmail().equals(user.getEmailConstraint())) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them.
             // We need to update the email constraint to reflect this change in the user entities.
             user.setEmailConstraint(user.getEmail());
             em.persist(user);
-        }  
+        }
     }
 
     private UserEntity userInEntityManagerContext(String id) {
         UserEntity user = em.getReference(UserEntity.class, id);
         boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
         return isLoaded ? user : null;
+    }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByIdcard", UserEntity.class);
+        query.setParameter("idcard", idcard);
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new UserAdapter(session, realm, em, results.get(0));
     }
 }

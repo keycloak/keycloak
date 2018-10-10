@@ -78,6 +78,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
                 public void setUsername(String username) {
                     throw new RuntimeException("Unsupported");
                 }
+
             };
         } else {
             return new AbstractUserAdapter(session, realm, model) {
@@ -220,5 +221,10 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
     }
 }

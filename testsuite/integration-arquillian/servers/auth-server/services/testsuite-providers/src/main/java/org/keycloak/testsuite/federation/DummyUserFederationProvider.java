@@ -136,5 +136,10 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     public void close() {
 
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }
 

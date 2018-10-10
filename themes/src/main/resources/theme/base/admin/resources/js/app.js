@@ -899,7 +899,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'DefaultGroupsCtrl'
         })
-
+        .when('/realms/:realm/group-bind-users', {
+             templateUrl : resourceUrl + '/partials/group-bind-users.html',
+             resolve : {
+                realm : function(RealmLoader) {
+                     return RealmLoader();
+                }
+              },
+              controller : 'GroupBindUsersCtrl'
+        })
 
         .when('/create/role/:realm/clients/:client', {
             templateUrl : resourceUrl + '/partials/client-role-detail.html',

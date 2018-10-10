@@ -167,4 +167,9 @@ public class PassThroughFederatedUserStorageProvider implements
             }
         };
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

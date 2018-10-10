@@ -33,6 +33,7 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String EMAIL = "email";
     String LOCALE = "locale";
+    String IDCARD = "idcard";
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
@@ -119,6 +120,14 @@ public interface UserModel extends RoleMapperModel {
 
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
+
+    String getIdcard();
+
+    void setIdcard(String idcard);
+
+    Long getModifyTimestamp();
+
+    void setModifyTimestamp(Long modifyTimestamp);
 
     public static enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS

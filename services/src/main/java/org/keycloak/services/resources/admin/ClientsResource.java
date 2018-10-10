@@ -21,18 +21,20 @@ import static java.lang.Boolean.TRUE;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -43,6 +45,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -57,9 +60,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -216,6 +217,163 @@ public class ClientsResource {
         ClientResource clientResource = new ClientResource(realm, auth, clientModel, session, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;
+    }
+
+
+    @Path("{id}/clientRoleResourceByUser/{userId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Set<ResourceRepresentation> getClientRoleResourceByUser(final @PathParam("id") String id, final @PathParam("userId") String userId) {
+        auth.clients().requireView();
+
+        final Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
+        ClientModel clientModel = realm.getClientById(id);
+        if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
+            UserModel user = session.users().getUserById(userId, realm);
+            Set<RoleModel> userRoles = getUserRoles(user, clientModel);
+            policyStore.findByType("resource", resourceServer.getId()).forEach(policy -> {
+                policyToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
+            });
+            policyStore.findByType("scope", resourceServer.getId()).forEach(policy -> {
+                policyToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
+            });
+        } else {
+            throw new ForbiddenException();
+        }
+
+        return resourceRepresentations;
+    }
+
+    /**
+     *
+     * @param resourceRepresentations
+     * @param authorizationProvider
+     * @param resourceServer
+     * @param userRoles
+     * @param policy
+     */
+    private void policyToResource(Set<ResourceRepresentation> resourceRepresentations, AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
+        while (associatedPoliciesIterable.hasNext()) {
+            Policy associatedPolicie = associatedPoliciesIterable.next();
+            Map<String, String> config = new HashMap(associatedPolicie.getConfig());
+            String roles = associatedPolicie.getConfig().get("roles");
+            if (roles != null) {
+                List<Map<String, Object>> roleConfig;
+                try {
+                    roleConfig = JsonSerialization.readValue(roles, List.class);
+                } catch (Exception e) {
+                    throw new RuntimeException("Malformed configuration for role policy [" + policy.getName() + "].", e);
+                }
+                if (!roleConfig.isEmpty()) {
+                    for (Map<String, Object> roleMap : roleConfig) {
+                        if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
+                            for (Resource resource : policy.getResources()) {
+                                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    @Path("{id}/clientRoleSubResourceByUser/{userId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Set<ResourceRepresentation> getClientRoleSubResourceByUser(final @PathParam("id") String id, final @PathParam("userId") String userId) {
+        auth.clients().requireView();
+
+        final Set<ResourceRepresentation> representations = getClientRoleResourceByUser(id, userId);
+        final Map<String, Set<ResourceRepresentation>> representationMap = new HashMap<>();
+        final Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
+        Set<ResourceRepresentation> subResourceRepresentations;
+        for (ResourceRepresentation resourceRepresentation : representations) {
+            String parent = getSingleAttribute("parent", resourceRepresentation);
+            if (parent != null) {
+                if (representationMap.containsKey(parent)) {
+                    representationMap.get(parent).add(resourceRepresentation);
+                } else {
+                    subResourceRepresentations = new LinkedHashSet<>();
+                    subResourceRepresentations.add(resourceRepresentation);
+                    representationMap.put(parent, subResourceRepresentations);
+                }
+            } else {
+                resourceRepresentations.add(resourceRepresentation);
+            }
+        }
+
+        for (ResourceRepresentation resourceRepresentation : representations) {
+            String name = resourceRepresentation.getName();
+            if (representationMap.containsKey(name)) {
+                resourceRepresentation.getSubResources().addAll(representationMap.get(name));
+            }
+        }
+
+        return resourceRepresentations;
+    }
+
+
+    /**
+     * @param name
+     * @param resourceRepresentation
+     * @return
+     */
+    public String getSingleAttribute(String name, ResourceRepresentation resourceRepresentation) {
+        if (resourceRepresentation.getAttributes() == null) {
+            return null;
+        }
+        List<String> values = resourceRepresentation.getAttributes().getOrDefault(name, Collections.emptyList());
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.get(0);
+    }
+
+
+    /**
+     * 获得用户角色
+     *
+     * @param user
+     * @param client
+     * @return
+     */
+    private Set<RoleModel> getUserRoles(UserModel user, ClientModel client) {
+        Set<RoleModel> userRoles = new HashSet<>();
+        for (RoleModel roleModel : client.getRoles()) {
+            if (user.hasRole(roleModel)) {
+                userRoles.add(roleModel);
+            }
+        }
+        return userRoles;
+    }
+
+
+    /**
+     * 是否包角色
+     *
+     * @param roleModels
+     * @param roleId
+     * @return
+     */
+    private boolean containRole(Set<RoleModel> roleModels, String roleId) {
+        boolean bool = false;
+        for (RoleModel roleModel : roleModels) {
+            if (roleModel.getId().equals(roleId)) {
+                bool = true;
+                break;
+            }
+        }
+        return bool;
     }
 
 }

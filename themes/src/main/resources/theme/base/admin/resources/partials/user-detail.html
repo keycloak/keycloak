@@ -32,7 +32,13 @@
                            required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
                 </div>
             </div>
-
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="idcard">{{:: 'idcard' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="idcard" id="idcard"
+                           data-ng-model="user.idcard">
+                </div>
+            </div>
 
             <div class="form-group">
                 <label class="col-md-2 control-label" for="email">{{:: 'email' | translate}}</label>
@@ -50,6 +56,7 @@
                            data-ng-model="user.firstName">
                 </div>
             </div>
+            <!--
             <div class="form-group">
                 <label class="col-md-2 control-label" for="lastName">{{:: 'last-name' | translate}}</label>
 
@@ -58,7 +65,7 @@
                            data-ng-model="user.lastName">
                 </div>
             </div>
-
+            -->
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userEnabled">{{:: 'user-enabled' | translate}}</label>
                 <div class="col-md-6">
@@ -90,24 +97,23 @@
                 </div>
                 <kc-tooltip>{{:: 'user-origin.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="emailVerified">{{:: 'email-verified' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'email-verified.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="reqActions">{{:: 'required-user-actions' | translate}}</label>
+            <!--<div class="form-group clearfix block">-->
+                <!--<label class="col-md-2 control-label" for="emailVerified">{{:: 'email-verified' | translate}}</label>-->
+                <!--<div class="col-md-6">-->
+                    <!--<input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>-->
+                <!--</div>-->
+                <!--<kc-tooltip>{{:: 'email-verified.tooltip' | translate}}</kc-tooltip>-->
+            <!--</div>-->
+            <!--<div class="form-group clearfix">-->
+                <!--<label class="col-md-2 control-label" for="reqActions">{{:: 'required-user-actions' | translate}}</label>-->
 
-                <div class="col-md-6">
-                    <select ui-select2 id="reqActions" ng-model="user.requiredActions" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}" multiple>
-                        <option ng-repeat="action in userReqActionList" value="{{action.alias}}">{{action.name}}</option>
-                    </select>
-                </div>
-                <kc-tooltip>{{:: 'required-user-actions.tooltip' | translate}}</kc-tooltip>
-            </div>
-
+                <!--<div class="col-md-6">-->
+                    <!--<select ui-select2 id="reqActions" ng-model="user.requiredActions" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}" multiple>-->
+                        <!--<option ng-repeat="action in userReqActionList" value="{{action.alias}}">{{action.name}}</option>-->
+                    <!--</select>-->
+                <!--</div>-->
+                <!--<kc-tooltip>{{:: 'required-user-actions.tooltip' | translate}}</kc-tooltip>-->
+            <!--</div>-->
             <div class="form-group clearfix" data-ng-if="realm.internationalizationEnabled">
                 <label class="col-md-2 control-label" for="locale">{{:: 'locale' | translate}}</label>
                 <div class="col-md-6">

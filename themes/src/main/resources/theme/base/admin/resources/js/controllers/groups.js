@@ -502,3 +502,251 @@ module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, D
 
 });
 
+module.controller('GroupBindUsersCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, GroupMembership, UserGroupMapping, User, Notifications) {
+    $scope.realm = realm;
+    $scope.groupList = [];
+
+    $scope.searchTerms = '';
+    $scope.searchUserTerms = '';
+    $scope.currentPage = 1;
+    $scope.currentPageInput = $scope.currentPage;
+    $scope.pageSize = 20;
+    $scope.tree = [{
+          "id" : "",
+          "name": "Groups",
+          "subGroups" : []
+    }];
+
+    $scope.query = {
+        realm: realm.realm,
+        max : $scope.pageSize,
+        first : 0
+    };
+
+    var refreshGroups = function (search) {
+        console.log('refreshGroups');
+
+        var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        console.log('first:' + first);
+        var queryParams = {
+            realm : realm.realm,
+            first : first,
+            max : $scope.pageSize
+        };
+        var countParams = {
+            realm : realm.realm,
+            top : 'true'
+        };
+
+        if(angular.isDefined(search) && search !== '') {
+            queryParams.search = search;
+            countParams.search = search;
+        }
+        var promiseGetGroups = $q.defer();
+        Groups.query(queryParams, function(entry) {
+            promiseGetGroups.resolve(entry);
+        }, function() {
+            promiseGetGroups.reject('Unable to fetch ' + queryParams);
+        });
+        var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
+            console.log('*** group call groups size: ' + groups.length);
+            $scope.groupList = [
+                {
+                    "id" : "",
+                    "name": "Groups",
+                    "subGroups" : groups
+                }
+            ];
+        });
+
+        var promiseCount = $q.defer();
+        console.log('countParams: realm[' + countParams.realm);
+        GroupsCount.query(countParams, function(entry) {
+            promiseCount.resolve(entry);
+        }, function() {
+            promiseCount.reject('Unable to fetch ' + countParams);
+        });
+        var promiseCountChain   = promiseCount.promise.then(function(groupsCount) {
+            $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+         });
+    };
+    refreshGroups();
+
+    $scope.$watch('currentPage', function(newValue, oldValue) {
+        if(newValue !== oldValue) {
+            refreshGroups($scope.searchTerms);
+        }
+    });
+
+    $scope.clearSearch = function() {
+        $scope.searchTerms = '';
+        $scope.currentPage = 1;
+        refreshGroups();
+    };
+
+    $scope.searchGroup = function() {
+        $scope.currentPage = 1;
+        refreshGroups($scope.searchTerms);
+    };
+
+    var isLeaf = function(node) {
+        return node.id !== "realm" && (!node.subGroups || node.subGroups.length === 0);
+    };
+
+    $scope.getGroupClass = function(node) {
+        if (isLeaf(node)) {
+            return 'normal';
+        }
+        if (node.subGroups.length && node.collapsed) return 'collapsed';
+        if (node.subGroups.length && !node.collapsed) return 'expanded';
+        return 'collapsed';
+
+    };
+
+    $scope.getSelectedClass = function(node) {
+        if (node.selected) {
+            return 'selected';
+        } else if ($scope.cutNode && $scope.cutNode.id === node.id) {
+            return 'cut';
+        }
+        return undefined;
+    }
+
+    $scope.tree.selectNodeHead = function(node) {
+		node.collapsed = !node.collapsed;
+    	if ((!node.subGroups || !node.subGroups.length ) && node.id != ''){
+			var queryParams = {
+				realm : realm.realm,
+				first : 0,
+				max : $scope.pageSize,
+				parent: node.id
+			};
+    	     Groups.query(queryParams, function(entry) {
+                   promiseSubGroups.resolve(entry);
+             }, function() {
+                   promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
+             });
+             var promiseSubGroups = $q.defer();
+             var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
+                   console.log('*** subGroups call groups size: ' + groups.length);
+                   if(groups && groups.length > 0){
+                   		node.subGroups = groups;
+                   		node.collapsed = false;
+                   }else{
+                   	    Notifications.info("This group has no children.");
+                   }
+             });
+
+    	}
+    };
+
+
+    $scope.tree.selectNodeLabel = function(node) {
+        $scope.query.groupId = node.id;
+        if($scope.tree.currentNode && $scope.tree.currentNode.selected ) {
+        	$scope.tree.currentNode.selected = undefined;
+        }
+        node.selected = 'selected';
+        $scope.tree.currentNode = node;
+        $scope.groupMembers = GroupMembership.query($scope.query, function() {
+            console.log('user search loaded');
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    }
+
+    var getIndex = function(array, id) {
+        var tmpItem = {};
+        angular.forEach(array, function(item) {
+          if (item.id == id) {
+            tmpItem = item;
+          }
+        });
+        return array.indexOf(tmpItem);
+    }
+
+	var containGroup = function(array, id) {
+		var bool = false;
+        angular.forEach(array, function(item) {
+          if (item.id == id) {
+			  bool = true;
+              return false;
+          }
+        });
+		return bool;
+	}
+
+    $scope.leaveGroupMember = function(){
+        if (!$scope.selectedGroupMember || !$scope.tree.currentNode) {
+            return;
+        }
+        UserGroupMapping.remove({realm: realm.realm, userId: $scope.selectedGroupMember, groupId: $scope.tree.currentNode.id}, function() {
+			var tmpIdIndex = getIndex($scope.groupMembers, $scope.selectedGroupMember);
+			if ($scope.selectedGroupMember[tmpIdIndex].showConfirm == false) {
+				tmpIndex = realOptions.indexOf($scope.selectedGroupMember[tmpIdIndex].content);
+				realOptions.splice(tmpIndex, 1);
+			}
+			$scope.groupMembers.splice(tmpIdIndex, 1);
+            Notifications.success('Removed group member');
+        });
+    }
+
+
+    $scope.joinUser = function() {
+        if (!$scope.tree.currentNode) {
+            Notifications.error('Please select a group');
+            return;
+        };
+
+		if(containGroup($scope.groupMembers,$scope.selectedUser)==true){
+			Notifications.error('The user is added, Please select other user to add');
+            return;
+		}
+        var tmpIdIndex = getIndex($scope.users, $scope.selectedUser);
+        var currentUser = $scope.users[tmpIdIndex];
+        if(currentUser.groups && currentUser.groups.length > 0){
+            $scope.query.search = currentUser.groups[0];
+            Groups.query($scope.query, function(entry) {
+                UserGroupMapping.remove({realm: realm.realm, userId: currentUser.id, groupId: entry[0].id});
+            });
+        }
+
+        UserGroupMapping.update({realm: realm.realm, userId: $scope.selectedUser, groupId: $scope.tree.currentNode.id}, function() {
+			$scope.groupMembers.push(currentUser);
+            Notifications.success('Added group membership');
+        });
+
+    };
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchUser();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchUser();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchUser();
+    }
+
+    $scope.searchUser = function() {
+        $scope.query.search = $scope.searchUserTerms;
+        console.log("query.search: " + $scope.query.search);
+        $scope.searchLoaded = false;
+        $scope.users = User.query($scope.query, function() {
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
+
+
+});
+
+

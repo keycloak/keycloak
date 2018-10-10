@@ -99,7 +99,6 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public void setUsername(String username) {
         getDelegateForUpdate();
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         updated.setUsername(username);
     }
 
@@ -252,7 +251,7 @@ public class UserAdapter implements CachedUserModel {
     public void setFederationLink(String link) {
         getDelegateForUpdate();
         updated.setFederationLink(link);
-   }
+    }
 
     @Override
     public String getServiceAccountClientLink() {
@@ -304,8 +303,8 @@ public class UserAdapter implements CachedUserModel {
         if (cached.getRoleMappings().contains(role.getId())) return true;
 
         Set<RoleModel> mappings = getRoleMappings();
-        for (RoleModel mapping: mappings) {
-           if (mapping.hasRole(role)) return true;
+        for (RoleModel mapping : mappings) {
+            if (mapping.hasRole(role)) return true;
         }
         return RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
@@ -392,6 +391,27 @@ public class UserAdapter implements CachedUserModel {
     }
 
 
+    @Override
+    public String getIdcard() {
+        if (updated != null) return updated.getIdcard();
+        return cached.getIdcard();
+    }
 
+    @Override
+    public void setIdcard(String idcard) {
+        getDelegateForUpdate();
+        updated.setIdcard(idcard);
+    }
 
+    @Override
+    public Long getModifyTimestamp() {
+        if (updated != null) return updated.getModifyTimestamp();
+        return cached.getModifyTimestamp();
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        getDelegateForUpdate();
+        updated.setModifyTimestamp(modifyTimestamp);
+    }
 }
