@@ -21,6 +21,7 @@ import org.keycloak.common.Profile;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -29,15 +30,16 @@ public class ProfileInfoRepresentation {
 
     private String name;
     private List<String> disabledFeatures;
+    private List<String> previewFeatures;
+    private List<String> experimentalFeatures;
 
     public static ProfileInfoRepresentation create() {
         ProfileInfoRepresentation info = new ProfileInfoRepresentation();
 
         info.name = Profile.getName();
-        info.disabledFeatures = new LinkedList<>();
-        for (Profile.Feature f : Profile.getDisabledFeatures()) {
-            info.disabledFeatures.add(f.name());
-        }
+        info.disabledFeatures = names(Profile.getDisabledFeatures());
+        info.previewFeatures = names(Profile.getPreviewFeatures());
+        info.experimentalFeatures = names(Profile.getExperimentalFeatures());
 
         return info;
     }
@@ -48,6 +50,22 @@ public class ProfileInfoRepresentation {
 
     public List<String> getDisabledFeatures() {
         return disabledFeatures;
+    }
+
+    public List<String> getPreviewFeatures() {
+        return previewFeatures;
+    }
+
+    public List<String> getExperimentalFeatures() {
+        return experimentalFeatures;
+    }
+
+    private static List<String> names(Set<Profile.Feature> featureSet) {
+        List<String> l = new LinkedList();
+        for (Profile.Feature f : featureSet) {
+            l.add(f.name());
+        }
+        return l;
     }
 
 }
