@@ -194,7 +194,7 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=org.jboss.as \
       -DartifactId=jboss-as-dist \
-      -Dversion=7.5.0.Final-redhat-21 \
+      -Dversion=7.5.21.Final-redhat-1 \
       -Dpackaging=zip \
       -Dfile=/mydownloads/jboss-eap-6.4.0.zip
 
@@ -207,9 +207,9 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=com.redhat.fuse.eap \
       -DartifactId=fuse-eap-installer \
-      -Dversion=6.3.0.redhat-220 \
+      -Dversion=6.3.0.redhat-347 \
       -Dpackaging=jar \
-      -Dfile=/fuse-eap-installer-6.3.0.redhat-220.jar
+      -Dfile=/fuse-eap-installer-6.3.0.redhat-347.jar
 
 
 5) Prepare EAP6 with Hawtio and run the test
@@ -219,15 +219,16 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn -f testsuite/integration-arquillian/servers \
       clean install \
       -Pauth-server-wildfly \
-      -Papp-server-eap6-fuse \
-      -Dapp.server.jboss.version=7.5.0.Final-redhat-21 \
-      -Dfuse.installer.version=6.3.0.redhat-220
+      -Papp-server-eap6 \
+      -Dapp.server.jboss.version=7.5.21.Final-redhat-1 \
+      -Dfuse63.version=6.3.0.redhat-347
  
     # Run the test
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/eap6-fuse/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
-      -Papp-server-eap6-fuse  
+      -Papp-server-eap6 \
+      -Dtest=EAP6Fuse6HawtioAdapterTest
  
 
 ## Migration test
