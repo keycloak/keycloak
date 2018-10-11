@@ -1043,7 +1043,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testWithoutKeycloakConf() {
         customerPortalNoConf.navigateTo();
         String pageSource = driver.getPageSource();
-        assertThat(pageSource, anyOf(containsString("Forbidden"), containsString("HTTP Status 401")));
+        assertThat(pageSource, anyOf(containsString("Forbidden"), containsString("forbidden"), containsString("HTTP Status 401")));
     }
     
     // KEYCLOAK-3509
