@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
@@ -56,6 +57,7 @@ import java.util.Collections;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("ResourceServerService")
 public class ResourceServerService {
 
     private final AuthorizationProvider authorization;

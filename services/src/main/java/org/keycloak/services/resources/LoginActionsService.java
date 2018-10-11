@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -105,6 +106,7 @@ import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("LoginActionsService")
 public class LoginActionsService {
 
     private static final Logger logger = Logger.getLogger(LoginActionsService.class);

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -59,6 +60,7 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 @Path("/realms")
+@Api("RealmsResource")
 public class RealmsResource {
     protected static final Logger logger = Logger.getLogger(RealmsResource.class);
 

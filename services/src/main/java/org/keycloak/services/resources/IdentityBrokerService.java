@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -120,6 +121,7 @@ import java.util.UUID;
  *
  * @author Pedro Igor
  */
+@Api("IdentityBrokerService")
 public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
     // Authentication session note, which references identity provider that is currently linked

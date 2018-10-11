@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -51,6 +52,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Api("ClientScopeResource")
 public class ClientScopeResource {
     protected static final Logger logger = Logger.getLogger(ClientScopeResource.class);
     protected RealmModel realm;

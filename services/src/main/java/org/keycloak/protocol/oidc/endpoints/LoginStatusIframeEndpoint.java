@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import io.swagger.annotations.Api;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
@@ -29,7 +30,6 @@ import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
@@ -42,6 +42,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("LoginStatusIframeEndpoint")
 public class LoginStatusIframeEndpoint {
 
     @Context

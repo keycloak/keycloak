@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -50,7 +51,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +63,7 @@ import static org.keycloak.models.utils.RepresentationToModel.toModel;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("ScopeService")
 public class ScopeService {
 
     private final AuthorizationProvider authorization;

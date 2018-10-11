@@ -36,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -76,6 +77,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("PolicyEvaluationService")
 public class PolicyEvaluationService {
 
     private static final Logger logger = Logger.getLogger(PolicyEvaluationService.class);

@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -60,6 +61,7 @@ import javax.ws.rs.core.UriBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("LogoutEndpoint")
 public class LogoutEndpoint {
     private static final Logger logger = Logger.getLogger(LogoutEndpoint.class);
 

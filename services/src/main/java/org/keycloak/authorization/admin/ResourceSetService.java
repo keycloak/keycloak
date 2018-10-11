@@ -46,6 +46,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -75,6 +76,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("ResourceSetService")
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;

@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -46,6 +47,7 @@ import java.util.List;
  * @resource Client Initial Access
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("ClientInitialAccessResource")
 public class ClientInitialAccessResource {
 
     private final AdminPermissionEvaluator auth;

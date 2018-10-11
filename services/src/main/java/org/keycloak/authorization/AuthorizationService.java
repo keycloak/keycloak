@@ -20,12 +20,14 @@ package org.keycloak.authorization;
 
 import javax.ws.rs.Path;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.protection.ProtectionService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("AuthorizationService")
 public class AuthorizationService {
 
     private final AuthorizationProvider authorization;

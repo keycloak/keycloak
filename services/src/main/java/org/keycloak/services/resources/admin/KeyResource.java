@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
@@ -40,6 +41,7 @@ import java.util.Map;
  * @resource Key
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("KeyResource")
 public class KeyResource {
 
     private RealmModel realm;

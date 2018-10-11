@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -94,6 +95,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Api("SamlService")
 public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);

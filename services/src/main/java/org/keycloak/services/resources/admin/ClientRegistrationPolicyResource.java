@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
  * @resource Client Registration Policy
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Api("ClientRegistrationPolicyResource")
 public class ClientRegistrationPolicyResource {
 
     private final AdminPermissionEvaluator auth;

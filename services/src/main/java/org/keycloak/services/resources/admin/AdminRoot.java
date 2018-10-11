@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -59,6 +60,7 @@ import java.util.Properties;
  * @version $Revision: 1 $
  */
 @Path("/admin")
+@Api("Admin")
 public class AdminRoot {
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 

@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -67,6 +68,7 @@ import java.security.PublicKey;
 /**
  * @author Pedro Igor
  */
+@Api("OIDCIdentityProvider")
 public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 

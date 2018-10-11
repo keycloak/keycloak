@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -67,6 +71,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -110,6 +115,7 @@ import java.security.MessageDigest;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Api("TokenEndpoint")
 public class TokenEndpoint {
 
     private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
@@ -202,6 +208,19 @@ public class TokenEndpoint {
         ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
 
         return tokenIntrospectionEndpoint;
+    }
+
+    @Path("/realms/{realm}/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL + "/token/introspect")
+    @ApiOperation(value = "introspect", httpMethod = "post", response = TokenMetadataRepresentation.class, consumes = MediaType.APPLICATION_FORM_URLENCODED)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "realm", required = true, dataType = "string", paramType = "path"),
+            @ApiImplicitParam(name = "client_id", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "token", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "token_type_hint", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "client_secret", required = true, dataType = "string", paramType = "form")
+    })
+    public Object introspectSwagger() {
+        return this.introspect();
     }
 
     @OPTIONS

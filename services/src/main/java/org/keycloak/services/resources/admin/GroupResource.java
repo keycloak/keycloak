@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -56,6 +57,7 @@ import java.util.Set;
  * @resource Groups
  * @author Bill Burke
  */
+@Api("GroupResource")
 public class GroupResource {
 
     private final RealmModel realm;

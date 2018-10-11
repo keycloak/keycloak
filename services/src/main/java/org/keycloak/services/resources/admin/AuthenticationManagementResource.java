@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
@@ -77,6 +78,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
  * @resource Authentication Management
  * @author Bill Burke
  */
+@Api("AuthenticationManagementResource")
 public class AuthenticationManagementResource {
 
     private final RealmModel realm;

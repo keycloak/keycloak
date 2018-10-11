@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.jaxrs.config.BeanConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
@@ -171,6 +172,18 @@ public class KeycloakApplication extends Application {
             singletons.add(new WelcomeResource(bootstrapAdminUser.get()));
 
             setupScheduledTasks(sessionFactory);
+
+            //Swagger config
+            BeanConfig beanConfig = new BeanConfig();
+            beanConfig.setVersion("1.0.2");
+            beanConfig.setSchemes(new String[]{"http"});
+            beanConfig.setHost("localhost:8081");
+            beanConfig.setBasePath("/auth");
+            beanConfig.setResourcePackage("org.keycloak");
+            beanConfig.setScan(true);
+
+            classes.add(io.swagger.jaxrs.listing.ApiListingResource.class);
+            classes.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
         } catch (Throwable t) {
             if (!embedded) {
                 exit(1);
@@ -309,14 +322,14 @@ public class KeycloakApplication extends Application {
             throw new RuntimeException("Failed to load config", e);
         }
     }
-    
+
     private static String loadDmrConfig(ServletContext context) {
         String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
         if (dmrConfig == null) return null;
 
         ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
         if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-        
+
         // note that we need to resolve expressions BEFORE we convert to JSON
         return dmrConfigNode.resolve().toJSONString(true);
     }

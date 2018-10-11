@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.ws.rs.Path;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -37,6 +38,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("PolicyTypeService")
 public class PolicyTypeService extends PolicyService {
 
     private final String type;

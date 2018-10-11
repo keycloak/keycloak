@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -60,6 +61,7 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
  * @resource Identity Providers
  * @author Pedro Igor
  */
+@Api("IdentityProvidersResource")
 public class IdentityProvidersResource {
 
     private final RealmModel realm;

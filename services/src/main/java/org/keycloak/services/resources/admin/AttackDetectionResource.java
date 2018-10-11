@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
@@ -47,6 +48,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Api("AttackDetectionResource")
 public class AttackDetectionResource {
     protected static final Logger logger = Logger.getLogger(AttackDetectionResource.class);
     protected AdminPermissionEvaluator auth;

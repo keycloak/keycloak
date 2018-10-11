@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -40,6 +44,7 @@ import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
@@ -66,6 +71,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Api("OIDCLoginProtocolService")
 public class OIDCLoginProtocolService {
 
     private RealmModel realm;
@@ -176,6 +182,20 @@ public class OIDCLoginProtocolService {
         TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
+    }
+
+    @Path("/realms/{realm}/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL + "/token")
+    @ApiOperation(value = "token", httpMethod = "post", response = AccessTokenResponse.class, consumes = MediaType.APPLICATION_FORM_URLENCODED)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "realm", required = true, dataType = "string", paramType = "path"),
+            @ApiImplicitParam(name = "client_id", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "username", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "password", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "grant_type", required = true, dataType = "string", paramType = "form"),
+            @ApiImplicitParam(name = "client_secret", required = true, dataType = "string", paramType = "form")
+    })
+    public Object tokenSwagger() {
+        return this.token();
     }
 
     @Path("login-status-iframe.html")

@@ -18,8 +18,7 @@
 
 package org.keycloak.authorization.admin;
 
-import javax.ws.rs.Path;
-
+import io.swagger.annotations.Api;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
@@ -28,9 +27,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
+import javax.ws.rs.Path;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Api("AuthorizationService")
 public class AuthorizationService {
 
     private final AdminPermissionEvaluator auth;

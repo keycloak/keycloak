@@ -17,9 +17,9 @@
 
 package org.keycloak.broker.saml;
 
+import io.swagger.annotations.Api;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -100,6 +100,7 @@ import org.w3c.dom.NodeList;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Api("SAMLEndpoint")
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
