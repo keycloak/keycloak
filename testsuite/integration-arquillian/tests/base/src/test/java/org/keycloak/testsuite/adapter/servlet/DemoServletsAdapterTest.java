@@ -654,22 +654,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testVersion() {
-        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth");
-        WaitUtils.waitForPageToLoad();
-        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
-                "/auth/admin/master/console/#/server-info");
-        WaitUtils.waitForPageToLoad();
-        jsDriverTestRealmLoginPage.form().login("admin", "admin");
-
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
-
-        Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
-                "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
-        String serverVersion = null;
-        if (matcher.find()) {
-            serverVersion = matcher.group(1);
-        }
+        String serverVersion = adminClient.serverInfo().getInfo().getSystemInfo().getVersion();
 
         assertNotNull(serverVersion);
 
