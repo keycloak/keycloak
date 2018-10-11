@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.services.messages.Messages;
 
-import static org.keycloak.common.Profile.Feature.ACCOUNT2;
+import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
@@ -234,7 +234,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetSessions() throws IOException {
-        assumeFeatureEnabled(ACCOUNT2);
+        assumeFeatureEnabled(ACCOUNT_API);
         
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
@@ -243,14 +243,14 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetPasswordDetails() throws IOException {
-        assumeFeatureEnabled(ACCOUNT2);
+        assumeFeatureEnabled(ACCOUNT_API);
         
         getPasswordDetails();
     }
 
     @Test
     public void testPostPasswordUpdate() throws IOException {
-        assumeFeatureEnabled(ACCOUNT2);
+        assumeFeatureEnabled(ACCOUNT_API);
         
         //Get the time of lastUpdate
         AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
@@ -275,7 +275,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testPasswordConfirmation() throws IOException {
-        assumeFeatureEnabled(ACCOUNT2);
+        assumeFeatureEnabled(ACCOUNT_API);
         
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
 
@@ -318,7 +318,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDeleteSession() throws IOException {
-        assumeFeatureEnabled(ACCOUNT2);
+        assumeFeatureEnabled(ACCOUNT_API);
         
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
