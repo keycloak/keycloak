@@ -23,5 +23,11 @@
             <where>NAME LIKE 'group.resource.%'</where>
         </update>
     </changeSet>
+    
+    <changeSet author="gideonray@gmail.com" id="4.6.0-KEYCLOAK-8555">
+        <createIndex tableName="COMPONENT" indexName="IDX_COMPONENT_PROVIDER_TYPE">
+            <column name="PROVIDER_TYPE" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
  
 </databaseChangeLog>
