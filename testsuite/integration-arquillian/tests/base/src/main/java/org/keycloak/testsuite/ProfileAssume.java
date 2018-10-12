@@ -33,7 +33,6 @@ import java.util.Set;
  */
 public class ProfileAssume {
 
-    private static Set<String> disabledFeatures;
     private static String profile;
 
     static {
@@ -45,8 +44,6 @@ public class ProfileAssume {
             Keycloak adminClient = AdminClientUtil.createAdminClient(false, authServerContextRoot);
             ProfileInfoRepresentation profileInfo = adminClient.serverInfo().getInfo().getProfileInfo();
             profile = profileInfo.getName();
-            List<String> disabled = profileInfo.getDisabledFeatures();
-            disabledFeatures = Collections.unmodifiableSet(new HashSet<>(disabled));
             adminClient.close();
         } catch (Exception e) {
             throw new RuntimeException("Failed to obtain profile / features info from serverinfo endpoint of " + authServerContextRoot, e);
@@ -70,6 +67,6 @@ public class ProfileAssume {
     }
 
     private static boolean isFeatureEnabled(Profile.Feature feature) {
-        return !disabledFeatures.contains(feature.name());
+        return Profile.isFeatureEnabled(feature);
     }
 }
