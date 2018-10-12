@@ -16,12 +16,15 @@
  */
 package org.keycloak.locale;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.storage.ReadOnlyException;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
@@ -31,6 +34,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     protected static final String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
     protected static final String KC_LOCALE_PARAM = "kc_locale";
+    protected static final Logger log = Logger.getLogger(DefaultLocaleSelectorProvider.class);
 
     protected final KeycloakSession session;
 
@@ -153,7 +157,11 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     protected void updateUsersLocale(UserModel user, String locale) {
         if (!locale.equals(user.getFirstAttribute("locale"))) {
-            user.setSingleAttribute(UserModel.LOCALE, locale);
+            try {
+                user.setSingleAttribute(UserModel.LOCALE, locale);
+            } catch (ReadOnlyException e) {
+                log.warnf("Failed to update locale preference for user %s: %s", user.getUsername(), e.getMessage());
+            }
         }
     }
 
