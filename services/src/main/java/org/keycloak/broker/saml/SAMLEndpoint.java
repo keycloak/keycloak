@@ -87,12 +87,13 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import java.net.URI;
 import java.security.cert.CertificateException;
 import org.w3c.dom.Element;
 
 import java.util.*;
-import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
@@ -410,6 +411,22 @@ public class SAMLEndpoint {
 
                 if (config.isStoreToken()) {
                     identity.setToken(samlResponse);
+                }
+
+                ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+                try {
+                    String issuerURL = getEntityId(session.getContext().getUri(), realm);
+                    cvb.addAllowedAudience(URI.create(issuerURL));
+                    // getDestination has been validated to match request URL already so it matches SAML endpoint
+                    cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                } catch (IllegalArgumentException ex) {
+                    // warning has been already emitted in DeploymentBuilder
+                }
+                if (! cvb.build().isValid()) {
+                    logger.error("Assertion expired.");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
                 }
 
                 AuthnStatementType authn = null;

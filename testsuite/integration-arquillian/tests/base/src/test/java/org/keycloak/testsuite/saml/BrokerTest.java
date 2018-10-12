@@ -22,9 +22,13 @@ import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthent
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -36,6 +40,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -44,6 +49,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import javax.ws.rs.core.Response.Status;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.hamcrest.Matchers;
@@ -185,4 +192,72 @@ public class BrokerTest extends AbstractSamlTest {
         }
     }
 
+    @Test
+    public void testExpiredAssertion() throws Exception {
+        XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+        XMLGregorianCalendar notBeforeInPast = XMLTimeUtil.subtract(now, 60 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInPast = XMLTimeUtil.subtract(now, 59 * 60 * 1000);
+        XMLGregorianCalendar notBeforeInFuture = XMLTimeUtil.add(now, 59 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInFuture = XMLTimeUtil.add(now, 60 * 60 * 1000);
+        // Should not pass:
+        assertExpired(notBeforeInPast, notOnOrAfterInPast, false);
+        assertExpired(notBeforeInFuture, notOnOrAfterInPast, false);
+        assertExpired(null, notOnOrAfterInPast, false);
+        assertExpired(notBeforeInFuture, notOnOrAfterInFuture, false);
+        assertExpired(notBeforeInFuture, null, false);
+        // Should pass:
+        assertExpired(notBeforeInPast, notOnOrAfterInFuture, true);
+        assertExpired(notBeforeInPast, null, true);
+        assertExpired(null, notOnOrAfterInFuture, true);
+        assertExpired(null, null, true);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testNonexpiredAssertionShouldFail() throws Exception {
+        assertExpired(null, null, false);   // Expected result (false) is it should fail but it should pass and throw
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testExpiredAssertionShouldFail() throws Exception {
+        XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+        XMLGregorianCalendar notBeforeInPast = XMLTimeUtil.subtract(now, 60 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInPast = XMLTimeUtil.subtract(now, 59 * 60 * 1000);
+        assertExpired(notBeforeInPast, notOnOrAfterInPast, true);   // Expected result (true) is it should succeed but it should pass and throw
+    }
+
+    private void assertExpired(XMLGregorianCalendar notBefore, XMLGregorianCalendar notOnOrAfter, boolean shouldPass) throws Exception {
+        Status expectedStatus = shouldPass ? Status.OK : Status.BAD_REQUEST;
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/"))) {
+            new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+              // Virtually perform login at IdP (return artificial SAML response)
+              .processSamlResponse(REDIRECT)
+              .transformObject(this::createAuthnResponse)
+              .transformObject(resp -> {  // always invent a new user identified by a different email address
+                  ResponseType rt = (ResponseType) resp;
+                  AssertionType a = rt.getAssertions().get(0).getAssertion();
+
+                  NameIDType nameId = new NameIDType();
+                  nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()));
+                  nameId.setValue(UUID.randomUUID() + "@random.email.org");
+                  SubjectType subject = new SubjectType();
+                  SubjectType.STSubType subType = new SubjectType.STSubType();
+                  subType.addBaseID(nameId);
+                  subject.setSubType(subType);
+                  a.setSubject(subject);
+
+                  ConditionsType conditions = a.getConditions();
+                  conditions.setNotBefore(notBefore);
+                  conditions.setNotOnOrAfter(notOnOrAfter);
+                  return rt;
+              })
+              .targetAttributeSamlResponse()
+              .targetUri(getSamlBrokerUrl(REALM_NAME))
+              .build()
+              .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(expectedStatus))
+              .execute();
+        }
+    }
 }
