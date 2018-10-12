@@ -22,7 +22,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -61,27 +60,8 @@ public class ConsoleUsernamePasswordAuthenticator extends AbstractUsernameFormAu
     }
 
     @Override
-    protected Response invalidUser(AuthenticationFlowContext context) {
-        Response response = challenge(context).message(Messages.INVALID_USER);
-        return response;
-    }
-
-    @Override
-    protected Response disabledUser(AuthenticationFlowContext context) {
-        Response response = challenge(context).message(Messages.ACCOUNT_DISABLED);
-        return response;
-    }
-
-    @Override
-    protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
-        Response response = challenge(context).message(Messages.INVALID_USER);
-        return response;
-    }
-
-    @Override
-    protected Response invalidCredentials(AuthenticationFlowContext context) {
-        Response response = challenge(context).message(Messages.INVALID_USER);
-        return response;
+    protected Response challenge(AuthenticationFlowContext context, String error) {
+        return challenge(context).message(error);
     }
 
     @Override
