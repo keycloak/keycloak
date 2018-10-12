@@ -49,14 +49,14 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
         String authorizationHeader = getAuthorizationHeader(context);
 
         if (authorizationHeader == null) {
-            context.challenge(challengeResponse(context));
+            context.challenge(challenge(context, null));
             return;
         }
 
         String[] challenge = getChallenge(authorizationHeader);
 
         if (challenge == null) {
-            context.challenge(challengeResponse(context));
+            context.challenge(challenge(context, null));
             return;
         }
 
@@ -64,9 +64,6 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
             context.success();
             return;
         }
-
-        context.setUser(null);
-        context.challenge(challengeResponse(context));
     }
 
     protected boolean onAuthenticate(AuthenticationFlowContext context, String[] challenge) {
@@ -105,28 +102,13 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
     }
 
     @Override
-    protected Response invalidUser(AuthenticationFlowContext context) {
-        return challengeResponse(context);
-    }
-
-    @Override
-    protected Response disabledUser(AuthenticationFlowContext context) {
-        return challengeResponse(context);
-    }
-
-    @Override
-    protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
-        return challengeResponse(context);
-    }
-
-    @Override
-    protected Response invalidCredentials(AuthenticationFlowContext context) {
-        return challengeResponse(context);
-    }
-
-    @Override
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
-        return challengeResponse(context);
+        return challenge(context, null);
+    }
+
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error) {
+        return Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, getHeader(context)).build();
     }
 
     @Override
@@ -146,10 +128,6 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
     @Override
     public void close() {
 
-    }
-
-    private Response challengeResponse(AuthenticationFlowContext context) {
-        return Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, getHeader(context)).build();
     }
 
     private String getHeader(AuthenticationFlowContext context) {
