@@ -92,10 +92,21 @@ public class JpaRealmProvider implements RealmProvider {
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         return adapter;
     }
+    
+    @Override
+    public List<RealmModel> getRealmsWithProviderType(Class<?> providerType) {
+        TypedQuery<String> query = em.createNamedQuery("getRealmIdsWithProviderType", String.class);
+        query.setParameter("providerType", providerType.getName());
+        return getRealms(query);
+    }
 
     @Override
     public List<RealmModel> getRealms() {
         TypedQuery<String> query = em.createNamedQuery("getAllRealmIds", String.class);
+        return getRealms(query);
+    }
+
+    private List<RealmModel> getRealms(TypedQuery<String> query) {
         List<String> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();
         for (String id : entities) {
