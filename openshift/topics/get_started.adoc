@@ -28,7 +28,7 @@ To update to the latest {project_openshift_product_name} images, run the followi
 ----
 $ oc login -u system:admin
 ----
-. Run the following commands to update the core set of RH-SSO 7.2 resources for OpenShift in the `openshift` project:
+. Run the following commands to update the core set of {project_name_abbr} {project_version} resources for OpenShift in the `openshift` project:
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -46,7 +46,7 @@ do
   https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/{project_templates_version}-dev/templates/${resource}
 done
 ----
-. Run the following command to install the RH-SSO 7.2 OpenShift image streams in the `openshift` project:
+. Run the following command to install the {project_name_abbr} {project_version} OpenShift image streams in the `openshift` project:
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -110,24 +110,24 @@ $ oc secrets link <pass:quotes[_service-account-name_]> <pass:quotes[_sso-ssl-se
 ////
 
 [[sso-administrator-setup]]
-==== Creating Administrator Account for Red Hat Single Sign-On Server
+==== Creating Administrator Account for {project_name} Server
 
-Red Hat Single Sign-On does not provide any pre-configured management account out of the box. This administrator account is necessary for logging into the `master` realm's management console and perform server maintenance operations such as, creating realms or users, or registering applications intended to be secured by Red Hat Single Sign-On.
+{project_name} does not provide any pre-configured management account out of the box. This administrator account is necessary for logging into the `master` realm's management console and perform server maintenance operations such as, creating realms or users, or registering applications intended to be secured by {project_name}.
 
 The administrator account can be created:
 
-* By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the RH-SSO application template, or
-* By xref:sso-admin-remote-shell[a remote shell session to particular RH-SSO pod], if the {project_openshift_product_name} image is deployed without an application template.
+* By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the {project_name_abbr} application template, or
+* By xref:sso-admin-remote-shell[a remote shell session to particular {project_name_abbr} pod], if the {project_openshift_product_name} image is deployed without an application template.
 
 [NOTE]
 ====
-Red Hat Single Sign-On allows an initial administrator account creation via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form. But only if the `Welcome Page` is accessed from a localhost, this method of administrator account creation is not applicable for {project_openshift_product_name} image.
+{project_name} allows an initial administrator account creation via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form. But only if the `Welcome Page` is accessed from a localhost, this method of administrator account creation is not applicable for {project_openshift_product_name} image.
 ====
 
 [[sso-admin-template-parameters]]
-===== Creating RH-SSO Administrator Account via Template Parameters
+===== Creating {project_name_abbr} Administrator Account via Template Parameters
 
-When deploying RH-SSO application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the RH-SSO server's administrator account to be created for the `master` realm.
+When deploying {project_name_abbr} application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name_abbr} server's administrator account to be created for the `master` realm.
 
 [NOTE]
 ====
@@ -136,25 +136,25 @@ When deploying RH-SSO application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADM
 
 [IMPORTANT]
 ====
-The lifespan of the RH-SSO server's administrator account depends upon the the storage type used to store the RH-SSO server's database:
+The lifespan of the {project_name_abbr} server's administrator account depends upon the the storage type used to store the {project_name_abbr} server's database:
 
-* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exist throughout the lifecycle of the particular RH-SSO pod (stored account data is lost upon pod destruction),
-* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exist throughout the lifecycle of the database pod (even if RH-SSO pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
-* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both, the RH-SSO and the database pods are destructed.
+* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exist throughout the lifecycle of the particular {project_name_abbr} pod (stored account data is lost upon pod destruction),
+* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exist throughout the lifecycle of the database pod (even if {project_name_abbr} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
+* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both, the {project_name_abbr} and the database pods are destructed.
 
-It is a common practice to deploy an RH-SSO application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new RH-SSO application needs to be instantiated).
+It is a common practice to deploy an {project_name_abbr} application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new {project_name_abbr} application needs to be instantiated).
 ====
 
 [WARNING]
 ====
-In the case of *ephemeral or persistent database mode*, after creating the RH_SSO server's administrator account, remove the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables from the deployment config before deploying new RH-SSO applications.
+In the case of *ephemeral or persistent database mode*, after creating the RH_SSO server's administrator account, remove the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables from the deployment config before deploying new {project_name_abbr} applications.
 ====
 
 [IMPORTANT]
 ====
-Run the following commands to prepare the previously created deployment config of the RH-SSO application for reuse after the administrator account has been created:
+Run the following commands to prepare the previously created deployment config of the {project_name_abbr} application for reuse after the administrator account has been created:
 
-. Identify the deployment config of the RH-SSO application.
+. Identify the deployment config of the {project_name_abbr} application.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -171,11 +171,11 @@ $ oc env dc/sso -e SSO_ADMIN_USERNAME="" SSO_ADMIN_PASSWORD=""
 ====
 
 [[sso-admin-remote-shell]]
-===== Creating RH-SSO Administrator Account via Remote Shell Session to RH-SSO Pod
+===== Creating {project_name_abbr} Administrator Account via Remote Shell Session to {project_name_abbr} Pod
 
-Run following commands to create administrator account for the `master` realm of the RH-SSO server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the RH-SSO application pod has been started:
+Run following commands to create administrator account for the `master` realm of the {project_name_abbr} server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the {project_name_abbr} application pod has been started:
 
-. Identify the RH-SSO application pod.
+. Identify the {project_name_abbr} application pod.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -191,7 +191,7 @@ sso-mysql-6-d97pf   1/1       Running   0          2m
 $ oc rsh sso-12-pt93n
 sh-4.2$
 ----
-. Create the RH-SSO server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
+. Create the {project_name_abbr} server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -217,9 +217,9 @@ sh-4.2$ ./jboss-cli.sh --connect ':reload'
 +
 [WARNING]
 ====
-When restarting the server it is important to restart just the JBoss EAP process within the running RH-SSO container, and not the whole container. Because restarting the whole container recreates it from scratch, without the RH-SSO server administration account for the `master` realm to be created.
+When restarting the server it is important to restart just the JBoss EAP process within the running {project_name_abbr} container, and not the whole container. Because restarting the whole container recreates it from scratch, without the {project_name_abbr} server administration account for the `master` realm to be created.
 ====
-. Log into the `master` realm's administration console of the RH-SSO server using the the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the RH-SSO web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted RH-SSO web server, and specify user name and password used to create the administrator user.
+. Log into the `master` realm's administration console of the {project_name_abbr} server using the the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name_abbr} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name_abbr} web server, and specify user name and password used to create the administrator user.
 
 ==== Using the OpenShift Web Console
 Log in to the OpenShift web console:
@@ -229,14 +229,14 @@ Log in to the OpenShift web console:
 . Select an application template and configure the deployment parameters as required.
 . Click *Create* to deploy the application template.
 
-These are some of the more common variables to configure an RH-SSO deployment:
+These are some of the more common variables to configure an {project_name_abbr} deployment:
 
 [cols="2*", options="header"]
 |===
 |Variable
 |Description
 |*_APPLICATION_NAME_*
-|The name for the RH-SSO application.
+|The name for the {project_name_abbr} application.
 
 |*_HOSTNAME_HTTPS_*
 |Custom hostname for https service route. Leave blank for default hostname of _<application-name>.<project>.<default-domain-suffix>_
@@ -263,47 +263,47 @@ These are some of the more common variables to configure an RH-SSO deployment:
 |The name of the secret containing the JGroups keystore file.
 
 |*_SSO_ADMIN_USERNAME_*
-|Username of the administrator account for the `master` realm of the RH-SSO server. *Required.* If no value is specified, it is auto generated and displayed as an OpenShift instructional message when the template is instantiated.
+|Username of the administrator account for the `master` realm of the {project_name_abbr} server. *Required.* If no value is specified, it is auto generated and displayed as an OpenShift instructional message when the template is instantiated.
 
 |*_SSO_ADMIN_PASSWORD_*
-|Password of the administrator account for the `master` realm of the RH-SSO server. *Required.* If no value is specified, it is auto generated and displayed as an OpenShift instructional message when the template is instantiated.
+|Password of the administrator account for the `master` realm of the {project_name_abbr} server. *Required.* If no value is specified, it is auto generated and displayed as an OpenShift instructional message when the template is instantiated.
 
 |*_SSO_REALM_*
-|The name of an additional RH-SSO realm to create during deployment.
+|The name of an additional {project_name_abbr} realm to create during deployment.
 
 |*_SSO_SERVICE_USERNAME_*
-|RH-SSO service user name to manage the realm.
+|{project_name_abbr} service user name to manage the realm.
 
 |*_SSO_SERVICE_PASSWORD_*
-|RH-SSO service user password.
+|{project_name_abbr} service user password.
 |===
 
-See the xref:env_vars[Reference chapter] for a more comprehensive list of the RH-SSO environment variables.
-See the xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} Image] for an end-to-end example of RH-SSO deployment.
+See the xref:env_vars[Reference chapter] for a more comprehensive list of the {project_name_abbr} environment variables.
+See the xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} Image] for an end-to-end example of {project_name_abbr} deployment.
 
 ==== Routes
 
-The {project_openshift_product_name} templates use TLS passthrough termination for routes by default. This means that the destination route receives encrypted traffic without the OpenShift router providing TLS termination. Users do not need the relevant SSL certificate to connect to the RH-SSO login page.
+The {project_openshift_product_name} templates use TLS passthrough termination for routes by default. This means that the destination route receives encrypted traffic without the OpenShift router providing TLS termination. Users do not need the relevant SSL certificate to connect to the {project_name_abbr} login page.
 
 For more information on OpenShift route types, see the link:https://docs.openshift.com/container-platform/3.7/architecture/networking/routes.html#route-types[Networking chapter] of the OpenShift Architecture Guide.
 
 ==== Deployment Process
 
-Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the RH-SSO servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the RH-SSO web server.
+Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name_abbr} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name_abbr} web server.
 
-After the RH-SSO web server pod has started, it can be accessed at its custom configured hostnames, or at the default hostnames:
+After the {project_name_abbr} web server pod has started, it can be accessed at its custom configured hostnames, or at the default hostnames:
 
-* *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the RH-SSO web server, and
-* *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted RH-SSO web server.
+* *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name_abbr} web server, and
+* *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name_abbr} web server.
 
 Use the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
 
 [[SSO-Clients]]
-==== RH-SSO Clients
+==== {project_name_abbr} Clients
 
-Clients are RH-SSO entities that request user authentication. A client can be an application requesting RH-SSO to provide user authentication, or it can be making requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the Red Hat Single Sign-On documentation] for more information.
+Clients are {project_name_abbr} entities that request user authentication. A client can be an application requesting {project_name_abbr} to provide user authentication, or it can be making requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the {project_name} documentation] for more information.
 
-RH-SSO provides link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#saml_clients[SAML] client protocols. +
+{project_name_abbr} provides link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#saml_clients[SAML] client protocols. +
 OpenID-Connect is the preferred protocol and utilizes three different access types:
 
 - *public*: Useful for JavaScript applications that run directly in the browser and require no server configuration.
@@ -327,16 +327,16 @@ The following is an example snippet for the application *web.xml* to configure a
 ----
 
 [[Auto-Man-Client-Reg]]
-==== Automatic and Manual RH-SSO Client Registration Methods
-A client application can be automatically registered to an RH-SSO realm by using credentials passed in variables specific to the *_eap64-sso-s2i_*,  *_eap70-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates.
+==== Automatic and Manual {project_name_abbr} Client Registration Methods
+A client application can be automatically registered to an {project_name_abbr} realm by using credentials passed in variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates.
 
-Alternatively, you can manually register the client application by configuring and exporting the RH-SSO client adapter and including it in the client application configuration.
+Alternatively, you can manually register the client application by configuring and exporting the {project_name_abbr} client adapter and including it in the client application configuration.
 
-==== Automatic RH-SSO Client Registration
+==== Automatic {project_name_abbr} Client Registration
 
-Automatic RH-SSO client registration is determined by RH-SSO environment variables specific to the *_eap64-sso-s2i_*,  *_eap70-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates. The RH-SSO credentials supplied in the template are then used to register the client to the RH-SSO realm during deployment of the client application.
+Automatic {project_name_abbr} client registration is determined by {project_name_abbr} environment variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates. The {project_name_abbr} credentials supplied in the template are then used to register the client to the {project_name_abbr} realm during deployment of the client application.
 
-The RH-SSO environment variables included in the *_eap64-sso-s2i_*,  *_eap70-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates are:
+The {project_name_abbr} environment variables included in the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates are:
 
 [cols="2*", options="header"]
 |===
@@ -349,10 +349,10 @@ The RH-SSO environment variables included in the *_eap64-sso-s2i_*,  *_eap70-sso
 |Custom hostname for https service route. Leave blank for default hostname of <application-name>.<project>.<default-domain-suffix>
 
 |*_SSO_URL_*
-|The RH-SSO web server authentication address: $$https://secure-sso-$$_<project-name>_._<hostname>_/auth
+|The {project_name_abbr} web server authentication address: $$https://secure-sso-$$_<project-name>_._<hostname>_/auth
 
 |*_SSO_REALM_*
-|The RH-SSO realm created for this procedure.
+|The {project_name_abbr} realm created for this procedure.
 
 |*_SSO_USERNAME_*
 |The name of the _realm management user_.
@@ -361,16 +361,16 @@ The RH-SSO environment variables included in the *_eap64-sso-s2i_*,  *_eap70-sso
 | The password of the user.
 
 |*_SSO_PUBLIC_KEY_*
-|The public key generated by the realm. It is located in the *Keys* tab of the *Realm Settings* in the RH-SSO console.
+|The public key generated by the realm. It is located in the *Keys* tab of the *Realm Settings* in the {project_name_abbr} console.
 
 |*_SSO_BEARER_ONLY_*
 |If set to *true*, the OpenID Connect client is registered as bearer-only.
 
 |*_SSO_ENABLE_CORS_*
-|If set to *true*, the RH-SSO adapter enables Cross-Origin Resource Sharing (CORS).
+|If set to *true*, the {project_name_abbr} adapter enables Cross-Origin Resource Sharing (CORS).
 |===
 
-If the RH-SSO client uses the SAML protocol, the following additional variables need to be configured:
+If the {project_name_abbr} client uses the SAML protocol, the following additional variables need to be configured:
 
 [cols="2*", options="header"]
 |===
@@ -389,29 +389,29 @@ If the RH-SSO client uses the SAML protocol, the following additional variables 
 |Alias for keys/certificate to use for SAML. The default is _jboss_.
 |===
 
-See xref:Example-EAP-Auto[Example Workflow: Automatically Registering EAP Application in RH-SSO with OpenID-Connect Client] for an end-to-end example of the automatic client registration method using an OpenID-Connect client.
+See xref:Example-EAP-Auto[Example Workflow: Automatically Registering EAP Application in {project_name_abbr} with OpenID-Connect Client] for an end-to-end example of the automatic client registration method using an OpenID-Connect client.
 
-==== Manual RH-SSO Client Registration
+==== Manual {project_name_abbr} Client Registration
 
-Manual RH-SSO client registration is determined by the presence of a deployment file in the client application's _../configuration/_ directory. These files are exported from the client adapter in the RH-SSO web console. The name of this file is different for OpenID-Connect and SAML clients:
+Manual {project_name_abbr} client registration is determined by the presence of a deployment file in the client application's _../configuration/_ directory. These files are exported from the client adapter in the {project_name_abbr} web console. The name of this file is different for OpenID-Connect and SAML clients:
 
 [horizontal]
 *OpenID-Connect*:: _../configuration/secure-deployments_
 *SAML*:: _../configuration/secure-saml-deployments_
 
-These files are copied to the RH-SSO adapter configuration section in the _standalone-openshift.xml_ at when the application is deployed.
+These files are copied to the {project_name_abbr} adapter configuration section in the _standalone-openshift.xml_ at when the application is deployed.
 
-There are two methods for passing the RH-SSO adapter configuration to the client application:
+There are two methods for passing the {project_name_abbr} adapter configuration to the client application:
 
-* Modify the deployment file to contain the RH-SSO adapter configuration so that it is included in the _standalone-openshift.xml_ file at deployment, or
+* Modify the deployment file to contain the {project_name_abbr} adapter configuration so that it is included in the _standalone-openshift.xml_ file at deployment, or
 * Manually include the OpenID-Connect _keycloak.json_ file, or the SAML _keycloak-saml.xml_ file in the client application's *../WEB-INF* directory.
 
-See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use RH-SSO Authentication, Using SAML Client] for an end-to-end example of the manual RH-SSO client registration method using a SAML client.
+See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use {project_name_abbr} Authentication, Using SAML Client] for an end-to-end example of the manual {project_name_abbr} client registration method using a SAML client.
 
 ==== Limitations
-OpenShift does not currently accept OpenShift role mapping from external providers. If RH-SSO is used as an authentication gateway for OpenShift, users created in RH-SSO must have the roles added using the OpenShift Administrator `oadm policy` command.
+OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name_abbr} is used as an authentication gateway for OpenShift, users created in {project_name_abbr} must have the roles added using the OpenShift Administrator `oadm policy` command.
 
-For example, to allow an RH-SSO-created user to view a project namespace in OpenShift:
+For example, to allow an {project_name_abbr}-created user to view a project namespace in OpenShift:
 [subs="verbatim,macros,attributes"]
 ----
 oadm policy add-role-to-user view <pass:quotes[_user-name_]> -n <pass:quotes[_project-name_]>
@@ -421,9 +421,9 @@ oadm policy add-role-to-user view <pass:quotes[_user-name_]> -n <pass:quotes[_pr
 
 To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
 
-==== Deploy Binary Build of EAP 6.4 / 7.0 JSP Service Invocation Application that Authenticates Using Red Hat Single Sign-On
+==== Deploy Binary Build of EAP 6.4 / 7.1 JSP Service Invocation Application that Authenticates Using {project_name}
 
-The following example uses both link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] quickstarts to deploy EAP 6.4 / 7.0 JSP service application that authenticates using the Red Hat Single Sign-On.
+The following example uses both link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] quickstarts to deploy EAP 6.4 / 7.1 JSP service application that authenticates using the {project_name}.
 
 *Prerequisite:*
 
@@ -439,38 +439,33 @@ This guide assumes the {project_openshift_product_name} image has been previousl
 * *_{project_templates_version}-x509-postgresql-persistent_*
 ====
 
-===== Create RH-SSO Realm, Roles, and User for the EAP 6.4 / 7.0 JSP Application
+===== Create {project_name_abbr} Realm, Roles, and User for the EAP 6.4 / 7.1 JSP Application
 
-The EAP 6.4 / 7.0 JSP service application requires dedicated RH-SSO realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {project_openshift_product_name} image has been deployed:
+The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name_abbr} realm, username, and password to be able to authenticate using {project_name}. Perform the following steps after the {project_openshift_product_name} image has been deployed:
 
-*Create the RH-SSO Realm*
+*Create the {project_name_abbr} Realm*
 
-. Login to the administration console of the RH-SSO server.
+. Login to the administration console of the {project_name_abbr} server.
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the RH-SSO administrator user].
+Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name_abbr} administrator user].
 . Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses `demo`) and click *Create*.
 
 [[copy-rsa-public-key]]
 *Copy the Public Key*
 
-In the newly created `demo` realm, click the *Keys* tab and copy the public key that has been generated.
+In the newly created `demo` realm, click the *Keys* tab, then select *Active* tab, and copy the public key of type *RSA* that has been generated.
 
 [NOTE]
 ====
-RH-SSO 7.1 and RH-SSO 7.2 images generate two keys by default:
-
-* RSA key, and
-* HMAC key
-
-To copy the public key information for the RH-SSO 7.1 or RH-SSO 7.2 image, click the *Public key* button of the *RSA* row of the keys table. Then select and copy the content of the pop-up window that appears.
+The {project_openshift_product_name} image version {project_version} generates multiple keys by default, for example *HS256*, *RS256*, or *AES*. To copy the public key information for the {project_openshift_product_name} {project_version} image, click the *Keys* tab, then select *Active* tab, and click the *Public key* button of that row in the keys table, where type of the key matches *RSA*. Then select and copy the content of the pop-up window that appears.
 ====
 
-The information about the public key is necessary xref:sso-public-key-details[later to deploy] the RH-SSO-enabled EAP 6.4 / 7.0 JSP application.
+The information about the public key is necessary xref:sso-public-key-details[later to deploy] the {project_name_abbr}-enabled EAP 6.4 / 7.1 JSP application.
 
-*Create RH-SSO Roles*
+*Create {project_name_abbr} Roles*
 
 [NOTE]
 ====
@@ -481,22 +476,20 @@ The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-je
 * `admin` - Can be invoked by users with the `admin` role.
 ====
 
-Create `user` and `admin` roles in RH-SSO. These roles will be assigned to an RH-SSO application user to authenticate access to user applications.
+Create `user` and `admin` roles in {project_name_abbr}. These roles will be assigned to an {project_name_abbr} application user to authenticate access to user applications.
 
 . Click *Roles* in the *Configure* sidebar to list the roles for this realm.
 +
 [NOTE]
 ====
-This is a new realm, so there should only be the default roles:
-
-* `offline_access` and `uma_authorization` role for the RH-SSO 7.1 and RH-SSO 7.2 images.
+This is a new realm, so there should only be the default (`offline_access` and `uma_authorization`) roles.
 ====
 . Click *Add Role*.
 . Enter the role name (`user`) and click *Save*.
 
 Repeat these steps for the `admin` role.
 
-*Create the RH-SSO Realm Management User*
+*Create the {project_name_abbr} Realm Management User*
 
 . Click *Users* in the *Manage* sidebar to view the user information for the realm.
 . Click *Add User.*
@@ -505,9 +498,9 @@ Repeat these steps for the `admin` role.
 .. Click the *Credentials* tab in the user space and enter a password for the user (this example uses the password `apppassword`).
 .. Ensure the *Temporary Password* option is set to *Off* so that it does not prompt for a password change later on, and click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
 
-===== Assign `user` RH-SSO Role to the Realm Management User
+===== Assign `user` {project_name_abbr} Role to the Realm Management User
 
-Perform the following steps to tie the previously created `appuser` with the `user` RH-SSO role:
+Perform the following steps to tie the previously created `appuser` with the `user` {project_name_abbr} role:
 
 . Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, select the `user` role created earlier, and click *Add selected>*.
 . Click *Client Roles*, select *realm-management* entry from the list, select each record in the *Available Roles* list.
@@ -518,9 +511,9 @@ You can select multiple items at once by holding the *Ctrl* key and simultaneous
 ====
 . Click *Add selected>* to assign the roles to the client.
 
-===== Prepare RH-SSO Authentication for OpenShift Deployment of the EAP 6.4 / 7.0 JSP Application
+===== Prepare {project_name_abbr} Authentication for OpenShift Deployment of the EAP 6.4 / 7.1 JSP Application
 
-. Create a new project for the EAP 6.4 / 7.0 JSP application.
+. Create a new project for the EAP 6.4 / 7.1 JSP application.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -552,7 +545,7 @@ $ keytool -genseckey \
 -storetype JCEKS \
 -keystore eapjgroups.jceks
 ----
-.. Generate the EAP 6.4 / 7.0 for OpenShift secrets with the SSL and JGroup keystore files.
+.. Generate the EAP 6.4 / 7.1 for OpenShift secrets with the SSL and JGroup keystore files.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -570,7 +563,7 @@ $ oc secret new eap-jgroup-secret eapjgroups.jceks
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
 
-===== Deploy Binary Build of the EAP 6.4 / 7.0 JSP Application
+===== Deploy Binary Build of the EAP 6.4 / 7.1 JSP Application
 
 . Clone the source code.
 +
@@ -642,7 +635,7 @@ app-jee-jsp]$ mvn clean package -DskipTests
 +
 [IMPORTANT]
 ====
-The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] quickstart requires to configure the adapter, and adapter configuration file (`keycloak.json`) to be present at the `config/` directory in the root of the quickstart to successfully build the quickstart. But since this example configures the adapter later via selected environment variables available for the EAP 6.4 / 7.0 for OpenShift image, it is not necessary to specify the form of `keycloak.json` adapter configuration file at this moment.
+The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] quickstart requires to configure the adapter, and adapter configuration file (`keycloak.json`) to be present at the `config/` directory in the root of the quickstart to successfully build the quickstart. But since this example configures the adapter later via selected environment variables available for the EAP 6.4 / 7.1 for OpenShift image, it is not necessary to specify the form of `keycloak.json` adapter configuration file at this moment.
 ====
 
 [[directory-structure-binary-builds]]
@@ -696,7 +689,7 @@ Location of the standard deployments directory depends on the underlying base im
 |===
 | Name of the Underlying Base Image(s) | Standard Location of the Deployments Directory
 
-| EAP for OpenShift 6.4 and 7.0 | *_$JBOSS_HOME/standalone/deployments_*
+| EAP for OpenShift 6.4 and 7.1 | *_$JBOSS_HOME/standalone/deployments_*
 
 | Java S2I for OpenShift | *_/deployments_*
 
@@ -704,13 +697,12 @@ Location of the standard deployments directory depends on the underlying base im
 
 |===
 ====
-. Identify the image stream for EAP 6.4 / 7.0 image.
+. Identify the image stream for EAP 6.4 / 7.1 image.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc get is -n openshift | grep eap | cut -d ' ' -f 1
 jboss-eap64-openshift
-jboss-eap70-openshift
 jboss-eap71-openshift
 ----
 
@@ -720,19 +712,19 @@ jboss-eap71-openshift
 +
 [NOTE]
 ====
-Replace `--image-stream=jboss-eap70-openshift` parameter with the `--image-stream=jboss-eap64-openshift` one in the following oc command to deploy the JSP application on top of JBoss EAP 6.4 for OpenShift image.
+Replace `--image-stream=jboss-eap71-openshift` parameter with the `--image-stream=jboss-eap64-openshift` one in the following oc command to deploy the JSP application on top of JBoss EAP 6.4 for OpenShift image.
 ====
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc new-build --binary=true \
---image-stream=jboss-eap70-openshift \
+--image-stream=jboss-eap71-openshift \
 --name=eap-app
---> Found image 31895a4 (3 months old) in image stream "openshift/jboss-eap70-openshift" under tag "latest" for "jboss-eap70-openshift"
+--> Found image 31895a4 (3 months old) in image stream "openshift/jboss-eap71-openshift" under tag "latest" for "jboss-eap71-openshift"
 
-    JBoss EAP 7.0
+    JBoss EAP 7.1
     -------------
-    Platform for building and running JavaEE applications on JBoss EAP 7.0
+    Platform for building and running JavaEE applications on JBoss EAP 7.1
 
     Tags: builder, javaee, eap, eap7
 
@@ -779,7 +771,7 @@ $ oc new-app eap-app
 
     eap-app-demo/eap-app-1:aa2574d9
     -------------------------------
-    Platform for building and running JavaEE applications on JBoss EAP 7.0
+    Platform for building and running JavaEE applications on JBoss EAP 7.1
 
     Tags: builder, javaee, eap, eap7
 
@@ -793,7 +785,7 @@ $ oc new-app eap-app
 --> Success
     Run 'oc status' to view your app.
 ----
-. Stop all running containers of the EAP 6.4 / 7.0 JSP application in the current namespace.
+. Stop all running containers of the EAP 6.4 / 7.1 JSP application in the current namespace.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -806,9 +798,9 @@ deploymentconfig/eap-app
 $ oc scale dc/eap-app --replicas=0
 deploymentconfig "eap-app" scaled
 ----
-. Further configure the EAP 6.4 / 7.0 JSP application prior the deployment.
+. Further configure the EAP 6.4 / 7.1 JSP application prior the deployment.
 [[sso-public-key-details]]
-.. Configure the application with proper details about the RH-SSO server instance.
+.. Configure the application with proper details about the {project_name_abbr} server instance.
 +
 [WARNING]
 ====
@@ -872,7 +864,7 @@ $ oc patch dc/eap-app --type=json \
 -p '[{"op": "add", "path": "/spec/template/spec/serviceAccountName", "value": "default"}]'
 "eap-app" patched
 ----
-. Deploy container of the EAP 6.4 / 7.0 JSP application using the modified deployment config.
+. Deploy container of the EAP 6.4 / 7.1 JSP application using the modified deployment config.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -911,16 +903,16 @@ eap-app   eap-app-eap-app-demo.openshift.example.com             eap-app    8080
 Access the application in your browser using the URL *\http://eap-app-eap-app-demo.openshift.example.com/app-jsp*. You should see output like on the following image:
 
 [.text-center]
-image:images/sso_app_jee_jsp.png[RH-SSO Example JSP Application]
+image:images/sso_app_jee_jsp.png[{project_name_abbr} Example JSP Application]
 
 Perform the following to test the application:
 
 * Click the *INVOKE PUBLIC* button to access the `public` endpoint that doesn't require authentication.
 +
 You should see the *Message: public* output.
-* Click the *LOGIN* button to be redirected for user authentication to the RH-SSO server instance against the `demo` realm.
+* Click the *LOGIN* button to be redirected for user authentication to the {project_name_abbr} server instance against the `demo` realm.
 +
-Specify username and password of the RH-SSO user configured earlier (`appuser` / `apppassword`). Click *Log in*. The look of the application changes as detailed in the following image:
+Specify username and password of the {project_name_abbr} user configured earlier (`appuser` / `apppassword`). Click *Log in*. The look of the application changes as detailed in the following image:
 +
 [.text-center]
 image:images/sso_app_jee_jsp_logged_in.png[]
@@ -934,23 +926,23 @@ You should see *403 Forbidden* output.
 +
 [NOTE]
 ====
-The `admin` endpoint requires users with `admin` RH-SSO role to invoke properly. Access for the `appuser` is forbidden because they only have `user` role privilege, which allows them to access the `secured` endpoint.
+The `admin` endpoint requires users with `admin` {project_name_abbr} role to invoke properly. Access for the `appuser` is forbidden because they only have `user` role privilege, which allows them to access the `secured` endpoint.
 ====
 +
-Perform the following steps to add the `appuser` to the `admin` RH-SSO role:
+Perform the following steps to add the `appuser` to the `admin` {project_name_abbr} role:
 +
-. Access the administration console of the RH-SSO server's instance.
+. Access the administration console of the {project_name_abbr} server's instance.
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*.
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the RH-SSO administrator user].
+Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name_abbr} administrator user].
 . Click *Users* in the *Manage* sidebar to view the user information for the `demo` realm.
 . Click *View all users* button.
 . Click the ID link for the *appuser* or alternatively click the *Edit* button in the *Actions* column.
 . Click the *Role Mappings* tab.
 . Select `admin` entry from the *Available Roles* list in the *Realm Roles* row.
 . Click *Add selected>* button to add the `admin` role to the user.
-. Return to EAP 6.4 / 7.0 JSP service application.
+. Return to EAP 6.4 / 7.1 JSP service application.
 +
 *\http://eap-app-eap-app-demo.openshift.example.com/app-jsp*.
 . Click the *LOGOUT* button to reload role mappings for the `appuser`.

@@ -11,6 +11,7 @@ ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On
 :project_version: 7.3.0.GA
 :project_versionDoc: 7.3
+:project_previous_version: 7.2
 :project_previous_templates_version: sso-cd
 :project_templates_version: sso73
 :project_latest_image_tag: 1.0
@@ -22,6 +23,7 @@ ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
 :project_version: 7.3.0.CD05
 :project_versionDoc: 7.3.0.cd05
+:project_previous_version: 7.2
 :project_previous_templates_version: sso72
 :project_templates_version: sso-cd
 :project_latest_image_tag: 1.0

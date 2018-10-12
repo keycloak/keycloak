@@ -1,9 +1,9 @@
 == Before You Begin
 
 === Comparison: {project_openshift_product_name} Image and Red Hat Single Sign-On
-The {project_openshift_product_name} image version number 7.2 is based on Red Hat Single Sign-On 7.2. There are some differences in functionality between the {project_openshift_product_name} image and Red Hat Single Sign-On:
+The {project_openshift_product_name} image version number {project_version} is based on {project_name} {project_version}. There are some differences in functionality between the {project_openshift_product_name} image and {project_name}:
 
-* The {project_openshift_product_name} image includes all of the functionality of Red Hat Single Sign-On. In addition, the RH-SSO-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
+* The {project_openshift_product_name} image includes all of the functionality of {project_name}. In addition, the {project_name_abbr}-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
 
 === Version Compatibility and Support
 See the xPaaS part of the https://access.redhat.com/articles/2176281[OpenShift and Atomic Platform Tested Integrations page] for details about OpenShift image version compatibility.
@@ -22,5 +22,5 @@ The Tutorials in this guide follow on from and assume an OpenShift instance simi
 
 [IMPORTANT]
 ====
-For information related to updating the existing database when migrating {project_openshift_product_name} image from RH-SSO 7.0 to RH-SSO 7.1, or from RH-SSO 7.1 to RH-SSO 7.2, see the xref:../tutorials/tutorials.adoc#upgrading-sso-db-from-70-to-71[Updating Existing Database when Migrating {project_openshift_product_name} Image to a new version] section.
+For information related to updating the existing database when migrating {project_openshift_product_name} image from previous versions to version {project_version}, see the xref:../tutorials/tutorials.adoc#upgrading-sso-db-from-previous-to-{project_version}[Updating Existing Database when Migrating {project_openshift_product_name} Image to a new version] section.
 ====
