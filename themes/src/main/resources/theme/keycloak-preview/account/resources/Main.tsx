@@ -15,27 +15,35 @@
  */
 
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
- 
-declare const baseUrl;
+import * as ReactDOM from 'react-dom';
 
-export interface LogoutProps {
+import {HashRouter} from 'react-router-dom';
+
+import {App} from './app/App';
+
+const e = React.createElement;
+
+export interface MainProps {
 }
- 
-export class Logout extends React.Component<LogoutProps> {
 
-    constructor(props: LogoutProps) {
+//declare function loadjs(url,loadListener?);
+ 
+//loadjs('/js/MyExtension.js');
+
+export class Main extends React.Component<MainProps> {
+    
+    constructor(props: MainProps) {
         super(props);
     }
-    
-    private handleLogout() {
-        KeycloakService.Instance.logout(baseUrl);
-    }
-    
+
     render() {
         return (
-            <Link to="/" className="btn btn-primary btn-lg btn-sign" type="button" onClick={this.handleLogout}>Logout</Link>
+            <HashRouter>
+                <App/>
+            </HashRouter>
         );
     }
-}
+};
+
+const domContainer = document.querySelector('#main_react_container');
+ReactDOM.render(e(Main), domContainer);
