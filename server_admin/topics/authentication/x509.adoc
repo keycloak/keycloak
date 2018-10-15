@@ -239,7 +239,7 @@ You can use this provider when your {project_name} server is behind an HAProxy r
 
 In this example configuration, the client certificate will be looked up from the HTTP header, `SSL_CLIENT_CERT`, and the other certificates from its chain will be looked up from HTTP headers like `CERT_CHAIN_0` , `CERT_CHAIN_1`, ..., `CERT_CHAIN_9` . The attribute `certificateChainLength` is the maximum length of the chain, so the last one tried attribute would be `CERT_CHAIN_9` .
 
-Consult the HAProxy documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+Consult the link:http://www.haproxy.org/#docs[HAProxy documentation] for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
 
 ===== Apache certificate lookup provider
 
@@ -259,14 +259,74 @@ You can use this provider when your {project_name} server is behind an Apache re
 </spi>
 ----
 
-The configuration is same as for the `haproxy` provider. Consult the Apache documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+The configuration is same as for the `haproxy` provider. Consult the Apache documentation on link:https://httpd.apache.org/docs/current/mod/mod_ssl.html[mod_ssl] and link:https://httpd.apache.org/docs/current/mod/mod_headers.html[mod_headers] for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
 
+===== Nginx certificate lookup provider
+
+ You can use this provider when your {project_name} server is behind an Nginx reverse proxy. Configure the server like this:
+ [source,xml]
+----
+<spi name="x509cert-lookup">
+    <default-provider>nginx</default-provider>
+    <provider name="nginx" enabled="true">
+        <properties>
+            <property name="sslClientCert" value="ssl-client-cert"/>
+            <property name="sslCertChainPrefix" value="USELESS"/>
+            <property name="certificateChainLength" value="2"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+ NOTE: NGINX link:http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables[SSL/TLS module] does not expose the client certificate chain, so Keycloak NGINX certificate lookup provider is rebuilding it using the link:{installguide_link}#_truststore[Keycloak Truststore]. Please populate Keycloak truststore using keytool CLI with all root and intermediate CA's needed for rebuilding client certificate chain.
+
+Consult the NGINX documentation for the details of how the HTTP Headers for the client certificate can be configured.
+Example of NGINX configuration file :
+[source,txt]
+----
+ ...
+ server { 
+    ...
+    ssl_client_certificate                  trusted-ca-list-for-client-auth.pem;
+    ssl_verify_client                       optional_no_ca;
+    ssl_verify_depth                        2;
+    ...
+    location / {
+      ...
+      proxy_set_header ssl-client-cert        $ssl_client_escaped_cert;
+      ...
+    }
+    ...
+}
+----
+
+ NOTE: all certificates in trusted-ca-list-for-client-auth.pem must be added to link:{installguide_link}#_truststore[Keycloak truststore].
+ 
 ===== Other reverse proxy implementations
 
 We do not have built-in support for other reverse proxy implementations. However, it is possible that other reverse proxies can be made to behave in a similar way to `apache` or `haproxy` and that some of those providers can be used. If none of those works, you may need to create your own implementation of the `org.keycloak.services.x509.X509ClientCertificateLookupFactory` and `org.keycloak.services.x509.X509ClientCertificateLookup` provider. See the link:{developerguide_link}[{developerguide_name}] for the details on how to add your own provider.
 
 ==== Troubleshooting
 
+Dumping HTTP headers::
+If you want to view what the reverse proxy is sending to Keycloak, simply activate link:https://mirocupak.com/logging-requests-with-undertow/[RequestDumpingHandler] and consult `server.log` file.
+
+Enable TRACE logging under the logging subsystem::
+[source,xml]
+----
+...
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:logging:3.0">
+...
+            <logger category="org.keycloak.authentication.authenticators.x509">
+                <level name="TRACE"/>
+            </logger>
+            <logger category="org.keycloak.services.x509">
+                <level name="TRACE"/>
+            </logger>
+----
+ WARNING: Don't use RequestDumpingHandler or TRACE logging in production.
+ 
 Direct Grant authentication with X.509::
 The following template can be used to request a token using the Resource Owner Password Credentials Grant: 
 
