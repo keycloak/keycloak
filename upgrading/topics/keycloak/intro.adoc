@@ -6,4 +6,4 @@ This guide describes how to upgrade {project_name}. It is recommended that you s
 server first and {project_name} adapters second.
 
 Before upgrading make sure to read the instructions carefully and carefully review the changes listed in
-<<migration-changes,Migration Chanages>>.
+<<migration-changes,Migration Changes>>.
