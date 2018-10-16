@@ -18,6 +18,9 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Base64;
+
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -59,6 +62,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -128,20 +132,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String extractTokenFromResponse(String response, String tokenName) {
-    	  if(response == null)
-    	  	return null;
-    	  
+        if (response == null)
+            return null;
+
         if (response.startsWith("{")) {
             try {
-            		JsonNode node = mapper.readTree(response);
-            		if(node.has(tokenName)){
-            			String s = node.get(tokenName).textValue();
-            			if(s == null || s.trim().isEmpty())
-            				return null;
-                  return s;
-            		} else {
-            			return null;
-            		}
+                JsonNode node = mapper.readTree(response);
+                if (node.has(tokenName)) {
+                    String s = node.get(tokenName).textValue();
+                    if (s == null || s.trim().isEmpty())
+                        return null;
+                    return s;
+                } else {
+                    return null;
+                }
             } catch (IOException e) {
                 throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "] due: " + e.getMessage(), e);
             }
@@ -188,6 +192,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     /**
      * check to see if we have a token exchange in session
      * in other words check to see if this session was created by an external exchange
+     *
      * @param tokenUserSession
      * @param params
      * @return
@@ -336,12 +341,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (acr != null) {
             uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
         }
-        String forwardParameterConfig = getConfig().getForwardParameters() != null ? getConfig().getForwardParameters(): "";
+        String forwardParameterConfig = getConfig().getForwardParameters() != null ? getConfig().getForwardParameters() : "";
         List<String> forwardParameters = Arrays.asList(forwardParameterConfig.split("\\s*,\\s*"));
-        for(String forwardParameter: forwardParameters) {
+        for (String forwardParameter : forwardParameters) {
             String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
             String parameter = request.getAuthenticationSession().getClientNote(name);
-            if(parameter != null && !parameter.isEmpty()) {
+            if (parameter != null && !parameter.isEmpty()) {
                 uriBuilder.queryParam(forwardParameter, parameter);
             }
         }
@@ -349,19 +354,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
-     * 
+     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     *
      * @param jsonNode to get property from
-     * @param name of property to get
+     * @param name     of property to get
      * @return string value of the property or null.
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
         if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-        	  String s = jsonNode.get(name).asText();
-        	  if(s != null && !s.isEmpty())
-        	  		return s;
-        	  else
-      	  			return null;
+            String s = jsonNode.get(name).asText();
+            if (s != null && !s.isEmpty())
+                return s;
+            else
+                return null;
         }
 
         return null;
@@ -424,7 +429,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (getConfig().isStoreToken()) {
                         // make sure that token wasn't already set by getFederatedIdentity();
                         // want to be able to allow provider to set the token itself.
-                        if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
+                        if (federatedIdentity.getToken() == null) federatedIdentity.setToken(response);
                     }
 
                     federatedIdentity.setIdpConfig(getConfig());
@@ -446,10 +451,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public SimpleHttp generateTokenRequest(String authorizationCode) {
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)
+                    .authBasic(getConfig().getClientId(), getConfig().getClientSecret());
         }
     }
 
@@ -499,7 +503,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
         return SimpleHttp.doGet(userInfoUrl, session)
-                  .header("Authorization", "Bearer " + subjectToken);
+                .header("Authorization", "Bearer " + subjectToken);
     }
 
 

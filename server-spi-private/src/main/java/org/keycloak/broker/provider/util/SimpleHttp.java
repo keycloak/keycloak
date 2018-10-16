@@ -33,6 +33,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
+import org.keycloak.common.util.Base64;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
@@ -48,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+
 import org.apache.http.client.methods.HttpDelete;
 
 /**
@@ -120,6 +122,12 @@ public class SimpleHttp {
 
     public SimpleHttp auth(String token) {
         header("Authorization", "Bearer " + token);
+        return this;
+    }
+
+    public SimpleHttp authBasic(final String username, final String password) {
+        final String basicCredentials = String.format("%s:%s", username, password);
+        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
         return this;
     }
 
@@ -222,12 +230,12 @@ public class SimpleHttp {
         return new StringEntity(JsonSerialization.writeValueAsString(entity));
     }
 
-    private UrlEncodedFormEntity getFormEntityFromParameter() throws IOException{
+    private UrlEncodedFormEntity getFormEntityFromParameter() throws IOException {
         List<NameValuePair> urlParameters = new ArrayList<>();
 
         if (params != null) {
             for (Map.Entry<String, String> p : params.entrySet()) {
-                urlParameters. add(new BasicNameValuePair(p.getKey(), p.getValue()));
+                urlParameters.add(new BasicNameValuePair(p.getKey(), p.getValue()));
             }
         }
 
