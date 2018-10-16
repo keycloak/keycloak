@@ -263,8 +263,9 @@ The configuration is same as for the `haproxy` provider. Consult the Apache docu
 
 ===== Nginx certificate lookup provider
 
- You can use this provider when your {project_name} server is behind an Nginx reverse proxy. Configure the server like this:
- [source,xml]
+You can use this provider when your {project_name} server is behind an Nginx reverse proxy. Configure the server like this:
+
+[source,xml]
 ----
 <spi name="x509cert-lookup">
     <default-provider>nginx</default-provider>
@@ -278,7 +279,7 @@ The configuration is same as for the `haproxy` provider. Consult the Apache docu
 </spi>
 ----
 
- NOTE: NGINX link:http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables[SSL/TLS module] does not expose the client certificate chain, so Keycloak NGINX certificate lookup provider is rebuilding it using the link:{installguide_link}#_truststore[Keycloak Truststore]. Please populate Keycloak truststore using keytool CLI with all root and intermediate CA's needed for rebuilding client certificate chain.
+NOTE: NGINX link:http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables[SSL/TLS module] does not expose the client certificate chain, so Keycloak NGINX certificate lookup provider is rebuilding it using the link:{installguide_truststore_link}[{installguide_truststore_name}]. Please populate Keycloak truststore using keytool CLI with all root and intermediate CA's needed for rebuilding client certificate chain.
 
 Consult the NGINX documentation for the details of how the HTTP Headers for the client certificate can be configured.
 Example of NGINX configuration file :
@@ -300,7 +301,7 @@ Example of NGINX configuration file :
 }
 ----
 
- NOTE: all certificates in trusted-ca-list-for-client-auth.pem must be added to link:{installguide_link}#_truststore[Keycloak truststore].
+NOTE: all certificates in trusted-ca-list-for-client-auth.pem must be added to link:{installguide_truststore_link}[{installguide_truststore_name}].
  
 ===== Other reverse proxy implementations
 

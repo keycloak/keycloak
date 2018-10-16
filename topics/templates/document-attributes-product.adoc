@@ -65,6 +65,8 @@ endif::[]
 :installguide_disablingcaching_link: {installguide_link}#disabling-caching
 :installguide_loadbalancer_name: Setting Up a Load Balancer or Proxy
 :installguide_loadbalancer_link: {installguide_link}#_setting-up-a-load-balancer-or-proxy
+:installguide_truststore_name: Keycloak truststore
+:installguide_truststore_link: {installguide_link}#_truststore
 :installguide_profile_name: Profiles
 :installguide_profile_link: {installguide_link}#profiles
 :installguide_stickysessions_name: Sticky sessions
