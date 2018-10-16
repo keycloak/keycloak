@@ -37,7 +37,7 @@ WARNING: From November 2018 onwards, Microsoft is removing support for the Live 
          The {project_name} Microsoft identity provider has been updated to use the new endpoints so make sure to upgrade to
          {project_name} version 4.6.0 or later in order to use this provider.
          Furthermore, client applications registered with Microsoft under "Live SDK applications" will need to be re-registered
-         in the https://apps.dev.microsoft.com/[Microsoft Application Registration] portal to obtain an application id that
+         in the https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain an application id that
          is compatible with the Microsoft Graph API.
 endif::[]
 ifeval::[{project_product}==true]
@@ -45,6 +45,6 @@ WARNING: From November 2018 onwards, Microsoft is removing support for the Live 
          The {project_name} Microsoft identity provider has been updated to use the new endpoints so make sure to upgrade to
          {project_name} version 7.2.5 or later in order to use this provider.
          Furthermore, client applications registered with Microsoft under "Live SDK applications" will need to be re-registered
-         in the https://apps.dev.microsoft.com/[Microsoft Application Registration] portal to obtain an application id that
+         in the https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain an application id that
          is compatible with the Microsoft Graph API.
 endif::[]
