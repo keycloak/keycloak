@@ -118,3 +118,5 @@ endif::[]
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:6.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:5.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
+:generic_adapter_name: keycloak-gatekeeper
+:generic_adapter_name_full: Keycloak Gatekeeper

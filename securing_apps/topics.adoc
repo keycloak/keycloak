@@ -53,7 +53,7 @@ include::topics/oidc/javascript-adapter.adoc[]
 
 include::topics/oidc/nodejs-adapter.adoc[]
 
-include::topics/oidc/oidc-generic.adoc[]
+include::topics/oidc/keycloak-gatekeeper.adoc[]
 ifeval::[{project_community}==true]
 include::topics/oidc/mod-auth-openidc.adoc[]
 endif::[]
