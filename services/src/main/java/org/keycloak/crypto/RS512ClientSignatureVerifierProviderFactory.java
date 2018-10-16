@@ -16,27 +16,20 @@
  */
 package org.keycloak.crypto;
 
-import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
 
-public class MacSecretSignatureProvider implements SignatureProvider {
+public class RS512ClientSignatureVerifierProviderFactory implements ClientSignatureVerifierProviderFactory {
 
-    private final KeycloakSession session;
-    private final String algorithm;
+    public static final String ID = Algorithm.RS512;
 
-    public MacSecretSignatureProvider(KeycloakSession session, String algorithm) {
-        this.session = session;
-        this.algorithm = algorithm;
+    @Override
+    public String getId() {
+        return ID;
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerMacSignatureSignerContext(session, algorithm);
-    }
-
-    @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
-        return new ServerMacSignatureVerifierContext(session, kid, algorithm);
+    public ClientSignatureVerifierProvider create(KeycloakSession session) {
+        return new AsymmetricClientSignatureVerifierProvider(session, Algorithm.RS512);
     }
 
 }

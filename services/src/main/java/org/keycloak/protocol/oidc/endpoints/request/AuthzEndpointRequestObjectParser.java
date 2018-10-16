@@ -41,7 +41,6 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
     private final JsonNode requestParams;
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) throws Exception {
-        // KEYCLOAK-8460 Request Object Signature Verification Other Than RS256
         JWSInput input = new JWSInput(requestObject);
         JWSHeader header = input.getHeader();
         Algorithm headerAlgorithm = header.getAlgorithm();
@@ -58,12 +57,10 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         if (header.getAlgorithm() == Algorithm.none) {
             this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
         } else {
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, headerAlgorithm.name()).verifier(client, input);
-            boolean verified = verifierContext.verify(input.getEncodedSignatureInput().getBytes("UTF-8"), input.getSignature());
-            if (!verified) {
-                throw new RuntimeException("Failed to verify signature on 'request' object");
+            this.requestParams = session.tokens().decodeClientJWT(requestObject, client, JsonNode.class);
+            if (this.requestParams == null) {
+            	throw new RuntimeException("Failed to verify signature on 'request' object");
             }
-            this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
         }
     }
 

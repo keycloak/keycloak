@@ -15,32 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys.infinispan;
+package org.keycloak.crypto;
 
-import java.io.Serializable;
-import java.util.Map;
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderFactory;
 
-import org.keycloak.crypto.KeyWrapper;
+public interface ClientSignatureVerifierProviderFactory extends ProviderFactory<ClientSignatureVerifierProvider> {
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public class PublicKeysEntry implements Serializable {
-
-    private final int lastRequestTime;
-
-    private final Map<String, KeyWrapper> currentKeys;
-
-    public PublicKeysEntry(int lastRequestTime, Map<String, KeyWrapper> currentKeys) {
-        this.lastRequestTime = lastRequestTime;
-        this.currentKeys = currentKeys;
+    @Override
+    default void init(Config.Scope config) {
     }
 
-    public int getLastRequestTime() {
-        return lastRequestTime;
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
     }
 
-    public Map<String, KeyWrapper> getCurrentKeys() {
-        return currentKeys;
+    @Override
+    default void close() {
     }
+
 }

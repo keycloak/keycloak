@@ -17,26 +17,22 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
-public class MacSecretSignatureProvider implements SignatureProvider {
-
+public class AsymmetricClientSignatureVerifierProvider implements ClientSignatureVerifierProvider {
     private final KeycloakSession session;
     private final String algorithm;
 
-    public MacSecretSignatureProvider(KeycloakSession session, String algorithm) {
+    public AsymmetricClientSignatureVerifierProvider(KeycloakSession session, String algorithm) {
         this.session = session;
         this.algorithm = algorithm;
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerMacSignatureSignerContext(session, algorithm);
-    }
-
-    @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
-        return new ServerMacSignatureVerifierContext(session, kid, algorithm);
+    public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
+        return new ClientAsymmetricSignatureVerifierContext(session, client, input);
     }
 
 }

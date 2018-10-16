@@ -24,7 +24,6 @@ import org.keycloak.models.KeycloakSession;
 
 public class ClientAsymmetricSignatureVerifierContext extends AsymmetricSignatureVerifierContext {
 
-    // KEYCLOAK-8460 client signed signature verification
     public ClientAsymmetricSignatureVerifierContext(KeycloakSession session, ClientModel client, JWSInput input) throws VerificationException {
         super(getKey(session, client, input));
     }

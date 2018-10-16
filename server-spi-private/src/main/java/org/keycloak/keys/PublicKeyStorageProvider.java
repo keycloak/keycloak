@@ -17,8 +17,7 @@
 
 package org.keycloak.keys;
 
-import java.security.PublicKey;
-
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.provider.Provider;
 
 /**
@@ -35,7 +34,7 @@ public interface PublicKeyStorageProvider extends Provider {
      * @param loader
      * @return
      */
-    PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
+	KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
 
     /**
      * Clears all the cached public keys, so they need to be loaded again

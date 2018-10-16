@@ -14,29 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
+import org.keycloak.provider.Provider;
 
-public class MacSecretSignatureProvider implements SignatureProvider {
-
-    private final KeycloakSession session;
-    private final String algorithm;
-
-    public MacSecretSignatureProvider(KeycloakSession session, String algorithm) {
-        this.session = session;
-        this.algorithm = algorithm;
-    }
+public interface ClientSignatureVerifierProvider extends Provider {
+    SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException;
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerMacSignatureSignerContext(session, algorithm);
+    default void close() {
     }
-
-    @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
-        return new ServerMacSignatureVerifierContext(session, kid, algorithm);
-    }
-
 }

@@ -16,27 +16,29 @@
  */
 package org.keycloak.crypto;
 
-import org.keycloak.common.VerificationException;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-public class MacSecretSignatureProvider implements SignatureProvider {
+public class ClientSignatureVerifierSpi implements Spi {
 
-    private final KeycloakSession session;
-    private final String algorithm;
-
-    public MacSecretSignatureProvider(KeycloakSession session, String algorithm) {
-        this.session = session;
-        this.algorithm = algorithm;
+    @Override
+    public boolean isInternal() {
+        return true;
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerMacSignatureSignerContext(session, algorithm);
+    public String getName() {
+        return "clientSignature";
     }
 
     @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
-        return new ServerMacSignatureVerifierContext(session, kid, algorithm);
+    public Class<? extends Provider> getProviderClass() {
+        return ClientSignatureVerifierProvider.class;
     }
 
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ClientSignatureVerifierProviderFactory.class;
+    }
 }

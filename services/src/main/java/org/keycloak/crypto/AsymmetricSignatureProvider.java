@@ -17,8 +17,6 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
 public class AsymmetricSignatureProvider implements SignatureProvider {
@@ -39,11 +37,6 @@ public class AsymmetricSignatureProvider implements SignatureProvider {
     @Override
     public SignatureVerifierContext verifier(String kid) throws VerificationException {
         return new ServerAsymmetricSignatureVerifierContext(session, kid, algorithm);
-    }
-
-    @Override
-    public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
-        return new ClientAsymmetricSignatureVerifierContext(session, client, input);
     }
 
 }

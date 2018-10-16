@@ -104,7 +104,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys(null);
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
         JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
         clientRep.setJwks(keySet);
@@ -129,7 +129,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys(null);
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
         JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
         clientRep.setJwks(keySet);
@@ -161,7 +161,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.generateKeys(null);
+        oidcClientEndpointsResource.generateKeys("RS256");
 
         JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
 
@@ -248,7 +248,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys(null);
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
         clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
 
@@ -271,7 +271,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys(null);
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
         clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
 
@@ -285,7 +285,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, KEEP_GENERATED_KID);
 
         // Add new key to the jwks
-        Map<String, String> generatedKeys2 = oidcClientEndpointsResource.generateKeys(null);
+        Map<String, String> generatedKeys2 = oidcClientEndpointsResource.generateKeys("RS256");
 
         // Error should happen. KeyStorageProvider won't yet download new keys because of timeout
         assertAuthenticateClientError(generatedKeys2, response, KEEP_GENERATED_KID);
