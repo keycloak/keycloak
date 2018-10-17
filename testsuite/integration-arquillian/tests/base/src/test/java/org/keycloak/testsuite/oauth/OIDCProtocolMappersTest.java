@@ -228,7 +228,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
 
             // Assert audiences added through AudienceResolve mapper
-            Assert.assertThat(accessToken.getAudience(), arrayContainingInAnyOrder("test-app", "app", "account"));
+            Assert.assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "app", "account"));
 
             // Assert allowed origins
             String expectedOrigin = UriUtils.getOrigin(oauth.getRedirectUri());
@@ -415,7 +415,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             List<String> roles = (List<String>) cst1.get("roles");
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
-            // Assert audience
+            // Assert audience - "test-app" is added due the AudienceResolveProtocolMapper
             Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "test-app");
         } finally {
             // Revert
@@ -430,13 +430,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
     @Test
-    public void testAllowedOriginsRemovedFromAccessToken() throws Exception {
+    public void testRolesAndAllowedOriginsRemovedFromAccessToken() throws Exception {
         RealmResource realm = adminClient.realm("test");
         ClientScopeRepresentation allowedOriginsScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
 
-        // Remove 'web-origins' scope from the client
+        // Remove 'roles' and 'web-origins' scope from the client
         ClientResource testApp = ApiUtil.findClientByClientId(realm, "test-app");
         testApp.removeDefaultClientScope(allowedOriginsScope.getId());
+        testApp.removeDefaultClientScope(rolesScope.getId());
 
         try {
             OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
@@ -445,9 +447,22 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             // Assert web origins are not in the token
             Assert.assertNull(accessToken.getAllowedOrigins());
 
+            // Assert roles are not in the token
+            Assert.assertNull(accessToken.getRealmAccess());
+            Assert.assertTrue(accessToken.getResourceAccess().isEmpty());
+
+            // Assert client not in the token audience. Just in "issuedFor"
+            Assert.assertEquals("test-app", accessToken.getIssuedFor());
+            Assert.assertFalse(accessToken.hasAudience("test-app"));
+
+            // Assert IDToken still has "test-app" as an audience
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            Assert.assertEquals("test-app", idToken.getIssuedFor());
+            Assert.assertTrue(idToken.hasAudience("test-app"));
         } finally {
             // Revert
             testApp.addDefaultClientScope(allowedOriginsScope.getId());
+            testApp.addDefaultClientScope(rolesScope.getId());
         }
     }
 

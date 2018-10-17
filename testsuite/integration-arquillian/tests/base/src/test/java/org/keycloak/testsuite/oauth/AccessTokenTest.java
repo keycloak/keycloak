@@ -143,6 +143,16 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 .password("password");
         realm.getUsers().add(user.build());
 
+        realm.getClients().stream().filter(clientRepresentation -> {
+
+            return "test-app".equals(clientRepresentation.getClientId());
+
+        }).forEach(clientRepresentation -> {
+
+            clientRepresentation.setFullScopeAllowed(false);
+
+        });
+
         testRealms.add(realm);
 
     }

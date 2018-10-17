@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oidc;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import javax.ws.rs.core.Response;
 
@@ -136,8 +137,8 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .user(userId)
                 .assertEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
-        // TODO: Frontend client itself should not be in the audiences of access token. Will be fixed in the future
-        assertAudiences(tokens.accessToken, "test-app", "service-client");
+
+        assertAudiences(tokens.accessToken, "service-client");
         assertAudiences(tokens.idToken, "test-app");
 
         // Revert
@@ -168,8 +169,8 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .user(userId)
                 .assertEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
-        // TODO: Frontend client itself should not be in the audiences of access token. Will be fixed in the future
-        assertAudiences(tokens.accessToken, "test-app", "http://host/service/ctx1", "http://host/service/ctx2");
+
+        assertAudiences(tokens.accessToken, "http://host/service/ctx1", "http://host/service/ctx2");
         assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");
 
         // Revert
@@ -192,7 +193,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .user(userId)
                 .assertEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email", "test-app");
-        assertAudiences(tokens.accessToken, "test-app");
+        assertAudiences(tokens.accessToken);
         assertAudiences(tokens.idToken, "test-app");
         Assert.assertFalse(tokens.accessToken.getResourceAccess().containsKey("service-client"));
 
@@ -215,7 +216,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .user(userId)
                 .assertEvent();
         tokens = sendTokenRequest(loginEvent, userId,"openid profile email service-client", "test-app");
-        assertAudiences(tokens.accessToken, "test-app", "service-client");
+        assertAudiences(tokens.accessToken, "service-client");
         assertAudiences(tokens.idToken, "test-app");
         Assert.assertTrue(tokens.accessToken.getResourceAccess().containsKey("service-client"));
         Assert.assertNames(tokens.accessToken.getResourceAccess().get("service-client").getRoles(), "role1");
@@ -228,7 +229,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
 
 
     private void assertAudiences(JsonWebToken token, String... expectedAudience) {
-        Collection<String> audiences = Arrays.asList(token.getAudience());
+        Collection<String> audiences = token.getAudience() == null ? Collections.emptyList() : Arrays.asList(token.getAudience());
         Collection<String> expectedAudiences = Arrays.asList(expectedAudience);
         Assert.assertTrue("Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences,
                 expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences));
