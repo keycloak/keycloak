@@ -109,6 +109,18 @@ declare namespace Keycloak {
 		 * @default standard
 		 */
 		flow?: KeycloakFlow;
+
+		/**
+		 * Used to pre-fill the username/email field on the login form.
+		 * (from KeycloakLoginOptions)
+		 */
+		loginHint?: string;
+
+		/**
+		 * Used to tell Keycloak which IDP the user wants to authenticate with.
+		 * (from KeycloakLoginOptions)
+		 */
+		idpHint?: string;
 	}
 
 	interface KeycloakLoginOptions {
@@ -155,16 +167,16 @@ declare namespace Keycloak {
 		 */
 		idpHint?: string;
 
-	        /**
+		/**
 		 * Sets the 'ui_locales' query param in compliance with section 3.1.2.1
-                 * of the OIDC 1.0 specification.
+		 * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
-                
-                /**
+
+		/**
 		 * Specifies the desired Keycloak locale for the UI.  This differs from
-                 * the locale param in that it tells the Keycloak server to set a cookie and update
-                 * the user's profile to a new preferred locale.
+		 * the locale param in that it tells the Keycloak server to set a cookie and update
+		 * the user's profile to a new preferred locale.
 		 */
 		kcLocale?: string;
 

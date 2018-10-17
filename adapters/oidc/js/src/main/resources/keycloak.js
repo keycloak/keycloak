@@ -138,6 +138,13 @@
             var configPromise = loadConfig(config);
 
             function onLoad() {
+				var options = {};
+				if (initOptions.idpHint !== undefined) {
+					options.idpHint = initOptions.idpHint;
+				}
+				if (initOptions.loginHint !== undefined) {
+					options.loginHint = initOptions.loginHint;
+				}
                 var doLogin = function(prompt) {
                     if (!prompt) {
                         options.prompt = 'none';
@@ -147,9 +154,8 @@
                     }).error(function () {
                         initPromise.setError();
                     });
-                }
+                };
 
-                var options = {};
                 switch (initOptions.onLoad) {
                     case 'check-sso':
                         if (loginIframe.enable) {
