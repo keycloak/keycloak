@@ -640,7 +640,6 @@ public class TokenManager {
         token.id(KeycloakModelUtils.generateId());
         token.type(TokenUtil.TOKEN_TYPE_BEARER);
         token.subject(user.getId());
-        token.audience(client.getClientId());
         token.issuedNow();
         token.issuedFor(client.getClientId());
 
