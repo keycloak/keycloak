@@ -194,7 +194,7 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=org.jboss.as \
       -DartifactId=jboss-as-dist \
-      -Dversion=7.5.0.Final-redhat-21 \
+      -Dversion=7.5.21.Final-redhat-1 \
       -Dpackaging=zip \
       -Dfile=/mydownloads/jboss-eap-6.4.0.zip
 
@@ -207,9 +207,9 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=com.redhat.fuse.eap \
       -DartifactId=fuse-eap-installer \
-      -Dversion=6.3.0.redhat-220 \
+      -Dversion=6.3.0.redhat-347 \
       -Dpackaging=jar \
-      -Dfile=/fuse-eap-installer-6.3.0.redhat-220.jar
+      -Dfile=/fuse-eap-installer-6.3.0.redhat-347.jar
 
 
 5) Prepare EAP6 with Hawtio and run the test
@@ -219,15 +219,16 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn -f testsuite/integration-arquillian/servers \
       clean install \
       -Pauth-server-wildfly \
-      -Papp-server-eap6-fuse \
-      -Dapp.server.jboss.version=7.5.0.Final-redhat-21 \
-      -Dfuse.installer.version=6.3.0.redhat-220
+      -Papp-server-eap6 \
+      -Dapp.server.jboss.version=7.5.21.Final-redhat-1 \
+      -Dfuse63.version=6.3.0.redhat-347
  
     # Run the test
-    mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/eap6-fuse/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
-      -Papp-server-eap6-fuse  
+      -Papp-server-eap6 \
+      -Dtest=EAP6Fuse6HawtioAdapterTest
  
 
 ## Migration test
@@ -251,16 +252,20 @@ This test will:
 
     mvn -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration \
+      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration,test-70-migration \
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
-      -Dmigrated.auth.server.version=1.9.8.Final \
       -Djdbc.mvn.groupId=mysql \
       -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
+      
+The profile "test-7X-migration" indicates from which version you want to test migration. The valid values are:
+* test-70-migration - indicates migration from RHSSO 7.0 (Equivalent to Keycloak 1.9.8.Final)
+* test-71-migration - indicates migration from RHSSO 7.1 (Equivalent to Keycloak 2.5.5.Final)
+* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)      
       
 ### DB migration test with manual mode
       
@@ -273,10 +278,9 @@ just exports the needed SQL into the script. This SQL script then needs to be ma
 
     mvn -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration \
+      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration,test-70-migration \
       -Dtest=MigrationTest \
       -Dmigration.mode=manual \
-      -Dmigrated.auth.server.version=1.9.8.Final \
       -Djdbc.mvn.groupId=mysql \
       -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
@@ -292,10 +296,9 @@ just exports the needed SQL into the script. This SQL script then needs to be ma
  
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
-      -Pauth-server-wildfly \
+      -Pauth-server-wildfly,test-70-migration \
       -Dskip.add.user.json=true \
-      -Dmigrated.auth.server.version=1.9.8.Final \
-      -Dtest=MigrationTest   
+      -Dtest=MigrationTest
 
 ### JSON export/import migration test
 This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
@@ -303,10 +306,9 @@ This will start latest Keycloak and import the realm JSON file, which was previo
 
     mvn -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pauth-server-wildfly,migration-import \
+      -Pauth-server-wildfly,migration-import,test-70-migration \
       -Dtest=MigrationTest \
-      -Dmigration.mode=import \
-      -Dmigrated.auth.server.version=1.9.8.Final
+      -Dmigration.mode=import
 
 
 ## Server configuration migration test

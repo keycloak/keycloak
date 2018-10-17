@@ -417,6 +417,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         } else {
             log.infof("already logged in to '%s'; skipping the login process", currentTestProvider.id());
         }
+        WaitUtils.pause(3000);
+        WaitUtils.waitForPageToLoad();
     }
 
     private void assertAccount() {

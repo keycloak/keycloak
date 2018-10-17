@@ -24,6 +24,8 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -42,6 +44,30 @@ import java.util.Map;
  * @author rodrigo.sasaki@icarros.com.br
  */
 public interface ClientResource {
+
+    /**
+     * Enables or disables the fine grain permissions feature.
+     * Returns the updated status of the server in the
+     * {@link ManagementPermissionReference}.
+     *
+     * @param status status request to apply
+     * @return permission reference indicating the updated status
+     */
+    @PUT
+    @Path("/management/permissions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference setPermissions(ManagementPermissionRepresentation status);
+
+    /**
+     * Returns indicator if the fine grain permissions are enabled or not.
+     *
+     * @return current representation of the permissions feature
+     */
+    @GET
+    @Path("/management/permissions")
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference getPermissions();
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers();

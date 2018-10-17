@@ -766,7 +766,7 @@
     "standardFlowEnabled" : true,
     "implicitFlowEnabled" : false,
     "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
+    "serviceAccountsEnabled" : true,
     "publicClient" : false,
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
@@ -859,7 +859,6 @@
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
     "useTemplateMappers" : false,
-    "serviceAccountsEnabled": true,
     "authorizationServicesEnabled": true,
     "authorizationSettings": {
       "resources": [

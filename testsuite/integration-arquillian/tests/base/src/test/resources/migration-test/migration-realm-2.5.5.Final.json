@@ -2560,7 +2560,7 @@
     "standardFlowEnabled" : true,
     "implicitFlowEnabled" : false,
     "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
+    "serviceAccountsEnabled" : true,
     "publicClient" : false,
     "frontchannelLogout" : false,
     "attributes" : { },
@@ -2651,7 +2651,32 @@
     } ],
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
-    "useTemplateMappers" : false
+    "useTemplateMappers" : false,
+    "authorizationServicesEnabled": true,
+    "authorizationSettings": {
+      "resources": [
+        {
+          "name": "group.resource.a",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.b",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.c",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.d",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.e",
+          "scopes": ["view-members"]
+        }
+      ]
+    }
   }, {
     "id" : "401e0c86-afd1-4f4f-8322-32b05222bd06",
     "clientId" : "security-admin-console",

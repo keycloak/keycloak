@@ -26,6 +26,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -63,6 +64,11 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     private AuthenticationFlowRepresentation flow;
 
     public static final String EXECUTION_ID = "scriptAuth";
+
+    @BeforeClass
+    public static void verifyEnvironment() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.SCRIPTS);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

@@ -23,9 +23,20 @@
     function checkState(clientId, origin, sessionState, callback) {
         var cookie = getCookie();
 
-        if (!cookie) {
-            callback('changed');
-        } else  if (!init) {
+        var checkCookie = function() {
+            if (clientId === init.clientId && origin === init.origin) {
+                var c = cookie.split('/');
+                if (sessionState === c[2]) {
+                    callback('unchanged');
+                } else {
+                    callback('changed');
+                }
+            } else {
+                callback('error');
+            }
+        }
+
+        if (!init) {
             var req = new XMLHttpRequest();
 
             var url = location.href.split("?")[0] + "/init";
@@ -41,9 +52,7 @@
                             clientId: clientId,
                             origin: origin
                         }
-                        callback('unchanged');
-                    } else if (req.status === 404) {
-                        callback('changed');
+                        checkCookie();
                     } else {
                         callback('error');
                     }
@@ -51,17 +60,14 @@
             };
 
             req.send();
-        } else {
-            if (clientId === init.clientId && origin === init.origin) {
-                var c = cookie.split('/');
-                if (sessionState === c[2]) {
-                    callback('unchanged');
-                } else {
-                    callback('changed');
-                }
+        } else  if (!cookie) {
+            if (sessionState != '') {
+                callback('changed');
             } else {
-                callback('error');
+                callback('unchanged');
             }
+        } else {
+            checkCookie();
         }
     }
 
