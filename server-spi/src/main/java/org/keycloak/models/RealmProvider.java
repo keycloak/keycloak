@@ -21,6 +21,7 @@ import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,9 +32,13 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
     MigrationModel getMigrationModel();
+
     RealmModel createRealm(String name);
+
     RealmModel createRealm(String id, String name);
+
     RealmModel getRealm(String id);
+
     RealmModel getRealmByName(String name);
 
     void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent);
@@ -72,25 +77,33 @@ public interface RealmProvider extends Provider, ClientProvider {
     RoleModel getRoleById(String id, RealmModel realm);
 
     ClientScopeModel getClientScopeById(String id, RealmModel realm);
+
     GroupModel getGroupById(String id, RealmModel realm);
 
 
-
     List<RealmModel> getRealms();
+
     boolean removeRealm(String id);
+
     void close();
 
     ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
+
     ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
+
     void removeClientInitialAccessModel(RealmModel realm, String id);
+
     List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
+
     void removeExpiredClientInitialAccess();
+
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
 
     List<GroupModel> getGroupsByParent(RealmModel realm, String parent);
 
     /**
      * 查询角色下的组
+     *
      * @param realm
      * @param role
      * @return
@@ -99,9 +112,20 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     /**
      * 按名称查询组
+     *
      * @param realm
      * @param groupName
      * @return
      */
     GroupModel getGroupByName(RealmModel realm, String groupName);
+
+    /**
+     * 查询角色下的用户
+     *
+     * @param realm
+     * @param role
+     * @param search
+     * @return
+     */
+    List<UserModel> searchForUserInRole(RealmModel realm, RoleModel role, String search, Integer first, Integer max);
 }

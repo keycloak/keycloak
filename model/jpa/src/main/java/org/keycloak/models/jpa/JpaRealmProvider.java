@@ -720,12 +720,29 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public GroupModel getGroupByName(RealmModel realm, String groupName) {
-        TypedQuery<GroupEntity> query = em.createNamedQuery("getGroupIdsByName", GroupEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByName", String.class);
         query.setParameter("name", groupName);
-        List<GroupEntity> results = query.getResultList();
+        List<String> results = query.getResultList();
         if (Objects.nonNull(results) && !results.isEmpty()) {
-            return getGroupById(results.get(0).getId(), realm);
+            return getGroupById(results.get(0), realm);
         }
         return null;
+    }
+
+    @Override
+    public List<UserModel> searchForUserInRole(RealmModel realm, RoleModel role, String search, Integer first, Integer max) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("searchForUserInRole", UserEntity.class);
+        query.setParameter("roleId", role.getId());
+        query.setParameter("search", "%" + search + "%");
+        if (first != -1) {
+            query.setFirstResult(first);
+        }
+        if (max != -1) {
+            query.setMaxResults(max);
+        }
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new LinkedList<>();
+        for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
+        return users;
     }
 }

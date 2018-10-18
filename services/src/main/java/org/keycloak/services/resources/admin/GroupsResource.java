@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupsResource {
 
@@ -82,7 +82,7 @@ public class GroupsResource {
 
         if (Objects.nonNull(search)) {
             results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        } else if (Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
         } else {
             results = ModelToRepresentation.toGroupHierarchy(realm, false);
@@ -103,7 +103,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -171,7 +171,6 @@ public class GroupsResource {
     }
 
 
-
     /**
      * Get groups.  all are returned.
      *
@@ -194,7 +193,7 @@ public class GroupsResource {
 
 
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults,true);
+            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
         } else if (Objects.nonNull(parent)) {
             results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
         } else {
@@ -204,18 +203,20 @@ public class GroupsResource {
         return results;
     }
 
-    @Path("name/{group-name}")
+    @Path("name")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation getGroup(@QueryParam("group-name") String groupName){
-        GroupModel group = realm.getGroupByName(realm,groupName);
+    public GroupRepresentation getGroup(@QueryParam("groupName") String groupName, @QueryParam("hierarchy") Boolean hierarchy) {
+        GroupModel group = realm.getGroupByName(realm, groupName);
         if (group == null) {
             throw new NotFoundException("Could not find group by name");
         }
-        return ModelToRepresentation.toRepresentation(group,true);
+        if (hierarchy) {
+            return ModelToRepresentation.toGroupHierarchy(group, false);
+        }
+        return ModelToRepresentation.toRepresentation(group, true);
     }
-
 
 
 }

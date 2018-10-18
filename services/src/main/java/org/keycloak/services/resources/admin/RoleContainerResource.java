@@ -50,9 +50,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Roles
  */
 public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
@@ -276,7 +276,7 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-name") String roleName,
-                                                                final @PathParam("client") String client) {
+                                                           final @PathParam("client") String client) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -295,14 +295,14 @@ public class RoleContainerResource extends RoleResource {
      * Remove roles from the role's composite
      *
      * @param roleName role's name (not id!)
-     * @param roles roles to remove
+     * @param roles    roles to remove
      */
     @Path("{role-name}/composites")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteComposites(
-                                   final @PathParam("role-name") String roleName,
-                                   List<RoleRepresentation> roles) {
+            final @PathParam("role-name") String roleName,
+            List<RoleRepresentation> roles) {
 
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -314,7 +314,6 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
-     *
      *
      * @param roleName
      * @return
@@ -339,7 +338,6 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
-     *
      *
      * @param roleName
      * @return initialized manage permissions reference
@@ -366,8 +364,7 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return List of Users that have the specified role name 
-     *
+     * Return List of Users that have the specified role name
      *
      * @param roleName
      * @param firstResult
@@ -378,14 +375,14 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public  List<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName, 
-                                                    @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults) {
-        
+    public List<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName,
+                                                   @QueryParam("first") Integer firstResult,
+                                                   @QueryParam("max") Integer maxResults) {
+
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        
+
         RoleModel role = roleContainer.getRole(roleName);
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getRoleMembers(realm, role, firstResult, maxResults);
@@ -393,8 +390,8 @@ public class RoleContainerResource extends RoleResource {
         for (UserModel user : userModels) {
             results.add(ModelToRepresentation.toRepresentation(session, realm, user));
         }
-        return results; 
-        
+        return results;
+
     }
 
 
@@ -402,9 +399,9 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
-                                                      @QueryParam("first") Integer firstResult,
-                                                      @QueryParam("max") Integer maxResults) {
+    public List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
+                                                     @QueryParam("first") Integer firstResult,
+                                                     @QueryParam("max") Integer maxResults) {
 
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
@@ -412,12 +409,34 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         List<GroupRepresentation> results = new ArrayList<GroupRepresentation>();
-        List<GroupModel> groupModels = session.realms().getRoleGroups(realm,role);
+        List<GroupModel> groupModels = session.realms().getRoleGroups(realm, role);
 
         for (GroupModel group : groupModels) {
             results.add(ModelToRepresentation.toRepresentation(group, false));
         }
         return results;
 
+    }
+
+    @Path("users/search")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<UserRepresentation> searchForUserInRole(@QueryParam("roleName") String roleName,
+                                                        @QueryParam("search") String search,
+                                                        @QueryParam("first") Integer firstResult,
+                                                        @QueryParam("max") Integer maxResults) {
+        auth.roles().requireView(roleContainer);
+
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
+        RoleModel role = roleContainer.getRole(roleName);
+        List<UserRepresentation> results = new ArrayList<>();
+        List<UserModel> models = session.realms().searchForUserInRole(realm, role, search, firstResult, maxResults);
+        for (UserModel model : models) {
+            results.add(ModelToRepresentation.toBriefRepresentation(model));
+        }
+        return results;
     }
 }

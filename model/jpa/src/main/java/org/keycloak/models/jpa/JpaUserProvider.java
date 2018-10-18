@@ -681,7 +681,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("searchForUser", UserEntity.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        query.setParameter("search", "%" + search + "%");
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }

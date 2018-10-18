@@ -612,35 +612,6 @@ module.controller('GroupBindUsersCtrl', function($scope, $route, $q, realm, Grou
         return undefined;
     }
 
-    $scope.tree.selectNodeHead = function(node) {
-		node.collapsed = !node.collapsed;
-    	if ((!node.subGroups || !node.subGroups.length ) && node.id != ''){
-			var queryParams = {
-				realm : realm.realm,
-				first : 0,
-				max : $scope.pageSize,
-				parent: node.id
-			};
-    	     Groups.query(queryParams, function(entry) {
-                   promiseSubGroups.resolve(entry);
-             }, function() {
-                   promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
-             });
-             var promiseSubGroups = $q.defer();
-             var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
-                   console.log('*** subGroups call groups size: ' + groups.length);
-                   if(groups && groups.length > 0){
-                   		node.subGroups = groups;
-                   		node.collapsed = false;
-                   }else{
-                   	    Notifications.info("This group has no children.");
-                   }
-             });
-
-    	}
-    };
-
-
     $scope.tree.selectNodeLabel = function(node) {
         $scope.query.groupId = node.id;
         if($scope.tree.currentNode && $scope.tree.currentNode.selected ) {
