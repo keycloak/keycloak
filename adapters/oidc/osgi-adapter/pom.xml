@@ -31,6 +31,9 @@
     <packaging>jar</packaging>
 
     <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.osgi.*
@@ -104,15 +107,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -14,20 +14,20 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
-  -->
+-->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-		<artifactId>keycloak-parent</artifactId>
-		<groupId>org.keycloak</groupId>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
         <version>4.6.0.Final-SNAPSHOT</version>
-		<relativePath>../../../../pom.xml</relativePath>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
+        <relativePath>../../../../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-jetty94-adapter</artifactId>
-	<name>Keycloak Jetty 9.4.x Integration</name>
+    <artifactId>keycloak-jetty94-adapter</artifactId>
+    <name>Keycloak Jetty 9.4.x Integration</name>
     <properties>
         <jetty9.version>9.4.2.v20170220</jetty9.version>
         <keycloak.osgi.export>
@@ -40,18 +40,17 @@
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
-	<description />
+    <description />
 
-	<dependencies>
+    <dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
         </dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-core</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
@@ -60,26 +59,26 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jetty-core</artifactId>
         </dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-		</dependency>
-		<dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-		</dependency>
+        </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
@@ -101,23 +100,14 @@
             <scope>provided</scope>
         </dependency>
 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -150,7 +140,7 @@
                     </instructions>
                 </configuration>
             </plugin>
-		</plugins>
-	</build>
+        </plugins>
+    </build>
 
 </project>

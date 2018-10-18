@@ -46,7 +46,7 @@
         
         <!-- cache server versions -->
         <!--<infinispan.version>8.2.8.Final</infinispan.version>--><!-- Use same infinspan-server version as our version -->
-        <jdg.version>8.5.0.Final-redhat-9</jdg.version><!-- JDG 7.2.0 -->
+        <jdg.version>8.5.3.Final-redhat-00002</jdg.version><!-- JDG 7.2.3 -->
         
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
@@ -65,12 +65,6 @@
     </modules>
 
     <profiles>
-        <profile>
-            <id>auth-server-cluster</id>
-            <modules>
-                <module>wildfly-balancer</module>
-            </modules>
-        </profile>
         
         <profile>
             <id>auth-server-migration</id>

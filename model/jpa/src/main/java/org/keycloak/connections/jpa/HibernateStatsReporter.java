@@ -18,7 +18,7 @@
 package org.keycloak.connections.jpa;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.jpa.internal.EntityManagerFactoryImpl;
+import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.stat.CollectionStatistics;
 import org.hibernate.stat.EntityStatistics;
 import org.hibernate.stat.QueryStatistics;
@@ -46,7 +46,7 @@ public class HibernateStatsReporter implements ScheduledTask {
 
     @Override
     public void run(KeycloakSession session) {
-        SessionFactory sessionFactory = ((EntityManagerFactoryImpl) emf).getSessionFactory();
+        SessionFactory sessionFactory = ((SessionFactoryImpl) emf);
         Statistics stats = sessionFactory.getStatistics();
 
         logStats(stats);
@@ -72,12 +72,12 @@ public class HibernateStatsReporter implements ScheduledTask {
         for (String entity : stats.getEntityNames()) {
             EntityStatistics entityStats = stats.getEntityStatistics(entity);
             if (entityStats.getInsertCount() > LIMIT || entityStats.getDeleteCount() > LIMIT || entityStats.getUpdateCount() > LIMIT || entityStats.getLoadCount() > LIMIT || entityStats.getFetchCount() > LIMIT) {
-                builder.append(entity + " - ")
-                        .append("inserted: " + entityStats.getInsertCount())
-                        .append(", updated: " + entityStats.getUpdateCount())
-                        .append(", removed: " + entityStats.getDeleteCount())
-                        .append(", loaded: " + entityStats.getLoadCount())
-                        .append(", fetched: " + entityStats.getFetchCount())
+                builder.append(entity).append(" - ")
+                        .append("inserted: ").append(entityStats.getInsertCount())
+                        .append(", updated: ").append(entityStats.getUpdateCount())
+                        .append(", removed: ").append(entityStats.getDeleteCount())
+                        .append(", loaded: ").append(entityStats.getLoadCount())
+                        .append(", fetched: ").append(entityStats.getFetchCount())
                         .append(lineSep);
             }
         }
@@ -91,12 +91,12 @@ public class HibernateStatsReporter implements ScheduledTask {
             CollectionStatistics collectionStats = stats.getCollectionStatistics(col);
             if (collectionStats.getRecreateCount() > LIMIT || collectionStats.getUpdateCount() > LIMIT || collectionStats.getRemoveCount() > LIMIT ||
                     collectionStats.getLoadCount() > LIMIT || collectionStats.getFetchCount() > LIMIT) {
-                builder.append(col + " - ")
-                        .append("recreated: " + collectionStats.getRecreateCount())
-                        .append(", updated: " + collectionStats.getUpdateCount())
-                        .append(", removed: " + collectionStats.getRemoveCount())
-                        .append(", loaded: " + collectionStats.getLoadCount())
-                        .append(", fetched: " + collectionStats.getFetchCount())
+                builder.append(col).append(" - ")
+                        .append("recreated: ").append(collectionStats.getRecreateCount())
+                        .append(", updated: ").append(collectionStats.getUpdateCount())
+                        .append(", removed: ").append(collectionStats.getRemoveCount())
+                        .append(", loaded: ").append(collectionStats.getLoadCount())
+                        .append(", fetched: ").append(collectionStats.getFetchCount())
                         .append(lineSep);
             }
         }
@@ -111,8 +111,8 @@ public class HibernateStatsReporter implements ScheduledTask {
 
             if (queryStats.getExecutionCount() > LIMIT || (queryStats.getExecutionCount() * queryStats.getExecutionAvgTime() > LIMIT)) {
                 builder.append(query).append(lineSep)
-                        .append("executionCount=" + queryStats.getExecutionCount()).append(lineSep)
-                        .append("executionAvgTime=" + queryStats.getExecutionAvgTime()).append(" ms").append(lineSep)
+                        .append("executionCount=").append(queryStats.getExecutionCount()).append(lineSep)
+                        .append("executionAvgTime=").append(queryStats.getExecutionAvgTime()).append(" ms").append(lineSep)
                         .append(lineSep)
                         .append(lineSep);
             }

@@ -77,7 +77,24 @@
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
-
+        
+        <#if properties.developmentMode?has_content && properties.developmentMode == "true">
+        <!-- Don't use this in production: -->
+        <script src="${resourceUrl}/node_modules/react/umd/react.development.js" crossorigin></script>
+        <script src="${resourceUrl}/node_modules/react-dom/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+        </#if>
+        
+        <#if properties.extensions?has_content>
+            <#list properties.extensions?split(' ') as script>
+                <#if properties.developmentMode?has_content && properties.developmentMode == "true">
+        <script type="text/babel" src="${resourceUrl}/${script}"></script>
+                <#else>
+        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+                </#if>
+            </#list>
+        </#if>
+        
    <!-- TODO: We should save these css and js into variables and then load in
         main.ts for better performance.  These might be loaded twice.
         -->
@@ -107,7 +124,7 @@
                 };
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 loadjs("/node_modules/react/umd/react.development.js", function() {
-                    loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
+                   loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
                         loadjs("/node_modules/systemjs/dist/system.src.js", function() {
                             loadjs("/systemjs.config.js", function() {
                                 System.import('${resourceUrl}/Main.js').catch(function (err) {

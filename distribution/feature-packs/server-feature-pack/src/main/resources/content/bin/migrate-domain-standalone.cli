@@ -239,7 +239,7 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=core-management/
         /extension=org.wildfly.extension.core-management/:add
         echo
     catch
-        echo Wasn't able to add core-management extension, it should be already added by migrate-domain-clustered.cli
+        echo Wasn't able to add core-management extension, it should be already added by migrate-domain-standalone.cli
         echo
     end-try
     echo Adding subsystem core-management
@@ -253,7 +253,7 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=elytron/:read-re
         /extension=org.wildfly.extension.elytron/:add
         echo
     catch
-        echo Wasn't able to add elytron extension, it should be already added by migrate-domain-clustered.cli
+        echo Wasn't able to add elytron extension, it should be already added by migrate-domain-standalone.cli
         echo
     end-try
     echo Adding subsystem elytron
@@ -360,7 +360,7 @@ if (outcome == success) of /profile=$standaloneProfile/subsystem=jdr/:read-resou
         /extension=org.jboss.as.jdr/:remove
         echo
     catch
-        echo Wasn't able to remove jdr extension, it should be removed by migrate-domain-clustered.cli
+        echo Wasn't able to remove jdr extension, it should be removed by migrate-domain-standalone.cli
         echo
     end-try
 end-if
@@ -374,7 +374,7 @@ if (outcome == success) of /profile=$standaloneProfile/subsystem=jsf/:read-resou
         /extension=org.jboss.as.jsf/:remove
         echo
     catch
-        echo Wasn't able to remove jsf extension, Should be removed by migrate-domain-clustered.cli
+        echo Wasn't able to remove jsf extension, Should be removed by migrate-domain-standalone.cli
         echo
     end-try
 end-if
@@ -463,6 +463,37 @@ if (outcome == success) of /profile=$standaloneProfile/subsystem=keycloak-server
   /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:undefine-attribute(name=properties)
   /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:write-attribute(name=properties,value={cacheContainer=java:jboss/infinispan/container/keycloak})
   echo
+end-if
+
+# Migrate from 4.5.0 to 4.6.0
+if (outcome == success) of /profile=$standaloneProfile/subsystem=elytron/http-authentication-factory=application-http-authentication/:read-resource
+    echo Removing application-http-authentication from elytron subsystem
+    /profile=$standaloneProfile/subsystem=elytron/http-authentication-factory=application-http-authentication:remove
+    echo
+end-if
+
+if (result == undefined) of /profile=$standaloneProfile/subsystem=transactions/:read-attribute(name=node-identifier,include-defaults=false)
+    echo Setting node-identifier attribute of core-environment element in transactions subsystem
+    /profile=$standaloneProfile/subsystem=transactions/:write-attribute(name=node-identifier,value=expression "${jboss.tx.node.id:1}")
+    echo
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=jgroups/stack=udp/transport=UDP/property=port_range:read-attribute(name=value)
+    try
+        /profile=$standaloneProfile/subsystem=jgroups/stack=udp/transport=UDP/property=port_range:remove
+        echo Remove port_range property from UDP transport type of udp stack
+    catch
+        echo
+    end-try
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:read-attribute(name=value)
+    try
+        /profile=$standaloneProfile/subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:remove
+        echo Remove port_range property from TCP transport type of tcp stack
+    catch
+        echo
+    end-try
 end-if
 
 echo *** End Migration of /profile=$standaloneProfile ***

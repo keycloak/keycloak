@@ -95,6 +95,20 @@ public class RealmTest extends AbstractAdminTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+
+    // Remove all realms before first run
+    @Override
+    public void beforeAbstractKeycloakTestRealmImport() {
+        if (testContext.isInitialized()) {
+            return;
+        }
+
+        removeAllRealmsDespiteMaster();
+
+        testContext.setInitialized(true);
+    }
+
+
     @Test
     public void getRealms() {
         List<RealmRepresentation> realms = adminClient.realms().findAll();

@@ -22,7 +22,8 @@ echo ** Update replicated-cache work element **
     cache=work, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 
@@ -39,7 +40,8 @@ echo ** Update distributed-cache sessions element **
     cache=sessions, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:write-attribute(name=statistics-enabled,value=true)
@@ -55,7 +57,8 @@ echo ** Update distributed-cache offlineSessions element **
     cache=offlineSessions, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:write-attribute(name=statistics-enabled,value=true)
@@ -71,7 +74,8 @@ echo ** Update distributed-cache clientSessions element **
     cache=clientSessions, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions:write-attribute(name=statistics-enabled,value=true)
@@ -87,7 +91,8 @@ echo ** Update distributed-cache offlineClientSessions element **
     cache=offlineClientSessions, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions:write-attribute(name=statistics-enabled,value=true)
@@ -103,7 +108,8 @@ echo ** Update distributed-cache loginFailures element **
     cache=loginFailures, \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:write-attribute(name=statistics-enabled,value=true)
@@ -119,7 +125,8 @@ echo ** Update distributed-cache actionTokens element **
     remote-servers=["remote-cache"], \
     properties={ \
         rawValues=true, \
-        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory \
+        marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion} \
     } \
 )
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens:write-attribute(name=statistics-enabled,value=true)
