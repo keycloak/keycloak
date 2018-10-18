@@ -46,3 +46,15 @@ If you use RH-SSO 7.1 or a legacy OAuth2 / OpenID Connect adapter, it may be use
 This can be done for the particular client in the {project_name} admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
 described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
 which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
+
+==== Microsoft Identity Provider updated to use the Microsoft Graph API
+
+The Microsoft Identity Provider implementation in {project_name} up to version 7.2.4 relies on the Live SDK
+endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
+for the Live SDK API in favor of the new Microsoft Graph API. The {project_name} identity provider has been updated
+to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 7.2.5 or later.
+
+Legacy client applications registered under "Live SDK applications" won't work with the Microsoft Graph endpoints
+due to changes in the id format of the applications. If you run into an error saying that the application identifier
+was not found in the directory, you will have to register the client application again in the
+https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain a new application id.
