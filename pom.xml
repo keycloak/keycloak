@@ -502,7 +502,6 @@
                 <groupId>org.subethamail</groupId>
                 <artifactId>subethasmtp</artifactId>
                 <version>${subethasmtp.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- Apache DS -->

@@ -46,7 +46,7 @@ public class HibernateStatsReporter implements ScheduledTask {
 
     @Override
     public void run(KeycloakSession session) {
-        SessionFactory sessionFactory = ((SessionFactoryImpl) emf);
+        SessionFactory sessionFactory = ((SessionFactory) emf);
         Statistics stats = sessionFactory.getStatistics();
 
         logStats(stats);

@@ -326,5 +326,13 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
 
+    @Override
+    public boolean isHasChild() {
+        return group.isHasChild();
+    }
 
+    @Override
+    public void setHasChild(boolean hasChild) {
+        group.setHasChild(hasChild);
+    }
 }

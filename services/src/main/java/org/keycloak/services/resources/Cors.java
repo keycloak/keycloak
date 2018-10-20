@@ -189,7 +189,7 @@ public class Cors {
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            if (logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled() && allowedOrigins!=null) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, Arrays.toString(allowedOrigins.toArray()));
             }
             return;

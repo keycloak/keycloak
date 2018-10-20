@@ -139,21 +139,21 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         String dataSource = config.get("dataSource");
                         if (dataSource != null) {
                             if (config.getBoolean("jta", jtaEnabled)) {
-                                properties.put(AvailableSettings.JPA_JTA_DATASOURCE, dataSource);
+                                properties.put(AvailableSettings.DATASOURCE, dataSource);
                             } else {
-                                properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
+                                properties.put(AvailableSettings.DATASOURCE, dataSource);
                             }
                         } else {
-                            properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
-                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
+                            properties.put(AvailableSettings.URL, config.get("url"));
+                            properties.put(AvailableSettings.DRIVER, config.get("driver"));
 
                             String user = config.get("user");
                             if (user != null) {
-                                properties.put(AvailableSettings.JPA_JDBC_USER, user);
+                                properties.put(AvailableSettings.USER, user);
                             }
                             String password = config.get("password");
                             if (password != null) {
-                                properties.put(AvailableSettings.JPA_JDBC_PASSWORD, password);
+                                properties.put(AvailableSettings.PASS, password);
                             }
                         }
 

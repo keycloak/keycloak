@@ -30,5 +30,16 @@
 
         <addUniqueConstraint columnNames="REALM_ID,IDCARD" constraintName="UK_RU8TT6T700S9V50BU18WSJDS" tableName="USER_ENTITY"/>
     </changeSet>
- 
+
+    <changeSet author="wadahiro@gmail.com" id="4.3.0.beta2.uc">
+
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="HAS_CHILD" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+    </changeSet>
+
+
 </databaseChangeLog>

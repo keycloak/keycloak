@@ -929,7 +929,7 @@ function removeGroupMember(groups, member) {
         }
     }
 }
-module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
+module.controller('UserGroupMembershipCtrl', function($scope, $route, $q, realm, Groups, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.groupList = groups;
@@ -945,6 +945,26 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
 
     });
 
+    var getIndex = function(array, id) {
+        var tmpItem = {};
+        angular.forEach(array, function(item) {
+          if (item.id == id) {
+            tmpItem = item;
+          }
+        });
+        return array.indexOf(tmpItem);
+    }
+
+	var containGroup = function(array, id) {
+		var bool = false;
+        angular.forEach(array, function(item) {
+          if (item.id == id) {
+			  bool = true;
+              return false;
+          }
+        });
+		return bool;
+	}
 
 
     $scope.joinGroup = function() {
@@ -952,9 +972,16 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
             Notifications.error('Please select a group to add');
             return;
         };
+
+        if(containGroup($scope.groupMemberships,$scope.tree.currentNode.id)==true){
+        	Notifications.error('The group is added, Please select other group to add');
+            return;
+        }
+
+
         UserGroupMapping.update({realm: realm.realm, userId: user.id, groupId: $scope.tree.currentNode.id}, function() {
+            $scope.groupMemberships.push($scope.tree.currentNode);
             Notifications.success('Added group membership');
-            $route.reload();
         });
 
     };
@@ -962,11 +989,16 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     $scope.leaveGroup = function() {
         if (!$scope.selectedGroup) {
             return;
-
         }
+
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
+            var tmpIdIndex = getIndex($scope.groupMemberships, $scope.selectedGroup.id);
+        	if ($scope.groupMemberships[tmpIdIndex].showConfirm == false) {
+        		tmpIndex = realOptions.indexOf($scope.groupMemberships[tmpIdIndex].content);
+        		realOptions.splice(tmpIndex, 1);
+        	}
+        	$scope.groupMemberships.splice(tmpIdIndex, 1);
             Notifications.success('Removed group membership');
-            $route.reload();
         });
 
     };
@@ -976,17 +1008,20 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     };
 
     $scope.getGroupClass = function(node) {
-        if (node.id == "realm") {
-            return 'pficon pficon-users';
-        }
-        if (isLeaf(node)) {
-            return 'normal';
-        }
-        if (node.subGroups.length && node.collapsed) return 'collapsed';
-        if (node.subGroups.length && !node.collapsed) return 'expanded';
-        return 'collapsed';
+           if (node.id === "realm") {
+               return 'pficon pficon-users';
+           }
+           if(node.hasChild){
+               return 'collapsed';
+           }
+           if (isLeaf(node)) {
+               return 'normal';
+           }
+           if (node.subGroups.length && node.collapsed) return 'collapsed';
+           if (node.subGroups.length && !node.collapsed) return 'expanded';
+           return 'collapsed';
 
-    }
+    };
 
     $scope.getSelectedClass = function(node) {
         if (node.selected) {
@@ -996,6 +1031,69 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
         }
         return undefined;
     }
+
+    $scope.tree.selectNodeHead = function(node) {
+            node.collapsed = !node.collapsed;
+
+        	if ((!node.subGroups || !node.subGroups.length ) && node.id != '' && node.hasChild){
+    			var queryParams = {
+    				realm : realm.realm,
+    				first : 0,
+    				max : $scope.pageSize,
+    				parent: node.id
+    			};
+        	     Groups.query(queryParams, function(entry) {
+                       promiseSubGroups.resolve(entry);
+                 }, function() {
+                       promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
+                 });
+                 var promiseSubGroups = $q.defer();
+                 var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
+                       console.log('*** subGroups call groups size: ' + groups.length);
+                       if(groups && groups.length > 0){
+                       		node.subGroups = groups;
+                       		node.collapsed = false;
+                       }
+                 });
+
+        	}
+     };
+
+
+    var refreshGroups = function (search) {
+            var queryParams = {
+                realm : realm.realm,
+            };
+            var countParams = {
+                realm : realm.realm,
+                top : 'true'
+            };
+
+            if(angular.isDefined(search) && search !== '') {
+                queryParams.search = search;
+                countParams.search = search;
+            }
+            var promiseGetGroups = $q.defer();
+            Groups.query(queryParams, function(entry) {
+                promiseGetGroups.resolve(entry);
+            }, function() {
+                promiseGetGroups.reject('Unable to fetch ' + queryParams);
+            });
+            var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
+                console.log('*** group call groups size: ' + groups.length);
+                $scope.groupList = [
+                    {
+                        "id" : "",
+                        "name": "Groups",
+                        "subGroups" : groups
+                    }
+                ];
+            });
+    };
+
+    $scope.searchGroup = function() {
+        refreshGroups($scope.searchTerms);
+    };
 
 });
 

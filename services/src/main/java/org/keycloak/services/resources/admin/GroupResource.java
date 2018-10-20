@@ -109,8 +109,10 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
-
         realm.removeGroup(group);
+        if(group.getParent().getSubGroups().isEmpty()){
+            group.getParent().setHasChild(false);
+        }
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
@@ -154,6 +156,7 @@ public class GroupResource {
             adminEvent.operation(OperationType.CREATE);
 
         }
+
         realm.moveGroup(child, group);
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -176,6 +179,7 @@ public class GroupResource {
             }
         }
     }
+
 
     @Path("role-mappings")
     public RoleMapperResource getRoleMappings() {

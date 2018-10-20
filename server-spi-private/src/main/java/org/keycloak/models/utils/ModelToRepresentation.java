@@ -69,6 +69,7 @@ public class ModelToRepresentation {
         rep.setId(group.getId());
         rep.setName(group.getName());
         rep.setPath(buildGroupPath(group));
+        rep.setHasChild(group.isHasChild());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
@@ -896,11 +897,12 @@ public class ModelToRepresentation {
         List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
         if (Objects.isNull(groups)) return result;
         for (GroupModel group : groups) {
-            GroupRepresentation rep = toGroupHierarchy(group, full);
-            result.add(rep);
+            result.add(toRepresentation(group, true));
         }
         return result;
     }
+
+
 
     /**
      * 查询顶级group

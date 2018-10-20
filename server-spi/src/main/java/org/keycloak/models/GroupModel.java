@@ -89,4 +89,8 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    boolean isHasChild();
+
+    void setHasChild(boolean hasChild);
 }

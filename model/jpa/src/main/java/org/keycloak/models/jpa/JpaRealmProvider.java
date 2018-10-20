@@ -326,8 +326,12 @@ public class JpaRealmProvider implements RealmProvider {
             group.getParent().removeChild(group);
         }
         group.setParent(toParent);
-        if (toParent != null) toParent.addChild(group);
-        else session.realms().addTopLevelGroup(realm, group);
+        if (toParent != null) {
+            toParent.addChild(group);
+            toParent.setHasChild(true);
+        }else {
+            session.realms().addTopLevelGroup(realm, group);
+        }
     }
 
     @Override
@@ -595,12 +599,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<GroupModel> list = new ArrayList<>();
         for (String id : groups) {
             GroupModel groupById = session.realms().getGroupById(id, realm);
-            while (Objects.nonNull(groupById.getParentId())) {
-                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
-            }
-            if (!list.contains(groupById)) {
-                list.add(groupById);
-            }
+            list.add(groupById);
         }
         list.sort(Comparator.comparing(GroupModel::getName));
 

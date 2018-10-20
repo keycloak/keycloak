@@ -75,17 +75,21 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("parent") String parent) {
         auth.groups().requireList();
 
         List<GroupRepresentation> results;
 
+        firstResult = firstResult != null ? firstResult : 0;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
-        } else if (Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
+        } else if (Objects.nonNull(parent)) {
+            results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
         } else {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false);
+            results = ModelToRepresentation.toTopLevelGroup(realm, firstResult, maxResults);
         }
 
         return results;
@@ -170,38 +174,6 @@ public class GroupsResource {
         return builder.build();
     }
 
-
-    /**
-     * Get groups.  all are returned.
-     *
-     * @return
-     */
-    @Path("list")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
-                                               @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults,
-                                               @QueryParam("parent") String parent) {
-        auth.groups().requireList();
-
-        List<GroupRepresentation> results;
-
-        firstResult = firstResult != null ? firstResult : 0;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-
-
-        if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
-        } else if (Objects.nonNull(parent)) {
-            results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
-        } else {
-            results = ModelToRepresentation.toTopLevelGroup(realm, firstResult, maxResults);
-        }
-
-        return results;
-    }
 
     @Path("name")
     @GET

@@ -43,7 +43,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         });
         var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
             console.log('*** group call groups size: ' + groups.length);
-            console.log('*** group call groups size: ' + groups.length);
+            console.log(groups);
             $scope.groupList = [
                 {
                     "id" : "realm",
@@ -146,6 +146,9 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         if (node.id === "realm") {
             return 'pficon pficon-users';
         }
+        if(node.hasChild){
+            return 'collapsed';
+        }
         if (isLeaf(node)) {
             return 'normal';
         }
@@ -164,6 +167,32 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         return undefined;
     }
 
+    $scope.tree.selectNodeHead = function(node) {
+            node.collapsed = !node.collapsed;
+
+        	if ((!node.subGroups || !node.subGroups.length ) && node.id != '' && node.hasChild){
+    			var queryParams = {
+    				realm : realm.realm,
+    				first : 0,
+    				max : $scope.pageSize,
+    				parent: node.id
+    			};
+        	     Groups.query(queryParams, function(entry) {
+                       promiseSubGroups.resolve(entry);
+                 }, function() {
+                       promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
+                 });
+                 var promiseSubGroups = $q.defer();
+                 var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
+                       console.log('*** subGroups call groups size: ' + groups.length);
+                       if(groups && groups.length > 0){
+                       		node.subGroups = groups;
+                       		node.collapsed = false;
+                       }
+                 });
+
+        	}
+     };
 });
 
 module.controller('GroupCreateCtrl', function($scope, $route, realm, parentId, Groups, Group, GroupChildren, Notifications, $location) {
@@ -482,9 +511,14 @@ module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, D
         if (node.id === "realm") {
             return 'pficon pficon-users';
         }
+        if(node.hasChild){
+             return "collapsed";
+        }
+
         if (isLeaf(node)) {
             return 'normal';
         }
+
         if (node.subGroups.length && node.collapsed) return 'collapsed';
         if (node.subGroups.length && !node.collapsed) return 'expanded';
         return 'collapsed';
@@ -594,6 +628,12 @@ module.controller('GroupBindUsersCtrl', function($scope, $route, $q, realm, Grou
     };
 
     $scope.getGroupClass = function(node) {
+        if (node.id === "realm") {
+            return 'pficon pficon-users';
+        }
+        if(node.hasChild){
+            return 'collapsed';
+        }
         if (isLeaf(node)) {
             return 'normal';
         }
@@ -625,6 +665,33 @@ module.controller('GroupBindUsersCtrl', function($scope, $route, $q, realm, Grou
             $scope.lastSearch = $scope.query.search;
         });
     }
+
+    $scope.tree.selectNodeHead = function(node) {
+            node.collapsed = !node.collapsed;
+
+        	if ((!node.subGroups || !node.subGroups.length ) && node.id != '' && node.hasChild){
+    			var queryParams = {
+    				realm : realm.realm,
+    				first : 0,
+    				max : $scope.pageSize,
+    				parent: node.id
+    			};
+        	     Groups.query(queryParams, function(entry) {
+                       promiseSubGroups.resolve(entry);
+                 }, function() {
+                       promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
+                 });
+                 var promiseSubGroups = $q.defer();
+                 var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
+                       console.log('*** subGroups call groups size: ' + groups.length);
+                       if(groups && groups.length > 0){
+                       		node.subGroups = groups;
+                       		node.collapsed = false;
+                       }
+                 });
+
+        	}
+     };
 
     var getIndex = function(array, id) {
         var tmpItem = {};

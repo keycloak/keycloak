@@ -35,6 +35,7 @@ public class GroupRepresentation {
     protected Map<String, List<String>> clientRoles;
     protected List<GroupRepresentation> subGroups;
     private Map<String, Boolean> access;
+    protected boolean hasChild;
 
     public String getId() {
         return id;
@@ -105,5 +106,13 @@ public class GroupRepresentation {
 
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
+    }
+
+    public boolean isHasChild() {
+        return hasChild;
+    }
+
+    public void setHasChild(boolean hasChild) {
+        this.hasChild = hasChild;
     }
 }
