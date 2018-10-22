@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2018 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -15,98 +15,82 @@
  * the License.
  */
  
-/*import {Injectable} from '@angular/core';
-import {Http, Response, RequestOptionsArgs} from '@angular/http';
-
-import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
+//import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
+import Axios, {AxiosRequestConfig, AxiosResponse, AxiosPromise} from 'axios';
 
-import {NotificationType} from 'patternfly-ng/notification';*/
+//import {NotificationType} from 'patternfly-ng/notification';*/
  
+type AxiosResolve = (AxiosResponse) => void;
+type ConfigResolve = (AxiosRequestConfig) => void;
+type ErrorReject = (Error) => void;
+
  /**
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2017 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-//@Injectable()
 export class AccountServiceClient {
-
- /*   private accountUrl: string;
-
-    constructor(protected http: Http,
-                protected kcSvc: KeycloakService,
-                protected kcNotifySvc: KeycloakNotificationService) {
-        this.accountUrl = kcSvc.authServerUrl() + 'realms/' + kcSvc.realm() + '/account';
+    private static instance: AccountServiceClient = new AccountServiceClient();
+    
+    private kcSvc: KeycloakService = KeycloakService.Instance;
+    private accountUrl: string = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
+ 
+    private constructor() {}
+    
+    public static get Instance(): AccountServiceClient  {
+        return this.instance;
     }
     
-    public doGetRequest(endpoint: string, 
-                        responseHandler: Function, 
-                        options?: RequestOptionsArgs) {
-        this.http.get(this.accountUrl + endpoint, options)
-            .subscribe((res: Response) => responseHandler(res),
-                       (error: Response) => this.handleServiceError(error));
+    public doGet(endpoint: string, 
+                config?: AxiosRequestConfig): Promise<AxiosResponse> {
+        return this.doRequest(endpoint, {...config, method: 'get'});
     }
     
-    public doPostRequest(endpoint: string,
-                         responseHandler: Function,
-                         options?: RequestOptionsArgs,
-                         successMessage?: string) {
-        this.http.post(this.accountUrl + endpoint, options)
-            .subscribe((res: Response) => this.handleAccountUpdated(responseHandler, res, successMessage),
-                       (error: Response) => this.handleServiceError(error));
-    }
-    
-    private handleAccountUpdated(responseHandler: Function, res: Response, successMessage?: string) {
-        let message: string = "Your account has been updated.";
-        if (successMessage) message = successMessage;
-        this.kcNotifySvc.notify(message, NotificationType.SUCCESS);
-        responseHandler(res);
-    } 
-    
-    public doDelete(endpoint: string,
-                    responseHandler: Function,
-                    options?: RequestOptionsArgs,
-                    successMessage?: string) {
-        this.http.delete(this.accountUrl + endpoint, options)
-            .subscribe((res: Response) => this.handleAccountUpdated(responseHandler, res, successMessage),
-                       (error: Response) => this.handleServiceError(error));
-    }
-    
-    private handleServiceError(response: Response): void {
-        console.log('**** ERROR!!!! ***');
-        console.log(JSON.stringify(response));
-        console.log("response.status=" + response.status);
-        console.log('***************************************')
+    public doRequest(endpoint: string, 
+                     config?: AxiosRequestConfig): Promise<AxiosResponse> {
         
-        if ((response.status === undefined) || (response.status === 401)) {
-            this.kcSvc.logout();
-            return;
-        }
-
-        if (response.status === 403) {
-            // TODO: go to a forbidden page?
-        }
-
-        if (response.status === 404) {
-            // TODO: route to PageNotFoundComponent
-        }
-
-        let message: string = response.status + " " + response.statusText;
-
-        const not500Error: boolean = response.status !== 500;
-        console.log('not500Error=' + not500Error);
-        
-        // Unfortunately, errors can be sent back in the response body as
-        // 'errorMessage' or 'error_description'
-        if (not500Error && response.json().hasOwnProperty('errorMessage')) {
-            message = response.json().errorMessage;
-        }
-
-        if (not500Error && response.json().hasOwnProperty('error_description')) {
-            message = response.json().error_description;
-        }
-        
-        this.kcNotifySvc.notify(message, NotificationType.DANGER, response.json().params);
-    } */
+        return new Promise((resolve: AxiosResolve, reject: ErrorReject) => {
+            this.makeConfig(endpoint, config)
+                .then((config: AxiosRequestConfig) => {
+                    console.log({config});
+                    this.axiosRequest(config, resolve, reject);
+                }).catch( (error: Error) => {
+                    this.handleError(error);
+                    reject(error);
+                });
+        });
+    }
+    
+    private axiosRequest(config: AxiosRequestConfig, 
+                         resolve: AxiosResolve, 
+                         reject: ErrorReject): void {
+        Axios.request(config)
+            .then((response: AxiosResponse) => { 
+                 resolve(response);
+            })
+            .catch((error: Error) => {
+                this.handleError(error);
+                reject(error);
+            });
+    }
+    
+    private handleError(error: Error) {
+        console.log(error);
+    }
+    
+    private makeConfig(endpoint: string, config?: AxiosRequestConfig): Promise<AxiosRequestConfig> {
+        return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
+            this.kcSvc.getToken()
+                .then( (token: string) => {
+                    resolve( {
+                        ...config,
+                        baseURL: this.accountUrl,
+                        url: endpoint,
+                        headers: {...config.headers, Authorization: 'Bearer ' + token}
+                    });
+                }).catch((error: Error) => {
+                    reject(error);
+                });       
+        });
+    }
 }
-
-
