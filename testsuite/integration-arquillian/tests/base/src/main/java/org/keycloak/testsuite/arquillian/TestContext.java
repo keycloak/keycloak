@@ -49,7 +49,7 @@ public final class TestContext {
 
     private Keycloak adminClient;
     private KeycloakTestingClient testingClient;
-    private List<RealmRepresentation> testRealmReps;
+    private List<RealmRepresentation> testRealmReps = new ArrayList<>();
 
     // Track if particular test was initialized. What exactly means "initialized" is test dependent (Eg. some user in @Before method was created, so we can set initialized to true
     // to avoid creating user when @Before method is executed for 2nd time)
@@ -194,4 +194,16 @@ public final class TestContext {
         customContext.put(key, value);
     }
 
+    public String getAppServerContainerName() {
+        if (isAdapterContainerEnabled()) { //standalone app server
+            return getAppServerInfo().getArquillianContainer().getName();
+
+        } else if (isAdapterContainerEnabledCluster()) { //clustered app server
+
+            return getAppServerBackendsInfo().stream()
+                .map(ContainerInfo::getQualifier)
+                .collect(Collectors.joining(";"));
+        }
+        return null;
+    }
 }

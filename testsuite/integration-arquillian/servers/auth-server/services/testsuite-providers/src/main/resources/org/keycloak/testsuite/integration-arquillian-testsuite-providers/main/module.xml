@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.testsuite.integration-arquillian-testsuite-providers">
+<module xmlns="urn:jboss:module:1.5" name="org.keycloak.testsuite.integration-arquillian-testsuite-providers">
     <resources>
         <resource-root path="integration-arquillian-testsuite-providers-${project.version}.jar"/>
     </resources>
@@ -32,8 +32,10 @@
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-model-infinispan"/>
         <module name="org.keycloak.keycloak-model-jpa"/>
+        <module name="org.keycloak.keycloak-ldap-federation"/>
         <module name="org.infinispan"/>
         <module name="org.infinispan.client.hotrod"/>
+        <module name="org.jgroups"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="javax.persistence.api"/>

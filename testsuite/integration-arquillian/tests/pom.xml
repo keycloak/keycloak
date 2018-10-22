@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -42,6 +42,10 @@
         <auth.server>undertow</auth.server>
         <auth.server.undertow>true</auth.server.undertow>
 
+        <auth.server.cluster>false</auth.server.cluster>
+        <auth.server.undertow.cluster>false</auth.server.undertow.cluster>
+        <auth.server.jboss.cluster>false</auth.server.jboss.cluster>
+
         <auth.server.crossdc>false</auth.server.crossdc>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
         <auth.server.jboss.crossdc>false</auth.server.jboss.crossdc>
@@ -52,6 +56,7 @@
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
 
         <auth.server.host>localhost</auth.server.host>
+        <auth.server.browserHost/> <!-- if set, this host will be used by the browser instead of auth.server.host -->
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.events.http.port>8089</auth.server.events.http.port>
@@ -107,6 +112,7 @@
         <cache.server.2.port.offset>2010</cache.server.2.port.offset>
         <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
+
         <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
         <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
         <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
@@ -145,19 +151,28 @@
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
         <github.username/>
         <github.secretToken/>
-        <ieDriverArch/>
+        <ieDriverArch>Win32</ieDriverArch>
         <js.browser>phantomjs</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <firefox_binary>/usr/bin/firefox</firefox_binary>
-        <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <firefox_binary/> <!-- the path is set automatically based on the OS -->
+        <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <chromeBinary/>
         <chromeArguments/>
+
+        <appium.platformName/>
+        <appium.deviceName/>
+        <appium.browserName/>
+        <appium.avd/>
+        <appium.automationName/>
+        <appium.noReset/>
+        <appium.fullReset/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
+        <testsuite.ui.layout>0</testsuite.ui.layout> <!-- this is to tell the UI tests what type of layout to expect (doesn't setup the layout, just what to expect); 0 == desktop layout, 1 == smartphone layout, 2 == tablet layout -->
 
         <skip.add.user.json>false</skip.add.user.json>
         <skip.clean.second.cache>true</skip.clean.second.cache>
@@ -231,7 +246,6 @@
                                 <goal>copy</goal>
                             </goals>
                             <configuration>
-                                <skip>${app.server.skip.unpack}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
@@ -287,7 +301,6 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${app.server.skip.unpack}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
@@ -371,7 +384,7 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>clean-second-cache-server-arquillian-bug-workaround</id>
+                            <id>clean-second-cache-server-arquillian-bug-workaround</id><!--https://issues.jboss.org/browse/WFARQ-44-->
                             <phase>process-test-resources</phase>
                             <goals><goal>run</goal></goals>
                             <configuration>
@@ -391,6 +404,7 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
+                            <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
 
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
@@ -403,6 +417,7 @@
                             <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
 
                             <auth.server.host>${auth.server.host}</auth.server.host>
+                            <auth.server.browserHost>${auth.server.browserHost}</auth.server.browserHost>
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.events.http.port>${auth.server.events.http.port}</auth.server.events.http.port>
@@ -452,6 +467,7 @@
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
+                            <testsuite.ui.layout>${testsuite.ui.layout}</testsuite.ui.layout>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
@@ -472,6 +488,14 @@
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
 
+                            <appium.platformName>${appium.platformName}</appium.platformName>
+                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
+                            <appium.browserName>${appium.browserName}</appium.browserName>
+                            <appium.avd>${appium.avd}</appium.avd>
+                            <appium.automationName>${appium.automationName}</appium.automationName>
+                            <appium.noReset>${appium.noReset}</appium.noReset>
+                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
+
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>
                             <migration.product.version>${migration.product.version}</migration.product.version>
@@ -490,6 +514,11 @@
                             <hok.client.certificate.keystore.passphrase>${hok.client.certificate.keystore.passphrase}</hok.client.certificate.keystore.passphrase>
 
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
+
+                            <!-- cluster properties -->
+                            <auth.server.cluster>${auth.server.cluster}</auth.server.cluster>
+                            <auth.server.undertow.cluster>${auth.server.undertow.cluster}</auth.server.undertow.cluster>
+                            <auth.server.jboss.cluster>${auth.server.jboss.cluster}</auth.server.jboss.cluster>
 
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
@@ -572,35 +601,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-karaf-managed</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-osgi</artifactId>
-            <version>${arquillian-container-karaf.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.enterprise</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
     <profiles>
 
@@ -726,6 +726,8 @@
                                     -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
                                 </cache.server.crossdc2.jvm.debug.args>
 
+                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -839,6 +841,7 @@
                                 <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
 
                                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                                 <!--8101-->
                                 <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
@@ -891,6 +894,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.8</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -919,9 +923,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                 </plugins>
                 <pluginManagement>
@@ -963,7 +964,8 @@
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>true</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.6</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -992,9 +994,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                 </plugins>
                 <pluginManagement>
@@ -1076,12 +1075,43 @@
         </profile>
 
         <profile>
+            <id>auth-server-cluster-undertow</id>
+            <properties>
+                <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
+                <exclude.cluster>-</exclude.cluster>
+
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.cluster>true</auth.server.cluster>
+                <auth.server.undertow.cluster>true</auth.server.undertow.cluster>
+
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <pageload.timeout>20000</pageload.timeout>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+
+        <!-- This is profile for auth-server cluster on JBoss (Wildfly, EAP) -->
+        <profile>
             <id>auth-server-cluster</id>
             <properties>
                 <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
                 <exclude.cluster>-</exclude.cluster>
 
-                <auth.server.balancer.home>${containers.home}/auth-server-balancer-wildfly</auth.server.balancer.home>
+                <auth.server.cluster>true</auth.server.cluster>
+                <auth.server.jboss.cluster>true</auth.server.jboss.cluster>
+
                 <auth.server.backend1.home>${containers.home}/auth-server-${auth.server}-backend1</auth.server.backend1.home>
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
 
@@ -1112,36 +1142,9 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                    </plugin>
                 </plugins>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack-auth-server-load-balancer</id>
-                                    <phase>generate-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-balancer</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <outputDirectory>${auth.server.balancer.home}</outputDirectory>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
@@ -1153,9 +1156,6 @@
                                     </goals>
                                     <configuration>
                                         <target>
-                                            <move todir="${auth.server.balancer.home}">
-                                                <fileset dir="${auth.server.balancer.home}/balancer-wildfly"/>
-                                            </move>
                                             <move todir="${auth.server.backend1.home}">
                                                 <fileset dir="${auth.server.home}"/>
                                             </move>
@@ -1174,9 +1174,7 @@
                                     <run.h2>true</run.h2>
 
                                     <auth.server.jboss>false</auth.server.jboss>
-                                    <auth.server.cluster>true</auth.server.cluster>
 
-                                    <auth.server.balancer.home>${auth.server.balancer.home}</auth.server.balancer.home>
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
                                     <auth.server.backend2.home>${auth.server.backend2.home}</auth.server.backend2.home>
 
@@ -1505,6 +1503,12 @@
                 </dependency>
 
                 <dependency>
+                    <groupId>io.appium</groupId>
+                    <artifactId>java-client</artifactId>
+                    <version>${appium.client.version}</version>
+                </dependency>
+
+                <dependency>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                     <version>4.5.3</version>
@@ -1518,6 +1522,12 @@
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
                     <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-util</artifactId>
                     <version>${project.version}</version>
                 </dependency>
 
@@ -1657,15 +1667,6 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>org.hibernate.javax.persistence</groupId>
-                    <artifactId>hibernate-jpa-2.1-api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-entitymanager</artifactId>
-                </dependency>
-
-                <dependency>
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcprov-jdk15on</artifactId>
                 </dependency>
@@ -1709,6 +1710,12 @@
                     <type>zip</type>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.osgi</groupId>
+                    <artifactId>org.osgi.enterprise</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+
             </dependencies>
 
             <dependencyManagement>
@@ -1729,6 +1736,9 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>

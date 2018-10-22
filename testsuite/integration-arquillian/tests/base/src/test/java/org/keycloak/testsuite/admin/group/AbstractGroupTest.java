@@ -37,7 +37,7 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import java.security.PublicKey;
 import java.util.List;
 
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -61,9 +61,6 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test");
 
         JWSInput jws = new JWSInput(refreshToken);
-        if (!RSAProvider.verify(jws, publicKey)) {
-            throw new RuntimeException("Invalid refresh token");
-        }
         RefreshToken refreshTokenRepresentation = jws.readJsonContent(RefreshToken.class);
 
         events.expectLogin()

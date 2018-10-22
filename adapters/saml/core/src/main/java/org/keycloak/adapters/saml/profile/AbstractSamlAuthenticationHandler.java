@@ -84,6 +84,8 @@ import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+import org.keycloak.saml.validators.ConditionsValidator;
+import org.keycloak.saml.validators.DestinationValidator;
 
 /**
  *
@@ -97,6 +99,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     protected final SamlSessionStore sessionStore;
     protected  final SamlDeployment deployment;
     protected AuthChallenge challenge;
+    private final DestinationValidator destinationValidator = DestinationValidator.forProtocolMap(null);
 
     public AbstractSamlAuthenticationHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
         this.facade = facade;
@@ -145,7 +148,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             holder = SAMLRequestParser.parseRequestPostBinding(samlRequest);
         }
         RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
-        if (!requestUri.equals(requestAbstractType.getDestination().toString())) {
+        if (! destinationValidator.validate(requestUri, requestAbstractType.getDestination())) {
             log.error("expected destination '" + requestUri + "' got '" + requestAbstractType.getDestination() + "'");
             return AuthOutcome.FAILED;
         }
@@ -186,7 +189,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         }
         final StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
         // validate destination
-        if (!requestUri.equals(statusResponse.getDestination())) {
+        if (! destinationValidator.validate(requestUri, statusResponse.getDestination())) {
             log.error("Request URI '" + requestUri + "' does not match SAML request destination '" + statusResponse.getDestination() + "'");
             return AuthOutcome.FAILED;
         }
@@ -339,8 +342,16 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             return AuthOutcome.FAILED;
         }
         try {
-            assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
-            if (AssertionUtil.hasExpired(assertion)) {
+            assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
+            ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+            try {
+                cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
+                // getDestination has been validated to match request URL already so it matches SAML endpoint
+                cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+            } catch (IllegalArgumentException ex) {
+                // warning has been already emitted in DeploymentBuilder
+            }
+            if (! cvb.build().isValid()) {
                 return initiateLogin();
             }
         } catch (Exception e) {

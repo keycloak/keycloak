@@ -62,11 +62,11 @@ public class UserSessionCrossDCManager {
 
     // Just check if userSession also exists on remoteCache. It can happen that logout happened on 2nd DC and userSession is already removed on remoteCache and this DC wasn't yet notified
     public UserSessionModel getUserSessionIfExistsRemotely(AuthenticationSessionManager asm, RealmModel realm) {
-        List<String> sessionIds = asm.getAuthSessionCookieIds(realm);
+        List<String> sessionCookies = asm.getAuthSessionCookies(realm);
 
-        return sessionIds.stream().map(id -> {
-            SimpleEntry<String, String> entry = asm.decodeAuthSessionId(id);
-            String sessionId = entry.getKey();
+        return sessionCookies.stream().map(oldEncodedId -> {
+            AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
+            String sessionId = authSessionId.getDecodedId();
 
             // This will remove userSession "locally" if it doesn't exists on remoteCache
             kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null);
@@ -74,7 +74,7 @@ public class UserSessionCrossDCManager {
             UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessionId);
 
             if (userSession != null) {
-                asm.reencodeAuthSessionCookie(sessionId, entry.getValue(), realm);
+                asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
                 return userSession;
             }
 

@@ -204,6 +204,9 @@ public interface TestingResource {
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);
 
+    @Path("/ldap/{realm}")
+    TestingLDAPResource ldap(@PathParam("realm") final String realmName);
+
     @POST
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
@@ -251,6 +254,7 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
 
+
     @GET
     @Path("/identity-config")
     @Produces(MediaType.APPLICATION_JSON)
@@ -285,6 +289,13 @@ public interface TestingResource {
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     String runOnServer(String runOnServer);
+
+    @POST
+    @Path("/run-model-test-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
+                                @QueryParam("testMethodName") String testMethodName);
 
     @GET
     @Path("js/keycloak.js")

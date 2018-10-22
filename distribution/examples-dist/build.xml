@@ -118,12 +118,6 @@
                 <exclude name="**/README.md"/>
             </fileset>
         </copy>
-        <copy todir="target/examples/fuse" overwrite="true">
-            <fileset dir="../../examples/fuse">
-                <exclude name="**/target/**"/>
-                <exclude name="**/*.iml"/>
-            </fileset>
-        </copy>
         <copy todir="target/examples/ldap" overwrite="true">
             <fileset dir="../../examples/ldap">
                 <exclude name="**/target/**"/>

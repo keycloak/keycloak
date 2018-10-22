@@ -64,4 +64,19 @@ public interface StoreFactory extends Provider {
      * @return the permission ticket store
      */
     PermissionTicketStore getPermissionTicketStore();
+
+    /**
+     * Sets whether or not changes to instances returned from this factory are supported. Once marked as read-only, any attempt to
+     * change state will throw an {@link IllegalStateException}.
+     *
+     * @param readOnly if true, changes are not supported
+     */
+    void setReadOnly(boolean readOnly);
+
+    /**
+     * Indicates if instances returned from storage are read-only.
+     *
+     * @return if true, instances only support reads.
+     */
+    boolean isReadOnly();
 }

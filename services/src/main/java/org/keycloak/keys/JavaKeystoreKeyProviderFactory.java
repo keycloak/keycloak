@@ -17,17 +17,15 @@
 
 package org.keycloak.keys;
 
-import org.keycloak.Config;
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
-import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
@@ -77,7 +75,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
         try {
             new JavaKeystoreKeyProvider(session.getContext().getRealm(), model)
-                    .loadKeys(session.getContext().getRealm(), model);
+                    .loadKey(session.getContext().getRealm(), model);
         } catch (Throwable t) {
             logger.error("Failed to load keys.", t);
             throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
@@ -92,18 +90,6 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return CONFIG_PROPERTIES;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override

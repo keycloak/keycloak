@@ -23,6 +23,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import java.io.StringWriter;
 import java.util.Objects;
 import javax.xml.namespace.QName;
@@ -98,6 +99,8 @@ public class SAMLAttributeValueParser implements StaxParser {
             return parseAnyTypeAsString(xmlEventReader);
         } else if(typeValue.contains(":base64Binary")){
             return StaxParserUtil.getElementText(xmlEventReader);
+        } else if(typeValue.contains(":date")){
+            return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
         } else if(typeValue.contains(":boolean")){
             return StaxParserUtil.getElementText(xmlEventReader);
         }

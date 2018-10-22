@@ -83,7 +83,23 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("loginHint", String.valueOf(loginHint));
     }
 
+    public boolean isUiLocales() {
+        return Boolean.valueOf(getConfig().get("uiLocales"));
+    }
+
+    public void setUiLocales(boolean uiLocales) {
+        getConfig().put("uiLocales", String.valueOf(uiLocales));
+    }
+
     public String getPrompt() {
         return getConfig().get("prompt");
+    }
+
+    public String getForwardParameters() {
+        return getConfig().get("forwardParameters");
+    }
+
+    public void setForwardParameters(String forwardParameters) {
+       getConfig().put("forwardParameters", forwardParameters);
     }
 }

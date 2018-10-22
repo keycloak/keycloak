@@ -1,5 +1,4 @@
 language: java
-dist: precise
 
 cache:
   cache: false
@@ -15,7 +14,9 @@ env:
     - TESTS=server-group3
     - TESTS=server-group4
     - TESTS=old
-    - TESTS=crossdc
+    - TESTS=crossdc-server
+    - TESTS=crossdc-adapter
+    - TESTS=ssl
 
 jdk:
   - oraclejdk8
@@ -34,5 +35,8 @@ before_install:
 
 script: 
   - ./travis-run-tests.sh $TESTS
+
+after_success:
+  - .travis/docker-hub-master-trigger.sh
 
 sudo: false

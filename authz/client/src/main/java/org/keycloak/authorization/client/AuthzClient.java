@@ -103,7 +103,7 @@ public class AuthzClient {
     /**
      * <p>Creates a {@link ProtectionResource} instance which can be used to access the Protection API.
      *
-     * @param the PAT (the access token with the uma_protection scope)
+     * @param accessToken the PAT (the access token with the uma_protection scope)
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {

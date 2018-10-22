@@ -202,6 +202,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public String getDefaultSignatureAlgorithm() {
+        if(isUpdated()) return updated.getDefaultSignatureAlgorithm();
+        return cached.getDefaultSignatureAlgorithm();
+    }
+
+    @Override
+    public void setDefaultSignatureAlgorithm(String defaultSignatureAlgorithm) {
+        getDelegateForUpdate();
+        updated.setDefaultSignatureAlgorithm(defaultSignatureAlgorithm);
+    }
+
+    @Override
     public boolean isBruteForceProtected() {
         if (isUpdated()) return updated.isBruteForceProtected();
         return cached.isBruteForceProtected();
@@ -416,6 +428,31 @@ public class RealmAdapter implements CachedRealmModel {
     public void setOfflineSessionIdleTimeout(int seconds) {
         getDelegateForUpdate();
         updated.setOfflineSessionIdleTimeout(seconds);
+    }
+
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    @Override
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+        if (isUpdated()) return updated.isOfflineSessionMaxLifespanEnabled();
+        return cached.isOfflineSessionMaxLifespanEnabled();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+    }
+
+    @Override
+    public int getOfflineSessionMaxLifespan() {
+        if (isUpdated()) return updated.getOfflineSessionMaxLifespan();
+        return cached.getOfflineSessionMaxLifespan();
+    }
+
+    @Override
+    public void setOfflineSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionMaxLifespan(seconds);
     }
 
     @Override

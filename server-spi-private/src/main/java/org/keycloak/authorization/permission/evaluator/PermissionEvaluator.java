@@ -17,10 +17,12 @@
  */
 package org.keycloak.authorization.permission.evaluator;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.keycloak.authorization.Decision;
-import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 
 /**
  * An {@link PermissionEvaluator} represents a source of {@link org.keycloak.authorization.permission.ResourcePermission}, responsible for emitting these permissions
@@ -31,5 +33,5 @@ import org.keycloak.authorization.policy.evaluation.Result;
 public interface PermissionEvaluator {
 
     <D extends Decision> D evaluate(D decision);
-    List<Result> evaluate();
+    Collection<Permission> evaluate(ResourceServer resourceServer, AuthorizationRequest request);
 }

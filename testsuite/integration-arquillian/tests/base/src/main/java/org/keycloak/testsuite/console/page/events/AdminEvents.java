@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.events;
 
 import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -98,23 +99,23 @@ public class AdminEvents extends Events {
             }
 
             public void setResourcePathInput(String value) {
-                setInputValue(resourcePathInput, value);
+                UIUtils.setTextInputValue(resourcePathInput, value);
             }
 
             public void setRealmInput(String value) {
-                setInputValue(realmInput, value);
+                UIUtils.setTextInputValue(realmInput, value);
             }
 
             public void setClientInput(String value) {
-                setInputValue(clientInput, value);
+                UIUtils.setTextInputValue(clientInput, value);
             }
 
             public void setUserInput(String value) {
-                setInputValue(userInput, value);
+                UIUtils.setTextInputValue(userInput, value);
             }
 
             public void setIpAddressInput(String value) {
-                setInputValue(ipAddressInput, value);
+                UIUtils.setTextInputValue(ipAddressInput, value);
             }
         }
 

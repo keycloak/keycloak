@@ -6,6 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -179,7 +180,7 @@ public class ClientModelTest extends AbstractModelTest {
 
     @Test
     public void json() {
-        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
         representation.setId(null);
         for (ProtocolMapperRepresentation protocolMapper : representation.getProtocolMappers()) {
             protocolMapper.setId(null);

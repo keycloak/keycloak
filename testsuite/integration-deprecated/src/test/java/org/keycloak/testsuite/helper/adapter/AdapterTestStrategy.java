@@ -130,6 +130,7 @@ public class AdapterTestStrategy extends ExternalResource {
         // Revert notBefore
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
         session.users().setNotBeforeForUser(realm, user, 0);
         session.getTransactionManager().commit();
@@ -310,6 +311,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         session.getTransactionManager().commit();
@@ -324,6 +326,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransactionManager().commit();
         session.close();
@@ -345,6 +348,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         session.getTransactionManager().commit();
@@ -355,6 +359,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         session.sessions().removeExpired(realm);
         session.getTransactionManager().commit();
         session.close();
@@ -365,6 +370,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
         new ResourceAdminManager(session).logoutUser(null, realm, user, session);
@@ -389,6 +395,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         int original = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
         session.getTransactionManager().commit();
@@ -403,6 +410,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        session.getContext().setRealm(realm);
         realm.setSsoSessionMaxLifespan(original);
         session.getTransactionManager().commit();
         session.close();

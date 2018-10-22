@@ -19,9 +19,11 @@ package org.keycloak.testsuite.broker;
 
 import java.util.List;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -36,6 +38,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.openqa.selenium.TimeoutException;
 
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -142,6 +145,22 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         return BrokerTestTools.getAuthRoot(suiteContext) + "/auth/realms/" + realmName + "/account/password";
     }
 
+    /**
+     * Get the login page for an existing client in provided realm
+     * @param realmName Name of the realm
+     * @param clientId ClientId of a client. Client has to exists in the realm.
+     * @return Login URL
+     */
+    protected String getLoginUrl(String realmName, String clientId) {
+        List<ClientRepresentation> clients = adminClient.realm(realmName).clients().findByClientId(clientId);
+
+        assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
+
+        String redirectURI = clients.get(0).getBaseUrl();
+
+        return BrokerTestTools.getAuthRoot(suiteContext) + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
+                clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=openid";
+    }
 
     protected void logoutFromRealm(String realm) {
         driver.navigate().to(BrokerTestTools.getAuthRoot(suiteContext)

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.SecretKeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 
@@ -32,25 +34,43 @@ import java.util.List;
  */
 public interface KeyManager {
 
+    KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm);
+
+    KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm);
+
+    List<KeyWrapper> getKeys(RealmModel realm);
+
+    List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm);
+
+    @Deprecated
     ActiveRsaKey getActiveRsaKey(RealmModel realm);
 
+    @Deprecated
     PublicKey getRsaPublicKey(RealmModel realm, String kid);
 
+    @Deprecated
     Certificate getRsaCertificate(RealmModel realm, String kid);
 
-    List<RsaKeyMetadata> getRsaKeys(RealmModel realm, boolean includeDisabled);
+    @Deprecated
+    List<RsaKeyMetadata> getRsaKeys(RealmModel realm);
 
+    @Deprecated
     ActiveHmacKey getActiveHmacKey(RealmModel realm);
 
+    @Deprecated
     SecretKey getHmacSecretKey(RealmModel realm, String kid);
 
-    List<SecretKeyMetadata> getHmacKeys(RealmModel realm, boolean includeDisabled);
+    @Deprecated
+    List<SecretKeyMetadata> getHmacKeys(RealmModel realm);
 
+    @Deprecated
     ActiveAesKey getActiveAesKey(RealmModel realm);
 
+    @Deprecated
     SecretKey getAesSecretKey(RealmModel realm, String kid);
 
-    List<SecretKeyMetadata> getAesKeys(RealmModel realm, boolean includeDisabled);
+    @Deprecated
+    List<SecretKeyMetadata> getAesKeys(RealmModel realm);
 
     class ActiveRsaKey {
         private final String kid;

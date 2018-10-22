@@ -19,7 +19,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -75,7 +75,6 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void onBeforeClass() {
-        ProfileAssume.assumePreview();
         httpService = Undertow.builder().addHttpListener(8989, "localhost").setHandler(exchange -> {
             if (exchange.isInIoThread()) {
                 try {
@@ -138,7 +137,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @AfterClass
     public static void onAfterClass() {
-        httpService.stop();
+        if (httpService != null) {
+            httpService.stop();
+        }
     }
 
     @Override

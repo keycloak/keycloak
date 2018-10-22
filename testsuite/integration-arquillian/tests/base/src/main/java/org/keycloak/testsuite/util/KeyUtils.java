@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -39,4 +40,15 @@ public class KeyUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveKey(KeysMetadataRepresentation keys, String algorithm) {
+        String kid = keys.getActive().get(algorithm);
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
+            if (k.getKid().equals(kid)) {
+                return k;
+            }
+        }
+        throw new RuntimeException("Active key not found");
+    }
+
 }

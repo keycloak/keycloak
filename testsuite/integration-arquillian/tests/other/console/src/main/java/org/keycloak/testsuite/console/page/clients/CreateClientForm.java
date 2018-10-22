@@ -3,11 +3,13 @@ package org.keycloak.testsuite.console.page.clients;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.Timer;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.page.Form.getInputValue;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
@@ -30,16 +32,16 @@ public class CreateClientForm extends Form {
     }
 
     public String getClientId() {
-        return getInputValue(clientIdInput);
+        return getTextInputValue(clientIdInput);
     }
 
     public void setClientId(String clientId) {
-        setInputValue(clientIdInput, clientId);
+        UIUtils.setTextInputValue(clientIdInput, clientId);
     }
 
     public String getProtocol() {
         waitUntilElement(protocolSelect.getFirstSelectedOption()).is().present();
-        return protocolSelect.getFirstSelectedOption().getText();
+        return getTextFromElement(protocolSelect.getFirstSelectedOption());
     }
 
     public void setProtocol(String protocol) {

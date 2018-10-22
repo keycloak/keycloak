@@ -38,7 +38,10 @@ import java.io.File;
 import java.net.URL;
 import java.util.*;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -69,6 +72,16 @@ public class ExportImportTest extends AbstractKeycloakTest {
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
         testRealm2.setId("test-realm");
         testRealms.add(testRealm2);
+    }
+
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
+    @Override
+    public void beforeAbstractKeycloakTestRealmImport() {
+        removeAllRealmsDespiteMaster();
     }
 
     private void setEventsConfig(RealmRepresentation realm) {
@@ -213,6 +226,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
         removeRealm("test-realm");
         Assert.assertNames(adminClient.realms().findAll(), "master");
 
+        Map<String, RequiredActionProviderRepresentation> requiredActionsBeforeImport = new HashMap<>();
+        adminClient.realm("master").flows().getRequiredActions().stream()
+                .forEach(action -> {
+                    requiredActionsBeforeImport.put(action.getAlias(), action);
+                });
+
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
         assertNotAuthenticated("test", "user2", "password");
@@ -233,6 +252,17 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         // KEYCLOAK-6050 Check SMTP password is exported/imported
         assertEquals("secret", testingClient.server("test").fetch(RunHelpers.internalRealm()).getSmtpServer().get("password"));
+
+        // KEYCLOAK-8176 Check required actions are exported/imported properly
+        List<RequiredActionProviderRepresentation> requiredActionsAfterImport = adminClient.realm("master").flows().getRequiredActions();
+        assertThat(requiredActionsAfterImport.size(), is(equalTo(requiredActionsBeforeImport.size())));
+        requiredActionsAfterImport.stream()
+                .forEach((action) -> {
+                    RequiredActionProviderRepresentation beforeImportAction = requiredActionsBeforeImport.get(action.getAlias());
+                    assertThat(action.getName(), is(equalTo(beforeImportAction.getName())));
+                    assertThat(action.getProviderId(), is(equalTo(beforeImportAction.getProviderId())));
+                    assertThat(action.getPriority(), is(equalTo(beforeImportAction.getPriority())));
+                });
     }
 
     private void testRealmExportImport() throws LifecycleException {

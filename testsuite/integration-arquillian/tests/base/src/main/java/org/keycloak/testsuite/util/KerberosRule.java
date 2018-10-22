@@ -34,9 +34,11 @@ public class KerberosRule extends LDAPRule {
     private static final Logger log = Logger.getLogger(KerberosRule.class);
 
     private final String configLocation;
+    private final String kerberosRealm;
 
-    public KerberosRule(String configLocation) {
+    public KerberosRule(String configLocation, String kerberosRealm) {
         this.configLocation = configLocation;
+        this.kerberosRealm = kerberosRealm;
 
         // Global kerberos configuration
         String krb5ConfPath = getKrb5ConfPath();
@@ -61,11 +63,25 @@ public class KerberosRule extends LDAPRule {
         return configLocation;
     }
 
+
+    public String getKerberosRealm() {
+        return kerberosRealm;
+    }
+
+
     @Override
     protected LDAPEmbeddedServer createServer() {
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:kerberos/users-kerberos.ldif");
+
+        KerberosEmbeddedServer.configureDefaultPropertiesForRealm(this.kerberosRealm, defaultProperties);
+
+        // Improve if more flexibility is needed
+        if ("KEYCLOAK.ORG".equals(kerberosRealm)) {
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:kerberos/users-kerberos.ldif");
+        } else if ("KC2.COM".equals(kerberosRealm)) {
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:kerberos/users-kerberos-kc2.ldif");
+        }
 
         return new KerberosEmbeddedServer(defaultProperties);
     }

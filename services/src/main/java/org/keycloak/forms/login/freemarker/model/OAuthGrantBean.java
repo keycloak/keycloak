@@ -18,16 +18,22 @@ package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.OrderedModel;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
 public class OAuthGrantBean {
 
-    private List<ClientScopeEntry> clientScopesRequested = new LinkedList<>();
+    private static OrderedModel.OrderedModelComparator<ClientScopeEntry> COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
+
+    private List<ClientScopeEntry> clientScopesRequested = new ArrayList<>();
     private String code;
     private ClientModel client;
 
@@ -36,8 +42,9 @@ public class OAuthGrantBean {
         this.client = client;
 
         for (ClientScopeModel clientScope : clientScopesRequested) {
-            this.clientScopesRequested.add(new ClientScopeEntry(clientScope.getConsentScreenText()));
+            this.clientScopesRequested.add(new ClientScopeEntry(clientScope.getConsentScreenText(), clientScope.getGuiOrder()));
         }
+        this.clientScopesRequested.sort(COMPARATOR_INSTANCE);
     }
 
     public String getCode() {
@@ -56,16 +63,23 @@ public class OAuthGrantBean {
 
 
     // Converting ClientScopeModel due the freemarker limitations. It's not able to read "getConsentScreenText" default method defined on interface
-    public static class ClientScopeEntry {
+    public static class ClientScopeEntry implements OrderedModel {
 
         private final String consentScreenText;
+        private final String guiOrder;
 
-        private ClientScopeEntry(String consentScreenText) {
+        private ClientScopeEntry(String consentScreenText, String guiOrder) {
             this.consentScreenText = consentScreenText;
+            this.guiOrder = guiOrder;
         }
 
         public String getConsentScreenText() {
             return consentScreenText;
+        }
+
+        @Override
+        public String getGuiOrder() {
+            return guiOrder;
         }
     }
 }

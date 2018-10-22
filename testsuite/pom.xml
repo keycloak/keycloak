@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -71,7 +71,6 @@
             <modules>
                 <module>jetty</module>
                 <module>proxy</module>
-                <module>tomcat6</module>
                 <module>tomcat7</module>
             </modules>
         </profile>

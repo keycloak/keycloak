@@ -32,14 +32,16 @@
             <th>{{:: 'name' | translate}}</th>
             <th>{{:: 'category' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
+            <th>{{:: 'priority-order' | translate}}</th>
             <th colspan="2">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="mapper in mappers | filter:search">
+        <tr ng-repeat="mapper in mappers | filter:search | orderBy:sortMappersByPriority">
             <td><a href="#/realms/{{realm.realm}}/client-scopes/{{clientScope.id}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
+            <td>{{mapperTypes[mapper.protocolMapper].priority}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-scopes/{{clientScope.id}}/mappers/{{mapper.id}}">{{:: 'edit' | translate}}</td>
             <td class="kc-action-cell" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
         </tr>

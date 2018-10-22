@@ -21,13 +21,17 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -35,16 +39,16 @@ import java.util.stream.Collectors;
  */
 public class CachedPolicy extends AbstractRevisioned implements InResourceServer {
 
-    private String type;
-    private DecisionStrategy decisionStrategy;
-    private Logic logic;
-    private Map<String, String> config;
-    private String name;
-    private String description;
-    private String resourceServerId;
-    private Set<String> associatedPoliciesIds;
-    private Set<String> resourcesIds;
-    private Set<String> scopesIds;
+    private final String type;
+    private final DecisionStrategy decisionStrategy;
+    private final Logic logic;
+    private final String name;
+    private final String description;
+    private final String resourceServerId;
+    private final LazyLoader<Policy, Set<String>> associatedPoliciesIds;
+    private final LazyLoader<Policy, Set<String>> resourcesIds;
+    private final LazyLoader<Policy, Set<String>> scopesIds;
+    private final LazyLoader<Policy, Map<String, String>> config;
     private final String owner;
 
     public CachedPolicy(Long revision, Policy policy) {
@@ -52,13 +56,38 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         this.type = policy.getType();
         this.decisionStrategy = policy.getDecisionStrategy();
         this.logic = policy.getLogic();
-        this.config = new HashMap(policy.getConfig());
         this.name = policy.getName();
         this.description = policy.getDescription();
         this.resourceServerId = policy.getResourceServer().getId();
-        this.associatedPoliciesIds = policy.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet());
-        this.resourcesIds = policy.getResources().stream().map(Resource::getId).collect(Collectors.toSet());
-        this.scopesIds = policy.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+
+        if (policy.isFetched("associatedPolicies")) {
+            Set<String> data = policy.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet());
+            this.associatedPoliciesIds = source -> data;
+        } else {
+            this.associatedPoliciesIds = new DefaultLazyLoader<>(source -> source.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet()), Collections::emptySet);
+        }
+
+        if (policy.isFetched("resources")) {
+            Set<String> data = policy.getResources().stream().map(Resource::getId).collect(Collectors.toSet());
+            this.resourcesIds = source -> data;
+        } else {
+            this.resourcesIds = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
+        }
+
+        if (policy.isFetched("scopes")) {
+            Set<String> data = policy.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+            this.scopesIds = source -> data;
+        } else {
+            this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
+        }
+
+        if (policy.isFetched("config")) {
+            Map<String, String> data = new HashMap<>(policy.getConfig());
+            this.config = source -> data;
+        } else {
+            this.config = new DefaultLazyLoader<>(source -> new HashMap<>(source.getConfig()), Collections::emptyMap);
+        }
+
         this.owner = policy.getOwner();
     }
 
@@ -74,8 +103,8 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         return this.logic;
     }
 
-    public Map<String, String> getConfig() {
-        return this.config;
+    public Map<String, String> getConfig(Supplier<Policy> policy) {
+        return this.config.get(policy);
     }
 
     public String getName() {
@@ -86,16 +115,16 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         return this.description;
     }
 
-    public Set<String> getAssociatedPoliciesIds() {
-        return this.associatedPoliciesIds;
+    public Set<String> getAssociatedPoliciesIds(Supplier<Policy> policy) {
+        return this.associatedPoliciesIds.get(policy);
     }
 
-    public Set<String> getResourcesIds() {
-        return this.resourcesIds;
+    public Set<String> getResourcesIds(Supplier<Policy> policy) {
+        return this.resourcesIds.get(policy);
     }
 
-    public Set<String> getScopesIds() {
-        return this.scopesIds;
+    public Set<String> getScopesIds(Supplier<Policy> policy) {
+        return this.scopesIds.get(policy);
     }
 
     public String getResourceServerId() {

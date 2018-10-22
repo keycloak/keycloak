@@ -30,8 +30,8 @@ import org.keycloak.testsuite.arquillian.container.AppServerContainerProvider;
 public class EAPAppServerProvider implements AppServerContainerProvider {
 
     private Node configuration;
-    private static final String containerName = "eap";
 
+    private final String containerName;
     private final String appServerHome;
     private final String appServerJavaHome;
     private final String appServerPortOffset;
@@ -40,6 +40,7 @@ public class EAPAppServerProvider implements AppServerContainerProvider {
     private final String startupTimeoutInSeconds;
 
     public EAPAppServerProvider() {
+        containerName = System.getProperty("app.server");
         appServerHome = System.getProperty("app.server.home");
         appServerJavaHome = System.getProperty("app.server.java.home");
         appServerPortOffset = System.getProperty("app.server.port.offset");
@@ -47,6 +48,7 @@ public class EAPAppServerProvider implements AppServerContainerProvider {
         managementPort = System.getProperty("app.server.management.port");
         startupTimeoutInSeconds = System.getProperty("app.server.startup.timeout");
 
+        Validate.notNullOrEmpty(containerName, "app.server is not set.");
         Validate.notNullOrEmpty(appServerHome, "app.server.home is not set.");
         Validate.notNullOrEmpty(appServerJavaHome, "app.server.java.home is not set.");
         Validate.notNullOrEmpty(appServerPortOffset, "app.server.port.offset is not set.");
@@ -85,6 +87,9 @@ public class EAPAppServerProvider implements AppServerContainerProvider {
         createChild("jbossHome", appServerHome);
         createChild("javaHome", appServerJavaHome);
         createChild("jbossArguments", 
+                "-Djboss.server.base.dir=" + appServerHome + "/standalone-test " +
+                "-Djboss.server.config.dir=" + appServerHome + "/standalone-test/configuration " +
+                "-Djboss.server.log.dir=" + appServerHome + "/standalone-test/log " +
                 "-Djboss.socket.binding.port-offset=" + appServerPortOffset + " " +
                 System.getProperty("adapter.test.props", " ") +
                 System.getProperty("kie.maven.settings", " ")

@@ -82,6 +82,15 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder addAttribute(String name, String... values) {
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+
+        rep.getAttributes().put(name, Arrays.asList(values));
+        return this;
+    }
+
     /**
      * This method makes sure that there is one single password for the user.
      */

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,6 +76,7 @@ import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbAudienceRequired;
 import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
 import org.keycloak.testsuite.adapter.page.CustomerPortal;
 import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
@@ -89,7 +88,6 @@ import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Applications;
@@ -131,8 +129,10 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703
@@ -214,6 +214,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
 
+    @Deployment(name = CustomerDbAudienceRequired.DEPLOYMENT_NAME)
+    protected static WebArchive customerDbAudienceRequired() {
+        return servletDeployment(CustomerDbAudienceRequired.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+    }
+
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
     protected static WebArchive customerDbErrorPage() {
         return servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
@@ -261,6 +266,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         loginEventsPage.setConsoleRealm(DEMO);
         applicationsPage.setAuthRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
+        oAuthGrantPage.setAuthRealm(DEMO);
     }
     
     @Before
@@ -270,21 +276,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         driver.manage().deleteAllCookies();
     }
     
-    private void assumeNotElytronAdapter() {
-        if (!AppServerTestEnricher.isUndertowAppServer()) {
-            try {
-                Assume.assumeFalse(FileUtils.readFileToString(Paths.get(System.getProperty("app.server.home"), "standalone", "configuration", "standalone.xml").toFile(), "UTF-8").contains("<security-domain name=\"KeycloakDomain\""));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     //KEYCLOAK-702
     @Test
     public void testTokenInCookieSSO() {
-        assumeNotElytronAdapter();
-
         // Login
         String tokenCookie = loginToCustomerCookiePortal();
         
@@ -309,8 +303,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-702
     @Test
     public void testTokenInCookieRefresh() {
-        assumeNotElytronAdapter();
-
         log.debug("Set token timeout 10 sec");
         RealmRepresentation demo = adminClient.realm("demo").toRepresentation();
         int originalTokenTimeout = demo.getAccessTokenLifespan();
@@ -360,8 +352,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-702
     @Test
     public void testInvalidTokenCookie() {
-        assumeNotElytronAdapter();
-
         // Login
         String tokenCookie = loginToCustomerCookiePortal();
         String changedTokenCookie = tokenCookie.replace("a", "b");
@@ -449,7 +439,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -524,7 +514,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -550,7 +540,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         log.info("Current url: " + driver.getCurrentUrl());
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         log.info("Current url: " + driver.getCurrentUrl());
@@ -582,7 +572,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(customerPortal);
@@ -664,19 +654,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testVersion() {
-        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
-                "/auth/admin/master/console/#/server-info");
-        jsDriverTestRealmLoginPage.form().login("admin", "admin");
-
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
-
-        Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
-                "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
-        String serverVersion = null;
-        if (matcher.find()) {
-            serverVersion = matcher.group(1);
-        }
+        String serverVersion = adminClient.serverInfo().getInfo().getSystemInfo().getVersion();
 
         assertNotNull(serverVersion);
 
@@ -736,7 +714,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testTokenMinTTL() {
         // Login
         tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(tokenMinTTLPage);
@@ -780,7 +758,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Test I need to reauthenticate with prompt=login
         String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
-        URLUtils.navigateToUri(appUri, true);
+        URLUtils.navigateToUri(appUri);
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         AccessToken token = tokenMinTTLPage.getAccessToken();
@@ -818,14 +796,14 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String portalUri = securePortal.getUriBuilder().build().toString();
             UriBuilder uriBuilder = securePortal.getUriBuilder();
             String appUri = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de en").build().toString();
-            URLUtils.navigateToUri(appUri, true);
+            URLUtils.navigateToUri(appUri);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
             // check the ui_locales param is there
             Map<String, String> parameters = getQueryFromUrl(driver.getCurrentUrl());
             assertThat(parameters.get(OAuth2Constants.UI_LOCALES_PARAM), allOf(containsString("de"), containsString("en")));
 
             String appUriDe = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de").build().toString();
-            URLUtils.navigateToUri(appUriDe, true);
+            URLUtils.navigateToUri(appUriDe);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
             // check that the page is in german
@@ -848,6 +826,50 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmResource().update(demoRealmRep);
         }
     }
+
+
+    @Test
+    public void testVerifyTokenAudience() {
+        // Generate audience client scope
+        Response resp = adminClient.realm("demo").clientScopes().generateAudienceClientScope("customer-db-audience-required");
+        String clientScopeId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("demo"), "customer-portal");
+        client.addOptionalClientScope(clientScopeId);
+
+        // Login without audience scope. Invoke service should end with failure
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Service returned: 401"));
+        Assert.assertFalse(pageSource.contains("Stian Thorgersen"));
+
+        // Logout TODO: will be good to not request logout to force adapter to use additional scope (and other request parameters)
+        driver.navigate().to(customerPortal.logout());
+        waitForPageToLoad();
+
+        // Login with requested audience
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(true));
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+
+        pageSource = driver.getPageSource();
+        Assert.assertFalse(pageSource.contains("Service returned: 401"));
+        assertLogged();
+
+        // logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
 
     @Test
     public void testBasicAuth() {
@@ -994,7 +1016,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         String appServer = System.getProperty("app.server");
         if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
-            serverLogPath = System.getProperty("app.server.home") + "/standalone/log/server.log";
+            serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 
         String appServerUrl;
@@ -1021,7 +1043,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     public void testWithoutKeycloakConf() {
         customerPortalNoConf.navigateTo();
         String pageSource = driver.getPageSource();
-        assertThat(pageSource, anyOf(containsString("Forbidden"), containsString("HTTP Status 401")));
+        assertThat(pageSource, anyOf(containsString("Forbidden"), containsString("forbidden"), containsString("HTTP Status 401")));
     }
     
     // KEYCLOAK-3509

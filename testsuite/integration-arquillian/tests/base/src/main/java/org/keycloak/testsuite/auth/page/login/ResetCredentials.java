@@ -16,20 +16,19 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.auth.page.account.AccountFields;
-import org.keycloak.testsuite.auth.page.account.PasswordFields;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 
 /**
- *
  * @author vramik
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ResetCredentials extends LoginActions {
 
@@ -38,27 +37,25 @@ public class ResetCredentials extends LoginActions {
         return super.createUriBuilder().path("reset-credentials");
     }
 
-    @Page
-    private AccountFields accountFields;
-    @Page
-    private PasswordFields passwordFields;
+    @FindBy(id = "username")
+    private WebElement usernameOrEmailInput;
+
+    @FindBy(xpath = "//a[contains(., 'Back to Login')]")
+    private WebElement backToLoginLink;
 
     @FindBy(id = "kc-info")
     private WebElement info;
     
-    public void resetCredentials(String value) {
-        accountFields.setUsername(value);
-        submit();
-    }
-    
-    public void updatePassword(String password) {
-        passwordFields.setNewPassword(password);
-        passwordFields.setConfirmPassword(password);
+    public void resetCredentials(String usernameOrEmail) {
+        setTextInputValue(usernameOrEmailInput, usernameOrEmail);
         submit();
     }
 
+    public void backToLogin() {
+        clickLink(backToLoginLink);
+    }
+
     public String getInfoMessage() {
-        waitUntilElement(info, "Info message should be visible").is().present();
-        return info.getText();
+        return getTextFromElement(info);
     }
 }

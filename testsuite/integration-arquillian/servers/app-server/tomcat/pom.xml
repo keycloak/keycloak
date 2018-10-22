@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -112,7 +112,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                                            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+                                            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
                                         </artifactItem>                                        
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>

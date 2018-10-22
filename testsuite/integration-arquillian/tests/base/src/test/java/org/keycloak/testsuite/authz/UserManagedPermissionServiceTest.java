@@ -111,6 +111,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         newPermission.addGroup("/group_a", "/group_a/group_b", "/group_c");
         newPermission.addClient("client-a", "resource-server-test");
         newPermission.setCondition("$evaluation.grant()");
+        newPermission.addUser("kolo");
 
         ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
@@ -118,11 +119,17 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         assertEquals(newPermission.getName(), permission.getName());
         assertEquals(newPermission.getDescription(), permission.getDescription());
+        assertNotNull(permission.getScopes());
         assertTrue(permission.getScopes().containsAll(newPermission.getScopes()));
+        assertNotNull(permission.getRoles());
         assertTrue(permission.getRoles().containsAll(newPermission.getRoles()));
+        assertNotNull(permission.getGroups());
         assertTrue(permission.getGroups().containsAll(newPermission.getGroups()));
+        assertNotNull(permission.getClients());
         assertTrue(permission.getClients().containsAll(newPermission.getClients()));
         assertEquals(newPermission.getCondition(), permission.getCondition());
+        assertNotNull(permission.getUsers());
+        assertTrue(permission.getUsers().containsAll(newPermission.getUsers()));
     }
 
     @Test
@@ -233,6 +240,38 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         assertEquals(permission.getCondition(), updated.getCondition());
 
+        permission.addUser("alice");
+
+        protection.policy(resource.getId()).update(permission);
+        assertEquals(5, getAssociatedPolicies(permission).size());
+        updated = protection.policy(resource.getId()).findById(permission.getId());
+        assertEquals(1, updated.getUsers().size());
+        assertEquals(permission.getUsers(), updated.getUsers());
+
+        permission.addUser("kolo");
+
+        protection.policy(resource.getId()).update(permission);
+        assertEquals(5, getAssociatedPolicies(permission).size());
+        updated = protection.policy(resource.getId()).findById(permission.getId());
+        assertEquals(2, updated.getUsers().size());
+        assertEquals(permission.getUsers(), updated.getUsers());
+
+        permission.removeUser("alice");
+
+        protection.policy(resource.getId()).update(permission);
+        assertEquals(5, getAssociatedPolicies(permission).size());
+        updated = protection.policy(resource.getId()).findById(permission.getId());
+        assertEquals(1, updated.getUsers().size());
+        assertEquals(permission.getUsers(), updated.getUsers());
+
+        permission.setUsers(null);
+
+        protection.policy(resource.getId()).update(permission);
+        assertEquals(4, getAssociatedPolicies(permission).size());
+        updated = protection.policy(resource.getId()).findById(permission.getId());
+
+        assertEquals(permission.getUsers(), updated.getUsers());
+
         permission.setCondition(null);
 
         protection.policy(resource.getId()).update(permission);
@@ -308,14 +347,14 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         protection.policy(resource.getId()).update(permission);
 
         try {
-            authzResponse = authorization.authorize(request);
+            authorization.authorize(request);
             fail("User should not have permission");
         } catch (Exception e) {
             assertTrue(AuthorizationDeniedException.class.isInstance(e));
         }
 
         try {
-            authzResponse = getAuthzClient().authorization("alice", "password").authorize(request);
+            getAuthzClient().authorization("alice", "password").authorize(request);
             fail("User should not have permission");
         } catch (Exception e) {
             assertTrue(AuthorizationDeniedException.class.isInstance(e));
@@ -332,7 +371,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         protection.policy(resource.getId()).delete(permission.getId());
 
         try {
-            authzResponse = authorization.authorize(request);
+            authorization.authorize(request);
             fail("User should not have permission");
         } catch (Exception e) {
             assertTrue(AuthorizationDeniedException.class.isInstance(e));
@@ -344,6 +383,27 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         } catch (Exception e) {
             assertEquals(404, HttpResponseException.class.cast(e.getCause()).getStatusCode());
         }
+
+        // create a user based permission, where only selected users are allowed access to the resource.
+        permission = new UmaPermissionRepresentation();
+        permission.setName("Custom User-Managed Permission");
+        permission.setDescription("Specific users are allowed access to the resource");
+        permission.addScope("Scope A");
+        permission.addUser("alice");
+        protection.policy(resource.getId()).create(permission);
+
+        // alice should be able to access the resource with the updated permission.
+        authzResponse = getAuthzClient().authorization("alice", "password").authorize(request);
+        assertNotNull(authzResponse);
+
+        // kolo shouldn't be able to access the resource with the updated permission.
+        try {
+            authorization.authorize(request);
+            fail("User should not have permission to access the protected resource");
+        } catch(Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+
     }
 
     @Test
@@ -395,13 +455,13 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         permission = protection.policy(resource.getId()).create(permission);
 
-        authzResponse = getAuthzClient().authorization("kolo", "password").authorize(request);
+        getAuthzClient().authorization("kolo", "password").authorize(request);
 
         ticket.setGranted(false);
 
         getAuthzClient().protection().permission().update(ticket);
 
-        authzResponse = getAuthzClient().authorization("kolo", "password").authorize(request);
+        getAuthzClient().authorization("kolo", "password").authorize(request);
 
         permission = getAuthzClient().protection("marta", "password").policy(resource.getId()).findById(permission.getId());
 
@@ -495,7 +555,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             getAuthzClient().protection("alice", "password").policy(resource.getId()).create(new UmaPermissionRepresentation());
             fail("Error expected");
         } catch (Exception e) {
-            assertTrue(HttpResponseException.class.cast(e.getCause()).toString().contains("Only resource onwer can access policies for resource"));
+            assertTrue(HttpResponseException.class.cast(e.getCause()).toString().contains("Only resource owner can access policies for resource"));
         }
     }
 

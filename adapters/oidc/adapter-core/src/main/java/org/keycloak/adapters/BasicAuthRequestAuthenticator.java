@@ -85,7 +85,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         return authenticateToken(exchange, atr.getToken());
     } 
  
-    private AccessTokenResponse getToken(String username, String password) throws Exception {
+    protected AccessTokenResponse getToken(String username, String password) throws Exception {
     	AccessTokenResponse tokenResponse=null;
     	HttpClient client = deployment.getClient();
 

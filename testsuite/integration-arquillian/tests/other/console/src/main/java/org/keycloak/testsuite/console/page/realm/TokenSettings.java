@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -27,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.valueOf;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.scrollElementIntoView;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -89,19 +92,20 @@ public class TokenSettings extends RealmSettings {
         private void setTimeout(Select timeoutElement, WebElement unitElement,
                 int timeout, TimeUnit unit) {
             timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
-            setInputValue(unitElement, valueOf(timeout));
+            UIUtils.setTextInputValue(unitElement, valueOf(timeout));
         }
 
         public boolean isOperationEquals(String tokenType, int timeout, TimeUnit unit) {
             selectOperation(tokenType);
 
             return actionTokenAttributeTime.getAttribute("value").equals(Integer.toString(timeout)) &&
-                    actionTokenAttributeUnit.getFirstSelectedOption().getText().equals(capitalize(unit.name().toLowerCase()));
+                    UIUtils.getTextFromElement(actionTokenAttributeUnit.getFirstSelectedOption()).equals(capitalize(unit.name().toLowerCase()));
         }
 
         public void resetActionToken(String tokenType) {
             selectOperation(tokenType);
-            resetButton.click();
+            scrollElementIntoView(resetButton);
+            clickLink(resetButton);
         }
 
         public void selectOperation(String tokenType) {

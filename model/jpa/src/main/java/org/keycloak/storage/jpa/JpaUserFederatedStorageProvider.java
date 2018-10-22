@@ -47,6 +47,7 @@ import org.keycloak.storage.jpa.entity.FederatedUserCredentialAttributeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity;
+import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity.Key;
 import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
 
 import javax.persistence.EntityManager;
@@ -494,14 +495,16 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void addRequiredAction(RealmModel realm, String userId, String action) {
-        createIndex(realm, userId);
-        FederatedUserRequiredActionEntity entity = new FederatedUserRequiredActionEntity();
-        entity.setUserId(userId);
-        entity.setRealmId(realm.getId());
-        entity.setStorageProviderId(new StorageId(userId).getProviderId());
-        entity.setAction(action);
-        em.persist(entity);
-
+        Key key = new FederatedUserRequiredActionEntity.Key(userId, action);
+        if (em.find(FederatedUserRequiredActionEntity.class, key) == null) {
+            createIndex(realm, userId);
+            FederatedUserRequiredActionEntity entity = new FederatedUserRequiredActionEntity();
+            entity.setUserId(userId);
+            entity.setRealmId(realm.getId());
+            entity.setStorageProviderId(new StorageId(userId).getProviderId());
+            entity.setAction(action);
+            em.persist(entity);
+        }
     }
 
     @Override

@@ -18,18 +18,23 @@ package org.keycloak.saml.common.util;
 
 import org.keycloak.saml.common.exceptions.ParsingException;
 import java.nio.charset.Charset;
+import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
+import javax.xml.stream.events.EndDocument;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matcher;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -173,6 +178,40 @@ public class StaxParserUtilTest {
 
         expectedException.expect(XMLStreamException.class);
         reader.nextEvent();
+    }
+
+    @Test
+    public void testGetDOMElementSameElements() throws XMLStreamException, ParsingException {
+        String xml = "<root><test><test><a>b</a></test></test></root>";
+        XMLEventReader reader = StaxParserUtil.getXMLEventReader(IOUtils.toInputStream(xml, Charset.defaultCharset()));
+
+        assertThat(reader.nextEvent(), instanceOf(StartDocument.class));
+
+        assertStartTag(reader.nextEvent(), "root");
+
+        Element element = StaxParserUtil.getDOMElement(reader);
+
+        assertThat(element.getNodeName(), is("test"));
+        assertThat(element.getChildNodes().getLength(), is(1));
+
+        assertThat(element.getChildNodes().item(0), instanceOf(Element.class));
+        Element e = (Element) element.getChildNodes().item(0);
+        assertThat(e.getNodeName(), is("test"));
+
+        assertThat(e.getChildNodes().getLength(), is(1));
+        assertThat(e.getChildNodes().item(0), instanceOf(Element.class));
+        Element e1 = (Element) e.getChildNodes().item(0);
+        assertThat(e1.getNodeName(), is("a"));
+
+        assertThat(e1.getChildNodes().getLength(), is(1));
+        assertThat(e1.getChildNodes().item(0), instanceOf(Text.class));
+        assertThat(((Text) e1.getChildNodes().item(0)).getWholeText(), is("b"));
+
+        assertEndTag(reader.nextEvent(), "root");
+        assertThat(reader.nextEvent(), instanceOf(EndDocument.class));
+
+        expectedException.expect(NoSuchElementException.class);
+        Assert.fail(String.valueOf(reader.nextEvent()));
     }
 
 }

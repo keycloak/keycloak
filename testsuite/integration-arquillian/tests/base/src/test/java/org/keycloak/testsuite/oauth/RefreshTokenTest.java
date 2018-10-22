@@ -23,8 +23,11 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -33,10 +36,12 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -48,6 +53,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.util.List;
 
@@ -142,7 +148,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String refreshTokenString = tokenResponse.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -160,7 +166,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         assertEquals(200, response.getStatusCode());
 
@@ -219,7 +225,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
-            RefreshToken refreshToken1 = oauth.verifyRefreshToken(response1.getRefreshToken());
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -256,14 +262,14 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
-            RefreshToken refreshToken1 = oauth.verifyRefreshToken(response1.getRefreshToken());
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
             setTimeOffset(2);
 
             OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
-            RefreshToken refreshToken2 = oauth.verifyRefreshToken(response2.getRefreshToken());
+            RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
 
             assertEquals(200, response2.getStatusCode());
 
@@ -301,7 +307,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             OAuthClient.AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
-            RefreshToken initialRefreshToken = oauth.verifyRefreshToken(initialResponse.getRefreshToken());
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -309,7 +315,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             // Initial refresh.
             OAuthClient.AccessTokenResponse responseFirstUse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
-            RefreshToken newTokenFirstUse = oauth.verifyRefreshToken(responseFirstUse.getRefreshToken());
+            RefreshToken newTokenFirstUse = oauth.parseRefreshToken(responseFirstUse.getRefreshToken());
 
             assertEquals(200, responseFirstUse.getStatusCode());
 
@@ -319,7 +325,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             // Second refresh (allowed).
             OAuthClient.AccessTokenResponse responseFirstReuse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
-            RefreshToken newTokenFirstReuse = oauth.verifyRefreshToken(responseFirstReuse.getRefreshToken());
+            RefreshToken newTokenFirstReuse = oauth.parseRefreshToken(responseFirstReuse.getRefreshToken());
 
             assertEquals(200, responseFirstReuse.getStatusCode());
 
@@ -370,7 +376,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             OAuthClient.AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
-            RefreshToken initialRefreshToken = oauth.verifyRefreshToken(initialResponse.getRefreshToken());
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -415,7 +421,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             OAuthClient.AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
-            RefreshToken initialRefreshToken = oauth.verifyRefreshToken(initialResponse.getRefreshToken());
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -448,7 +454,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     private void processExpectedValidRefresh(String sessionId, RefreshToken requestToken, String refreshToken) {
         OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(refreshToken, "password");
-        RefreshToken refreshToken2 = oauth.verifyRefreshToken(response2.getRefreshToken());
+        RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
 
         assertEquals(200, response2.getStatusCode());
 
@@ -472,7 +478,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         String refreshTokenString = response.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -503,7 +509,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.poll();
 
-        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+        String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         testingClient.testing().removeUserSession("test", sessionId);
 
@@ -531,7 +537,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.poll();
 
-        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+        String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         int last = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
@@ -540,7 +546,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         AccessToken refreshedToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(tokenResponse.getRefreshToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
 
         assertEquals(200, tokenResponse.getStatusCode());
 
@@ -595,7 +601,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.poll();
 
-        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+        String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         RealmResource realmResource = adminClient.realm("test");
         Integer maxLifespan = realmResource.toRepresentation().getSsoSessionMaxLifespan();
@@ -688,7 +694,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         String refreshTokenString = response.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -718,7 +724,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         String refreshTokenString = response.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         events.expectCodeToToken(codeId, sessionId).user(userId).assertEvent();
 
@@ -751,5 +757,183 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                 .post(Entity.form(form));
     }
 
+    private void refreshToken(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getIdToken()).getHeader();
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String refreshTokenString = tokenResponse.getRefreshToken();
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
+
+        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        Assert.assertNotNull(refreshTokenString);
+
+        assertEquals("bearer", tokenResponse.getTokenType());
+
+        assertEquals(sessionId, refreshToken.getSessionState());
+
+        setTimeOffset(2);
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals(sessionId, refreshedToken.getSessionState());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+
+        Assert.assertNotEquals(token.getId(), refreshedToken.getId());
+        Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
+
+        assertEquals("bearer", response.getTokenType());
+
+        assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
+        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+
+        EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+
+        setTimeOffset(0);
+    }
+
+    @Test
+    public void tokenRefreshRequest_RealmRS384_ClientRS384_EffectiveRS384() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS384);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS384);
+            refreshToken(Algorithm.HS256, Algorithm.RS384, Algorithm.RS384);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void tokenRefreshRequest_RealmRS256_ClientRS512_EffectiveRS256() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS512);
+            refreshToken(Algorithm.HS256, Algorithm.RS512, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void tokenRefreshRequest_RealmRS256_ClientES256_EffectiveRS256() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void tokenRefreshRequest_RealmES384_ClientES384_EffectiveES384() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES384);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES384);
+            TokenSignatureUtil.registerKeyProvider("P-384", adminClient, testContext);
+            refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void tokenRefreshRequest_RealmRS256_ClientES512_EffectiveRS256() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES512);
+            TokenSignatureUtil.registerKeyProvider("P-521", adminClient, testContext);
+            refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    private void refreshTokenSignatureVerifyOnly(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getIdToken()).getHeader();
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(tokenResponse.getRefreshToken()).getHeader();
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        Assert.assertNotNull(refreshTokenString);
+
+        assertEquals("bearer", tokenResponse.getTokenType());
+
+        setTimeOffset(2);
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals("bearer", response.getTokenType());
+
+        // decode JWS for refreshed access token and refresh token
+        assertEquals(TokenSignatureUtil.verifySignature(expectedAccessAlg, response.getAccessToken(), adminClient), true);
+        assertEquals(TokenSignatureUtil.verifySignature(expectedIdTokenAlg, response.getIdToken(), adminClient), true);
+
+        EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+
+        setTimeOffset(0);
+    }
 
 }

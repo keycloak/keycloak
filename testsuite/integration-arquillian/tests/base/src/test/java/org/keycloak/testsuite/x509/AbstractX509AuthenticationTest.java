@@ -98,6 +98,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
+    @Override
     protected boolean isImportAfterEachMethod() {
         return true;
     }
@@ -113,9 +114,9 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
                 cliArgs.append("--ignore-ssl-errors=true ");
                 cliArgs.append("--web-security=false ");
-                cliArgs.append("--ssl-certificates-path=" + authServerHome + "/ca.crt ");
-                cliArgs.append("--ssl-client-certificate-file=" + authServerHome + "/client.crt ");
-                cliArgs.append("--ssl-client-key-file=" + authServerHome + "/client.key ");
+                cliArgs.append("--ssl-certificates-path=").append(authServerHome).append("/ca.crt ");
+                cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append("/client.crt ");
+                cliArgs.append("--ssl-client-key-file=").append(authServerHome).append("/client.key ");
                 cliArgs.append("--ssl-client-key-passphrase=secret ");
 
                 System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
@@ -217,7 +218,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
-        URI redir = URI.create("https://localhost:" + System.getProperty("app.server.https.port", "8543") + baseUri.getRawPath());
+        URI redir = URI.create("https://localhost:" + System.getProperty("auth.server.https.port", "8543") + baseUri.getRawPath());
         client.getRedirectUris().add(redir.toString());
 
         testRealm.setBruteForceProtected(true);

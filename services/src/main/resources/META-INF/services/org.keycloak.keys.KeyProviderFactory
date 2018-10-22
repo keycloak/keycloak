@@ -20,3 +20,4 @@ org.keycloak.keys.GeneratedAesKeyProviderFactory
 org.keycloak.keys.GeneratedRsaKeyProviderFactory
 org.keycloak.keys.JavaKeystoreKeyProviderFactory
 org.keycloak.keys.ImportedRsaKeyProviderFactory
+org.keycloak.keys.GeneratedEcdsaKeyProviderFactory

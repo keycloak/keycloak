@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.authorization.model.PermissionTicket;
@@ -30,7 +31,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.evaluator.Evaluators;
-import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
+import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
@@ -74,18 +75,18 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
  */
 public final class AuthorizationProvider implements Provider {
 
-    private final DefaultPolicyEvaluator policyEvaluator;
+    private final PolicyEvaluator policyEvaluator;
     private StoreFactory storeFactory;
     private StoreFactory storeFactoryDelegate;
     private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories, PolicyEvaluator policyEvaluator) {
         this.keycloakSession = session;
         this.realm = realm;
         this.policyProviderFactories = policyProviderFactories;
-        this.policyEvaluator = new DefaultPolicyEvaluator(this);
+        this.policyEvaluator = policyEvaluator;
     }
 
     /**
@@ -95,7 +96,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link Evaluators} instance
      */
     public Evaluators evaluators() {
-        return new Evaluators(policyEvaluator);
+        return new Evaluators(this);
     }
 
     /**
@@ -169,6 +170,10 @@ public final class AuthorizationProvider implements Provider {
         return realm;
     }
 
+    public PolicyEvaluator getPolicyEvaluator() {
+        return policyEvaluator;
+    }
+
     @Override
     public void close() {
 
@@ -218,6 +223,16 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void close() {
                 storeFactory.close();
+            }
+
+            @Override
+            public void setReadOnly(boolean readOnly) {
+                storeFactory.setReadOnly(readOnly);
+            }
+
+            @Override
+            public boolean isReadOnly() {
+                return storeFactory.isReadOnly();
             }
         };
     }
@@ -381,6 +396,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+                policyStore.findByResource(resourceId, resourceServerId, consumer);
+            }
+
+            @Override
             public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
                 return policyStore.findByResourceType(resourceType, resourceServerId);
             }
@@ -396,6 +416,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+                policyStore.findByScopeIds(scopeIds, resourceId, resourceServerId, consumer);
+            }
+
+            @Override
             public List<Policy> findByType(String type, String resourceServerId) {
                 return policyStore.findByType(type, resourceServerId);
             }
@@ -403,6 +428,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public List<Policy> findDependentPolicies(String id, String resourceServerId) {
                 return policyStore.findDependentPolicies(id, resourceServerId);
+            }
+
+            @Override
+            public void findByResourceType(String type, String id, Consumer<Policy> policyConsumer) {
+                policyStore.findByResourceType(type, id, policyConsumer);
             }
         };
     }
@@ -457,6 +487,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByOwner(ownerId, resourceServerId, consumer);
+            }
+
+            @Override
             public List<Resource> findByUri(String uri, String resourceServerId) {
                 return delegate.findByUri(uri, resourceServerId);
             }
@@ -477,6 +512,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByScope(scopes, resourceServerId, consumer);
+            }
+
+            @Override
             public Resource findByName(String name, String resourceServerId) {
                 return delegate.findByName(name, resourceServerId);
             }
@@ -489,6 +529,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public List<Resource> findByType(String type, String resourceServerId) {
                 return delegate.findByType(type, resourceServerId);
+            }
+
+            @Override
+            public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByType(type, resourceServerId, consumer);
             }
         };
     }

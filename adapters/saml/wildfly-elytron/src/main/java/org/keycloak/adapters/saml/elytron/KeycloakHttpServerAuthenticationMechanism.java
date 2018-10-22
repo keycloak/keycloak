@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.security.auth.callback.CallbackHandler;
+import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlAuthenticator;
@@ -79,7 +80,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             return;
         }
 
-        if (httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
+        if (deployment.getLogoutPage() != null && httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
             LOGGER.debugf("Ignoring request for [%s] and logout page [%s].", request.getRequestURI(), deployment.getLogoutPage());
             httpFacade.authenticationCompleteAnonymous();
             return;
@@ -131,16 +132,14 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
     private SamlDeploymentContext getDeploymentContext(HttpServerRequest request) {
         if (this.deploymentContext == null) {
-            return (SamlDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE);
+            return (SamlDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON);
         }
 
         return this.deploymentContext;
     }
 
     protected void redirectLogout(SamlDeployment deployment, ElytronHttpFacade exchange) {
-        String page = deployment.getLogoutPage();
-        sendRedirect(exchange, page);
-        exchange.getResponse().setStatus(302);
+        sendRedirect(exchange, deployment.getLogoutPage());
     }
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
@@ -148,7 +147,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     static void sendRedirect(final ElytronHttpFacade exchange, final String location) {
         if (location == null) {
             LOGGER.warn("Logout page not set.");
-            exchange.getResponse().setStatus(302);
+            exchange.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
         if (PROTOCOL_PATTERN.matcher(location).find()) {
@@ -161,5 +160,6 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             String loc = exchange.getURI().getScheme() + "://" + exchange.getURI().getHost() + ":" + exchange.getURI().getPort() + contextPath + location;
             exchange.getResponse().setHeader("Location", loc);
         }
+        exchange.getResponse().setStatus(HttpServletResponse.SC_FOUND);
     }
 }

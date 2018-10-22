@@ -17,22 +17,21 @@
  */
 package org.keycloak.protocol.oidc;
 
-import java.io.IOException;
-import java.security.PublicKey;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -74,36 +73,20 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         AccessToken accessToken;
 
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(token)
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
 
-            if (publicKey == null) {
-                return null;
-            }
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            verifier.verifierContext(verifierContext);
 
-            accessToken = verifier.publicKey(publicKey).verify().getToken();
+            accessToken = verifier.verify().getToken();
         } catch (VerificationException e) {
             return null;
         }
 
         RealmModel realm = this.session.getContext().getRealm();
 
-        return tokenManager.isTokenValid(session, realm, accessToken) ? accessToken : null;
-    }
-
-    protected AccessToken toAccessToken(String token) {
-        try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(token)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-
-            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
-            verifier.publicKey(publicKey);
-
-            return verifier.verify().getToken();
-        } catch (VerificationException e) {
-            throw new ErrorResponseException("invalid_request", "Invalid token.", Response.Status.UNAUTHORIZED);
-        }
+        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken) ? accessToken : null;
     }
 
     @Override

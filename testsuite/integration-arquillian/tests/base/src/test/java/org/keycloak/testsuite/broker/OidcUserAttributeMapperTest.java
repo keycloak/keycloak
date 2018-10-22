@@ -32,7 +32,23 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
           .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
           .build());
 
-        return Lists.newArrayList(attrMapper1, emailAttrMapper);
+        IdentityProviderMapperRepresentation nestedEmailAttrMapper = new IdentityProviderMapperRepresentation();
+        nestedEmailAttrMapper.setName("nested-attribute-mapper-email");
+        nestedEmailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        nestedEmailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(UserAttributeMapper.CLAIM, "nested.email")
+          .put(UserAttributeMapper.USER_ATTRIBUTE, "nested.email")
+          .build());
+
+        IdentityProviderMapperRepresentation dottedEmailAttrMapper = new IdentityProviderMapperRepresentation();
+        dottedEmailAttrMapper.setName("dotted-attribute-mapper-email");
+        dottedEmailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        dottedEmailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(UserAttributeMapper.CLAIM, "dotted\\.email")
+          .put(UserAttributeMapper.USER_ATTRIBUTE, "dotted.email")
+          .build());
+
+        return Lists.newArrayList(attrMapper1, emailAttrMapper, nestedEmailAttrMapper, dottedEmailAttrMapper);
     }
 
 }

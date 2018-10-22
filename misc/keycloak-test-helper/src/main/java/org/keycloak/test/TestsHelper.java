@@ -45,6 +45,10 @@ import java.util.Arrays;
 
 import static org.keycloak.test.builders.ClientBuilder.AccessType.PUBLIC;
 
+/**
+ * @deprecated This class will be removed in the next major release. Please migrate to {@link FluentTestsHelper}.
+ */
+@Deprecated
 public class TestsHelper {
 
     public static String baseUrl;

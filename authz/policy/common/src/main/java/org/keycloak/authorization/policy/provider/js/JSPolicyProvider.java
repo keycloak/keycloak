@@ -19,6 +19,9 @@ package org.keycloak.authorization.policy.provider.js;
 
 import java.util.function.BiFunction;
 
+import javax.script.ScriptContext;
+import javax.script.SimpleScriptContext;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -40,14 +43,14 @@ class JSPolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
         AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
-        final EvaluatableScriptAdapter adapter = evaluatableScript.apply(authorization, policy);
+        EvaluatableScriptAdapter adapter = evaluatableScript.apply(authorization, policy);
 
         try {
-            //how to deal with long running scripts -> timeout?
-            adapter.eval(bindings -> {
-                bindings.put("script", adapter.getScriptModel());
-                bindings.put("$evaluation", evaluation);
-            });
+            SimpleScriptContext context = new SimpleScriptContext();
+
+            context.setAttribute("$evaluation", evaluation, ScriptContext.ENGINE_SCOPE);
+
+            adapter.eval(context);
         }
         catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);

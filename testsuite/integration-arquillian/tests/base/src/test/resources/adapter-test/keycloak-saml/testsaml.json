@@ -32,8 +32,8 @@
             },
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
-                "http://localhost:8081/employee/": [ "employee" ],
-                "http://localhost:8081/employee2/": [ "employee" ]
+                "http://localhost:8280/employee/": [ "employee" ],
+                "http://localhost:8280/employee2/": [ "employee" ]
             }
         },
         {
@@ -49,8 +49,8 @@
             },
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
-                "http://localhost:8081/employee/": [ "employee" ],
-                "http://localhost:8081/employee2/": [ "employee" ]
+                "http://localhost:8280/employee/": [ "employee" ],
+                "http://localhost:8280/employee2/": [ "employee" ]
             }
         },
         {
@@ -102,7 +102,7 @@
     ],
     "clients": [
         {
-            "clientId": "http://localhost:8081/missing-assertion-sig/",
+            "clientId": "http://localhost:8280/missing-assertion-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -124,7 +124,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-assertion-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-assertion-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -141,7 +141,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/input-portal/",
+            "clientId": "http://localhost:8280/input-portal/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -158,7 +158,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-assertion-and-response-sig/",
+            "clientId": "http://localhost:8280/sales-post-assertion-and-response-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -180,7 +180,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post2/",
+            "clientId": "http://localhost:8280/sales-post2/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -197,7 +197,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/different-cookie-name/",
+            "clientId": "http://localhost:8280/different-cookie-name/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -212,7 +212,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post/",
+            "clientId": "http://localhost:8280/sales-post/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -228,7 +228,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-passive/",
+            "clientId": "http://localhost:8280/sales-post-passive/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -242,7 +242,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig/",
+            "clientId": "http://localhost:8280/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -259,7 +259,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-transient/",
+            "clientId": "http://localhost:8280/sales-post-sig-transient/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -277,7 +277,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-persistent/",
+            "clientId": "http://localhost:8280/sales-post-sig-persistent/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -294,7 +294,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-sig-email/",
+            "clientId": "http://localhost:8280/sales-post-sig-email/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -315,7 +315,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-realm-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-realm-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -332,7 +332,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/bad-client-sales-post-sig/",
+            "clientId": "http://localhost:8280/bad-client-sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -349,7 +349,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-enc/",
+            "clientId": "http://localhost:8280/sales-post-enc/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -368,7 +368,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/sales-post-enc-sign-assertions-only/",
+            "clientId": "http://localhost:8280/sales-post-enc-sign-assertions-only/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -387,7 +387,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig/",
+            "clientId": "http://localhost:8280/employee-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -405,7 +405,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-redir-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-redir-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -423,7 +423,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-redir-opt-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-redir-opt-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -442,7 +442,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-post-noidpkey/",
+            "clientId": "http://localhost:8280/employee-sig-post-noidpkey/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -460,7 +460,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/employee/",
+            "clientId": "http://localhost:8280/employee/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -510,7 +510,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee-acs/",
+            "clientId": "http://localhost:8280/employee-acs/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -560,7 +560,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee2/",
+            "clientId": "http://localhost:8280/employee2/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -611,7 +611,7 @@
             ]
         },
         {
-            "clientId": "http://localhost:8081/employee-sig-front/",
+            "clientId": "http://localhost:8280/employee-sig-front/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -629,7 +629,7 @@
             }
         },
         {
-            "clientId": "http://localhost:8081/ecp-sp/",
+            "clientId": "http://localhost:8280/ecp-sp/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -683,13 +683,13 @@
             }
         ],
         "application" : {
-            "http://localhost:8081/employee/" : [
+            "http://localhost:8280/employee/" : [
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"
                 }
             ],
-            "http://localhost:8081/employee2/" : [
+            "http://localhost:8280/employee2/" : [
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"

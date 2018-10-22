@@ -22,11 +22,13 @@ import org.junit.Test;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -152,5 +154,36 @@ public class JsonParserTest {
         OIDCClientRepresentation clientRep = JsonSerialization.readValue(stringRep, OIDCClientRepresentation.class);
         Assert.assertNotNull(clientRep.getJwks());
     }
+
+
+    @Test
+    public void testResourceRepresentationParsing() throws Exception {
+        Map<String, Object> resource = parseResourceRepresentation("{ \"_id\": \"123\", \"name\": \"foo\" }");
+        Assert.assertFalse(resource.containsKey("uri"));
+        Assert.assertFalse(resource.containsKey("uris"));
+
+        resource = parseResourceRepresentation("{ \"_id\": \"123\", \"name\": \"foo\", \"uris\": [ \"uri1\", \"uri2\" ] }");
+        Assert.assertFalse(resource.containsKey("uri"));
+        Assert.assertTrue(resource.containsKey("uris"));
+        Collection<String> uris = (Collection) resource.get("uris");
+        Assert.assertEquals(2, uris.size());
+        Assert.assertTrue(uris.contains("uri1"));
+        Assert.assertTrue(uris.contains("uri2"));
+
+        // Backwards compatibility (using old property "uri")
+        resource = parseResourceRepresentation("{ \"_id\": \"123\", \"name\": \"foo\", \"uri\": \"uri1\" }");
+        Assert.assertFalse(resource.containsKey("uri"));
+        Assert.assertTrue(resource.containsKey("uris"));
+        uris = (Collection) resource.get("uris");
+        Assert.assertEquals(1, uris.size());
+        Assert.assertTrue(uris.contains("uri1"));
+    }
+
+    private Map<String, Object> parseResourceRepresentation(String resourceJson) throws Exception {
+        ResourceRepresentation rep = JsonSerialization.readValue(resourceJson, ResourceRepresentation.class);
+        String repp = JsonSerialization.writeValueAsString(rep);
+        return JsonSerialization.readValue(repp, Map.class);
+    }
+
 
 }

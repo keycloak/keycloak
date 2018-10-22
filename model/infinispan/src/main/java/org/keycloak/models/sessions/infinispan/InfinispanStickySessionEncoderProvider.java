@@ -22,6 +22,7 @@ import org.infinispan.distribution.DistributionManager;
 import org.infinispan.remoting.transport.Address;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
@@ -30,12 +31,10 @@ import org.keycloak.sessions.StickySessionEncoderProvider;
 public class InfinispanStickySessionEncoderProvider implements StickySessionEncoderProvider {
 
     private final KeycloakSession session;
-    private final String myNodeName;
     private final boolean shouldAttachRoute;
 
-    public InfinispanStickySessionEncoderProvider(KeycloakSession session, String myNodeName, boolean shouldAttachRoute) {
+    public InfinispanStickySessionEncoderProvider(KeycloakSession session, boolean shouldAttachRoute) {
         this.session = session;
-        this.myNodeName = myNodeName;
         this.shouldAttachRoute = shouldAttachRoute;
     }
 
@@ -45,9 +44,9 @@ public class InfinispanStickySessionEncoderProvider implements StickySessionEnco
             return sessionId;
         }
 
-        String nodeName = getNodeName(sessionId);
-        if (nodeName != null) {
-            return sessionId + '.' + nodeName;
+        String route = getRoute(sessionId);
+        if (route != null) {
+            return sessionId + '.' + route;
         } else {
             return sessionId;
         }
@@ -71,19 +70,10 @@ public class InfinispanStickySessionEncoderProvider implements StickySessionEnco
     }
 
 
-    private String getNodeName(String sessionId) {
+    private String getRoute(String sessionId) {
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
         Cache cache = ispnProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
-        DistributionManager distManager = cache.getAdvancedCache().getDistributionManager();
-
-        if (distManager != null) {
-            // Sticky session to the node, who owns this authenticationSession
-            Address address = distManager.getPrimaryLocation(sessionId);
-            return address.toString();
-        } else {
-            // Fallback to jbossNodeName if authSession cache is local
-            return myNodeName;
-        }
+        return InfinispanUtil.getTopologyInfo(session).getRouteName(cache, sessionId);
     }
 
 

@@ -27,20 +27,32 @@
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
         <property name="githubUsername">${github.username}</property>
         <property name="githubToken">${github.secretToken}</property>
-        <property name="ieDriverArch">${ieDriverArch}</property>
 
         <!-- htmlunit -->
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
         <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
 
         <!-- firefox -->
-        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="firefoxBinary">${firefox_binary}</property> <!-- we need to use 'firefoxBinary' instead of 'firefox_binary' due to some weird conflict with Appium -->
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${chromeArguments}</property>
+
+        <!-- internet explorer -->
+        <property name="ieDriverArch">${ieDriverArch}</property>
+
+        <!-- appium -->
+        <property name="appium.platformName">${appium.platformName}</property>
+        <property name="appium.deviceName">${appium.deviceName}</property>
+        <property name="appium.browserName">${appium.browserName}</property>
+        <property name="appium.avd">${appium.avd}</property>
+        <property name="appium.automationName">${appium.automationName}</property>
+        <property name="appium.noReset">${appium.noReset}</property>
+        <property name="appium.fullReset">${appium.fullReset}</property>
+        <property name="appium.nativeWebScreenshot">true</property> <!-- there's some issue when taking screenshot using the chromedriver therefore we need to take screenshots of the whole screen (using adb) instead -->
     </extension>
 
     <extension qualifier="drone">
@@ -66,7 +78,7 @@
         <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
 
         <!-- firefox -->
-        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="firefoxBinary">${firefox_binary}</property>
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
 
@@ -77,15 +89,15 @@
 
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
-        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="firefoxBinary">${firefox_binary}</property>
     </extension>
-    
+
     <engine>
         <!-- This allows manual inspection of deployed archives. -->
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
-    
-    <container qualifier="auth-server-undertow" mode="suite" default="true">
+
+    <container qualifier="auth-server-undertow" mode="manual" default="true">
         <configuration>
             <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="bindAddress">0.0.0.0</property>
@@ -94,8 +106,8 @@
             <property name="remoteMode">${undertow.remote}</property>
         </configuration>
     </container>
-    
-    <container qualifier="auth-server-${auth.server}" mode="suite" default="true">
+
+    <container qualifier="auth-server-${auth.server}" mode="manual" default="true">
         <configuration>
             <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -131,7 +143,7 @@
     <group qualifier="auth-server-${auth.server}-cluster">
         <container qualifier="auth-server-${auth.server}-backend1" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -155,7 +167,7 @@
         </container>
         <container qualifier="auth-server-${auth.server}-backend2" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${auth.server.backend2.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -191,7 +203,9 @@
                 <property name="route">node1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.nodeName": "node1"
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
             </configuration>
@@ -206,7 +220,9 @@
                 <property name="route">node2</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.nodeName": "node2"
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node2",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
             </configuration>
@@ -214,7 +230,7 @@
 
         <container qualifier="auth-server-balancer-undertow" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="enabled">${auth.server.cluster}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
@@ -226,7 +242,7 @@
 
     <!-- Cross DC. Node numbering is [centre #].[node #] -->
     <group qualifier="auth-server-jboss-cross-dc">
-        <container qualifier="cache-server-cross-dc-1" mode="suite" >
+        <container qualifier="cache-server-cross-dc-1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
@@ -252,7 +268,7 @@
             </configuration>
         </container>
 
-        <container qualifier="cache-server-cross-dc-2" mode="suite" >
+        <container qualifier="cache-server-cross-dc-2" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
@@ -290,7 +306,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="suite" >
+        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.undertow.crossdc}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
@@ -307,6 +323,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -330,6 +347,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -337,7 +355,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="suite" >
+        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.undertow.crossdc}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
@@ -354,6 +372,7 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -377,13 +396,14 @@
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
                 }</property>
             </configuration>
         </container>
-        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="suite" >
+        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.jboss.crossdc}</property>
                 <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -398,8 +418,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc01.jvm.debug.args}
                 </property>
@@ -424,8 +446,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc02.jvm.debug.args}
                 </property>
@@ -436,7 +460,7 @@
             </configuration>
         </container>
 
-        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="suite" >
+        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="manual" >
             <configuration>
                 <property name="enabled">${auth.server.jboss.crossdc}</property>
                 <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
@@ -451,8 +475,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc11.jvm.debug.args}
                 </property>
@@ -477,8 +503,10 @@
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
+                    -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc12.jvm.debug.args}
                 </property>
@@ -489,27 +517,6 @@
             </configuration>
         </container>
     </group>
-    
-
-    <container qualifier="auth-server-balancer-wildfly" mode="suite" >
-        <configuration>
-            <property name="enabled">${auth.server.cluster}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${auth.server.balancer.home}</property>
-            <property name="jbossArguments">
-                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
-                -Dauth.server.truststore=${auth.server.truststore}
-                -Dauth.server.truststore.password=${auth.server.truststore.password}
-            </property>
-            <property name="javaVmArguments">
-                -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
-                -Djava.net.preferIPv4Stack=true
-            </property>
-            <property name="outputToConsole">${frontend.console.output}</property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
-        </configuration>
-    </container>
     
     <container qualifier="auth-server-remote" mode="suite" >
         <configuration>

@@ -40,7 +40,9 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -190,7 +192,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             int clientSessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(clientSessionsCacheName).size();
             int remoteSessions1 = (Integer) cacheDc1Statistics.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
             int remoteSessions2 = (Integer) cacheDc2Statistics.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
-            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_SENT_MESSAGES);
+            // Needs to use "received_messages" on Infinispan 9.2.4.Final.  Stats for "sent_messages" is always null
+            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_RECEIVED_MESSAGES);
             log.infof(messagePrefix + ": sessions1: %d, sessions2: %d, remoteSessions1: %d, remoteSessions2: %d, sentMessages: %d", sessions1, sessions2, remoteSessions1, remoteSessions2, messagesCount);
 
             Assert.assertEquals(sessions1, sessions1Expected);
@@ -417,20 +420,27 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC)
     public void testLogoutUserWithFailover(
             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-
-        // Start node2 on first DC
-        startBackendNode(DC.FIRST, 1);
 
         // Don't include remote stats. Size is smaller because of distributed cache
         List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
                 false, cacheDc1Statistics, cacheDc2Statistics, false);
 
         // Kill node2 now. Around 10 sessions (half of SESSIONS_COUNT) will be lost on Keycloak side. But not on infinispan side
-        stopBackendNode(DC.FIRST, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 1);
+
+        // Assert it's still possible to refresh tokens. UserSessions, which were cleared from the Keycloak node, should be downloaded from remoteStore
+        int i1 = 0;
+        for (OAuthClient.AccessTokenResponse response : responses) {
+            i1++;
+            OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            Assert.assertNotNull("Failed in iteration " + i1, refreshTokenResponse.getRefreshToken());
+            Assert.assertNull("Failed in iteration " + i1, refreshTokenResponse.getError());
+        }
 
         channelStatisticsCrossDc.reset();
 
@@ -461,14 +471,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     @Test
+    @InitialDcState(authServers = ServerSetup.ALL_NODES_IN_EVERY_DC)
     public void testLogoutWithAllStartedNodes(
             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-
-        // Start node2 on every DC
-        startBackendNode(DC.FIRST, 1);
-        startBackendNode(DC.SECOND, 1);
 
         // Create sessions. Don't include remote stats. Size is smaller because of distributed cache
         List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
@@ -505,8 +512,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         }, 50, 50);
 
         // Stop both nodes
-        stopBackendNode(DC.FIRST, 1);
-        stopBackendNode(DC.SECOND, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.FIRST, 1);
+        CrossDCTestEnricher.stopAuthServerBackendNode(DC.SECOND, 1);
     }
 
     private void assertTestAppActiveSessionsCount(int expectedSessionsCount) {
@@ -665,7 +672,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         Retry.execute(() -> {
             int authSessions1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
             int authSessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
-            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_SENT_MESSAGES);
+            long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_RECEIVED_MESSAGES);
             log.infof(messagePrefix + ": authSessions1: %d, authSessions2: %d, sentMessages: %d", authSessions1, authSessions2, messagesCount);
 
             int diff1 = authSessions1 - authSessions01;

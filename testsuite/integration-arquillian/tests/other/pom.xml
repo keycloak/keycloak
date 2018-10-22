@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -65,8 +65,8 @@
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
-                                        <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*</includes>
+                                        <classifier>tests</classifier>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*,log4j.properties</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -165,6 +165,12 @@
             <id>welcome-page</id>
             <modules>
                 <module>welcome-page</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>base-ui</id>
+            <modules>
+                <module>base-ui</module>
             </modules>
         </profile>
     </profiles>

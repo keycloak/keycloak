@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
@@ -72,24 +72,6 @@
         </profile>
 
         <profile>
-            <id>app-server-eap6</id>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly9</id>
-            <modules>
-                <module>wildfly9</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-wildfly10</id>
-            <modules>
-                <module>wildfly10</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-relative</id>
             <modules>
                 <module>relative</module>
@@ -99,12 +81,6 @@
             <id>app-server-remote</id>
             <modules>
                 <module>remote</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-eap6-fuse</id>
-            <modules>
-                <module>eap6-fuse</module>
             </modules>
         </profile>
     </profiles>

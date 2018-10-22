@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -361,6 +361,7 @@
             <properties>
                 <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
+                <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
             </properties>
             <build>
                 <pluginManagement>
@@ -478,6 +479,10 @@
                                                     <parameter>
                                                         <name>password</name>
                                                         <value>${keycloak.connectionsJpa.password}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>schema</name>
+                                                        <value>${keycloak.connectionsJpa.schema}</value>
                                                     </parameter>
                                                 </parameters>
                                             </transformationSet>
@@ -766,25 +771,6 @@
                                                 </parameters>
                                             </transformationSet>
                                         </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-antrun-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>configure-modcluster</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>run</goal>
-                                    </goals>
-                                    <configuration>
-                                        <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="modcluster" />
-                                        </target>
                                     </configuration>
                                 </execution>
                             </executions>

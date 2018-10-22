@@ -1,5 +1,7 @@
 /subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900)
 /subsystem=keycloak-server/theme=defaults/:add(dir=${jboss.home.dir}/themes,staticMaxAge=2592000,cacheTemplates=true,cacheThemes=true)
+/subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
+/subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
 /subsystem=keycloak-server/spi=eventsStore/:add
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)
 /subsystem=keycloak-server/spi=userCache/:add
@@ -13,7 +15,7 @@
 /subsystem=keycloak-server/spi=realmCache/:add
 /subsystem=keycloak-server/spi=realmCache/provider=default/:add(enabled=true)
 /subsystem=keycloak-server/spi=connectionsInfinispan/:add(default-provider=default)
-/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default/:add(properties={cacheContainer => "java:comp/env/infinispan/Keycloak"},enabled=true)
+/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default/:add(properties={cacheContainer => "java:jboss/infinispan/container/keycloak"},enabled=true)
 /subsystem=keycloak-server/spi=jta-lookup/:add(default-provider=${keycloak.jta.lookup.provider:jboss})
 /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
 /subsystem=keycloak-server/spi=publicKeyStorage/:add

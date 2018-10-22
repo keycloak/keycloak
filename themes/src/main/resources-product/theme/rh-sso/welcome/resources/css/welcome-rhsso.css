@@ -1,0 +1,12 @@
+body {
+  background-image: url(../bg.png),url(../bg-login.png);
+  background-repeat: no-repeat,no-repeat;
+  background-position: right bottom, left top;
+  background-size: auto, auto;
+  background-color: #1a1a1a;
+  height: 100%;
+}
+
+.welcome-header {
+  color: #fff;
+}

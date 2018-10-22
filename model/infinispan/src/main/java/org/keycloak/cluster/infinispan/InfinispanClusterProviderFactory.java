@@ -33,6 +33,7 @@ import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
@@ -77,7 +78,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     @Override
     public ClusterProvider create(KeycloakSession session) {
         lazyInit(session);
-        String myAddress = InfinispanUtil.getMyAddress(session);
+        String myAddress = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
         return new InfinispanClusterProvider(clusterStartupTime, myAddress, crossDCAwareCacheFactory, notificationsManager, localExecutor);
     }
 
@@ -96,8 +97,9 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
                     clusterStartupTime = initClusterStartupTime(session);
 
-                    String myAddress = InfinispanUtil.getMyAddress(session);
-                    String mySite = InfinispanUtil.getMySite(session);
+                    TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
+                    String myAddress = topologyInfo.getMyNodeName();
+                    String mySite = topologyInfo.getMySiteName();
 
                     notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, remoteStores);
                 }

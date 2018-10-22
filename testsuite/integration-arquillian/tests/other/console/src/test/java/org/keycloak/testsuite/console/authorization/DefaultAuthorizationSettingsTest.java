@@ -40,7 +40,7 @@ public class DefaultAuthorizationSettingsTest extends AbstractAuthorizationSetti
         AuthorizationSettingsForm settings = authorizationPage.settings();
 
         assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING, settings.getEnforcementMode());
-        assertEquals(false, settings.isAllowRemoteResourceManagement());
+        assertEquals(true, settings.isAllowRemoteResourceManagement());
 
         Resources resources = authorizationPage.authorizationTabs().resources();
         ResourceRepresentation resource = resources.resources().findByName("Default Resource");

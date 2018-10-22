@@ -29,7 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
@@ -43,6 +43,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -85,11 +86,15 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
-        testRealms.add(realm.build());
+        RealmRepresentation testRealm = realm.build();
+        testRealms.add(testRealm);
 
+        ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "saml-client");
+        samlApp.setSecret("secret");
+        samlApp.setServiceAccountsEnabled(true);
+        samlApp.setDirectAccessGrantsEnabled(true);
     }
 
     @Test
@@ -222,6 +227,66 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testSuccessSignedResponseES256() throws Exception {
+
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+
+            // Require signed userInfo request
+            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(Algorithm.ES256);
+            clientResource.update(clientRep);
+
+            // test signed response
+            Client client = ClientBuilder.newClient();
+
+            try {
+                AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+                events.expect(EventType.USER_INFO_REQUEST)
+                        .session(Matchers.notNullValue(String.class))
+                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                        .detail(Details.USERNAME, "test-user@localhost")
+                        .detail(Details.SIGNATURE_REQUIRED, "true")
+                        .detail(Details.SIGNATURE_ALGORITHM, Algorithm.ES256.toString())
+                        .assertEvent();
+
+                Assert.assertEquals(200, response.getStatus());
+                Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+                String signedResponse = response.readEntity(String.class);
+                response.close();
+
+                JWSInput jwsInput = new JWSInput(signedResponse);
+
+                assertEquals("ES256", jwsInput.getHeader().getAlgorithm().name());
+
+                UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
+
+                Assert.assertNotNull(userInfo);
+                Assert.assertNotNull(userInfo.getSubject());
+                Assert.assertEquals("test-user@localhost", userInfo.getEmail());
+                Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+
+                Assert.assertTrue(userInfo.hasAudience("test-app"));
+                String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
+                Assert.assertEquals(expectedIssuer, userInfo.getIssuer());
+
+            } finally {
+                client.close();
+            }
+
+            // Revert signed userInfo request
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
+            clientResource.update(clientRep);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, org.keycloak.crypto.Algorithm.RS256);
+        }
+    }
+
+    @Test
     public void testSessionExpired() throws Exception {
         Client client = ClientBuilder.newClient();
 
@@ -285,6 +350,35 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
 
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUserInfoRequestWithSamlClient() throws Exception {
+        // obtain an access token
+        String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", null, "saml-client", "secret").getAccessToken();
+
+        // change client's protocol
+        ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
+        samlClient.setProtocol("saml");
+        adminClient.realm("test").clients().get(samlClient.getId()).update(samlClient);
+
+        Client client = ClientBuilder.newClient();
+        try {
+            events.clear();
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessToken);
+            response.close();
+
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            events.expect(EventType.USER_INFO_REQUEST)
+                    .error(Errors.INVALID_CLIENT)
+                    .client((String) null)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
         } finally {
             client.close();
         }

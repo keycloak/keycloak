@@ -27,8 +27,8 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
  */
 public class CachedResourceServer extends AbstractRevisioned {
 
-    private boolean allowRemoteResourceManagement;
-    private PolicyEnforcementMode policyEnforcementMode;
+    private final boolean allowRemoteResourceManagement;
+    private final PolicyEnforcementMode policyEnforcementMode;
 
     public CachedResourceServer(Long revision, ResourceServer resourceServer) {
         super(revision, resourceServer.getId());
@@ -43,5 +43,4 @@ public class CachedResourceServer extends AbstractRevisioned {
     public PolicyEnforcementMode getPolicyEnforcementMode() {
         return this.policyEnforcementMode;
     }
-
 }

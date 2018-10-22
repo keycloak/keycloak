@@ -18,15 +18,18 @@
 package org.keycloak.keys;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedHmacKeyProvider extends GeneratedSecretKeyProvider implements HmacKeyProvider {
+public class GeneratedHmacKeyProvider extends AbstractGeneratedSecretKeyProvider {
 
     public GeneratedHmacKeyProvider(ComponentModel model) {
-        super(model);
+        super(model, KeyUse.SIG, KeyType.OCT, model.get(Attributes.ALGORITHM_KEY, Algorithm.HS256));
     }
 
 }

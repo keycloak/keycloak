@@ -58,7 +58,7 @@ public class UserStorageSyncManager {
 
             @Override
             public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.realms().getRealms();
+                List<RealmModel> realms = session.realms().getRealmsWithProviderType(UserStorageProvider.class);
                 for (final RealmModel realm : realms) {
                     List<UserStorageProviderModel> providers = realm.getUserStorageProviders();
                     for (final UserStorageProviderModel provider : providers) {

@@ -20,12 +20,12 @@ package org.keycloak.keys;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 /**
@@ -38,7 +38,7 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
     }
 
     @Override
-    public Keys loadKeys(RealmModel realm, ComponentModel model) {
+    public KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
         String privateRsaKeyPem = model.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY);
         String certificatePem = model.getConfig().getFirst(Attributes.CERTIFICATE_KEY);
 
@@ -48,9 +48,7 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         X509Certificate certificate = PemUtils.decodeCertificate(certificatePem);
 
-        String kid = KeyUtils.createKeyId(keyPair.getPublic());
-
-        return new Keys(kid, keyPair, certificate);
+        return createKeyWrapper(keyPair, certificate);
     }
 
 }

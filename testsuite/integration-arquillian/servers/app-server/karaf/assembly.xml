@@ -31,6 +31,7 @@
             <outputDirectory>app-server-${app.server.karaf}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
+                <exclude>%regex[.*config/org/ops4j/pax/web/context.*]</exclude>   <!-- Since fuse's configadmin is sensitive to absolute location -->
             </excludes>
         </fileSet>
         <fileSet>

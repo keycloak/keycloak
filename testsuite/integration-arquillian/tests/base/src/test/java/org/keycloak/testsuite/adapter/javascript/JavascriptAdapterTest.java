@@ -542,4 +542,31 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                         }
                 );
     }
+
+    @Test
+    public void fragmentInURLTest() {
+        jsDriver.navigate().to(testAppUrl + "#fragmentPart");
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), (driver1, output, events1) -> {
+                    assertSuccessfullyLoggedIn(driver1, output, events1);
+                    assertThat(driver1.getCurrentUrl(), containsString("#fragmentPart"));
+                });
+    }
+
+    @Test
+    public void fragmentInLoginFunction() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(JSObjectBuilder.create()
+                        .add("redirectUri", testAppUrl + "#fragmentPart")
+                        .build(), this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), (driver1, output, events1) -> {
+                    assertSuccessfullyLoggedIn(driver1, output, events1);
+                    assertThat(driver1.getCurrentUrl(), containsString("#fragmentPart"));
+                });
+    }
+
+
 }

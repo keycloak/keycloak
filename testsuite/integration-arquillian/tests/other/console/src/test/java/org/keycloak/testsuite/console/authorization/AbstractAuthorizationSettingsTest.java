@@ -43,11 +43,6 @@ public abstract class AbstractAuthorizationSettingsTest extends AbstractClientTe
 
     protected ClientRepresentation newClient;
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     @Before
     public void configureTest() {
         this.newClient = createResourceServer();

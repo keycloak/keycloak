@@ -17,9 +17,12 @@
 
 package org.keycloak.keys;
 
+import org.keycloak.Config;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -27,5 +30,21 @@ import org.keycloak.models.KeycloakSession;
 public interface KeyProviderFactory<T extends KeyProvider> extends ComponentFactory<T, KeyProvider> {
 
     T create(KeycloakSession session, ComponentModel model);
+
+    default boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
+        return false;
+    }
+
+    @Override
+    default void init(Config.Scope config) {
+    }
+
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    default void close() {
+    }
 
 }

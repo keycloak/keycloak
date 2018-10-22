@@ -1,13 +1,15 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -39,55 +41,46 @@ public class UserAttributesForm extends Form {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='emailVerified']]")
     private OnOffSwitch emailVerifiedSwitch;
 
-    @FindBy(xpath = ".//div[./label[contains(text(), 'Required User Actions')]]//input")
-    private WebElement requiredUserActionsInput;
-
-    @FindBy(id = "reqActions")
-    private Select requiredUserActionsSelect;
-
-    @FindBy(className = "select2-result-label")
-    private WebElement requiredUserActionsConfirm;
-
-    @FindBy(className = "select2-search-choice-close")
-    private List<WebElement> removeRequiredActionsList;
+    @FindBy(id = "s2id_reqActions")
+    private MultipleStringSelect2 requiredUserActionsSelect;
 
     @FindBy(xpath = "//button[@data-ng-click='unlockUser()']")
     private WebElement unlockUserButton;
 
     public String getId() {
-        return getInputValue(idInput);
+        return UIUtils.getTextInputValue(idInput);
     }
 
     public String getUsername() {
-        return getInputValue(usernameInput);
+        return UIUtils.getTextInputValue(usernameInput);
     }
 
     public void setUsername(String username) {
-        setInputValue(usernameInput, username);
+        UIUtils.setTextInputValue(usernameInput, username);
     }
 
     public String getEmail() {
-        return getInputValue(emailInput);
+        return UIUtils.getTextInputValue(emailInput);
     }
 
     public void setEmail(String email) {
-        setInputValue(emailInput, email);
+        UIUtils.setTextInputValue(emailInput, email);
     }
 
     public String getFirstName() {
-        return getInputValue(firstNameInput);
+        return UIUtils.getTextInputValue(firstNameInput);
     }
 
     public void setFirstName(String firstName) {
-        setInputValue(firstNameInput, firstName);
+        UIUtils.setTextInputValue(firstNameInput, firstName);
     }
 
     public String getLastName() {
-        return getInputValue(lastNameInput);
+        return UIUtils.getTextInputValue(lastNameInput);
     }
 
     public void setLastName(String lastname) {
-        setInputValue(lastNameInput, lastname);
+        UIUtils.setTextInputValue(lastNameInput, lastname);
     }
 
     public boolean isEnabled() {
@@ -111,19 +104,11 @@ public class UserAttributesForm extends Form {
     }
 
     public void addRequiredAction(String requiredAction) {
-        requiredUserActionsInput.click();
-        requiredUserActionsSelect.selectByVisibleText(requiredAction);
+        requiredUserActionsSelect.select(requiredAction);
     }
 
-    public void setRequiredActions(List<String> requiredActions) {
-        for (WebElement e : removeRequiredActionsList) {
-            e.click();
-        }
-        if (requiredActions != null && !requiredActions.isEmpty()) {
-            for (String action : requiredActions) {
-                addRequiredAction(action);
-            }
-        }
+    public void setRequiredActions(Set<String> requiredActions) {
+        requiredUserActionsSelect.update(requiredActions);
     }
 
     public void setValues(UserRepresentation user) {
@@ -134,7 +119,7 @@ public class UserAttributesForm extends Form {
         setLastName(user.getLastName());
         if (user.isEnabled() != null) setEnabled(user.isEnabled());
         if (user.isEmailVerified() != null) setEmailVerified(user.isEmailVerified());
-        setRequiredActions(user.getRequiredActions());
+        if (user.getRequiredActions() != null) setRequiredActions(new HashSet<>(user.getRequiredActions()));
     }
 
     // TODO Contact Information section

@@ -35,8 +35,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
-import static org.keycloak.testsuite.util.IOUtil.documentToString;
-import static org.keycloak.testsuite.util.IOUtil.setDocElementAttributeValue;
+import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
+import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**

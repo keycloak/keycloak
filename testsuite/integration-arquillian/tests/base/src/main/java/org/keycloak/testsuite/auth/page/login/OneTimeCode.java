@@ -17,18 +17,47 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import org.keycloak.testsuite.auth.page.login.LoginForm.TotpSetupForm;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class OneTimeCode extends Authenticate {
-
     @FindBy(id = "kc-totp-login-form")
     private TotpSetupForm form;
+
+    @FindBy(xpath = ".//label[@for='totp']")
+    private WebElement totpInputLabel;
     
     public TotpSetupForm form() {
         return form;
+    }
+
+    public String getTotpLabel() {
+        return getTextFromElement(totpInputLabel);
+    }
+
+    public boolean isTotpLabelPresent() {
+        try {
+            return totpInputLabel.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    public void sendCode(String code) {
+        form.setTotp(code);
+        submit();
+    }
+
+    @Override
+    public boolean isCurrent() {
+        return super.isCurrent() && isTotpLabelPresent();
     }
 }

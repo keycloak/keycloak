@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
@@ -159,5 +160,15 @@ public class ProtocolMapperUtil {
 
     public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
         return SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, salt);
+    }
+
+    public static ProtocolMapperRepresentation createAudienceMapper(String name,
+                                                                    String includedClientAudience,
+                                                                    String includedCustomAudience,
+                                                                    boolean accessToken, boolean idToken) {
+
+        return ModelToRepresentation.toRepresentation(
+                AudienceProtocolMapper.createClaimMapper(name, includedClientAudience, includedCustomAudience, accessToken, idToken)
+        );
     }
 }

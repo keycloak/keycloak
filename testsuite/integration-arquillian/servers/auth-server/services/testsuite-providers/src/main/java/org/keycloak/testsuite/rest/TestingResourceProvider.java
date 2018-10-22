@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -35,6 +36,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
@@ -54,6 +56,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
@@ -63,6 +67,7 @@ import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
+import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
@@ -84,6 +89,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -572,6 +580,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
 
+    @Path("/ldap/{realm}")
+    public TestLDAPResource ldap(@PathParam("realm") final String realmName) {
+        RealmModel realm = session.realms().getRealmByName(realmName);
+        return new TestLDAPResource(session, realm);
+    }
+
+
     @Override
     public void close() {
     }
@@ -682,6 +697,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return reps;
     }
 
+
     @GET
     @Path("/identity-config")
     @Produces(MediaType.APPLICATION_JSON)
@@ -759,6 +775,33 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return SerializationUtil.encodeException(t);
         }
     }
+
+
+    @POST
+    @Path("/run-model-test-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
+                                       @QueryParam("testMethodName") String testMethodName) throws Exception {
+        try {
+            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
+
+            Class testClass = cl.loadClass(testClassName);
+            Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
+
+            Object test = testClass.newInstance();
+            testMethod.invoke(test, session);
+
+            return "SUCCESS";
+        } catch (Throwable t) {
+            if (t instanceof InvocationTargetException) {
+                t = ((InvocationTargetException) t).getTargetException();
+            }
+
+            return SerializationUtil.encodeException(t);
+        }
+    }
+
 
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {

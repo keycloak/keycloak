@@ -85,9 +85,12 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!SECRET_QUESTION.equals(credentialType)) return;
-        session.userCredentialManager().disableCredentialType(realm, user, credentialType);
-        session.userCache().evict(realm, user);
 
+        List<CredentialModel> credentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, SECRET_QUESTION);
+        for (CredentialModel cred : credentials) {
+            session.userCredentialManager().removeStoredCredential(realm, user, cred.getId());
+        }
+        session.userCache().evict(realm, user);
     }
 
     @Override

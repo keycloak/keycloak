@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.page.events;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -106,7 +107,7 @@ public class Config extends Events {
 
         public void setExpiration(String value, String unit) {
             expirationUnitSelect.selectByVisibleText(unit);
-            Form.setInputValue(expirationInput, value);
+            UIUtils.setTextInputValue(expirationInput, value);
         }
 
         public void setSaveAdminEvents(boolean value) {

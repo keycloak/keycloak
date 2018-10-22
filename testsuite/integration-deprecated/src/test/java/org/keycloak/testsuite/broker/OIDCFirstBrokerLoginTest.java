@@ -39,6 +39,9 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.IdentityProviderModel;
+import static org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest.APP_REALM_ID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -147,6 +150,77 @@ public class OIDCFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         }, APP_REALM_ID);
     }
 
+    /**
+     * Tests that user can link federated identity with existing brokered
+     * account without prompt (KEYCLOAK-7270).
+     */
+    @Test
+    public void testAutoLinkAccountWithBroker() throws Exception {        
+        final String originalFirstBrokerLoginFlowId = getRealm().getIdentityProviderByAlias(getProviderId()).getFirstBrokerLoginFlowId();
+        
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                AuthenticationFlowModel newFlow = new AuthenticationFlowModel();
+                newFlow.setAlias("AutoLink");
+                newFlow.setDescription("AutoLink");
+                newFlow.setProviderId("basic-flow");
+                newFlow.setBuiltIn(false);
+                newFlow.setTopLevel(true);
+                newFlow = appRealm.addAuthenticationFlow(newFlow);
+                
+                AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+                execution.setAuthenticatorFlow(false);
+                execution.setAuthenticator("idp-create-user-if-unique");
+                execution.setPriority(1);
+                execution.setParentFlow(newFlow.getId());
+                execution = appRealm.addAuthenticatorExecution(execution);              
+                
+                AuthenticationExecutionModel execution2 = new AuthenticationExecutionModel();
+                execution2.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+                execution2.setAuthenticatorFlow(false);
+                execution2.setAuthenticator("idp-auto-link");
+                execution2.setPriority(2);
+                execution2.setParentFlow(newFlow.getId());
+                execution2 = appRealm.addAuthenticatorExecution(execution2);
+                
+                IdentityProviderModel idp = appRealm.getIdentityProviderByAlias(getProviderId());                      
+                idp.setFirstBrokerLoginFlowId(newFlow.getId()); 
+                appRealm.updateIdentityProvider(idp);
+                
+            }
+        }, APP_REALM_ID);             
+        
+        // login through OIDC broker
+        loginIDP("pedroigor");
+        
+        // authenticated and redirected to app. User is linked with identity provider
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+        UserModel federatedUser = getFederatedUser();      
+        
+        assertNotNull(federatedUser);
+        assertEquals("pedroigor", federatedUser.getUsername());
+        assertEquals("psilva@redhat.com", federatedUser.getEmail());        
+        
+        RealmModel realmWithBroker = getRealm();
+        Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realmWithBroker);
+        assertEquals(1, federatedIdentities.size());   
+        
+        for (FederatedIdentityModel link : federatedIdentities) {
+            Assert.assertEquals("pedroigor", link.getUserName());
+            Assert.assertTrue(link.getIdentityProvider().equals(getProviderId()));
+        }      
+        
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                IdentityProviderModel idp = appRealm.getIdentityProviderByAlias(getProviderId());                
+                idp.setFirstBrokerLoginFlowId(originalFirstBrokerLoginFlowId); 
+                appRealm.updateIdentityProvider(idp);                
+            }
+        }, APP_REALM_ID);
+    }
 
     // KEYCLOAK-5936
     @Test

@@ -27,6 +27,7 @@ import java.security.PublicKey;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public class RSATokenVerifier {
 
     private final TokenVerifier<AccessToken> tokenVerifier;

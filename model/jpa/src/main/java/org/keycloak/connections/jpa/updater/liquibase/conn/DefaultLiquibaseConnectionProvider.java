@@ -34,6 +34,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
@@ -93,6 +94,8 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Adding PostgresPlus support to liquibase
         DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
+        // Adding newer version of MySQL/MariaDB support to liquibase
+        DatabaseFactory.getInstance().register(new UpdatedMySqlDatabase());
 
         // Change command for creating lock and drop DELETE lock record from it
         SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());
@@ -240,6 +243,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             public int getPriority() {
                 return 0;
             }
+
+            @Override
+            public void closeLogFile() {}
         };
 
         @Override

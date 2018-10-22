@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,26 +32,27 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PermissionTicketAwareDecisionResultCollector extends DecisionResultCollector {
+public class PermissionTicketAwareDecisionResultCollector extends DecisionPermissionCollector {
 
     private final AuthorizationRequest request;
     private PermissionTicketToken ticket;
     private final Identity identity;
     private ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
-    private List<Result> results;
 
     public PermissionTicketAwareDecisionResultCollector(AuthorizationRequest request, PermissionTicketToken ticket, Identity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        super(authorization, resourceServer, request);
         this.request = request;
         this.ticket = ticket;
         this.identity = identity;
@@ -59,44 +61,26 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
     }
 
     @Override
-    public void onDecision(DefaultEvaluation evaluation) {
-        super.onDecision(evaluation);
-        removePermissionsIfGranted(evaluation);
-    }
+    protected void onGrant(Permission grantedPermission) {
+        // Removes permissions (represented by {@code ticket}) granted by any user-managed policy so we don't create unnecessary permission tickets.
+        List<Permission> permissions = ticket.getPermissions();
+        Iterator<Permission> itPermissions = permissions.iterator();
 
-    /**
-     * Removes permissions (represented by {@code ticket}) granted by any user-managed policy so we don't create unnecessary permission tickets.
-     *
-     * @param evaluation the evaluation
-     */
-    private void removePermissionsIfGranted(DefaultEvaluation evaluation) {
-        if (Effect.PERMIT.equals(evaluation.getEffect())) {
-            Policy policy = evaluation.getParentPolicy();
+        while (itPermissions.hasNext()) {
+            Permission permission = itPermissions.next();
 
-            if ("uma".equals(policy.getType())) {
-                ResourcePermission grantedPermission = evaluation.getPermission();
-                List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
+            if (permission.getResourceId() == null || permission.getResourceId().equals(grantedPermission.getResourceId())) {
+                Set<String> scopes = permission.getScopes();
+                Iterator<String> itScopes = scopes.iterator();
 
-                Iterator<PermissionTicketToken.ResourcePermission> itPermissions = permissions.iterator();
-
-                while (itPermissions.hasNext()) {
-                    PermissionTicketToken.ResourcePermission permission = itPermissions.next();
-
-                    if (permission.getResourceId().equals(grantedPermission.getResource().getId())) {
-                        Set<String> scopes = permission.getScopes();
-                        Iterator<String> itScopes = scopes.iterator();
-
-                        while (itScopes.hasNext()) {
-                            Scope scope = authorization.getStoreFactory().getScopeStore().findByName(itScopes.next(), resourceServer.getId());
-                            if (policy.getScopes().contains(scope)) {
-                                itScopes.remove();
-                            }
-                        }
-
-                        if (scopes.isEmpty()) {
-                            itPermissions.remove();
-                        }
+                while (itScopes.hasNext()) {
+                    if (grantedPermission.getScopes().contains(itScopes.next())) {
+                        itScopes.remove();
                     }
+                }
+
+                if (scopes.isEmpty()) {
+                    itPermissions.remove();
                 }
             }
         }
@@ -109,10 +93,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
         if (request.isSubmitRequest()) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            List<PermissionTicketToken.ResourcePermission> permissions = ticket.getResources();
+            List<Permission> permissions = ticket.getPermissions();
 
             if (permissions != null) {
-                for (PermissionTicketToken.ResourcePermission permission : permissions) {
+                for (Permission permission : permissions) {
                     Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
 
                     if (resource == null) {
@@ -167,14 +151,5 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
                 }
             }
         }
-    }
-
-    @Override
-    protected void onComplete(List<Result> results) {
-        this.results = results;
-    }
-
-    public List<Result> results() {
-        return results;
     }
 }

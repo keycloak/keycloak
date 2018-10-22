@@ -40,6 +40,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.servlet.DispatcherType;
 import java.io.File;
@@ -47,6 +48,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -356,6 +359,7 @@ public class KeycloakServer {
                 session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
+                    log.info("Created master user with credentials admin:admin");
                 }
                 session.getTransactionManager().commit();
             } finally {
@@ -376,7 +380,7 @@ public class KeycloakServer {
                 .setIoThreads(config.getWorkerThreads() / 8);
 
         if (config.getPortHttps() != -1) {
-            builder = builder.addHttpsListener(config.getPortHttps(), config.getHost(), SSLContext.getDefault());
+            builder = builder.addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext());
         }
 
         server = new UndertowJaxrsServer();
@@ -471,4 +475,35 @@ public class KeycloakServer {
         }
     }
 
+    private SSLContext createSSLContext() throws Exception {
+        String keyStorePath = System.getProperty("keycloak.tls.keystore.path");
+
+        if (keyStorePath == null) {
+            return SSLContext.getDefault();
+        }
+
+        InputStream stream = Files.newInputStream(Paths.get(keyStorePath));
+
+        if (stream == null) {
+            throw new RuntimeException("Could not load keystore");
+        }
+
+        try (InputStream is = stream) {
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+
+            char[] keyStorePassword = System.getProperty("keycloak.tls.keystore.password", "password").toCharArray();
+
+            keyStore.load(is, keyStorePassword);
+
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+
+            keyManagerFactory.init(keyStore, keyStorePassword);
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+
+            sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+
+            return sslContext;
+        }
+    }
 }

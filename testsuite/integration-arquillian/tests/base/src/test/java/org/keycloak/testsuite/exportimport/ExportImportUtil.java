@@ -315,7 +315,7 @@ public class ExportImportUtil {
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "given name"));
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
 
-        Assert.assertEquals(1, otherApp.getProtocolMappers().size());
+        Assert.assertEquals(4, otherApp.getProtocolMappers().size());
         List<ProtocolMapperRepresentation> otherAppMappers = otherApp.getProtocolMappers();
         Assert.assertNull(findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
         ProtocolMapperRepresentation gssCredentialMapper = findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
@@ -384,9 +384,7 @@ public class ExportImportUtil {
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
         
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            assertAuthorizationSettings(realmRsc);
-        }
+        assertAuthorizationSettings(realmRsc);
     }
 
 
@@ -644,6 +642,8 @@ public class ExportImportUtil {
         org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_ADDRESS));
         org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_PHONE));
         org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.OFFLINE_ACCESS));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OIDCLoginProtocolFactory.ROLES_SCOPE));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE));
         org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(SamlProtocolFactory.SCOPE_ROLE_LIST));
 
         // Check content of some client scopes
@@ -661,6 +661,8 @@ public class ExportImportUtil {
                 .stream().collect(Collectors.toMap(clientScope -> clientScope.getName(), clientScope -> clientScope));
         org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OAuth2Constants.SCOPE_PROFILE));
         org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OAuth2Constants.SCOPE_EMAIL));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OIDCLoginProtocolFactory.ROLES_SCOPE));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE));
 
         Map<String, ClientScopeRepresentation> optionalClientScopes = realm.getDefaultOptionalClientScopes()
                 .stream().collect(Collectors.toMap(clientScope -> clientScope.getName(), clientScope -> clientScope));

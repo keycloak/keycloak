@@ -43,7 +43,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
@@ -67,6 +66,7 @@ import java.util.Set;
 
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 
 /**
  * Utility to deal with assertions
@@ -139,12 +139,7 @@ public class AssertionUtil {
      * @return
      */
     public static AssertionType createAssertion(String id, NameIDType issuer) {
-        XMLGregorianCalendar issueInstant = null;
-        try {
-            issueInstant = XMLTimeUtil.getIssueInstant();
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        }
+        XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
         AssertionType assertion = new AssertionType(id, issueInstant);
         assertion.setIssuer(issuer);
         return assertion;
@@ -319,7 +314,8 @@ public class AssertionUtil {
     }
     
     /**
-     * Check whether the assertion has expired
+     * Check whether the assertion has expired.
+     * Processing rules defined in Section 2.5.1.2 of saml-core-2.0-os.pdf.
      *
      * @param assertion
      *
@@ -552,7 +548,7 @@ public class AssertionUtil {
         return roles;
     }
 
-    public static AssertionType getAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+    public static AssertionType getAssertion(SAMLDocumentHolder holder, ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
         List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
 
         if (assertions.isEmpty()) {
@@ -566,7 +562,7 @@ public class AssertionUtil {
             if (privateKey == null) {
                 throw new ProcessingException("Encryptd assertion and decrypt private key is null");
             }
-            decryptAssertion(responseType, privateKey);
+            decryptAssertion(holder, responseType, privateKey);
 
         }
         return responseType.getAssertions().get(0).getAssertion();
@@ -588,10 +584,8 @@ public class AssertionUtil {
      * @param responseType a response containg an encrypted assertion
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
-    public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
-        SAML2Response saml2Response = new SAML2Response();
-
-        Document doc = saml2Response.convert(responseType);
+    public static Element decryptAssertion(SAMLDocumentHolder holder, ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+        Document doc = holder.getSamlDocument();
         Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
 
         if (enc == null) {

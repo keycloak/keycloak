@@ -43,7 +43,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,9 +62,6 @@ public class UserStorageProviderResource {
 
     @Context
     protected ClientConnection clientConnection;
-
-    @Context
-    protected UriInfo uriInfo;
 
     @Context
     protected KeycloakSession session;
@@ -153,7 +149,7 @@ public class UserStorageProviderResource {
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", action);
         eventRep.put("result", syncResult);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
 
         return syncResult;
     }
@@ -241,7 +237,7 @@ public class UserStorageProviderResource {
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", direction);
         eventRep.put("result", syncResult);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
         return syncResult;
     }
 

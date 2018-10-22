@@ -132,7 +132,7 @@
                     <input ng-model="clientEdit.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
@@ -387,14 +387,46 @@
 
         <fieldset data-ng-show="protocol == 'openid-connect'">
             <legend collapsed><span class="text">{{:: 'fine-oidc-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-oidc-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenSignedResponseAlg">{{:: 'access-token-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenSignedResponseAlg"
+                                ng-change="changeAccessTokenSignedResponseAlg()"
+                                ng-model="accessTokenSignedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenSignedResponseAlg">{{:: 'id-token-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenSignedResponseAlg"
+                                ng-change="changeIdTokenSignedResponseAlg()"
+                                ng-model="idTokenSignedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userInfoSignedResponseAlg">{{:: 'user-info-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="userInfoSignedResponseAlg"
                                 ng-change="changeUserInfoSignedResponseAlg()"
-                                ng-model="userInfoSignedResponseAlg"
-                                ng-options="sig for sig in oidcSignatureAlgorithms">
+                                ng-model="userInfoSignedResponseAlg">
+                            <option value="unsigned">unsigned</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">{{provider}}</option>
                         </select>
                     </div>
                 </div>
@@ -439,9 +471,26 @@
             </div>
         </fieldset>
 
-        <!-- KEYCLOAK-6771 Certificate Bound Token https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3 -->
         <fieldset data-ng-show="protocol == 'openid-connect'">
             <legend collapsed><span class="text">{{:: 'advanced-client-settings' | translate}}</span>  <kc-tooltip>{{:: 'advanced-client-settings.tooltip' | translate}}</kc-tooltip></legend>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="-1"
+                           max="31536000" data-ng-model="accessTokenLifespan.time"
+                           id="accessTokenLifespan" name="accessTokenLifespan"
+                           data-ng-change="updateTimeouts()"/>
+                    <select class="form-control" name="accessTokenLifespanUnit" data-ng-model="accessTokenLifespan.unit" data-ng-change="updateTimeouts()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'access-token-lifespan.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="tlsClientCertificateBoundAccessTokens">{{:: 'tls-client-certificate-bound-access-tokens' | translate}}</label>
                 <div class="col-sm-6">

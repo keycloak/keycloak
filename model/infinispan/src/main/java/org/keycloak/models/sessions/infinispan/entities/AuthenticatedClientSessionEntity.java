@@ -174,14 +174,14 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             MarshallUtil.marshallString(session.getRealmId(), output);
             MarshallUtil.marshallString(session.getAuthMethod(), output);
             MarshallUtil.marshallString(session.getRedirectUri(), output);
-            MarshallUtil.marshallInt(output, session.getTimestamp());
+            KeycloakMarshallUtil.marshall(session.getTimestamp(), output);
             MarshallUtil.marshallString(session.getAction(), output);
 
             Map<String, String> notes = session.getNotes();
             KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
 
             MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
-            MarshallUtil.marshallInt(output, session.getCurrentRefreshTokenUseCount());
+            KeycloakMarshallUtil.marshall(session.getCurrentRefreshTokenUseCount(), output);
         }
 
 
@@ -193,7 +193,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
             sessionEntity.setRedirectUri(MarshallUtil.unmarshallString(input));
-            sessionEntity.setTimestamp(MarshallUtil.unmarshallInt(input));
+            sessionEntity.setTimestamp(KeycloakMarshallUtil.unmarshallInteger(input));
             sessionEntity.setAction(MarshallUtil.unmarshallString(input));
 
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
@@ -201,7 +201,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             sessionEntity.setNotes(notes);
 
             sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
-            sessionEntity.setCurrentRefreshTokenUseCount(MarshallUtil.unmarshallInt(input));
+            sessionEntity.setCurrentRefreshTokenUseCount(KeycloakMarshallUtil.unmarshallInteger(input));
 
             return sessionEntity;
         }

@@ -27,13 +27,14 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractRsaKeyProviderFactory implements RsaKeyProviderFactory {
+public abstract class AbstractRsaKeyProviderFactory implements KeyProviderFactory {
 
     public final static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 .property(Attributes.PRIORITY_PROPERTY)
                 .property(Attributes.ENABLED_PROPERTY)
-                .property(Attributes.ACTIVE_PROPERTY);
+                .property(Attributes.ACTIVE_PROPERTY)
+                .property(Attributes.RS_ALGORITHM_PROPERTY);
     }
 
     @Override

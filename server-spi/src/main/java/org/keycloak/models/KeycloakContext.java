@@ -33,7 +33,7 @@ public interface KeycloakContext {
 
     String getContextPath();
 
-    UriInfo getUri();
+    KeycloakUriInfo getUri();
 
     HttpHeaders getRequestHeaders();
 

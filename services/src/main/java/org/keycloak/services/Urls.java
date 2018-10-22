@@ -16,7 +16,6 @@
  */
 package org.keycloak.services;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -190,7 +189,7 @@ public class Urls {
 
     public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString, String clientId, String tabId) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
-                .queryParam("key", tokenString)
+                .queryParam(Constants.KEY, tokenString)
                 .queryParam(Constants.CLIENT_ID, clientId)
                 .queryParam(Constants.TAB_ID, tabId);
 

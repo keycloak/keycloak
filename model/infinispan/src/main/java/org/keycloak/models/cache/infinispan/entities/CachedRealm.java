@@ -74,11 +74,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int failureFactor;
     //--- end brute force settings
 
+    protected String defaultSignatureAlgorithm;
     protected boolean revokeRefreshToken;
     protected int refreshTokenMaxReuse;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
     protected int offlineSessionIdleTimeout;
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    protected boolean offlineSessionMaxLifespanEnabled;
+    protected int offlineSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -176,11 +180,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         failureFactor = model.getFailureFactor();
         //--- end brute force settings
 
+        defaultSignatureAlgorithm = model.getDefaultSignatureAlgorithm();
         revokeRefreshToken = model.isRevokeRefreshToken();
         refreshTokenMaxReuse = model.getRefreshTokenMaxReuse();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
+        offlineSessionMaxLifespan = model.getOfflineSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -385,6 +393,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return editUsernameAllowed;
     }
 
+    public String getDefaultSignatureAlgorithm() {
+        return defaultSignatureAlgorithm;
+    }
+
     public boolean isRevokeRefreshToken() {
         return revokeRefreshToken;
     }
@@ -403,6 +415,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getOfflineSessionIdleTimeout() {
         return offlineSessionIdleTimeout;
+    }
+
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    public boolean isOfflineSessionMaxLifespanEnabled() {
+        return offlineSessionMaxLifespanEnabled;
+    }
+
+    public int getOfflineSessionMaxLifespan() {
+        return offlineSessionMaxLifespan;
     }
 
     public int getAccessTokenLifespan() {

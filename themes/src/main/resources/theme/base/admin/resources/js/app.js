@@ -289,8 +289,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmKeysCtrl'
         })
-        .when('/realms/:realm/keys/list', {
-            templateUrl : resourceUrl + '/partials/realm-keys-list.html',
+        .when('/realms/:realm/keys/passive', {
+            templateUrl : resourceUrl + '/partials/realm-keys-passive.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -304,6 +304,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmKeysCtrl'
         })
+        .when('/realms/:realm/keys/disabled', {
+                    templateUrl : resourceUrl + '/partials/realm-keys-disabled.html',
+                    resolve : {
+                        realm : function(RealmLoader) {
+                            return RealmLoader();
+                        },
+                        serverInfo : function(ServerInfoLoader) {
+                            return ServerInfoLoader();
+                        },
+                        keys: function(RealmKeysLoader) {
+                            return RealmKeysLoader();
+                        }
+                    },
+                    controller : 'RealmKeysCtrl'
+                })
         .when('/realms/:realm/keys/providers', {
             templateUrl : resourceUrl + '/partials/realm-keys-providers.html',
             resolve : {
@@ -1404,7 +1419,19 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientDetailCtrl'
         })
-        .when('/create/client-scope/:realm', {
+        .when('/create/client-scope/step-1/:realm', {
+            templateUrl : resourceUrl + '/partials/client-scope-create-step-1.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
+            },
+            controller : 'ClientScopeCreateStep1Ctrl'
+        })
+        .when('/create/client-scope/step-2/:realm', {
             templateUrl : resourceUrl + '/partials/client-scope-detail.html',
             resolve : {
                 realm : function(RealmLoader) {

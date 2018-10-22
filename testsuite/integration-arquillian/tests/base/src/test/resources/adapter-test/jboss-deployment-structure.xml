@@ -26,6 +26,7 @@
             <!--required by SAML test servlets-->
             <module name="org.keycloak.keycloak-adapter-spi" />
             <module name="org.keycloak.keycloak-saml-core" />
+            <module name="org.keycloak.keycloak-saml-core-public" />
             
         </dependencies>
     </deployment>

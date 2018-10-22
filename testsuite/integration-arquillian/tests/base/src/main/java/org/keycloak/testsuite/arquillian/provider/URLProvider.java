@@ -26,7 +26,9 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerBrowserContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 
 import java.lang.annotation.Annotation;
@@ -100,13 +102,29 @@ public class URLProvider extends URLResourceProvider {
                 return suiteContext.get().getAuthServerInfo().getContextRoot();
             }
             if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
+                //standalone
                 ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
                 if (appServerInfo != null) return appServerInfo.getContextRoot();
-                
+
+                //cluster
                 List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
                 if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
-                
+
                 return appServerBackendsInfo.get(0).getContextRoot();
+            }
+            if (AuthServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
+                return suiteContext.get().getAuthServerInfo().getBrowserContextRoot();
+            }
+            if (AppServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
+                //standalone
+                ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
+                if (appServerInfo != null) return appServerInfo.getBrowserContextRoot();
+
+                //cluster
+                List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
+                if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
+
+                return appServerBackendsInfo.get(0).getBrowserContextRoot();
             }
         }
 

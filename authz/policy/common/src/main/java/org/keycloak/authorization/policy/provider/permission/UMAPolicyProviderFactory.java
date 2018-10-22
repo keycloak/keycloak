@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.RoleDefinition;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -103,6 +104,14 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         if (clients != null) {
             for (String client : clients) {
                 createClientPolicy(policy, policyStore, client, representation.getOwner());
+            }
+        }
+
+        Set<String> users = representation.getUsers();
+
+        if (users != null) {
+            for (String user : users) {
+                createUserPolicy(policy, policyStore, user, representation.getOwner());
             }
         }
 
@@ -184,6 +193,24 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
+            } else if ("user".equals(associatedRep.getType())) {
+                UserPolicyRepresentation rep = UserPolicyRepresentation.class.cast(associatedRep);
+
+                rep.setUsers(new HashSet<>());
+
+                Set<String> updatedUsers = representation.getUsers();
+
+                if (updatedUsers != null) {
+                    for (String user : updatedUsers) {
+                        rep.addUser(user);
+                    }
+                }
+
+                if (rep.getUsers().isEmpty()) {
+                    policyStore.delete(associatedPolicy.getId());
+                } else {
+                    RepresentationToModel.toModel(rep, authorization, associatedPolicy);
+                }
             }
         }
 
@@ -237,6 +264,24 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
             if (createPolicy) {
                 for (String client : updatedClients) {
                     createClientPolicy(policy, policyStore, client, policy.getOwner());
+                }
+            }
+        }
+
+        Set<String> updatedUsers = representation.getUsers();
+
+        if (updatedUsers != null) {
+            boolean createPolicy = true;
+
+            for (Policy associatedPolicy : associatedPolicies) {
+                if ("user".equals(associatedPolicy.getType())) {
+                    createPolicy = false;
+                }
+            }
+
+            if (createPolicy) {
+                for (String user : updatedUsers) {
+                    createUserPolicy(policy, policyStore, user, policy.getOwner());
                 }
             }
         }
@@ -299,6 +344,12 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
 
                 for (String client : rep.getClients()) {
                     representation.addClient(realm.getClientById(client).getClientId());
+                }
+            } else if ("user".equals(associatedPolicy.getType())) {
+                UserPolicyRepresentation rep = UserPolicyRepresentation.class.cast(associatedRep);
+
+                for (String user : rep.getUsers()) {
+                    representation.addUser(authorization.getKeycloakSession().users().getUserById(user, realm).getUsername());
                 }
             }
         }
@@ -384,6 +435,19 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
 
         rep.setName(KeycloakModelUtils.generateId());
         rep.addRole(role, false);
+
+        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+
+        associatedPolicy.setOwner(owner);
+
+        policy.addAssociatedPolicy(associatedPolicy);
+    }
+
+    private void createUserPolicy(Policy policy, PolicyStore policyStore, String user, String owner) {
+        UserPolicyRepresentation rep = new UserPolicyRepresentation();
+
+        rep.setName(KeycloakModelUtils.generateId());
+        rep.addUser(user);
 
         Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
 

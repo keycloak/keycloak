@@ -27,6 +27,7 @@ import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -54,6 +55,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmRegistrationPage.setAuthRealm("test");
+        termsAndConditionsPage.setAuthRealm("test");
     }
 
     @Before
@@ -133,7 +135,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
         registerTestUser();
 
-        Assert.assertTrue(driver.findElement(By.id("kc-page-title")).getText().equals("Mobile Authenticator Setup"));
+        Assert.assertTrue(UIUtils.getTextFromElement(driver.findElement(By.id("kc-page-title"))).equals("Mobile Authenticator Setup"));
     }
 
     private void allowTestRealmUserRegistration() {

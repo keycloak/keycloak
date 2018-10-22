@@ -97,13 +97,12 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         String configResolverClass = context.getServletContext().getInitParameter("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
-                throw new RuntimeException("Not implemented yet");
-                //KeycloakConfigResolver configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
-                //deploymentContext = new SamlDeploymentContext(configResolver);
-                //log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
+                SamlConfigResolver configResolver = (SamlConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new SamlDeploymentContext(configResolver);
+                log.infov("Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
             } catch (Exception ex) {
                 log.errorv("The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", configResolverClass, ex.getMessage());
-                //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                deploymentContext = new SamlDeploymentContext(new DefaultSamlDeployment());
             }
         } else {
             InputStream is = getConfigInputStream(context);

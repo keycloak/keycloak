@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -38,8 +38,21 @@
 
     <modules>
         <module>camel-undertow</module>
-        <module>jetty94</module>
-        <module>tomcat8</module>
         <module>undertow</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>jetty94</module>
+                <module>tomcat8</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

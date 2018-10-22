@@ -747,8 +747,6 @@ module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, N
 });
 
 module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, authFlows, $location, Notifications, Dialog) {
-    console.log('RealmIdentityProviderCtrl');
-
     $scope.realm = angular.copy(realm);
 
     $scope.initSamlProvider = function() {
@@ -1090,6 +1088,8 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.realm.ssoSessionIdleTimeout = TimeUnit2.asUnit(realm.ssoSessionIdleTimeout);
     $scope.realm.ssoSessionMaxLifespan = TimeUnit2.asUnit(realm.ssoSessionMaxLifespan);
     $scope.realm.offlineSessionIdleTimeout = TimeUnit2.asUnit(realm.offlineSessionIdleTimeout);
+    // KEYCLOAK-7688 Offline Session Max for Offline Token
+    $scope.realm.offlineSessionMaxLifespan = TimeUnit2.asUnit(realm.offlineSessionMaxLifespan);
     $scope.realm.accessCodeLifespan = TimeUnit2.asUnit(realm.accessCodeLifespan);
     $scope.realm.accessCodeLifespanLogin = TimeUnit2.asUnit(realm.accessCodeLifespanLogin);
     $scope.realm.accessCodeLifespanUserAction = TimeUnit2.asUnit(realm.accessCodeLifespanUserAction);
@@ -1137,6 +1137,8 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.ssoSessionIdleTimeout = $scope.realm.ssoSessionIdleTimeout.toSeconds();
         $scope.realm.ssoSessionMaxLifespan = $scope.realm.ssoSessionMaxLifespan.toSeconds();
         $scope.realm.offlineSessionIdleTimeout = $scope.realm.offlineSessionIdleTimeout.toSeconds();
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        $scope.realm.offlineSessionMaxLifespan = $scope.realm.offlineSessionMaxLifespan.toSeconds();
         $scope.realm.accessCodeLifespan = $scope.realm.accessCodeLifespan.toSeconds();
         $scope.realm.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction.toSeconds();
         $scope.realm.accessCodeLifespanLogin = $scope.realm.accessCodeLifespanLogin.toSeconds();
@@ -2280,7 +2282,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
 module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredRequiredActions,
                                                   $modal, $route,
-                                                  RegisterRequiredAction, RequiredActions, Notifications) {
+                                                  RegisterRequiredAction, RequiredActions, RequiredActionRaisePriority, RequiredActionLowerPriority, Notifications) {
     console.log('RequiredActionsCtrl');
     $scope.realm = realm;
     $scope.unregisteredRequiredActions = unregisteredRequiredActions;
@@ -2300,6 +2302,20 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
             Notifications.success("Required action updated");
             setupRequiredActionsForm();
         });
+    }
+
+    $scope.raisePriority = function(action) {
+        RequiredActionRaisePriority.save({realm: realm.realm, alias: action.alias}, function() {
+            Notifications.success("Required action's priority raised");
+            setupRequiredActionsForm();
+        })
+    }
+
+    $scope.lowerPriority = function(action) {
+        RequiredActionLowerPriority.save({realm: realm.realm, alias: action.alias}, function() {
+            Notifications.success("Required action's priority lowered");
+            setupRequiredActionsForm();
+        })
     }
 
     $scope.register = function() {

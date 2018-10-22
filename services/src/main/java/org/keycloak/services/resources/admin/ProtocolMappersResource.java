@@ -46,7 +46,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,9 +70,6 @@ public class ProtocolMappersResource {
     protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
 
     protected AdminEventBuilder adminEvent;
-
-    @Context
-    protected UriInfo uriInfo;
 
     @Context
     protected KeycloakSession session;
@@ -128,13 +124,13 @@ public class ProtocolMappersResource {
             model = RepresentationToModel.toModel(rep);
             validateModel(model);
             model = client.addProtocolMapper(model);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Protocol mapper exists with same name");
         }
 
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
     /**
      * Create multiple mappers
@@ -153,7 +149,7 @@ public class ProtocolMappersResource {
             validateModel(model);
             model = client.addProtocolMapper(model);
         }
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(reps).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(reps).success();
     }
 
     /**
@@ -213,7 +209,7 @@ public class ProtocolMappersResource {
         validateModel(model);
 
         client.updateProtocolMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
     }
 
     /**
@@ -230,7 +226,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
     }
 

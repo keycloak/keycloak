@@ -19,13 +19,15 @@ package org.keycloak.testsuite.adapter.servlet;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
+import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter",
         filterDependency = "org.keycloak:keycloak-servlet-filter-adapter", skipPattern = "/error.html")
 public class DemoFilterServletAdapterTest extends DemoServletsAdapterTest {

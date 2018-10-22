@@ -63,7 +63,7 @@ public class MigrationContext {
         logger.info("Requesting offline token on the old container");
         try {
             OAuthClient oauth = new OAuthClient();
-            oauth.init(null, null);
+            oauth.init(null);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.realm("Migration");
             oauth.clientId("migration-test-client");

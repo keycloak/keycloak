@@ -22,6 +22,7 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -31,12 +32,15 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -98,13 +102,22 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByOwner(ownerId, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
         String queryName = "findResourceIdByOwner";
 
         if (resourceServerId == null) {
             queryName = "findAnyResourceIdByOwner";
         }
 
-        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery(queryName, ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
@@ -113,19 +126,11 @@ public class JPAResourceStore implements ResourceStore {
             query.setParameter("serverId", resourceServerId);
         }
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(id -> new ResourceAdapter(id, entityManager, storeFactory))
+                .forEach(consumer);
     }
 
     @Override
@@ -192,9 +197,12 @@ public class JPAResourceStore implements ResourceStore {
             } else if ("ownerManagedAccess".equals(name)) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
             } else if ("uri".equals(name)) {
-                predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+                predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
-                predicates.add(builder.isNotNull(root.get("uri")));
+                // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
+                // Workaround
+                Expression<Integer> urisSize = builder.size(root.get("uris"));
+                predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
             } else {
@@ -230,25 +238,26 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByScope(List<String> scopes, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByScope", String.class);
+        List<Resource> result = new ArrayList<>();
+
+        findByScope(scopes, resourceServerId, result::add);
+
+        return result;
+    }
+
+    @Override
+    public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByScope", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopes);
         query.setParameter("serverId", resourceServerId);
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(id -> new ResourceAdapter(id, entityManager, storeFactory))
+                .forEach(consumer);
     }
 
     @Override
@@ -258,16 +267,14 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByName", String.class);
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByName", ResourceEntity.class);
 
-        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
         query.setParameter("ownerId", ownerId);
 
         try {
-            String id = query.getSingleResult();
-            return provider.getStoreFactory().getResourceStore().findById(id, resourceServerId);
+            return new ResourceAdapter(query.getSingleResult(), entityManager, provider.getStoreFactory());
         } catch (NoResultException ex) {
             return null;
         }
@@ -275,25 +282,26 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByType(String type, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByType", String.class);
+        List<Resource> list = new LinkedList<>();
+
+        findByType(type, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByType", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
         query.setParameter("ownerId", resourceServerId);
         query.setParameter("serverId", resourceServerId);
 
-        List<String> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
-        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        StoreFactory storeFactory = provider.getStoreFactory();
 
-        for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
-
-            if (resource != null) {
-                list.add(resource);
-            }
-        }
-
-        return list;
+        query.getResultList().stream()
+                .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
+                .forEach(consumer);
     }
 }

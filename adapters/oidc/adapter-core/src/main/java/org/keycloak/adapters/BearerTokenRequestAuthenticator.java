@@ -18,7 +18,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -72,8 +72,12 @@ public class BearerTokenRequestAuthenticator {
         for (String authHeader : authHeaders) {
             String[] split = authHeader.trim().split("\\s+");
             if (split == null || split.length != 2) continue;
-            if (!split[0].equalsIgnoreCase("Bearer")) continue;
-            tokenString = split[1];
+            if (split[0].equalsIgnoreCase("Bearer")) {
+                tokenString = split[1];
+
+                log.debugf("Found [%d] values in authorization header, selecting the first value for Bearer.", (Integer) authHeaders.size());
+                break;
+            };
         }
 
         if (tokenString == null) {
@@ -96,7 +100,7 @@ public class BearerTokenRequestAuthenticator {
             }
         }
         try {
-            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+            token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());

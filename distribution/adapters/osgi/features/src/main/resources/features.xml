@@ -20,7 +20,8 @@
 
     <feature name="keycloak-adapter-core" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
-        <bundle dependency="true">mvn:org.keycloak/keycloak-osgi-thirdparty/${project.version}</bundle>
+        <bundle dependency="true">mvn:org.apache.httpcomponents/httpclient-osgi/${apache.httpcomponents.version}</bundle>
+        <bundle dependency="true">mvn:org.apache.httpcomponents/httpcore-osgi/${apache.httpcomponents.httpcore.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcprov-jdk15on/${bouncycastle.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcpkix-jdk15on/${bouncycastle.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-core/${jackson.version}</bundle>
@@ -67,7 +68,8 @@
     <feature name="keycloak-pax-http-jetty" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Jetty 9.4</details>
         <feature>keycloak-adapter-core</feature>
-        <feature>keycloak-osgi-adapter</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty94-adapter/${project.version}</bundle>
@@ -78,8 +80,9 @@
     <!-- Keycloak adapter for PaxWeb undertow provider -->
     <feature name="keycloak-pax-http-undertow" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Undertow</details>
-        <feature>keycloak-osgi-adapter</feature>
         <feature>keycloak-adapter-core</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
@@ -91,13 +94,21 @@
     <feature name="keycloak-pax-http-tomcat" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Tomcat 8</details>
         <feature>keycloak-adapter-core</feature>
-        <feature>keycloak-osgi-adapter</feature>
+        <feature version="[7.1,9)">pax-web-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-core-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat8-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-tomcat8/${project.version}</bundle>
     </feature>
  -->
+
+    <feature name="keycloak-servlet-filter-adapter" version="${project.version}" resolver="(obr)">
+        <details>Keycloak servlet filter adapter</details>
+        <feature>keycloak-adapter-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-servlet-filter-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-servlet-adapter-spi/${project.version}</bundle>
+    </feature>
 
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
         <details>The keycloak JAAS configuration</details>

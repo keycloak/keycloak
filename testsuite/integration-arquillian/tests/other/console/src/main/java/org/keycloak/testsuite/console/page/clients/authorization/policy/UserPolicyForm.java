@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.List;
@@ -28,6 +29,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -57,8 +59,8 @@ public class UserPolicyForm extends Form {
     protected ModalDialog modalDialog;
 
     public void populate(UserPolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
         usersInput.update(expected.getUsers());
@@ -76,9 +78,9 @@ public class UserPolicyForm extends Form {
     public UserPolicyRepresentation toRepresentation() {
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setUsers(usersInput.getSelected());
 
         return representation;
@@ -98,8 +100,8 @@ public class UserPolicyForm extends Form {
             return (webElement, name) -> {
                 List<WebElement> tds = webElement.findElements(tagName("td"));
 
-                if (!tds.get(0).getText().isEmpty()) {
-                    if (tds.get(0).getText().equals(name)) {
+                if (!UIUtils.getTextFromElement(tds.get(0)).isEmpty()) {
+                    if (UIUtils.getTextFromElement(tds.get(0)).equals(name)) {
                         tds.get(1).findElement(By.tagName("button")).click();
                         return true;
                     }
@@ -111,7 +113,7 @@ public class UserPolicyForm extends Form {
 
         @Override
         protected Function<WebElement, String> representation() {
-            return webElement -> webElement.findElements(tagName("td")).get(0).getText();
+            return webElement -> getTextFromElement(webElement.findElements(tagName("td")).get(0));
         }
     }
 }

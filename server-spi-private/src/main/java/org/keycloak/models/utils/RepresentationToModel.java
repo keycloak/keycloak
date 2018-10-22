@@ -47,6 +47,7 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -174,6 +175,8 @@ public class RepresentationToModel {
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
+        if (rep.getDefaultSignatureAlgorithm() != null) newRealm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
+
         if (rep.getRevokeRefreshToken() != null) newRealm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         else newRealm.setRevokeRefreshToken(false);
 
@@ -195,6 +198,14 @@ public class RepresentationToModel {
         if (rep.getOfflineSessionIdleTimeout() != null)
             newRealm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null) newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        else newRealm.setOfflineSessionMaxLifespanEnabled(false);
+
+        if (rep.getOfflineSessionMaxLifespan() != null)
+            newRealm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
+        else newRealm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
 
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
@@ -897,6 +908,7 @@ public class RepresentationToModel {
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
+        if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         if (rep.getRefreshTokenMaxReuse() != null) realm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
@@ -906,6 +918,10 @@ public class RepresentationToModel {
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
+        // KEYCLOAK-7688 Offline Session Max for Offline Token
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespan() != null)
+            realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -1233,6 +1249,7 @@ public class RepresentationToModel {
         }
 
         client.updateClient();
+        resourceRep.setId(client.getId());
 
         return client;
     }
@@ -1843,13 +1860,14 @@ public class RepresentationToModel {
     public static AuthenticatorConfigModel toModel(AuthenticatorConfigRepresentation rep) {
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setAlias(rep.getAlias());
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         return model;
     }
 
     public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setConfig(rep.getConfig());
+        model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
         model.setProviderId(rep.getProviderId());
@@ -1974,7 +1992,7 @@ public class RepresentationToModel {
         }
     }
 
-    public static void toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
+    public static ResourceServer toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
         ResourceServerStore resourceServerStore = authorization.getStoreFactory().getResourceServerStore();
         ResourceServer resourceServer;
         ResourceServer existing = resourceServerStore.findById(rep.getClientId());
@@ -2016,6 +2034,8 @@ public class RepresentationToModel {
         }
 
         importPolicies(authorization, resourceServer, rep.getPolicies(), null);
+
+        return resourceServer;
     }
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
@@ -2343,7 +2363,7 @@ public class RepresentationToModel {
             existing.setName(resource.getName());
             existing.setDisplayName(resource.getDisplayName());
             existing.setType(resource.getType());
-            existing.setUri(resource.getUri());
+            existing.updateUris(resource.getUris());
             existing.setIconUri(resource.getIconUri());
             existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
             existing.updateScopes(resource.getScopes().stream()
@@ -2375,7 +2395,7 @@ public class RepresentationToModel {
 
         model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
-        model.setUri(resource.getUri());
+        model.updateUris(resource.getUris());
         model.setIconUri(resource.getIconUri());
         model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
 
@@ -2544,4 +2564,31 @@ public class RepresentationToModel {
         return m;
     }
 
+    public static ResourceServer createResourceServer(ClientModel client, KeycloakSession session, boolean addDefaultRoles) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        UserModel serviceAccount = session.users().getServiceAccount(client);
+
+        if (serviceAccount == null) {
+            client.setServiceAccountsEnabled(true);
+        }
+
+        if (addDefaultRoles) {
+            RoleModel umaProtectionRole = client.getRole(Constants.AUTHZ_UMA_PROTECTION);
+
+            if (umaProtectionRole == null) {
+                umaProtectionRole = client.addRole(Constants.AUTHZ_UMA_PROTECTION);
+            }
+
+            if (serviceAccount != null) {
+                serviceAccount.grantRole(umaProtectionRole);
+            }
+        }
+
+        ResourceServerRepresentation representation = new ResourceServerRepresentation();
+
+        representation.setAllowRemoteResourceManagement(true);
+        representation.setClientId(client.getId());
+
+        return toModel(representation, authorization);
+    }
 }

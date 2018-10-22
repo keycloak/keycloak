@@ -31,6 +31,7 @@ import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionCluster
 import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -73,7 +74,12 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             @Override
             public void onEvent(ProviderEvent event) {
                 if (event instanceof PostMigrationEvent) {
-                    registerClusterListeners(((PostMigrationEvent) event).getSession());
+
+                    KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
+
+                        registerClusterListeners(session);
+
+                    });
                 }
             }
         });

@@ -59,7 +59,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
 
         List<DeploymentDescription> deployments = super.generate(testClass);
 
-        checkTestDeployments(deployments, testClass);
+        checkTestDeployments(deployments, testClass, context.isAdapterTest());
         List<String> appServerQualifiers = getAppServerQualifiers(testClass.getJavaClass());
         if (appServerQualifiers == null) return deployments; // no adapter test
 
@@ -87,11 +87,11 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
         return deployments;
     }
 
-    private void checkTestDeployments(List<DeploymentDescription> descriptions, TestClass testClass) {
+    private void checkTestDeployments(List<DeploymentDescription> descriptions, TestClass testClass, boolean isAdapterTest) {
         for (DeploymentDescription deployment : descriptions) {
             if (deployment.getTarget() != null) {
                 String containerQualifier = deployment.getTarget().getName();
-                if (AUTH_SERVER_CURRENT.equals(containerQualifier)) {
+                if (AUTH_SERVER_CURRENT.equals(containerQualifier) || (!isAdapterTest && "_DEFAULT_".equals(containerQualifier))) {
                     String newAuthServerQualifier = AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
                     updateServerQualifier(deployment, testClass, newAuthServerQualifier);
                 } else if (containerQualifier.contains(APP_SERVER_CURRENT)) {

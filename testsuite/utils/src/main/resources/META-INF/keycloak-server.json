@@ -1,4 +1,15 @@
 {
+
+    "hostname": {
+        "provider": "request",
+
+        "fixed": {
+            "hostname": "localhost",
+            "httpPort": "-1",
+            "httpsPort": "-1"
+        }
+    },
+
     "admin": {
         "realm": "master"
     },
@@ -61,7 +72,6 @@
         "default": {}
     },
 
-
     "connectionsJpa": {
         "default": {
             "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;DB_CLOSE_DELAY=-1}",
@@ -95,12 +105,7 @@
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "remoteStoreSecurityEnabled": "${keycloak.connectionsInfinispan.remoteStoreSecurityEnabled:false}",
-            "remoteStoreSecurityServerName": "${keycloak.connectionsInfinispan.remoteStoreSecurityServerName:keycloak-server}",
-            "remoteStoreSecurityRealm": "${keycloak.connectionsInfinispan.remoteStoreSecurityRealm:ApplicationRealm}",
-            "remoteStoreSecurityHotRodEndpoint": "${keycloak.connectionsInfinispan.remoteStoreSecurityHotRodEndpoint}",
-            "remoteStoreSecurityUsername": "${keycloak.connectionsInfinispan.remoteStoreSecurityUsername}",
-            "remoteStoreSecurityPassword": "${keycloak.connectionsInfinispan.remoteStoreSecurityPassword}"
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}"
         }
     },
 

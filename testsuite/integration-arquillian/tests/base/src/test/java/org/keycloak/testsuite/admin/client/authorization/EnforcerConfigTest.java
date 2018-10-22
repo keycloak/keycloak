@@ -33,15 +33,12 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class EnforcerConfigTest extends AbstractKeycloakTest {
-
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

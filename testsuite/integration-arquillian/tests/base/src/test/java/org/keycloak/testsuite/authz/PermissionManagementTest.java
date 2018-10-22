@@ -36,6 +36,7 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -303,14 +304,14 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
 
         PermissionTicketToken token = new JWSInput(ticket).readJsonContent(PermissionTicketToken.class);
 
-        List<PermissionTicketToken.ResourcePermission> tokenPermissions = token.getResources();
+        List<Permission> tokenPermissions = token.getPermissions();
         assertNotNull(tokenPermissions);
         assertEquals(expectedPermissions, scopeNames.length > 0 ? scopeNames.length : tokenPermissions.size());
 
-        Iterator<PermissionTicketToken.ResourcePermission> permissionIterator = tokenPermissions.iterator();
+        Iterator<Permission> permissionIterator = tokenPermissions.iterator();
 
         while (permissionIterator.hasNext()) {
-            PermissionTicketToken.ResourcePermission resourcePermission = permissionIterator.next();
+            Permission resourcePermission = permissionIterator.next();
             long count = tickets.stream().filter(representation -> representation.getResource().equals(resourcePermission.getResourceId())).count();
             if (count == (scopeNames.length > 0 ? scopeNames.length : 1)) {
                 permissionIterator.remove();

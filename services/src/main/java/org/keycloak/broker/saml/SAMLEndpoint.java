@@ -87,9 +87,12 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.validators.DestinationValidator;
+import java.security.cert.CertificateException;
 import org.w3c.dom.Element;
 
 import java.util.*;
+import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
@@ -111,9 +114,7 @@ public class SAMLEndpoint {
     protected SAMLIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
     protected SAMLIdentityProvider provider;
-
-    @Context
-    private UriInfo uriInfo;
+    private final DestinationValidator destinationValidator;
 
     @Context
     private KeycloakSession session;
@@ -125,18 +126,19 @@ public class SAMLEndpoint {
     private HttpHeaders headers;
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback) {
+    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
         this.provider = provider;
+        this.destinationValidator = destinationValidator;
     }
 
     @GET
     @NoCache
     @Path("descriptor")
     public Response getSPDescriptor() {
-        return provider.export(uriInfo, realm, null);
+        return provider.export(session.getContext().getUri(), realm, null);
     }
 
     @GET
@@ -181,7 +183,7 @@ public class SAMLEndpoint {
 
     protected abstract class Binding {
         private boolean checkSsl() {
-            if (uriInfo.getBaseUri().getScheme().equals("https")) {
+            if (session.getContext().getUri().getBaseUri().getScheme().equals("https")) {
                 return true;
             } else {
                 return !realm.getSslRequired().isRequired(clientConnection);
@@ -213,14 +215,18 @@ public class SAMLEndpoint {
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
-        
+
         protected KeyLocator getIDPKeyLocator() {
             List<Key> keys = new LinkedList<>();
 
             for (String signingCertificate : config.getSigningCertificates()) {
+                X509Certificate cert = null;
                 try {
-                    X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    cert.checkValidity();
                     keys.add(cert.getPublicKey());
+                } catch (CertificateException e) {
+                    logger.warnf("Ignoring invalid certificate: %s", cert);
                 } catch (ProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -241,7 +247,7 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
-            if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -280,7 +286,7 @@ public class SAMLEndpoint {
                         continue;
                     }
                     try {
-                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
+                        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
                     } catch (Exception e) {
                         logger.warn("failed to do backchannel logout for userSession", e);
                     }
@@ -295,7 +301,7 @@ public class SAMLEndpoint {
                             continue;
                         }
                         try {
-                            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
+                            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
                         } catch (Exception e) {
                             logger.warn("failed to do backchannel logout for userSession", e);
                         }
@@ -303,7 +309,7 @@ public class SAMLEndpoint {
                 }
             }
 
-            String issuerURL = getEntityId(uriInfo, realm);
+            String issuerURL = getEntityId(session.getContext().getUri(), realm);
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(request.getID());
             builder.destination(config.getSingleLogoutServiceUrl());
@@ -340,7 +346,7 @@ public class SAMLEndpoint {
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
             return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
         }
-        
+
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
@@ -366,7 +372,7 @@ public class SAMLEndpoint {
 
                 if (assertionIsEncrypted) {
                     // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
+                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
@@ -459,7 +465,7 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -506,7 +512,7 @@ public class SAMLEndpoint {
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
-            return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
 
@@ -552,7 +558,7 @@ public class SAMLEndpoint {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             KeyLocator locator = getIDPKeyLocator();
-            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, uriInfo, key);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key);
         }
 
 

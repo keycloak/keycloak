@@ -18,17 +18,23 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.auth.page.account.AccountFields;
+import org.keycloak.testsuite.auth.page.AccountFields;
 
 /**
  *
  * @author tkyjovsk
  */
-public class UpdateAccount extends Authenticate {
+public class UpdateAccount extends RequiredActions {
 
     @Page
     private AccountFields accountFields;
+
+    @Override
+    public String getActionId() {
+        return UserModel.RequiredAction.UPDATE_PROFILE.name();
+    }
 
     public void updateAccount(UserRepresentation user) {
         updateAccount(user.getEmail(), user.getFirstName(), user.getLastName());

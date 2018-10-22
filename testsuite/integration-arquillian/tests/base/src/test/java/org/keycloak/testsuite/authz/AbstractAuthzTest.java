@@ -12,11 +12,6 @@ import org.keycloak.testsuite.ProfileAssume;
  */
 public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     protected AccessToken toAccessToken(String rpt) {
         AccessToken accessToken;
 

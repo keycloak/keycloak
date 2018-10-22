@@ -23,6 +23,13 @@
                 <kc-tooltip>{{:: 'content-sec-policy-tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="contentSecurityPolicyReportOnly"><a href="http://www.w3.org/TR/CSP/" target="_blank">{{:: 'content-sec-policy-report-only' | translate}}</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="contentSecurityPolicyReportOnly" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicyReportOnly">
+                </div>
+                <kc-tooltip>{{:: 'content-sec-policy-report-only-tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="xContentTypeOptions"><a href="https://www.owasp.org/index.php/List_of_useful_HTTP_headers" target="_blank">{{:: 'content-type-options' | translate}}</a></label>
                 <div class="col-sm-6">
                     <input class="form-control" id="xContentTypeOptions" type="text" ng-model="realm.browserSecurityHeaders.xContentTypeOptions">

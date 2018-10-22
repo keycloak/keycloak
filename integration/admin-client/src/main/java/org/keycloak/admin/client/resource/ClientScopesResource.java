@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -25,6 +26,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -39,12 +41,24 @@ public interface ClientScopesResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(ClientScopeRepresentation clientScopeRepresentation);
+    Response create(ClientScopeRepresentation clientScopeRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientScopeRepresentation> findAll();
+    List<ClientScopeRepresentation> findAll();
 
+
+    /**
+     * Generate new client scope for specified service client. The "Frontend" clients, who will use this client scope, will be able to
+     * send their access token to authenticate against specified service client
+     *
+     * @param clientId Client ID of service client (typically bearer-only client)
+     * @return
+     */
+    @Path("generate-audience-client-scope")
+    @POST
+    @NoCache
+    Response generateAudienceClientScope(final @QueryParam("clientId") String clientId);
 
 
 }

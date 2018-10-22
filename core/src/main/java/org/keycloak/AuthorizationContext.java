@@ -22,9 +22,9 @@ import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -113,7 +113,7 @@ public class AuthorizationContext {
             return Collections.emptyList();
         }
 
-        return Collections.unmodifiableList(authorization.getPermissions());
+        return Collections.unmodifiableList(new ArrayList<>(authorization.getPermissions()));
     }
 
     public boolean isGranted() {

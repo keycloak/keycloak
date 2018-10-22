@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
 /**
@@ -154,7 +155,7 @@ public class PathCache {
             if(maxAge == -1) {
                 expiration = -1;
             } else {
-                expiration = System.currentTimeMillis() + maxAge;
+                expiration = Time.currentTimeMillis() + maxAge;
             }
         }
 
@@ -167,7 +168,7 @@ public class PathCache {
         }
 
         boolean isExpired() {
-            return expiration != -1 ? System.currentTimeMillis() > expiration : false;
+            return expiration != -1 ? Time.currentTimeMillis() > expiration : false;
         }
     }
 }

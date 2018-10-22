@@ -235,6 +235,7 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
         
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
+        $scope.query.briefRepresentation = 'true';
         
         if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
@@ -561,7 +562,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     }
     
     $scope.disableCredentialTypes = function() {
-        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
+        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
                 $route.reload();
                 Notifications.success("Credentials disabled");
@@ -1322,7 +1323,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.post(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
@@ -1331,7 +1332,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.post(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save(initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");

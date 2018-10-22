@@ -40,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
-        "policy-enforcer", "ignore-oauth-query-parameter"
+        "policy-enforcer", "ignore-oauth-query-parameter", "verify-token-audience"
 })
 public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
@@ -85,6 +85,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected boolean pkce = false;
     @JsonProperty("ignore-oauth-query-parameter")
     protected boolean ignoreOAuthQueryParameter = false;
+    @JsonProperty("verify-token-audience")
+    protected boolean verifyTokenAudience = false;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -267,5 +269,13 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setIgnoreOAuthQueryParameter(boolean ignoreOAuthQueryParameter) {
         this.ignoreOAuthQueryParameter = ignoreOAuthQueryParameter;
+    }
+
+    public boolean isVerifyTokenAudience() {
+        return verifyTokenAudience;
+    }
+
+    public void setVerifyTokenAudience(boolean verifyTokenAudience) {
+        this.verifyTokenAudience = verifyTokenAudience;
     }
 }

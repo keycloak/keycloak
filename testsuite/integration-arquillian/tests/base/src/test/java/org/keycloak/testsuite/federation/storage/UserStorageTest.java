@@ -51,7 +51,17 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.GreenMailRule;
+import java.util.Map;
+import javax.mail.internet.MimeMessage;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -64,6 +74,18 @@ public class UserStorageTest extends AbstractAuthTest {
     private String memProviderId;
     private String propProviderROId;
     private String propProviderRWId;
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected RegisterPage registerPage;
+
+    @Page
+    protected VerifyEmailPage verifyEmailPage;
 
     private static final File CONFIG_DIR = new File(System.getProperty("auth.server.config.dir", ""));
 
@@ -265,6 +287,38 @@ public class UserStorageTest extends AbstractAuthTest {
             }
         }
         assertFalse(foundRole);
+    }
+
+    @Test
+    public void testRegisterWithRequiredEmail() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
+          .updateWith(r -> {
+            Map<String, String> config = new HashMap<>();
+            config.put("from", "auto@keycloak.org");
+            config.put("host", "localhost");
+            config.put("port", "3025");
+            r.setSmtpServer(config);
+            r.setRegistrationAllowed(true);
+            r.setVerifyEmail(true);
+          })
+          .update()) {
+
+            testRealmAccountPage.navigateTo();
+            loginPage.clickRegister();
+            registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+
+            verifyEmailPage.assertCurrent();
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String verificationUrl = getPasswordResetEmailLink(message);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            testRealmAccountPage.assertCurrent();
+        }
     }
 
     public UserResource user(String userId) {

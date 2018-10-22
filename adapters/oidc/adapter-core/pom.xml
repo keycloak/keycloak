@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.1.0.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,12 +31,24 @@
     <description/>
 
     <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <keycloak.osgi.export>
             org.keycloak.adapters.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
-            org.apache.http.*;version=${apache.httpcomponents.version},
+            org.apache.http.auth.*;version=${apache.httpcomponents.version},
+            org.apache.http.client.*;version=${apache.httpcomponents.version},
+            org.apache.http.conn.*;version=${apache.httpcomponents.version},
+            org.apache.http.cookie.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.auth.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.client.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.conn.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.cookie.*;version=${apache.httpcomponents.version},
+            org.apache.http.impl.execchain.*;version=${apache.httpcomponents.version},
+            org.apache.http.*;version=${apache.httpcomponents.httpcore.version},
             org.apache.karaf.jaas.boot.principal;resolution:=optional,
             org.apache.karaf.jaas.modules;resolution:=optional,
             *;resolution:=optional
@@ -52,7 +64,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -98,15 +109,6 @@
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

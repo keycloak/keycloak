@@ -147,4 +147,16 @@ public class TestingExportImportResource {
         String absolutePath = new File(System.getProperty("project.build.directory", "target")).getAbsolutePath();
         return absolutePath;
     }
+
+    @GET
+    @Path("/clear")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clear() {
+        System.clearProperty(REALM_NAME);
+        System.clearProperty(PROVIDER);
+        System.clearProperty(ACTION);
+        System.clearProperty(FILE);
+
+        return Response.ok().build();
+    }
 }

@@ -32,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -116,7 +117,13 @@ public class KeycloakIdentity implements Identity {
             if (token instanceof AccessToken) {
                 this.accessToken = AccessToken.class.cast(token);
             } else {
-                UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, token.getSessionState());
+                UserSessionProvider sessions = keycloakSession.sessions();
+                UserSessionModel userSession = sessions.getUserSession(realm, token.getSessionState());
+
+                if (userSession == null) {
+                    userSession = sessions.getOfflineUserSession(realm, token.getSessionState());
+                }
+
                 ClientModel client = realm.getClientByClientId(token.getIssuedFor());
                 AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessions().get(client.getId());
 
@@ -252,7 +259,13 @@ public class KeycloakIdentity implements Identity {
     }
 
     private UserModel getUserFromSessionState() {
-        UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, accessToken.getSessionState());
+        UserSessionProvider sessions = keycloakSession.sessions();
+        UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
+
+        if (userSession == null) {
+            userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+        }
+
         return userSession.getUser();
     }
 }

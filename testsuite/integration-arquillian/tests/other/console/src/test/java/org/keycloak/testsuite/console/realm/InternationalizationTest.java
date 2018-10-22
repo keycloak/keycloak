@@ -6,13 +6,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.console.page.fragment.Dropdown;
+import org.keycloak.testsuite.console.page.fragment.LocaleDropdown;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.junit.Assert.*;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.URLAssert.*;
 
 /**
@@ -30,7 +31,7 @@ public class InternationalizationTest extends AbstractRealmTest {
     private ThemeSettings themeSettingsPage;
 
     @FindBy(id = "kc-locale-dropdown")
-    private Dropdown localeDropdown;
+    private LocaleDropdown localeDropdown;
 
     @Before
     public void beforeInternationalizationTest() {
@@ -107,6 +108,6 @@ public class InternationalizationTest extends AbstractRealmTest {
     }
 
     private void assertLocale(WebElement element, String expected) {
-        assertEquals(expected, element.getText());
+        assertEquals(expected, getTextFromElement(element));
     }
 }

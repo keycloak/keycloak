@@ -36,14 +36,14 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
     private static final Logger log = Logger.getLogger(SessionInitializerWorker.class);
 
     private int segment;
-    private int sessionsPerSegment;
+    private SessionLoader.LoaderContext ctx;
     private SessionLoader sessionLoader;
 
     private transient Cache<String, Serializable> workCache;
 
-    public void setWorkerEnvironment(int segment, int sessionsPerSegment, SessionLoader sessionLoader) {
+    public void setWorkerEnvironment(int segment, SessionLoader.LoaderContext ctx, SessionLoader sessionLoader) {
         this.segment = segment;
-        this.sessionsPerSegment = sessionsPerSegment;
+        this.ctx = ctx;
         this.sessionLoader = sessionLoader;
     }
 
@@ -64,14 +64,11 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
             return InfinispanCacheInitializer.WorkerResult.create(segment, false);
         }
 
-        final int first = segment * sessionsPerSegment;
-        final int max = sessionsPerSegment;
-
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
-                sessionLoader.loadSessions(session, first, max);
+                sessionLoader.loadSessions(session, ctx, segment);
             }
 
         });

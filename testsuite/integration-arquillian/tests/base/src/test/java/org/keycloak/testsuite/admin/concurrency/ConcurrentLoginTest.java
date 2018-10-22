@@ -190,7 +190,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
         for (int i=0 ; i<10 ; i++) {
             OAuthClient oauth1 = new OAuthClient();
-            oauth1.init(adminClient, driver);
+            oauth1.init(driver);
             oauth1.clientId("client0");
 
             OAuthClient.AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
@@ -320,7 +320,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 @Override
                 protected OAuthClient initialValue() {
                     OAuthClient oauth1 = new OAuthClient();
-                    oauth1.init(adminClient, driver);
+                    oauth1.init(driver);
                     return oauth1;
                 }
             };

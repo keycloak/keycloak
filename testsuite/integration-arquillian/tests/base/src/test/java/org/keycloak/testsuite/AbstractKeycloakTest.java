@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite;
 
+import io.appium.java_client.AppiumDriver;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -29,7 +30,6 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -81,9 +81,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 
 /**
  *
@@ -94,6 +98,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public abstract class AbstractKeycloakTest {
 
     protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "false"));
+
+    protected static final String ENGLISH_LOCALE_NAME = "English";
 
     protected Logger log = Logger.getLogger(this.getClass());
 
@@ -149,10 +155,8 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
-        if (adminClient == null) {
-            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
-            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
-            testContext.setAdminClient(adminClient);
+        if (adminClient == null || adminClient.isClosed()) {
+            reconnectAdminClient();
         }
 
         getTestingClient();
@@ -170,20 +174,36 @@ public abstract class AbstractKeycloakTest {
 
         beforeAbstractKeycloakTestRealmImport();
 
-        if (testContext.getTestRealmReps() == null) {
+        if (testContext.getTestRealmReps().isEmpty()) {
             importTestRealms();
 
             if (!isImportAfterEachMethod()) {
                 testContext.setTestRealmReps(testRealmReps);
             }
+
+            afterAbstractKeycloakTestRealmImport();
         }
 
-        oauth.init(adminClient, driver);
+        oauth.init(driver);
 
+    }
+
+    public void reconnectAdminClient() throws Exception {
+        if (adminClient != null && !adminClient.isClosed()) {
+            adminClient.close();
+        }
+
+        String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+        adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
+        testContext.setAdminClient(adminClient);
     }
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
+    protected void postAfterAbstractKeycloak() {
+    }
+
+    protected void afterAbstractKeycloakTestRealmImport() {}
 
     @After
     public void afterAbstractKeycloakTest() {
@@ -215,6 +235,8 @@ public abstract class AbstractKeycloakTest {
             }
             testContext.getCleanups().clear();
         }
+
+        postAfterAbstractKeycloak();
 
         // Remove all browsers from queue
         DroneUtils.resetQueue();
@@ -258,9 +280,47 @@ public abstract class AbstractKeycloakTest {
 
     protected void deleteAllCookiesForRealm(String realmName) {
         // masterRealmPage.navigateTo();
-        driver.navigate().to(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
+    }
+
+    // this is useful mainly for smartphones as cookies deletion doesn't work there
+    protected void deleteAllSessionsInRealm(String realmName) {
+        log.info("removing all sessions from '" + realmName + "' realm...");
+        try {
+            adminClient.realm(realmName).logoutAll();
+            log.info("sessions successfully deleted");
+        }
+        catch (NotFoundException e) {
+            log.warn("realm not found");
+        }
+    }
+
+    protected void resetRealmSession(String realmName) {
+        deleteAllCookiesForRealm(realmName);
+
+        if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
+            try {
+                log.info("resetting realm session");
+
+                final RealmRepresentation realmRep = adminClient.realm(realmName).toRepresentation();
+
+                deleteAllSessionsInRealm(realmName); // logout users
+
+                if (realmRep.isInternationalizationEnabled()) { // reset the locale
+                    String locale = getDefaultLocaleName(realmRep.getRealm());
+                    loginPage.localeDropdown().selectByText(locale);
+                    log.info("locale reset to " + locale);
+                }
+            } catch (NotFoundException e) {
+                log.warn("realm not found");
+            }
+        }
+    }
+
+    protected String getDefaultLocaleName(String realmName) {
+        return ENGLISH_LOCALE_NAME;
     }
 
     public void setDefaultPageUriParameters() {
@@ -308,6 +368,17 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+
+    protected void removeAllRealmsDespiteMaster() {
+        // remove all realms (accidentally left by other tests) except for master
+        adminClient.realms().findAll().stream()
+                .map(RealmRepresentation::getRealm)
+                .filter(realmName -> ! realmName.equals("master"))
+                .forEach(this::removeRealm);
+        assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
+    }
+
+
     private UserRepresentation createAdminUserRepresentation() {
         UserRepresentation adminUserRep = new UserRepresentation();
         adminUserRep.setUsername(ADMIN);
@@ -316,12 +387,11 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void importRealm(RealmRepresentation realm) {
-        log.debug("importing realm: " + realm.getRealm());
-        try { // TODO - figure out a way how to do this without try-catch
-            RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
-            log.debug("realm already exists on server, re-importing");
-            realmResource.remove();
-        } catch (NotFoundException nfe) {
+        log.debug("--importing realm: " + realm.getRealm());
+        try {
+            adminClient.realms().realm(realm.getRealm()).remove();
+            log.debug("realm already existed on server, re-importing");
+        } catch (NotFoundException ignore) {
             // expected when realm does not exist
         }
         adminClient.realms().create(realm);

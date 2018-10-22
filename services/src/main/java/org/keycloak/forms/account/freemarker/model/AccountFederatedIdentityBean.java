@@ -20,19 +20,16 @@ package org.keycloak.forms.account.freemarker.model;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.resources.account.AccountFormService;
-import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,7 +37,9 @@ import java.util.TreeSet;
  */
 public class AccountFederatedIdentityBean {
 
-    private final List<FederatedIdentityEntry> identities;
+    private static OrderedModel.OrderedModelComparator<FederatedIdentityEntry> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
+
+    private final List<FederatedIdentityEntry> identities = new ArrayList<>();
     private final boolean removeLinkPossible;
     private final KeycloakSession session;
 
@@ -50,7 +49,6 @@ public class AccountFederatedIdentityBean {
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
 
-        Set<FederatedIdentityEntry> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);       
         int availableIdentities = 0;
         if (identityProviders != null && !identityProviders.isEmpty()) {
             for (IdentityProviderModel provider : identityProviders) {
@@ -68,11 +66,11 @@ public class AccountFederatedIdentityBean {
                 String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
                 FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(),
                 		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
-                orderedSet.add(entry);
+                this.identities.add(entry);
             }
         }
         
-        this.identities = new LinkedList<FederatedIdentityEntry>(orderedSet); 
+        this.identities.sort(IDP_COMPARATOR_INSTANCE);
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
         this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountFormService.isPasswordSet(session, realm, user);
@@ -95,7 +93,7 @@ public class AccountFederatedIdentityBean {
         return removeLinkPossible;
     }
 
-    public class FederatedIdentityEntry {
+    public class FederatedIdentityEntry implements OrderedModel {
 
         private FederatedIdentityModel federatedIdentityModel;
         private final String providerId;
@@ -132,6 +130,7 @@ public class AccountFederatedIdentityBean {
             return federatedIdentityModel != null;
         }
 
+        @Override
         public String getGuiOrder() {
             return guiOrder;
         }
@@ -141,38 +140,5 @@ public class AccountFederatedIdentityBean {
         }
 
     }
-    
-	public static class IdentityProviderComparator implements Comparator<FederatedIdentityEntry> {
 
-		public static IdentityProviderComparator INSTANCE = new IdentityProviderComparator();
-
-		private IdentityProviderComparator() {
-
-		}
-
-		@Override
-		public int compare(FederatedIdentityEntry o1, FederatedIdentityEntry o2) {
-
-			int o1order = parseOrder(o1);
-			int o2order = parseOrder(o2);
-
-			if (o1order > o2order)
-				return 1;
-			else if (o1order < o2order)
-				return -1;
-
-			return 1;
-		}
-
-		private int parseOrder(FederatedIdentityEntry ip) {
-			if (ip != null && ip.getGuiOrder() != null) {
-				try {
-					return Integer.parseInt(ip.getGuiOrder());
-				} catch (NumberFormatException e) {
-					// ignore it and use defaulr
-				}
-			}
-			return 10000;
-		}
-	}
 }

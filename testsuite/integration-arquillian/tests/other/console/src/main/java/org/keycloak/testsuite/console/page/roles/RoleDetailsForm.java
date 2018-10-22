@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.roles;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -18,9 +19,6 @@ public class RoleDetailsForm extends Form {
     @FindBy(id = "description")
     private WebElement descriptionInput;
 
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='scopeParamRequired']]")
-    private OnOffSwitch scopeParamRequired;
-
     @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='compositeSwitch']]")
     private OnOffSwitch compositeSwitch;
 
@@ -31,7 +29,7 @@ public class RoleDetailsForm extends Form {
     private WebElement removeIcon;
 
     public RoleRepresentation getRole() {
-        RoleRepresentation role = new RoleRepresentation(getName(), getDescription(), isScopeParamRequired());
+        RoleRepresentation role = new RoleRepresentation(getName(), getDescription(), false);
         role.setComposite(isComposite());
         if (role.isComposite()) {
             role.setComposites(compositeRoles.getComposites());
@@ -47,7 +45,6 @@ public class RoleDetailsForm extends Form {
         RoleRepresentation role = new RoleRepresentation();
         role.setName(getName());
         role.setDescription(getDescription());
-        role.setScopeParamRequired(isScopeParamRequired());
         role.setComposite(isComposite());
         log.info(role.getName() + ": " + role.getDescription() + ", comp: " + role.isComposite());
         return role;
@@ -56,7 +53,6 @@ public class RoleDetailsForm extends Form {
     public void setBasicAttributes(RoleRepresentation role) {
         setName(role.getName());
         setDescription(role.getDescription());
-        setScopeParamRequired(role.isScopeParamRequired());
         if (role.isComposite()) {
             setCompositeRoles(role);
         }
@@ -72,27 +68,19 @@ public class RoleDetailsForm extends Form {
     }
 
     public void setName(String name) {
-        setInputValue(nameInput, name);
+        UIUtils.setTextInputValue(nameInput, name);
     }
 
     public String getName() {
-        return getInputValue(nameInput);
+        return UIUtils.getTextInputValue(nameInput);
     }
 
     public void setDescription(String description) {
-        setInputValue(descriptionInput, description);
+        UIUtils.setTextInputValue(descriptionInput, description);
     }
 
     public String getDescription() {
-        return getInputValue(descriptionInput);
-    }
-
-    public void setScopeParamRequired(boolean scopeParamRequired) {
-        this.scopeParamRequired.setOn(scopeParamRequired);
-    }
-
-    public boolean isScopeParamRequired() {
-        return scopeParamRequired.isOn();
+        return UIUtils.getTextInputValue(descriptionInput);
     }
 
     public void setComposite(boolean composite) {

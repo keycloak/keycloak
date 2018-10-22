@@ -22,11 +22,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -41,21 +45,28 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.NoSuchElementException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -110,14 +121,59 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     public void testBrowserSecurityHeaders() {
         Client client = ClientBuilder.newClient();
         Response response = client.target(oauth.getLoginFormUrl()).request().get();
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertThat(response.getStatus(), is(equalTo(200)));
         for (Map.Entry<String, String> entry : BrowserSecurityHeaders.defaultHeaders.entrySet()) {
             String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
             String headerValue = response.getHeaderString(headerName);
-            Assert.assertNotNull(headerValue);
-            Assert.assertEquals(headerValue, entry.getValue());
+            if (entry.getValue().isEmpty()) {
+                Assert.assertNull(headerValue);
+            } else {
+                Assert.assertNotNull(headerValue);
+                Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+            }
         }
         response.close();
+        client.close();
+    }
+
+    @Test
+    public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() {
+        final String expectedCspReportOnlyValue = "default-src 'none'";
+        final String cspReportOnlyAttr = "contentSecurityPolicyReportOnly";
+        final String cspReportOnlyHeader = "Content-Security-Policy-Report-Only";
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        final String defaultContentSecurityPolicyReportOnly = realmRep.getBrowserSecurityHeaders().get(cspReportOnlyAttr);
+        realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, expectedCspReportOnlyValue);
+        adminClient.realm("test").update(realmRep);
+
+        try {
+            Client client = ClientBuilder.newClient();
+            Response response = client.target(oauth.getLoginFormUrl()).request().get();
+            String headerValue = response.getHeaderString(cspReportOnlyHeader);
+            Assert.assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
+            response.close();
+            client.close();
+        } finally {
+            realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, defaultContentSecurityPolicyReportOnly);
+            adminClient.realm("test").update(realmRep);
+        }
+    }
+
+    //KEYCLOAK-5556
+    @Test
+    public void testPOSTAuthenticationRequest() {
+        Client client = ClientBuilder.newClient();
+
+        //POST request to http://localhost:8180/auth/realms/test/protocol/openid-connect/auth;
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
+        Response response = client.target(b.build(oauth.getRealm())).request().post(oauth.getLoginEntityForPOST());
+        
+        Assert.assertThat(response.getStatus(), is(equalTo(200)));
+        Assert.assertThat(response, Matchers.body(containsString("Log In")));
+
+        response.close();
+        client.close();
     }
 
     @Test
@@ -302,6 +358,45 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
+
+    @Test
+    public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
+        loginPage.open();
+        loginPage.login("login-test", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+        String keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+        // Check identity cookie is signed with HS256
+        String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+        assertEquals("HS256", algorithm);
+
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
+
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+            keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+            // Check identity cookie is still signed with HS256
+            algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+            assertEquals("HS256", algorithm);
+
+            // Check identity cookie still works
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+        }
     }
 
     @Test

@@ -57,9 +57,6 @@ public class TokenIntrospectionEndpoint {
     private HttpHeaders headers;
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private ClientConnection clientConnection;
 
     private final RealmModel realm;
@@ -130,7 +127,7 @@ public class TokenIntrospectionEndpoint {
     }
 
     private void checkSsl() {
-        if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
+        if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new ErrorResponseException("invalid_request", "HTTPS required", Status.FORBIDDEN);
         }
     }

@@ -4,7 +4,7 @@ Executing testsuite
 Browser
 -------
 
-The testsuite uses Sellenium. By default it uses the HtmlUnit WebDriver, but can also be executed with Chrome or Firefox.
+The testsuite uses Selenium. By default it uses the HtmlUnit WebDriver, but can also be executed with Chrome or Firefox.
 
 To run the tests with Firefox add `-Dbrowser=firefox` or for Chrome add `-Dbrowser=chrome`
 
@@ -15,6 +15,10 @@ By default the testsuite uses an embedded H2 database to test with other databas
 
 Test utils
 ==========
+
+All the utils can be executed from the directory testsuite/utils:
+
+    cd testsuite/utils
 
 Keycloak server
 ---------------
@@ -37,6 +41,16 @@ and https port, optionally setting the truststore.
         -Djavax.net.ssl.keyStore=/path/to/keystore.jks \
         -Djavax.net.ssl.keyStorePassword=CHANGEME \
         -Dkeycloak.port.https=8443
+
+### Default admin account
+
+The default admin within the master realm are created with credentials:
+* Username: `admin`
+* Password: `admin`
+
+The Keycloak test suite server will automatically create the new master realm user when the following conditions are met
+* Property `keycloak.createAdminUser` is set to `true` (defaults to `true` if not present)
+* There is no existing user within the master realm
 
 ### Live edit of html and styles
 
@@ -107,7 +121,14 @@ To start a ApacheDS based Kerberos server for testing Kerberos + LDAP sending ru
     mvn exec:java -Pkerberos
     
 There are additional system properties you can use to configure (See LDAPEmbeddedServer and KerberosEmbeddedServer class for details) but for testing purposes default values should be good.
-By default ApacheDS LDAP server will be running on localhost:10389 and Kerberos KDC on localhost:6088 . 
+By default ApacheDS LDAP server will be running on localhost:10389 and Kerberos KDC on localhost:6088 .
+
+The alternative is to start Kerberos with the alternative realm KC2.COM instead of default KEYCLOAK.ORG. 
+The ApacheDS server will be then started with all ports shifted by 1000 (EG. LDAP on 11389, Kerberos KDC on 7088).
+This allows to start 2 kerberos servers in parallel to test things like Kerberos cross-realm trust:
+
+    mvn exec:java -Pkerberos -Dkeycloak.kerberos.realm=KC2.COM
+ 
 
 Once kerberos is running, you can create LDAP Federation provider in Keycloak admin console with same settings like mentioned in previous LDAP section. 
 But additionally you can enable Kerberos authentication in LDAP provider with the settings like:

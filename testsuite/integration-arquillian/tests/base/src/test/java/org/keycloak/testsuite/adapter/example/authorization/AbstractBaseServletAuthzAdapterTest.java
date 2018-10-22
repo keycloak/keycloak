@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
-import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -42,9 +42,9 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -54,9 +54,6 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
 
     protected static final String REALM_NAME = "servlet-authz";
     protected static final String RESOURCE_SERVER_ID = "servlet-authz-app";
-
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @ArquillianResource
     private Deployer deployer;
@@ -113,23 +110,17 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
 
     private void logOut() {
         navigateTo();
-        By by = By.xpath("//a[text() = 'Sign Out']");
-        WaitUtils.waitUntilElement(by);
-        this.driver.findElement(by).click();
-        pause(500);
+        UIUtils.clickLink(driver.findElement(By.xpath("//a[text() = 'Sign Out']")));
     }
+
 
     protected void login(String username, String password) {
         try {
             navigateTo();
-            Thread.sleep(2000);
             if (this.driver.getCurrentUrl().startsWith(getResourceServerUrl().toString())) {
-                Thread.sleep(2000);
                 logOut();
                 navigateTo();
             }
-
-            Thread.sleep(2000);
 
             this.loginPage.form().login(username, password);
         } catch (Exception cause) {
@@ -138,8 +129,8 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
     }
 
     protected void navigateTo() {
-        this.driver.navigate().to(getResourceServerUrl());
-        WaitUtils.waitUntilElement(By.xpath("//a[text() = 'Dynamic Menu']"));
+        this.driver.navigate().to(getResourceServerUrl() + "/");
+        waitForPageToLoad();
     }
 
     protected void assertWasDenied() {
@@ -160,17 +151,17 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
 
     protected void navigateToDynamicMenuPage() {
         navigateTo();
-        getLink("Dynamic Menu").click();
+        UIUtils.clickLink(getLink("Dynamic Menu"));
     }
 
     protected void navigateToUserPremiumPage() {
         navigateTo();
-        getLink("User Premium").click();
+        UIUtils.clickLink(getLink("User Premium"));
     }
 
     protected void navigateToAdminPage() {
         navigateTo();
-        getLink("Administration").click();
+        UIUtils.clickLink(getLink("Administration"));
     }
 
     protected void updatePermissionPolicies(String permissionName, String... policyNames) {

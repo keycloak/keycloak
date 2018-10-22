@@ -15,20 +15,43 @@
             <td>{{serverInfo.systemInfo.version}}</td>
         </tr>
         <tr>
-            <td width="20%">{{:: 'server-profile' | translate}}</td>
-            <td>{{serverInfo.profileInfo.name | capitalize}}</td>
-        </tr>
-        <tr data-ng-if="serverInfo.profileInfo.disabledFeatures.length > 0">
-            <td width="20%">{{:: 'server-disabled' | translate}}</td>
-            <td>{{serverInfo.profileInfo.disabledFeatures.join(', ').toLowerCase() | capitalize}}</td>
-        </tr>
-        <tr>
             <td>{{:: 'server-time' | translate}}</td>
             <td>{{serverInfo.systemInfo.serverTime}}</td>
         </tr>
         <tr>
             <td>{{:: 'server-uptime' | translate}}</td>
             <td>{{serverInfo.systemInfo.uptime}}</td>
+        </tr>
+    </table>
+
+    <table class="table table-striped table-bordered">
+        <legend>{{:: 'profile' | translate}}</legend>
+
+        <tr>
+            <td width="20%">{{:: 'server-profile' | translate}}</td>
+            <td>{{serverInfo.profileInfo.name | capitalize}}</td>
+        </tr>
+        <tr data-ng-if="serverInfo.profileInfo.disabledFeatures.length > 0">
+            <td width="20%">
+                <span>{{:: 'server-disabled' | translate}}</span>
+                <kc-tooltip>{{:: 'server-disabled.tooltip' | translate}}</kc-tooltip>
+            </td>
+            <td>{{serverInfo.profileInfo.disabledFeatures.sort().join(', ')}}</td>
+
+        </tr>
+        <tr data-ng-if="serverInfo.profileInfo.previewFeatures.length > 0">
+            <td width="20%">
+                <span>{{:: 'server-preview' | translate}}</span>
+                <kc-tooltip>{{:: 'server-preview.tooltip' | translate}}</kc-tooltip>
+            </td>
+            <td>{{serverInfo.profileInfo.previewFeatures.sort().join(', ')}}</td>
+        </tr>
+        <tr data-ng-if="serverInfo.profileInfo.experimentalFeatures.length > 0">
+            <td width="20%">
+                <span>{{:: 'server-experimental' | translate}}</span>
+                <kc-tooltip>{{:: 'server-experimental.tooltip' | translate}}</kc-tooltip>
+            </td>
+            <td>{{serverInfo.profileInfo.experimentalFeatures.sort().join(', ')}}</td>
         </tr>
     </table>
 

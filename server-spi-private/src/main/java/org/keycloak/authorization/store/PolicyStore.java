@@ -20,6 +20,7 @@ package org.keycloak.authorization.store;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -93,6 +94,8 @@ public interface PolicyStore {
      */
     List<Policy> findByResource(String resourceId, String resourceServerId);
 
+    void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer);
+
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>type</code>.
      *
@@ -121,6 +124,8 @@ public interface PolicyStore {
      */
     List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId);
 
+    void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer);
+
     /**
      * Returns a list of {@link Policy} with the given <code>type</code>.
      *
@@ -138,4 +143,6 @@ public interface PolicyStore {
      * @return a list of policies that depends on the a policy with the given identifier
      */
     List<Policy> findDependentPolicies(String id, String resourceServerId);
+
+    void findByResourceType(String type, String id, Consumer<Policy> policyConsumer);
 }

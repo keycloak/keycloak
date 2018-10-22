@@ -24,6 +24,8 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -60,6 +62,7 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -83,12 +86,14 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import javax.ws.rs.core.Response;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -121,9 +126,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         testRealmPage.setAuthRealm(REALM_NAME);
     }
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @Before
     public void beforePhotozExampleAdapterTest() throws Exception {
         DroneUtils.addWebDriver(jsDriver);
@@ -155,6 +157,18 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
         importResourceServerSettings();
+    }
+
+    //revert provider in persistence.xml for EAP6 backward compatibility
+    protected static void updatePersistenceXml(WebArchive war) {
+        //double check app server is eap6
+        if (AppServerTestEnricher.isEAP6AppServer()) {
+            String persistanceXmlPath = "/WEB-INF/classes/META-INF/persistence.xml";
+            org.w3c.dom.Document persistenceXml = IOUtil.loadXML(war.get(persistanceXmlPath).getAsset().openStream());
+            IOUtil.modifyDocElementValue(persistenceXml, "provider", 
+                    "org.hibernate.jpa.HibernatePersistenceProvider", "org.hibernate.ejb.HibernatePersistence");
+            war.add(new StringAsset((IOUtil.documentToString(persistenceXml))), persistanceXmlPath);
+        }
     }
 
     private List<ResourceRepresentation> getResourcesOfUser(String username) throws FileNotFoundException {
@@ -302,7 +316,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         printUpdatedPolicies();
 
         clientPage.navigateToAdminAlbum(false);
+
         clientPage.viewAlbum("Alice Family Album", true);
+        clientPage.navigateToAdminAlbum(false);
+        clientPage.deleteAlbum("Alice Family Album", true);
 
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
             if ("Album Resource Permission".equals(policy.getName())) {
@@ -738,7 +755,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
                     clientPage.navigateTo();
                     // Check for correct logout
-                    this.jsDriverTestRealmLoginPage.form().waitForLoginButtonPresent();
+                    assertCurrentUrlStartsWithLoginUrlOf(jsDriverTestRealmLoginPage);
                 } else {
                     throw ex;
                 }

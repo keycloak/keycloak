@@ -64,7 +64,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
-        oauth.verifyRefreshToken(response.getRefreshToken());
+        oauth.parseRefreshToken(response.getRefreshToken());
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
                 .client(oauth.getClientId())
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)

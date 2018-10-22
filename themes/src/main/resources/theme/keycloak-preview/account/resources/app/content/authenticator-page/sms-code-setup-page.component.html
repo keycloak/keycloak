@@ -1,0 +1,48 @@
+<ol class="breadcrumb" id="breadcrumbs">
+  <li>{{'accountSecurityTitle' | translate}}</li>
+  <li>
+    <a href="#">{{'authenticatorTitle' | translate}}</a>
+  </li>
+  <li><strong>{{'authenticatorSMSCodeSetupTitle' | translate}}</strong></li>
+</ol>
+
+<div class="col-sm-12 card-pf ">
+    <div class="card-pf-body row">
+        <div class="col-sm-12 col-md-4">
+          <div class="card-pf-subtitle" id="authenticatorSMSCodeSetupTitle">
+              {{'authenticatorSMSCodeSetupTitle' | translate}}
+          </div>
+          <div class="introMessage" id="smscodeIntroMessage">
+            <p>{{'smscodeIntroMessage' | translate}}</p>
+          </div>
+        </div>
+        <div class="col-sm-12 col-md-8">
+          <div class="form-group">
+            <label>{{'chooseYourCountry' | translate}}</label>
+            <div class="dropdown">
+              <button class="btn btn-default dropdown-toggle sms-dropdown" type="button" id="dropdownMenu-lan" data-toggle="dropdown">
+                China +86
+                <span class="caret dropdown-caret"></span>
+              </button>
+              <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu-lan" id="dropdownMenu">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Argentina +54</a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Brazil +55</a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Canada +1</a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">China +86</a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">United States +1</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="InputPhoneNumber">{{'enterYourPhoneNumber' | translate}}</label>
+            <input class="form-control" id="InputPhoneNumber">
+          </div>
+          <button class="btn btn-default">{{'sendVerficationCode' | translate}}</button>
+          <hr>
+          <div class="form-group">
+            <label for="EnterVerificationCode">{{'enterYourVerficationCode' | translate}}</label>
+            <input class="form-control" id="EnterVerificationCode">
+          </div>
+          <button class="btn btn-primary" id="authenticatorFinishBtn">Finish</button>
+          <button class="btn btn-default" id="authenticatorCancelBtn">Cancel</button>
+        </div>

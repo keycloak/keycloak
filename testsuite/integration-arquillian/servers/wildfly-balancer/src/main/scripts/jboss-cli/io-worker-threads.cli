@@ -1,7 +1,0 @@
-embed-server --server-config=standalone.xml
-
-# default is cpuCount * 2
-/subsystem=io/worker=default:write-attribute(name=io-threads,value=${wildfly.balancer.worker.io-threads})
-
-# default is cpuCount * 16
-/subsystem=io/worker=default:write-attribute(name=task-max-threads,value=${jboss.default.worker.task-max-threads})

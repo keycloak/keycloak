@@ -22,9 +22,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -35,6 +35,7 @@ import java.net.URL;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -104,8 +105,8 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         createAlbum.click();
         WebElement albumNameInput = driver.findElement(By.id("album.name"));
         waitUntilElement(albumNameInput).is().present();
-        Form.setInputValue(albumNameInput, name);
-        waitUntilElement(albumNameInput).attribute(Form.VALUE).contains(name);
+        UIUtils.setTextInputValue(albumNameInput, name);
+        waitUntilElement(albumNameInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(name);
         WebElement button = driver.findElement(By.id(buttonId));
         waitUntilElement(button).is().clickable();
         button.click();
@@ -142,7 +143,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void navigateToAdminAlbum(boolean shouldBeDenied) {
         log.debug("Navigating to Admin Album");
-        URLUtils.navigateToUri(toString() + "/#/admin/album", true);
+        URLUtils.navigateToUri(toString() + "/#/admin/album");
         
         driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
         waitForPageToLoad();
@@ -157,8 +158,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     public void logOut() {
         navigateTo();
         waitUntilElement(signOutButton).is().clickable(); // Sometimes doesn't work in PhantomJS!
-        signOutButton.click();
-        this.loginPage.form().waitForLoginButtonPresent();
+        clickLink(signOutButton);
     }
     
     public void requestEntitlement() {
@@ -210,7 +210,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
             urlWithScopeParam.append(scopesValue);
 
-            URLUtils.navigateToUri(urlWithScopeParam.toString(), true);
+            URLUtils.navigateToUri(urlWithScopeParam.toString());
         }
 
         this.loginPage.form().login(username, password);
@@ -315,9 +315,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     public void accountShareResource(String name, String user) {
         accountMyResource(name);
         WebElement userIdInput = driver.findElement(By.id("user_id"));
-        Form.setInputValue(userIdInput, user);
+        UIUtils.setTextInputValue(userIdInput, user);
         pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        waitUntilElement(userIdInput).attribute(Form.VALUE).contains(user);
+        waitUntilElement(userIdInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(user);
         
         WebElement shareButton = driver.findElement(By.id("share-button"));
         waitUntilElement(shareButton).is().clickable();
@@ -330,9 +330,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         accountMyResource(name);
         
         WebElement userIdInput = driver.findElement(By.id("user_id"));
-        Form.setInputValue(userIdInput, user);
+        UIUtils.setTextInputValue(userIdInput, user);
         pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        waitUntilElement(userIdInput).attribute(Form.VALUE).contains(user);
+        waitUntilElement(userIdInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(user);
         
         WebElement shareRemoveScope = driver.findElement(By.id("share-remove-scope-" + name + "-" + scope));
         waitUntilElement(shareRemoveScope).is().clickable();
@@ -379,13 +379,13 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     @Override
-    public void navigateTo(boolean waitForMatch) {
-        super.navigateTo(waitForMatch);
+    public void navigateTo() {
+        super.navigateTo();
         pause(WAIT_AFTER_OPERATION);
     }
 
     @Override
     public boolean isCurrent() {
-        return URLUtils.currentUrlStartWith(toString());
+        return URLUtils.currentUrlStartsWith(toString());
     }
 }

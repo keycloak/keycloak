@@ -16,14 +16,16 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditions extends LoginActions {
+public class TermsAndConditions extends RequiredActions {
 
     @FindBy(id = "kc-accept")
     private WebElement acceptButton;
@@ -33,19 +35,17 @@ public class TermsAndConditions extends LoginActions {
 
     @FindBy(id = "kc-terms-text")
     private WebElement textElem;
-    
+
     @Override
-    public boolean isCurrent() {
-        return heading.getText().equals("Terms and Conditions");
+    public String getActionId() {
+        return "terms_and_conditions";
     }
 
     public void acceptTerms() {
-        acceptButton.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(acceptButton);
     }
     public void declineTerms() {
-        declineButton.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(declineButton);
     }
 
     public String getAcceptButtonText() {
@@ -57,7 +57,7 @@ public class TermsAndConditions extends LoginActions {
     }
     
     public String getText() {
-        return textElem.getText();
+        return getTextFromElement(textElem);
     }
     
 }

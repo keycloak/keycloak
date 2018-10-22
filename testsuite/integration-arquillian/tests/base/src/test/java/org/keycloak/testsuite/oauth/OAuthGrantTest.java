@@ -23,11 +23,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -97,7 +99,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.accept();
 
@@ -146,7 +148,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.cancel();
 
@@ -200,7 +202,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Open login form again and assert grant Page is shown
         oauth.openLoginForm();
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
     }
 
     @Test
@@ -344,7 +346,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, "foo-addr");
+        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "foo-addr");
         grantPage.accept();
 
         events.expectLogin()
@@ -400,6 +402,61 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String backToAppLink = errorPage.getBackToApplicationLink();
         ClientRepresentation thirdParty = findClientByClientId(adminClient.realm(REALM_NAME), THIRD_PARTY_APP).toRepresentation();
         Assert.assertEquals(backToAppLink, thirdParty.getBaseUrl());
+    }
+
+
+    // KEYCLOAK-7470
+    @Test
+    public void oauthGrantOrderedClientScopes() throws Exception {
+        // Add GUI Order to client scopes --- email=1, profile=2
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+
+        ClientScopeResource emailScope = ApiUtil.findClientScopeByName(appRealm, "email");
+        ClientScopeRepresentation emailRep = emailScope.toRepresentation();
+        emailRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "1");
+        emailScope.update(emailRep);
+
+        ClientScopeResource profileScope = ApiUtil.findClientScopeByName(appRealm, "profile");
+        ClientScopeRepresentation profileRep = profileScope.toRepresentation();
+        profileRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "2");
+        profileScope.update(profileRep);
+
+        // Display consent screen --- assert email, then profile
+        oauth.clientId(THIRD_PARTY_APP);
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        grantPage.assertCurrent();
+        List<String> displayedScopes = grantPage.getDisplayedGrants();
+        Assert.assertEquals("Email address", displayedScopes.get(0));
+        Assert.assertEquals("User profile", displayedScopes.get(1));
+        grantPage.accept();
+
+        // Display account mgmt --- assert email, then profile
+        accountAppsPage.open();
+        displayedScopes = accountAppsPage.getApplications().get(THIRD_PARTY_APP).getClientScopesGranted();
+        Assert.assertEquals("Email address", displayedScopes.get(0));
+        Assert.assertEquals("User profile", displayedScopes.get(1));
+
+
+        // Update GUI Order --- email=3
+        emailRep = emailScope.toRepresentation();
+        emailRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "3");
+        emailScope.update(emailRep);
+
+
+        // Display account mgmt --- assert profile, then email
+        accountAppsPage.open();
+        displayedScopes = accountAppsPage.getApplications().get(THIRD_PARTY_APP).getClientScopesGranted();
+        Assert.assertEquals("User profile", displayedScopes.get(0));
+        Assert.assertEquals("Email address", displayedScopes.get(1));
+
+        // Revoke grant and display consent screen --- assert profile, then email
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
+        oauth.openLoginForm();
+        grantPage.assertCurrent();
+        displayedScopes = grantPage.getDisplayedGrants();
+        Assert.assertEquals("User profile", displayedScopes.get(0));
+        Assert.assertEquals("Email address", displayedScopes.get(1));
     }
 
 }

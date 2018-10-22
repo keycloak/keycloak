@@ -18,15 +18,19 @@ package org.keycloak.authorization.client.util;
 
 import java.util.concurrent.Callable;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
 
 public class TokenCallable implements Callable<String> {
 
+    private static Logger log = Logger.getLogger(TokenCallable.class);
     private final String userName;
     private final String password;
     private final Http http;
@@ -54,6 +58,22 @@ public class TokenCallable implements Callable<String> {
             } else {
                 clientToken = obtainAccessToken(userName, password);
             }
+        } else {
+            String refreshTokenValue = clientToken.getRefreshToken();
+            try {
+                RefreshToken refreshToken = JsonSerialization.readValue(new JWSInput(refreshTokenValue).getContent(), RefreshToken.class);
+                if (!refreshToken.isActive() || !isTokenTimeToLiveSufficient(refreshToken)) {
+                    log.debug("Refresh token is expired.");
+                    if (userName == null || password == null) {
+                        clientToken = obtainAccessToken();
+                    } else {
+                        clientToken = obtainAccessToken(userName, password);
+                    }
+                }
+            } catch (Exception e) {
+                clientToken = null;
+                throw new RuntimeException(e);
+            }
         }
 
         String token = clientToken.getToken();
@@ -61,8 +81,10 @@ public class TokenCallable implements Callable<String> {
         try {
             AccessToken accessToken = JsonSerialization.readValue(new JWSInput(token).getContent(), AccessToken.class);
 
-            if (accessToken.isActive()) {
+            if (accessToken.isActive() && this.isTokenTimeToLiveSufficient(accessToken)) {
                 return token;
+            } else {
+                log.debug("Access token is expired.");
             }
 
             clientToken = http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
@@ -79,6 +101,10 @@ public class TokenCallable implements Callable<String> {
         }
 
         return clientToken.getToken();
+    }
+
+    public boolean isTokenTimeToLiveSufficient(AccessToken token) {
+        return token != null && (token.getExpiration() - getConfiguration().getTokenMinimumTimeToLive()) > Time.currentTime();
     }
 
     /**

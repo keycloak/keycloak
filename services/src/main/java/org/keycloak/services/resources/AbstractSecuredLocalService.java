@@ -21,27 +21,24 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.CookieHelper;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -61,8 +58,6 @@ public abstract class AbstractSecuredLocalService {
     protected final ClientModel client;
     protected RealmModel realm;
 
-    @Context
-    protected UriInfo uriInfo;
     @Context
     protected HttpHeaders headers;
     @Context
@@ -89,8 +84,14 @@ public abstract class AbstractSecuredLocalService {
                                   @Context HttpHeaders headers) {
         try {
             if (error != null) {
-                logger.debug("error from oauth");
-                throw new ForbiddenException("error");
+                if (OAuthErrorException.ACCESS_DENIED.equals(error)) {
+                    // cased by CANCELLED_BY_USER or CONSENT_DENIED
+                    session.getContext().setClient(client);
+                    return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage(Response.Status.FORBIDDEN);
+                } else {
+                    logger.debug("error from oauth");
+                    throw new ForbiddenException("error");
+                }
             }
             if (path != null && !getValidPaths().contains(path)) {
                 throw new BadRequestException("Invalid path");
@@ -111,7 +112,6 @@ public abstract class AbstractSecuredLocalService {
                 logger.debug("state not specified");
                 throw new BadRequestException("state not specified");
             }
-
             KeycloakUriBuilder redirect = KeycloakUriBuilder.fromUri(getBaseRedirectUri());
             if (path != null) {
                 redirect.path(path);
@@ -131,7 +131,7 @@ public abstract class AbstractSecuredLocalService {
 
     protected Response login(String path) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()).toString();
+        String authUrl = OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(client.getClientId());
@@ -144,12 +144,12 @@ public abstract class AbstractSecuredLocalService {
             uriBuilder.queryParam("path", path);
         }
 
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer != null) {
             uriBuilder.queryParam("referrer", referrer);
         }
 
-        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
+        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
         if (referrerUri != null) {
             uriBuilder.queryParam("referrer_uri", referrerUri);
         }
@@ -157,7 +157,7 @@ public abstract class AbstractSecuredLocalService {
         URI accountUri = uriBuilder.build(realm.getName());
 
         oauth.setStateCookiePath(accountUri.getRawPath());
-        return oauth.redirect(uriInfo, accountUri.toString());
+        return oauth.redirect(session.getContext().getUri(), accountUri.toString());
     }
 
     static class OAuthRedirect extends AbstractOAuthClient {

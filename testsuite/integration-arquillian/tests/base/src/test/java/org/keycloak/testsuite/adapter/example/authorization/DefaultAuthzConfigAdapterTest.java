@@ -41,21 +41,21 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
 
     private static final String REALM_NAME = "hello-world-authz";
     private static final String RESOURCE_SERVER_ID = "hello-world-authz-service";
-
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @ArquillianResource
     private Deployer deployer;
@@ -102,7 +102,7 @@ public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
     }
 
     private void login() throws MalformedURLException {
-        this.driver.navigate().to(getResourceServerUrl());
+        this.driver.navigate().to(getResourceServerUrl() + "/");
         this.loginPage.form().login("alice", "alice");
     }
 

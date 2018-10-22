@@ -23,6 +23,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Environment;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -109,13 +110,19 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             @Override
             public void onEvent(ProviderEvent event) {
                 if (event instanceof PostMigrationEvent) {
-                    KeycloakSession session = ((PostMigrationEvent) event).getSession();
 
-                    keyGenerator = new InfinispanKeyGenerator();
-                    checkRemoteCaches(session);
-                    loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
-                    registerClusterListeners(session);
-                    loadSessionsFromRemoteCaches(session);
+                    int preloadTransactionTimeout = getTimeoutForPreloadingSessionsSeconds();
+                    log.debugf("Will preload sessions with transaction timeout %d seconds", preloadTransactionTimeout);
+
+                    KeycloakModelUtils.runJobInTransactionWithTimeout(factory, (KeycloakSession session) -> {
+
+                        keyGenerator = new InfinispanKeyGenerator();
+                        checkRemoteCaches(session);
+                        loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
+                        registerClusterListeners(session);
+                        loadSessionsFromRemoteCaches(session);
+
+                    }, preloadTransactionTimeout);
 
                 } else if (event instanceof UserModel.UserRemovedEvent) {
                     UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
@@ -134,7 +141,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     // Count of sessions to be computed in each segment
     private int getSessionsPerSegment() {
-        return config.getInt("sessionsPerSegment", 100);
+        return config.getInt("sessionsPerSegment", 64);
+    }
+
+    private int getTimeoutForPreloadingSessionsSeconds() {
+        Integer timeout = config.getInt("sessionsPreloadTimeoutInSeconds", null);
+        return timeout != null ? timeout : Environment.getServerStartupTimeout();
     }
 
 
@@ -149,7 +161,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache, new OfflinePersistentUserSessionLoader(), "offlineUserSessions", sessionsPerSegment, maxErrors);
+                InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                        new OfflinePersistentUserSessionLoader(sessionsPerSegment), "offlineUserSessions", sessionsPerSegment, maxErrors);
 
                 // DB-lock to ensure that persistent sessions are loaded from DB just on one DC. The other DCs will load them from remote cache.
                 CacheInitializer initializer = new DBLockBasedCacheInitializer(session, ispnInitializer);
@@ -290,7 +303,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache, new RemoteCacheSessionsLoader(cacheName), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
+                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
 
                 initializer.initCache();
                 initializer.loadSessions();

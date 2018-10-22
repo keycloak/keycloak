@@ -13,10 +13,16 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
-            var isRegistrationEmailAsUsername = ${realm.registrationEmailAsUsername?c};
-            var isEditUserNameAllowed = ${realm.editUsernameAllowed?c};
-            var isInternationalizationEnabled = ${realm.internationalizationEnabled?c};
-
+                
+            var features = {
+                isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
+                isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
+                isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
+                isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
+                isEventsEnabled : ${isEventsEnabled?c},
+                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c}
+            }
+                
             var availableLocales = [];
             <#list supportedLocales as locale, label>
                 availableLocales.push({locale : '${locale}', label : '${label}'});
@@ -35,7 +41,7 @@
                 var l18n_msg = {};
             </#if>
         </script>
-
+        
         <base href="${baseUrl}/">
 
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
@@ -66,13 +72,29 @@
               media="screen, print">
         <link href="${resourceUrl}/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet"
               media="screen, print">
-        <link rel="stylesheet" href="${resourceUrl}/node_modules/patternfly-ng/dist/css/patternfly-ng.min.css" media="screen, print">
 
         <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js"></script>
         <script src="${resourceUrl}/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
         <script src="${resourceUrl}/node_modules/patternfly/dist/js/patternfly.min.js"></script>
         <script src="${authUrl}/js/keycloak.js"></script>
-
+        
+        <#if properties.developmentMode?has_content && properties.developmentMode == "true">
+        <!-- Don't use this in production: -->
+        <script src="${resourceUrl}/node_modules/react/umd/react.development.js" crossorigin></script>
+        <script src="${resourceUrl}/node_modules/react-dom/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+        </#if>
+        
+        <#if properties.extensions?has_content>
+            <#list properties.extensions?split(' ') as script>
+                <#if properties.developmentMode?has_content && properties.developmentMode == "true">
+        <script type="text/babel" src="${resourceUrl}/${script}"></script>
+                <#else>
+        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+                </#if>
+            </#list>
+        </#if>
+        
    <!-- TODO: We should save these css and js into variables and then load in
         main.ts for better performance.  These might be loaded twice.
         -->
@@ -101,14 +123,16 @@
                     document.head.appendChild(script);
                 };
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
-                loadjs("/node_modules/core-js/client/shim.min.js", function(){
-                    loadjs("/node_modules/zone.js/dist/zone.min.js");
-                    loadjs("/node_modules/systemjs/dist/system.src.js", function() {
-                        loadjs("/systemjs.config.js");
-                        System.import('${resourceUrl}/main.js').catch(function (err) {
-                            console.error(err);
+                loadjs("/node_modules/react/umd/react.development.js", function() {
+                   loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
+                        loadjs("/node_modules/systemjs/dist/system.src.js", function() {
+                            loadjs("/systemjs.config.js", function() {
+                                System.import('${resourceUrl}/Main.js').catch(function (err) {
+                                    console.error(err);
+                                });
+                                if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
+                            });
                         });
-                        if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
                     });
                 });
             }).error(function() {
@@ -116,7 +140,9 @@
             });
         </script>
 
+<div id="main_react_container"></div>
 
+<div id="welcomeScreen">
 <!-- Top Navigation -->
         <nav class="navbar navbar-pf-alt">
 
@@ -134,13 +160,16 @@
                      we are unable to localize the button's message.  Not sure what to do about that yet.
                 -->
                 <ul class="nav navbar-nav navbar-right navbar-iconic">
+                    <#if referrer?has_content && referrer_uri?has_content>
+                        <li><a class="nav-item-iconic" href="${referrer_uri}" id="referrer"><span class="pficon-arrow"></span>${msg("backTo",referrer)}</a></li>
+                    </#if>
                     <li><button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="btn btn-primary btn-lg btn-sign" type="button">${msg("doLogIn")}</button></li>
                     <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
                         <li class="dropdown">
-                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <a href="#0" class="dropdown-toggle nav-item-iconic" id="localeDropdownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             ${msg("locale_" + locale)} <span class="caret"></span>
                           </a>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                          <ul class="dropdown-menu" aria-labelledby="localeDropdownBtn" id="localeDropdownMenu">
                           <#list supportedLocales as locale, label>
                             <li><a href="${baseUrl}/?kc_locale=${locale}">${label}</a></li>
                           </#list>
@@ -155,13 +184,13 @@
 
 <!-- Home Page -->
 
-    <div class="cards-pf" id="welcomeScreen">
-        <div class="text-center">
+    <div class="cards-pf">
+        <div class="text-center" id="welcomeMsg">
           <h1>${msg("accountManagementWelcomeMessage")}</h1>
         </div>
         <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="personalInfoCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -170,12 +199,12 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("personalInfoHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("personalInfoIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                              <h3 id="personalInfoLink"><a href="${baseUrl}/#/app/account">${msg("personalInfoHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="accountSecurityCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -184,15 +213,15 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("accountSecurityTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/authenticator">${msg("authenticatorTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3><a href="${baseUrl}/#/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
+                              <h3 id="changePasswordLink"><a href="${baseUrl}/#/app/password">${msg("changePasswordHtmlTitle")}</a></h3>
+                              <h3 id="authenticatorLink"><a href="${baseUrl}/#/app/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3 id="deviceActivityLink"><a href="${baseUrl}/#/app/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
+                              <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/app/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="applicationsCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -201,12 +230,12 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("applicationsHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("applicationsIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                              <h3 id="applicationsLink"><a href="${baseUrl}/#/app/applications">${msg("applicationsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="myResourcesCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -215,7 +244,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("myResources")}</h2>
                               <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
-                              <h3><a href="${baseUrl}/#/my-resources">${msg("myResources")}</a></h3>
+                              <h3 id="myResourcesLink"><a href="${baseUrl}/#/app/my-resources">${msg("myResources")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -224,14 +253,35 @@
             </div>
         </div>
     </div>
+</div>
 
         <script>
-            var winHash = window.location.hash;
-            if ((winHash.indexOf('#/') == 0) && (!winHash.indexOf('#/&state') == 0)) {
-                document.getElementById("welcomeScreen").style.display='none';
+            var isWelcomePage = function() {
+                var winHash = window.location.hash;
+                return winHash.indexOf('#/app') !== 0;
             }
+                
+            var toggleReact = function() {
+                if (!isWelcomePage()) {
+                    document.getElementById("welcomeScreen").style.display='none';
+                    document.getElementById("main_react_container").style.display='block';
+                } else {
+                    document.getElementById("welcomeScreen").style.display='block';
+                    document.getElementById("main_react_container").style.display='none';
+                }
+            };
+        </script>
+        <script>
+            if (!features.isLinkedAccountsEnabled) {
+                document.getElementById("linkedAccountsLink").style.display='none';
+            };
+                
+            if (!features.isMyResourcesEnabled) {
+                document.getElementById("myResourcesCard").style.display='none';
+            };
+                
+            toggleReact(); 
         </script>
 
-        <app-root></app-root>
     </body>
 </html>

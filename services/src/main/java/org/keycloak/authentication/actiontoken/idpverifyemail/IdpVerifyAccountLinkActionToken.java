@@ -43,10 +43,11 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
 
 
     public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId,
-      String identityProviderUsername, String identityProviderAlias) {
+      String identityProviderUsername, String identityProviderAlias, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
         this.identityProviderAlias = identityProviderAlias;
+        this.issuedFor = clientId;
     }
 
     private IdpVerifyAccountLinkActionToken() {

@@ -301,6 +301,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
             var resource = {};
             resource.scopes = [];
             resource.attributes = {};
+            resource.uris = [];
 
             $scope.resource = angular.copy(resource);
 
@@ -310,7 +311,17 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 }
             }, true);
 
+            $scope.$watch('newUri', function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.changed = true;
+                }
+            }, true);
+
             $scope.save = function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.addUri();
+                }
+
                 for (i = 0; i < $scope.resource.scopes.length; i++) {
                     delete $scope.resource.scopes[i].text;
                 }
@@ -350,11 +361,26 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                     }
                 }, true);
 
+                $scope.$watch('newUri', function() {
+                    if ($scope.newUri && $scope.newUri.length > 0) {
+                        $scope.changed = true;
+                    }
+                }, true);
+
                 $scope.save = function() {
+                    if ($scope.newUri && $scope.newUri.length > 0) {
+                        $scope.addUri();
+                    }
+
                     for (i = 0; i < $scope.resource.scopes.length; i++) {
                         delete $scope.resource.scopes[i].text;
                     }
-                    for (var [key, value] of Object.entries($scope.resource.attributes)) {
+
+                    var keys = Object.keys($scope.resource.attributes);
+
+                    for (var k = 0; k < keys.length; k++) {
+                        var key = keys[k];
+                        var value = $scope.resource.attributes[key];
                         var values = value.toString().split(',');
 
                         $scope.resource.attributes[key] = [];
@@ -411,6 +437,15 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
 
     $scope.removeAttribute = function(key) {
         delete $scope.resource.attributes[key];
+    }
+
+    $scope.addUri = function() {
+        $scope.resource.uris.push($scope.newUri);
+        $scope.newUri = "";
+    }
+
+    $scope.deleteUri = function(index) {
+        $scope.resource.uris.splice(index, 1);
     }
 });
 
@@ -1950,6 +1985,16 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
 });
 
 module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route, $location, realm, PolicyController, client) {
+
+    function clearEmptyStrings() {
+        if ($scope.policy.notBefore != undefined && $scope.policy.notBefore.trim() == '') {
+            $scope.policy.notBefore = null;
+        }
+        if ($scope.policy.notOnOrAfter != undefined && $scope.policy.notOnOrAfter.trim() == '') {
+            $scope.policy.notOnOrAfter = null;
+        }
+    }
+
     PolicyController.onInit({
         getPolicyType : function() {
             return "time";
@@ -1993,6 +2038,7 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onUpdate : function() {
+            clearEmptyStrings();
             delete $scope.policy.config;
         },
 
@@ -2000,6 +2046,7 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onCreate : function() {
+            clearEmptyStrings();
             delete $scope.policy.config;
         }
     }, realm, client, $scope);

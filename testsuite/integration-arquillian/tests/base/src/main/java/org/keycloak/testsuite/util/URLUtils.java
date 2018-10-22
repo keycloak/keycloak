@@ -8,6 +8,8 @@ import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
@@ -23,12 +25,11 @@ public final class URLUtils {
 
     private static Logger log = Logger.getLogger(URLUtils.class);
 
-    public static void navigateToUri(String uri, boolean waitForMatch) {
-        navigateToUri(uri, waitForMatch, true);
+    public static void navigateToUri(String uri) {
+        navigateToUri(uri, true);
     }
 
-    // TODO: remove waitForMatch
-    private static void navigateToUri(String uri, boolean waitForMatch, boolean enableIEWorkaround) {
+    private static void navigateToUri(String uri, boolean enableIEWorkaround) {
         WebDriver driver = getCurrentDriver();
 
         log.info("starting navigation");
@@ -62,14 +63,14 @@ public final class URLUtils {
                 && (driver.getCurrentUrl().matches("^[^#]+/#state=[^#/&]+&code=[^#/&]+$")
                 ||  driver.getCurrentUrl().matches("^.+/auth/admin/[^/]+/console/$"))) {
             log.info("IE workaround: reloading the page after deleting the cookies...");
-            navigateToUri(uri, waitForMatch, false);
+            navigateToUri(uri, false);
         }
         else {
             log.info("navigation complete");
         }
     }
 
-    public static boolean currentUrlEqual(String url) {
+    public static boolean currentUrlEquals(String url) {
         return urlCheck(urlToBe(url));
     }
 
@@ -77,12 +78,32 @@ public final class URLUtils {
         return urlCheck(not(urlToBe(url)));
     }
 
-    public static boolean currentUrlStartWith(String url) {
-        return urlCheck(urlMatches("^" + Pattern.quote(url) + ".*$"));
+    public static boolean currentUrlWithQueryEquals(String expectedUrl, String... expectedQuery) {
+        List<String> expectedQueryList = Arrays.asList(expectedQuery);
+
+        ExpectedCondition<Boolean> condition = (WebDriver driver) -> {
+            String[] urlParts = driver.getCurrentUrl().split("\\?", 2);
+            if (urlParts.length != 2) {
+                throw new RuntimeException("Current URL doesn't contain query string");
+            }
+            List<String> queryParts = Arrays.asList(urlParts[1].split("&"));
+
+            return urlParts[0].equals(expectedUrl) && queryParts.containsAll(expectedQueryList);
+        };
+
+        return urlCheck(condition);
+    }
+
+    public static boolean currentUrlStartsWith(String url) {
+        return currentUrlMatches("^" + Pattern.quote(url) + ".*$");
     }
 
     public static boolean currentUrlDoesntStartWith(String url) {
-        return urlCheck(urlMatches("^(?!" + Pattern.quote(url) + ").+$"));
+        return currentUrlMatches("^(?!" + Pattern.quote(url) + ").+$");
+    }
+
+    public static boolean currentUrlMatches(String regex) {
+        return urlCheck(urlMatches(regex));
     }
 
     private static boolean urlCheck(ExpectedCondition condition) {

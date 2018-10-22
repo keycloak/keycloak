@@ -60,6 +60,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
         testRealmAccountPage.setAuthRealm(TEST);
         testRealmUpdateAccountPage.setAuthRealm(TEST);
         testRealmUpdatePasswordPage.setAuthRealm(TEST);
+        termsAndConditionsPage.setAuthRealm(TEST);
     }
 
     @Before

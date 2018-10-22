@@ -48,6 +48,25 @@ public class JsonWebTokenTest {
     }
 
     @Test
+    public void testAddAudience() throws IOException {
+        // Token with no audience
+        JsonWebToken s = new JsonWebToken();
+        s.addAudience("audience-1");
+        assertArrayEquals(new String[] { "audience-1"}, s.getAudience());
+
+        // Add to existing
+        s.addAudience("audience-2");
+        assertArrayEquals(new String[]{"audience-1", "audience-2"}, s.getAudience());
+
+        s.addAudience("audience-3");
+        assertArrayEquals(new String[]{"audience-1", "audience-2", "audience-3"}, s.getAudience());
+
+        // Add existing. Shouldn't be added as it's already there
+        s.addAudience("audience-2");
+        assertArrayEquals(new String[]{"audience-1", "audience-2", "audience-3"}, s.getAudience());
+    }
+
+    @Test
     public void test() throws IOException {
         JsonWebToken jsonWebToken = new JsonWebToken();
         jsonWebToken.audience("test");

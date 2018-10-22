@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,13 +28,27 @@ import java.util.Map;
 */
 public class RequiredActionProviderModel implements Serializable {
 
+    public static class RequiredActionComparator implements Comparator<RequiredActionProviderModel> {
+        public static final RequiredActionComparator SINGLETON = new RequiredActionComparator();
+
+        @Override
+        public int compare(RequiredActionProviderModel o1, RequiredActionProviderModel o2) {
+
+            return Comparator
+                    .comparingInt(RequiredActionProviderModel::getPriority)
+                    .thenComparing(RequiredActionProviderModel::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+                    .compare(o1, o2);
+        }
+    }
+
     private String id;
     private String alias;
     private String name;
     private String providerId;
     private boolean enabled;
     private boolean defaultAction;
-    private Map<String, String> config = new HashMap<String, String>();
+    private int priority;
+    private Map<String, String> config = new HashMap<>();
 
 
     public String getId() {
@@ -88,6 +103,14 @@ public class RequiredActionProviderModel implements Serializable {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public Map<String, String> getConfig() {

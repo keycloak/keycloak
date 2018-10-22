@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.clients.credentials;
 
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -12,6 +13,7 @@ import static org.keycloak.services.resources.admin.ClientAttributeCertificateRe
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.JKS;
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.PKCS12;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.sendKeysToInvisibleElement;
 
 /**
@@ -66,7 +68,7 @@ public class SAMLClientCredentialsForm extends Form {
     }
 
     public String getSuccessMessage() {
-        return success.getText();
+        return getTextFromElement(success);
     }
 
     private void uploadFile(String file) {
@@ -77,8 +79,8 @@ public class SAMLClientCredentialsForm extends Form {
     }
 
     private void fillCredentials() {
-        setInputValue(uploadKeyAlias, "samlKey");
-        setInputValue(uploadStorePassword, "secret");
+        UIUtils.setTextInputValue(uploadKeyAlias, "samlKey");
+        UIUtils.setTextInputValue(uploadStorePassword, "secret");
     }
 
     private void navigateToImport() {

@@ -10,6 +10,8 @@ import org.openqa.selenium.support.FindBy;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+
 /**
  *
  * @author tkyjovsk
@@ -96,9 +98,9 @@ public class ClientMappers extends Client {
             List<WebElement> cols = row.findElements(By.tagName("td"));
 
 
-            mappingsRepresentation.setName(cols.get(0).getText());
+            mappingsRepresentation.setName(getTextFromElement(cols.get(0)));
             //mappingsRepresentation.setProtocol(cols.get(1).getText());
-            mappingsRepresentation.setProtocolMapper(cols.get(2).getText());
+            mappingsRepresentation.setProtocolMapper(getTextFromElement(cols.get(2)));
 
             return mappingsRepresentation;
         }

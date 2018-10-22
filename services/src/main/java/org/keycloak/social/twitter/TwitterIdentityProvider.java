@@ -22,8 +22,8 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -172,11 +172,6 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
         @Context
         protected HttpHeaders headers;
-
-        @Context
-        protected UriInfo uriInfo;
-
-
 
         public Endpoint(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
             this.realm = realm;

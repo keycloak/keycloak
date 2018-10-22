@@ -17,7 +17,12 @@
   -->
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
-    <changeSet author="bburke@redhat.com" id="2.1.0">
+    <changeSet author="bburke@redhat.com" id="2.1.0-KEYCLOAK-5461">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted id="2.1.0" author="bburke@redhat.com" changeLogFile="META-INF/jpa-changelog-2.1.0.xml"/>
+            </not>
+        </preConditions>
 
         <createTable tableName="BROKER_LINK">
             <column name="IDENTITY_PROVIDER" type="VARCHAR(255)">
@@ -88,7 +93,7 @@
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
             <column name="HASH_ITERATIONS" type="INT"/>
-            <column name="SALT" type="BLOB(16)"/>
+            <column name="SALT" type="TINYBLOB(16)"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
             <column name="CREATED_DATE" type="BIGINT"/>

@@ -21,7 +21,7 @@ public class H2TestEnricher {
 
     private Server server = null;
 
-    public void startH2(@Observes(precedence = 2) BeforeSuite event) throws SQLException {
+    public void startH2(@Observes(precedence = 3) BeforeSuite event) throws SQLException {
         if (runH2) {
             log.info("Starting H2 database.");
             server = Server.createTcpServer();

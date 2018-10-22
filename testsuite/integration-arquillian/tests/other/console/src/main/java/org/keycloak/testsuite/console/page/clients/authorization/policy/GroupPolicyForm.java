@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -31,6 +32,7 @@ import org.openqa.selenium.support.ui.Select;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.openqa.selenium.By.tagName;
 
@@ -64,9 +66,9 @@ public class GroupPolicyForm extends Form {
     private WebDriver driver;
 
     public void populate(GroupPolicyRepresentation expected, boolean save) {
-        setInputValue(name, expected.getName());
-        setInputValue(description, expected.getDescription());
-        setInputValue(groupsClaim, expected.getGroupsClaim());
+        UIUtils.setTextInputValue(name, expected.getName());
+        UIUtils.setTextInputValue(description, expected.getDescription());
+        UIUtils.setTextInputValue(groupsClaim, expected.getGroupsClaim());
         logic.selectByValue(expected.getLogic().name());
 
 
@@ -95,7 +97,7 @@ public class GroupPolicyForm extends Form {
             driver.findElements(By.xpath("(//table[@id='selected-groups'])/tbody/tr")).stream()
                     .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
                     .map(webElement -> webElement.findElements(tagName("td")))
-                    .filter(tds -> tds.get(0).getText().equals(definition.getPath()))
+                    .filter(tds -> UIUtils.getTextFromElement(tds.get(0)).equals(definition.getPath()))
                     .forEach(tds -> {
                         if (!tds.get(1).findElement(By.tagName("input")).isSelected()) {
                             if (definition.isExtendChildren()) {
@@ -119,7 +121,7 @@ public class GroupPolicyForm extends Form {
             List<WebElement> tds = webElement.findElements(tagName("td"));
 
             if (tds.size() > 1) {
-                if (tds.get(0).getText().equals(path)) {
+                if (UIUtils.getTextFromElement(tds.get(0)).equals(path)) {
                     tds.get(2).findElement(By.tagName("button")).click();
                     return;
                 }
@@ -135,17 +137,20 @@ public class GroupPolicyForm extends Form {
     public GroupPolicyRepresentation toRepresentation() {
         GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
 
-        representation.setName(getInputValue(name));
-        representation.setDescription(getInputValue(description));
-        representation.setGroupsClaim(getInputValue(groupsClaim));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setName(UIUtils.getTextInputValue(name));
+        representation.setDescription(UIUtils.getTextInputValue(description));
+
+        String groupsClaimValue = UIUtils.getTextInputValue(groupsClaim);
+
+        representation.setGroupsClaim(groupsClaim == null || "".equals(groupsClaimValue.trim()) ? null : groupsClaimValue);
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setGroups(new HashSet<>());
 
         driver.findElements(By.xpath("(//table[@id='selected-groups'])/tbody/tr")).stream()
                 .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
                 .forEach(webElement -> {
                     List<WebElement> tds = webElement.findElements(tagName("td"));
-                    representation.addGroupPath(tds.get(0).getText(), tds.get(1).findElement(By.tagName("input")).isSelected());
+                    representation.addGroupPath(getTextFromElement(tds.get(0)), tds.get(1).findElement(tagName("input")).isSelected());
                 });
 
         return representation;

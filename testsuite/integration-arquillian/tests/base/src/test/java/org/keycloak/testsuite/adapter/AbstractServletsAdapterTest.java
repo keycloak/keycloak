@@ -24,6 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.io.IOUtil;
 import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
@@ -31,10 +32,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
+import org.jboss.shrinkwrap.api.asset.UrlAsset;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
@@ -110,9 +111,52 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return deployment;
     }
 
+    public static WebArchive samlServletDeploymentMultiTenant(String name, String webXMLPath, 
+            String config1, String config2,
+            String keystore1, String keystore2, Class... servletClasses) {
+        String baseSAMLPath = "/adapter-test/keycloak-saml/";
+        String webInfPath = baseSAMLPath + name + "/WEB-INF/";
+
+        URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + webXMLPath);
+        Assert.assertNotNull("web.xml should be in " + baseSAMLPath + webXMLPath, webXML);
+
+        WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
+                .addClasses(servletClasses)
+                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+
+        String webXMLContent;
+        try {
+            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
+                    .replace("%CONTEXT_PATH%", name);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        deployment.add(new StringAsset(webXMLContent), "/WEB-INF/web.xml");
+
+        // add the xml for each tenant in classes
+        URL config1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config1);
+        Assert.assertNotNull("config1Url should be in " + webInfPath + config1, config1Url);
+        deployment.add(new UrlAsset(config1Url), "/WEB-INF/classes/" + config1);
+        URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
+        Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
+        deployment.add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
+        
+        // add the keystores for each tenant in classes
+        URL keystore1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore1);
+        Assert.assertNotNull("keystore1Url should be in " + webInfPath + keystore1, keystore1Url);
+        deployment.add(new UrlAsset(keystore1Url), "/WEB-INF/classes/" + keystore1);
+        URL keystore2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore2);
+        Assert.assertNotNull("keystore2Url should be in " + webInfPath + keystore2, keystore2Url);
+        deployment.add(new UrlAsset(keystore2Url), "/WEB-INF/classes/" + keystore2);
+
+        addContextXml(deployment, name);
+
+        return deployment;
+    }
+
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/demorealm.json"));
+        testRealms.add(IOUtil.loadRealm("/adapter-test/demorealm.json"));
     }
 
     @Override

@@ -18,9 +18,11 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import javax.security.cert.X509Certificate;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.HttpHeaders;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,18 +33,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.security.cert.X509Certificate;
-
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
+import org.keycloak.adapters.CorsHeaders;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
@@ -58,12 +65,9 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.authorization.AuthorizationRequest;
-import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
@@ -81,11 +85,6 @@ import org.keycloak.util.JsonSerialization;
 public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
-
-    @BeforeClass
-    public static void onBeforeClass() {
-        ProfileAssume.assumePreview();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -117,168 +116,20 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
                 .build());
     }
 
-    @Test
-    public void testEnforceUMAAccessWithClaimsUsingBearerToken() {
-        initAuthorizationSettings(getClientResource("resource-server-uma-test"));
-
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-uma-claims-test.json"));
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
-        HashMap<String, List<String>> headers = new HashMap<>();
-        HashMap<String, List<String>> parameters = new HashMap<>();
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        AuthzClient authzClient = getAuthzClient("enforcer-uma-claims-test.json");
-        String token = authzClient.obtainAccessToken("marta", "password").getToken();
-
-        headers.put("Authorization", Arrays.asList("Bearer " + token));
-
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        AuthorizationRequest request = new AuthorizationRequest();
-
-        request.setTicket(extractTicket(headers));
-
-        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
-        token = response.getToken();
-
-        assertNotNull(token);
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("200"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("10"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-
-        request = new AuthorizationRequest();
-
-        request.setTicket(extractTicket(headers));
-
-        response = authzClient.authorization("marta", "password").authorize(request);
-        token = response.getToken();
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "POST", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        request = new AuthorizationRequest();
-
-        request.setTicket(extractTicket(headers));
-
-        response = authzClient.authorization("marta", "password").authorize(request);
-        token = response.getToken();
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", "GET", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        assertEquals(1, context.getPermissions().size());
-        Permission permission = context.getPermissions().get(0);
-
-        assertEquals(parameters.get("withdrawal.amount").get(0), permission.getClaims().get("withdrawal.amount").iterator().next());
+    @Before
+    public void onBefore() {
+        initAuthorizationSettings(getClientResource("resource-server-test"));
     }
 
     @Test
-    public void testEnforceEntitlementAccessWithClaimsWithoutBearerToken() {
-        initAuthorizationSettings(getClientResource("resource-server-test"));
-
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-entitlement-claims-test.json"));
+    public void testBearerOnlyClientResponse() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
-        HashMap<String, List<String>> headers = new HashMap<>();
-        HashMap<String, List<String>> parameters = new HashMap<>();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
 
-        AuthzClient authzClient = getAuthzClient("enforcer-entitlement-claims-test.json");
-        String token = authzClient.obtainAccessToken("marta", "password").getToken();
-
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
         assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertTrue(context.isGranted());
-        assertEquals(1, context.getPermissions().size());
-        Permission permission = context.getPermissions().get(0);
-        assertEquals(parameters.get("withdrawal.amount").get(0), permission.getClaims().get("withdrawal.amount").iterator().next());
-
-        parameters.put("withdrawal.amount", Arrays.asList("200"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("10"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-
-        assertTrue(context.isGranted());
-
-        assertEquals(1, context.getPermissions().size());
-        permission = context.getPermissions().get(0);
-        assertEquals(parameters.get("withdrawal.amount").get(0), permission.getClaims().get("withdrawal.amount").iterator().next());
-    }
-
-    @Test
-    public void testEnforceEntitlementAccessWithClaimsWithBearerToken() {
-        initAuthorizationSettings(getClientResource("resource-server-test"));
-
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-entitlement-claims-test.json"));
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
-        HashMap<String, List<String>> headers = new HashMap<>();
-        HashMap<String, List<String>> parameters = new HashMap<>();
-
-        AuthzClient authzClient = getAuthzClient("enforcer-entitlement-claims-test.json");
-        String token = authzClient.obtainAccessToken("marta", "password").getToken();
-
-        headers.put("Authorization", Arrays.asList("Bearer " + token));
-
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("200"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertTrue(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("10"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-
-        assertTrue(context.isGranted());
-    }
-
-    @Test
-    public void testEnforceEntitlementAccessWithClaimsWithBearerTokenFromPublicClient() {
-        initAuthorizationSettings(getClientResource("resource-server-test"));
-
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-entitlement-claims-test.json"));
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
-        HashMap<String, List<String>> headers = new HashMap<>();
-        HashMap<String, List<String>> parameters = new HashMap<>();
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
 
         oauth.realm(REALM_NAME);
         oauth.clientId("public-client-test");
@@ -288,71 +139,173 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
         String token = response.getAccessToken();
 
-        headers.put("Authorization", Arrays.asList("Bearer " + token));
+        httpFacade = createHttpFacade("/api/resourcea", token);
 
-        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertFalse(context.isGranted());
-
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
-
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
 
-        parameters.put("withdrawal.amount", Arrays.asList("200"));
+        httpFacade = createHttpFacade("/api/resourceb");
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        context = policyEnforcer.enforce(httpFacade);
         assertFalse(context.isGranted());
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+    }
 
-        parameters.put("withdrawal.amount", Arrays.asList("50"));
+    @Test
+    public void testResolvingClaimsOnce() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
-        assertTrue(context.isGranted());
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
 
-        parameters.put("withdrawal.amount", Arrays.asList("10"));
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
 
-        context = policyEnforcer.enforce(createHttpFacade("/api/bank/account/1/withdrawal", token, headers, parameters));
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token, new Function<String, String>() {
+            AtomicBoolean resolved = new AtomicBoolean();
+
+            @Override
+            public String apply(String s) {
+                Assert.assertTrue(resolved.compareAndSet(false, true));
+                return "claim-value";
+            }
+        });
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
 
         assertTrue(context.isGranted());
     }
 
-    private String extractTicket(HashMap<String, List<String>> headers) {
-        List<String> wwwAuthenticateHeader = headers.get("WWW-Authenticate");
+    @Test
+    public void testOnDenyRedirectTo() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-on-deny-redirect.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
 
-        assertNotNull(wwwAuthenticateHeader);
-        assertFalse(wwwAuthenticateHeader.isEmpty());
+        assertFalse(context.isGranted());
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(302, response.getStatus());
+        List<String> location = response.getHeaders().getOrDefault("Location", Collections.emptyList());
+        assertFalse(location.isEmpty());
+        assertEquals("/accessDenied", location.get(0));
+    }
 
-        String wwwAuthenticate = wwwAuthenticateHeader.get(0);
-        return wwwAuthenticate.substring(wwwAuthenticate.indexOf("ticket=") + "ticket=\"".length(), wwwAuthenticate.lastIndexOf('"'));
+    @Test
+    public void testNotAuthenticatedDenyUnmapedPath() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/unmmaped");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertFalse(context.isGranted());
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void testMappedPathEnforcementModeDisabled() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/resourceb");
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(403, response.getStatus());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), null).getAccessToken();
+
+        httpFacade = createHttpFacade("/api/resourcea", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/resourceb", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+        response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(403, response.getStatus());
+
+        httpFacade = createHttpFacade("/api/resource/public", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testDefaultWWWAuthenticateCorsHeader() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
+
+        deployment.setCors(true);
+        Map<String, List<String>> headers = new HashMap<>();
+
+        headers.put(CorsHeaders.ORIGIN,Arrays.asList("http://localhost:8180"));
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), null).getAccessToken();
+        OIDCHttpFacade httpFacade = createHttpFacade("http://server/api/resource/public", HttpMethod.OPTIONS, token, headers, Collections.emptyMap(), null, deployment);
+        new AuthenticatedActionsHandler(deployment, httpFacade).handledRequest();
+        assertEquals(HttpHeaders.WWW_AUTHENTICATE, headers.get(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS).get(0));
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
-        if (clientResource.authorization().resources().findByName("Bank Account").isEmpty()) {
+        if (clientResource.authorization().resources().findByName("Resource A").isEmpty()) {
             JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
-            policy.setName("Withdrawal Limit Policy");
+            policy.setName("Resource A Policy");
 
             StringBuilder code = new StringBuilder();
 
-            code.append("var context = $evaluation.getContext();");
-            code.append("var attributes = context.getAttributes();");
-            code.append("var withdrawalAmount = attributes.getValue('withdrawal.amount');");
-            code.append("if (withdrawalAmount && withdrawalAmount.asDouble(0) <= 100) {");
-            code.append("   $evaluation.grant();");
-            code.append("}");
+            code.append("$evaluation.grant();");
 
             policy.setCode(code.toString());
 
             clientResource.authorization().policies().js().create(policy);
 
-            createResource(clientResource, "Bank Account", "/api/bank/account/{id}/withdrawal", "withdrawal");
+            createResource(clientResource, "Resource A", "/api/resourcea");
 
-            ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
 
-            permission.setName("Withdrawal Permission");
-            permission.addScope("withdrawal");
+            permission.setName("Resource A Permission");
+            permission.addResource("Resource A");
             permission.addPolicy(policy.getName());
 
-            clientResource.authorization().permissions().scope().create(permission);
+            clientResource.authorization().permissions().resource().create(permission);
+        }
+
+        if (clientResource.authorization().resources().findByName("Resource B").isEmpty()) {
+            JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+            policy.setName("Resource B Policy");
+
+            StringBuilder code = new StringBuilder();
+
+            code.append("$evaluation.deny();");
+
+            policy.setCode(code.toString());
+
+            clientResource.authorization().policies().js().create(policy);
+
+            createResource(clientResource, "Resource B", "/api/resourceb");
+
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+            permission.setName("Resource B Permission");
+            permission.addResource("Resource B");
+            permission.addPolicy(policy.getName());
+
+            clientResource.authorization().permissions().resource().create(permission);
         }
     }
 
@@ -380,26 +333,33 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         return clients.get(representation.getId());
     }
 
-    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody) {
+    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment) {
+        return createHttpFacade(path, method, token, headers, parameters, requestBody, deployment, null);
+    }
+
+    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, KeycloakDeployment deployment, Function<String, String> parameterFunction) {
         return new OIDCHttpFacade() {
             Request request;
             Response response;
 
             @Override
             public KeycloakSecurityContext getSecurityContext() {
-                AccessToken accessToken;
-                try {
-                    accessToken = new JWSInput(token).readJsonContent(AccessToken.class);
-                } catch (JWSInputException cause) {
-                    throw new RuntimeException(cause);
+                if (token != null) {
+                    AccessToken accessToken;
+                    try {
+                        accessToken = new JWSInput(token).readJsonContent(AccessToken.class);
+                    } catch (JWSInputException cause) {
+                        throw new RuntimeException(cause);
+                    }
+                    return new RefreshableKeycloakSecurityContext(deployment, null, token, accessToken, null, null, null);
                 }
-                return new KeycloakSecurityContext(token, accessToken, null, null);
+                return null;
             }
 
             @Override
             public Request getRequest() {
                 if (request == null) {
-                    request = createHttpRequest(path, method, headers, parameters, requestBody);
+                    request = createHttpRequest(path, method, headers, parameters, requestBody, parameterFunction);
                 }
                 return request;
             }
@@ -419,67 +379,35 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         };
     }
 
-    private OIDCHttpFacade createHttpFacade(String path, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters) {
-        return createHttpFacade(path, null, token, headers, parameters, null);
+    private OIDCHttpFacade createHttpFacade(String path, String token) {
+        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null, null);
     }
 
-    private OIDCHttpFacade createHttpFacade(String path, String method, String token, Map<String, List<String>> headers, Map<String, List<String>> parameters) {
-        return createHttpFacade(path, method, token, headers, parameters, null);
+    private OIDCHttpFacade createHttpFacade(String path) {
+        return createHttpFacade(path, null, null, new HashMap<>(), new HashMap<>(), null, null);
+    }
+
+    private OIDCHttpFacade createHttpFacade(String path, String token, Function<String, String> parameterFunction) {
+        return createHttpFacade(path, null, token, new HashMap<>(), new HashMap<>(), null, null, parameterFunction);
     }
 
     private Response createHttpResponse(Map<String, List<String>> headers) {
-        return new Response() {
-
-            private int status;
-
-            @Override
-            public void setStatus(int status) {
-                this.status = status;
-            }
-
-            @Override
-            public void addHeader(String name, String value) {
-                setHeader(name, value);
-            }
-
-            @Override
-            public void setHeader(String name, String value) {
-                headers.put(name, Arrays.asList(value));
-            }
-
-            @Override
-            public void resetCookie(String name, String path) {
-
-            }
-
-            @Override
-            public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
-
-            }
-
-            @Override
-            public OutputStream getOutputStream() {
-                return null;
-            }
-
-            @Override
-            public void sendError(int code) {
-
-            }
-
-            @Override
-            public void sendError(int code, String message) {
-
-            }
-
-            @Override
-            public void end() {
-
-            }
-        };
+        return new TestResponse(headers);
     }
 
-    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody) {
+    private Request createHttpRequest(String path, String method, Map<String, List<String>> headers, Map<String, List<String>> parameters, InputStream requestBody, Function<String, String> parameterFunction) {
+        if (parameterFunction == null) {
+            parameterFunction = param -> {
+                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
+
+                if (!values.isEmpty()) {
+                    return values.get(0);
+                }
+
+                return null;
+            };
+        }
+        Function<String, String> finalParameterFunction = parameterFunction;
         return new Request() {
 
             private InputStream inputStream;
@@ -506,13 +434,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
             @Override
             public String getFirstParam(String param) {
-                List<String> values = parameters.getOrDefault(param, Collections.emptyList());
-
-                if (!values.isEmpty()) {
-                    return values.get(0);
-                }
-
-                return null;
+                return finalParameterFunction.apply(param);
             }
 
             @Override
@@ -585,6 +507,69 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             return AuthzClient.create(JsonSerialization.readValue(getAdapterConfiguration(fileName), Configuration.class));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create authz client", cause);
+        }
+    }
+
+    private class TestResponse implements Response {
+
+        private final Map<String, List<String>> headers;
+        private int status;
+
+        public TestResponse(Map<String, List<String>> headers) {
+            this.headers = headers;
+        }
+
+        @Override
+        public void setStatus(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        @Override
+        public void addHeader(String name, String value) {
+            setHeader(name, value);
+        }
+
+        @Override
+        public void setHeader(String name, String value) {
+            headers.put(name, Arrays.asList(value));
+        }
+
+        public Map<String, List<String>> getHeaders() {
+            return headers;
+        }
+
+        @Override
+        public void resetCookie(String name, String path) {
+
+        }
+
+        @Override
+        public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
+
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return null;
+        }
+
+        @Override
+        public void sendError(int code) {
+            status = code;
+        }
+
+        @Override
+        public void sendError(int code, String message) {
+            status = code;
+        }
+
+        @Override
+        public void end() {
+
         }
     }
 }

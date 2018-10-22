@@ -21,7 +21,7 @@
     <parent>
 		<artifactId>keycloak-tomcat-integration-pom</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>4.1.0.Final-SNAPSHOT</version>
+		<version>4.6.0.Final-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -38,7 +38,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>

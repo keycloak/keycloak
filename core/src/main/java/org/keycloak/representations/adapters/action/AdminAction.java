@@ -18,6 +18,8 @@
 package org.keycloak.representations.adapters.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
 
 /**
@@ -26,7 +28,7 @@ import org.keycloak.common.util.Time;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AdminAction {
+public abstract class AdminAction implements Token {
     protected String id;
     protected int expiration;
     protected String resource;
@@ -85,4 +87,9 @@ public abstract class AdminAction {
     }
 
     public abstract boolean validate();
+
+    @Override
+    public TokenCategory getCategory() {
+        return TokenCategory.ADMIN;
+    }
 }

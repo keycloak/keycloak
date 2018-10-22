@@ -16,39 +16,25 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
-import freemarker.ext.beans.HashAdapter;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialAuthentication;
-import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
-import org.keycloak.models.cache.infinispan.UserAdapter;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.ApplicationServlet;
 import org.keycloak.testsuite.AssertEvents;
@@ -61,12 +47,10 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -159,7 +143,7 @@ public class UserStorageFailureTest {
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
-        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
         events.clear();
 
         evictUser(FailableHardcodedStorageProvider.username);
@@ -194,7 +178,7 @@ public class UserStorageFailureTest {
         Assert.assertNotNull(tokenResponse.getAccessToken());
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         offlineTokenString = tokenResponse.getRefreshToken();
-        offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+        offlineToken = oauth.parseRefreshToken(offlineTokenString);
         events.clear();
 
 

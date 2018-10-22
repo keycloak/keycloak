@@ -18,16 +18,17 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.auth.page.account.AccountFields;
-import org.keycloak.testsuite.auth.page.account.PasswordFields;
+import org.keycloak.testsuite.auth.page.AccountFields;
+import org.keycloak.testsuite.auth.page.PasswordFields;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  *
@@ -44,18 +45,16 @@ public class LoginForm extends Form {
 
     @FindBy(name = "login")
     private WebElement loginButton;
-//    @FindBy(name = "cancel")
-//    private WebElement cancelButton;
 
     @FindBy(xpath = "//div[@id='kc-registration']/span/a")
     private WebElement registerLink;
     @FindBy(linkText = "Forgot Password?")
     private WebElement forgottenPassword;
+
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
-
-    @FindBy(xpath = ".//label[@for='password']")
-    private WebElement labelPassword;
+    @FindBy(xpath = "//input[@id='rememberMe']/parent::label")
+    private WebElement rememberMeLabel;
 
     public void setUsername(String username) {
         accountFields.setUsername(username);
@@ -94,61 +93,84 @@ public class LoginForm extends Form {
         }
     }
 
-//    @Override
-//    public void cancel() {
-//        waitUntilElement(cancelButton).is().present();
-//        cancelButton.click();
-//    }
-    public void waitForUsernameInputPresent() {
-        accountFields.waitForUsernameInputPresent();
+    public boolean isRememberMe() {
+        return rememberMe.isSelected();
     }
 
-    public void waitForRegisterLinkNotPresent() {
-        waitUntilElementIsNotPresent(registerLink);
+    public boolean isUsernamePresent() {
+        return accountFields.isUsernamePresent();
     }
 
-    public void waitForResetPasswordLinkNotPresent() {
-        waitUntilElement(forgottenPassword).is().not().present();
+    public boolean isRegisterLinkPresent() {
+        try {
+            return registerLink.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    public void waitForRememberMePresent() {
-        waitUntilElement(rememberMe).is().present();
+    public boolean isForgotPasswordLinkPresent() {
+        try {
+            return forgottenPassword.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    public void waitForRememberMeNotPresent() {
-        waitUntilElementIsNotPresent(rememberMe);
+    public boolean isRememberMePresent() {
+        try {
+            return rememberMe.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    public void waitForLoginButtonPresent() {
-        waitUntilElement(loginButton).is().present();
+    public boolean isLoginButtonPresent() {
+        try {
+            return loginButton.isDisplayed();
+        }
+        catch (NoSuchElementException e) {
+            return false;
+        }
     }
     
     public TotpSetupForm totpForm() {
         return totpForm;
     }
-    
+
+    public String getUsernameLabel() {
+        return accountFields.getUsernameLabel();
+    }
+
+    public String getPasswordLabel() {
+        return passwordFields.getPasswordLabel();
+    }
+
+    public String getRememberMeLabel() {
+        return getTextFromElement(rememberMeLabel);
+    }
+
     public class TotpSetupForm extends Form {
         @FindBy(id = "totp")
         private WebElement totpInputField;
-        
+
         @FindBy(id = "totpSecret")
         private WebElement totpSecret;
-        
+
         @FindBy(xpath = ".//input[@value='Submit']")
         private WebElement submit;
-        
-        public void waitForTotpInputFieldPresent() {
-            waitUntilElement(totpInputField).is().present();
-        }
-        
+
         public void setTotp(String value) {
-            setInputValue(totpInputField, value);
+            UIUtils.setTextInputValue(totpInputField, value);
         }
         
         public String getTotpSecret() {
-            return totpSecret.getAttribute(VALUE);
+            return totpSecret.getAttribute(UIUtils.VALUE_ATTR_NAME);
         }
-        
+
         public void submit() {
             clickLink(submit);
         }

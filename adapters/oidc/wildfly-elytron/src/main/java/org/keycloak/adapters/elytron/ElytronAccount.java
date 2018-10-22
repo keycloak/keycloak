@@ -78,7 +78,7 @@ public class ElytronAccount implements OidcKeycloakAccount {
         return false;
     }
 
-    boolean tryRefresh(CallbackHandler callbackHandler) {
+    boolean tryRefresh() {
         log.debug("Trying to refresh");
 
         RefreshableKeycloakSecurityContext securityContext = getKeycloakSecurityContext();
@@ -88,14 +88,8 @@ public class ElytronAccount implements OidcKeycloakAccount {
         }
 
         if (securityContext.refreshExpiredToken(false)) {
-            SecurityIdentity securityIdentity = SecurityIdentityUtil.authorize(callbackHandler, principal);
-
-            if (securityIdentity != null) {
-                log.debug("refresh succeeded");
-                return true;
-            }
-
-            return false;
+            log.debug("refresh succeeded");
+            return true;
         }
 
         return checkActive();

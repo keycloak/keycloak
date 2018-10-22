@@ -21,7 +21,6 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
-import org.infinispan.stream.SerializableSupplier;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;

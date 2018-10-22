@@ -19,11 +19,13 @@ package org.keycloak.models;
 
 import java.util.Map;
 
+import org.keycloak.common.util.ObjectUtil;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel {
+public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
     String getId();
 
     String getName();
@@ -48,6 +50,8 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     String DISPLAY_ON_CONSENT_SCREEN = "display.on.consent.screen";
     String CONSENT_SCREEN_TEXT = "consent.screen.text";
+    String GUI_ORDER = "gui.order";
+    String INCLUDE_IN_TOKEN_SCOPE = "include.in.token.scope";
 
     default boolean isDisplayOnConsentScreen() {
         String displayVal = getAttribute(DISPLAY_ON_CONSENT_SCREEN);
@@ -61,7 +65,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     // Fallback to name if consentScreenText attribute is null
     default String getConsentScreenText() {
         String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
-        if (consentScreenText == null) {
+        if (ObjectUtil.isBlank(consentScreenText)) {
             consentScreenText = getName();
         }
         return consentScreenText;
@@ -69,6 +73,24 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     default void setConsentScreenText(String consentScreenText) {
         setAttribute(CONSENT_SCREEN_TEXT, consentScreenText);
+    }
+
+    @Override
+    default String getGuiOrder() {
+        return getAttribute(GUI_ORDER);
+    }
+
+    default void setGuiOrder(String guiOrder) {
+        setAttribute(GUI_ORDER, guiOrder);
+    }
+
+    default boolean isIncludeInTokenScope() {
+        String includeInTokenScope = getAttribute(INCLUDE_IN_TOKEN_SCOPE);
+        return includeInTokenScope==null ? true : Boolean.parseBoolean(includeInTokenScope);
+    }
+
+    default void setIncludeInTokenScope(boolean includeInTokenScope) {
+        setAttribute(INCLUDE_IN_TOKEN_SCOPE, String.valueOf(includeInTokenScope));
     }
 
 

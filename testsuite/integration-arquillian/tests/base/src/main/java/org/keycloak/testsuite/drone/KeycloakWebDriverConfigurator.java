@@ -17,107 +17,109 @@
 
 package org.keycloak.testsuite.drone;
 
-import java.util.ArrayList;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.drone.spi.DroneContext;
+import org.jboss.arquillian.drone.spi.event.BeforeDroneInstantiated;
+import org.jboss.arquillian.drone.webdriver.configuration.WebDriverConfiguration;
+import org.jboss.arquillian.drone.webdriver.spi.BrowserCapabilities;
+import org.jboss.arquillian.drone.webdriver.spi.BrowserCapabilitiesRegistry;
+import org.jboss.logging.Logger;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.DesiredCapabilities;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
-import org.jboss.arquillian.drone.spi.Configurator;
-import org.jboss.arquillian.drone.spi.DronePoint;
-import org.jboss.arquillian.drone.webdriver.configuration.WebDriverConfiguration;
-import org.jboss.arquillian.drone.webdriver.factory.BrowserCapabilitiesList;
-import org.jboss.arquillian.drone.webdriver.factory.BrowserCapabilitiesList.PhantomJS;
-import org.jboss.arquillian.drone.webdriver.factory.WebDriverFactory;
-import org.jboss.logging.Logger;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public class KeycloakWebDriverConfigurator extends WebDriverFactory implements Configurator<WebDriver, WebDriverConfiguration> {
+public class KeycloakWebDriverConfigurator {
 
     protected final Logger log = Logger.getLogger(KeycloakWebDriverConfigurator.class);
 
-    @Override
-    public int getPrecedence() {
-        return 1;
+    @Inject
+    private Instance<BrowserCapabilitiesRegistry> registryInstance;
+
+    public void createConfiguration(@Observes BeforeDroneInstantiated event, DroneContext droneContext) {
+        WebDriverConfiguration webDriverCfg = droneContext.get(event.getDronePoint()).getConfigurationAs(WebDriverConfiguration.class);
+
+        DesiredCapabilities capabilitiesToAdd = new DesiredCapabilities();
+        updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
+        updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
+        configurePhantomJSDriver(webDriverCfg, capabilitiesToAdd);
+
+        BrowserCapabilities browserCap = registryInstance.get().getEntryFor(webDriverCfg.getBrowser());
+        webDriverCfg.setBrowserInternal(new KcBrowserCapabilities(capabilitiesToAdd, browserCap));
     }
 
-    @Override
-    public WebDriverConfiguration createConfiguration(ArquillianDescriptor descriptor, DronePoint<WebDriver> dronePoint) {
-        WebDriverConfiguration webDriverCfg = super.createConfiguration(descriptor, dronePoint);
-
-        if (webDriverCfg.getBrowser().equals("htmlUnit")) {
-            updateCapabilities(webDriverCfg);
-        } else if (webDriverCfg.getBrowser().equals("phantomjs")) {
-            configurePhantomJSDriver(webDriverCfg);
+    private void configurePhantomJSDriver(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
+        if (!webDriverCfg.getBrowser().equals("phantomjs")) {
+            return;
         }
 
-        return webDriverCfg;
-    }
+        String cliArgs = System.getProperty("keycloak.phantomjs.cli.args");
 
-    private void configurePhantomJSDriver(WebDriverConfiguration webDriverCfg) {
-        webDriverCfg.setBrowserInternal(new PhantomJS() {
-            @Override
-            public Map<String, ?> getRawCapabilities() {
-                List<String> cliArgs = new ArrayList<>();
-                String cliArgsProperty = System.getProperty("keycloak.phantomjs.cli.args");
+        if (cliArgs == null) {
+            cliArgs = "--ignore-ssl-errors=true --web-security=false";
+        }
 
-                if (cliArgsProperty != null) {
-                    cliArgs = Arrays.asList(cliArgsProperty.split(" "));
-                } else {
-                    cliArgs.add("--ignore-ssl-errors=true");
-                    cliArgs.add("--web-security=false");
-                }
-
-                Map<String, Object> mergedCapabilities = new HashMap<>(super.getRawCapabilities());
-
-                mergedCapabilities.put(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs.toArray(new String[cliArgs.size()]));
-
-                return mergedCapabilities;
-            }
-        });
+        capabilitiesToAdd.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
     }
 
 
     // This is to ensure that default value of capabilities like "version" will be used just for the HtmlUnitDriver, but not for other drivers.
     // Hence in configs we have "htmlUnit.version" instead of "version"
-    protected void updateCapabilities(WebDriverConfiguration configuration) {
-        Map<String, Object> newCapabilities = new HashMap<>();
-
-        for (Map.Entry<String, ?> capability : configuration.getCapabilities().asMap().entrySet()) {
-            if (capability.getKey().startsWith("htmlUnit.")) {
-                newCapabilities.put(capability.getKey().substring(9), capability.getValue());
-            }
+    private void updateCapabilityKeys(String browser, WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd, String... exclude) {
+        if (!webDriverCfg.getBrowser().toLowerCase().equals(browser.toLowerCase())) {
+            return;
         }
 
-        log.debug("Adding new capabilities for HtmlUnitDriver: " + newCapabilities);
+        List excludeList = Arrays.asList(exclude);
 
-        KcHtmlUnitCapabilities mergedBrowser = new KcHtmlUnitCapabilities(newCapabilities);
-        configuration.setBrowserInternal(mergedBrowser);
+        String key = browser + ".";
+        int keyLength = key.length();
+        for (Map.Entry<String, ?> capability : webDriverCfg.getCapabilities().asMap().entrySet()) {
+            if (!excludeList.contains(capability.getKey()) && capability.getKey().startsWith(key)) {
+                capabilitiesToAdd.setCapability(capability.getKey().substring(keyLength), capability.getValue());
+            }
+        }
     }
 
+    public class KcBrowserCapabilities implements BrowserCapabilities {
+        private Capabilities capabilitiesToAdd;
+        private BrowserCapabilities origBrowserCapabilities;
 
-    private static class KcHtmlUnitCapabilities extends BrowserCapabilitiesList.HtmlUnit {
+        public KcBrowserCapabilities(Capabilities capabilitiesToAdd, BrowserCapabilities origBrowserCapabilities) {
+            this.capabilitiesToAdd = capabilitiesToAdd;
+            this.origBrowserCapabilities = origBrowserCapabilities;
+        }
 
-        private final Map<String, Object> newCapabilities;
-
-        public KcHtmlUnitCapabilities(Map<String, Object> newCapabilities) {
-            this.newCapabilities = newCapabilities;
+        @Override
+        public String getImplementationClassName() {
+            return origBrowserCapabilities.getImplementationClassName();
         }
 
         @Override
         public Map<String, ?> getRawCapabilities() {
-            Map<String, ?> parent = super.getRawCapabilities();
-
-            Map<String, Object> merged = new HashMap<>(parent);
-            merged.putAll(newCapabilities);
-
-            return merged;
+            Map<String, Object> ret = new HashMap<>(origBrowserCapabilities.getRawCapabilities());
+            ret.putAll(capabilitiesToAdd.asMap());
+            return ret;
         }
 
+        @Override
+        public String getReadableName() {
+            return origBrowserCapabilities.getReadableName();
+        }
+
+        @Override
+        public int getPrecedence() {
+            return origBrowserCapabilities.getPrecedence();
+        }
     }
 }

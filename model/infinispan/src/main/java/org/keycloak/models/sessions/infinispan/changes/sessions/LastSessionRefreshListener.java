@@ -23,6 +23,7 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -45,20 +46,14 @@ public class LastSessionRefreshListener implements ClusterListener {
 
     private final KeycloakSessionFactory sessionFactory;
     private final Cache<String, SessionEntityWrapper<UserSessionEntity>> cache;
-    private final boolean distributed;
-    private final String myAddress;
+    private final TopologyInfo topologyInfo;
 
     public LastSessionRefreshListener(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
         this.sessionFactory = session.getKeycloakSessionFactory();
         this.cache = cache;
         this.offline = offline;
 
-        this.distributed = InfinispanUtil.isDistributedCache(cache);
-        if (this.distributed) {
-            this.myAddress = InfinispanUtil.getMyAddress(session);
-        } else {
-            this.myAddress = null;
-        }
+        this.topologyInfo = InfinispanUtil.getTopologyInfo(session);
     }
 
     @Override
@@ -81,7 +76,7 @@ public class LastSessionRefreshListener implements ClusterListener {
                     RealmModel realm = kcSession.realms().getRealm(realmId);
                     UserSessionModel userSession = offline ? kcSession.sessions().getOfflineUserSession(realm, sessionId) : kcSession.sessions().getUserSession(realm, sessionId);
                     if (userSession == null) {
-                        logger.debugf("User session '%s' not available on node '%s' offline '%b'", sessionId, myAddress, offline);
+                        logger.debugf("User session '%s' not available on node '%s' offline '%b'", sessionId, topologyInfo.getMyNodeName(), offline);
                     } else {
                         // Update just if lastSessionRefresh from event is bigger than ours
                         if (lastSessionRefresh > userSession.getLastSessionRefresh()) {
@@ -101,11 +96,6 @@ public class LastSessionRefreshListener implements ClusterListener {
 
     // For distributed caches, ensure that local modification is executed just on owner
     protected boolean shouldUpdateLocalCache(String key) {
-        if (!distributed) {
-            return true;
-        } else {
-            String keyAddress = InfinispanUtil.getKeyPrimaryOwnerAddress(cache, key);
-            return myAddress.equals(keyAddress);
-        }
+        return topologyInfo.amIOwner(cache, key);
     }
 }

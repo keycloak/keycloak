@@ -44,6 +44,8 @@
         <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
         <module name="org.keycloak.keycloak-authz-policy-drools" services="import"/>
 
+        <module name="com.googlecode.owasp-java-html-sanitizer"/>
+        <module name="com.google.guava"/>
         <module name="org.freemarker"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.mail.api"/>

@@ -74,7 +74,7 @@ public class UserManagedPermissionService {
     @Path("{resourceId}")
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(@Context UriInfo uriInfo, @PathParam("resourceId") String resourceId, UmaPermissionRepresentation representation) {
+    public Response create(@PathParam("resourceId") String resourceId, UmaPermissionRepresentation representation) {
         if (representation.getId() != null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Newly created uma policies should not have an id", Response.Status.BAD_REQUEST);
         }
@@ -91,7 +91,7 @@ public class UserManagedPermissionService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@Context UriInfo uriInfo, @PathParam("policyId") String policyId, String payload) {
+    public Response update(@PathParam("policyId") String policyId, String payload) {
         UmaPermissionRepresentation representation;
 
         try {
@@ -102,14 +102,14 @@ public class UserManagedPermissionService {
 
         checkRequest(getAssociatedResourceId(policyId), representation);
 
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(uriInfo, payload);
+        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
     }
 
     @Path("{policyId}")
     @DELETE
-    public Response delete(@Context UriInfo uriInfo, @PathParam("policyId") String policyId) {
+    public Response delete(@PathParam("policyId") String policyId) {
         checkRequest(getAssociatedResourceId(policyId), null);
-        PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).delete(uriInfo);
+        PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).delete();
         return Response.noContent().build();
     }
 
@@ -151,7 +151,7 @@ public class UserManagedPermissionService {
         }
 
         if (!resource.getOwner().equals(identity.getId())) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Only resource onwer can access policies for resource [" + resourceId + "]", Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Only resource owner can access policies for resource [" + resourceId + "]", Status.BAD_REQUEST);
         }
 
         if (!resource.isOwnerManagedAccess()) {

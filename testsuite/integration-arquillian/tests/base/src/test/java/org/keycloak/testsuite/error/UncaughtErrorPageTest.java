@@ -1,16 +1,22 @@
 package org.keycloak.testsuite.error;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 
 import javax.ws.rs.core.Response;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,10 +49,14 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void uncaughtErrorJson() {
+    public void uncaughtErrorJson() throws IOException {
         Response response = testingClient.testing().uncaughtError();
-        assertNull(response.getEntity());
         assertEquals(500, response.getStatus());
+
+        InputStream is = (InputStream) response.getEntity();
+        String responseString = StreamUtil.readString(is, Charset.forName("UTF-8"));
+
+        Assert.assertTrue(responseString.contains("An internal server error has occurred"));
     }
 
     @Test

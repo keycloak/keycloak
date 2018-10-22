@@ -21,6 +21,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.mappers;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -39,18 +40,18 @@ public class MapperSettingsForm extends CreateClientMappersForm {
     private WebElement mapperTypeInput;
     
     public String getProtocol() {
-        return getInputValue(protocolInput);
+        return UIUtils.getTextInputValue(protocolInput);
     }
     
     public String getMapperId() {
-        return getInputValue(mapperIdInput);
+        return UIUtils.getTextInputValue(mapperIdInput);
     }
     
     public String getName() {
-        return getInputValue(nameInput);
+        return UIUtils.getTextInputValue(nameInput);
     }
     
     public String getMapperType() {
-        return getInputValue(mapperTypeInput);
+        return UIUtils.getTextInputValue(mapperTypeInput);
     }
 }

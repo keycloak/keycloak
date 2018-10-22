@@ -24,9 +24,16 @@ import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -59,7 +66,29 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             reg.create(rep);
             Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
-            Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void createWithES256() throws JWSInputException, ClientRegistrationException {
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
+
+            ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
+            reg.auth(Auth.token(response));
+
+            String token = response.getToken();
+
+            JWSHeader header = new JWSInput(token).getHeader();
+            assertEquals("HS256", header.getAlgorithm().name());
+
+            ClientRepresentation rep = new ClientRepresentation();
+            ClientRepresentation created = reg.create(rep);
+            Assert.assertNotNull(created);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
     }
 
@@ -81,7 +110,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             reg.create(rep);
             Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
-            Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
@@ -99,7 +128,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             reg.create(rep);
             Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
-            Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
@@ -117,7 +146,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             reg.create(rep);
             Assert.fail("Expected exception");
         } catch (ClientRegistrationException e) {
-            Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 

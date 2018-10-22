@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -127,7 +128,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         assertNotNull(authorization);
 
-        List<Permission> permissions = authorization.getPermissions();
+        List<Permission> permissions = new ArrayList<>(authorization.getPermissions());
 
         assertFalse(permissions.isEmpty());
         assertEquals("Default Resource", permissions.get(0).getResourceName());

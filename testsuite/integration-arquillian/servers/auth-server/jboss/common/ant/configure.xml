@@ -1,8 +1,6 @@
 <project>
 
     <target name="check-configuration-state">
-        <available property="modcluster-configured" file="${project.build.directory}/modcluster-configured"/>
-        <echo>modcluster-configured: ${modcluster-configured}</echo>
         <available property="crossdc-configured" file="${project.build.directory}/crossdc-configured"/>
         <echo>crossdc-configured: ${crossdc-configured}</echo>
     </target>
@@ -24,16 +22,7 @@
             <delete dir="${auth.server.home}/standalone/data"/>
             <delete dir="${auth.server.home}/standalone/tmp"/>
         </sequential>
-    </macrodef> 
-    
-    <target name="modcluster" unless="modcluster-configured" depends="check-configuration-state">
-        <bin-chmod/>
-        <exec dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
-            <arg value="--file=${common.resources}/jboss-cli/modcluster-simple-load-provider.cli"/>
-        </exec>
-        <cleanup/>
-        <touch file="${project.build.directory}/modcluster-configured"/>
-    </target>
+    </macrodef>
     
     <target name="crossdc" unless="crossdc-configured" depends="check-configuration-state">
         <bin-chmod/>
