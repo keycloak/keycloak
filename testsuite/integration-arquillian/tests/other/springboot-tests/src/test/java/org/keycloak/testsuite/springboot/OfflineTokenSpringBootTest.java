@@ -155,4 +155,9 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         // Revert change
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(CLIENT_ID).consentRequired(false);
     }
+
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
 }
