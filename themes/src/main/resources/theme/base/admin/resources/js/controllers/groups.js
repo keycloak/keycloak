@@ -471,7 +471,7 @@ module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMember
 
 });
 
-module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, DefaultGroups, Notifications) {
+module.controller('DefaultGroupsCtrl', function($scope, $route, $q, realm, Groups, groups, DefaultGroups, Notifications) {
     $scope.realm = realm;
     $scope.groupList = groups;
     $scope.selectedGroup = null;
@@ -533,6 +533,33 @@ module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, D
         }
         return undefined;
     }
+
+    $scope.tree.selectNodeHead = function(node) {
+            node.collapsed = !node.collapsed;
+
+        	if ((!node.subGroups || !node.subGroups.length ) && node.id != '' && node.hasChild){
+    			var queryParams = {
+    				realm : realm.realm,
+    				first : 0,
+    				max : $scope.pageSize,
+    				parent: node.id
+    			};
+        	     Groups.query(queryParams, function(entry) {
+                       promiseSubGroups.resolve(entry);
+                 }, function() {
+                       promiseSubGroups.reject('subGroups Unable to fetch ' + queryParams);
+                 });
+                 var promiseSubGroups = $q.defer();
+                 var promiseGetGroupsChain   = promiseSubGroups.promise.then(function(groups) {
+                       console.log('*** subGroups call groups size: ' + groups.length);
+                       if(groups && groups.length > 0){
+                       		node.subGroups = groups;
+                       		node.collapsed = false;
+                       }
+                 });
+
+        	}
+     };
 
 });
 
