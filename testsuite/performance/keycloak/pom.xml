@@ -43,7 +43,7 @@
         
         <jdbc.driver.groupId>org.mariadb.jdbc</jdbc.driver.groupId>
         <jdbc.driver.artifactId>mariadb-java-client</jdbc.driver.artifactId>
-        <jdbc.driver.version>2.0.3</jdbc.driver.version>
+        <jdbc.driver.version>2.2.4</jdbc.driver.version>
         <jdbc.driver.module.path>org/mariadb/jdbc</jdbc.driver.module.path>
 
         <script.extension>sh</script.extension>
