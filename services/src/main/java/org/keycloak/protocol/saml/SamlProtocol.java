@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import com.google.common.base.Charsets;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -25,10 +26,14 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -53,11 +58,17 @@ import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -68,23 +79,23 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.*;
+
+import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -99,6 +110,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE = "saml_assertion_consumer_url_redirect";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
+    public static final String SAML_ARTIFACT_BINDING_URL = "saml_artifact_binding_url";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
@@ -120,6 +132,9 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_PERSISTENT_NAME_ID_FOR = "saml.persistent.name.id.for";
     public static final String SAML_IDP_INITIATED_SSO_RELAY_STATE = "saml_idp_initiated_sso_relay_state";
     public static final String SAML_IDP_INITIATED_SSO_URL_NAME = "saml_idp_initiated_sso_url_name";
+
+    /** SAML 2 artifact type code (0x0004). */
+    private static final byte[] TYPE_CODE = { 0, 4 };
 
     protected KeycloakSession session;
 
@@ -487,6 +502,10 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
+        if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))){
+            return buildArtifactAuthenticatedResponse(clientSession, redirectUri, samlDocument, bindingBuilder);
+        }
+
         if (isPostBinding(clientSession)) {
             return bindingBuilder.postBinding(samlDocument).response(redirectUri);
         } else {
@@ -737,5 +756,199 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public void close() {
 
+    }
+
+    /**
+     * This method, instead of sending the actual response with the token, stores it in cache, and sends
+     * the artifact message via post or redirect.
+     *
+     * @param clientSession the current authenticated client session
+     * @param redirectUri the redirect uri to the client
+     * @param samlDocument a Document containing the saml Response
+     * @param bindingBuilder the current JaxrsSAML2BindingBuilder configured with information for signing and encryption
+     * @return A response (POSTed form or redirect) with a newly generated artifact
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     * @throws IOException
+     */
+    protected Response buildArtifactAuthenticatedResponse(AuthenticatedClientSessionModel clientSession,
+                                                  String redirectUri, Document samlDocument,
+                                                  JaxrsSAML2BindingBuilder bindingBuilder)
+            throws ConfigurationException, ProcessingException, IOException {
+        String artifact = buildArtifact(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+
+        //save ArtifactResponse in localmap and in cache
+        Document artifactResponse = buildArtifactResponse(samlDocument);
+        bindingBuilder.postBinding(artifactResponse); //this step performs necessary signatures and encryption
+
+        clientSession.setNote(artifact, DocumentUtil.getDocumentAsString(artifactResponse));
+
+        //return message with artifact
+        String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
+
+        logger.debug("Sending artifact "+ artifact + " to client " + clientSession.getClient().getClientId());
+
+        if (isPostBinding(clientSession)) {
+            return artifactPost(redirectUri, artifact, relayState, bindingBuilder);
+        } else {
+            return artifactRedirect(redirectUri, artifact, relayState);
+        }
+    }
+
+    /**
+     * Return an artifact through a redirect message
+     * @param redirectUri the redirect uri to the client
+     * @param artifact the artifact to send
+     * @param relayState the current relayState
+     * @return a redirect Response with the artifact
+     */
+    private Response artifactRedirect(String redirectUri, String artifact, String relayState)  {
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
+                .replaceQuery(null)
+                .queryParam("SAMLart", artifact);
+
+        if (relayState != null) {
+            builder.queryParam("RelayState", relayState);
+        }
+
+        URI uri = builder.build();
+        return Response.status(302).location(uri)
+                .header("Pragma", "no-cache")
+                .header("Cache-Control", "no-cache, no-store").build();
+    }
+
+    /**
+     * Return an artifact through a POSTed form
+     * @param redirectUri the redirect uri to the client
+     * @param artifact the artifact to send
+     * @param relayState current relayState
+     * @param bindingBuilder the current JaxrsSAML2BindingBuilder configured with information for signing and encryption
+     * @return a POSTed form response, with the artifact
+     */
+    private Response artifactPost(String redirectUri, String artifact, String relayState, JaxrsSAML2BindingBuilder bindingBuilder){
+        Map<String, String> inputTypes = new HashMap<>();
+        inputTypes.put("SAMLart", artifact);
+        if (relayState != null) {
+            inputTypes.put("RelayState", escapeAttribute(relayState));
+        }
+
+        String str = bindingBuilder.buildHtmlForm(redirectUri, inputTypes);
+
+        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
+                .header("Pragma", "no-cache")
+                .header("Cache-Control", "no-cache, no-store").build();
+    }
+
+    /**
+     * Takes a document (containing the saml Response), and inserts it as the body of an ArtifactResponse. The ArtifactResponse is returned as
+     * a Document.
+     * @param samlResponse a saml Response message
+     * @return A document containing the saml Response incapsulated in an artifact response.
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     */
+    Document buildArtifactResponse(Document samlResponse) throws ConfigurationException, ProcessingException {
+        ArtifactResponseType artifactResponse = new ArtifactResponseType(IDGenerator.create("ID_"),
+                XMLTimeUtil.getIssueInstant());
+
+        // Status
+        StatusType statusType = new StatusType();
+        StatusCodeType statusCodeType = new StatusCodeType();
+        statusCodeType.setValue(JBossSAMLURIConstants.STATUS_SUCCESS.getUri());
+        statusType.setStatusCode(statusCodeType);
+
+        artifactResponse.setStatus(statusType);
+        Document artifactResponseDocument = null;
+        try {
+            artifactResponseDocument = convert(artifactResponse);
+        } catch (ParsingException e) {
+            throw new ProcessingException(e.getMessage());
+        }
+        Element artifactResponseElement = artifactResponseDocument.getDocumentElement();
+
+        Node issuer = artifactResponseDocument.importNode(getIssuer(samlResponse), true);
+        if (issuer != null) {
+            artifactResponseElement.appendChild(issuer);
+        }
+
+        Node samlresponseNode = artifactResponseDocument.importNode(samlResponse.getDocumentElement(), true);
+        artifactResponseElement.appendChild(samlresponseNode);
+
+        return artifactResponseDocument;
+    }
+
+    /**
+     * Convert a SAML2 ArtifactResponse into a Document
+     * @param responseType an artifactResponse
+     *
+     * @return an artifact response converted to a Document
+     *
+     * @throws ParsingException
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     */
+    private Document convert(ArtifactResponseType responseType) throws ProcessingException, ConfigurationException,
+            ParsingException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
+        writer.write(responseType);
+        return DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
+    }
+
+    /**
+     * Gets the first found issuer of a SAML Document
+     * @param samlDocument a document containing a SAML message
+     * @return an issuer node
+     */
+    private Node getIssuer(Document samlDocument) {
+        NodeList nl = samlDocument.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get());
+        if (nl.getLength() > 0) {
+            return nl.item(0);
+        }
+        return null;
+    }
+
+    /**
+     * Creates an artifact. Format is:
+     *
+     * SAML_artifact := B64(TypeCode EndpointIndex RemainingArtifact)
+     *
+     * TypeCode := 0x0004
+     * EndpointIndex := Byte1Byte2
+     * RemainingArtifact := SourceID MessageHandle
+     *
+     * SourceID := 20-byte_sequence, used by the artifact receiver to determine artifact issuer
+     * MessageHandle := 20-byte_sequence
+     *
+     * @param entityId the entity id to encode in the sourceId
+     * @return an artifact
+     * @throws ProcessingException
+     * @throws IOException
+     */
+    private String buildArtifact(String entityId) throws ProcessingException, IOException {
+        try {
+            SecureRandom handleGenerator = SecureRandom.getInstance("SHA1PRNG");
+            byte[] trimmedIndex = new byte[2];
+
+            MessageDigest sha1Digester = MessageDigest.getInstance("SHA-1");
+            byte[] source = sha1Digester.digest(entityId.getBytes(Charsets.UTF_8));
+
+            byte[] assertionHandle;
+            assertionHandle = new byte[20];
+            handleGenerator.nextBytes(assertionHandle);
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bos.write(TYPE_CODE);
+            bos.write(trimmedIndex);
+            bos.write(source);
+            bos.write(assertionHandle);
+
+            byte[] artifact = bos.toByteArray();
+
+            return Base64.getEncoder().encodeToString(artifact);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("JVM does not support required cryptography algorithms: SHA-1/SHA1PRNG.", e);
+            throw new ProcessingException("JVM does not support required cryptography algorithms: SHA-1/SHA1PRNG.");
+        }
     }
 }

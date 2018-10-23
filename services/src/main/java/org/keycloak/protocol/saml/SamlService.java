@@ -28,11 +28,7 @@ import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -48,11 +44,17 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
+import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -75,10 +77,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.HardcodedKeyLocator;
@@ -87,6 +87,7 @@ import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.w3c.dom.Document;
 
 /**
  * Resource class for the saml connect token service
@@ -196,6 +197,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
+
 
             SAML2Object samlObject = documentHolder.getSamlObject();
 
@@ -313,6 +315,13 @@ public class SamlService extends AuthorizationEndpointBase {
 
             AuthenticationSessionModel authSession = createAuthenticationSession(client, relayState);
 
+            // determine if artifact binding should be used to answer the login request
+            if ((requestAbstractType.getProtocolBinding() != null && JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri()
+                    .compareTo(requestAbstractType.getProtocolBinding()) == 0)
+                    || new SamlClient(client).forceArtifactBinding()) {
+                authSession.setClientNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get(), "true");
+            }
+
             authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
             authSession.setRedirectUri(redirect);
             authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
@@ -345,7 +354,6 @@ public class SamlService extends AuthorizationEndpointBase {
                         NameIDType nameID = (NameIDType) baseID;
                         authSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
                     }
-
                 }
             }
             //If unset we fall back to default "false"
@@ -360,6 +368,8 @@ public class SamlService extends AuthorizationEndpointBase {
             if (requestedProtocolBinding != null) {
                 if (JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get().equals(requestedProtocolBinding.toString())) {
                     return SamlProtocol.SAML_POST_BINDING;
+                } else if (JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get().equals(requestedProtocolBinding.toString())) {
+                    return getBindingType();
                 } else {
                     return SamlProtocol.SAML_REDIRECT_BINDING;
                 }
@@ -714,14 +724,113 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
 
+    /**
+     * Handles SOAP messages. Chooses the correct response path depending on whether the message is of type ECP or Artifact
+     * @param inputStream the data of the request.
+     * @return The response to the SOAP message
+     */
     @POST
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
+        Document soapBodyContents = Soap.extractSoapMessage(inputStream);
+        try {
+            SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
+            if (samlDoc.getSamlObject() instanceof ArtifactResolveType) {
+                logger.debug("Received artifact resolve message");
+                ArtifactResolveType art = (ArtifactResolveType)samlDoc.getSamlObject();
+
+                return artifactResolve(art, samlDoc);
+            }
+        } catch (Exception e) {
+            String reason = "An error occurred while trying to return the artifactResponse";
+            String detail = e.getMessage();
+
+            if (detail == null) {
+                detail = "";
+            }
+
+            logger.error(reason + ": " + detail);
+            return Soap.createFault().reason(reason).detail(detail).build();
+        }
+
         SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, destinationValidator);
 
         ResteasyProviderFactory.getInstance().injectProperties(bindingService);
 
         return bindingService.authenticate(inputStream);
+    }
+
+    /**
+     * Takes an artifact resolve message and returns the artifact response, if the artifact is found belonging to a session
+     * of the issuer.
+     * @param artifactResolveMessage The artifact resolve message sent by the client
+     * @param samlDoc the document containing the artifact resolve message sent by the client
+     * @return a Response containing the SOAP message with the ArifactResponse
+     * @throws ParsingException
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     */
+    public Response artifactResolve(ArtifactResolveType artifactResolveMessage, SAMLDocumentHolder samlDoc) throws ParsingException, ConfigurationException, ProcessingException {
+
+        logger.debug("Received artifactResolve message for artifact " + artifactResolveMessage.getArtifact() + "\n" +
+                "Message: \n" + DocumentUtil.getDocumentAsString(samlDoc.getSamlDocument()));
+
+        String issuer = artifactResolveMessage.getIssuer().getValue();
+        ClientModel client = realm.getClientByClientId(issuer);
+
+        if (client == null) {
+            throw new ProcessingException(Errors.CLIENT_NOT_FOUND);
+        }
+        if (!client.isEnabled()) {
+            throw new ProcessingException(Errors.CLIENT_DISABLED);
+        }
+        if (client.isBearerOnly()) {
+            throw new ProcessingException(Errors.NOT_ALLOWED);
+        }
+        if (!client.isStandardFlowEnabled()) {
+            throw new ProcessingException(Errors.NOT_ALLOWED);
+        }
+        try {
+            SamlProtocolUtils.verifyDocumentSignature(client, samlDoc.getSamlDocument());
+        } catch (VerificationException e) {
+            SamlService.logger.error("request validation failed", e);
+            throw new ProcessingException(Errors.INVALID_SIGNATURE);
+        }
+
+        Document artifactResponseDocument = getArtifact(client, artifactResolveMessage.getArtifact());
+
+        Soap.SoapMessageBuilder messageBuilder = Soap.createMessage();
+        messageBuilder.addToBody(artifactResponseDocument);
+
+        logger.debug("Sending artifactResponse message for artifact " + artifactResolveMessage.getArtifact() + "\n" +
+                "Message: \n" + DocumentUtil.getDocumentAsString(artifactResponseDocument));
+
+        return messageBuilder.build();
+    }
+
+    /**
+     * Retrieves an artifact from a client's cache. The method does this by going through the UserSessions attached to the
+     * client.
+     * @param client the clients session for which to query the artifact
+     * @param artifact an artifact value
+     * @return the document containing the corresponding artifact response, which was saved to the session
+     * @throws ParsingException
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     */
+    private Document getArtifact(ClientModel client, String artifact) throws ParsingException, ConfigurationException, ProcessingException {
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, client);
+        for (UserSessionModel userSession: userSessions) {
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+            if (clientSession != null) {
+                String response = clientSession.getNote(artifact);
+                if (response != null && ! response.isEmpty()) {
+                    clientSession.removeNote(artifact);
+                    return DocumentUtil.getDocument(response);
+                }
+            }
+        }
+        throw new ProcessingException("Cannot find artifact "+ artifact + " in cache");
     }
 }

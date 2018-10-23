@@ -77,8 +77,9 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
           "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/post",
           "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/soap",
           "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/paos",
-          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect"
-        ));  // No redirect URI for ARTIFACT binding which is unsupported
+          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect",
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/artifact"
+        ));
 
         assertThat(response.getAttributes().get("saml_single_logout_service_url_redirect"), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloRedirect/metaAlias/sp"));
     }

@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.saml.profile.ecp.util;
+package org.keycloak.protocol.saml.profile.util;
 
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.soap.MessageFactory;
@@ -34,6 +38,7 @@ import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,11 +59,27 @@ public final class Soap {
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      *
-     * @param inputStream the input stream containing a valid SOAP message with a Body that contains a SAML message
+     * @param document the document containing a valid SOAP message with a Body that contains a SAML message
      *
      * @return a string encoded accordingly with the SAML HTTP POST Binding specification
      */
-    public static String toSamlHttpPostMessage(InputStream inputStream) {
+    public static String toSamlHttpPostMessage(Document document) {
+        try {
+            return PostBindingUtil.base64Encode(DocumentUtil.asString(document));
+        } catch (Exception e) {
+            throw new RuntimeException("Error encoding SOAP document to String.", e);
+        }
+    }
+
+    /**
+     * <p>Returns Docuemnt based on the given <code>inputStream</code> which must contain a valid SOAP message.
+     *
+     * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
+     *
+     * @param inputStream
+     * @return A document containing the body of the SOAP message
+     */
+    public static Document extractSoapMessage(InputStream inputStream) {
         try {
             MessageFactory messageFactory = MessageFactory.newInstance();
             SOAPMessage soapMessage = messageFactory.createMessage(null, inputStream);
@@ -68,7 +89,7 @@ public final class Soap {
 
             document.appendChild(document.importNode(authnRequestNode, true));
 
-            return PostBindingUtil.base64Encode(DocumentUtil.asString(document));
+            return document;
         } catch (Exception e) {
             throw new RuntimeException("Error creating fault message.", e);
         }
@@ -127,6 +148,11 @@ public final class Soap {
             return build(Status.OK);
         }
 
+        /**
+         * Standard build method, generates a javax ws rs Response
+         * @param status the status of the response
+         * @return a Response containing the SOAP message
+         */
         Response build(Status status) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -136,7 +162,28 @@ public final class Soap {
                 throw new RuntimeException("Error while building SOAP Fault.", e);
             }
 
-            return Response.status(status).entity(outputStream.toByteArray()).build();
+            return Response.status(status).entity(outputStream.toByteArray()).type(MediaType.TEXT_XML_TYPE).build();
+        }
+
+
+
+        /**
+         * Build method for testing, generates an appache httpcomponents HttpPost
+         * @param uri the URI to which to POST the soap message
+         * @return an HttpPost containing the SOAP message
+         */
+        public HttpPost buildHttpPost(URI uri) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+            try {
+                this.message.writeTo(outputStream);
+            } catch (Exception e) {
+                throw new RuntimeException("Error while building SOAP Fault.", e);
+            }
+
+            HttpPost post = new HttpPost(uri);
+            post.setEntity(new ByteArrayEntity(outputStream.toByteArray(), ContentType.TEXT_XML));
+            return post;
         }
 
         SOAPMessage getMessage() {
