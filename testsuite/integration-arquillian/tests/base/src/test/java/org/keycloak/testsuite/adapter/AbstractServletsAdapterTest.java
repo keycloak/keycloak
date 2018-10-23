@@ -41,9 +41,21 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     protected static WebArchive servletDeploymentMultiTenant(String name, Class... servletClasses) {
         WebArchive servletDeployment = servletDeployment(name, null, servletClasses);
-        return servletDeployment;
+
+        String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
+        String config1 = "tenant1-keycloak.json";
+        String config2 = "tenant2-keycloak.json";
+
+        URL config1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config1);
+        Assert.assertNotNull("config1Url should be in " + webInfPath + config1, config1Url);
+        URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
+        Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
+
+        return servletDeployment
+                .add(new UrlAsset(config1Url), "/WEB-INF/classes/" + config1)
+                .add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
     }
-    
+
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
     }
