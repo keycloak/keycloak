@@ -331,8 +331,8 @@ public class AuthorizationTokenService {
         // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
         PermissionTicketToken permissions = request.getPermissions();
 
-        // an audience must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
-        permissions.audience(request.getAudience());
+        // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+        permissions.issuedFor(request.getAudience());
 
         return permissions;
     }
@@ -341,13 +341,13 @@ public class AuthorizationTokenService {
         AuthorizationProvider authorization = request.getAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        String[] audience = ticket.getAudience();
+        String issuedFor = ticket.getIssuedFor();
 
-        if (audience == null || audience.length == 0) {
-            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
+        if (issuedFor == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
         }
 
-        ClientModel clientModel = request.getRealm().getClientByClientId(audience[0]);
+        ClientModel clientModel = request.getRealm().getClientByClientId(issuedFor);
 
         if (clientModel == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
@@ -514,7 +514,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getIssuedFor());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
