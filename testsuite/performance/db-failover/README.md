@@ -25,7 +25,7 @@ This script will:
 
 Parameterized by environment variables:
 - `MARIADB_HA_MODE` See: [MariaDB HA parameters](https://mariadb.com/kb/en/library/failover-and-high-availability-with-mariadb-connector-j/#failover-high-availability-parameters)
-   Defaults to `replication`.
+   Defaults to `replication:`.
 - `MARIADB_OPTIONS` See: [MariaDB HA options](https://mariadb.com/kb/en/library/failover-and-high-availability-with-mariadb-connector-j/#failover-high-availability-options).
    Use format: `?option1=value1[&option2=value2]...`. Default is an empty string.
 - `START_KEYCLOAK` Default is `false`. Use `export START_KEYCLOAK=true` to enable.

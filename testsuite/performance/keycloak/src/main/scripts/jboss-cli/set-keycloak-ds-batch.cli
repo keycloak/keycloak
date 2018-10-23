@@ -1,8 +1,8 @@
-/subsystem=datasources/jdbc-driver=mariadb:add(driver-name=mariadb, driver-module-name=org.mariadb.jdbc, driver-xa-datasource-class-name=org.mariadb.jdbc.Driver)
+/subsystem=datasources/jdbc-driver=mariadb:add(driver-name=mariadb, driver-module-name=org.mariadb.jdbc, driver-xa-datasource-class-name=org.mariadb.jdbc.MySQLDataSource)
 
 cd /subsystem=datasources/data-source=KeycloakDS
 
-:write-attribute(name=connection-url, value=jdbc:mariadb:${env.MARIADB_HA_MODE:}://${env.MARIADB_HOSTS:mariadb:3306}/${env.MARIADB_DATABASE:keycloak}${env.MARIADB_OPTIONS:})
+:write-attribute(name=connection-url, value=jdbc:mariadb:${env.MARIADB_HA_MODE:}//${env.MARIADB_HOSTS:mariadb:3306}/${env.MARIADB_DATABASE:keycloak}${env.MARIADB_OPTIONS:})
 :write-attribute(name=driver-name, value=mariadb)
 :write-attribute(name=user-name, value=${env.MARIADB_USER:keycloak})
 :write-attribute(name=password, value=${env.MARIADB_PASSWORD:keycloak})
