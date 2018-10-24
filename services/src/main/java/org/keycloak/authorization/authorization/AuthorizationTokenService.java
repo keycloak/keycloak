@@ -65,6 +65,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -78,7 +79,11 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
@@ -246,17 +251,34 @@ public class AuthorizationTokenService {
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
-        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
+        ClientSessionContext clientSessionCtx;
+
+        if (clientSession == null) {
+            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
+
+            if (rootAuthSession == null) {
+                rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+            }
+
+            AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+
+            authSession.setAuthenticatedUser(userSessionModel.getUser());
+            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+
+            AuthenticationManager.setClientScopesInSession(authSession);
+            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
+        } else {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        }
+
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
-        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, keycloakSession, userSessionModel, clientSessionCtx)
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
         AccessToken rpt = responseBuilder.getAccessToken();
-
-        rpt.issuedFor(client.getClientId());
-
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
