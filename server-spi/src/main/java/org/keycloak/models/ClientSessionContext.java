@@ -32,6 +32,9 @@ public interface ClientSessionContext {
 
     Set<ClientScopeModel> getClientScopes();
 
+    /**
+     * @return expanded roles (composite roles already applied)
+     */
     Set<RoleModel> getRoles();
 
     Set<ProtocolMapperModel> getProtocolMappers();

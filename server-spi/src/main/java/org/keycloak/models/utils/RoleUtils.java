@@ -19,11 +19,13 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -105,30 +107,67 @@ public class RoleUtils {
     /**
      * Recursively expands composite roles into their composite.
      * @param role
+     * @param visited Track roles, which were already visited. Those will be ignored and won't be added to the stream. Besides that,
+     *                the "visited" set itself will be updated as a result of this method call and all the tracked roles will be added to it
      * @return Stream of containing all of the composite roles and their components.
      */
-    public static Stream<RoleModel> expandCompositeRolesStream(RoleModel role) {
+    private static Stream<RoleModel> expandCompositeRolesStream(RoleModel role, Set<RoleModel> visited) {
         Stream.Builder<RoleModel> sb = Stream.builder();
-        Set<RoleModel> roles = new HashSet<>();
 
-        Deque<RoleModel> stack = new ArrayDeque<>();
-        stack.add(role);
+        if (!visited.contains(role)) {
+            Deque<RoleModel> stack = new ArrayDeque<>();
+            stack.add(role);
 
-        while (! stack.isEmpty()) {
-            RoleModel current = stack.pop();
-            sb.add(current);
+            while (!stack.isEmpty()) {
+                RoleModel current = stack.pop();
+                sb.add(current);
 
-            if (current.isComposite()) {
-                current.getComposites().stream()
-                  .filter(r -> ! roles.contains(r))
-                  .forEach(r -> {
-                    roles.add(r);
-                    stack.add(r);
-                  });
+                if (current.isComposite()) {
+                    current.getComposites().stream()
+                            .filter(r -> !visited.contains(r))
+                            .forEach(r -> {
+                                visited.add(r);
+                                stack.add(r);
+                            });
+                }
             }
         }
 
         return sb.build();
+    }
+
+
+    /**
+     * @param roles
+     * @return new set with composite roles expanded
+     */
+    public static Set<RoleModel> expandCompositeRoles(Set<RoleModel> roles) {
+        Set<RoleModel> visited = new HashSet<>();
+
+        return roles.stream()
+                .flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited))
+                .collect(Collectors.toSet());
+    }
+
+
+    /**
+     * @param user
+     * @return all user role mappings including all groups of user. Composite roles will be expanded
+     */
+    public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
+        Set<RoleModel> roleMappings = new HashSet<>(user.getRoleMappings());
+        for (GroupModel group : user.getGroups()) {
+            addGroupRoles(group, roleMappings);
+        }
+
+        return expandCompositeRoles(roleMappings);
+    }
+
+
+    private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
+        roleMappings.addAll(group.getRoleMappings());
+        if (group.getParentId() == null) return;
+        addGroupRoles(group.getParent(), roleMappings);
     }
 
 }
