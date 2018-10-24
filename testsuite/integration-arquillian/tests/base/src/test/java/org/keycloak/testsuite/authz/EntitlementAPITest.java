@@ -54,10 +54,14 @@ import org.keycloak.authorization.client.representation.TokenIntrospectionRespon
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
@@ -1206,6 +1210,78 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
+    }
+
+    @Test
+    public void testProcessMappersForTargetAudience() throws Exception {
+        ClientResource publicClient = getClient(getRealm(), PUBLIC_TEST_CLIENT);
+
+        ProtocolMapperRepresentation customClaimMapper = new ProtocolMapperRepresentation();
+
+        customClaimMapper.setName("custom_claim");
+        customClaimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        customClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "custom_claim");
+        config.put(HardcodedClaim.CLAIM_VALUE, PUBLIC_TEST_CLIENT);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        customClaimMapper.setConfig(config);
+
+        publicClient.getProtocolMappers().createMapper(customClaimMapper);
+
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+
+        config.put(HardcodedClaim.CLAIM_VALUE, RESOURCE_SERVER_TEST);
+
+        client.getProtocolMappers().createMapper(customClaimMapper);
+
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission);
+
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessToken token = toAccessToken(response.getAccessToken());
+
+        assertEquals(PUBLIC_TEST_CLIENT, token.getOtherClaims().get("custom_claim"));
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+
+        AuthorizationResponse authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+
+        authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
     }
 
     private void testRptRequestWithResourceName(String configFile) {
