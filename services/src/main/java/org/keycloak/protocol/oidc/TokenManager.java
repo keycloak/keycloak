@@ -35,9 +35,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -46,13 +44,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -85,20 +83,6 @@ import java.util.Set;
 public class TokenManager {
     private static final Logger logger = Logger.getLogger(TokenManager.class);
     private static final String JWT = "JWT";
-
-    public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
-        if (visited.contains(scope)) return;
-        visited.add(scope);
-        if (role.hasRole(scope)) {
-            requested.add(scope);
-            return;
-        }
-        if (!scope.isComposite()) return;
-
-        for (RoleModel contained : scope.getComposites()) {
-            applyScope(role, contained, visited, requested);
-        }
-    }
 
     public static class TokenValidation {
         public final UserModel user;
@@ -468,28 +452,14 @@ public class TokenManager {
     }
 
 
-    private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
-        roleMappings.addAll(group.getRoleMappings());
-        if (group.getParentId() == null) return;
-        addGroupRoles(group.getParent(), roleMappings);
-    }
-
-
     public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Set<ClientScopeModel> clientScopes) {
-        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
-
-        Set<RoleModel> mappings = user.getRoleMappings();
-        Set<RoleModel> roleMappings = new HashSet<>();
-        roleMappings.addAll(mappings);
-        for (GroupModel group : user.getGroups()) {
-            addGroupRoles(group, roleMappings);
-        }
+        Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
 
         if (client.isFullScopeAllowed()) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Using full scope for client %s", client.getClientId());
             }
-            requestedRoles = roleMappings;
+            return roleMappings;
         } else {
             Set<RoleModel> scopeMappings = new HashSet<>();
 
@@ -504,15 +474,14 @@ public class TokenManager {
                 scopeMappings.addAll(clientScope.getScopeMappings());
             }
 
-            for (RoleModel role : roleMappings) {
-                for (RoleModel desiredRole : scopeMappings) {
-                    Set<RoleModel> visited = new HashSet<RoleModel>();
-                    applyScope(role, desiredRole, visited, requestedRoles);
-                }
-            }
-        }
+            // 3 - Expand scope mappings
+            scopeMappings = RoleUtils.expandCompositeRoles(scopeMappings);
 
-        return requestedRoles;
+            // Intersection of expanded user roles and expanded scopeMappings
+            roleMappings.retainAll(scopeMappings);
+
+            return roleMappings;
+        }
     }
 
 
