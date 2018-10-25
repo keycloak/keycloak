@@ -179,55 +179,6 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     }
 
 
-    @Test
-    public void testAudienceClientScopeGeneration() throws Exception {
-        // Generate the "Audience" client scope for the "service-client" as an audience
-        Response resp = testRealm().clientScopes().generateAudienceClientScope("service-client");
-        String audienceScopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
-
-        // Login and check audiences in the token. It's no audience for "service-client" yet and no clientRoles of "service-client" in the token
-        oauth.scope("openid service-client");
-        oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email", "test-app");
-        assertAudiences(tokens.accessToken);
-        assertAudiences(tokens.idToken, "test-app");
-        Assert.assertFalse(tokens.accessToken.getResourceAccess().containsKey("service-client"));
-
-        // Logout
-        oauth.doLogout(tokens.refreshToken, "password");
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
-
-
-        // Add clientScope to the test-app client
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
-        testApp.addOptionalClientScope(audienceScopeId);
-
-        // Login again and check audiences in the token. Now there is audience for "service-client" and clientRoles of "service-client" in the token
-        oauth.scope("openid service-client");
-        oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
-        tokens = sendTokenRequest(loginEvent, userId,"openid profile email service-client", "test-app");
-        assertAudiences(tokens.accessToken, "service-client");
-        assertAudiences(tokens.idToken, "test-app");
-        Assert.assertTrue(tokens.accessToken.getResourceAccess().containsKey("service-client"));
-        Assert.assertNames(tokens.accessToken.getResourceAccess().get("service-client").getRoles(), "role1");
-
-        // Revert
-        testApp.removeOptionalClientScope(audienceScopeId);
-        testRealm().clientScopes().get(audienceScopeId).remove();
-    }
-
-
-
     private void assertAudiences(JsonWebToken token, String... expectedAudience) {
         Collection<String> audiences = token.getAudience() == null ? Collections.emptyList() : Arrays.asList(token.getAudience());
         Collection<String> expectedAudiences = Arrays.asList(expectedAudience);

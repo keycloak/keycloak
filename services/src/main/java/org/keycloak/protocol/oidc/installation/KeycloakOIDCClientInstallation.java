@@ -103,17 +103,20 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
     }
 
 
-    // Check if there is audience client scope created for particular client. If yes, admin wants verifying token audience
     static boolean showVerifyTokenAudience(ClientModel client) {
-        String clientId = client.getClientId();
-        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), clientId);
-        if (clientScope == null) {
-            return false;
+        // We want to verify-token-audience if service client has any client roles
+        if (client.getRoles().size() > 0) {
+            return true;
         }
 
-        for (ProtocolMapperModel protocolMapper : clientScope.getProtocolMappers()) {
-            if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) && (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
-                return true;
+        // Check if there is client scope with audience protocol mapper created for particular client. If yes, admin wants verifying token audience
+        String clientId = client.getClientId();
+
+        for (ClientScopeModel clientScope : client.getRealm().getClientScopes()) {
+            for (ProtocolMapperModel protocolMapper : clientScope.getProtocolMappers()) {
+                if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) && (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
+                    return true;
+                }
             }
         }
 

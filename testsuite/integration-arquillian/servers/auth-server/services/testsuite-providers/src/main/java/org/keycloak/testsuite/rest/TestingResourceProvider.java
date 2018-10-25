@@ -20,7 +20,6 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -34,9 +33,11 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
@@ -45,6 +46,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
@@ -52,12 +55,9 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
@@ -99,7 +99,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimerTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -126,11 +125,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
+        RealmModel realm = getRealmByName(name);
 
         UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
@@ -145,11 +140,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/remove-user-sessions")
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeUserSessions(@QueryParam("realm") final String realmName) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(realmName);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
+        RealmModel realm = getRealmByName(realmName);
 
         session.sessions().removeUserSessions(realm);
         return Response.ok().build();
@@ -159,12 +150,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
     public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
-
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
+        RealmModel realm = getRealmByName(name);
 
         UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
@@ -178,11 +164,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeExpired(@QueryParam("realm") final String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
+        RealmModel realm = getRealmByName(name);
 
         session.sessions().removeExpired(realm);
         session.authenticationSessions().removeExpired(realm);
@@ -196,11 +178,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
 
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
+        RealmModel realm = getRealmByName(name);
 
         UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
@@ -753,6 +731,42 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
 
+    /**
+     * Generate new client scope for specified service client. The "Frontend" clients, who will use this client scope, will be able to
+     * send their access token to authenticate against specified service client
+     *
+     * @param clientId Client ID of service client (typically bearer-only client)
+     * @return ID of the newly generated clientScope
+     */
+    @Path("generate-audience-client-scope")
+    @POST
+    @NoCache
+    public String generateAudienceClientScope(@QueryParam("realm") final String realmName, final @QueryParam("clientId") String clientId) {
+        try {
+            RealmModel realm = getRealmByName(realmName);
+            ClientModel serviceClient = realm.getClientByClientId(clientId);
+            if (serviceClient == null) {
+                throw new NotFoundException("Referenced service client doesn't exists");
+            }
+
+            ClientScopeModel clientScopeModel = realm.addClientScope(clientId);
+            clientScopeModel.setProtocol(serviceClient.getProtocol()==null ? OIDCLoginProtocol.LOGIN_PROTOCOL : serviceClient.getProtocol());
+            clientScopeModel.setDisplayOnConsentScreen(true);
+            clientScopeModel.setConsentScreenText(clientId);
+            clientScopeModel.setIncludeInTokenScope(true);
+
+            // Add audience protocol mapper
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
+            clientScopeModel.addProtocolMapper(audienceMapper);
+
+            return clientScopeModel.getId();
+        } catch (ModelDuplicateException e) {
+            throw new BadRequestException("Client Scope " + clientId + " already exists");
+        }
+    }
+
+
+
     @POST
     @Path("/run-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
@@ -810,7 +824,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
-        return realmProvider.getRealmByName(realmName);
+        RealmModel realm = realmProvider.getRealmByName(realmName);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+        return realm;
     }
 
 }
