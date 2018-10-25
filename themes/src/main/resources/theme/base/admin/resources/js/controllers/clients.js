@@ -107,16 +107,20 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
     );
 
     $scope.changePassword = function() {
-        var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
-            function() {
-                Notifications.success('The secret has been changed.');
-                $scope.secret = secret.value;
-            },
-            function() {
-                Notifications.error("The secret was not changed due to a problem.");
-                $scope.secret = "error";
-            }
-        );
+         if(!$scope.secret){
+            var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
+                function() {
+                    Notifications.success('The secret has been changed.');
+                    $scope.secret = secret.value;
+                },
+                function() {
+                    Notifications.error("The secret was not changed due to a problem.");
+                    $scope.secret = "error";
+                }
+            );
+         }else{
+            Notifications.error("The secret was not changed.");
+         }
     };
 
     $scope.$watch(function() {

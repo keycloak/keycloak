@@ -79,6 +79,7 @@ public class ResourceRepresentation {
         this.uris = uris;
         this.type = type;
         this.iconUri = iconUri;
+        this.subResources=new HashSet<>();
     }
 
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
@@ -119,6 +120,7 @@ public class ResourceRepresentation {
             ScopeRepresentation rep = new ScopeRepresentation(s);
             this.scopes.add(rep);
         }
+        this.subResources=new HashSet<>();
     }
 
     /**

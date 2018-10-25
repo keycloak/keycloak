@@ -184,7 +184,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by name");
         }
-        if (hierarchy) {
+        if (hierarchy!=null && hierarchy) {
             return ModelToRepresentation.toGroupHierarchy(group, false);
         }
         return ModelToRepresentation.toRepresentation(group, true);

@@ -26,6 +26,7 @@ import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
@@ -61,13 +62,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Base resource class for managing a realm's clients.
  *
- * @resource Clients
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Clients
  */
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
@@ -87,10 +89,10 @@ public class ClientsResource {
 
     /**
      * Get clients belonging to the realm
-     *
+     * <p>
      * Returns a list of clients belonging to the realm
      *
-     * @param clientId filter by clientId
+     * @param clientId     filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
      */
     @GET
@@ -123,7 +125,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
-                } else if (!viewableOnly && auth.clients().canList()){
+                } else if (!viewableOnly && auth.clients().canList()) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -144,7 +146,7 @@ public class ClientsResource {
 
     /**
      * Create a new client
-     *
+     * <p>
      * Client's client_id must be unique!
      *
      * @param rep
@@ -240,7 +242,7 @@ public class ClientsResource {
                 policyToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
             });
             policyStore.findByType("scope", resourceServer.getId()).forEach(policy -> {
-                policyToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
+                policyScopeToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
             });
         } else {
             throw new ForbiddenException();
@@ -249,8 +251,42 @@ public class ClientsResource {
         return resourceRepresentations;
     }
 
+
     /**
-     *
+     * @param resourceRepresentations
+     * @param authorizationProvider
+     * @param resourceServer
+     * @param userRoles
+     * @param policy
+     */
+    private void policyScopeToResource(Set<ResourceRepresentation> resourceRepresentations, AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
+        while (associatedPoliciesIterable.hasNext()) {
+            Policy associatedPolicie = associatedPoliciesIterable.next();
+            Map<String, String> config = new HashMap(associatedPolicie.getConfig());
+            String roles = associatedPolicie.getConfig().get("roles");
+            if (roles != null) {
+                List<Map<String, Object>> roleConfig;
+                try {
+                    roleConfig = JsonSerialization.readValue(roles, List.class);
+                } catch (Exception e) {
+                    throw new RuntimeException("Malformed configuration for role policy [" + policy.getName() + "].", e);
+                }
+                if (!roleConfig.isEmpty()) {
+                    for (Map<String, Object> roleMap : roleConfig) {
+                        if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
+                            for (Resource resource : authorizationProvider.getStoreFactory().getResourceStore().findByScope(policy.getScopes().stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId())) {
+                                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * @param resourceRepresentations
      * @param authorizationProvider
      * @param resourceServer

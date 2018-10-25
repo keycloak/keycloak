@@ -74,7 +74,7 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://192.168.3.206:3306/keycloak_new?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://192.168.3.206:3306/keycloak_yun_test?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false}",
             "driver": "${keycloak.connectionsJpa.driver:com.mysql.jdbc.Driver}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:root}",
