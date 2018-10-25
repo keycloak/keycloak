@@ -17,20 +17,15 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -109,10 +104,7 @@ public class InstallationTest extends AbstractClientTest {
     @Test
     public void testOidcBearerOnlyJsonWithAudienceClientScope() {
         // Generate audience client scope
-        Response resp = testRealmResource().clientScopes().generateAudienceClientScope(OIDC_NAME_BEARER_ONLY_NAME);
-        String clientScopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeGenerateAudienceClientScopePath(), null, ResourceType.CLIENT_SCOPE);
+        String clientScopeId = testingClient.testing().generateAudienceClientScope("test", OIDC_NAME_BEARER_ONLY_NAME);
 
         String json = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
         assertOidcInstallationConfig(json);
