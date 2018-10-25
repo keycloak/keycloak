@@ -60,6 +60,9 @@ import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,6 +72,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,6 +139,18 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
             HttpGet request = new HttpGet(clientPage.toString() + "/unsecured/clean");
             httpClient.execute(request).close();
         } 
+    }
+
+    // workaround for KEYCLOAK-8660 from https://stackoverflow.com/questions/50917932/what-versions-of-jackson-are-allowed-in-jboss-6-4-20-patch
+    @Before
+    public void fixBrokenDeserializationOnEAP6() throws IOException, CliException, TimeoutException, InterruptedException {
+        if (AppServerTestEnricher.isEAP6AppServer()) {
+            OnlineManagementClient client = AppServerTestEnricher.getManagementClient();
+            Administration administration = new Administration(client);
+
+            client.execute("/system-property=jackson.deserialization.whitelist.packages:add(value=org.keycloak.testsuite.photoz)");
+            administration.reloadIfRequired();
+        }
     }
     
     @After
