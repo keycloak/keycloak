@@ -21,11 +21,19 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -116,6 +124,77 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }
 
+    private void persistAttributeValue(String name, String value) {
+        RoleAttributeEntity attr = new RoleAttributeEntity();
+        attr.setId(KeycloakModelUtils.generateId());
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setRole(role);
+        em.persist(attr);
+        role.getAttributes().add(attr);
+    }
+
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        setAttribute(name, Collections.singletonList(value));
+    }
+
+    @Override
+    public void setAttribute(String name, Collection<String> values) {
+        removeAttribute(name);
+
+        for (String value : values) {
+            persistAttributeValue(name, value);
+        }
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        Collection<RoleAttributeEntity> attributes = role.getAttributes();
+        if (attributes == null) {
+            return;
+        }
+
+        Query query = em.createNamedQuery("deleteRoleAttributesByNameAndUser");
+        query.setParameter("name", name);
+        query.setParameter("roleId", role.getId());
+        query.executeUpdate();
+
+        attributes.removeIf(attribute -> attribute.getName().equals(name));
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        for (RoleAttributeEntity attribute : role.getAttributes()) {
+            if (attribute.getName().equals(name)) {
+                return attribute.getValue();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        List<String> attributes = new ArrayList<>();
+        for (RoleAttributeEntity attribute : role.getAttributes()) {
+            if (attribute.getName().equals(name)) {
+                attributes.add(attribute.getValue());
+            }
+        }
+        return attributes;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        Map<String, List<String>> map = new HashMap<>();
+        for (RoleAttributeEntity attribute : role.getAttributes()) {
+            map.computeIfAbsent(attribute.getName(), name -> new ArrayList<>()).add(attribute.getValue());
+        }
+
+        return map;
+    }
+
     @Override
     public boolean isClientRole() {
         return role.isClientRole();
@@ -154,7 +233,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     public static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
         if (model instanceof RoleAdapter) {
-            return ((RoleAdapter)model).getEntity();
+            return ((RoleAdapter) model).getEntity();
         }
         return em.getReference(RoleEntity.class, model.getId());
     }

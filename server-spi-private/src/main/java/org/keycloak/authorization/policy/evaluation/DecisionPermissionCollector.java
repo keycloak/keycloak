@@ -76,6 +76,11 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         for (Scope scope : requestedScopes) {
                             if (policyScopes.contains(scope)) {
                                 grantedScopes.add(scope);
+                                // we need to grant any scope granted by a permission in case it is not explicitly
+                                // associated with the resource. For instance, resources inheriting scopes from parent resources.
+                                if (!resource.getScopes().contains(scope)) {
+                                    deniedScopes.remove(scope);
+                                }
                             }
                         }
                     } else if (isResourcePermission(policy)) {

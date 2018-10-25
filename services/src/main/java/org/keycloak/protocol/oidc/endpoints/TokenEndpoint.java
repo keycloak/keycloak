@@ -854,6 +854,10 @@ public class TokenEndpoint {
                 .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
+        if (audience != null) {
+            responseBuilder.getAccessToken().addAudience(audience);
+        }
+
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());

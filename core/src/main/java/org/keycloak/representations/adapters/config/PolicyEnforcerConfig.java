@@ -61,6 +61,9 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Map<String, Object>> claimInformationPointConfig;
 
+    @JsonProperty("http-method-as-scope")
+    private Boolean httpMethodAsScope;
+
     public List<PathConfig> getPaths() {
         return this.paths;
     }
@@ -115,6 +118,14 @@ public class PolicyEnforcerConfig {
 
     public void setClaimInformationPointConfig(Map<String, Map<String, Object>> config) {
         this.claimInformationPointConfig = config;
+    }
+
+    public Boolean getHttpMethodAsScope() {
+        return httpMethodAsScope;
+    }
+
+    public void setHttpMethodAsScope(Boolean httpMethodAsScope) {
+        this.httpMethodAsScope = httpMethodAsScope;
     }
 
     public static class PathConfig {

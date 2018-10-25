@@ -128,7 +128,7 @@
                                         <td>
                                             <#if permission.scopes?size != 0>
                                                 <#list permission.scopes as scope>
-                                                    <#if scope.granted>
+                                                    <#if scope.granted && scope.scope??>
                                                         <div class="search-box">
                                                             <#if scope.scope.displayName??>
                                                                 ${scope.scope.displayName}
@@ -138,6 +138,8 @@
                                                             <button class="close-icon" type="button" name="removeScope-${authorization.resource.id}-${permission.requester.username}" onclick="removeScopeElm(this.parentNode);document.forms['revokeForm-${authorization.resource.id}-${permission.requester.username}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
                                                             <input type="hidden" name="permission_id" value="${scope.id}"/>
                                                         </div>
+                                                    <#else>
+                                                        ${msg("anyPermission")}
                                                     </#if>
                                                 </#list>
                                             <#else>

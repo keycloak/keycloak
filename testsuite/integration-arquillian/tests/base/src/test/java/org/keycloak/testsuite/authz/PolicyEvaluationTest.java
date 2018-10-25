@@ -50,6 +50,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
@@ -58,7 +59,10 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -676,6 +680,53 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
             Assert.fail("Instances should be marked as read-only");
         } catch (Exception ignore) {
         }
+    }
+
+    @Test
+    public void testCachedDecisionsWithNegativePolicies() {
+        testingClient.server().run(PolicyEvaluationTest::testCachedDecisionsWithNegativePolicies);
+    }
+
+    public static void testCachedDecisionsWithNegativePolicies(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+
+        Scope readScope = storeFactory.getScopeStore().create("read", resourceServer);
+        Scope writeScope = storeFactory.getScopeStore().create("write", resourceServer);
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant()");
+        policy.setLogic(Logic.NEGATIVE);
+
+        storeFactory.getPolicyStore().create(policy, resourceServer);
+
+        ScopePermissionRepresentation readPermission = new ScopePermissionRepresentation();
+
+        readPermission.setName(KeycloakModelUtils.generateId());
+        readPermission.addScope(readScope.getId());
+        readPermission.addPolicy(policy.getName());
+
+        storeFactory.getPolicyStore().create(readPermission, resourceServer);
+
+        ScopePermissionRepresentation writePermission = new ScopePermissionRepresentation();
+
+        writePermission.setName(KeycloakModelUtils.generateId());
+        writePermission.addScope(writeScope.getId());
+        writePermission.addPolicy(policy.getName());
+
+        storeFactory.getPolicyStore().create(writePermission, resourceServer);
+
+        Resource resource = storeFactory.getResourceStore().create(KeycloakModelUtils.generateId(), resourceServer, resourceServer.getId());
+
+        PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(readScope, writeScope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
+        Collection<Permission> permissions = evaluator.evaluate(resourceServer, null);
+
+        Assert.assertEquals(0, permissions.size());
     }
 
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy) {
