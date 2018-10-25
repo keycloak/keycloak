@@ -131,6 +131,17 @@ To see an example of a real access token, generated for the particular user and 
 value of `scope` parameter, select the user from the `Evaluate` screen. This will generate an example token that includes all of the
 claims and role mappings used.
 
+==== Client Scopes Permissions
+
+When issuing tokens for a particular user, the client scope is applied only if the user is permitted to use it. In the case that
+a client scope does not have any role scope mappings defined on itself, then each user is automatically permitted to use this
+client scope. However, when a client scope has any role scope mappings defined on itself, then the user must be a member of at least
+one of the roles. In other words, there must be an intersection between the user roles and the roles of the client scope. Composite
+roles are taken into account when evaluating this intersection.
+
+If a user is not permitted to use the client scope, then no protocol mappers or role scope mappings will be used when generating tokens
+and the client scope will not appear in the _scope_ value in the token.
+
 ==== Realm Default Client Scopes
 
 The `Realm Default Client Scopes` allow you to define set of client scopes, which will be automatically linked to newly created clients.
