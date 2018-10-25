@@ -70,22 +70,43 @@ To properly set up audience checking:
   in the adapter configuration. See link:{adapterguide_link}#_java_adapter_config[Adapter configuration] for details.
 
 * Ensure that when an access token is issued by {project_name}, it contains all requested audiences and does not contain any
-  audiences that are not needed. This is described below in more details.
+  audiences that are not needed. The audience can be either automatically added due the client roles as described
+  in the <<_audience_resolve, next section>> or it can be hardcoded as described <<_audience_hardcoded, below>>.
 
-As an example, let us assume that you have a bearer-only client `good-service`. Set up {project_name} for audience support like this:
+[[_audience_resolve]]
+===== Automatically add audience
 
-* Log in to the admin console. Go to the _Client Scopes_ tab on the left and click _Create_.
+In the default client scope _roles_, there is an _Audience Resolve_
+protocol mapper defined. This protocol mapper will check all the clients for which current token has at least one client role
+available. Then the client ID of each of those clients will be added as an audience automatically. This is especially useful if
+your service (usually bearer-only) clients rely on client roles.
 
-* Choose the _Audience template_.
+As an example, let us assume that you have a bearer-only client `good-service` and the confidential client `my-app`, which you want
+to authenticate and then use the access token issued for the `my-app` to invoke the `good-service` REST service. If the following
+are true:
 
-* Select `good-service` as the requested audience
+* The `good-service` client has any client roles defined on itself
 
-.Creating Audience Client Scope
-image:{project_images}/audience_client-scope-creating.png[]
+* Target user has at least one of those client roles assigned
 
-* When the client scope is created, you should confirm that it contains:
-** An audience protocol mapper, which is used for adding the `good-service` as an audience to the access token. See the figure below.
-** Role scope mappings for all the client roles of `good-service` client.
+* Client `my-app` has the role scope mappings for the assigned role
+
+then the `good-service` will be automatically added as an audience to the access token issued for the `my-app`.
+
+NOTE: If you want to ensure that audience is not added automatically, do not configure role scope mappings directly
+on the `my-app` client, but instead create a dedicated client scope, for example called `good-service`, which will contain the role scope mappings
+for the client roles of the `good-service` client. Assuming that this client scope will be added as an optional client scope to
+the `my-app` client, the client roles and audience will be added to the token just if explicitly requested by the `scope=good-service` parameter.
+
+[[_audience_hardcoded]]
+===== Hardcoded audience
+
+For the case when your service relies on realm roles or does not rely on the roles in the token at all, it can be useful to use hardcoded
+audience. This is a protocol mapper, which will add client ID of the specified service client as an audience to the token.
+You can even use any custom value, for example some URL, if you want different audience than client ID.
+
+You can add protocol mapper directly to the frontend client, however than the audience will be always added. If you want more fine-grain
+control, you can create protocol mapper on the dedicated client scope, which will be called for example `good-service`.
 
 .Audience Protocol Mapper
 image:{project_images}/audience_mapper.png[]
@@ -108,25 +129,12 @@ image:{project_images}/audience_mapper.png[]
   adapter, or the link:{adapterguide_link}#_javascript_adapter[javascript adapter section], if your application uses the
   javascript adapter.
 
-[[_audience_resolve]]
-===== Automatically add audience
-
-There is another way that the audience can be added to the token. In the default client scope _roles_, there is an _Audience Resolve_
-protocol mapper defined. This protocol mapper will check all the clients for which current token has at least one client role
-available. Then the client ID of each of those clients will be added as an audience automatically. This is especially useful if
-your service (usually bearer-only) clients rely on client roles. In the example in previous section, if all of those are true:
-
-* The `good-service` client has any client role defined on itself
-
-* Target user has this client role assigned
-
-* Client `my-app` has the role scope mappings for this role
-
-then the `good-service` will be automatically added as an audience. In this case, you do not need to set up the audience client
-scope as described in the previous section.
-
 NOTE: If you are unsure what the correct audience and roles in the token will be, it is always a good idea to
 <<_client_scopes_evaluate, Evaluate Client Scopes>> in the admin console and do some testing around it.
 
+NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences just to the access token by default. The ID Token
+typically contains only single audience, which is the client ID of the client for which the token was issued. This is a requirement
+of the OpenID Connect specification. On the other hand, the access token does not necessarily have the client ID of the client,
+which was the token issued for, unless any of the audience mappers added it.
 
 
