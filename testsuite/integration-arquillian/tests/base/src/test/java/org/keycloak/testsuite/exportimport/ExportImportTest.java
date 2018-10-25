@@ -311,7 +311,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertEquals(sampleRealmRoleId, importedSampleRealmRoleId);
 
         Map<String, List<String>> importedRoleAttributes = adminClient.realm("test").roles().get("attribute-role").toRepresentation().getAttributes();
-        assertEquals(roleAttributes, importedRoleAttributes);
+        Assert.assertRoleAttributes(roleAttributes, importedRoleAttributes);
 
         String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
         assertEquals(sampleClientRoleId, importedSampleClientRoleId);
