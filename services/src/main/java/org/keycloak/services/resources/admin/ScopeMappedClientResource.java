@@ -87,7 +87,7 @@ public class ScopeMappedClientResource {
         Set<RoleModel> mappings = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer); //scopedClient.getClientScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
-            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
+            mapRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return mapRep;
     }
@@ -165,7 +165,7 @@ public class ScopeMappedClientResource {
 
             for (RoleModel roleModel : roleModels) {
                 scopeContainer.deleteScopeMapping(roleModel);
-                roles.add(ModelToRepresentation.toRepresentation(roleModel));
+                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
 
         } else {

@@ -258,10 +258,13 @@ public class PolicyEvaluationService {
 
         }
 
-        AccessToken.Access realmAccess = accessToken.getRealmAccess();
+        if (representation.getRoleIds() != null && !representation.getRoleIds().isEmpty()) {
+            if (accessToken.getRealmAccess() == null) {
+                accessToken.setRealmAccess(new AccessToken.Access());
+            }
+            AccessToken.Access realmAccess = accessToken.getRealmAccess();
 
-        if (representation.getRoleIds() != null) {
-            representation.getRoleIds().forEach(roleName -> realmAccess.addRole(roleName));
+            representation.getRoleIds().forEach(realmAccess::addRole);
         }
 
         return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession);

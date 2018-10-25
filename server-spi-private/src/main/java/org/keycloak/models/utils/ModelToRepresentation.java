@@ -230,6 +230,18 @@ public class ModelToRepresentation {
         rep.setComposite(role.isComposite());
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
+        rep.setAttributes(role.getAttributes());
+        return rep;
+    }
+
+    public static RoleRepresentation toBriefRepresentation(RoleModel role) {
+        RoleRepresentation rep = new RoleRepresentation();
+        rep.setId(role.getId());
+        rep.setName(role.getName());
+        rep.setDescription(role.getDescription());
+        rep.setComposite(role.isComposite());
+        rep.setClientRole(role.isClientRole());
+        rep.setContainerId(role.getContainerId());
         return rep;
     }
 

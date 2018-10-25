@@ -17,11 +17,15 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,6 +38,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String description;
     final protected boolean composite;
     final protected Set<String> composites = new HashSet<String>();
+    private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(Long revision, RoleModel model, RealmModel realm) {
         super(revision, model.getId());
@@ -46,7 +51,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
                 composites.add(child.getId());
             }
         }
-
+        attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
 
     public String getName() {
@@ -67,5 +72,9 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public Set<String> getComposites() {
         return composites;
+    }
+
+    public MultivaluedHashMap<String, String> getAttributes(Supplier<RoleModel> roleModel) {
+        return attributes.get(roleModel);
     }
 }

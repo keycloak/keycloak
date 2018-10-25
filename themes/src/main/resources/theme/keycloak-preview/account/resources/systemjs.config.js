@@ -18,6 +18,7 @@
       'react-dom': 'npm:react-dom/umd/react-dom.development.js',
       'react-router-dom': 'npm:react-router-dom/umd/react-router-dom.js',
       
+      'axios': 'npm:axios/dist/axios.min.js',
     },
     
     bundles: {
