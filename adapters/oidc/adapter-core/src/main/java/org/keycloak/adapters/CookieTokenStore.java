@@ -104,17 +104,18 @@ public class CookieTokenStore {
     }
 
     static String getCookiePath(KeycloakDeployment deployment, HttpFacade facade) {
-        if (deployment.getAdapterStateCookiePath().startsWith("/")) {
-            return deployment.getAdapterStateCookiePath();
+        String path = deployment.getAdapterStateCookiePath() == null ? "" : deployment.getAdapterStateCookiePath().trim();
+        if (path.startsWith("/")) {
+            return path;
         }
         String contextPath = getContextPath(facade);
         StringBuilder cookiePath = new StringBuilder(contextPath);
-        if (!contextPath.endsWith("/") && !deployment.getAdapterStateCookiePath().isEmpty()) {
+        if (!contextPath.endsWith("/") && !path.isEmpty()) {
             cookiePath.append("/");
         }
-        return cookiePath.append(deployment.getAdapterStateCookiePath()).toString();
+        return cookiePath.append(path).toString();
     }
-    
+
     static String getContextPath(HttpFacade facade) {
         String uri = facade.getRequest().getURI();
         String path = KeycloakUriBuilder.fromUri(uri).getPath();
