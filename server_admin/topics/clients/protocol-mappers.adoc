@@ -39,3 +39,15 @@ image:{project_images}/add-mapper.png[]
 
 Pick a `Mapper Type` from the list box.  If you hover over the tooltip, you'll see a description of what that mapper type does.
 Different config parameters will appear for different mapper types.
+
+==== Priority order
+
+Mapper implementations have _priority order_. This priority order is not the configuration property of the mapper; rather, it is
+the property of the concrete implementation of the mapper.
+
+Mappers are sorted in the admin console by the order in the list of mappers and the changes in the token or assertion will be
+applied using that order with the lowest being applied first. This means that implementations which are dependent on other
+implementations are processed in the needed order.
+
+For example, when we first want to compute the roles which will be included with a token, we first resolve audiences based on
+those roles. Then, we process a JavaScript script that uses the roles and audiences already available in the token.
