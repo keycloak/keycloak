@@ -6,7 +6,7 @@
     "ssl-required" : "external",
     "expose-token": true,
     "token-store": "cookie",
-    "token-cookie-path": "/",
+    "adapter-state-cookie-path": "/",
     "credentials": {
         "secret": "password"
     }
