@@ -90,12 +90,6 @@
                                 <goal>descriptor</goal>
                             </goals>
                         </execution>
-                        <execution>
-                            <id>generate-help</id>
-                            <goals>
-                                <goal>helpmojo</goal>
-                            </goals>
-                        </execution>
                     </executions>
                 </plugin>
             </plugins>
