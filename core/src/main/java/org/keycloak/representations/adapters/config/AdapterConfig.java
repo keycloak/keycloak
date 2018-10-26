@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "token-cookie-path", "principal-attribute",
+        "register-node-at-startup", "register-node-period", "token-store", "adapter-state-cookie-path", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
         "policy-enforcer", "ignore-oauth-query-parameter", "verify-token-audience"
@@ -68,7 +68,7 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected int registerNodePeriod = -1;
     @JsonProperty("token-store")
     protected String tokenStore;
-    @JsonProperty("token-cookie-path")
+    @JsonProperty("adapter-state-cookie-path")
     protected String tokenCookiePath;
     @JsonProperty("principal-attribute")
     protected String principalAttribute;
