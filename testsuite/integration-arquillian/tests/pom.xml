@@ -1356,56 +1356,6 @@
         </profile>
 
         <profile>
-            <id>migration-import</id>
-            <activation>
-                <property>
-                    <name>migration.mode</name>
-                    <value>import</value>
-                </property>
-            </activation>
-            <properties>
-                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
-                <migration.import.properties>
-                    -Dkeycloak.migration.action=import
-                    -Dkeycloak.migration.provider=singleFile
-                    -Dkeycloak.migration.file=${migration.import.file}
-                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
-                </migration.import.properties>
-                <skip.add.user.json>true</skip.add.user.json>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>migrated.auth.server.version</property>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
-                                <migration.import.properties>${migration.import.properties}</migration.import.properties>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>    
-
-        <profile>
             <id>migration-productized</id>
             <activation>
                 <property>
@@ -1414,26 +1364,6 @@
             </activation>
             <properties>
                 <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>no-account</id>
-            <properties>
-                <exclude.account>**/account/**/*Test.java</exclude.account>
-            </properties>
-        </profile>
-        <profile>
-            <id>no-client</id>
-            <properties>
-                <exclude.client>**/client/**/*Test.java</exclude.client>
-            </properties>
-        </profile>
-        <profile>
-            <id>no-base</id>
-            <properties>
-                <exclude.account>**/account/**/*Test.java</exclude.account>
-                <exclude.client>**/client/**/*Test.java</exclude.client>
             </properties>
         </profile>
 
