@@ -306,9 +306,8 @@ This will start latest Keycloak and import the realm JSON file, which was previo
 
     mvn -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pauth-server-wildfly,migration-import,test-70-migration \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=import
+      -Pauth-server-wildfly \
+      -Dtest=JsonFileImport*MigrationTest
 
 
 ## Server configuration migration test

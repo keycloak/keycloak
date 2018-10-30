@@ -477,19 +477,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testOfflineTokenLogin() throws Exception {
-        if (isImportMigrationMode()) {
-            log.info("Skip offline token login test in the 'import' migrationMode");
-        } else {
-            log.info("test login with old offline token");
-            String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
-            Assert.assertNotNull(oldOfflineToken);
+        log.info("test login with old offline token");
+        String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
+        Assert.assertNotNull(oldOfflineToken);
 
-            oauth.realm(MIGRATION);
-            oauth.clientId("migration-test-client");
-            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
-            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-            assertEquals("migration-test-user", accessToken.getPreferredUsername());
-        }
+        oauth.realm(MIGRATION);
+        oauth.clientId("migration-test-client");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertEquals("migration-test-user", accessToken.getPreferredUsername());
     }
 
     private void testRealmDefaultClientScopes(RealmResource realm) {
@@ -552,15 +548,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 priority += 10;
             }
         }
-    }
-
-    protected String getMigrationMode() {
-        return System.getProperty("migration.mode");
-    }
-
-    protected boolean isImportMigrationMode() {
-        String mode = getMigrationMode();
-        return "import".equals(mode);
     }
 
     protected void testMigrationTo2_x() throws Exception {
