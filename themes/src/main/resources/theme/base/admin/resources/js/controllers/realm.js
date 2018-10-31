@@ -1100,29 +1100,33 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
     
-    var refresh = function() {
-        Realm.get($scope.realm.realm, function () {
-            $scope.changed = false;
-        });
-    };
-
     $scope.$watch('realm', function() {
         if (!angular.equals($scope.realm, oldCopy)) {
             $scope.changed = true;
         }
     }, true);
-
+    
     $scope.$watch('actionLifespanId', function () {
-        $scope.actionTokenAttribute = TimeUnit2.asUnit($scope.realm.attributes['actionTokenGeneratedByUserLifespan.' + $scope.actionLifespanId]);
-        //Refresh and disable the button if attribute is empty
-        if (!$scope.actionTokenAttribute.toSeconds()) {
-            refresh();
+        // changedActionLifespanId signals other watchers that we were merely 
+        // changing the dropdown and we should not enable 'save' button
+        if ($scope.actionTokenAttribute && $scope.actionTokenAttribute.hasOwnProperty('time')) {
+            $scope.changedActionLifespanId = true;
         }
+        
+        $scope.actionTokenAttribute = TimeUnit2.asUnit($scope.realm.attributes['actionTokenGeneratedByUserLifespan.' + $scope.actionLifespanId]);
     }, true);
 
     $scope.$watch('actionTokenAttribute', function () {
-        if ($scope.actionLifespanId != null && $scope.actionTokenAttribute != null) {
+        if ($scope.actionLifespanId === null) return;
+        
+        if ($scope.changedActionLifespanId) {
+            $scope.changedActionLifespanId = false;
+            return;
+        } else {
             $scope.changed = true;
+        }
+        
+        if ($scope.actionTokenAttribute !== null) {
             $scope.realm.attributes['actionTokenGeneratedByUserLifespan.' + $scope.actionLifespanId] = $scope.actionTokenAttribute.toSeconds();
         }
     }, true);
