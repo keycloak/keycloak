@@ -43,6 +43,9 @@ import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,6 +103,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -116,6 +120,7 @@ import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -140,6 +145,7 @@ import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -1156,6 +1162,233 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         String pageSource = driver.getPageSource();
         Assert.assertThat(pageSource, containsString("Relay state: " + SamlSPFacade.RELAY_STATE));
         Assert.assertThat(pageSource, not(containsString("SAML response: null")));
+    }
+
+    private static List<String> parseCommaSeparatedAttributes(String body, String attribute) {
+        int start = body.indexOf(attribute) + attribute.length();
+        if (start == -1) {
+            return Collections.emptyList();
+        }
+        int end = body.indexOf(System.getProperty("line.separator"), start);
+        if (end == -1) {
+            end = body.length();
+        }
+        String values = body.substring(start, end);
+        String[] parts = values.split(",");
+        return Arrays.asList(parts);
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperUserGroupsAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
+        userResource.update(user);
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        config.put("aggregate.attrs", "true");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(3, values.size());
+            Assert.assertTrue(values.contains("user-value1"));
+            Assert.assertTrue(values.contains("value1"));
+            Assert.assertTrue(values.contains("value2"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            user.getAttributes().remove("group-value");
+            userResource.update(user);
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperUserGroupsNoAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
+        userResource.update(user);
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(1, values.size());
+            Assert.assertTrue(values.contains("user-value1"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            user.getAttributes().remove("group-value");
+            userResource.update(user);
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperGroupsAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        testRealmResource().groups().add(group2);
+        group2 = testRealmResource().getGroupByPath("/group2");
+        userResource.joinGroup(group2.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        config.put("aggregate.attrs", "true");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(3, values.size());
+            Assert.assertTrue(values.contains("value1"));
+            Assert.assertTrue(values.contains("value2"));
+            Assert.assertTrue(values.contains("value3"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            userResource.leaveGroup(group2.getId());
+            testRealmResource().groups().group(group2.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperGroupsNoAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        testRealmResource().groups().add(group2);
+        group2 = testRealmResource().getGroupByPath("/group2");
+        userResource.joinGroup(group2.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(2, values.size());
+            Assert.assertTrue((values.contains("value1") && values.contains("value2"))
+                    || (values.contains("value2") && values.contains("value3")));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            userResource.leaveGroup(group2.getId());
+            testRealmResource().groups().group(group2.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
     }
 
     @Test
