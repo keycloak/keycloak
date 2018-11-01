@@ -49,7 +49,7 @@ public class RoleResolveUtil {
      * @return can return null (just in case that createIfMissing is false)
      */
     public static AccessToken.Access getResolvedRealmRoles(KeycloakSession session, ClientSessionContext clientSessionCtx, boolean createIfMissing) {
-        AccessToken rolesToken = getAllCompositeRoles(session, clientSessionCtx);
+        AccessToken rolesToken = getAndCacheResolvedRoles(session, clientSessionCtx);
         AccessToken.Access access = rolesToken.getRealmAccess();
         if (access == null && createIfMissing) {
             access = new AccessToken.Access();
@@ -72,7 +72,7 @@ public class RoleResolveUtil {
      * @return can return null (just in case that createIfMissing is false)
      */
     public static AccessToken.Access getResolvedClientRoles(KeycloakSession session, ClientSessionContext clientSessionCtx, String clientId, boolean createIfMissing) {
-        AccessToken rolesToken = getAllCompositeRoles(session, clientSessionCtx);
+        AccessToken rolesToken = getAndCacheResolvedRoles(session, clientSessionCtx);
         AccessToken.Access access = rolesToken.getResourceAccess(clientId);
 
         if (access == null && createIfMissing) {
@@ -93,30 +93,24 @@ public class RoleResolveUtil {
      * @return not-null object (can return empty map)
      */
     public static Map<String, AccessToken.Access> getAllResolvedClientRoles(KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        return getAllCompositeRoles(session, clientSessionCtx).getResourceAccess();
+        return getAndCacheResolvedRoles(session, clientSessionCtx).getResourceAccess();
     }
 
+    private static AccessToken getAndCacheResolvedRoles(KeycloakSession session, ClientSessionContext clientSessionCtx) {
+        ClientModel client = clientSessionCtx.getClientSession().getClient();
+        String resolvedRolesAttrName = RESOLVED_ROLES_ATTR + ":" + clientSessionCtx.getClientSession().getUserSession().getId() + ":" + client.getId();
+        AccessToken token = session.getAttribute(resolvedRolesAttrName, AccessToken.class);
 
-    private static AccessToken getAllCompositeRoles(KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        AccessToken resolvedRoles = session.getAttribute(RESOLVED_ROLES_ATTR, AccessToken.class);
-        if (resolvedRoles == null) {
-            resolvedRoles = loadCompositeRoles(session, clientSessionCtx);
-            session.setAttribute(RESOLVED_ROLES_ATTR, resolvedRoles);
+        if (token == null) {
+            token = new AccessToken();
+            for (RoleModel role : clientSessionCtx.getRoles()) {
+                addToToken(token, role);
+            }
+            session.setAttribute(resolvedRolesAttrName, token);
         }
 
-        return resolvedRoles;
-    }
-
-
-    private static AccessToken loadCompositeRoles(KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        Set<RoleModel> requestedRoles = clientSessionCtx.getRoles();
-        AccessToken token = new AccessToken();
-        for (RoleModel role : requestedRoles) {
-            addToToken(token, role);
-        }
         return token;
     }
-
 
     private static void addToToken(AccessToken token, RoleModel role) {
         AccessToken.Access access = null;
