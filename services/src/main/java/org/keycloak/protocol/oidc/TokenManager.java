@@ -309,7 +309,7 @@ public class TokenManager {
             if (clientSession.getCurrentRefreshToken() != null &&
                     !refreshToken.getId().equals(clientSession.getCurrentRefreshToken()) &&
                     refreshToken.getIssuedAt() < clientSession.getTimestamp() &&
-                    clusterStartupTime != clientSession.getTimestamp()) {
+                    clusterStartupTime <= clientSession.getTimestamp()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 

@@ -17,38 +17,34 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
-import java.io.Serializable;
-
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 
 /**
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RemoteCacheSessionsLoaderContext implements SessionLoader.LoaderContext, Serializable {
+public class RemoteCacheSessionsLoaderContext extends SessionLoader.LoaderContext {
 
     // Count of hash segments for remote infinispan cache. It's by default 256 for distributed/replicated caches
     private final int ispnSegmentsCount;
-
-    // Count of segments (worker iterations for distributedExecutionService executions on KC side). Each segment will be 1 worker iteration.
-    // Count of segments could be lower than "ispnSegmentsCount" and depends on the size of the cache. For example if we have cache with just 500 items,
-    // we don't need 256 segments and send 256 requests to remoteCache to preload thing. Instead, we will have lower number of segments (EG. 8)
-    // and we will map more ispnSegments into 1 worker segment (In this case 256 / 8 = 32. So 32 ISPN segments mapped to each worker segment)
-    private final int segmentsCount;
 
     private final int sessionsPerSegment;
     private final int sessionsTotal;
 
 
     public RemoteCacheSessionsLoaderContext(int ispnSegmentsCount, int sessionsPerSegment, int sessionsTotal) {
+        super(computeSegmentsCount(sessionsTotal, sessionsPerSegment, ispnSegmentsCount));
         this.ispnSegmentsCount = ispnSegmentsCount;
         this.sessionsPerSegment = sessionsPerSegment;
         this.sessionsTotal = sessionsTotal;
-        this.segmentsCount = computeSegmentsCount(sessionsTotal, sessionsPerSegment, ispnSegmentsCount);
     }
 
 
-    private int computeSegmentsCount(int sessionsTotal, int sessionsPerSegment, int ispnSegments) {
+    // Count of segments (worker iterations for distributedExecutionService executions on KC side). Each segment will be 1 worker iteration.
+    // Count of segments could be lower than "ispnSegmentsCount" and depends on the size of the cache. For example if we have cache with just 500 items,
+    // we don't need 256 segments and send 256 requests to remoteCache to preload thing. Instead, we will have lower number of segments (EG. 8)
+    // and we will map more ispnSegments into 1 worker segment (In this case 256 / 8 = 32. So 32 ISPN segments mapped to each worker segment)
+    private static int computeSegmentsCount(int sessionsTotal, int sessionsPerSegment, int ispnSegments) {
         // No support by remote ISPN cache for segments. This can happen if remoteCache is local (non-clustered)
         if (ispnSegments < 0) {
             return 1;
@@ -68,11 +64,6 @@ public class RemoteCacheSessionsLoaderContext implements SessionLoader.LoaderCon
     }
 
 
-    @Override
-    public int getSegmentsCount() {
-        return segmentsCount;
-    }
-
     public int getIspnSegmentsCount() {
         return ispnSegmentsCount;
     }
@@ -89,7 +80,7 @@ public class RemoteCacheSessionsLoaderContext implements SessionLoader.LoaderCon
     @Override
     public String toString() {
         return new StringBuilder("RemoteCacheSessionsLoaderContext [ ")
-                .append("segmentsCount: ").append(segmentsCount)
+                .append("segmentsCount: ").append(getSegmentsCount())
                 .append(", ispnSegmentsCount: ").append(ispnSegmentsCount)
                 .append(", sessionsPerSegment: ").append(sessionsPerSegment)
                 .append(", sessionsTotal: ").append(sessionsTotal)

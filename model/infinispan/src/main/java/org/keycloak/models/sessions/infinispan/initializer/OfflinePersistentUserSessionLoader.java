@@ -21,8 +21,8 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -33,7 +33,11 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflinePersistentUserSessionLoader implements SessionLoader<OfflinePersistentUserSessionLoaderContext>, Serializable {
+public class OfflinePersistentUserSessionLoader implements SessionLoader<OfflinePersistentLoaderContext,
+        OfflinePersistentWorkerContext, OfflinePersistentWorkerResult>, Serializable {
+
+    // Placeholder String used in the searching conditions to identify very first session
+    private static final String FIRST_SESSION_ID = "000";
 
     private static final Logger log = Logger.getLogger(OfflinePersistentUserSessionLoader.class);
 
@@ -53,46 +57,67 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
 
     @Override
     public void init(KeycloakSession session) {
-        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-
-        // TODO: check if update of timestamps in persister can be skipped entirely
-        int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
-
-        log.debugf("Clearing detached sessions from persistent storage and updating timestamps to %d", clusterStartupTime);
-
-        persister.clearDetachedUserSessions();
-        persister.updateAllTimestamps(clusterStartupTime);
     }
 
 
     @Override
-    public OfflinePersistentUserSessionLoaderContext computeLoaderContext(KeycloakSession session) {
+    public OfflinePersistentLoaderContext computeLoaderContext(KeycloakSession session) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int sessionsCount = persister.getUserSessionsCount(true);
 
-        return new OfflinePersistentUserSessionLoaderContext(sessionsCount, sessionsPerSegment);
+        return new OfflinePersistentLoaderContext(sessionsCount, sessionsPerSegment);
     }
 
 
     @Override
-    public boolean loadSessions(KeycloakSession session, OfflinePersistentUserSessionLoaderContext ctx, int segment) {
-        int first = ctx.getSessionsPerSegment() * segment;
-        int max = sessionsPerSegment;
-
-        if (log.isTraceEnabled()) {
-            log.tracef("Loading sessions - first: %d, max: %d", first, max);
+    public OfflinePersistentWorkerContext computeWorkerContext(OfflinePersistentLoaderContext loaderCtx, int segment, int workerId, List<OfflinePersistentWorkerResult> previousResults) {
+        int lastCreatedOn;
+        String lastSessionId;
+        if (previousResults.isEmpty()) {
+            lastCreatedOn = 0;
+            lastSessionId = FIRST_SESSION_ID;
+        } else {
+            OfflinePersistentWorkerResult lastResult = previousResults.get(previousResults.size() - 1);
+            lastCreatedOn = lastResult.getLastCreatedOn();
+            lastSessionId = lastResult.getLastSessionId();
         }
+
+        // We know the last loaded session. New workers iteration will start from this place
+        return new OfflinePersistentWorkerContext(segment, workerId, lastCreatedOn, lastSessionId);
+    }
+
+
+    @Override
+    public OfflinePersistentWorkerResult createFailedWorkerResult(OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext workerContext) {
+        return new OfflinePersistentWorkerResult(false, workerContext.getSegment(), workerContext.getWorkerId(), -1, FIRST_SESSION_ID);
+    }
+
+
+    @Override
+    public OfflinePersistentWorkerResult loadSessions(KeycloakSession session, OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext ctx) {
+        int first = ctx.getWorkerId() * sessionsPerSegment;
+
+        log.tracef("Loading sessions for segment: %d", ctx.getSegment());
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        List<UserSessionModel> sessions = persister.loadUserSessions(first, max, true);
+        List<UserSessionModel> sessions = persister.loadUserSessions(first, sessionsPerSegment, true, ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
-        for (UserSessionModel persistentSession : sessions) {
+        log.tracef("Sessions loaded from DB - segment: %d", ctx.getSegment());
+
+        UserSessionModel lastSession = null;
+        if (!sessions.isEmpty()) {
+            lastSession = sessions.get(sessions.size() - 1);
 
             // Save to memory/infinispan
-            UserSessionModel offlineUserSession = session.sessions().importUserSession(persistentSession, true, true);
+            session.sessions().importUserSessions(sessions, true);
         }
 
-        return true;
+        int lastCreatedOn = lastSession==null ? Time.currentTime() + 100000 : lastSession.getStarted();
+        String lastSessionId = lastSession==null ? FIRST_SESSION_ID : lastSession.getId();
+
+        log.tracef("Sessions imported to infinispan - segment: %d, lastCreatedOn: %d, lastSessionId: %s", ctx.getSegment(), lastCreatedOn, lastSessionId);
+
+        return new OfflinePersistentWorkerResult(true, ctx.getSegment(), ctx.getWorkerId(), lastCreatedOn, lastSessionId);
     }
 
 
