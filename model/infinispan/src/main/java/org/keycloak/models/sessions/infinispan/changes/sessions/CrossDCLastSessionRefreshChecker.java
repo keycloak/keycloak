@@ -23,7 +23,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -32,15 +31,15 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LastSessionRefreshChecker {
+public class CrossDCLastSessionRefreshChecker {
 
-    public static final Logger logger = Logger.getLogger(LastSessionRefreshChecker.class);
+    public static final Logger logger = Logger.getLogger(CrossDCLastSessionRefreshChecker.class);
 
-    private final LastSessionRefreshStore store;
-    private final LastSessionRefreshStore offlineStore;
+    private final CrossDCLastSessionRefreshStore store;
+    private final CrossDCLastSessionRefreshStore offlineStore;
 
 
-    public LastSessionRefreshChecker(LastSessionRefreshStore store, LastSessionRefreshStore offlineStore) {
+    public CrossDCLastSessionRefreshChecker(CrossDCLastSessionRefreshStore store, CrossDCLastSessionRefreshStore offlineStore) {
         this.store = store;
         this.offlineStore = offlineStore;
     }
@@ -73,7 +72,7 @@ public class LastSessionRefreshChecker {
             logger.debugf("Skip writing last session refresh to the remoteCache. Session %s newLastSessionRefresh %d", userSessionId, newLastSessionRefresh);
         }
 
-        LastSessionRefreshStore storeToUse = offline ? offlineStore : store;
+        CrossDCLastSessionRefreshStore storeToUse = offline ? offlineStore : store;
         storeToUse.putLastSessionRefresh(kcSession, userSessionId, realm.getId(), newLastSessionRefresh);
 
         return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
@@ -118,13 +117,13 @@ public class LastSessionRefreshChecker {
         }
 
         // We're likely not in cross-dc environment. Doesn't matter what we return
-        LastSessionRefreshStore storeToUse = offline ? offlineStore : store;
+        CrossDCLastSessionRefreshStore storeToUse = offline ? offlineStore : store;
         if (storeToUse == null) {
             return SessionUpdateTask.CrossDCMessageStatus.SYNC;
         }
 
         // Received the message from the other DC that we should update the lastSessionRefresh in local cluster
-        Boolean ignoreRemoteCacheUpdate = (Boolean) kcSession.getAttribute(LastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE);
+        Boolean ignoreRemoteCacheUpdate = (Boolean) kcSession.getAttribute(CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE);
         if (ignoreRemoteCacheUpdate != null && ignoreRemoteCacheUpdate) {
             return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
         }

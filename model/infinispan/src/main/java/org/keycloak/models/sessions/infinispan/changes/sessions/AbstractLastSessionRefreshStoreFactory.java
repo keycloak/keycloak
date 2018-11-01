@@ -17,19 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan.changes.sessions;
 
-import org.infinispan.Cache;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LastSessionRefreshStoreFactory {
+public abstract class AbstractLastSessionRefreshStoreFactory {
 
     // Timer interval. The store will be checked every 5 seconds whether the message with stored lastSessionRefreshes should be sent
     public static final long DEFAULT_TIMER_INTERVAL_MS = 5000;
@@ -40,40 +36,14 @@ public class LastSessionRefreshStoreFactory {
     // Max count of lastSessionRefreshes. If count of lastSessionRefreshes reach this value, the message is sent to second DC
     public static final int DEFAULT_MAX_COUNT = 100;
 
-    // Name of periodic tasks to send events to the other DCs
-    public static final String LSR_PERIODIC_TASK_NAME = "lastSessionRefreshes";
-    public static final String LSR_OFFLINE_PERIODIC_TASK_NAME = "lastSessionRefreshes-offline";
 
 
-    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
-        return createAndInit(kcSession, cache, DEFAULT_TIMER_INTERVAL_MS, DEFAULT_MAX_INTERVAL_BETWEEN_MESSAGES_SECONDS, DEFAULT_MAX_COUNT, offline);
-    }
-
-
-    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
-        String eventKey = offline ? LSR_OFFLINE_PERIODIC_TASK_NAME :  LSR_PERIODIC_TASK_NAME;
-        LastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, eventKey);
-
-        // Register listener
-        ClusterProvider cluster = kcSession.getProvider(ClusterProvider.class);
-        cluster.registerListener(eventKey, new LastSessionRefreshListener(kcSession, cache, offline));
-
-        // Setup periodic timer check
+    protected void setupPeriodicTimer(KeycloakSession kcSession, AbstractLastSessionRefreshStore store, long timerIntervalMs, String eventKey) {
         TimerProvider timer = kcSession.getProvider(TimerProvider.class);
         timer.scheduleTask((KeycloakSession keycloakSession) -> {
 
             store.checkSendingMessage(keycloakSession, Time.currentTime());
 
         }, timerIntervalMs, eventKey);
-
-        return store;
     }
-
-
-    protected LastSessionRefreshStore createStoreInstance(int maxIntervalBetweenMessagesSeconds, int maxCount, String eventKey) {
-        return new LastSessionRefreshStore(maxIntervalBetweenMessagesSeconds, maxCount, eventKey);
-    }
-
-
-
 }

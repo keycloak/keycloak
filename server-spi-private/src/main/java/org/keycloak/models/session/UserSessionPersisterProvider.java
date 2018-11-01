@@ -24,6 +24,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,8 +38,6 @@ public interface UserSessionPersisterProvider extends Provider {
     // Assuming that corresponding userSession is already persisted
     void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline);
 
-    void updateUserSession(UserSessionModel userSession, boolean offline);
-
     // Called during logout (for online session) or during periodic expiration. It will remove all corresponding clientSessions too
     void removeUserSession(String userSessionId, boolean offline);
 
@@ -49,14 +48,14 @@ public interface UserSessionPersisterProvider extends Provider {
     void onClientRemoved(RealmModel realm, ClientModel client);
     void onUserRemoved(RealmModel realm, UserModel user);
 
-    // Called at startup to remove userSessions without any clientSession
-    void clearDetachedUserSessions();
+    // Bulk update of lastSessionRefresh of all specified userSessions to the given value.
+    void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline);
 
-    // Update "lastSessionRefresh" of all userSessions and "timestamp" of all clientSessions to specified time
-    void updateAllTimestamps(int time);
+    // Remove userSessions and clientSessions, which are expired
+    void removeExpired(RealmModel realm);
 
     // Called during startup. For each userSession, it loads also clientSessions
-    List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline);
+    List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId);
 
     int getUserSessionsCount(boolean offline);
 

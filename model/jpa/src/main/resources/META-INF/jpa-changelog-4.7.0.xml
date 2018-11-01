@@ -19,9 +19,30 @@
 
     <changeSet author="sguilhen@redhat.com" id="4.7.0-KEYCLOAK-1267">
         <addColumn tableName="REALM">
-            <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT"/>
-            <column name="SSO_IDLE_TIMEOUT_REMEMBER_ME" type="INT"/>
+            <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT" defaultValueNumeric="0"/>
+            <column name="SSO_IDLE_TIMEOUT_REMEMBER_ME" type="INT" defaultValueNumeric="0"/>
         </addColumn>
+    </changeSet>
+
+
+    <changeSet author="keycloak" id="4.7.0-KEYCLOAK-7275">
+        <renameColumn tableName="OFFLINE_USER_SESSION" oldColumnName="LAST_SESSION_REFRESH" newColumnName="CREATED_ON" columnDataType="INT" />
+
+        <addNotNullConstraint tableName="OFFLINE_USER_SESSION" columnName="CREATED_ON" columnDataType="INT" defaultNullValue="0" />
+
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="LAST_SESSION_REFRESH" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!--Update "lastSessionRefresh" to the current time when migrating from previous version-->
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate4_7_0_OfflineSessionsTimestamps"/>
+
+        <createIndex indexName="IDX_OFFLINE_USS_CREATEDON" tableName="OFFLINE_USER_SESSION">
+            <column name="CREATED_ON" type="INT"/>
+        </createIndex>
+
     </changeSet>
 
 </databaseChangeLog>

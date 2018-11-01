@@ -17,36 +17,32 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflinePersistentUserSessionLoaderContext implements SessionLoader.LoaderContext, Serializable {
+public class OfflinePersistentLoaderContext extends SessionLoader.LoaderContext {
 
     private final int sessionsTotal;
-    private final int segmentsCount;
     private final int sessionsPerSegment;
 
-    public OfflinePersistentUserSessionLoaderContext(int sessionsTotal, int sessionsPerSegment) {
+    public OfflinePersistentLoaderContext(int sessionsTotal, int sessionsPerSegment) {
+        super(computeSegmentsCount(sessionsTotal, sessionsPerSegment));
         this.sessionsTotal = sessionsTotal;
         this.sessionsPerSegment = sessionsPerSegment;
+    }
 
+
+    private static int computeSegmentsCount(int sessionsTotal, int sessionsPerSegment) {
         int segmentsCount = sessionsTotal / sessionsPerSegment;
         if (sessionsTotal % sessionsPerSegment >= 1) {
             segmentsCount = segmentsCount + 1;
         }
-        this.segmentsCount = segmentsCount;
+        return segmentsCount;
     }
 
 
     public int getSessionsTotal() {
         return sessionsTotal;
-    }
-
-    @Override
-    public int getSegmentsCount() {
-        return segmentsCount;
     }
 
     public int getSessionsPerSegment() {
@@ -56,10 +52,10 @@ public class OfflinePersistentUserSessionLoaderContext implements SessionLoader.
 
     @Override
     public String toString() {
-        return new StringBuilder("OfflinePersistentUserSessionLoaderContext [ ")
+        return new StringBuilder("OfflinePersistentLoaderContext [ ")
                 .append(" sessionsTotal: ").append(sessionsTotal)
                 .append(", sessionsPerSegment: ").append(sessionsPerSegment)
-                .append(", segmentsCount: ").append(segmentsCount)
+                .append(", segmentsCount: ").append(getSegmentsCount())
                 .append(" ]")
                 .toString();
     }

@@ -36,9 +36,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LastSessionRefreshListener implements ClusterListener {
+public class CrossDCLastSessionRefreshListener implements ClusterListener {
 
-    public static final Logger logger = Logger.getLogger(LastSessionRefreshListener.class);
+    public static final Logger logger = Logger.getLogger(CrossDCLastSessionRefreshListener.class);
 
     public static final String IGNORE_REMOTE_CACHE_UPDATE = "IGNORE_REMOTE_CACHE_UPDATE";
 
@@ -48,7 +48,7 @@ public class LastSessionRefreshListener implements ClusterListener {
     private final Cache<String, SessionEntityWrapper<UserSessionEntity>> cache;
     private final TopologyInfo topologyInfo;
 
-    public LastSessionRefreshListener(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
+    public CrossDCLastSessionRefreshListener(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
         this.sessionFactory = session.getKeycloakSessionFactory();
         this.cache = cache;
         this.offline = offline;
