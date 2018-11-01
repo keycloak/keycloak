@@ -187,7 +187,7 @@ public class GroupsResource {
         if (hierarchy!=null && hierarchy) {
             return ModelToRepresentation.toGroupHierarchy(group, false);
         }
-        return ModelToRepresentation.toRepresentation(group, true);
+        return ModelToRepresentation.toRepresentation(group, false);
     }
 
 

@@ -666,4 +666,26 @@ public class ClientAdapter implements ClientModel, CachedObject {
         return getId().hashCode();
     }
 
+
+    @Override
+    public Set<String> getResourceKeys() {
+        if (isUpdated()) return updated.getResourceKeys();
+        return cached.getResourceKeys();
+    }
+
+    @Override
+    public void setResourceKey(Set<String> resourceKeys) {
+        getDelegateForUpdate();
+        updated.setResourceKey(resourceKeys);
+    }
+
+    @Override
+    public void addResourceKey(String resourceKey) {
+        updated.addResourceKey(resourceKey);
+    }
+
+    @Override
+    public void removeResourceKey(String resourceKey) {
+        updated.removeResourceKey(resourceKey);
+    }
 }

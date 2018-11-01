@@ -77,6 +77,7 @@ public class ClientRepresentation {
     private ResourceServerRepresentation authorizationSettings;
     private Map<String, Boolean> access;
     protected String origin;
+    protected List<String> resourceKeys;
 
 
     public String getId() {
@@ -413,4 +414,11 @@ public class ClientRepresentation {
         this.origin = origin;
     }
 
+    public List<String> getResourceKeys() {
+        return resourceKeys;
+    }
+
+    public void setResourceKeys(List<String> resourceKeys) {
+        this.resourceKeys = resourceKeys;
+    }
 }

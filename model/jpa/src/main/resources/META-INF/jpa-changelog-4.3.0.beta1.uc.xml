@@ -17,7 +17,7 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="liubinwang@govnet.com.cn" id="4.3.0.beta1.uc">
+    <changeSet author="wadahiro@gmail.com" id="4.3.0.beta1.uc">
         <addColumn tableName="USER_ENTITY">
             <column name="IDCARD" type="VARCHAR(20)">
                 <constraints nullable="true"/>
@@ -31,7 +31,7 @@
         <addUniqueConstraint columnNames="REALM_ID,IDCARD" constraintName="UK_RU8TT6T700S9V50BU18WSJDS" tableName="USER_ENTITY"/>
     </changeSet>
 
-    <changeSet author="liubinwang@govnet.com.cn" id="4.3.0.beta2.uc">
+    <changeSet author="wadahiro@gmail.com" id="4.3.0.beta2.uc">
 
         <addColumn tableName="KEYCLOAK_GROUP">
             <column name="HAS_CHILD" type="BOOLEAN" defaultValueBoolean="false">
@@ -39,6 +39,15 @@
             </column>
         </addColumn>
 
+    </changeSet>
+
+    <changeSet author="liubinwang@govnet.com.cn" id="4.3.0.beta3.uc">
+        <createTable tableName="RESOURCE_KEYS">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(50)"/>
+        </createTable>
     </changeSet>
 
 

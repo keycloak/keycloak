@@ -1322,6 +1322,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.newRedirectUri = "";
     }
 
+    $scope.deleteResourceKey = function(index) {
+        $scope.clientEdit.resourceKeys.splice(index, 1);
+    }
+
+    $scope.addResourceKey = function() {
+        $scope.clientEdit.resourceKeys.push($scope.newResourceKey);
+        $scope.newResourceKey = "";
+    }
+
     $scope.save = function() {
         if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
             $scope.addRedirectUri();

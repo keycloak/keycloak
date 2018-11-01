@@ -216,4 +216,13 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         }
         return consentScreenText;
     }
+
+
+    Set<String> getResourceKeys();
+
+    void setResourceKey(Set<String> resourceKeys);
+
+    void addResourceKey(String resourceKey);
+
+    void removeResourceKey(String resourceKey);
 }

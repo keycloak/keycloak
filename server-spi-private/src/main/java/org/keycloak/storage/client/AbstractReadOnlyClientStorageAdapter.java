@@ -263,4 +263,24 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
         throw new ReadOnlyException("client is read only for this update");
 
     }
+
+    @Override
+    public Set<String> getResourceKeys() {
+        throw new ReadOnlyException("client is read only for this update");
+    }
+
+    @Override
+    public void setResourceKey(Set<String> resourceKeys) {
+        throw new ReadOnlyException("client is read only for this update");
+    }
+
+    @Override
+    public void addResourceKey(String resourceKey) {
+        throw new ReadOnlyException("client is read only for this update");
+    }
+
+    @Override
+    public void removeResourceKey(String resourceKey) {
+        throw new ReadOnlyException("client is read only for this update");
+    }
 }

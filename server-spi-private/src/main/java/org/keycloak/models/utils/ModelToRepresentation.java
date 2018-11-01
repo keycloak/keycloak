@@ -70,6 +70,7 @@ public class ModelToRepresentation {
         rep.setName(group.getName());
         rep.setPath(buildGroupPath(group));
         rep.setHasChild(group.isHasChild());
+        rep.setAttributes(group.getAttributes());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
@@ -87,8 +88,6 @@ public class ModelToRepresentation {
         }
         rep.setRealmRoles(realmRoleNames);
         rep.setClientRoles(clientRoleNames);
-        Map<String, List<String>> attributes = group.getAttributes();
-        rep.setAttributes(attributes);
         return rep;
     }
 
@@ -538,6 +537,11 @@ public class ModelToRepresentation {
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<>(redirectUris));
+        }
+
+        Set<String> resourceKeys = clientModel.getResourceKeys();
+        if (resourceKeys != null) {
+            rep.setResourceKeys(new LinkedList<>(resourceKeys));
         }
 
         Set<String> webOrigins = clientModel.getWebOrigins();

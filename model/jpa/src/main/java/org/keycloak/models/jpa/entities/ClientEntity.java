@@ -105,6 +105,11 @@ public class ClientEntity {
     protected Set<String> redirectUris = new HashSet<String>();
 
     @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name = "RESOURCE_KEYS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    protected Set<String> resourceKeys = new HashSet<String>();
+
+    @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE", length = 4000)
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
@@ -428,6 +433,14 @@ public class ClientEntity {
 
     public void setScopeMapping(Set<RoleEntity> scopeMapping) {
         this.scopeMapping = scopeMapping;
+    }
+
+    public Set<String> getResourceKeys() {
+        return resourceKeys;
+    }
+
+    public void setResourceKeys(Set<String> resourceKeys) {
+        this.resourceKeys = resourceKeys;
     }
 
     @Override

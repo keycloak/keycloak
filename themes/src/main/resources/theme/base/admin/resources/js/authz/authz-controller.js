@@ -303,6 +303,10 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
             resource.attributes = {};
             resource.uris = [];
 
+            for (i = 0; i < client.resourceKeys.length; i++) {
+                resource.attributes[client.resourceKeys[i]]=[];
+            }
+
             $scope.resource = angular.copy(resource);
 
             $scope.$watch('resource', function() {

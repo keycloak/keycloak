@@ -1326,6 +1326,11 @@ public class RepresentationToModel {
             resource.setRedirectUris(new HashSet<String>(redirectUris));
         }
 
+        List<String> resourceKeys = rep.getResourceKeys();
+        if (resourceKeys != null) {
+            resource.setResourceKey(new HashSet<String>(resourceKeys));
+        }
+
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
             resource.setWebOrigins(new HashSet<String>(webOrigins));
