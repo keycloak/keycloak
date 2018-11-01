@@ -20,34 +20,27 @@ package org.keycloak.models.sessions.infinispan.changes.sessions;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * Tracks the queue of lastSessionRefreshes, which were updated on this host. Those will be sent to the second DC in bulk, so second DC can update
- * lastSessionRefreshes on it's side. Message is sent either periodically or if there are lots of stored lastSessionRefreshes.
+ * Abstract "store" for bulk sending of the updates related to lastSessionRefresh
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LastSessionRefreshStore {
-
-    protected static final Logger logger = Logger.getLogger(LastSessionRefreshStore.class);
+public abstract class AbstractLastSessionRefreshStore {
 
     private final int maxIntervalBetweenMessagesSeconds;
     private final int maxCount;
-    private final String eventKey;
 
     private volatile Map<String, SessionData> lastSessionRefreshes = new ConcurrentHashMap<>();
 
     private volatile int lastRun = Time.currentTime();
 
 
-    protected LastSessionRefreshStore(int maxIntervalBetweenMessagesSeconds, int maxCount, String eventKey) {
+    protected AbstractLastSessionRefreshStore(int maxIntervalBetweenMessagesSeconds, int maxCount) {
         this.maxIntervalBetweenMessagesSeconds = maxIntervalBetweenMessagesSeconds;
         this.maxCount = maxCount;
-        this.eventKey = eventKey;
     }
 
 
@@ -86,16 +79,11 @@ public class LastSessionRefreshStore {
     }
 
 
-    protected void sendMessage(KeycloakSession kcSession, Map<String, SessionData> refreshesToSend) {
-        LastSessionRefreshEvent event = new LastSessionRefreshEvent(refreshesToSend);
-
-        if (logger.isDebugEnabled()) {
-            logger.debugf("Sending lastSessionRefreshes for key '%s'. Refreshes: %s", eventKey, event.getLastSessionRefreshes().toString());
-        }
-
-        // Don't notify local DC about the lastSessionRefreshes. They were processed here already
-        ClusterProvider cluster = kcSession.getProvider(ClusterProvider.class);
-        cluster.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC);
-    }
-
+    /**
+     * Bulk update the underlying store with all the user sessions, which were refreshed by Keycloak since the last call of this method
+     *
+     * @param kcSession
+     * @param refreshesToSend Key is userSession ID, SessionData are data about the session
+     */
+    protected abstract void sendMessage(KeycloakSession kcSession, Map<String, SessionData> refreshesToSend);
 }
