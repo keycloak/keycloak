@@ -1066,6 +1066,8 @@ public class TokenEndpoint {
             claimTokenFormat = AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN;
         }
 
+        String subjectToken = formParams.getFirst("subject_token");
+
         if (accessTokenString == null) {
             // in case no bearer token is provided, we force client authentication
             checkClient();
@@ -1073,6 +1075,8 @@ public class TokenEndpoint {
             // if a claim token is provided, we check if the format is a OpenID Connect IDToken and assume the token represents the identity asking for permissions
             if (AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN.equalsIgnoreCase(claimTokenFormat)) {
                 accessTokenString = claimToken;
+            } else if (subjectToken != null) {
+                accessTokenString = subjectToken;
             } else {
                 // Clients need to authenticate in order to obtain a RPT from the server.
                 // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
@@ -1100,7 +1104,7 @@ public class TokenEndpoint {
 
         authorizationRequest.setScope(formParams.getFirst("scope"));
         authorizationRequest.setAudience(formParams.getFirst("audience"));
-        authorizationRequest.setSubjectToken(formParams.getFirst("subject_token") != null ? formParams.getFirst("subject_token") : accessTokenString);
+        authorizationRequest.setSubjectToken(accessTokenString);
 
         String submitRequest = formParams.getFirst("submit_request");
 
