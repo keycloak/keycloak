@@ -19,9 +19,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-public class SamlProtocolTest {
-
-    SamlProtocol protocol = new SamlProtocol();
+public class SamlProtocolUtilsTest {
 
     @Test
     public void testBuildArtifactResponse() throws ConfigurationException, ProcessingException, ParsingException {
@@ -43,7 +41,7 @@ public class SamlProtocolTest {
         writer.write(response);
         Document responseDoc = DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
 
-        Document artifactResponseDoc = protocol.buildArtifactResponse(responseDoc);
+        Document artifactResponseDoc = SamlProtocolUtils.buildArtifactResponse(responseDoc);
         String artifactResponse = DocumentUtil.asString(artifactResponseDoc);
 
         assertTrue(artifactResponse.contains("samlp:ArtifactResponse"));

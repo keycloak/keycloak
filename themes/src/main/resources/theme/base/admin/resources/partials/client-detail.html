@@ -399,6 +399,13 @@
                 </div>
                 <kc-tooltip>{{:: 'artifact-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="artifactResolutionServiceUrl">{{:: 'artifact-resolution-service-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_artifact_resolution_service_url" class="form-control" type="text" name="artifactResolutionServiceUrl" id="artifactResolutionServiceUrl" />
+                </div>
+                <kc-tooltip>{{:: 'artifact-resolution-service-url.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">

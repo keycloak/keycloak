@@ -14,6 +14,7 @@ import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
@@ -157,7 +158,7 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
             String location = currentResponse.getFirstHeader("location").getValue();
             List<NameValuePair> params = URLEncodedUtils.parse(URI.create(location), Charset.forName("UTF-8"));
             for (NameValuePair param : params) {
-                if ("SAMLart".equals(param.getName())) {
+                if (GeneralConstants.SAML_ARTIFACT_KEY.equals(param.getName())) {
                     String artifact = param.getValue();
                     if (artifact != null && !artifact.isEmpty()) {
                         return artifact;

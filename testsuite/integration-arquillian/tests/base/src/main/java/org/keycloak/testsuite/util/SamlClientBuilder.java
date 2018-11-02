@@ -211,4 +211,12 @@ public class SamlClientBuilder {
     public HandleArtifactStepBuilder handleArtifact(HandleArtifactStepBuilder handleArtifactStepBuilder) {
         return doNotFollowRedirects().addStepBuilder(handleArtifactStepBuilder);
     }
+
+    public CreateArtifactMessageStepBuilder artifactMessage(URI authServerSamlUrl, String issuer, Binding requestBinding) {
+        return addStepBuilder(new CreateArtifactMessageStepBuilder(authServerSamlUrl, issuer, requestBinding,this));
+    }
+
+    public CreateArtifactMessageStepBuilder artifactMessage(CreateArtifactMessageStepBuilder camb) {
+        return addStepBuilder(camb);
+    }
 }

@@ -73,7 +73,7 @@ public class SamlEcpProfileService extends SamlService {
                     requestAbstractType.setDestination(session.getContext().getUri().getAbsolutePath());
                     return super.loginRequest(relayState, requestAbstractType, client);
                 }
-            }.execute(Soap.toSamlHttpPostMessage(Soap.extractSoapMessage(inputStream)), null, null);
+            }.execute(Soap.toSamlHttpPostMessage(Soap.extractSoapMessage(inputStream)), null, null, null);
         } catch (Exception e) {
             String reason = "Some error occurred while processing the AuthnRequest.";
             String detail = e.getMessage();

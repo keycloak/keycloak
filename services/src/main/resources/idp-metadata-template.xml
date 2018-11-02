@@ -42,6 +42,9 @@ ${idp.signing.certificates}
 			<SingleSignOnService
 				Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
 				Location="${idp.sso.HTTP-POST}" />
+			<SingleSignOnService
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+					Location="${idp.sso.HTTP-POST}" />
 		</IDPSSODescriptor>
 	</EntityDescriptor>
 </EntitiesDescriptor>
