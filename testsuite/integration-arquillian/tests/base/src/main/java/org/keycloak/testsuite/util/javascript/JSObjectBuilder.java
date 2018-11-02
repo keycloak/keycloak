@@ -55,6 +55,10 @@ public class JSObjectBuilder {
         return this;
     }
 
+    public boolean contains(String key, Object value) {
+       return arguments.containsKey(key) && arguments.get(key).equals(value);
+    }
+
     public JSObjectBuilder add(String key, Object value) {
         arguments.put(key, value);
         return this;

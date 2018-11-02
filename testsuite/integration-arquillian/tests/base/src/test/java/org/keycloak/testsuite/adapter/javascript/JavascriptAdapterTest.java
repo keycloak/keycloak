@@ -58,7 +58,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
-    private JavascriptTestExecutor testExecutor;
+    protected JavascriptTestExecutor testExecutor;
     private static int TIME_SKEW_TOLERANCE = 3;
 
     @Rule
@@ -96,7 +96,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         setStandardFlowForClient();
     }
 
-    private JSObjectBuilder defaultArguments() {
+    protected JSObjectBuilder defaultArguments() {
         return JSObjectBuilder.create().defaultSettings();
     }
 

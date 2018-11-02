@@ -130,13 +130,27 @@ public class JavascriptTestExecutor {
 
         String arguments = argumentsBuilder.build();
 
-        Object output = jsExecutor.executeAsyncScript(
-                "var callback = arguments[arguments.length - 1];" +
-                "   window.keycloak.init(" + arguments + ").success(function (authenticated) {" +
-                "       callback(\"Init Success (\" + (authenticated ? \"Authenticated\" : \"Not Authenticated\") + \")\");" +
-                "   }).error(function () {" +
-                "       callback(\"Init Error\");" +
-                "   });");
+        String script;
+
+        // phantomjs do not support Native promises
+        if (argumentsBuilder.contains("promiseType", "native") && !"phantomjs".equals(System.getProperty("js.browser"))) {
+            script = "var callback = arguments[arguments.length - 1];" +
+                    "   window.keycloak.init(" + arguments + ").then(function (authenticated) {" +
+                    "       callback(\"Init Success (\" + (authenticated ? \"Authenticated\" : \"Not Authenticated\") + \")\");" +
+                    "   }, function () {" +
+                    "       callback(\"Init Error\");" +
+                    "   });";
+        } else {
+            script = "var callback = arguments[arguments.length - 1];" +
+                    "   window.keycloak.init(" + arguments + ").success(function (authenticated) {" +
+                    "       callback(\"Init Success (\" + (authenticated ? \"Authenticated\" : \"Not Authenticated\") + \")\");" +
+                    "   }).error(function () {" +
+                    "       callback(\"Init Error\");" +
+                    "   });";
+        }
+
+
+        Object output = jsExecutor.executeAsyncScript(script);
 
         if (validator != null) {
             validator.validate(jsDriver, output, events);
@@ -159,8 +173,20 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor refreshToken(int value, JavascriptStateValidator validator) {
-        Object output = jsExecutor.executeAsyncScript(
-                    "var callback = arguments[arguments.length - 1];" +
+        String script;
+        if (useNativePromises()) {
+            script = "var callback = arguments[arguments.length - 1];" +
+                    "   window.keycloak.updateToken(" + Integer.toString(value) + ").then(function (refreshed) {" +
+                    "       if (refreshed) {" +
+                    "            callback(window.keycloak.tokenParsed);" +
+                    "       } else {" +
+                    "            callback('Token not refreshed, valid for ' + Math.round(window.keycloak.tokenParsed.exp + window.keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');" +
+                    "       }" +
+                    "   }, function () {" +
+                    "       callback('Failed to refresh token');" +
+                    "   });";
+        } else {
+            script = "var callback = arguments[arguments.length - 1];" +
                     "   window.keycloak.updateToken(" + Integer.toString(value) + ").success(function (refreshed) {" +
                     "       if (refreshed) {" +
                     "            callback(window.keycloak.tokenParsed);" +
@@ -169,13 +195,22 @@ public class JavascriptTestExecutor {
                     "       }" +
                     "   }).error(function () {" +
                     "       callback('Failed to refresh token');" +
-                    "   });");
+                    "   });";
+        }
+
+        Object output = jsExecutor.executeAsyncScript(script);
 
         if(validator != null) {
             validator.validate(jsDriver, output, events);
         }
 
         return this;
+    }
+
+    public boolean useNativePromises() {
+        return (boolean) jsExecutor.executeScript("if (typeof window.keycloak !== 'undefined') {" +
+                "return window.keycloak.useNativePromise" +
+                "} else { return false}");
     }
 
     public JavascriptTestExecutor openAccountPage(JavascriptStateValidator validator) {
@@ -198,13 +233,24 @@ public class JavascriptTestExecutor {
 
     public JavascriptTestExecutor getProfile(JavascriptStateValidator validator) {
 
-        Object output = jsExecutor.executeAsyncScript(
-                "var callback = arguments[arguments.length - 1];" +
-                "   window.keycloak.loadUserProfile().success(function (profile) {" +
-                "       callback(profile);" +
-                "   }).error(function () {" +
-                "       callback('Failed to load profile');" +
-                "   });");
+        String script;
+        if (useNativePromises()) {
+            script = "var callback = arguments[arguments.length - 1];" +
+                    "   window.keycloak.loadUserProfile().then(function (profile) {" +
+                    "       callback(profile);" +
+                    "   }, function () {" +
+                    "       callback('Failed to load profile');" +
+                    "   });";
+        } else {
+            script = "var callback = arguments[arguments.length - 1];" +
+                    "   window.keycloak.loadUserProfile().success(function (profile) {" +
+                    "       callback(profile);" +
+                    "   }).error(function () {" +
+                    "       callback('Failed to load profile');" +
+                    "   });";
+        }
+
+        Object output = jsExecutor.executeAsyncScript(script);
 
         if(validator != null) {
             validator.validate(jsDriver, output, events);
