@@ -369,6 +369,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                assertTrue(samlResponse.getSamlObject() instanceof StatusResponseType);
                StatusResponseType srt = (StatusResponseType) samlResponse.getSamlObject();
                assertEquals(JBossSAMLURIConstants.STATUS_SUCCESS.get(), srt.getStatus().getStatusCode().getValue().toString());
+               assertEquals(camb.getLastArtifact(), ars.getLastArtifactResolve().getArtifact());
             }
         } finally {
             ars.stop();
@@ -411,6 +412,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                 assertTrue(samlResponse.getSamlObject() instanceof StatusResponseType);
                 StatusResponseType srt = (StatusResponseType) samlResponse.getSamlObject();
                 assertEquals(JBossSAMLURIConstants.STATUS_SUCCESS.get(), srt.getStatus().getStatusCode().getValue().toString());
+                assertEquals(camb.getLastArtifact(), ars.getLastArtifactResolve().getArtifact());
             }
         } finally {
             ars.stop();
