@@ -38,12 +38,22 @@ export class AccountServiceClient {
     private constructor() {}
     
     public static get Instance(): AccountServiceClient  {
-        return this.instance;
+        return AccountServiceClient.instance;
     }
     
     public doGet(endpoint: string, 
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'get'});
+    }
+    
+    public doPut(endpoint: string, 
+                config?: AxiosRequestConfig): Promise<AxiosResponse> {
+        return this.doRequest(endpoint, {...config, method: 'put'});
+    }
+    
+    public doPost(endpoint: string, 
+                config?: AxiosRequestConfig): Promise<AxiosResponse> {
+        return this.doRequest(endpoint, {...config, method: 'post'});
     }
     
     public doRequest(endpoint: string, 
