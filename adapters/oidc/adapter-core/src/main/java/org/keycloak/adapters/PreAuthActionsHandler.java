@@ -107,10 +107,10 @@ public class PreAuthActionsHandler {
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
             return false;
         }
-        // OPTIONS usage is not limited to just preflight. All preflight ones have ACCESS_CONTROL_REQUEST_METHOD  header, so it can be used as good criteria,
+        // OPTIONS usage is not limited to just preflight. All preflight have ACCESS_CONTROL_REQUEST_METHOD  header, so it can be used as a good criteria,
         // to differentiate preflight and non-preflight OPTIONS. I think the ORIGIN header can be removed because chrome populates origin in non-preflight OPTIONS
         // while the firefox doesn't. As far as i saw in SPEC, OPTIONS may be used to fetch some meta-data about a resource and may have a response body, for example
-        // Camunda bpms uses that some of their REST apis
+        // Camunda bpms uses that approach in some of their REST APIs
         if (facade.getRequest().getHeader(CorsHeaders.ACCESS_CONTROL_REQUEST_METHOD) == null || facade.getRequest().getHeader(CorsHeaders.ORIGIN) == null) {
             log.debug("checkCorsPreflight: no origin header");
             return false;
