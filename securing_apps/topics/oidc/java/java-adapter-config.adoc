@@ -213,6 +213,11 @@ token-store::
   Alternative _cookie_ means storage of info in cookie.
   See <<_applicationclustering,Application Clustering>> for details
 
+token-cookie-path::
+  When using a cookie store, this option sets the path of the cookie used to store account info. If it's a relative path,
+  then it is assumed that the application is running in a context root, and is interpreted relative to that context root.
+  If it's an absolute path, then the absolute path is used to set the cookie path. Defaults to use paths relative to the context root.
+
 principal-attribute::
   OpenID Connect ID Token attribute to populate the UserPrincipal name with.
   If token attribute is null, defaults to `sub`.

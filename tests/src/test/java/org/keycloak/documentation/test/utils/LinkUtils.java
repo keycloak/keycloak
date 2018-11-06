@@ -69,7 +69,7 @@ public class LinkUtils {
                             error = "invalid redirect to " + response.getRedirectLocation();
                         }
                     } else if (response.isSuccess() && anchor != null) {
-                        if (!(response.getContent().contains("id=\"" + anchor + "\"") || response.getContent().toString().contains("name=\"" + anchor + "\""))) {
+                        if (!(response.getContent().contains("id=\"" + anchor + "\"") || response.getContent().contains("name=\"" + anchor + "\"") || response.getContent().contains("href=\"#" + anchor + "\""))) {
                             error = "invalid anchor " + anchor;
                         }
                     } else {
