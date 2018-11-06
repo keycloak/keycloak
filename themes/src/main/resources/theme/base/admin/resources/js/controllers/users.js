@@ -504,6 +504,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
 
     $scope.removeAttribute = function(key) {
         delete $scope.user.attributes[key];
+        $scope.addDefaltKeys = true;
     }
 
     $scope.addDefaltAttribute = function(){
