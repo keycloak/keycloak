@@ -156,7 +156,13 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void logOut() {
-        navigateTo();
+        logOut(true);
+    }
+
+    public void logOut(boolean refreshPageBeforeLogout) {
+        if (refreshPageBeforeLogout) {
+            navigateTo();
+        }
         waitUntilElement(signOutButton).is().clickable(); // Sometimes doesn't work in PhantomJS!
         clickLink(signOutButton);
     }

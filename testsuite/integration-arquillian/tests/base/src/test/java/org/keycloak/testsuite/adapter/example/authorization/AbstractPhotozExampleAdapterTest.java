@@ -406,6 +406,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         setManageAlbumScopeRequired();
 
+        clientPage.logOut(false);
         loginToClientPage("alice", "alice");
         clientPage.viewAlbum("Alice Family Album", true);
 
@@ -440,6 +441,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         manageAlbumRole.update(roleRepresentation);
 
+        clientPage.logOut(false);
         loginToClientPage("alice", "alice");
         clientPage.viewAlbum("Alice Family Album", true);
 
