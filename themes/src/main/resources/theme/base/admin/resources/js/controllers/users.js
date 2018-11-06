@@ -407,6 +407,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 
     $scope.changed = false; // $scope.create;
+    $scope.addDefaltKeys = true;
     if (user.requiredActions) {
         for (var i = 0; i < user.requiredActions.length; i++) {
             console.log("user require action: " + user.requiredActions[i]);
@@ -503,6 +504,17 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
 
     $scope.removeAttribute = function(key) {
         delete $scope.user.attributes[key];
+    }
+
+    $scope.addDefaltAttribute = function(){
+        var keys = ['phone', 'policeNo',  'sex','avatarUrl', 'mac', 'workNature', 'isFirst', 'verifyIp', 'ip'];
+        var attrs = $scope.user.attributes;
+        for(var i=0; i< keys.length; i++){
+             if (!attrs[keys[i]]) {
+                 $scope.user.attributes[keys[i]]=[];
+             }
+        }
+        $scope.addDefaltKeys = false;
     }
 });
 
