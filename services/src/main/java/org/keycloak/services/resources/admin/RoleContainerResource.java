@@ -88,7 +88,7 @@ public class RoleContainerResource extends RoleResource {
         Set<RoleModel> roleModels = roleContainer.getRoles();
         List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roleModels) {
-            roles.add(ModelToRepresentation.toRepresentation(roleModel));
+            roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return roles;
     }

@@ -301,7 +301,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
             AccessToken exchangedToken = verifier.parse().getToken();
             Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
-            Assert.assertEquals("client-exchanger", exchangedToken.getAudience()[0]);
+            Assert.assertNull(exchangedToken.getAudience());
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
             Assert.assertNull(exchangedToken.getRealmAccess());
         }
@@ -409,7 +409,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
             AccessToken exchangedToken = verifier.parse().getToken();
             Assert.assertEquals("direct-exchanger", exchangedToken.getIssuedFor());
-            Assert.assertEquals("direct-exchanger", exchangedToken.getAudience()[0]);
+            Assert.assertNull(exchangedToken.getAudience());
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
             Assert.assertNull(exchangedToken.getRealmAccess());
         }

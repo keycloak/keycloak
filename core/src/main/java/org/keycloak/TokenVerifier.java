@@ -153,15 +153,36 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException("No audience in the token");
             }
 
-            for (String aud : audience) {
-                if (expectedAudience.equals(aud)) {
-                    return true;
-                }
+            if (t.hasAudience(expectedAudience)) {
+                return true;
             }
 
             throw new VerificationException("Expected audience not available in the token");
         }
     };
+
+
+    public static class IssuedForCheck implements Predicate<JsonWebToken> {
+
+        private final String expectedIssuedFor;
+
+        public IssuedForCheck(String expectedIssuedFor) {
+            this.expectedIssuedFor = expectedIssuedFor;
+        }
+
+        @Override
+        public boolean test(JsonWebToken jsonWebToken) throws VerificationException {
+            if (expectedIssuedFor == null) {
+                throw new VerificationException("Missing expectedIssuedFor");
+            }
+
+            if (expectedIssuedFor.equals(jsonWebToken.getIssuedFor())) {
+                return true;
+            }
+
+            throw new VerificationException("Expected issuedFor doesn't match");
+        }
+    }
 
 
     private String tokenString;
@@ -350,6 +371,16 @@ public class TokenVerifier<T extends JsonWebToken> {
      */
     public TokenVerifier<T> audience(String expectedAudience) {
         return this.replaceCheck(AudienceCheck.class, true, new AudienceCheck(expectedAudience));
+    }
+
+    /**
+     * Add check for verifying that token issuedFor (azp claim) is the expected value
+     *
+     * @param expectedIssuedFor issuedFor, which needs to be in the target token. Can't be null
+     * @return This token verifier
+     */
+    public TokenVerifier<T> issuedFor(String expectedIssuedFor) {
+        return this.replaceCheck(IssuedForCheck.class, true, new IssuedForCheck(expectedIssuedFor));
     }
 
     public TokenVerifier<T> parse() throws VerificationException {

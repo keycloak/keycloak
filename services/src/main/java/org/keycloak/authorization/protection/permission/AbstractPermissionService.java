@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -148,8 +149,8 @@ public class AbstractPermissionService {
     private String createPermissionTicket(List<PermissionRequest> request) {
         List<Permission> permissions = verifyRequestedResource(request);
 
-        ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
-        PermissionTicketToken token = new PermissionTicketToken(permissions, targetClient.getClientId(), this.identity.getAccessToken());
+        String audience = Urls.realmIssuer(this.authorization.getKeycloakSession().getContext().getUri().getBaseUri(), this.authorization.getRealm().getName());
+        PermissionTicketToken token = new PermissionTicketToken(permissions, audience, this.identity.getAccessToken());
         Map<String, List<String>> claims = new HashMap<>();
 
         for (PermissionRequest permissionRequest : request) {

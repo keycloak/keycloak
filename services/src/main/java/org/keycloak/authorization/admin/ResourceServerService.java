@@ -87,6 +87,7 @@ public class ResourceServerService {
             this.resourceServer = RepresentationToModel.createResourceServer(client, session, true);
             createDefaultPermission(createDefaultResource(), createDefaultPolicy());
         }
+
         audit(OperationType.CREATE, session.getContext().getUri(), newClient);
 
         return resourceServer;

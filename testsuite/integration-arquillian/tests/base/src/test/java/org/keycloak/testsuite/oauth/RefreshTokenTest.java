@@ -179,6 +179,10 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
         Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
 
+        // "test-app" should not be an audience in the refresh token
+        assertEquals("test-app", refreshedRefreshToken.getIssuedFor());
+        Assert.assertFalse(refreshedRefreshToken.hasAudience("test-app"));
+
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
 

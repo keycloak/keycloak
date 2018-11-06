@@ -1033,6 +1033,11 @@ public class RepresentationToModel {
     public static void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
         RoleModel role = roleRep.getId() != null ? newRealm.addRole(roleRep.getId(), roleRep.getName()) : newRealm.addRole(roleRep.getName());
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
+        if (roleRep.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> attribute : roleRep.getAttributes().entrySet()) {
+                role.setAttribute(attribute.getKey(), attribute.getValue());
+            }
+        }
     }
 
     private static void addComposites(RoleModel role, RoleRepresentation roleRep, RealmModel realm) {

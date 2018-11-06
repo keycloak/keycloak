@@ -307,7 +307,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
         Assert.assertEquals(200, accessTokenResponse.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assert.assertEquals(response.getClientId(), accessToken.getAudience()[0]);
+        Assert.assertEquals(response.getClientId(), accessToken.getIssuedFor());
     }
 
     private void assertAuthenticateClientError(Map<String, String> generatedKeys, OIDCClientRepresentation response, String kid) throws Exception {

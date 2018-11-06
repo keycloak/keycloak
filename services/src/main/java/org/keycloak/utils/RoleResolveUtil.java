@@ -26,7 +26,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.util.DefaultClientSessionContext;
 
 /**
  * Helper class to ensure that all the user's permitted roles (including composite roles) are loaded just once per request.
@@ -113,13 +112,13 @@ public class RoleResolveUtil {
         Set<RoleModel> requestedRoles = clientSessionCtx.getRoles();
         AccessToken token = new AccessToken();
         for (RoleModel role : requestedRoles) {
-            addComposites(token, role);
+            addToToken(token, role);
         }
         return token;
     }
 
 
-    private static void addComposites(AccessToken token, RoleModel role) {
+    private static void addToToken(AccessToken token, RoleModel role) {
         AccessToken.Access access = null;
         if (role.getContainer() instanceof RealmModel) {
             access = token.getRealmAccess();
@@ -139,12 +138,6 @@ public class RoleResolveUtil {
 
         }
         access.addRole(role.getName());
-        if (!role.isComposite()) return;
-
-        for (RoleModel composite : role.getComposites()) {
-            addComposites(token, composite);
-        }
-
     }
 
 }

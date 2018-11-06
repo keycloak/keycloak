@@ -20,6 +20,7 @@ package org.keycloak.testsuite.adduser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -27,6 +28,7 @@ import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wildfly.adduser.AddUser;
 
@@ -48,6 +50,12 @@ public class AddUserTest extends AbstractKeycloakTest {
 
     @ArquillianResource
     private ContainerController controller;
+
+    @BeforeClass
+    public static void enabled() {
+        // don't run with auth-server-undertow for now
+        ContainerAssume.assumeNotAuthServerUndertow();
+    }
 
     @Test
     public void addUserTest() throws Exception {

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.util.RoleBuilder;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -151,4 +152,43 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
 
     }
 
+    @Test
+    public void attributes() {
+        for (String id : ids.values()) {
+            RoleRepresentation role = resource.getRole(id);
+            assertNotNull(role.getAttributes());
+            assertTrue(role.getAttributes().isEmpty());
+
+            // update the role with attributes
+            Map<String, List<String>> attributes = new HashMap<>();
+            List<String> attributeValues = new ArrayList<>();
+            attributeValues.add("value1");
+            attributes.put("key1", attributeValues);
+            attributeValues = new ArrayList<>();
+            attributeValues.add("value2.1");
+            attributeValues.add("value2.2");
+            attributes.put("key2", attributeValues);
+            role.setAttributes(attributes);
+
+            resource.updateRole(id, role);
+            role = resource.getRole(id);
+            assertNotNull(role);
+            Map<String, List<String>> roleAttributes = role.getAttributes();
+            assertNotNull(roleAttributes);
+
+            Assert.assertRoleAttributes(attributes, roleAttributes);
+
+
+            // delete an attribute
+            attributes.remove("key2");
+            role.setAttributes(attributes);
+            resource.updateRole(id, role);
+            role = resource.getRole(id);
+            assertNotNull(role);
+            roleAttributes = role.getAttributes();
+            assertNotNull(roleAttributes);
+
+            Assert.assertRoleAttributes(attributes, roleAttributes);
+        }
+    }
 }
