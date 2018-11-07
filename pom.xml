@@ -72,6 +72,7 @@
         <jboss-jaxrs-api_2.1_spec>1.0.1.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-transaction-api_1.2_spec>1.1.1.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
+        <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy.version>3.6.1.Final</resteasy.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
@@ -316,6 +317,11 @@
                 <groupId>org.jboss.spec.javax.xml.bind</groupId>
                 <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
                 <version>${jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
+                <artifactId>jboss-jsp-api_2.3_spec</artifactId>
+                <version>${jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>

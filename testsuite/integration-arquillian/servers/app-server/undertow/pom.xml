@@ -54,6 +54,16 @@
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>undertow-embedded</artifactId>
         </dependency>
+
+
+        <!--
+            it is required for undertow adapter example authorization tests when they run with -Pauth-server-eap
+            todo: find out why it doesn't happen with -Pauth-server-wildfly
+        -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
+            <artifactId>jboss-jsp-api_2.3_spec</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
