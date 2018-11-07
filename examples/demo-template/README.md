@@ -185,7 +185,7 @@ is displayed to the user after login and the user has to copy this code back to 
 
 Step 8: Admin REST API
 ----------------------------------
-Keycloak has a Admin REST API.  This example shows an application making a remove direct login to Keycloak to obtain a token
+Keycloak has a Admin REST API.  This example shows an application making a remote direct login to Keycloak to obtain a token
 then using that token to access the Admin REST API.
 
 [http://localhost:8080/admin-access](http://localhost:8080/admin-access)
