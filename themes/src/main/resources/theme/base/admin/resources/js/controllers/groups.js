@@ -257,6 +257,7 @@ module.controller('GroupDetailCtrl', function(Dialog, $scope, realm, group, Grou
     $scope.group = angular.copy(group);
 
     $scope.changed = false; // $scope.create;
+    $scope.addDefaltKeys = true;
     $scope.$watch('group', function() {
         if (!angular.equals($scope.group, group)) {
             $scope.changed = true;
@@ -311,7 +312,20 @@ module.controller('GroupDetailCtrl', function(Dialog, $scope, realm, group, Grou
 
     $scope.removeAttribute = function(key) {
         delete $scope.group.attributes[key];
+        $scope.addDefaltKeys = true;
     }
+
+    $scope.addDefaltAttribute = function(){
+        var keys = ['unitCode', 'parentCode',  'shortName', 'unitLevel'];
+        var attrs = $scope.group.attributes;
+        for(var i=0; i< keys.length; i++){
+             if (!attrs[keys[i]]) {
+                 $scope.group.attributes[keys[i]]=[];
+             }
+        }
+        $scope.addDefaltKeys = false;
+    }
+
 });
 
 module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, clients, client, Notifications, GroupRealmRoleMapping,

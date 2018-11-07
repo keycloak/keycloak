@@ -26,6 +26,12 @@
                 <td><input ng-model="newAttribute.value" class="form-control" type="text" id="newAttributeValue" /></td>
                 <td class="kc-action-cell" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">{{:: 'add' | translate}}</td>
             </tr>
+            <tr>
+                <td colspan="3">
+                    <button class="btn btn-default" data-ng-disabled="!addDefaltKeys" data-ng-click="addDefaltAttribute()" >{{:: 'add' | translate}}{{:: 'attributes' | translate}}</button>
+                    <kc-tooltip>Add default keys.</kc-tooltip>
+                </td>
+            </tr>
             </tbody>
         </table>
 
