@@ -25,7 +25,7 @@
 
         var checkCookie = function() {
             if (clientId === init.clientId && origin === init.origin) {
-                var c = cookie.split('/');
+                var c = cookie ? cookie.split('/') : [];
                 if (sessionState === c[2]) {
                     callback('unchanged');
                 } else {
