@@ -209,6 +209,25 @@ public class PolicyEvaluationService {
             }
 
         }
+
+        @Override
+        public String getId() {
+            if (userSession != null) {
+                return super.getId();
+            }
+
+            String issuedFor = accessToken.getIssuedFor();
+
+            if (issuedFor != null) {
+                UserModel serviceAccount = keycloakSession.users().getServiceAccount(realm.getClientByClientId(issuedFor));
+
+                if (serviceAccount != null) {
+                    return serviceAccount.getId();
+                }
+            }
+
+            return null;
+        }
     }
 
     private CloseableKeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
@@ -251,7 +270,19 @@ public class PolicyEvaluationService {
             accessToken = new AccessToken();
 
             accessToken.subject(representation.getUserId());
-            accessToken.issuedFor(representation.getClientId());
+            ClientModel client = null;
+            String clientId = representation.getClientId();
+
+            if (clientId != null) {
+                client = realm.getClientById(clientId);
+            }
+
+            if (client == null) {
+                client = realm.getClientById(resourceServer.getId());
+            }
+
+            accessToken.issuedFor(client.getClientId());
+            accessToken.audience(client.getId());
             accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
             accessToken.setRealmAccess(new AccessToken.Access());
 
