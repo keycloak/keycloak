@@ -76,7 +76,7 @@ public class CrossDCTestEnricher {
         if (annotation == null) {
             Class<?> annotatedClass = getNearestSuperclassWithAnnotation(event.getTestClass().getJavaClass(), InitialDcState.class);
 
-            annotation = annotatedClass.getAnnotation(InitialDcState.class);
+            annotation = annotatedClass == null ? null : annotatedClass.getAnnotation(InitialDcState.class);
         }
 
         if (annotation == null) {

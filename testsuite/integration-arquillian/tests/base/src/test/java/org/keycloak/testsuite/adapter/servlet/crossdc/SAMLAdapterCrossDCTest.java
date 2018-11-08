@@ -26,8 +26,10 @@ import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.adapter.AbstractSAMLAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
+import org.keycloak.testsuite.crossdc.ServerSetup;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
@@ -39,6 +41,7 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
+@InitialDcState(authServers = ServerSetup.FIRST_NODE_IN_EVERY_DC, cacheServers = ServerSetup.FIRST_NODE_IN_EVERY_DC)
 public class SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {
 
     @BeforeClass

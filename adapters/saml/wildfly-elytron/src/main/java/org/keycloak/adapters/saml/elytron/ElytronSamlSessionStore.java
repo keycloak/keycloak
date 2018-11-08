@@ -18,13 +18,10 @@
 package org.keycloak.adapters.saml.elytron;
 
 import java.net.URI;
-import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -32,6 +29,7 @@ import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.Scope;
@@ -45,13 +43,15 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
     public static final String SAML_REDIRECT_URI = "SAML_REDIRECT_URI";
 
     private final SessionIdMapper idMapper;
+    private final SessionIdMapperUpdater idMapperUpdater;
     protected final SamlDeployment deployment;
     private final ElytronHttpFacade exchange;
 
 
-    public ElytronSamlSessionStore(ElytronHttpFacade exchange, SessionIdMapper idMapper, SamlDeployment deployment) {
+    public ElytronSamlSessionStore(ElytronHttpFacade exchange, SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater, SamlDeployment deployment) {
         this.exchange = exchange;
         this.idMapper = idMapper;
+        this.idMapperUpdater = idMapperUpdater;
         this.deployment = deployment;
     }
 
@@ -81,10 +81,11 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
     public void logoutAccount() {
         HttpScope session = getSession(false);
         if (session.exists()) {
+            log.debug("Logging out - current account");
             SamlSession samlSession = (SamlSession)session.getAttachment(SamlSession.class.getName());
             if (samlSession != null) {
                 if (samlSession.getSessionIndex() != null) {
-                    idMapper.removeSession(session.getID());
+                    idMapperUpdater.removeSession(idMapper, session.getID());
                 }
                 session.setAttachment(SamlSession.class.getName(), null);
             }
@@ -96,11 +97,12 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
     public void logoutByPrincipal(String principal) {
         Set<String> sessions = idMapper.getUserSessions(principal);
         if (sessions != null) {
+            log.debugf("Logging out - by principal: %s", sessions);
             List<String> ids = new LinkedList<>();
             ids.addAll(sessions);
             logoutSessionIds(ids);
             for (String id : ids) {
-                idMapper.removeSession(id);
+                idMapperUpdater.removeSession(idMapper, id);
             }
         }
 
@@ -109,12 +111,13 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
     @Override
     public void logoutBySsoId(List<String> ssoIds) {
         if (ssoIds == null) return;
+        log.debugf("Logging out - by session IDs: %s", ssoIds);
         List<String> sessionIds = new LinkedList<>();
         for (String id : ssoIds) {
              String sessionId = idMapper.getSessionFromSSO(id);
              if (sessionId != null) {
                  sessionIds.add(sessionId);
-                 idMapper.removeSession(sessionId);
+                 idMapperUpdater.removeSession(idMapper, sessionId);
              }
 
         }
@@ -126,6 +129,8 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             HttpScope scope = exchange.getScope(Scope.SESSION, id);
 
             if (scope.exists()) {
+                log.debugf("Invalidating session %s", id);
+                scope.setAttachment(SamlSession.class.getName(), null);
                 scope.invalidate();
             }
         });
@@ -138,6 +143,13 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             log.debug("session was null, returning null");
             return false;
         }
+
+        if (! idMapper.hasSession(session.getID())) {
+            log.debugf("Session %s has expired on some other node", session.getID());
+            session.setAttachment(SamlSession.class.getName(), null);
+            return false;
+        }
+
         final SamlSession samlSession = (SamlSession)session.getAttachment(SamlSession.class.getName());
         if (samlSession == null) {
             log.debug("SamlSession was not in session, returning null");
@@ -154,7 +166,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
         HttpScope session = getSession(true);
         session.setAttachment(SamlSession.class.getName(), account);
         String sessionId = changeSessionId(session);
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
+        idMapperUpdater.map(idMapper, account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
 
     }
 

@@ -25,6 +25,8 @@ import javax.security.auth.callback.CallbackHandler;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
+import org.jboss.logging.Logger;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
@@ -34,7 +36,7 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
  */
 public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpServerAuthenticationMechanismFactory {
 
-    private SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    private final SessionIdMapper idMapper = new InMemorySessionIdMapper();
     private final SamlDeploymentContext deploymentContext;
 
     /**
@@ -62,7 +64,8 @@ public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpSer
         mechanismProperties.putAll(properties);
 
         if (KeycloakHttpServerAuthenticationMechanism.NAME.equals(mechanismName)) {
-            return new KeycloakHttpServerAuthenticationMechanism(properties, callbackHandler, this.deploymentContext, idMapper);
+            KeycloakHttpServerAuthenticationMechanism mech = new KeycloakHttpServerAuthenticationMechanism(properties, callbackHandler, this.deploymentContext, idMapper, SessionIdMapperUpdater.DIRECT);
+            return mech;
         }
 
         return null;
