@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.adapters.saml.wildfly.infinispan;
+package org.keycloak.adapters.saml.elytron.infinispan;
 
 import org.keycloak.adapters.spi.SessionIdMapper;
 
@@ -39,8 +39,8 @@ import org.jboss.logging.Logger;
  *
  * @author hmlnarik
  */
-@Listener
-@ClientListener
+@Listener(sync = false)
+@ClientListener()
 public class SsoSessionCacheListener {
 
     private static final Logger LOG = Logger.getLogger(SsoSessionCacheListener.class);
@@ -64,7 +64,7 @@ public class SsoSessionCacheListener {
             return;
         }
 
-        map.put(event.getGlobalTransaction().globalId(), new ConcurrentLinkedQueue<Event>());
+        map.put(event.getGlobalTransaction().globalId(), new ConcurrentLinkedQueue<>());
     }
 
     @CacheStarted
@@ -175,27 +175,38 @@ public class SsoSessionCacheListener {
 
             @Override
             public void run() {
-                String[] value = ssoCache.get((String) httpSessionId);
+                String[] value;
+                try {
+                    value = ssoCache.get((String) httpSessionId);
 
-                if (value != null) {
-                    String ssoId = value[0];
-                    String principal = value[1];
+                    if (value != null) {
+                        String ssoId = value[0];
+                        String principal = value[1];
 
-                    LOG.tracev("remoteCacheEntryCreated {0}:{1}", httpSessionId, ssoId);
+                        LOG.tracev("remoteCacheEntryCreated {0}:{1}", httpSessionId, ssoId);
 
-                    idMapper.map(ssoId, principal, httpSessionId);
-                } else {
-                    LOG.tracev("remoteCacheEntryCreated {0}", event.getKey());
+                        idMapper.map(ssoId, principal, httpSessionId);
+                    } else {
+                        LOG.tracev("remoteCacheEntryCreated {0}", event.getKey());
 
+                    }
+                } catch (Exception ex) {
+                    LOG.debugf(ex, "Cannot get remote cache entry %s", httpSessionId);
                 }
             }
-          });
+        });
     }
 
     @ClientCacheEntryRemoved
     public void remoteCacheEntryRemoved(ClientCacheEntryRemovedEvent event) {
         LOG.tracev("remoteCacheEntryRemoved {0}", event.getKey());
 
-        this.idMapper.removeSession((String) event.getKey());
+        this.executor.submit(new Runnable() {
+
+            @Override
+            public void run() {
+                idMapper.removeSession((String) event.getKey());
+            }
+        });
     }
 }

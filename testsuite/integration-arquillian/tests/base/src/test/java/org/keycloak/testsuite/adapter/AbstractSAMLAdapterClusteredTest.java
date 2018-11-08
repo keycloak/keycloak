@@ -120,13 +120,16 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractServletsA
         Assume.assumeThat(PORT_OFFSET_NODE_1, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_2, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_REVPROXY, not(is(-1)));
-        assumeNotElytronAdapter();
     }
 
     @Before
     public void prepareReverseProxy() throws Exception {
         loadBalancerToNodes = new LoadBalancingProxyClient().addHost(NODE_1_URI, NODE_1_NAME).setConnectionsPerThread(10);
-        reverseProxyToNodes = Undertow.builder().addHttpListener(HTTP_PORT_NODE_REVPROXY, "localhost").setIoThreads(2).setHandler(new ProxyHandler(loadBalancerToNodes, 5000, ResponseCodeHandler.HANDLE_404)).build();
+        int maxTime = 3600000; // 1 hour for proxy request timeout, so we can debug the backend keycloak servers
+        reverseProxyToNodes = Undertow.builder()
+          .addHttpListener(HTTP_PORT_NODE_REVPROXY, "localhost")
+          .setIoThreads(2)
+          .setHandler(new ProxyHandler(loadBalancerToNodes, maxTime, ResponseCodeHandler.HANDLE_404)).build();
         reverseProxyToNodes.start();
     }
 
@@ -232,20 +235,6 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractServletsA
         log.infov("Logged out via admin console");
     }
     
-    private static void assumeNotElytronAdapter() {
-        if (!AppServerTestEnricher.isUndertowAppServer()) {
-            try {
-                boolean contains = FileUtils.readFileToString(Paths.get(System.getProperty("app.server.home"), "standalone", "configuration", "standalone.xml").toFile(), "UTF-8").contains("<security-domain name=\"KeycloakDomain\"");
-                if (contains) {
-                    Logger.getLogger(AbstractSAMLAdapterClusteredTest.class).debug("Elytron adapter installed: skipping");
-                }
-                Assume.assumeFalse(contains);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     @Test
     public void testAdminInitiatedBackchannelLogout(@ArquillianResource
       @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
