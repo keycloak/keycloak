@@ -23,7 +23,7 @@ For further information, see the included help file which includes a full list o
 - Run `make test` to run the included tests.
 - Run `make` to build the project. You can instead use `make static` if you prefer to build a binary that includes within it all of the required dependencies.
 
-NOTE: You can also build via docker container: `make docker-build`. A Docker image is available at link:https://hub.docker.com/r/jboss/keycloak-gatekeeper[https://hub.docker.com/r/jboss/keycloak-gatekeeper].
+NOTE: You can also build via docker container: `make docker-build`. A Docker image is available at link:https://hub.docker.com/r/keycloak/keycloak-gatekeeper[https://hub.docker.com/r/keycloak/keycloak-gatekeeper].
 
 ==== Configuration options
 
