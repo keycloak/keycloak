@@ -531,9 +531,11 @@ public class RealmManager {
             setupMasterAdminManagement(realm);
         }
 
-        // Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
-        checkMasterAdminManagementRoles(realm);
-        checkRealmAdminManagementRoles(realm);
+        if (rep.getRoles() != null) {
+        	// Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
+        	checkMasterAdminManagementRoles(realm);
+        	checkRealmAdminManagementRoles(realm);
+        }
 
         // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
