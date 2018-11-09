@@ -49,7 +49,8 @@ public class Profile {
         IMPERSONATION(Type.DEFAULT),
         OPENSHIFT_INTEGRATION(Type.DEFAULT),
         SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW);
+        TOKEN_EXCHANGE(Type.PREVIEW),
+        AUTHZ_DROOLS_POLICY(Type.PREVIEW);;
 
         private Type type;
 
