@@ -52,7 +52,15 @@
                             clientId: clientId,
                             origin: origin
                         }
-                        checkCookie();
+                        if (!cookie) {
+                            if (sessionState != '') {
+                                callback('changed');
+                            } else {
+                                callback('unchanged');
+                            }
+                        } else {
+                            checkCookie();
+                        }
                     } else {
                         callback('error');
                     }
