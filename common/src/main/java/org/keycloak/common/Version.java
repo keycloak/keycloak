@@ -28,6 +28,7 @@ import java.util.Properties;
 public class Version {
     public static final String UNKNOWN = "UNKNOWN";
     public static String NAME;
+    public static String NAME_FULL;
     public static String NAME_HTML;
     public static String VERSION;
     public static String RESOURCES_VERSION;
@@ -40,6 +41,7 @@ public class Version {
         try {
             props.load(is);
             Version.NAME = props.getProperty("name");
+            Version.NAME_FULL = props.getProperty("name-full");
             Version.NAME_HTML = props.getProperty("name-html");
             Version.DEFAULT_PROFILE = props.getProperty("default-profile");
             Version.VERSION = props.getProperty("version");
