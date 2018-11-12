@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +32,6 @@ import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -44,9 +42,7 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPolicy;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -239,7 +235,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
             rulePolicy.setDescription("description");
             rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
             rulePolicy.setArtifactId("photoz-authz-policy");
-            rulePolicy.setArtifactVersion(Version.VERSION);
+            rulePolicy.setArtifactVersion(System.getProperty("project.version"));
             rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
             rulePolicy.setSessionName("MainOwnerSession");
             rulePolicy.setScannerPeriod("1");
