@@ -40,11 +40,6 @@ may have negative impact on performance. For details, please refer to Oracle JDB
 Unicode characters are properly handled only for the special fields. No special settings of JDBC driver or database is
 necessary.
 
-==== IBM DB2 Database
-
-Unicode characters are properly handled for all fields, length reduction applies to non-special fields. No special
-settings of JDBC driver or database is necessary.
-
 ==== MySQL Database
 
 Unicode characters are properly handled provided the database was created with Unicode support in `VARCHAR` and `CHAR`
