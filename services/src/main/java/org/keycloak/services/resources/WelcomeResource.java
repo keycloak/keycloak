@@ -178,6 +178,7 @@ public class WelcomeResource {
           Map<String, Object> map = new HashMap<>();
 
           map.put("productName", Version.NAME);
+          map.put("productNameFull", Version.NAME_FULL);
 
           map.put("properties", theme.getProperties());
 
