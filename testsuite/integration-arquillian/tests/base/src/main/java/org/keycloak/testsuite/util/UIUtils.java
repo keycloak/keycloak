@@ -10,6 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -61,6 +62,13 @@ public final class UIUtils {
 
     public static void clickLink(WebElement element) {
         WebDriver driver = getCurrentDriver();
+
+        // Sometimes at some weird specific conditions, Firefox fail to click an element
+        // because the element is at the edge of the view and need to be scrolled on "manually" (normally the driver
+        // should do this automatically)
+        if (driver instanceof FirefoxDriver) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+        }
 
         if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
                                                                         // even though it is. In this case we just move the cursor and click.

@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
@@ -95,7 +94,7 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         expected.setDescription("description");
         expected.setArtifactGroupId("org.keycloak.testsuite");
         expected.setArtifactId("photoz-authz-policy");
-        expected.setArtifactVersion(Version.VERSION);
+        expected.setArtifactVersion(System.getProperty("project.version"));
         expected.setModuleName("PhotozAuthzOwnerPolicy");
         expected.setSessionName("MainOwnerSession");
         expected.setScannerPeriod("1");
