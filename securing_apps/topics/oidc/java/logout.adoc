@@ -2,8 +2,13 @@
 
 [[_java_adapter_logout]]
 You can log out of a web application in multiple ways.
-For Java EE servlet containers, you can call HttpServletRequest.logout(). For other browser applications, you can redirect the browser to
+For Java EE servlet containers, you can call `HttpServletRequest.logout()`. For other browser applications, you can redirect the browser to
 `$$http://auth-server/auth/realms/{realm-name}/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri$$`, which logs you out if you have an SSO session with your browser.
+
+When using the `HttpServletRequest.logout()` option the adapter executes a back-channel POST call against the {project_name} server passing the refresh token.
+If the method is executed from an unprotected page (a page that does not check for a valid token) the refresh token can be unavailable and, in that case,
+the adapter skips the call. For this reason, using a protected page to execute `HttpServletRequest.logout()` is recommended so that current tokens are always
+taken into account and an interaction with the {project_name} server is performed if needed.
 
 If you want to avoid logging out of an external identity provider as part of the logout process, you can supply the parameter `$$initiating_idp$$`, with the value being
 the identity (alias) of the identity provider in question. This is useful when the logout endpoint is invoked as part of single logout initiated by the external identity provider.
