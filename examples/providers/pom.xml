@@ -31,9 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>event-listener-sysout</module>
-        <module>event-store-mem</module>
-        <module>authenticator</module>
         <module>rest</module>
         <module>domain-extension</module>
     </modules>
