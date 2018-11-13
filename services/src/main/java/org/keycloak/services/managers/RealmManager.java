@@ -531,7 +531,7 @@ public class RealmManager {
             setupMasterAdminManagement(realm);
         }
 
-        if (rep.getRoles() != null) {
+        if (rep.getRoles() != null || hasRealmAdminManagementClient(rep)) {
         	// Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
         	checkMasterAdminManagementRoles(realm);
         	checkRealmAdminManagementRoles(realm);
