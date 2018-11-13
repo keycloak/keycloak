@@ -37,6 +37,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -65,6 +66,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -463,51 +465,57 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
     }
-    
+
     @Test
     public void requestObjectNotRequiredProvidedInRequestParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
-        assertTrue(appPage.isCurrent());
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object not required for client
+            prepareClientRepresentation(Algorithm.RS256, null, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = prepareOIDCEndpointsApplicationResource(Algorithm.RS256);
+            // Send request object in "request" param
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response1.getCode());
+            Assert.assertEquals("mystate2", response1.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectNotRequiredProvidedInRequestUriParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response2.getCode());
-        Assert.assertEquals("mystate2", response2.getState());
-        assertTrue(appPage.isCurrent());
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object not required for client
+            prepareClientRepresentation(Algorithm.ES256, null, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = prepareOIDCEndpointsApplicationResource(Algorithm.ES256);
+            // Send request object reference in "request_uri" param
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response2.getCode());
+            Assert.assertEquals("mystate2", response2.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectRequiredNotProvided() throws Exception {
         oauth.stateParamHardcoded("mystate2");
@@ -527,57 +535,55 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
         clientResource.update(clientRep);
     }
-    
+
     @Test
     public void requestObjectRequiredProvidedInRequestParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
-        assertTrue(appPage.isCurrent());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required for client
+            prepareClientRepresentation(Algorithm.RS256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = prepareOIDCEndpointsApplicationResource(Algorithm.RS256);
+            // Send request object in "request" param
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response1.getCode());
+            Assert.assertEquals("mystate2", response1.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectRequiredProvidedInRequestUriParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response2.getCode());
-        Assert.assertEquals("mystate2", response2.getState());
-        assertTrue(appPage.isCurrent());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required for client
+            prepareClientRepresentation(Algorithm.ES256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            prepareOIDCEndpointsApplicationResource(Algorithm.ES256);
+            // Send request object reference in "request_uri" param
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response2.getCode());
+            Assert.assertEquals("mystate2", response2.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
     
     @Test
@@ -602,55 +608,53 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestParamProvidedInRequestParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
-        assertTrue(appPage.isCurrent());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required as request parameter for client
+            prepareClientRepresentation(Algorithm.RS256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = prepareOIDCEndpointsApplicationResource(Algorithm.RS256);
+            // Send request object in "request" param
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response1.getCode());
+            Assert.assertEquals("mystate2", response1.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectRequiredAsRequestParamProvidedInRequestUriParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        // Assert that the request is accepted
-        oauth.openLoginForm();
-        Assert.assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid Request", errorPage.getError());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required as request parameter for client
+            prepareClientRepresentation(Algorithm.ES256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            prepareOIDCEndpointsApplicationResource(Algorithm.ES256);
+            // Send request object reference in "request_uri" param
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            // Assert that the request is accepted
+            oauth.openLoginForm();
+            Assert.assertTrue(errorPage.isCurrent());
+            assertEquals("Invalid Request", errorPage.getError());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectRequiredAsRequestUriParamNotProvided() throws Exception {
         oauth.stateParamHardcoded("mystate2");
@@ -670,63 +674,60 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
         clientResource.update(clientRep);
     }
-    
+
     @Test
     public void requestObjectRequiredAsRequestUriParamProvidedInRequestParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
-        // Assert that the request is not accepted
-        oauth.openLoginForm();
-        Assert.assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid Request", errorPage.getError());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required as request uri parameter for client
+            prepareClientRepresentation(Algorithm.RS256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = prepareOIDCEndpointsApplicationResource(Algorithm.RS256);
+            // Send request object in "request" param
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            // Assert that the request is not accepted
+            oauth.openLoginForm();
+            Assert.assertTrue(errorPage.isCurrent());
+            assertEquals("Invalid Request", errorPage.getError());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
-    
+
     @Test
     public void requestObjectRequiredAsRequestUriParamProvidedInRequestUriParam() throws Exception {
-        oauth.stateParamHardcoded("mystate2");
-        // Set request object not required for client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI);
-        clientResource.update(clientRep);
-        
-        // Set up a request object
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
-        
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
-        assertTrue(appPage.isCurrent());
-        
-        // Revert requiring request object for client
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
-        clientResource.update(clientRep);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate2");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // Set request object required as request uri parameter for client
+            prepareClientRepresentation(Algorithm.ES256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI, clientResource, clientRep);
+            // prepare OIDC Endpoint Application Resource
+            prepareOIDCEndpointsApplicationResource(Algorithm.ES256);
+            // Send request object reference in "request_uri" param
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            // Assert that the request is accepted
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            Assert.assertNotNull(response1.getCode());
+            Assert.assertEquals("mystate2", response1.getState());
+            assertTrue(appPage.isCurrent());
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
 
     @Test
     public void requestParamUnsigned() throws Exception {
         oauth.stateParamHardcoded("mystate2");
 
-        String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Send request object with invalid redirect uri.
@@ -736,25 +737,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.request(requestStr);
         oauth.openLoginForm();
         Assert.assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
-
-        // Assert the value from request object has bigger priority then from the query parameter.
-        oauth.redirectUri("http://invalid");
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
-        requestStr = oidcClientEndpointsResource.getOIDCRequest();
-
-        oauth.request(requestStr);
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate2", response.getState());
-        assertTrue(appPage.isCurrent());
+        assertEquals("Invalid Request", errorPage.getError());
     }
 
     @Test
     public void requestUriParamUnsigned() throws Exception {
         oauth.stateParamHardcoded("mystate1");
 
-        String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Send request object with invalid redirect uri.
@@ -763,16 +752,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         oauth.openLoginForm();
         Assert.assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
-
-        // Assert the value from request object has bigger priority then from the query parameter.
-        oauth.redirectUri("http://invalid");
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
-
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate1", response.getState());
-        assertTrue(appPage.isCurrent());
+        assertEquals("Invalid Request", errorPage.getError());
     }
 
     @Test
@@ -831,35 +811,29 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         ClientRepresentation clientRep = null;
         try {
             oauth.stateParamHardcoded("mystate3");
-
             String validRedirectUri = oauth.getRedirectUri();
-            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
-            // Set required signature for request_uri
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(expectedAlgorithm);
-            clientResource.update(clientRep);
+            // Set request object required as request uri parameter for client
+            prepareClientRepresentation(expectedAlgorithm, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI, clientResource, clientRep);
 
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
             // generate and register client keypair
-            if (Algorithm.none != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm.name());
-
+            if (actualAlgorithm == Algorithm.none) {
+                // register RS256 key intentionally to test no signed Request Object case
+                oidcClientEndpointsResource.generateKeys(Algorithm.RS256.name());
+            } else {
+                oidcClientEndpointsResource.generateKeys(actualAlgorithm.name());
+            }
             // register request object
             oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", actualAlgorithm.name());
-
-            // use and set jwks_url
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
-            String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
-            clientResource.update(clientRep);
 
             // set time offset, so that new keys are downloaded
             setTimeOffset(20);
 
             oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-            if (expectedAlgorithm == null || expectedAlgorithm == actualAlgorithm) {
+            if ((expectedAlgorithm == null && actualAlgorithm != Algorithm.none) || expectedAlgorithm == actualAlgorithm) {
                 // Check signed request_uri will pass
                 OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
                 Assert.assertNotNull(response.getCode());
@@ -873,12 +847,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             }
 
         } finally {
-            // Revert requiring signature for client
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
-            // Revert jwks_url settings
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
-            clientResource.update(clientRep);
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
         }
     }
 
@@ -886,18 +856,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void requestUriParamSignedExpectedES256ActualRS256() throws Exception {
         // will fail
         requestUriParamSignedIn(Algorithm.ES256, Algorithm.RS256);
-    }
-
-    @Test
-    public void requestUriParamSignedExpectedNoneActualES256() throws Exception {
-        // will fail
-        requestUriParamSignedIn(Algorithm.none, Algorithm.ES256);
-    }
-
-    @Test
-    public void requestUriParamSignedExpectedNoneActualNone() throws Exception {
-        // will success
-        requestUriParamSignedIn(Algorithm.none, Algorithm.none);
     }
 
     @Test
@@ -937,6 +895,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         requestUriParamSignedIn(null, Algorithm.ES256);
     }
 
+    @Test
+    public void requestUriParamSignedExpectedAnyActualNone() throws Exception {
+        // Algorithm is null if 'any'
+        // will fail
+        requestUriParamSignedIn(null, Algorithm.none);
+    }
+    
     // LOGIN_HINT
 
     @Test
@@ -988,41 +953,95 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void processClaimsRequestParam() throws Exception {
-        Map<String, Object> claims = ImmutableMap.of(
-                "id_token", ImmutableMap.of(
-                        "test_claim", ImmutableMap.of(
-                                "essential", true)));
-        
-        String claimsJson = JsonSerialization.writeValueAsString(claims);
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            // Set request object not required for client
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
 
-        Map<String, Object> oidcRequest = new HashMap<>();
-        oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, "test-app");
-        oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
-        oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
-        oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+            // Set request object required as request parameter for client
+            prepareClientRepresentation(Algorithm.RS256, OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST, clientResource, clientRep);
 
-        String request = new JWSBuilder().jsonContent(oidcRequest).none();
-        
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.REQUEST_PARAM + "=" + request);
-        
-        // need to login so session id can be read from event
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            // Set up a request object
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        String sessionId = loginEvent.getSessionId();
-        String clientId = loginEvent.getClientId();
-        
-        testingClient.server("test").run(session -> {
-            RealmModel realmModel = session.getContext().getRealm();
-            String clientUuid = realmModel.getClientByClientId(clientId).getId();
-            UserSessionModel userSession = session.sessions().getUserSession(realmModel, sessionId);
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
-            
-            String claimsInSession = clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM);
-            assertEquals(claimsJson, claimsInSession);
-        });
+            // generate and register client keypair
+            Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys(Algorithm.RS256.name());
+            String privateKeyPem = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
+            PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(privateKeyPem);
+
+            Map<String, Object> claims = ImmutableMap.of(
+                    "id_token", ImmutableMap.of(
+                            "test_claim", ImmutableMap.of(
+                                    "essential", true)));
+
+            String claimsJson = JsonSerialization.writeValueAsString(claims);
+
+            Map<String, Object> oidcRequest = new HashMap<>();
+            oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, "test-app");
+            oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+            oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+            oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+
+            String request = new JWSBuilder().jsonContent(oidcRequest).rsa256(privateKey);
+
+            driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.REQUEST_PARAM + "=" + request);
+
+            // need to login so session id can be read from event
+            loginPage.assertCurrent();
+            loginPage.login("test-user@localhost", "password");
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            String sessionId = loginEvent.getSessionId();
+            String clientId = loginEvent.getClientId();
+
+            testingClient.server("test").run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                String clientUuid = realmModel.getClientByClientId(clientId).getId();
+                UserSessionModel userSession = session.sessions().getUserSession(realmModel, sessionId);
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
+
+                String claimsInSession = clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM);
+                assertEquals(claimsJson, claimsInSession);
+            });
+        } finally {
+            // revert client settings
+            revertClientRepresentation(clientResource, clientRep);
+        }
     }
 
+    private void prepareClientRepresentation(Algorithm signatureAlg, String requestObjectRequired, ClientResource clientResource, ClientRepresentation clientRep) {
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(requestObjectRequired);
+        // use and set jwks_url
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+        String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+        // Set required signature
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(signatureAlg);
+        // update client settings
+        clientResource.update(clientRep);
+    }
+
+    private TestOIDCEndpointsApplicationResource prepareOIDCEndpointsApplicationResource(Algorithm signatureAlg) {
+        // Set up a request object
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        // generate and register client keypair
+        oidcClientEndpointsResource.generateKeys(signatureAlg.name());
+        // register request object
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", signatureAlg.name());
+        return oidcClientEndpointsResource;
+    }
+
+    private void revertClientRepresentation(ClientResource clientResource, ClientRepresentation clientRep) {
+        // Revert requiring request object for client
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectRequired(null);
+        // Revert requiring signature for client
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+        // Revert jwks_url settings
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
+        clientResource.update(clientRep);
+    }
 }

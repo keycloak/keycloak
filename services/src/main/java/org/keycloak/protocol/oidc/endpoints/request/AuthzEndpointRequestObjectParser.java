@@ -50,17 +50,18 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         if (headerAlgorithm == null) {
             throw new RuntimeException("Request object signed algorithm not specified");
         }
-        if (requestedSignatureAlgorithm != null && requestedSignatureAlgorithm != headerAlgorithm) {
-            throw new RuntimeException("Request object signed with different algorithm than client requested algorithm");
-        }
-
-        if (header.getAlgorithm() == Algorithm.none) {
-            this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
-        } else {
-            this.requestParams = session.tokens().decodeClientJWT(requestObject, client, JsonNode.class);
-            if (this.requestParams == null) {
-            	throw new RuntimeException("Failed to verify signature on 'request' object");
+        if (requestedSignatureAlgorithm != null) {
+            if (requestedSignatureAlgorithm == Algorithm.none) {
+                throw new RuntimeException("client setting of Request object without signature(none) no longer permitted");
             }
+            if (requestedSignatureAlgorithm != headerAlgorithm) {
+                throw new RuntimeException("Request object signed with different algorithm than client requested algorithm");
+            }
+        }
+        // requestedSignatureAlgorithm is null if 'any'
+        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, JsonNode.class);
+        if (this.requestParams == null) {
+            throw new RuntimeException("Failed to verify signature on 'request' object");
         }
     }
 
