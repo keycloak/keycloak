@@ -28,19 +28,21 @@ include::topics/oidc/java/fuse7/cxf-builtin.adoc[]
 include::topics/oidc/java/fuse7/fuse-admin.adoc[]
 include::topics/oidc/java/fuse7/hawtio.adoc[]
 include::topics/oidc/java/spring-boot-adapter.adoc[]
+
 ifeval::[{project_community}==true]
 include::topics/oidc/java/tomcat-adapter.adoc[]
 include::topics/oidc/java/jetty9-adapter.adoc[]
 include::topics/oidc/java/jetty8-adapter.adoc[]
 include::topics/oidc/java/spring-security-adapter.adoc[]
 endif::[]
+
 include::topics/oidc/java/servlet-filter-adapter.adoc[]
+
 ifeval::[{project_community}==true]
 include::topics/oidc/java/jaas.adoc[]
-endif::[]
-ifeval::[{project_community}==true]
 include::topics/oidc/java/installed-adapter.adoc[]
 endif::[]
+
 include::topics/oidc/java/adapter-context.adoc[]
 include::topics/oidc/java/adapter_error_handling.adoc[]
 include::topics/oidc/java/logout.adoc[]
@@ -53,10 +55,12 @@ include::topics/oidc/javascript-adapter.adoc[]
 
 include::topics/oidc/nodejs-adapter.adoc[]
 
-include::topics/oidc/keycloak-gatekeeper.adoc[]
 ifeval::[{project_community}==true]
+include::topics/oidc/keycloak-gatekeeper.adoc[]
 include::topics/oidc/mod-auth-openidc.adoc[]
 endif::[]
+
+include::topics/oidc/oidc-generic.adoc[]
 
 include::topics/saml/saml-overview.adoc[]
 include::topics/saml/java/java-adapters.adoc[]

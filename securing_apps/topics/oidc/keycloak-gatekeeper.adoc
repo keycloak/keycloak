@@ -23,7 +23,7 @@ For further information, see the included help file which includes a full list o
 - Run `make test` to run the included tests.
 - Run `make` to build the project. You can instead use `make static` if you prefer to build a binary that includes within it all of the required dependencies.
 
-NOTE: You can also build via docker container: `make docker-build`. A Docker image is available at link:https://hub.docker.com/r/keycloak/keycloak-gatekeeper[https://hub.docker.com/r/keycloak/keycloak-gatekeeper].
+NOTE: You can also build via docker container: `make docker-build`. A Docker image is available at link:https://hub.docker.com/r/keycloak/keycloak-gatekeeper/[https://hub.docker.com/r/keycloak/keycloak-gatekeeper/].
 
 ==== Configuration options
 
@@ -125,7 +125,7 @@ resources:
 
 Anything defined in a configuration file can also be configured using command line options, such as in this example.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 bin/{generic_adapter_name} \
     --discovery-url=https://keycloak.example.com/auth/realms/<REALM_NAME> \
@@ -171,7 +171,7 @@ Example setup:
 
 You have collection of micro-services which are permitted to speak to one another; you have already set up the credentials, roles, and clients in Keycloak, providing granular role controls over issue tokens.
 
-[source,yaml]
+[source,yaml,subs="attributes+"]
 ----
 - name: {generic_adapter_name}
   image: quay.io/gambol99/keycloak-generic-adapter:latest
@@ -202,7 +202,7 @@ On the receiver side you could set up the {generic_adapter_name_full} (--no=redi
 
 Handling HTTPS requires a man-in-the-middle sort of TLS connection. By default, if no `--tls-ca-certificate` and `--tls-ca-key` are provided the proxy will use the default certificate. If you wish to verify the trust, you'll need to generate a CA, for example.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ca.key -out ca.pem
 $ bin/{generic_adapter_name} \
@@ -434,7 +434,7 @@ To enable a local redis store use `redis://[USER:PASSWORD@]HOST:PORT`. In both c
 
 ==== Logout endpoint
 
-A */oauth/logout?redirect=url* is provided as a helper to log users out. In addition to dropping any session cookies, we also attempt to revoke access via revocation url (config *revocation-url* or *--revocation-url*) with the provider. For Keycloak, the url for this would be https://keycloak.example.com/auth/realms/REALM_NAME/protocol/openid-connect/logout, for Google https://accounts.google.com/o/oauth2/revoke. If the url is not specified we will attempt to grab the url from the OpenID discovery response.
+A */oauth/logout?redirect=url* is provided as a helper to log users out. In addition to dropping any session cookies, we also attempt to revoke access via revocation url (config *revocation-url* or *--revocation-url*) with the provider. For Keycloak, the url for this would be https://keycloak.example.com/auth/realms/REALM_NAME/protocol/openid-connect/logout. If the url is not specified we will attempt to grab the url from the OpenID discovery response.
 
 ==== Cross-origin resource sharing (CORS)
 

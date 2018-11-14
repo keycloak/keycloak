@@ -4,7 +4,7 @@
 
 {project_name} also comes with a built-in https://fedoraproject.org/wiki/Features/SSSD[SSSD] (System Security Services Daemon) plugin. SSSD is part of the latest Fedora or Red Hat Enterprise Linux and provides access to multiple identity and authentication providers. It provides benefits such as failover and offline support. To see configuration options and for more information see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
 
-SSSD also integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. For {project_name}, we benefit from this integration authenticating against http://tldp.org/HOWTO/User-Authentication-HOWTO/x115.html[PAM] services and retrieving user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
+SSSD also integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. For {project_name}, we benefit from this integration authenticating against PAM services and retrieving user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
 
 image:{project_images}/keycloak-sssd-freeipa-integration-overview.png[]
 
@@ -48,7 +48,7 @@ You should be prompted for the password. After that, you can add users to the IP
 
 ==== SSSD and D-Bus
 
-As mentioned previously, the federation provider obtains the data from SSSD using D-BUS and authentication occurs using http://tldp.org/HOWTO/User-Authentication-HOWTO/x115.html[PAM].
+As mentioned previously, the federation provider obtains the data from SSSD using D-BUS and authentication occurs using PAM.
 
 First, you have to install the sssd-dbus RPM, which allows information from SSSD to be transmitted over the system bus.
 
