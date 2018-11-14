@@ -128,12 +128,23 @@ public class LDAPUtils {
     // roles & groups
 
     public static LDAPObject createLDAPGroup(LDAPStorageProvider ldapProvider, String groupName, String groupNameAttribute, Collection<String> objectClasses,
-                                             String parentDn, Map<String, Set<String>> additionalAttributes) {
+                                             String parentDn, Map<String, Set<String>> additionalAttributes, String membershipLdapAttribute) {
         LDAPObject ldapObject = new LDAPObject();
 
         ldapObject.setRdnAttributeName(groupNameAttribute);
         ldapObject.setObjectClasses(objectClasses);
         ldapObject.setSingleAttribute(groupNameAttribute, groupName);
+
+        for (String objectClassValue : objectClasses) {
+            // On MSAD with object class "group", empty member must not be added. Specified object classes typically
+            // require empty member attribute if no members have joined yet
+            if ((objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
+                    || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
+                    || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) &&
+                    additionalAttributes.get(membershipLdapAttribute) == null) {
+                ldapObject.setSingleAttribute(membershipLdapAttribute, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
+            }
+        }
 
         LDAPDn roleDn = LDAPDn.fromString(parentDn);
         roleDn.addFirst(groupNameAttribute, groupName);
