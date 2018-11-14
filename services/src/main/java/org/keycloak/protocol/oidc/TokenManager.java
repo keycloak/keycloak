@@ -180,6 +180,8 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
         }
 
+        clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
+
         // recreate token.
         AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
         verifyAccess(oldToken, newToken);
@@ -433,7 +435,10 @@ public class TokenManager {
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
-        return DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds);
+        clientSessionCtx.setAttribute(ClientSessionContext.AUTHENTICATION_SESSION_ATTR, authSession);
+
+        return clientSessionCtx;
     }
 
 
@@ -614,7 +619,7 @@ public class TokenManager {
 
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
-        token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
+        token.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
         token.setScope(clientSessionCtx.getScopeString());
 
         // Best effort for "acr" value. Use 0 if clientSession was authenticated through cookie ( SSO )
