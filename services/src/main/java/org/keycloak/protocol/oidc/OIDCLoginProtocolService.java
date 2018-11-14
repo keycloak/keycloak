@@ -202,7 +202,7 @@ public class OIDCLoginProtocolService {
             if (k.getStatus().isEnabled() && k.getUse().equals(KeyUse.SIG) && k.getVerifyKey() != null) {
                 JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
                 if (k.getType().equals(KeyType.RSA)) {
-                    keys.add(b.rsa(k.getVerifyKey()));
+                    keys.add(b.rsa(k.getVerifyKey(), k.getCertificate()));
                 } else if (k.getType().equals(KeyType.EC)) {
                     keys.add(b.ec(k.getVerifyKey()));
                 }
