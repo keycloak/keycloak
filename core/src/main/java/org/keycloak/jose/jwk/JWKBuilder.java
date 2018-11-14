@@ -19,12 +19,14 @@ package org.keycloak.jose.jwk;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -38,7 +40,7 @@ public class JWKBuilder {
     private String kid;
 
     private String algorithm;
-
+    
     private JWKBuilder() {
     }
 
@@ -62,6 +64,10 @@ public class JWKBuilder {
     }
 
     public JWK rsa(Key key) {
+    	return rsa(key, null);
+    }
+    
+    public JWK rsa(Key key, X509Certificate certificate) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
@@ -73,6 +79,10 @@ public class JWKBuilder {
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
+        
+        if (certificate != null) {
+            k.setX509CertificateChain(new String [] {PemUtils.encodeCertificate(certificate)});
+        }
 
         return k;
     }

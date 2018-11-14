@@ -19,7 +19,9 @@ package org.keycloak.jose.jwk;
 
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.util.JsonSerialization;
 
@@ -30,6 +32,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 
 import static org.junit.Assert.*;
@@ -43,8 +46,9 @@ public class JWKTest {
     public void publicRs256() throws Exception {
         KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "Test");
 
-        JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(publicKey)).algorithm("RS256").rsa(publicKey);
+        JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(publicKey)).algorithm("RS256").rsa(publicKey, certificate);
 
         assertNotNull(jwk.getKeyId());
         assertEquals("RSA", jwk.getKeyType());
@@ -54,6 +58,8 @@ public class JWKTest {
         assertTrue(jwk instanceof RSAPublicJWK);
         assertNotNull(((RSAPublicJWK) jwk).getModulus());
         assertNotNull(((RSAPublicJWK) jwk).getPublicExponent());
+        assertNotNull(((RSAPublicJWK) jwk).getX509CertificateChain());
+        assertEquals(PemUtils.encodeCertificate(certificate), ((RSAPublicJWK) jwk).getX509CertificateChain()[0]);
 
         String jwkJson = JsonSerialization.writeValueAsString(jwk);
 
