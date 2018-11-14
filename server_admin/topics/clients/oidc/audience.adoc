@@ -98,6 +98,11 @@ on the `my-app` client, but instead create a dedicated client scope, for example
 for the client roles of the `good-service` client. Assuming that this client scope will be added as an optional client scope to
 the `my-app` client, the client roles and audience will be added to the token just if explicitly requested by the `scope=good-service` parameter.
 
+NOTE: The frontend client itself is not automatically added to the access token audience. This allows for easy differentiation between
+the access token and the ID token, because the access token will not contain the client for which the token was issued as an audience. So in
+he example above, the `my-app` won't be added as an audience. If you need the client itself as an audience, see the
+<<_audience_hardcoded, hardcoded audience>> option. However, using the same client as both frontend and REST service is not recommended.
+
 [[_audience_hardcoded]]
 ===== Hardcoded audience
 
