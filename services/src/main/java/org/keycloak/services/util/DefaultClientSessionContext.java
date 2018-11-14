@@ -17,7 +17,9 @@
 
 package org.keycloak.services.util;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
@@ -55,6 +57,8 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     // All roles of user expanded. It doesn't yet take into account permitted clientScopes
     private Set<RoleModel> userRoles;
+
+    private Map<String, Object> attributes = new HashMap<>();
 
     private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds) {
         this.clientSession = clientSession;
@@ -174,6 +178,19 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         }
 
         return scopeParam;
+    }
+
+
+    @Override
+    public void setAttribute(String name, Object value) {
+        attributes.put(name, value);
+    }
+
+
+    @Override
+    public <T> T getAttribute(String name, Class<T> clazz) {
+        Object value = attributes.get(name);
+        return clazz.cast(value);
     }
 
 

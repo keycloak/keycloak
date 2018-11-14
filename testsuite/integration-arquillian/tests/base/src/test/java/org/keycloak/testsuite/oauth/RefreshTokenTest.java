@@ -136,6 +136,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenRequest() throws Exception {
+        oauth.nonce("123456");
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -147,6 +148,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        assertEquals("123456", token.getNonce());
+
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
@@ -199,6 +202,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+
+        assertEquals("123456", refreshedToken.getNonce());
 
         setTimeOffset(0);
     }

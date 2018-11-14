@@ -760,6 +760,10 @@ public class OAuthClient {
         return redirectUri;
     }
 
+    public String getNonce() {
+        return nonce;
+    }
+
     public String getLoginFormUrl() {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {

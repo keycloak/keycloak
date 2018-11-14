@@ -29,7 +29,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -39,16 +38,21 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -179,7 +183,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession= clientSessionCtx.getClientSession();
-        ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
 
         String responseTypeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         String responseModeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
@@ -197,10 +200,27 @@ public class OIDCLoginProtocol implements LoginProtocol {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
         }
 
+        AuthenticationSessionModel authSession = clientSessionCtx.getAttribute(ClientSessionContext.AUTHENTICATION_SESSION_ATTR, AuthenticationSessionModel.class);
+        if (authSession == null) {
+            // Shouldn't happen if correctly used
+            throw new IllegalStateException("AuthenticationSession attachement not set in the ClientSessionContext");
+        }
+
+        String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
+        clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
+
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-            code = accessCode.getOrGenerateCode();
+            OAuth2Code codeData = new OAuth2Code(UUID.randomUUID(),
+                    Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
+                    nonce,
+                    authSession.getClientNote(OAuth2Constants.SCOPE),
+                    authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
+                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
+                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+
+            code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);
         }
 
