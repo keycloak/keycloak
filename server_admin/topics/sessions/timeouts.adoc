@@ -19,7 +19,8 @@ Let's walk through each of the items on this page.
 
 |SSO Session Idle
 |Also pertains to OIDC clients.  If the user is not active for longer than this timeout, the user session will be invalidated.  How is idle time checked?
- A client requesting authentication will bump the idle timeout.  Refresh token requests will also bump the idle timeout.
+A client requesting authentication will bump the idle timeout.  Refresh token requests will also bump the idle timeout.
+There is a small window of time that is always added to the idle timeout before the session is actually invalidated (See note below).
 
 |SSO Session Max
 |Maximum time before a user session is expired and invalidated.  This is a hard number and time.  It controls the maximum time
@@ -27,6 +28,7 @@ Let's walk through each of the items on this page.
 
 |Offline Session Idle
 |For <<_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
+There is a small window of time that is always added to the idle timeout before the session is actually invalidated (See note below).
 
 |Offline Session Max Limited
 |For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of activity.
@@ -58,3 +60,9 @@ Let's walk through each of the items on this page.
 |Override User-Initiated Action Lifespan
 |Permits the possibility of having independent timeouts per operation (e.g. e-mail verification, forgot password, user actions and Identity Provider E-mail Verification). This field is non mandatory and if nothing is specified it defaults to the value configured at _User-Initiated Action Lifespan_.
 |===
+
+NOTE: For idle timeouts, there is a small window of time (2 minutes) during which the session is kept unexpired. For example, when you have
+timeout set to 30 minutes, it will be actually 32 minutes before the session is expired. This is needed for some corner-case scenarios in
+cluster and cross-datacenter environments, in cases where the token was refreshed on one cluster node for a very short time before the
+expiration and the other cluster nodes would in the meantime incorrectly consider the session as expired, because they had not yet received
+the message about successful refresh from the node which did the refresh.
