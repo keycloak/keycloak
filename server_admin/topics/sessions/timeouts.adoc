@@ -26,6 +26,16 @@ There is a small window of time that is always added to the idle timeout before 
 |Maximum time before a user session is expired and invalidated.  This is a hard number and time.  It controls the maximum time
  a user session can remain active, regardless of activity.
 
+|SSO Session Idle Remember Me
+|Same as the standard SSO Session Idle configuration but specific to logins with remember me enabled. It allows for the specification of longer
+ session idle timeouts when remember me is selected during the login process. It is an optional configuration and if not set to a value
+ bigger than 0 it uses the same idle timeout set in the SSO Session Idle configuration.
+
+|SSO Session Max Remember Me
+|Same as the standard SSO Session Max but specific to logins with remember me enabled. It allows for the specification of longer lived
+ sessions when remember me is selected during the login process. It is an optional configuration and if not set to a value bigger than 0
+ it uses the same session lifespan set in the SSO Session Max configuration.
+
 |Offline Session Idle
 |For <<_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
 There is a small window of time that is always added to the idle timeout before the session is actually invalidated (See note below).
