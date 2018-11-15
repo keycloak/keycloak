@@ -1,8 +1,8 @@
 ADOPTERS
-
+========
 
 PUBLIC REFERENCES
-=================
+-----------------
 
 List of organization names below is based on information collected using Keycloak Community Survey. It contains company names from participants who agreed to serve as public reference. If organizations would like get added or removed please make a PR. 
 
