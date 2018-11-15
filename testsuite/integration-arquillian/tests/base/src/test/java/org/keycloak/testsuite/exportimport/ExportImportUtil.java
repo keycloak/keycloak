@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
@@ -136,6 +137,16 @@ public class ExportImportUtil {
         // test clientAuthenticatorType
         Assert.assertEquals("client-secret", application.getClientAuthenticatorType());
         Assert.assertEquals("client-jwt", otherApp.getClientAuthenticatorType());
+
+        // test authenticationFlowBindingOverrides
+        Map<String, String> flowMap = otherApp.getAuthenticationFlowBindingOverrides();
+        Assert.assertNotNull(flowMap);
+        Assert.assertEquals(1, flowMap.size());
+        Assert.assertTrue(flowMap.containsKey("browser"));
+        // if the authentication flows were correctly imported there must be a flow whose id matches the one in the authenticationFlowBindingOverrides
+        AuthenticationFlowRepresentation flowRep = realmRsc.flows().getFlow(flowMap.get("browser"));
+        Assert.assertNotNull(flowRep);
+        Assert.assertEquals("browser", flowRep.getAlias());
 
         // Test finding applications by ID
         Assert.assertNull(ApiUtil.findClientResourceById(realmRsc, "982734"));
