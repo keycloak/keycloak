@@ -22,6 +22,7 @@
             MARIADB_PASSWORD: keycloak
             KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
             KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+            JSTAT: "${KEYCLOAK_JSTAT:-false}"
             INFINISPAN_HOST: infinispan_dc1
             SITE: dc1
             HOTROD_VERSION: 2.8

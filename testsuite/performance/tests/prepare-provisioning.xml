@@ -10,10 +10,10 @@
                 <include name="monitoring/**"/>
             </fileset>
         </copy>
-        <copy todir="${project.build.directory}/docker-compose/infinispan" overwrite="false" failonerror="true">
+        <copy todir="${project.build.directory}/docker-compose/infinispan" overwrite="false" failonerror="false">
             <fileset dir="${project.basedir}/../infinispan/target/docker"/>
         </copy>
-        <copy todir="${project.build.directory}/docker-compose/load-balancer/wildfly-modcluster" overwrite="false" failonerror="true">
+        <copy todir="${project.build.directory}/docker-compose/load-balancer/wildfly-modcluster" overwrite="false" failonerror="false">
             <fileset dir="${project.basedir}/../load-balancer/wildfly-modcluster/target/docker"/>
         </copy>
         <copy todir="${project.build.directory}/docker-compose/keycloak" overwrite="false" failonerror="true">
