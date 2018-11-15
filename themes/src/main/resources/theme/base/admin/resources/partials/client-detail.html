@@ -440,6 +440,7 @@
                                 ng-change="changeRequestObjectSignatureAlg()"
                                 ng-model="requestObjectSignatureAlg">
                             <option value="any">any</option>
+                            <option value="none">none</option>
                             <option ng-repeat="provider in serverInfo.listProviderIds('clientSignature')" value="{{provider}}">{{provider}}</option>
                         </select>
                     </div>

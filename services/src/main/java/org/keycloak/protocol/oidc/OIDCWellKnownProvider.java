@@ -91,7 +91,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setIdTokenSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
         config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
-        config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+        config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(true));
         config.setResponseTypesSupported(DEFAULT_RESPONSE_TYPES_SUPPORTED);
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
