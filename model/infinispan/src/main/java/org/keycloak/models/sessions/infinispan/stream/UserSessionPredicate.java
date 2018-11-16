@@ -152,16 +152,19 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     public static class ExternalizerImpl implements Externalizer<UserSessionPredicate> {
 
         private static final int VERSION_1 = 1;
+        private static final int VERSION_2 = 2;
 
         @Override
         public void writeObject(ObjectOutput output, UserSessionPredicate obj) throws IOException {
-            output.writeByte(VERSION_1);
+            output.writeByte(VERSION_2);
 
             MarshallUtil.marshallString(obj.realm, output);
             MarshallUtil.marshallString(obj.user, output);
             MarshallUtil.marshallString(obj.client, output);
             KeycloakMarshallUtil.marshall(obj.expired, output);
             KeycloakMarshallUtil.marshall(obj.expiredRefresh, output);
+            KeycloakMarshallUtil.marshall(obj.expiredRememberMe, output);
+            KeycloakMarshallUtil.marshall(obj.expiredRefreshRememberMe, output);
             MarshallUtil.marshallString(obj.brokerSessionId, output);
             MarshallUtil.marshallString(obj.brokerUserId, output);
 
@@ -172,6 +175,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             switch (input.readByte()) {
                 case VERSION_1:
                     return readObjectVersion1(input);
+                case VERSION_2:
+                    return readObjectVersion2(input);
                 default:
                     throw new IOException("Unknown version");
             }
@@ -182,6 +187,17 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             res.user(MarshallUtil.unmarshallString(input));
             res.client(MarshallUtil.unmarshallString(input));
             res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
+            res.brokerSessionId(MarshallUtil.unmarshallString(input));
+            res.brokerUserId(MarshallUtil.unmarshallString(input));
+            return res;
+        }
+
+        public UserSessionPredicate readObjectVersion2(ObjectInput input) throws IOException, ClassNotFoundException {
+            UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
+            res.user(MarshallUtil.unmarshallString(input));
+            res.client(MarshallUtil.unmarshallString(input));
+            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input),
+                    KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
             res.brokerSessionId(MarshallUtil.unmarshallString(input));
             res.brokerUserId(MarshallUtil.unmarshallString(input));
             return res;
