@@ -2,7 +2,7 @@
 
 == Introduction
 
-Red Hat Single Sign-On (RH-SSO) 7.2 is based on the Keycloak project and provides security for your web applications by
+Red Hat Single Sign-On (RH-SSO) 7.3 is based on the Keycloak project and provides security for your web applications by
 providing Web single sign-on capabilities based on popular standards such as SAML 2.0, OpenID Connect, and OAuth 2.0.
 The Red Hat Single Sign-On Server can act as a SAML or OpenID Connect-based identity provider, mediating with your
 enterprise user directory or third-party SSO provider for identity information and your applications using standards-based
@@ -14,7 +14,7 @@ RH-SSO instances from a single control point. The upgrade process differs depend
 implemented. Specific instructions for each mode are provided where applicable.
 
 The purpose of this guide is to document the steps that are required to successfully upgrade from
-Red Hat Single Sign-On 7.1 to Red Hat Single Sign-On 7.2.
+Red Hat Single Sign-On 7.2 to Red Hat Single Sign-On 7.3.
 
 === About Upgrades
 
@@ -28,7 +28,7 @@ that could require rewriting parts of applications or server extensions.
 
 Red Hat Single Sign-On periodically provides point releases, which are minor updates that include bug fixes, security
 fixes, and new features. If you plan to upgrade from one Red Hat Single Sign-On point release to another, for example,
-from Red Hat Single Sign-On 7.1 to Red Hat Single Sign-On 7.2, code changes should not be required for applications or
+from Red Hat Single Sign-On 7.2 to Red Hat Single Sign-On 7.3, code changes should not be required for applications or
 custom server extensions as long as no private, unsupported, or tech preview APIs are used.
 
 ==== Micro Updates

@@ -2,5 +2,6 @@
 
 Review these changes carefully before upgrading.
 
+include::changes-73.adoc[leveloffset=1]
 include::changes-72.adoc[leveloffset=1]
 include::changes-71.adoc[leveloffset=1]
