@@ -527,7 +527,7 @@ public class LoginActionsService {
             if (tokenAuthSessionCompoundId != null) {
                 // This can happen if the token contains ID but user opens the link in a new browser
                 String sessionId = AuthenticationSessionCompoundId.encoded(tokenAuthSessionCompoundId).getRootSessionId();
-                LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, sessionId);
+                LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, authSession, sessionId);
             }
 
             if (authSession == null) {
