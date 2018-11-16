@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -29,15 +28,17 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.broker.BrokerTestTools;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ProceedPage;
@@ -46,11 +47,9 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -65,6 +64,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -849,6 +849,48 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         // this will result in email verification
         loginPage.open();
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        // confirm
+        driver.navigate().to(verificationUrl);
+
+        // back to account, already logged in
+        accountPage.assertCurrent();
+
+        // email should be verified and required actions empty
+        UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
+        Assert.assertTrue(user.isEmailVerified());
+        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+    }
+
+    @Test
+    public void verifyEmailViaAuthSessionWhileLoggedIn() throws IOException, MessagingException {
+        Assume.assumeTrue("Works only on auth-server-undertow",
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
+
+        UserAttributeUpdater userAttributeUpdater = new UserAttributeUpdater(testRealm().users().get(testUserId));
+        userAttributeUpdater.setEmailVerified(false).update();
+
+        final String testRealmName = testRealm().toRepresentation().getRealm();
+        accountPage.setAuthRealm(testRealmName);
+        oauth.realm(testRealmName).clientId("account").redirectUri(getAuthServerRoot() + "realms/" + testRealmName + "/account");
+        loginPage.open();
+
+        String authSessionId = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
+        String realmId = testRealm().toRepresentation().getId();
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+            assertThat("Expecting single auth session", ras.getAuthenticationSessions().keySet(), Matchers.hasSize(1));
+            ras.getAuthenticationSessions().forEach((id, as) -> as.addRequiredAction(RequiredAction.VERIFY_EMAIL));
+        });
+        loginPage.login("test-user@localhost", "password");
+
         verifyEmailPage.assertCurrent();
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
