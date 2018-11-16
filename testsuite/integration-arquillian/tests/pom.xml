@@ -141,7 +141,6 @@
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>
 
-        <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
         <examples.version.suffix>${project.version}</examples.version.suffix>
@@ -463,7 +462,6 @@
                             <examples.home>${examples.home}</examples.home>
                             <examples.version.suffix>${examples.version.suffix}</examples.version.suffix>
 
-                            <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
@@ -497,8 +495,6 @@
                             <appium.fullReset>${appium.fullReset}</appium.fullReset>
 
                             <project.version>${project.version}</project.version>
-                            <migration.project.version>${migration.project.version}</migration.project.version>
-                            <migration.product.version>${migration.product.version}</migration.product.version>
 
                             <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
                             <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
@@ -1345,7 +1341,7 @@
                                 <systemPropertyVariables>
                                     <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
                                     <auth.server.jboss.migration>true</auth.server.jboss.migration>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
+                                    <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>
                                     <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
                                 </systemPropertyVariables>
                             </configuration>
@@ -1356,14 +1352,14 @@
         </profile>
 
         <profile>
-            <id>migration-productized</id>
+            <id>migration-prod</id>
             <activation>
                 <property>
-                    <name>migrated.version.import.file.suffix</name>
+                    <name>migration.import.file.name</name>
                 </property>
             </activation>
             <properties>
-                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
+                <migration.import.file>target/test-classes/migration-test/${migration.import.file.name}</migration.import.file>
             </properties>
         </profile>
 
