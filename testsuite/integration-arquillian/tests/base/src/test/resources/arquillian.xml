@@ -122,7 +122,6 @@
                 -Dauth.server.https.port=${auth.server.https.port}
                 -Dkeycloak.password.blacklists.path=${keycloak.password.blacklists.path}
                 ${adapter.test.props}
-                ${migration.import.properties}
                 ${auth.server.profile}
                 ${auth.server.feature}
                 ${kie.maven.settings}

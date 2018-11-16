@@ -31,7 +31,7 @@
 
     <properties>
         <keycloak.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}</keycloak.server.home>
-        <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+        <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
     </properties>
 
     <build>
