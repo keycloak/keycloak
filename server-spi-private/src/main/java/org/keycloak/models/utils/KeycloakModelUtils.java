@@ -570,7 +570,14 @@ public final class KeycloakModelUtils {
                 return clientScope;
             }
         }
-
+        // check if we are referencing a client instead of a scope
+        if (realm.getClients() != null) {
+            for (ClientModel client : realm.getClients()) {
+                if (clientScopeName.equals(client.getClientId())) {
+                    return client;
+                }
+            }
+        }
         return null;
     }
 

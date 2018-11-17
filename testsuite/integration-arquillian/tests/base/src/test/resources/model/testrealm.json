@@ -179,7 +179,8 @@
                     "grantedRealmRoles": [ "offline_access" ],
                     "grantedClientRoles": {
                         "Application": [ "app-admin" ]
-                    }
+                    },
+                    "grantedClientScopes" : [ "roles", "profile", "email", "account", "web-origins" ]
                 },
                 {
                     "clientId": "OtherApp",
@@ -535,6 +536,4 @@
         ]
 
     }
-
-
 }
