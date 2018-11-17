@@ -660,7 +660,11 @@ public class ModelToRepresentation {
 
         List<String> grantedClientScopes = new LinkedList<>();
         for (ClientScopeModel clientScope : model.getGrantedClientScopes()) {
-            grantedClientScopes.add(clientScope.getName());
+            if (clientScope instanceof ClientModel) {
+                grantedClientScopes.add(((ClientModel) clientScope).getClientId());
+            } else {
+                grantedClientScopes.add(clientScope.getName());
+            }
         }
 
         UserConsentRepresentation consentRep = new UserConsentRepresentation();

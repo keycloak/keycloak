@@ -59,6 +59,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -368,7 +369,7 @@ public class ExportImportUtil {
 
         Map<String, Object> appAdminConsent = findConsentByClientId(consents, application.getClientId());
         Assert.assertNotNull(appAdminConsent);
-        Assert.assertTrue(isClientScopeGranted(appAdminConsent, OAuth2Constants.OFFLINE_ACCESS));
+        Assert.assertTrue(isClientScopeGranted(appAdminConsent, OAuth2Constants.OFFLINE_ACCESS, "roles", "profile", "email", "account", "web-origins"));
 
         Map<String, Object> otherAppAdminConsent = findConsentByClientId(consents, otherApp.getClientId());//admin.getConsentByClient(otherApp.getId());
         Assert.assertFalse(isClientScopeGranted(otherAppAdminConsent, OAuth2Constants.OFFLINE_ACCESS));
@@ -392,9 +393,9 @@ public class ExportImportUtil {
     }
 
 
-    private static boolean isClientScopeGranted(Map<String, Object> consent, String clientScopeName) {
+    private static boolean isClientScopeGranted(Map<String, Object> consent, String... clientScopeNames) {
         if (consent.get("grantedClientScopes") == null) return false;
-        return ((List)consent.get("grantedClientScopes")).contains(clientScopeName);
+        return ((List)consent.get("grantedClientScopes")).containsAll(Arrays.asList(clientScopeNames));
     }
 
 
