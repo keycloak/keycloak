@@ -28,9 +28,9 @@ The following example shows how to initialize the JavaScript adapter:
     <script src="keycloak.js"></script>
     <script>
         var keycloak = Keycloak();
-        keycloak.init().then(function(authenticated) {
+        keycloak.init().success(function(authenticated) {
             alert(authenticated ? 'authenticated' : 'not authenticated');
-        }).catch(function() {
+        }).error(function() {
             alert('failed to initialize');
         });
     </script>
@@ -102,9 +102,9 @@ token was successfully refreshed and for example display an error to the user if
 
 [source,javascript]
 ----
-keycloak.updateToken(30).then(function() {
+keycloak.updateToken(30).success(function() {
     loadData();
-}).catch(function() {
+}).error(function() {
     alert('Failed to refresh token');
 });
 ----
@@ -392,9 +392,9 @@ For example:
 
 [source,javascript]
 ----
-keycloak.loadUserProfile().then(function(profile) {
+keycloak.loadUserProfile().success(function(profile) {
         alert(JSON.stringify(profile, null, "  "));
-    }).catch(function() {
+    }).error(function() {
         alert('Failed to load user profile');
     });
 ----
@@ -413,13 +413,13 @@ For example:
 
 [source,javascript]
 ----
-keycloak.updateToken(5).then(function(refreshed) {
+keycloak.updateToken(5).success(function(refreshed) {
         if (refreshed) {
             alert('Token was successfully refreshed');
         } else {
             alert('Token is still valid');
         }
-    }).catch(function() {
+    }).error(function() {
         alert('Failed to refresh the token, or the session has expired');
     });
 ----
