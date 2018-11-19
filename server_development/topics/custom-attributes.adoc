@@ -41,7 +41,7 @@ As an example to add a mobile number to the account page add the following snipp
    </div>
 
    <div class="col-sm-10 col-md-10">
-       <input type="text" class="form-control" id="user.attributes.mobile" name="user.attributes.mobile" value="${(account.attributes.mobile!'')?html}"/>
+       <input type="text" class="form-control" id="user.attributes.mobile" name="user.attributes.mobile" value="${(account.attributes.mobile!'')}"/>
    </div>
 </div>
 ----
