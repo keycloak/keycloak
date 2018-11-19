@@ -421,8 +421,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             List<String> roles = (List<String>) cst1.get("roles");
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
-            // Assert audience - "test-app" is added due the AudienceResolveProtocolMapper
-            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "test-app");
+            // Assert audience
+            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account");
         } finally {
             // Revert
             rolesScope.getProtocolMappers().delete(hardcodedMapperId);
