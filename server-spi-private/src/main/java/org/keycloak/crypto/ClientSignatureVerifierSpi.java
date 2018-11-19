@@ -14,33 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
 
-package org.keycloak.keys.infinispan;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-import java.io.Serializable;
-import java.util.Map;
+public class ClientSignatureVerifierSpi implements Spi {
 
-import org.keycloak.crypto.KeyWrapper;
-
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public class PublicKeysEntry implements Serializable {
-
-    private final int lastRequestTime;
-
-    private final Map<String, KeyWrapper> currentKeys;
-
-    public PublicKeysEntry(int lastRequestTime, Map<String, KeyWrapper> currentKeys) {
-        this.lastRequestTime = lastRequestTime;
-        this.currentKeys = currentKeys;
+    @Override
+    public boolean isInternal() {
+        return true;
     }
 
-    public int getLastRequestTime() {
-        return lastRequestTime;
+    @Override
+    public String getName() {
+        return "clientSignature";
     }
 
-    public Map<String, KeyWrapper> getCurrentKeys() {
-        return currentKeys;
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ClientSignatureVerifierProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ClientSignatureVerifierProviderFactory.class;
     }
 }

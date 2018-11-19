@@ -41,4 +41,6 @@ public interface TokenManager {
 
     String signatureAlgorithm(TokenCategory category);
 
+    <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz);
+
 }

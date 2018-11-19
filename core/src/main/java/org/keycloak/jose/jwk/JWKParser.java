@@ -128,7 +128,7 @@ public class JWKParser {
     }
 
     public boolean isKeyTypeSupported(String keyType) {
-        return RSAPublicJWK.RSA.equals(keyType);
+        return (RSAPublicJWK.RSA.equals(keyType) || ECPublicJWK.EC.equals(keyType));
     }
 
 }
