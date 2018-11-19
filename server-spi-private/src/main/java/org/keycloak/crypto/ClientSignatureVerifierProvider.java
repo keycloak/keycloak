@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.crypto;
 
-import java.util.Map;
+import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
+import org.keycloak.provider.Provider;
 
-import org.keycloak.crypto.KeyWrapper;
+public interface ClientSignatureVerifierProvider extends Provider {
+    SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public interface PublicKeyLoader {
-
-    Map<String, KeyWrapper> loadKeys() throws Exception;
-
+    @Override
+    default void close() {
+    }
 }

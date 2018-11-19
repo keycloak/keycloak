@@ -14,33 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
 
-package org.keycloak.keys.infinispan;
+import org.keycloak.models.KeycloakSession;
 
-import java.io.Serializable;
-import java.util.Map;
+public class RS256ClientSignatureVerifierProviderFactory implements ClientSignatureVerifierProviderFactory {
 
-import org.keycloak.crypto.KeyWrapper;
+    public static final String ID = Algorithm.RS256;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public class PublicKeysEntry implements Serializable {
-
-    private final int lastRequestTime;
-
-    private final Map<String, KeyWrapper> currentKeys;
-
-    public PublicKeysEntry(int lastRequestTime, Map<String, KeyWrapper> currentKeys) {
-        this.lastRequestTime = lastRequestTime;
-        this.currentKeys = currentKeys;
+    @Override
+    public String getId() {
+        return ID;
     }
 
-    public int getLastRequestTime() {
-        return lastRequestTime;
+    @Override
+    public ClientSignatureVerifierProvider create(KeycloakSession session) {
+        return new AsymmetricClientSignatureVerifierProvider(session, Algorithm.RS256);
     }
 
-    public Map<String, KeyWrapper> getCurrentKeys() {
-        return currentKeys;
-    }
 }

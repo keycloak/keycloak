@@ -796,7 +796,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertEquals("Invalid Request", errorPage.getError());
 
         // Generate keypair for client
-        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys().get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
+        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys(null).get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
 
         // Verify signed request_uri will fail due to failed signature validation
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.RS256.toString());
@@ -824,6 +824,117 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Revert requiring signature for client
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
         clientResource.update(clientRep);
+    }
+
+    private void requestUriParamSignedIn(Algorithm expectedAlgorithm, Algorithm actualAlgorithm) throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate3");
+
+            String validRedirectUri = oauth.getRedirectUri();
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+            // Set required signature for request_uri
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(expectedAlgorithm);
+            clientResource.update(clientRep);
+
+            // generate and register client keypair
+            if (Algorithm.none != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm.name());
+
+            // register request object
+            oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", actualAlgorithm.name());
+
+            // use and set jwks_url
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+            clientResource.update(clientRep);
+
+            // set time offset, so that new keys are downloaded
+            setTimeOffset(20);
+
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            if (expectedAlgorithm == null || expectedAlgorithm == actualAlgorithm) {
+                // Check signed request_uri will pass
+                OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+                Assert.assertNotNull(response.getCode());
+                Assert.assertEquals("mystate3", response.getState());
+                assertTrue(appPage.isCurrent());
+            } else {
+                // Verify signed request_uri will fail due to failed signature validation
+                oauth.openLoginForm();
+                Assert.assertTrue(errorPage.isCurrent());
+                assertEquals("Invalid Request", errorPage.getError());
+            }
+
+        } finally {
+            // Revert requiring signature for client
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+            // Revert jwks_url settings
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualRS256() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.RS256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedNoneActualES256() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.none, Algorithm.ES256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedNoneActualNone() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.none, Algorithm.none);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualES256() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.ES256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES384ActualES384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES384, Algorithm.ES384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES512ActualES512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES512, Algorithm.ES512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedRS384ActualRS384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.RS384, Algorithm.RS384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedRS512ActualRS512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.RS512, Algorithm.RS512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedAnyActualES256() throws Exception {
+        // Algorithm is null if 'any'
+        // will success
+        requestUriParamSignedIn(null, Algorithm.ES256);
     }
 
     // LOGIN_HINT

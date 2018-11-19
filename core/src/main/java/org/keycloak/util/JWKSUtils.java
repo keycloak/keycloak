@@ -17,6 +17,8 @@
 
 package org.keycloak.util;
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -41,6 +43,34 @@ public class JWKSUtils {
         }
 
         return result;
+    }
+
+    public static Map<String, KeyWrapper> getKeyWrappersForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
+        Map<String, KeyWrapper> result = new HashMap<>();
+        for (JWK jwk : keySet.getKeys()) {
+            JWKParser parser = JWKParser.create(jwk);
+            if (jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+                KeyWrapper keyWrapper = new KeyWrapper();
+                keyWrapper.setKid(jwk.getKeyId());
+                keyWrapper.setAlgorithm(jwk.getAlgorithm());
+                keyWrapper.setType(jwk.getKeyType());
+                keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));
+                keyWrapper.setVerifyKey(parser.toPublicKey());
+                result.put(keyWrapper.getKid(), keyWrapper);
+            }
+        }
+        return result;
+    }
+
+    private static KeyUse getKeyUse(String keyUse) {
+        switch (keyUse) {
+            case "sig" : 
+                return KeyUse.SIG;
+            case "enc" : 
+                return KeyUse.ENC;
+            default :
+                return null;
+        }
     }
 
     public static JWK getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
