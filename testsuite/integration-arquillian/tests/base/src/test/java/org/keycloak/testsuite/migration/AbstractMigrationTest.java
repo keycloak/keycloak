@@ -106,6 +106,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
+            expectedClientIds.add("client-with-template");
         }
 
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
@@ -211,6 +212,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo4_0_0() {
         testRealmDefaultClientScopes(this.masterRealm);
         testRealmDefaultClientScopes(this.migrationRealm);
+        testClientDefaultClientScopes(this.migrationRealm);
         testOfflineScopeAddedToClient();
     }
 
@@ -491,6 +493,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testRealmDefaultClientScopes(RealmResource realm) {
         log.info("Testing default client scopes created in realm: " + realm.toRepresentation().getRealm());
         ExportImportUtil.testRealmDefaultClientScopes(realm);
+    }
+
+    private void testClientDefaultClientScopes(RealmResource realm) {
+        log.info("Testing default client scopes transferred from client scope in realm: " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testClientDefaultClientScopes(realm);
     }
 
     private void testOfflineScopeAddedToClient() {
