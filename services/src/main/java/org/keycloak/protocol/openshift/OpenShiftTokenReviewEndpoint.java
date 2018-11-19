@@ -17,6 +17,7 @@
 package org.keycloak.protocol.openshift;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -30,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -47,7 +49,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider {
+public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, EnvironmentDependentProviderFactory {
 
     private KeycloakSession session;
     private TokenManager tokenManager;
@@ -169,4 +171,8 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider {
         throw new ErrorResponseException(response);
     }
 
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION);
+    }
 }
