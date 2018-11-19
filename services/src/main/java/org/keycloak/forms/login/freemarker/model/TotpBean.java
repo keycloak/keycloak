@@ -64,11 +64,11 @@ public class TotpBean {
     }
 
     public String getManualUrl() {
-        return uriBuilder.replaceQueryParam("mode", "manual").build().toString();
+        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "manual").build().toString();
     }
 
     public String getQrUrl() {
-        return uriBuilder.replaceQueryParam("mode", "qr").build().toString();
+        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "qr").build().toString();
     }
 
     public OTPPolicy getPolicy() {
