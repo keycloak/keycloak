@@ -142,7 +142,7 @@ to:
 
 [source]
 ----
-styles=lib/patternfly/css/patternfly.css lib/zocial/zocial.css css/login.css css/styles.css
+styles=node_modules/patternfly/dist/css/patternfly.css node_modules/patternfly/dist/css/patternfly-additions.css lib/zocial/zocial.css css/login.css css/styles.css
 ----
 
 NOTE: To override styles from the parent stylesheets it's important that your stylesheet is listed last.
