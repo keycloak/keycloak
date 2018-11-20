@@ -122,7 +122,7 @@
                     if (loadListener) script.addEventListener("load", loadListener);
                     document.head.appendChild(script);
                 };
-            keycloak.init({onLoad: 'login-required'}).success(function(authenticated) {
+            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 loadjs("/node_modules/react/umd/react.development.js", function() {
                    loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
                         loadjs("/node_modules/systemjs/dist/system.src.js", function() {
