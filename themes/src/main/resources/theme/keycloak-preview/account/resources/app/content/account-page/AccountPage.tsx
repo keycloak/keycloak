@@ -16,7 +16,9 @@
 
 import * as React from 'react';
 import {AxiosResponse} from 'axios';
+
 import {AccountServiceClient} from '../../account-service/account.service';
+import {Msg} from '../../widgets/Msg';
  
 interface AccountPageProps {
 }
@@ -77,11 +79,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             });
     }
     
-    private makeTextInput(label: string, 
-                          name: string, 
+    private makeTextInput(name: string, 
                           disabled = false): React.ReactElement<any> {
         return (
-            <label>{label}
+            <label><Msg msgKey={name}/>:
                 <input disabled={disabled} type="text" name={name} value={this.state[name]} onChange={this.handleChange} />
             </label>
         );
@@ -90,17 +91,17 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     render() {
         return (
             <form onSubmit={this.handleSubmit}>
-                {this.makeTextInput('User Name:', 'username', true)}
+                {this.makeTextInput('username', true)}
                 <br/>
-                {this.makeTextInput('First Name:', 'firstName')}
+                {this.makeTextInput('firstName')}
                 <br/>
-                {this.makeTextInput('Last Name:', 'lastName')}
+                {this.makeTextInput('lastName')}
                 <br/>
-                {this.makeTextInput('Email:', 'email')}
+                {this.makeTextInput('email')}
                 <br/>
                 <button className="btn btn-primary btn-lg btn-sign" 
                         disabled={!this.state.changed}
-                        value="Submit">Submit</button>
+                        value="Submit"><Msg msgKey="doSave"/></button>
             </form>
         );
     }
