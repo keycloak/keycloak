@@ -15,29 +15,32 @@
  */
 
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-
-import {Msg} from './Msg';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
  
-declare const baseUrl;
+declare const l18n_msg: {[key:string]: string};
 
-export interface LogoutProps {
+export interface MsgProps {
+    readonly msgKey:string;
+    readonly params?:Array<string>;
 }
  
-export class Logout extends React.Component<LogoutProps> {
+export class Msg extends React.Component<MsgProps> {
 
-    constructor(props: LogoutProps) {
+    constructor(props: MsgProps) {
         super(props);
     }
     
-    private handleLogout() {
-        KeycloakService.Instance.logout(baseUrl);
-    }
-    
     render() {
+        let message:string = l18n_msg[this.props.msgKey];
+        if (message === undefined) message = this.props.msgKey;
+        
+        if (this.props.params !== undefined) {
+            this.props.params.forEach((value: string, index: number) => {
+                message = message.replace('{{param_'+ index + '}}', value);
+            })
+        }
+        
         return (
-            <Link to="/" className="btn btn-primary btn-lg btn-sign" type="button" onClick={this.handleLogout}><Msg msgKey="doSignOut"/></Link>
+            <span>{message}</span>
         );
     }
 }
