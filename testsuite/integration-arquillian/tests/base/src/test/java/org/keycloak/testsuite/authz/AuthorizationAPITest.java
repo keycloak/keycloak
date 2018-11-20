@@ -19,7 +19,6 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -31,7 +30,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -210,10 +208,6 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String configFile) {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
     }
 }
