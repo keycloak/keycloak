@@ -211,11 +211,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient() {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
     }
 
     private ClientResource getClient() {
