@@ -168,9 +168,9 @@ In our case we are storing this information, hashed, within a UserCredentialValu
 
 [source,java]
 ----
-    @Override
+  @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().configuredForCredentialType("secret_question", realm, user);
+        return session.userCredentialManager().isConfiguredFor(realm, user, "SECRET_QUESTION");
     }
 ----            
 
@@ -204,8 +204,17 @@ Its sole purpose is to render the page or to continue the flow.
            context.success();
            return;
         }
-        Response challenge = loginForm(context).createForm("secret_question.ftl");
+        Response challenge = context.form().createForm("secret-question.ftl");
         context.challenge(challenge);
+    }
+    
+    protected boolean hasCookie(AuthenticationFlowContext context) {
+        Cookie cookie = context.getHttpRequest().getHttpHeaders().getCookies().get("SECRET_QUESTION_ANSWERED");
+        boolean result = cookie != null;
+        if (result) {
+            System.out.println("Bypassing secret question because cookie is set");
+        }
+        return result;
     }
 ----            
 
@@ -242,6 +251,15 @@ The flow will end up invoking the action() method of our Authenticator implement
         }
         setCookie(context);
         context.success();
+    }
+    
+    protected boolean validateAnswer(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        String secret = formData.getFirst("secret_answer");
+        UserCredentialModel input = new UserCredentialModel();
+        input.setType("SECRET_QUESTION");
+        input.setValue(secret);
+        return context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), input);
     }
 ----            
 
@@ -392,6 +410,7 @@ Let's take a bigger look at secret-question.ftl  Here's a small code snippet:
                     <input id="totp" name="secret_answer" type="text" class="${properties.kcInputClass!}" />
                 </div>
             </div>
+        </form>
 ----            
 
 Any piece of text enclosed in `${}` corresponds to an attribute or template funtion.
