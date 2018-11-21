@@ -73,7 +73,9 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
         logoutFromRealm(bc.consumerRealmName(), "kc-oidc-idp");
         driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
-        waitForPage(driver, "keycloak account management", true);
+
+        //could be 'keycloak account management' or 'rh-sso account management'
+        waitForPage(driver, " account management", true);
     }
 
     @Test
