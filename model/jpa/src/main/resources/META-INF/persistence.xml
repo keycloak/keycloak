@@ -21,6 +21,7 @@
     version="1.0">
     <persistence-unit name="keycloak-default" transaction-type="RESOURCE_LOCAL">
         <class>org.keycloak.models.jpa.entities.ClientEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.CredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.CredentialAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
@@ -54,6 +55,7 @@
         <class>org.keycloak.models.jpa.entities.GroupRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.UserGroupMembershipEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientScopeEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientScopeAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity</class>
