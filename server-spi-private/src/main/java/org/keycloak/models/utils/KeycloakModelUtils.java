@@ -55,7 +55,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -432,15 +431,18 @@ public final class KeycloakModelUtils {
     }
 
 
-    private static GroupModel findSubGroup(String[] path, int index, GroupModel parent) {
+    private static GroupModel findSubGroup(String[] segments, int index, GroupModel parent) {
         for (GroupModel group : parent.getSubGroups()) {
-            if (group.getName().equals(path[index])) {
-                if (path.length == index + 1) {
+            String groupName = group.getName();
+            String[] pathSegments = formatPathSegments(segments, index, groupName);
+
+            if (groupName.equals(pathSegments[index])) {
+                if (pathSegments.length == index + 1) {
                     return group;
                 }
                 else {
-                    if (index + 1 < path.length) {
-                        GroupModel found = findSubGroup(path, index + 1, group);
+                    if (index + 1 < pathSegments.length) {
+                        GroupModel found = findSubGroup(pathSegments, index + 1, group);
                         if (found != null) return found;
                     } else {
                         return null;
@@ -450,6 +452,44 @@ public final class KeycloakModelUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@pathParts} in order to ignore
+     * group names containing a {@code /} character.
+     *
+     * @param segments the path segments
+     * @param index the index pointing to the position to start looking for the group name
+     * @param groupName the groupName
+     * @return a new array of strings with the correct segments in case the group has a name containing slashes
+     */
+    private static String[] formatPathSegments(String[] segments, int index, String groupName) {
+        String[] nameSegments = groupName.split("/");
+
+        if (nameSegments.length > 1 && segments.length >= nameSegments.length) {
+            for (int i = 0; i < nameSegments.length; i++) {
+                if (!nameSegments[i].equals(segments[index + i])) {
+                    return segments;
+                }
+            }
+
+            int numMergedIndexes = nameSegments.length - 1;
+            String[] newPath = new String[segments.length - numMergedIndexes];
+
+            for (int i = 0; i < newPath.length; i++) {
+                if (i == index) {
+                    newPath[i] = groupName;
+                } else if (i > index) {
+                    newPath[i] = segments[i + numMergedIndexes];
+                } else {
+                    newPath[i] = segments[i];
+                }
+            }
+
+            return newPath;
+        }
+
+        return segments;
     }
 
     public static GroupModel findGroupByPath(RealmModel realm, String path) {
@@ -466,14 +506,17 @@ public final class KeycloakModelUtils {
         if (split.length == 0) return null;
         GroupModel found = null;
         for (GroupModel group : realm.getTopLevelGroups()) {
-            if (group.getName().equals(split[0])) {
-                if (split.length == 1) {
+            String groupName = group.getName();
+            String[] pathSegments = formatPathSegments(split, 0, groupName);
+
+            if (groupName.equals(pathSegments[0])) {
+                if (pathSegments.length == 1) {
                     found = group;
                     break;
                 }
                 else {
-                    if (split.length > 1) {
-                        found = findSubGroup(split, 1, group);
+                    if (pathSegments.length > 1) {
+                        found = findSubGroup(pathSegments, 1, group);
                         if (found != null) break;
                     }
                 }
