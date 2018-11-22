@@ -96,7 +96,8 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
-            LDAPObject groupSpecialCharacters = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group-spec,ia*l_characžter)s", descriptionAttrName, "group-special-characters");
+            LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group-spec,ia*l_characžter)s", descriptionAttrName, "group-special-characters");
+            LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group/with/three/slashes", descriptionAttrName, "group-with-three-slashes");
 
             // Resync LDAP groups to Keycloak DB
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
@@ -170,10 +171,15 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
             specialUser.joinGroup(specialGroup);
 
+            GroupModel groupWithSlashes = KeycloakModelUtils.findGroupByPath(appRealm, "/group/with/three/slashes");
+            Assert.assertNotNull(groupWithSlashes);
+
+            specialUser.joinGroup(groupWithSlashes);
+
             // 2 - Check that group mappings are in LDAP and hence available through federation
 
             Set<GroupModel> userGroups = specialUser.getGroups();
-            Assert.assertEquals(1, userGroups.size());
+            Assert.assertEquals(2, userGroups.size());
             Assert.assertTrue(userGroups.contains(specialGroup));
 
             // 3 - Check through userProvider
@@ -182,9 +188,15 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
+            groupMembers = session.users().getGroupMembers(appRealm, groupWithSlashes, 0, 10);
+
+            Assert.assertEquals(1, groupMembers.size());
+            Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
+
             // 4 - Delete some group mappings and check they are deleted
 
             specialUser.leaveGroup(specialGroup);
+            specialUser.leaveGroup(groupWithSlashes);
 
             userGroups = specialUser.getGroups();
             Assert.assertEquals(0, userGroups.size());
