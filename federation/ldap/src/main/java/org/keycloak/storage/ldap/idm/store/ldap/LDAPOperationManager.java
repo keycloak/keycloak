@@ -42,6 +42,7 @@ import javax.naming.directory.SearchResult;
 import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 import java.io.IOException;
@@ -195,7 +196,7 @@ public class LDAPOperationManager {
                     int max = 5;
                     for (int i=0 ; i<max ; i++) {
                         try {
-                            context.rename(oldDn, dn);
+                            context.rename(new LdapName(oldDn), new LdapName(dn));
                             return dn;
                         } catch (NameAlreadyBoundException ex) {
                             if (!fallback) {
@@ -250,7 +251,7 @@ public class LDAPOperationManager {
             return execute(new LdapOperation<List<SearchResult>>() {
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
-                    NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                    NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                     while (search.hasMoreElements()) {
                         result.add(search.nextElement());
@@ -295,7 +296,7 @@ public class LDAPOperationManager {
                         PagedResultsControl pagedControls = new PagedResultsControl(identityQuery.getLimit(), cookie, Control.CRITICAL);
                         context.setRequestControls(new Control[] { pagedControls });
 
-                        NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                        NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                         while (search.hasMoreElements()) {
                             result.add(search.nextElement());
@@ -407,7 +408,7 @@ public class LDAPOperationManager {
 
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
-                    NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                    NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                     try {
                         if (search.hasMoreElements()) {
@@ -451,7 +452,7 @@ public class LDAPOperationManager {
             NamingEnumeration<Binding> enumeration = null;
 
             try {
-                enumeration = context.listBindings(dn);
+                enumeration = context.listBindings(new LdapName(dn));
 
                 while (enumeration.hasMore()) {
                     Binding binding = enumeration.next();
@@ -460,7 +461,7 @@ public class LDAPOperationManager {
                     destroySubcontext(context, name);
                 }
 
-                context.unbind(dn);
+                context.unbind(new LdapName(dn));
             } finally {
                 try {
                     enumeration.close();
@@ -550,7 +551,7 @@ public class LDAPOperationManager {
 
                 @Override
                 public Void execute(LdapContext context) throws NamingException {
-                    context.modifyAttributes(dn, mods);
+                    context.modifyAttributes(new LdapName(dn), mods);
                     return null;
                 }
 
@@ -595,7 +596,7 @@ public class LDAPOperationManager {
             execute(new LdapOperation<Void>() {
                 @Override
                 public Void execute(LdapContext context) throws NamingException {
-                    DirContext subcontext = context.createSubcontext(name, attributes);
+                    DirContext subcontext = context.createSubcontext(new LdapName(name), attributes);
 
                     subcontext.close();
 

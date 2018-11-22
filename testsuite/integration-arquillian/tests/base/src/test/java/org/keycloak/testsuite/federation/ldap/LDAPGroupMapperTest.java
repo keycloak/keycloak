@@ -116,6 +116,20 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
             john.joinGroup(group12);
             mary.joinGroup(group12);
+
+            // This group should already exists as it was imported from LDAP
+            GroupModel groupWithSlashesInName = KeycloakModelUtils.findGroupByPath(appRealm, "Team 2016/2017");
+            john.joinGroup(groupWithSlashesInName);
+            mary.joinGroup(groupWithSlashesInName);
+
+            // This group should already exists as it was imported from LDAP
+            GroupModel groupChildWithSlashesInName = KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019");
+            john.joinGroup(groupChildWithSlashesInName);
+            mary.joinGroup(groupChildWithSlashesInName);
+
+            Assert.assertEquals("Team SubChild 2020/2021", KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019/Team SubChild 2020/2021").getName());
+            Assert.assertEquals("defaultGroup14", KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup13/Team SubChild 2022/2023/A/B/C/D/E/defaultGroup14").getName());
+            Assert.assertEquals("Team SubChild 2026/2027", KeycloakModelUtils.findGroupByPath(appRealm, "Team Root 2024/2025/A/B/C/D/defaultGroup15/Team SubChild 2026/2027").getName());
         });
 
 
@@ -155,16 +169,20 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
             GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
             GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+            GroupModel groupTeam20162017 = KeycloakModelUtils.findGroupByPath(appRealm, "Team 2016/2017");
+            GroupModel groupTeamChild20182019 = KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019");
             UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
             Set<GroupModel> johnGroups = john.getGroups();
-            Assert.assertEquals(2, johnGroups.size());
+            Assert.assertEquals(4, johnGroups.size());
             long groupCount = john.getGroupsCount();
-            Assert.assertEquals(2, groupCount);
+            Assert.assertEquals(4, groupCount);
             Assert.assertTrue(johnGroups.contains(group1));
             Assert.assertFalse(johnGroups.contains(group11));
             Assert.assertTrue(johnGroups.contains(group12));
+            Assert.assertTrue(johnGroups.contains(groupTeam20162017));
+            Assert.assertTrue(johnGroups.contains(groupTeamChild20182019));
 
             Set<GroupModel> johnGroupsWithGr = john.getGroups("gr", 0, 10);
             Assert.assertEquals(2, johnGroupsWithGr.size());
@@ -178,24 +196,38 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Set<GroupModel> johnGroupsWith12 = john.getGroups("12", 0, 10);
             Assert.assertEquals(1, johnGroupsWith12.size());
 
+            Set<GroupModel> johnGroupsWith2017 = john.getGroups("2017", 0, 10);
+            Assert.assertEquals(1, johnGroupsWith2017.size());
+
+            Set<GroupModel> johnGroupsWith2018 = john.getGroups("2018", 0, 10);
+            Assert.assertEquals(1, johnGroupsWith2017.size());
+
             // 4 - Check through userProvider
             List<UserModel> group1Members = session.users().getGroupMembers(appRealm, group1, 0, 10);
             List<UserModel> group11Members = session.users().getGroupMembers(appRealm, group11, 0, 10);
             List<UserModel> group12Members = session.users().getGroupMembers(appRealm, group12, 0, 10);
+            List<UserModel> groupTeam20162017Members = session.users().getGroupMembers(appRealm, groupTeam20162017, 0, 10);
+            List<UserModel> groupTeam20182019Members = session.users().getGroupMembers(appRealm, groupTeamChild20182019, 0, 10);
 
             Assert.assertEquals(1, group1Members.size());
             Assert.assertEquals("johnkeycloak", group1Members.get(0).getUsername());
             Assert.assertEquals(1, group11Members.size());
             Assert.assertEquals("marykeycloak", group11Members.get(0).getUsername());
             Assert.assertEquals(2, group12Members.size());
+            Assert.assertEquals(2, groupTeam20162017Members.size());
+            Assert.assertEquals(2, groupTeam20182019Members.size());
 
             // 4 - Delete some group mappings and check they are deleted
 
             john.leaveGroup(group1);
             john.leaveGroup(group12);
+            john.leaveGroup(groupTeam20162017);
+            john.leaveGroup(groupTeamChild20182019);
 
             mary.leaveGroup(group1);
             mary.leaveGroup(group12);
+            mary.leaveGroup(groupTeam20162017);
+            mary.leaveGroup(groupTeamChild20182019);
 
             johnGroups = john.getGroups();
             Assert.assertEquals(0, johnGroups.size());
