@@ -138,10 +138,21 @@ public class Config {
 
             Map<String, String> attributes = new HashMap<>();
 
+            // Slight work around to CD block overriding attribute values
+            boolean useFirstAttribute = true;
+
             for (String l : FileUtils.readLines(f, "utf-8")) {
                 if (l.startsWith(":")) {
                     String[] s = l.split(": ");
-                    attributes.put(s[0].substring(1).trim(), s[1].trim());
+                    String key = s[0].substring(1).trim();
+                    String value = s[1].trim();
+                    if (!attributes.containsKey(key) || !useFirstAttribute) {
+                        attributes.put(key, value);
+                    }
+
+                    if (key.equals("project_product_cd") && value.equals("true")) {
+                        useFirstAttribute = false;
+                    }
                 }
             }
 
