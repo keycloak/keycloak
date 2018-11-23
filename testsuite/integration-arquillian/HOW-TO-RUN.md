@@ -170,8 +170,8 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     # Prepare Fuse server
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
-      -Papp-server-fuse70 \
-      -Dfuse70.version=7.0.0.fuse-000202 \
+      -Papp-server-fuse7x \
+      -Dfuse7x.version=7.0.0.fuse-000202 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
       -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
