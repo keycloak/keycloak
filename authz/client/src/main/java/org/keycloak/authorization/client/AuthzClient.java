@@ -24,6 +24,7 @@ import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.HttpMethod;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -38,6 +39,14 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthzClient {
+
+    private static final String GRANT_TYPE_PARAM = "grant_type";
+    private static final String SUBJECT_TOKEN_PARAM = "subject_token";
+    private static final String REQUESTED_TOKEN_TYPE_PARAM = "requested_token_type";
+    private static final String AUDIENCE_PARAM = "audience";
+
+    private static final String TOKEN_EXCHANGE_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
+    private static final String REQUESTED_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token";
 
     private final Http http;
     private TokenCallable patSupplier;
@@ -197,6 +206,27 @@ public class AuthzClient {
                 .response()
                     .json(AccessTokenResponse.class)
                 .execute();
+    }
+
+    /**
+     * Exchanges an access token.
+     *
+     * @return an {@link AccessTokenResponse} with the changed access token
+     */
+    public AccessTokenResponse exchangeToken(String bearer, String audience) {
+        HttpMethod<AccessTokenResponse> request = this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
+                .authentication()
+                    .client()
+                        .param(GRANT_TYPE_PARAM, TOKEN_EXCHANGE_TYPE)
+                        .param(SUBJECT_TOKEN_PARAM, bearer)
+                        .param(REQUESTED_TOKEN_TYPE_PARAM, REQUESTED_TOKEN_TYPE);
+        if (audience != null && !audience.isEmpty()) {
+            request.param(AUDIENCE_PARAM, audience);
+        }
+
+        return request.response()
+                      .json(AccessTokenResponse.class)
+                      .execute();
     }
 
     /**
