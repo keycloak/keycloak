@@ -148,9 +148,9 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
       -Dtest=Fuse*AdapterTest
 
 
-### JBoss Fuse 7.0
+### JBoss Fuse 7.X
 
-1) Download JBoss Fuse 7.0 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
+1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
 Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
@@ -180,7 +180,7 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean test \
-      -Papp-server-fuse70 \
+      -Papp-server-fuse7x \
       -Dtest=Fuse*AdapterTest
 
 
