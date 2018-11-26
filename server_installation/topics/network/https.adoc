@@ -119,10 +119,26 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 ===== Configure {project_name} to Use the Keystore
 
 Now that you have a Java keystore with the appropriate certificates, you need to configure your {project_name} installation to use it.
-First step is to move the keystore file to the _configuration/_ directory of your deployment and to edit the _standalone.xml_, _standalone-ha.xml_ or _domain.xml_ file to use
-the keystore and enable HTTPS.  (See <<_operating-mode, operating mode>>).
+First, you must move the keystore file to the _configuration/_ directory of your deployment and edit the _standalone.xml_, _standalone-ha.xml_, or _host.xml_ file to use the keystore and enable HTTPS.  (See <<_operating-mode, operating mode>>).
 
-In the standalone or domain configuration file, search for the `security-realms` element and add:
+Add the new `security-realm` element using the CLI:
+
+[source]
+
+----
+$ /core-service=management/security-realm=UndertowRealm:add()
+
+$ /core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.server.config.dir, keystore-password=secret)
+----
+
+If using domain mode, the commands should be executed in every host using the `/host=<host_name>/` prefix (in order to create the `security-realm` in all of them), like this, which you would repeat for each host:
+
+[source]
+----
+$ /host=<host_name>/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.server.config.dir, keystore-password=secret)
+----
+
+In the standalone or host configuration file, the `security-realms` element should look like this:
 
 [source,xml]
 ----
@@ -136,7 +152,16 @@ In the standalone or domain configuration file, search for the `security-realms`
 </security-realm>
 ----
 
-Find the element `server name="default-server"` (it's a child element of `subsystem xmlns="{subsystem_undertow_xml_urn}"`) and add:
+Next, in the standalone or each domain configuration file, search for any instances of `security-realm`. Modify the `https-listener` to use the created realm:
+
+[source]
+----
+$ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=security-realm, value=UndertowRealm)
+----
+
+If using domain mode, prefix the command with the profile that is being used with: `/profile=<profile_name>/`.
+
+The resulting element, `server name="default-server"`, which is a child element of `subsystem xmlns="{subsystem_undertow_xml_urn}"`, should contain the following stanza:
 
 [source,xml,subs="attributes+"]
 ----
@@ -147,3 +172,5 @@ Find the element `server name="default-server"` (it's a child element of `subsys
    ...
 </subsystem>
 ----
+
+
