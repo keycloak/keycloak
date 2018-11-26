@@ -53,7 +53,14 @@ Executions can be used
 
 .Script Authenticator
 A _script_ authenticator allows to define custom authentication logic via JavaScript.
-Custom authenticators. Authentication scripts must at least provide one of the following functions:
+Custom authenticators. In order to make use of this feature, it must be explicitly enabled:
+[source]
+----
+bin/standalone.sh|bat -Dkeycloak.profile.feature.scripts=enabled
+----
+For more information, see the link:{installguide_profile_link}[{installguide_profile_name}] section.
+
+Authentication scripts must at least provide one of the following functions:
 `authenticate(..)` which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
 `action(..)` which is called from `Authenticator#action(AuthenticationFlowContext)`
 
