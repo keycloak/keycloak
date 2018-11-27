@@ -13,6 +13,7 @@ endif::[]
 
 Extract the contents of this file into the root directory of your {appserver_name} distribution.
 
+ifeval::[{project_community}==true]
 Run the appropriate script for your platform:
 
 .WildFly 10 and Linux/Unix
@@ -29,7 +30,6 @@ $ ./jboss-cli.sh --file=adapter-install-offline.cli
 > jboss-cli.bat --file=adapter-install-offline.cli
 ----
 
-ifeval::[{project_community}==true]
 .Wildfly 11 and Linux/Unix
 [source,bash,subs=+attributes]
 ----
@@ -43,9 +43,9 @@ $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 > cd bin
 > jboss-cli.bat --file=adapter-elytron-install-offline.cli
 ----
-endif::[]
 
 NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution and may take some time to complete.
+endif::[]
 
 Start the application server.
 
