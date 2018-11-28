@@ -99,6 +99,7 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
     }
 
     @Bean
+    @ConditionalOnMissingBean(HttpSessionManager.class)
     protected HttpSessionManager httpSessionManager() {
         return new HttpSessionManager();
     }
