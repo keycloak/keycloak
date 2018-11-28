@@ -184,7 +184,6 @@ public class TokenManager {
 
         // recreate token.
         AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
-        verifyAccess(oldToken, newToken);
 
         return new TokenValidation(user, userSession, clientSessionCtx, newToken);
     }
@@ -537,33 +536,6 @@ public class TokenManager {
         }
 
         return true;
-    }
-
-    // TODO: Remove this check entirely? It should be sufficient to check granted consents (client scopes) during refresh token
-    private void verifyAccess(AccessToken token, AccessToken newToken) throws OAuthErrorException {
-        if (token.getRealmAccess() != null) {
-            if (newToken.getRealmAccess() == null) throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm roles");
-
-            for (String roleName : token.getRealmAccess().getRoles()) {
-                if (!newToken.getRealmAccess().getRoles().contains(roleName)) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm role: " + roleName);
-                }
-            }
-        }
-        if (token.getResourceAccess() != null) {
-            for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
-                AccessToken.Access appAccess = newToken.getResourceAccess(entry.getKey());
-                if (appAccess == null && !entry.getValue().getRoles().isEmpty()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or client no longer has role permissions for client key: " + entry.getKey());
-
-                }
-                for (String roleName : entry.getValue().getRoles()) {
-                    if (!appAccess.getRoles().contains(roleName)) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for client role " + roleName);
-                    }
-                }
-            }
-        }
     }
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
