@@ -121,6 +121,9 @@ resources:
   white-listed: true
 - uri: /img/*
   white-listed: true
+headers:
+  myheader1: value_1
+  myheader2: value_2
 ----
 
 Anything defined in a configuration file can also be configured using command line options, such as in this example.
@@ -141,7 +144,9 @@ bin/{generic_adapter_name} \
     --resources="uri=/backend*|roles=test1" \
     --resources="uri=/css/*|white-listed=true" \
     --resources="uri=/img/*|white-listed=true" \
-    --resources="uri=/public/*|white-listed=true"
+    --resources="uri=/public/*|white-listed=true" \
+    --headers="myheader1=value1" \
+    --headers="myheader2=value2"
 ----
 
 By default the roles defined on a resource perform a logical `AND` so all roles specified must be present in the claims, this behavior can be altered by the `require-any-role` option, however, so as long as one role is present the permission is granted.
@@ -311,6 +316,16 @@ This would add the additional headers to the authenticated request along with st
 X-Auth-Family-Name: User
 X-Auth-Given-Name: Beloved
 X-Auth-Name: Beloved User
+----
+
+==== Custom headers
+
+You can inject custom headers using the `--headers="name=value"` option or the configuration file:
+
+[source.yaml]
+----
+headers:
+  name: value
 ----
 
 ==== Encryption key
