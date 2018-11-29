@@ -85,6 +85,7 @@ import org.keycloak.testsuite.adapter.page.InputPortalNoAccessToken;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortalAutodetectBearerOnly;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.SecurePortalRewriteRedirectUri;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -153,6 +154,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Page
     private SecurePortalWithCustomSessionConfig securePortalWithCustomSessionConfig;
     @Page
+    private SecurePortalRewriteRedirectUri securePortalRewriteRedirectUri;
+    @Page
     private CustomerDb customerDb;
     @Page
     private CustomerDbErrorPage customerDbErrorPage;
@@ -203,6 +206,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive securePortal() {
         return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
+    @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
+    protected static WebArchive securePortalRewriteRedirectUri() {
+        return servletDeployment(SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
 
     @Deployment(name = SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME)
     protected static WebArchive securePortalWithCustomSessionConfig() {
@@ -707,6 +715,15 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         securePortalWithCustomSessionConfig.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
+    @Test
+    public void testRewriteRedirectUri() {
+        // test login to application where the redirect_uri is rewritten based on rules defined in keycloak.json
+        securePortalRewriteRedirectUri.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertTrue(driver.getCurrentUrl().contains("/rewritten"));
     }
 
     // Tests "token-minimum-time-to-live" adapter configuration option
