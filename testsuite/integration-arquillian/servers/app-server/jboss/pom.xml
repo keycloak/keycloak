@@ -39,10 +39,27 @@
         <saml-adapter.version>${project.version}</saml-adapter.version>
         <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
         <skip.adapter.offline.installation>true</skip.adapter.offline.installation>
+
+        <cli.executable>./jboss-cli.${script.suffix}</cli.executable>
+        <cli.working.dir>${app.server.jboss.home}/bin</cli.working.dir>
+        <cli.win.working.dir/>
     </properties>
 
     <profiles>
 
+    	<profile>
+            <id>windows-properties-cli</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <cli.executable>run-jboss-cli.bat</cli.executable>
+                <cli.working.dir>${common.resources}/win</cli.working.dir>
+                <cli.win.working.dir>${app.server.jboss.home}/bin</cli.win.working.dir>
+            </properties>
+        </profile>
         <profile>
             <id>app-server-jboss-submodules</id>
             <activation>
@@ -249,10 +266,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -264,10 +287,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>
@@ -282,10 +311,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -298,10 +333,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>
@@ -315,10 +356,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -331,10 +378,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>
@@ -349,10 +402,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -365,10 +424,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>
@@ -382,10 +447,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -398,10 +469,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>./jboss-cli.${script.suffix}</executable>
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dserver.config=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>
@@ -414,10 +491,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                    <executable>./jboss-cli.sh</executable>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-secured-deployments/configuration</argument>
                                     </arguments>
                                 </configuration>
@@ -430,10 +513,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                    <executable>./jboss-cli.sh</executable>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/configure-cluster-config.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-cluster/configuration</argument>
                                     </arguments>
                                 </configuration>
@@ -446,10 +535,16 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
-                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                    <executable>./jboss-cli.sh</executable>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/configure-crossdc-config.cli</argument>
+                                        <!--
+                                            following attribute is required just for windows
+                                            see ${common.resources}/win/run-jboss-cli.bat
+                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
+                                        -->
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-crossdc/configuration</argument>
                                     </arguments>
                                 </configuration>

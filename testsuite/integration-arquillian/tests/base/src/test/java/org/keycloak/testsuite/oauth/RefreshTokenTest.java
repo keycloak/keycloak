@@ -63,6 +63,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -90,6 +91,12 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+
+        realmRepresentation.getClients().add(org.keycloak.testsuite.util.ClientBuilder.create()
+                .clientId("service-account-app")
+                .serviceAccount()
+                .secret("secret")
+                .build());
 
         RealmBuilder realm = RealmBuilder.edit(realmRepresentation)
                 .testEventListener();
@@ -155,7 +162,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-        Assert.assertNotNull(refreshTokenString);
+        assertNotNull(refreshTokenString);
 
         assertEquals("bearer", tokenResponse.getTokenType());
 
@@ -854,6 +861,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         events.expectRefresh(refreshToken.getId(), sessionId).user(userId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
     }
 
+    @Test
+    public void refreshTokenServiceAccount() throws Exception {
+        OAuthClient.AccessTokenResponse response = oauth.clientId("service-account-app").doClientCredentialsGrantAccessTokenRequest("secret");
+
+        assertNotNull(response.getRefreshToken());
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
+
+        assertNotNull(response.getRefreshToken());
+    }
+
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
@@ -908,7 +926,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-        Assert.assertNotNull(refreshTokenString);
+        assertNotNull(refreshTokenString);
 
         assertEquals("bearer", tokenResponse.getTokenType());
 
@@ -1031,7 +1049,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-        Assert.assertNotNull(refreshTokenString);
+        assertNotNull(refreshTokenString);
 
         assertEquals("bearer", tokenResponse.getTokenType());
 
