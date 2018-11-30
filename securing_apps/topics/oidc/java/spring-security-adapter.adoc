@@ -258,11 +258,12 @@ public KeycloakConfigResolver KeycloakConfigResolver() {
 
 ----
 
-====== Avoid double Filter bean registration
+====== Avoid double bean registration
 
 Spring Boot attempts to eagerly register filter beans with the web application context.
 Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice.
 
+Spring boot 2.1 also disables `spring.main.allow-bean-definition-overriding` by default. This can mean that an `BeanDefinitionOverrideException` will be encountered if a `Configuration` class extending `KeycloakWebSecurityConfigurerAdapter` registers a bean that is already detected by a `@ComponentScan`. This can be avoided by overriding the registration to use the boot-specific `@ConditionalOnMissingBean` annotation, as with `HttpSessionManager` below.
 
 [source,java]
 ----
@@ -306,6 +307,12 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
         return registrationBean;
     }
 
+    @Bean
+    @Override
+    @ConditionalOnMissingBean(HttpSessionManager.class)
+    protected HttpSessionManager httpSessionManager() {
+        return new HttpSessionManager();
+    }
     ...
 }
 ----
