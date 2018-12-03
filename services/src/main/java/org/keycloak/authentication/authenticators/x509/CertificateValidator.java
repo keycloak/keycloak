@@ -51,6 +51,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -149,8 +151,11 @@ public class CertificateValidator {
     public static class BouncyCastleOCSPChecker extends OCSPChecker {
 
         private final String responderUri;
-        BouncyCastleOCSPChecker(String responderUri) {
+        private final X509Certificate responderCert;
+
+        BouncyCastleOCSPChecker(String responderUri, X509Certificate responderCert) {
             this.responderUri = responderUri;
+            this.responderCert = responderCert;
         }
 
         @Override
@@ -177,12 +182,13 @@ public class CertificateValidator {
                     String message = String.format("Unable to check certificate revocation status using OCSP.\n%s", e.getMessage());
                     throw new CertPathValidatorException(message, e);
                 }
-                logger.tracef("Responder URI \"%s\" will be used to verify revocation status of the certificate using OCSP", uri.toString());
+                logger.tracef("Responder URI \"%s\" will be used to verify revocation status of the certificate using OCSP with responderCert=%s",
+                        uri.toString(), responderCert);
                 // Obtains the revocation status of a certificate using OCSP.
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
                 // responderUri overrides the contents (if any) of the certificate's AIA extension
-                ocspRevocationStatus = OCSPUtils.check(cert, issuerCertificate, uri, null, null);
+                ocspRevocationStatus = OCSPUtils.check(cert, issuerCertificate, uri, responderCert, null);
             }
             return ocspRevocationStatus;
         }
@@ -529,6 +535,7 @@ public class CertificateValidator {
         CRLLoaderImpl _crlLoader;
         boolean _ocspEnabled;
         String _responderUri;
+        X509Certificate _responderCert;
 
         public CertificateValidatorBuilder() {
             _extendedKeyUsage = new LinkedList<>();
@@ -675,6 +682,21 @@ public class CertificateValidator {
             }
 
             public class GotOCSP {
+                public GotOCSP oCSPResponseCertificate(String responderCert) {
+                    if (responderCert != null && !responderCert.isEmpty()) {
+                        try {
+                            _responderCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(responderCert);
+                            _responderCert.checkValidity();
+                        } catch(CertificateException e) {
+                            logger.warnf("Ignoring invalid certificate: %s", _responderCert);
+                            _responderCert = null;
+                        } catch (ProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    return new GotOCSP();
+                }
+
                 public CertificateValidatorBuilder oCSPResponderURI(String responderURI) {
                     _responderUri = responderURI;
                     return _parent;
@@ -699,7 +721,8 @@ public class CertificateValidator {
                  _crlLoader = new CRLFileLoader("");
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
-                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled, new BouncyCastleOCSPChecker(_responderUri));
+                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
+                    new BouncyCastleOCSPChecker(_responderUri, _responderCert));
         }
     }
 

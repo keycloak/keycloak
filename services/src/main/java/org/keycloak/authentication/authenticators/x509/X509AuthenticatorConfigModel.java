@@ -142,6 +142,19 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public String getOCSPResponderCertificate() {
+        return getConfig().getOrDefault(OCSPRESPONDER_CERTIFICATE, null);
+    }
+
+    public X509AuthenticatorConfigModel setOCSPResponderCertificate(String responderCert) {
+        if (responderCert != null) {
+            getConfig().put(OCSPRESPONDER_CERTIFICATE, responderCert);
+        } else {
+            getConfig().remove(OCSPRESPONDER_CERTIFICATE);
+        }
+        return this;
+    }
+
     public MappingSourceType getMappingSourceType() {
         return MappingSourceType.parse(getConfig().getOrDefault(MAPPING_SOURCE_SELECTION, MAPPING_SOURCE_CERT_SUBJECTDN));
     }

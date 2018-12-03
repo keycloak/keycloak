@@ -378,7 +378,7 @@ public final class OCSPUtils {
         }
         if (signingCert != null) {
             if (signingCert.equals(issuerCertificate)) {
-                logger.log(Level.INFO, "OCSP response is signed by the target\'s Issuing CA");
+                logger.log(Level.INFO, "OCSP response is signed by the target''s Issuing CA");
             } else if (responderCertificate != null && signingCert.equals(responderCertificate)) {
                 // https://www.ietf.org/rfc/rfc2560.txt
                 // 2.6  OCSP Signature Authority Delegation
@@ -390,7 +390,7 @@ public final class OCSPUtils {
                 // extension and is issued by the CA that issued the certificate in
                 // question."
                 if (!signingCert.getIssuerX500Principal().equals(issuerCertificate.getSubjectX500Principal())) {
-                    logger.log(Level.INFO, "Signer certificate's Issuer: {0}\nIssuer certificate's Subject: {1}",
+                    logger.log(Level.INFO, "Signer certificate''s Issuer: {0}\nIssuer certificate''s Subject: {1}",
                             new Object[] {signingCert.getIssuerX500Principal().getName(), issuerCertificate.getSubjectX500Principal().getName()});
                     throw new CertPathValidatorException("Responder\'s certificate is not authorized to sign OCSP responses");
                 }
@@ -401,7 +401,7 @@ public final class OCSPUtils {
                         throw new CertPathValidatorException("Responder\'s certificate not valid for signing OCSP responses");
                     }
                 } catch (CertificateParsingException e) {
-                    logger.log(Level.FINE, "Failed to get certificate's extended key usage extension\n{0}", e.getMessage());
+                    logger.log(Level.FINE, "Failed to get certificate''s extended key usage extension\n{0}", e.getMessage());
                 }
                 if (date == null) {
                     signingCert.checkValidity();
