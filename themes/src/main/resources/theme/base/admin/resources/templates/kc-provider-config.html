@@ -2,7 +2,7 @@
     <div data-ng-repeat="option in properties" class="form-group" data-ng-controller="ProviderConfigCtrl">
         <label class="col-md-2 control-label">{{:: option.label | translate}}</label>
 
-        <div class="col-md-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList' || option.type == 'Password' || option.type=='Script'">
+        <div class="col-md-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList' || option.type == 'Password' || option.type=='Script' || option.type=='Text'">
             <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
         </div>
         <div class="col-md-6" data-ng-show="option.type == 'Password'">
@@ -36,6 +36,10 @@
             <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ onLoad : initEditor, useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
                 {{config[option.name]}}
             </div>
+        </div>
+
+        <div class="col-md-6" data-ng-show="option.type == 'Text'">
+            <textarea class="form-control" data-ng-model="config[ option.name ]"/>
         </div>
 
         <kc-tooltip>{{:: option.helpText | translate}}</kc-tooltip>
