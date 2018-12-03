@@ -8,6 +8,16 @@ include::topics/templates/document-attributes-product.adoc[]
 
 = {releasenotes_name}
 
+ifeval::[{project_product_cd}==false]
+
+== {project_name_full} 7.3
+
+include::topics/7_3_final.adoc[leveloffset=2]
+
+endif::[]
+
+ifeval::[{project_product_cd}==true]
+
 == {project_name_full} 7.3.CD05
 
 include::topics/4_8_0_final.adoc[leveloffset=2]
@@ -28,3 +38,4 @@ include::topics/4_1_0_final.adoc[leveloffset=2]
 == {project_name_full} 7.3.CD02
 include::topics/4_0_0_final.adoc[leveloffset=2]
 include::topics/4_0_0_beta3.adoc[leveloffset=2]
+endif::[]
