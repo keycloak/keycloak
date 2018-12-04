@@ -2,42 +2,65 @@
 
 == Profiles
 
-ifeval::[{project_community}==true]
-{project_name} has a single profile, community, that enables most features by default, including features that
-are considered less mature. It is however possible to disable individual features.
+There are features in {project_name} that are not enabled by default, these include features that are not fully
+supported. In addition there are some features that are enabled by default, but that can be disabled.
 
 The features that can be enabled and disabled are:
 
-[cols="3*", options="header"]
+[cols="4*", options="header"]
 |===
 |Name
 |Description
 |Enabled by default
+|Support level
 
-|authorization
-|Authorization Services
-|Yes
+|account2
+|New Account Management Console
+|No
+|Experimental
+
+|account_api
+|Account Management REST API
+|No
+|Preview
+
+|admin_fine_grained_authz
+|Fine-Grained Admin Permissions
+|No
+|Preview
+
+|authz_drools_policy
+|Drools Policy for Authorization Services
+|No
+|Preview
 
 |docker
 |Docker Registry protocol
 |No
+|Supported
 
 |impersonation
 |Ability for admins to impersonate users
 |Yes
+|Supported
+
+|openshift_integration
+|Extension to enable securing OpenShift
+|No
+|Preview
 
 |script
 |Write custom authenticators using JavaScript
 |Yes
+|Preview
+
+|token_exchange
+|Token Exchange Service
+|No
+|Preview
 |===
-endif::[]
 
-ifeval::[{project_product}==true]
-{project_name} has two profiles, product and preview. The product profile is enabled by default, which disables
-some tech preview features. To enable the features you can either switch to the preview profile or enable individual
-features.
-
-To enable the preview profile start the server with:
+To enable all preview features start the server with:
 
 [source]
 ----
@@ -53,32 +76,6 @@ the file:
 profile=preview
 ----
 
-The features that can be enabled and disabled are:
-
-[cols="3*", options="header"]
-|===
-|Name
-|Description
-|Enabled by default
-
-|authorization
-|Authorization Services
-|No
-
-|docker
-|Docker Registry protocol
-|No
-
-|impersonation
-|Ability for admins to impersonate users
-|Yes
-
-|script
-|Write custom authenticators using JavaScript
-|No
-|===
-endif::[]
-
 To enable a specific feature start the server with:
 
 [source]
@@ -87,6 +84,13 @@ bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=enabled
 ----
 
 For example to enable Docker use `-Dkeycloak.profile.feature.docker=enabled`.
+
+You can set this permanently in the `profile.properties` file by adding:
+
+[source]
+----
+feature.docker=enabled
+----
 
 To disable a specific feature start the server with:
 
@@ -103,21 +107,3 @@ You can set this permanently in the `profile.properties` file by adding:
 ----
 feature.impersonation=disabled
 ----
-
-ifeval::[{project_product}==true]
-To enable a specific feature without enabling the full preview profile you can start the server with:
-
-[source]
-----
-bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=enabled`
-----
-
-For example to enable Authorization Services use `-Dkeycloak.profile.feature.authorization=enabled`.
-
-You can set this permanently in the `profile.properties` file by adding:
-
-[source]
-----
-feature.authorization=enabled
-----
-endif::[]
