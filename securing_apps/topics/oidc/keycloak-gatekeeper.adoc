@@ -271,6 +271,8 @@ if r.config.EnableAuthorizationHeader {
 }
 ----
 
+To control the `Authorization` header use the `enable-authorization-header` yaml configuration or the `--enable-authorization-header` command line option. By default this option is set to `true`.
+
 ==== Custom claim headers
 
 You can inject additional claims from the access token into the authorization headers with the `--add-claims` option. For example, a token from a {project_name} provider might include the following claims:
