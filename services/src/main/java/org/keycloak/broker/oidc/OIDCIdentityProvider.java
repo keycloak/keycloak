@@ -55,7 +55,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -378,20 +378,29 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
 
                 if (accessToken != null) {
-                    SimpleHttp.Response response = SimpleHttp.doGet(userInfoUrl, session)
-                            .header("Authorization", "Bearer " + accessToken).asResponse();
-                    if (response.getStatus() != 200) {
-                        String msg = "failed to invoke user info url";
+                    SimpleHttp.Response response = executeRequest(userInfoUrl, SimpleHttp.doGet(userInfoUrl, session).header("Authorization", "Bearer " + accessToken));
+                    String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+                    JsonNode userInfo;
+
+                    if (MediaType.APPLICATION_JSON.equals(contentType)) {
+                        userInfo = response.asJson();
+                    } else if ("application/jwt".equals(contentType)) {
+                        JWSInput jwsInput;
+
                         try {
-                            String tmp = response.asString();
-                            if (tmp != null) msg = tmp;
-
-                        } catch (IOException e) {
-
+                            jwsInput = new JWSInput(response.asString());
+                        } catch (JWSInputException cause) {
+                            throw new RuntimeException("Failed to parse JWT userinfo response", cause);
                         }
-                        throw new IdentityBrokerException("Failed to invoke on user info url: " + msg);
+
+                        if (verify(jwsInput)) {
+                            userInfo = JsonSerialization.readValue(jwsInput.getContent(), JsonNode.class);
+                        } else {
+                            throw new RuntimeException("Failed to verify signature of userinfo response from [" + userInfoUrl + "].");
+                        }
+                    } else {
+                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
                     }
-                    JsonNode userInfo = response.asJson();
 
                     id = getJsonProperty(userInfo, "sub");
                     name = getJsonProperty(userInfo, "name");
@@ -434,6 +443,21 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
+    private SimpleHttp.Response executeRequest(String url, SimpleHttp request) throws IOException {
+        SimpleHttp.Response response = request.asResponse();
+        if (response.getStatus() != 200) {
+            String msg = "failed to invoke url [" + url + "]";
+            try {
+                String tmp = response.asString();
+                if (tmp != null) msg = tmp;
+
+            } catch (IOException e) {
+
+            }
+            throw new IdentityBrokerException("Failed to invoke url [" + url + "]: " + msg);
+        }
+        return  response;
+    }
 
     private String verifyAccessToken(AccessTokenResponse tokenResponse) {
         String accessToken = tokenResponse.getToken();
