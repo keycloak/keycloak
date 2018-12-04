@@ -68,7 +68,7 @@
                                     <name>springboot</name>
                                     <workingDir>../../../../test-apps/spring-boot-adapter</workingDir>
                                     <healthcheckUrl>http://localhost:8280/index.html</healthcheckUrl>
-                                    <waitAfterLaunch>360</waitAfterLaunch>
+                                    <waitAfterLaunch>900</waitAfterLaunch>
                                     <arguments>
                                         <argument>mvn</argument>
                                         <argument>spring-boot:run</argument>
@@ -118,7 +118,107 @@
                                     <name>springboot</name>
                                     <workingDir>../../../../test-apps/spring-boot-adapter</workingDir>
                                     <healthcheckUrl>http://localhost:8280/index.html</healthcheckUrl>
-                                    <waitAfterLaunch>360</waitAfterLaunch>
+                                    <waitAfterLaunch>900</waitAfterLaunch>
+                                    <arguments>
+                                        <argument>mvn</argument>
+                                        <argument>spring-boot:run</argument>
+                                        <argument>-B</argument>
+                                        <argument>-s</argument>
+                                        <argument>${maven.settings.file}</argument>
+                                        <argument>-Dkeycloak.version=${project.version}</argument>
+                                        <argument>-Pspring-boot-adapter-${adapter.container}</argument>
+                                        <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
+                                        <argument>-Djetty.adapter.version=${jetty.adapter.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>kill-processes</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop-all</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test-springboot-2-prod</id>
+            <properties>
+                <exclude.springboot>-</exclude.springboot>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.bazaarvoice.maven.plugins</groupId>
+                        <artifactId>process-exec-maven-plugin</artifactId>
+                        <version>0.7</version>
+                        <executions>
+                            <execution>
+                                <id>spring-boot-application-process</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <name>springboot</name>
+                                    <workingDir>../../../../test-apps/spring-boot-2-adapter</workingDir>
+                                    <healthcheckUrl>http://localhost:8280/index.html</healthcheckUrl>
+                                    <waitAfterLaunch>900</waitAfterLaunch>
+                                    <arguments>
+                                        <argument>mvn</argument>
+                                        <argument>spring-boot:run</argument>
+                                        <argument>-B</argument>
+                                        <argument>-s</argument>
+                                        <argument>${maven.settings.file}</argument>
+                                        <argument>-Dkeycloak.version=${project.version}</argument>
+                                        <argument>-Pspring-boot-adapter-${adapter.container}</argument>
+                                        <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
+                                        <argument>-Djetty.adapter.version=${jetty.adapter.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>kill-processes</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop-all</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test-springboot-21-prod</id>
+            <properties>
+                <exclude.springboot>-</exclude.springboot>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.bazaarvoice.maven.plugins</groupId>
+                        <artifactId>process-exec-maven-plugin</artifactId>
+                        <version>0.7</version>
+                        <executions>
+                            <execution>
+                                <id>spring-boot-application-process</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <name>springboot</name>
+                                    <workingDir>../../../../test-apps/spring-boot-21-adapter</workingDir>
+                                    <healthcheckUrl>http://localhost:8280/index.html</healthcheckUrl>
+                                    <waitAfterLaunch>900</waitAfterLaunch>
                                     <arguments>
                                         <argument>mvn</argument>
                                         <argument>spring-boot:run</argument>
@@ -168,7 +268,7 @@
                                     <name>springboot</name>
                                     <workingDir>../../../../test-apps/spring-boot-2-adapter</workingDir>
                                     <healthcheckUrl>http://localhost:8280/index.html</healthcheckUrl>
-                                    <waitAfterLaunch>360</waitAfterLaunch>
+                                    <waitAfterLaunch>900</waitAfterLaunch>
                                     <arguments>
                                         <argument>mvn</argument>
                                         <argument>spring-boot:run</argument>
