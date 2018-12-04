@@ -4,6 +4,7 @@
 == Token Exchange
 
 :tech_feature_name: Token Exchange
+:tech_feature_setting: -Dkeycloak.profile.feature.token_exchange=enabled
 include::../templates/techpreview.adoc[]
 
 In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.

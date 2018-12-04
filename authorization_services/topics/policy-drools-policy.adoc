@@ -1,6 +1,10 @@
 [[_policy_drools]]
 = Rule-Based Policy
 
+:tech_feature_name: Drools Policy
+:tech_feature_setting: -Dkeycloak.profile.feature.authz_drools_policy=enabled
+include::./templates/techpreview.adoc[]
+
 With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
 supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.
 

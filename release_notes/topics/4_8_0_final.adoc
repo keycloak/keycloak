@@ -1,0 +1,7 @@
+ifeval::[{project_community}==true]
+= Rules/Drools Policy Marked as a Technology Preview Feature
+
+Until now, Drools policies were enabled by default. But now, this policy type is only available as a technology preview feature and
+to use it you need to enable the preview profile or the corresponding feature. Take a look at the link:{authorizationguide_link}[{authorizationguide_name}] for more details.
+
+endif::[]

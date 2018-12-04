@@ -3,6 +3,7 @@
 === Fine Grain Admin Permissions
 
 :tech_feature_name: Fine Grain Admin Permissions
+:tech_feature_setting: -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled
 include::../templates/techpreview.adoc[]
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
