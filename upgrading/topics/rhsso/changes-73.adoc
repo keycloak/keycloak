@@ -2,107 +2,6 @@
 
 The following changes have occurred from RH-SSO 7.2 to RH-SSO 7.3.
 
-===  New default client scopes
-
-We have added new realm default client scopes `roles` and `web-origins`. These client scopes contain protocol
-mappers to add the roles of the user and allowed web origins to the token. During migration, these client scopes should be
-automatically added to all the OpenID Connect clients as default client scopes. Hence no setup should be required after database
-migration is finished.
-
-==== Protocol mapper SPI addition
-Related to this, there is a small addition in the (unsupported) Protocol Mappers SPI. You can be affected only if you
-implemented a custom ProtocolMapper. There is a new `getPriority()` method on the ProtocolMapper interface. The method has the
-default implementation set to return 0. If your protocol mapper implementation relies on the roles in the access token `realmAccess`
-or `resourceAccess` properties, you may need to increase the priority of your mapper.
-
-==== Audience resolving
-
-Audiences of all the clients, for which authenticated user has at least one client role in the token, are automatically added
-to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
-frontend client, for which it was issued. Read the link:{adminguide_link}#_audience[{adminguide_name}] for more details.
-
-=== JavaScipt Adapter Promise
-
-To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
-init options.
-
-In the past if native promise was available a wrapper was returned that provided both the legacy Keycloak promise and
-the native promise. This was causing issues as the error handler was not always set prior to the native error event, which
-resulted in `Uncaught (in promise)` error.
-
-=== Microsoft Identity Provider updated to use the Microsoft Graph API
-
-The Microsoft Identity Provider implementation in {project_name} up to version 4.5.0 relies on the Live SDK
-endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
-for the Live SDK API in favor of the new Microsoft Graph API. The {project_name} identity provider has been updated
-to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 4.6.0 or later.
-
-Legacy client applications registered under "Live SDK applications" won't work with the Microsoft Graph endpoints
-due to changes in the id format of the applications. If you run into an error saying that the application identifier
-was not found in the directory, you will have to register the client application again in the
-https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain a new application id.
-
-=== Upgrade to Wildfly 14
-
-The {project_name} server was upgraded to use Wildfly 14 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
-
-Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 14 server. For example, Infinispan is now 9.3.1.Final.
-
-Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
-  section to handle the migration of configuration files automatically.
-
-Cross-Datacenter Replication changes::
-  * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
-  not guaranteed as we don't test it anymore.
-ifeval::[{project_product}==true]
-  * There is a need to add `protocolVersion` property with the value `2.6` to the configuration of the `remote-store` element in the
-  {project_name} configuration. This is required as there is a need to downgrade the version of HotRod protocol to be compatible
-  with the version used by {jdgserver_name} {jdgserver_version}.
-endif::[]
-
-=== Hostname configuration
-
-In previous versions it was recommended to use a filter to specify permitted hostnames. It is now possible to
-set a fixed hostname which makes it easier to make sure the valid hostname is used and also allows internal
-applications to invoke {project_name} through an alternative URL, for example an internal IP address. It is
-recommended that you switch to this approach in production.
-
-=== Client Templates changed to Client Scopes
-
-We added support for Client Scopes, which requires some attention during migration.
-
-Client Templates changed to Client Scopes::
-  Client Templates were changed to Client Scopes. If you had any Client Templates, their protocol mappers and role scope mappings
-  will be preserved.
-
-Spaces replaced in the names::
-  Client templates with the space character in the name were renamed by replacing spaces with an underscore, because spaces are
-  not allowed in the name of client scopes. For example, a client template `my template` will be changed to client scope `my_template`.
-
-Linking Client Scopes to Clients::
-  For clients which had the client template, the corresponding client scope
-  is now added as `Default Client Scope` to the client. So protocol mappers and role scope mappings will be preserved on the client.
-
-Realm Default Client Scopes not linked with existing clients::
-  During the migration, the list of built-in client scopes is added to each realm as well as list of `Realm Default Client Scopes`. However,
-  existing clients are NOT upgraded and new client scopes are NOT automatically added to them. Also all the protocol mappers and role
-  scope mappings are kept on existing clients. In the new version, when you create a new client, it automatically has Realm Default Client Scopes
-  attached to it and it does not have any protocol mappers attached to it. We did not change existing clients during migration as it
-  would be impossible to properly detect customizations, which you will have for protocol mappers of the clients, for example. If you want to
-  update existing clients (remove protocol mappers from them and link them with client scopes), you will need to do it manually.
-
-Consents need to be confirmed again::
-  The client scopes change required the refactoring of consents. Consents now point to client scopes, not to roles or protocol mappers.
-  Because of this change, the previously confirmed persistent consents by users are not valid anymore and users need to confirm
-  the consent page again after the migration.
-
-Some configuration switches removed::
-  The switch `Scope Param Required` was removed from Role Detail. The switches `Consent Required` and `Consent Text` were removed
-  from the Protocol Mapper details. Those switches were replaced by the Client Scope feature.
-
 === Changes to Authorization Services
 
 We added support for UMA 2.0. This version of the UMA specification introduced some important changes on how permissions are obtained from the server.
@@ -137,4 +36,104 @@ Changes to {project_name} Authorization JavaScript Adapter::
 Changes to {project_name} Authorization Client Java API::
   When upgrading to the new version of {project_name} Authorization Client Java API, you'll notice that some representation classes
   were moved to a different package in `org.keycloak:keycloak-core`.
+
+=== Client Templates changed to Client Scopes
+
+We added support for Client Scopes, which requires some attention during migration.
+
+  Client Templates changed to Client Scopes::
+    Client Templates were changed to Client Scopes. If you had any Client Templates, their protocol mappers and role scope mappings
+    will be preserved.
+
+  Spaces replaced in the names::
+    Client templates with the space character in the name were renamed by replacing spaces with an underscore, because spaces are
+    not allowed in the name of client scopes. For example, a client template `my template` will be changed to client scope `my_template`.
+
+  Linking Client Scopes to Clients::
+    For clients which had the client template, the corresponding client scope
+    is now added as `Default Client Scope` to the client. So protocol mappers and role scope mappings will be preserved on the client.
+
+  Realm Default Client Scopes not linked with existing clients::
+    During the migration, the list of built-in client scopes is added to each realm as well as list of `Realm Default Client Scopes`. However,
+    existing clients are NOT upgraded and new client scopes are NOT automatically added to them. Also all the protocol mappers and role
+    scope mappings are kept on existing clients. In the new version, when you create a new client, it automatically has Realm Default Client Scopes
+    attached to it and it does not have any protocol mappers attached to it. We did not change existing clients during migration as it
+    would be impossible to properly detect customizations, which you will have for protocol mappers of the clients, for example. If you want to
+    update existing clients (remove protocol mappers from them and link them with client scopes), you will need to do it manually.
+
+  Consents need to be confirmed again::
+    The client scopes change required the refactoring of consents. Consents now point to client scopes, not to roles or protocol mappers.
+    Because of this change, the previously confirmed persistent consents by users are not valid anymore and users need to confirm
+    the consent page again after the migration.
+
+  Some configuration switches removed::
+    The switch `Scope Param Required` was removed from Role Detail. The switches `Consent Required` and `Consent Text` were removed
+    from the Protocol Mapper details. Those switches were replaced by the Client Scope feature.
+
+=== New default client scopes
+We have added new realm default client scopes `roles` and `web-origins`. These client scopes contain protocol
+mappers to add the roles of the user and allowed web origins to the token. During migration, these client scopes should be
+automatically added to all the OpenID Connect clients as default client scopes. Hence no setup should be required after database
+migration is finished.
+
+==== Protocol mapper SPI addition
+Related to this, there is a small addition in the (unsupported) Protocol Mappers SPI. You can be affected only if you
+implemented a custom ProtocolMapper. There is a new `getPriority()` method on the ProtocolMapper interface. The method has the
+default implementation set to return 0. If your protocol mapper implementation relies on the roles in the access token `realmAccess`
+or `resourceAccess` properties, you may need to increase the priority of your mapper.
+
+==== Audience resolving
+
+Audiences of all the clients, for which authenticated user has at least one client role in the token, are automatically added
+to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
+frontend client, for which it was issued. Read the link:{adminguide_link}#_audience[{adminguide_name}] for more details.
+
+=== Upgrade to EAP 7.2
+
+The {project_name} server was upgraded to use EAP 7.2 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
+
+  Dependency updates::
+    The dependencies were updated to the versions used by EAP 7.2 server. For example, Infinispan is now 9.3.1.Final.
+
+  Configuration changes::
+    There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+    section to handle the migration of configuration files automatically.
+
+  Cross-Datacenter Replication changes::
+    * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
+    not guaranteed as we don't test it anymore.
+  ifeval::[{project_product}==true]
+    * There is a need to add `protocolVersion` property with the value `2.6` to the configuration of the `remote-store` element in the
+    {project_name} configuration. This is required as there is a need to downgrade the version of HotRod protocol to be compatible
+    with the version used by {jdgserver_name} {jdgserver_version}.
+  endif::[]
+
+=== Hostname configuration
+
+In previous versions it was recommended to use a filter to specify permitted hostnames. It is now possible to
+set a fixed hostname which makes it easier to make sure the valid hostname is used and also allows internal
+applications to invoke {project_name} through an alternative URL, for example an internal IP address. It is
+recommended that you switch to this approach in production.
+
+=== JavaScipt Adapter Promise
+
+To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
+init options.
+
+In the past if native promise was available a wrapper was returned that provided both the legacy Keycloak promise and
+the native promise. This was causing issues as the error handler was not always set prior to the native error event, which
+resulted in `Uncaught (in promise)` error.
+
+=== Microsoft Identity Provider updated to use the Microsoft Graph API
+
+The Microsoft Identity Provider implementation in {project_name} up to version 4.5.0 relies on the Live SDK
+endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
+for the Live SDK API in favor of the new Microsoft Graph API. The {project_name} identity provider has been updated
+to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 4.6.0 or later.
+
+Legacy client applications registered under "Live SDK applications" won't work with the Microsoft Graph endpoints
+due to changes in the id format of the applications. If you run into an error saying that the application identifier
+was not found in the directory, you will have to register the client application again in the
+https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain a new application id.
 
