@@ -419,6 +419,36 @@
             </div>
 
             <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenEncryptedResponseAlg">{{:: 'id-token-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenEncryptedResponseAlg"
+                                ng-change="changeIdTokenEncryptedResponseAlg()"
+                                ng-model="idTokenEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenEncryptedResponseEnc">{{:: 'id-token-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenEncryptedResponseEnc"
+                                ng-change="changeIdTokenEncryptedResponseEnc()"
+                                ng-model="idTokenEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userInfoSignedResponseAlg">{{:: 'user-info-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>

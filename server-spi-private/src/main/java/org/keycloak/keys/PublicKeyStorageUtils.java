@@ -17,17 +17,25 @@
 
 package org.keycloak.keys;
 
+import org.keycloak.jose.jwk.JWK;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class PublicKeyStorageUtils {
 
+    static final JWK.Use DEFAULT_KEYUSE = JWK.Use.SIG;
+
     public static String getClientModelCacheKey(String realmId, String clientUuid) {
-        return realmId + "::client::" + clientUuid;
+        return getClientModelCacheKey(realmId, clientUuid, DEFAULT_KEYUSE);
     }
 
     public static String getIdpModelCacheKey(String realmId, String idpInternalId) {
         return realmId + "::idp::" + idpInternalId;
+    }
+
+    public static String getClientModelCacheKey(String realmId, String clientUuid, JWK.Use keyUse) {
+        return realmId + "::client::" + clientUuid + "::keyuse::" + keyUse;
     }
 
 }

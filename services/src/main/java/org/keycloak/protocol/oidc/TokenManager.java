@@ -824,7 +824,7 @@ public class TokenManager {
                 idToken.setStateHash(stateHash);
             }
             if (idToken != null) {
-                String encodedToken = session.tokens().encode(idToken);
+                String encodedToken = session.tokens().encodeAndEncrypt(idToken);
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {

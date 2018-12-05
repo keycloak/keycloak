@@ -1171,6 +1171,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
         $scope.accessTokenSignedResponseAlg = $scope.client.attributes['access.token.signed.response.alg'];
         $scope.idTokenSignedResponseAlg = $scope.client.attributes['id.token.signed.response.alg'];
+        $scope.idTokenEncryptedResponseAlg = $scope.client.attributes['id.token.encrypted.response.alg'];
+        $scope.idTokenEncryptedResponseEnc = $scope.client.attributes['id.token.encrypted.response.enc'];
 
         var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
         $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
@@ -1291,6 +1293,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.changeIdTokenSignedResponseAlg = function() {
         $scope.clientEdit.attributes['id.token.signed.response.alg'] = $scope.idTokenSignedResponseAlg;
+    };
+
+    $scope.changeIdTokenEncryptedResponseAlg = function() {
+        $scope.clientEdit.attributes['id.token.encrypted.response.alg'] = $scope.idTokenEncryptedResponseAlg;
+    };
+
+    $scope.changeIdTokenEncryptedResponseEnc = function() {
+        $scope.clientEdit.attributes['id.token.encrypted.response.enc'] = $scope.idTokenEncryptedResponseEnc;
     };
 
     $scope.changeUserInfoSignedResponseAlg = function() {
