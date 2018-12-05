@@ -988,7 +988,7 @@ public class AuthenticationManager {
         List<ClientScopeModel> clientScopesToDisplay = new LinkedList<>();
 
         for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, authSession.getClient(), clientScopeId);
 
             if (clientScope == null || !clientScope.isDisplayOnConsentScreen()) {
                 continue;

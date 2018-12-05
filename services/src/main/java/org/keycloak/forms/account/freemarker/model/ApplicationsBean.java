@@ -32,6 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.storage.StorageId;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,28 +53,18 @@ public class ApplicationsBean {
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
-        List<ClientModel> realmClients = realm.getClients();
-        for (ClientModel client : realmClients) {
-            // Don't show bearerOnly clients
-            if (client.isBearerOnly()) {
-                continue;
-            }
-
+        for (ClientModel client : getApplications(session, realm, user)) {
             Set<RoleModel> availableRoles = new HashSet<>();
-            if (client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
-                    || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
-                if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
 
-            } else {
-                // Construct scope parameter with all optional scopes to see all potentially available roles
-                Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
-                allClientScopes.addAll(client.getClientScopes(false, true).values());
-                allClientScopes.add(client);
+            // Construct scope parameter with all optional scopes to see all potentially available roles
+            Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
+            allClientScopes.addAll(client.getClientScopes(false, true).values());
+            allClientScopes.add(client);
 
-                availableRoles = TokenManager.getAccess(user, client, allClientScopes);
-            }
-            List<RoleModel> realmRolesAvailable = new LinkedList<RoleModel>();
-            MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<String, ClientRoleEntry>();
+            availableRoles = TokenManager.getAccess(user, client, allClientScopes);
+
+            List<RoleModel> realmRolesAvailable = new LinkedList<>();
+            MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<>();
             processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
 
             List<ClientScopeModel> orderedScopes = new ArrayList<>();
@@ -94,10 +85,37 @@ public class ApplicationsBean {
                 additionalGrants.add("${offlineToken}");
             }
 
-            ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, client,
-                    clientScopesGranted, additionalGrants);
-            applications.add(appEntry);
+            applications.add(new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, client, clientScopesGranted, additionalGrants));
         }
+    }
+
+    private Set<ClientModel> getApplications(KeycloakSession session, RealmModel realm, UserModel user) {
+        Set<ClientModel> clients = new HashSet<>();
+
+        for (ClientModel client : realm.getClients()) {
+            // Don't show bearerOnly clients
+            if (client.isBearerOnly()) {
+                continue;
+            }
+
+            if (client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                    || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+                if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
+            }
+
+            clients.add(client);
+        }
+
+        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
+
+        for (UserConsentModel consent : consents) {
+            ClientModel client = consent.getClient();
+
+            if (!new StorageId(client.getId()).isLocal()) {
+                clients.add(client);
+            }
+        }
+        return clients;
     }
 
     private void processRoles(Set<RoleModel> inputRoles, List<RoleModel> realmRoles, MultivaluedHashMap<String, ClientRoleEntry> clientRoles) {
