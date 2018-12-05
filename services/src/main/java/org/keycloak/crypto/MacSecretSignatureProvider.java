@@ -18,6 +18,7 @@ package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 public class MacSecretSignatureProvider implements SignatureProvider {
 
@@ -30,12 +31,12 @@ public class MacSecretSignatureProvider implements SignatureProvider {
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
+    public SignatureSignerContext signer(RealmModel realm) throws SignatureException {
         return new ServerMacSignatureSignerContext(session, algorithm);
     }
 
     @Override
-    public SignatureVerifierContext verifier(String kid) throws VerificationException {
+    public SignatureVerifierContext verifier(RealmModel realm, String kid) throws VerificationException {
         return new ServerMacSignatureVerifierContext(session, kid, algorithm);
     }
 

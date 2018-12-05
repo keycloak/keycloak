@@ -17,13 +17,14 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 
 public interface SignatureProvider extends Provider {
 
-    SignatureSignerContext signer() throws SignatureException;
+    SignatureSignerContext signer(RealmModel realm) throws SignatureException;
 
-    SignatureVerifierContext verifier(String kid) throws VerificationException;
+    SignatureVerifierContext verifier(RealmModel realm, String kid) throws VerificationException;
 
     @Override
     default void close() {

@@ -18,15 +18,16 @@ package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 public class ServerAsymmetricSignatureVerifierContext extends AsymmetricSignatureVerifierContext {
 
-    public ServerAsymmetricSignatureVerifierContext(KeycloakSession session, String kid, String algorithm) throws VerificationException {
-        super(getKey(session, kid, algorithm));
+    public ServerAsymmetricSignatureVerifierContext(KeycloakSession session, RealmModel realm, String kid, String algorithm) throws VerificationException {
+        super(getKey(session, realm, kid, algorithm));
     }
 
-    private static KeyWrapper getKey(KeycloakSession session, String kid, String algorithm) throws VerificationException {
-        KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), kid, KeyUse.SIG, algorithm);
+    private static KeyWrapper getKey(KeycloakSession session, RealmModel realm, String kid, String algorithm) throws VerificationException {
+        KeyWrapper key = session.keys().getKey(realm, kid, KeyUse.SIG, algorithm);
         if (key == null) {
             throw new VerificationException("Key not found");
         }

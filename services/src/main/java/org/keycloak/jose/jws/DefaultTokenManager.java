@@ -47,7 +47,7 @@ public class DefaultTokenManager implements TokenManager {
         String signatureAlgorithm = signatureAlgorithm(token.getCategory());
 
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-        SignatureSignerContext signer = signatureProvider.signer();
+        SignatureSignerContext signer = signatureProvider.signer(session.getContext().getRealm());
 
         String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).sign(signer);
         return encodedToken;
@@ -76,7 +76,7 @@ public class DefaultTokenManager implements TokenManager {
                 kid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, signatureAlgorithm).getKid();
             }
 
-            boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            boolean valid = signatureProvider.verifier(session.getContext().getRealm(), kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);

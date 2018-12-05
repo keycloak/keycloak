@@ -490,7 +490,7 @@ public class LoginActionsService {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(realm, kid);
             verifier.verifierContext(signatureVerifier);
 
             verifier.verify();

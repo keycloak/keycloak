@@ -135,7 +135,7 @@ public class UserInfoEndpoint {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(realm, verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
@@ -209,7 +209,7 @@ public class UserInfoEndpoint {
             String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.USERINFO);
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-            SignatureSignerContext signer = signatureProvider.signer();
+            SignatureSignerContext signer = signatureProvider.signer(realm);
 
             String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 

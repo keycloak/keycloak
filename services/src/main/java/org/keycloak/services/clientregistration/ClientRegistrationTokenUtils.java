@@ -46,7 +46,7 @@ public class ClientRegistrationTokenUtils {
 
     public static String updateTokenSignature(KeycloakSession session, ClientRegistrationAuth auth) {
         String algorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
-        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer();
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer(session.getContext().getRealm());
 
         if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();
@@ -96,7 +96,7 @@ public class ClientRegistrationTokenUtils {
             TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
                     .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE);
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(realm, verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             kid = verifierContext.getKid();

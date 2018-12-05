@@ -76,7 +76,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(realm, verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             accessToken = verifier.verify().getToken();

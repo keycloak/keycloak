@@ -17,15 +17,16 @@
 package org.keycloak.crypto;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 public class ServerAsymmetricSignatureSignerContext extends AsymmetricSignatureSignerContext {
 
-    public ServerAsymmetricSignatureSignerContext(KeycloakSession session, String algorithm) throws SignatureException {
-        super(getKey(session, algorithm));
+    public ServerAsymmetricSignatureSignerContext(KeycloakSession session, RealmModel realm, String algorithm) throws SignatureException {
+        super(getKey(session, realm, algorithm));
     }
 
-    private static KeyWrapper getKey(KeycloakSession session, String algorithm) {
-        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
+    private static KeyWrapper getKey(KeycloakSession session, RealmModel realm, String algorithm) {
+        KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, algorithm);
         if (key == null) {
             throw new SignatureException("Active key for " + algorithm + " not found");
         }
