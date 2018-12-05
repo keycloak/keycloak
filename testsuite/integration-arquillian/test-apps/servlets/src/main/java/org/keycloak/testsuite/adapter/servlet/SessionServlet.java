@@ -34,6 +34,10 @@ public class SessionServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getRequestURI().endsWith("/logout")) {
+            req.logout();
+            return;
+        }
         String counter = increaseAndGetCounter(req);
 
         resp.setContentType("text/html");

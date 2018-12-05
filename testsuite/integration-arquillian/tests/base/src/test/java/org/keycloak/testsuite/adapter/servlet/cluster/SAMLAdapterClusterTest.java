@@ -26,8 +26,6 @@ import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 
-import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
-
 /**
  *
  * @author hmlnarik
@@ -51,11 +49,5 @@ public class SAMLAdapterClusterTest extends AbstractSAMLAdapterClusteredTest {
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME + "_2", managed = false)
     protected static WebArchive employee2() {
         return employee();
-    }
-
-    @Override
-    protected void prepareServerDirectories() throws Exception {
-        prepareServerDirectory("standalone-cluster", "standalone-" + NODE_1_NAME);
-        prepareServerDirectory("standalone-cluster", "standalone-" + NODE_2_NAME);
     }
 }
