@@ -28,7 +28,8 @@
         <plexus-interpolation.version>1.21</plexus-interpolation.version>
         <plexus-utils.version>3.0.22</plexus-utils.version>
         <aether.version>1.1.0</aether.version>
-        <org.eclipse.sisu>0.3.2</org.eclipse.sisu>
+        <org.eclipse.sisu.inject>0.3.2</org.eclipse.sisu.inject>
+        <org.eclipse.sisu.plexus>0.3.2</org.eclipse.sisu.plexus>
         <mvel2.version>2.4.0.Final</mvel2.version>
         <plexus-cipher.version>1.7</plexus-cipher.version>
         <plexus-sec-dispatcher.version>1.3</plexus-sec-dispatcher.version>
@@ -211,12 +212,12 @@
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.inject</artifactId>
-                <version>${org.eclipse.sisu}</version>
+                <version>${org.eclipse.sisu.inject}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>${org.eclipse.sisu}</version>
+                <version>${org.eclipse.sisu.plexus}</version>
             </dependency>
             <dependency>
                 <groupId>org.mvel</groupId>
