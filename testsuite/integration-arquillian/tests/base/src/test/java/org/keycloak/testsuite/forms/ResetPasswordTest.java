@@ -1011,10 +1011,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5982
     @Test
     public void resetPasswordLinkOpenedInNewBrowserAndAccountClientRenamed() throws IOException, MessagingException {
-        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-
         // Temporarily rename client "account" . Revert it back after the test
-        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
+        try (Closeable accountClientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
                 .setClientId("account-changed")
                 .update()) {
 
