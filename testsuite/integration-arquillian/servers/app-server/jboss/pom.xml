@@ -268,6 +268,9 @@
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
                                         <!--
@@ -289,6 +292,9 @@
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-adapter-log-level.cli</argument>
                                         <!--
@@ -313,6 +319,9 @@
                                     <skip>${skip.elytron.adapter.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
                                         <!--
@@ -335,6 +344,9 @@
                                     <skip>${skip.elytron.adapter.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
                                         <!--
@@ -358,6 +370,9 @@
                                     <skip>${skip.elytron.adapter.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
                                         <!--
@@ -380,6 +395,9 @@
                                     <skip>${skip.elytron.adapter.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-saml-offline.cli</argument>
                                         <!--
@@ -404,6 +422,9 @@
                                     <skip>${skip.adapter.offline.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
                                         <!--
@@ -426,6 +447,9 @@
                                     <skip>${skip.adapter.offline.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
                                         <!--
@@ -449,6 +473,9 @@
                                     <skip>${skip.adapter.offline.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
                                         <!--
@@ -471,6 +498,9 @@
                                     <skip>${skip.adapter.offline.installation}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${app.server.jboss.home}/bin/adapter-install-saml-offline.cli</argument>
                                         <!--
@@ -493,6 +523,9 @@
                                     <skip>${skip.apply.offline.cli}</skip><!--eap6-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
                                         <!--
@@ -515,6 +548,9 @@
                                     <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/configure-cluster-config.cli</argument>
                                         <!--
@@ -537,6 +573,9 @@
                                     <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
                                     <arguments>
                                         <argument>--file=${common.resources}/cli/configure-crossdc-config.cli</argument>
                                         <!--
