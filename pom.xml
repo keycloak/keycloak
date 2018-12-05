@@ -92,6 +92,9 @@
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>7.11.0.Final</version.org.drools>
 
+        <!-- Openshift -->
+        <version.com.openshift.openshift-restclient-java>6.1.3.Final</version.com.openshift.openshift-restclient-java>
+
         <!-- Others -->
         <apacheds.version>2.0.0-M21</apacheds.version>
         <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
@@ -1170,6 +1173,13 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-authz-policy-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- Openshift -->
+            <dependency>
+                <groupId>com.openshift</groupId>
+                <artifactId>openshift-restclient-java</artifactId>
+                <version>${version.com.openshift.openshift-restclient-java}</version>
             </dependency>
 
             <dependency>

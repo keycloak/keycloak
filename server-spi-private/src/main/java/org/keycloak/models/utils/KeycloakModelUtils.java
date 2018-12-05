@@ -55,7 +55,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -585,8 +584,13 @@ public final class KeycloakModelUtils {
      * Lookup clientScope OR client by id. Method is useful if you know just ID, but you don't know
      * if underlying model is clientScope or client
      */
-    public static ClientScopeModel findClientScopeById(RealmModel realm, String clientScopeId) {
+    public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+
+        if (clientScope ==  null) {
+            // as fallback we try to resolve dynamic scopes
+            clientScope = client.getDynamicClientScope(clientScopeId);
+        }
 
         if (clientScope != null) {
             return clientScope;

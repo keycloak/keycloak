@@ -446,6 +446,10 @@
             <artifactId>guice</artifactId>
             <classifier>no_aop</classifier>
         </dependency>
+        <dependency>
+            <groupId>com.openshift</groupId>
+            <artifactId>openshift-restclient-java</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
