@@ -24,6 +24,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.TokenUtil;
+import org.hamcrest.Matchers;
 import org.openqa.selenium.By;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -181,8 +182,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
         accountAppPage.open();
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get("offline-client");
-        Assert.assertTrue(offlineClient.getClientScopesGranted().contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
-        Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
+        Assert.assertThat(offlineClient.getClientScopesGranted(), Matchers.hasItem(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
+        Assert.assertThat(offlineClient.getAdditionalGrants(), Matchers.hasItem("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail
         offlineTokenPage.logout();

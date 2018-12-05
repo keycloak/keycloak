@@ -18,13 +18,11 @@
 package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrderedModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
@@ -39,7 +37,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -47,36 +44,44 @@ import java.util.stream.Collectors;
  */
 public class ApplicationsBean {
 
-    private List<ApplicationEntry> applications = new LinkedList<ApplicationEntry>();
+    private List<ApplicationEntry> applications = new LinkedList<>();
 
     public ApplicationsBean(KeycloakSession session, RealmModel realm, UserModel user) {
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         for (ClientModel client : getApplications(session, realm, user)) {
-            Set<RoleModel> availableRoles = new HashSet<>();
+            if (isAdminClient(client) && ! AdminPermissions.realms(session, realm, user).isAdmin()) {
+                continue;
+            }
 
             // Construct scope parameter with all optional scopes to see all potentially available roles
             Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
             allClientScopes.addAll(client.getClientScopes(false, true).values());
             allClientScopes.add(client);
 
-            availableRoles = TokenManager.getAccess(user, client, allClientScopes);
+            Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);
+
+            // Don't show applications, which user doesn't have access into (any available roles)
+            // unless this is can be changed by approving/revoking consent
+            if (! isAdminClient(client) && availableRoles.isEmpty() && ! client.isConsentRequired()) {
+                continue;
+            }
 
             List<RoleModel> realmRolesAvailable = new LinkedList<>();
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<>();
             processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
 
-            List<ClientScopeModel> orderedScopes = new ArrayList<>();
+            List<ClientScopeModel> orderedScopes = new LinkedList<>();
             if (client.isConsentRequired()) {
                 UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
                 if (consent != null) {
                     orderedScopes.addAll(consent.getGrantedClientScopes());
-                    orderedScopes.sort(new OrderedModel.OrderedModelComparator<>());
                 }
             }
             List<String> clientScopesGranted = orderedScopes.stream()
+                    .sorted(OrderedModel.OrderedModelComparator.getInstance())
                     .map(ClientScopeModel::getConsentScreenText)
                     .collect(Collectors.toList());
 
@@ -89,6 +94,11 @@ public class ApplicationsBean {
         }
     }
 
+    public static boolean isAdminClient(ClientModel client) {
+        return client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+          || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID);
+    }
+
     private Set<ClientModel> getApplications(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<ClientModel> clients = new HashSet<>();
 
@@ -96,11 +106,6 @@ public class ApplicationsBean {
             // Don't show bearerOnly clients
             if (client.isBearerOnly()) {
                 continue;
-            }
-
-            if (client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
-                    || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
-                if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
             }
 
             clients.add(client);

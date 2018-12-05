@@ -818,8 +818,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostEncSignedAssertionsAndDocumentTest() throws Exception {
-        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostEncServlet.CLIENT_NAME)
           .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
           .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
           .update()) {
@@ -831,8 +830,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostEncRejectConsent() throws Exception {
-        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostEncServlet.CLIENT_NAME)
           .setConsentRequired(true)
           .update()) {
             new SamlClientBuilder()
@@ -853,8 +851,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostRejectConsent() throws Exception {
-        ClientRepresentation salesPostClient = testRealmResource().clients().findByClientId(SalesPostServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostServlet.CLIENT_NAME)
           .setConsentRequired(true)
           .update()) {
             new SamlClientBuilder()

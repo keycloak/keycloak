@@ -3,10 +3,14 @@ package org.keycloak.testsuite.updaters;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import java.io.Closeable;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
@@ -14,29 +18,40 @@ import static org.junit.Assert.assertThat;
  *
  * @author hmlnarik
  */
-public class ClientAttributeUpdater {
+public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttributeUpdater, ClientResource, ClientRepresentation> {
 
-    private final ClientResource clientResource;
-
-    private final ClientRepresentation rep;
-    private final ClientRepresentation origRep;
+    private final RealmResource realmResource;
 
     public static ClientAttributeUpdater forClient(Keycloak adminClient, String realm, String clientId) {
-        ClientsResource clients = adminClient.realm(realm).clients();
+        RealmResource realmRes = adminClient.realm(realm);
+        ClientsResource clients = realmRes.clients();
         List<ClientRepresentation> foundClients = clients.findByClientId(clientId);
         assertThat(foundClients, hasSize(1));
         ClientResource clientRes = clients.get(foundClients.get(0).getId());
         
-        return new ClientAttributeUpdater(clientRes);
+        return new ClientAttributeUpdater(clientRes, realmRes);
     }
 
-    public ClientAttributeUpdater(ClientResource clientResource) {
-        this.clientResource = clientResource;
-        this.origRep = clientResource.toRepresentation();
-        this.rep = clientResource.toRepresentation();
+    private ClientAttributeUpdater(ClientResource resource, RealmResource realmResource) {
+        super(resource, resource::toRepresentation, resource::update);
         if (this.rep.getAttributes() == null) {
             this.rep.setAttributes(new HashMap<>());
         }
+        this.realmResource = realmResource;
+    }
+
+    @Override
+    protected void performUpdate(ClientRepresentation from, ClientRepresentation to) {
+        super.performUpdate(from, to);
+        updateViaAddRemove(from.getDefaultClientScopes(), to.getDefaultClientScopes(), this::getConversionForScopeNameToId, resource::addDefaultClientScope, resource::removeDefaultClientScope);
+        updateViaAddRemove(from.getOptionalClientScopes(), to.getOptionalClientScopes(), this::getConversionForScopeNameToId, resource::addOptionalClientScope, resource::removeOptionalClientScope);
+    }
+
+    private Function<String, String> getConversionForScopeNameToId() {
+        Map<String, String> scopeNameToIdMap = realmResource.clientScopes().findAll().stream()
+          .collect(Collectors.toMap(ClientScopeRepresentation::getName, ClientScopeRepresentation::getId));
+
+        return scopeNameToIdMap::get;
     }
 
     public ClientAttributeUpdater setClientId(String clientId) {
@@ -64,9 +79,27 @@ public class ClientAttributeUpdater {
         return this;
     }
 
-    public Closeable update() {
-        clientResource.update(rep);
-
-        return () -> clientResource.update(origRep);
+    public ClientAttributeUpdater setFullScopeAllowed(Boolean fullScopeAllowed) {
+        rep.setFullScopeAllowed(fullScopeAllowed);
+        return this;
     }
+
+    public ClientAttributeUpdater setDefaultClientScopes(List<String> defaultClientScopes) {
+        rep.setDefaultClientScopes(defaultClientScopes);
+        return this;
+    }
+
+    public ClientAttributeUpdater setOptionalClientScopes(List<String> optionalClientScopes) {
+        rep.setOptionalClientScopes(optionalClientScopes);
+        return this;
+    }
+
+    public RoleScopeUpdater realmRoleScope() {
+        return new RoleScopeUpdater(resource.getScopeMappings().realmLevel());
+    }
+
+    public RoleScopeUpdater clientRoleScope(String clientUUID) {
+        return new RoleScopeUpdater(resource.getScopeMappings().clientLevel(clientUUID));
+    }
+
 }
