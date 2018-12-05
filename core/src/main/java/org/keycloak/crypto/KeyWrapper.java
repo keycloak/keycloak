@@ -30,8 +30,8 @@ public class KeyWrapper {
     private KeyUse use;
     private KeyStatus status;
     private SecretKey secretKey;
-    private Key signKey;
-    private Key verifyKey;
+    private Key publicKey;
+    private Key privateKey;
     private X509Certificate certificate;
 
     public String getProviderId() {
@@ -99,19 +99,19 @@ public class KeyWrapper {
     }
 
     public Key getSignKey() {
-        return signKey;
+        return privateKey;
     }
 
     public void setSignKey(Key signKey) {
-        this.signKey = signKey;
+        this.privateKey = signKey;
     }
 
     public Key getVerifyKey() {
-        return verifyKey;
+        return publicKey;
     }
 
     public void setVerifyKey(Key verifyKey) {
-        this.verifyKey = verifyKey;
+        this.publicKey = verifyKey;
     }
 
     public X509Certificate getCertificate() {
@@ -121,4 +121,21 @@ public class KeyWrapper {
     public void setCertificate(X509Certificate certificate) {
         this.certificate = certificate;
     }
+
+    public Key getPrivateKey() {
+        return privateKey;
+    }
+
+    public void setPrivateKey(Key privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    public Key getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(Key publicKey) {
+        this.publicKey = publicKey;
+    }
+
 }

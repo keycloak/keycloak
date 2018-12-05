@@ -16,19 +16,32 @@
  */
 package org.keycloak.jose.jws;
 
+import java.io.UnsupportedEncodingException;
+import java.security.Key;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.util.TokenUtil;
 
 public class DefaultTokenManager implements TokenManager {
 
@@ -142,4 +155,96 @@ public class DefaultTokenManager implements TokenManager {
         return DEFAULT_ALGORITHM_NAME;
     }
 
+    @Override
+    public String encodeAndEncrypt(Token token) {
+        String encodedToken = encode(token);
+        if (isTokenEncyptRequired(token.getCategory())) {
+            encodedToken = getEncryptedToken(token.getCategory(), encodedToken);
+        }
+        return encodedToken;
+    }
+
+    private boolean isTokenEncyptRequired(TokenCategory category) {
+        if (cekManagementAlgorithm(category) == null) return false;
+        if (encryptAlgorithm(category) == null) return false;
+        return true;
+    }
+
+    private String getEncryptedToken(TokenCategory category, String encodedToken) {
+        String encryptedToken = null;
+
+        String algAlgorithm = cekManagementAlgorithm(category);
+        String encAlgorithm = encryptAlgorithm(category);
+
+        CekManagementProvider cekManagementProvider = session.getProvider(CekManagementProvider.class, algAlgorithm);
+        JWEAlgorithmProvider jweAlgorithmProvider = cekManagementProvider.jweAlgorithmProvider();
+
+        ContentEncryptionProvider contentEncryptionProvider = session.getProvider(ContentEncryptionProvider.class, encAlgorithm);
+        JWEEncryptionProvider jweEncryptionProvider = contentEncryptionProvider.jweEncryptionProvider();
+
+        ClientModel client = session.getContext().getClient();
+
+        KeyWrapper keyWrapper = getEncryptionKekWrapper(algAlgorithm, client);
+        if (keyWrapper == null) {
+            throw new RuntimeException("can not get encryption KEK");
+        }
+        Key encryptionKek = keyWrapper.getPublicKey();
+        String encryptionKekId = keyWrapper.getKid();
+        try {
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes("UTF-8"), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
+        } catch (JWEException | UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return encryptedToken;
+    }
+
+    private KeyWrapper getEncryptionKekWrapper(String algAlgorithm, ClientModel client) {
+        if (algAlgorithm == null) return null;
+        switch (algAlgorithm) {
+            case JWEConstants.RSA1_5:
+            case JWEConstants.RSA_OAEP:
+                return PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION);
+        }
+        return null;
+    }
+
+    @Override
+    public String cekManagementAlgorithm(TokenCategory category) {
+        if (category == null) return null;
+        switch (category) {
+            case ID:
+                return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+            default:
+                return null;
+        }
+    }
+
+    private String getCekManagementAlgorithm(String clientAttribute) {
+        ClientModel client = session.getContext().getClient();
+        String algorithm = client != null && clientAttribute != null ? client.getAttribute(clientAttribute) : null;
+        if (algorithm != null && !algorithm.equals("")) {
+            return algorithm;
+        }
+        return null;
+    }
+
+    @Override
+    public String encryptAlgorithm(TokenCategory category) {
+        if (category == null) return null;
+        switch (category) {
+            case ID:
+                return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+            default:
+                return null;
+        }
+    }
+
+    private String getEncryptAlgorithm(String clientAttribute) {
+        ClientModel client = session.getContext().getClient();
+        String algorithm = client != null && clientAttribute != null ? client.getAttribute(clientAttribute) : null;
+        if (algorithm != null && !algorithm.equals("")) {
+            return algorithm;
+        }
+        return null;
+    }
 }

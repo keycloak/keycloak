@@ -19,8 +19,6 @@ package org.keycloak.jose.jwe;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
 import org.keycloak.common.util.Base64;
@@ -153,6 +151,36 @@ public class JWE {
         }
     }
 
+    public String encodeJwe(JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        try {
+            if (header == null) {
+                throw new IllegalStateException("Header must be set");
+            }
+            if (content == null) {
+                throw new IllegalStateException("Content must be set");
+            }
+
+            if (algorithmProvider == null) {
+                throw new IllegalArgumentException("No provider for alg '" + header.getAlgorithm() + "'");
+            }
+
+            if (encryptionProvider == null) {
+                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
+            }
+
+            keyStorage.setEncryptionProvider(encryptionProvider);
+            keyStorage.getCEKKey(JWEKeyStorage.KeyUse.ENCRYPTION, true); // Will generate CEK if it's not already present
+
+            byte[] encodedCEK = algorithmProvider.encodeCek(encryptionProvider, keyStorage, keyStorage.getEncryptionKey());
+            base64Cek = Base64Url.encode(encodedCEK);
+
+            encryptionProvider.encodeJwe(this);
+
+            return getEncodedJweString();
+        } catch (Exception e) {
+            throw new JWEException(e);
+        }
+    }
 
     private String getEncodedJweString() {
         StringBuilder builder = new StringBuilder();
@@ -192,7 +220,42 @@ public class JWE {
 
             keyStorage.setEncryptionProvider(encryptionProvider);
 
-            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getEncryptionKey());
+            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
+            keyStorage.setCEKBytes(decodedCek);
+
+            encryptionProvider.verifyAndDecodeJwe(this);
+
+            return this;
+        } catch (Exception e) {
+            throw new JWEException(e);
+        }
+    }
+
+    public JWE verifyAndDecodeJwe(String jweStr, JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        try {
+            String[] parts = jweStr.split("\\.");
+            if (parts.length != 5) {
+                throw new IllegalStateException("Not a JWE String");
+            }
+
+            this.base64Header = parts[0];
+            this.base64Cek = parts[1];
+            this.initializationVector = Base64Url.decode(parts[2]);
+            this.encryptedContent = Base64Url.decode(parts[3]);
+            this.authenticationTag = Base64Url.decode(parts[4]);
+
+            this.header = getHeader();
+            if (algorithmProvider == null) {
+                throw new IllegalArgumentException("No provider for alg ");
+            }
+
+            if (encryptionProvider == null) {
+                throw new IllegalArgumentException("No provider for enc ");
+            }
+
+            keyStorage.setEncryptionProvider(encryptionProvider);
+
+            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
             keyStorage.setCEKBytes(decodedCek);
 
             encryptionProvider.verifyAndDecodeJwe(this);
@@ -247,7 +310,7 @@ public class JWE {
 
             JWE jwe = new JWE();
             jwe.getKeyStorage()
-                    .setEncryptionKey(aesKey);
+                    .setDecryptionKey(aesKey);
 
             jwe.verifyAndDecodeJwe(encodedJwe);
             return jwe.getContent();

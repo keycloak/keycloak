@@ -21,6 +21,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 import java.math.BigInteger;
 import java.security.Key;
@@ -77,6 +78,13 @@ public class JWKBuilder {
         return k;
     }
 
+    public JWK rsa(Key key, KeyUse keyUse) {
+        JWK k = rsa(key);
+        String keyUseString = DEFAULT_PUBLIC_KEY_USE;
+        if (KeyUse.ENC == keyUse) keyUseString = "enc";
+        k.setPublicKeyUse(keyUseString);
+        return k;
+    }
 
     public JWK ec(Key key) {
         ECPublicKey ecKey = (ECPublicKey) key;

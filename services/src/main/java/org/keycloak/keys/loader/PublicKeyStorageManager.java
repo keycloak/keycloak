@@ -20,6 +20,7 @@ package org.keycloak.keys.loader;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -52,6 +53,13 @@ public class PublicKeyStorageManager {
         String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId());
         ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client);
         return keyStorage.getPublicKey(modelKey, kid, loader);
+    }
+
+    public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWK.Use keyUse) {
+        PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+        String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId(), keyUse);
+        ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client, keyUse);
+        return keyStorage.getPublicKey(modelKey, null, loader);
     }
 
     public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
