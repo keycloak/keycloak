@@ -71,6 +71,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("id_token_signing_alg_values_supported")
     private List<String> idTokenSigningAlgValuesSupported;
 
+    @JsonProperty("id_token_encryption_alg_values_supported")
+    private List<String> idTokenEncryptionAlgValuesSupported;
+
+    @JsonProperty("id_token_encryption_enc_values_supported")
+    private List<String> idTokenEncryptionEncValuesSupported;
+
     @JsonProperty("userinfo_signing_alg_values_supported")
     private List<String> userInfoSigningAlgValuesSupported;
 
@@ -222,6 +228,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setIdTokenSigningAlgValuesSupported(List<String> idTokenSigningAlgValuesSupported) {
         this.idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported;
+    }
+
+    public List<String> getIdTokenEncryptionAlgValuesSupported() {
+        return idTokenEncryptionAlgValuesSupported;
+    }
+
+    public void setIdTokenEncryptionAlgValuesSupported(List<String> idTokenEncryptionAlgValuesSupported) {
+        this.idTokenEncryptionAlgValuesSupported = idTokenEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getIdTokenEncryptionEncValuesSupported() {
+        return idTokenEncryptionEncValuesSupported;
+    }
+
+    public void setIdTokenEncryptionEncValuesSupported(List<String> idTokenEncryptionEncValuesSupported) {
+        this.idTokenEncryptionEncValuesSupported = idTokenEncryptionEncValuesSupported;
     }
 
     public List<String> getUserInfoSigningAlgValuesSupported() {

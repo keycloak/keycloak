@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.crypto;
 
-public enum KeyUse {
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.models.KeycloakSession;
 
-    SIG("sig"),
-    ENC("enc");
+public class RsaesOaepCekManagementProviderFactory implements CekManagementProviderFactory {
 
-    private String specName;
+    public static final String ID = JWEConstants.RSA_OAEP;
 
-    KeyUse(String specName) {
-        this.specName = specName;
+    @Override
+    public String getId() {
+        return ID;
     }
 
-    public String getSpecName() {
-        return specName;
+    @Override
+    public CekManagementProvider create(KeycloakSession session) {
+        return new RsaCekManagementProvider(session, ID);
     }
 
 }

@@ -43,7 +43,7 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
     public boolean verify(byte[] data, byte[] signature) throws VerificationException {
         try {
             Signature verifier = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithm()));
-            verifier.initVerify((PublicKey) key.getVerifyKey());
+            verifier.initVerify((PublicKey) key.getPublicKey());
             verifier.update(data);
             return verifier.verify(signature);
         } catch (Exception e) {
