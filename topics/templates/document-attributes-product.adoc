@@ -82,7 +82,7 @@ endif::[]
 
 :appserver_name: JBoss EAP
 :appserver_dirref: EAP_HOME
-:appserver_version: 7.1
+:appserver_version: 7.2
 
 :appserver_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/{appserver_version}
 :appserver_socket_name: JBoss EAP Configuration Guide
@@ -90,7 +90,7 @@ endif::[]
 :appserver_jgroups_name: JBoss EAP Configuration Guide
 :appserver_jgroups_link: {appserver_doc_base_url}/html-single/configuration_guide/#cluster_communication_jgroups
 :appserver_jpa_name: JBoss EAP Development Guide
-:appserver_jpa_link: {appserver_doc_base_url}/html-single/development_guide/#java_persistence_api_jpa
+:appserver_jpa_link: {appserver_doc_base_url}/html-single/development_guide/#java_persistence_api
 :appserver_network_name: JBoss EAP Configuration Guide
 :appserver_network_link: {appserver_doc_base_url}/html-single/configuration_guide/#network_and_port_configuration
 :appserver_datasource_name: JBoss EAP Configuration Guide
