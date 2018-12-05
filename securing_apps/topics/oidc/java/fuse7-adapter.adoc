@@ -24,7 +24,7 @@ Security for the following items is supported for Fuse:
 * http://cxf.apache.org/[Apache CXF] endpoints running on their own separate Undertow engine
 * http://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
 * SSH and JMX admin access
-* http://hawt.io[Hawtio administration console]
+* https://hawt.io/[Hawtio administration console]
 
 ===== Securing Your Web Applications Inside Fuse 7
 

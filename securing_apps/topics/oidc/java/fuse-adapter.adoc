@@ -9,7 +9,7 @@ JBoss Fuse 6 leverages <<_jetty9_adapter,Jetty 9 adapter>> as {fuseVersion} is b
 under the covers and Jetty is used for running various kinds of web applications.
 endif::[]
 
-WARNING: The only supported version of Fuse 6 is {fuseVersion}. If you use earlier versions of Fuse 6, it is possible that some functions will not work correctly. In particular, the http://hawt.io[Hawtio] integration will not work with earlier versions of Fuse 6.
+WARNING: The only supported version of Fuse 6 is {fuseVersion}. If you use earlier versions of Fuse 6, it is possible that some functions will not work correctly. In particular, the https://hawt.io/[Hawtio] integration will not work with earlier versions of Fuse 6.
 
 Security for the following items is supported for Fuse:
 
@@ -19,7 +19,7 @@ Security for the following items is supported for Fuse:
 * http://cxf.apache.org/[Apache CXF] endpoints running on their own separate http://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]
 * http://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
 * SSH and JMX admin access
-* http://hawt.io[Hawtio administration console]
+* https://hawt.io/[Hawtio administration console]
 
 ===== Securing Your Web Applications Inside Fuse 6
 
