@@ -46,6 +46,8 @@ import org.apache.http.conn.params.ConnManagerParams;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,6 +77,7 @@ import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
+import org.keycloak.testsuite.adapter.page.CustomerCookiePortalRoot;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
 import org.keycloak.testsuite.adapter.page.CustomerDbAudienceRequired;
 import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
@@ -180,6 +183,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     private ClientSecretJwtSecurePortal clientSecretJwtSecurePortal;
     @Page
     private CustomerCookiePortal customerCookiePortal;
+    @Page
+    private CustomerCookiePortalRoot customerCookiePortalRoot;
 
     @Rule
     public AssertEvents assertEvents = new AssertEvents(this);
@@ -257,6 +262,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = ClientSecretJwtSecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive clientSecretSecurePortal() {
         return servletDeployment(ClientSecretJwtSecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
+    @Deployment(name = CustomerCookiePortalRoot.DEPLOYMENT_NAME)
+    protected static WebArchive customerCookiePortalRoot() {
+        return servletDeployment(CustomerCookiePortalRoot.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Override
@@ -522,17 +532,19 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
-        demoRealmRep.setSsoSessionIdleTimeout(1);
-        testRealmResource().update(demoRealmRep);
+        try {
+            demoRealmRep.setSsoSessionIdleTimeout(1);
+            testRealmResource().update(demoRealmRep);
 
-        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
-        setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+            setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
-        productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-
-        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        testRealmResource().update(demoRealmRep);
+            productPortal.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        } finally {
+            demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+            testRealmResource().update(demoRealmRep);
+        }
     }
 
     @Test
@@ -548,20 +560,21 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
-        demoRealmRep.setSsoSessionIdleTimeout(1);
-        testRealmResource().update(demoRealmRep);
+        try {
+            demoRealmRep.setSsoSessionIdleTimeout(1);
+            testRealmResource().update(demoRealmRep);
 
-        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
-        setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+            setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
-        productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-
-        // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
-        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        testRealmResource().update(demoRealmRep);
-        // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
-
+            productPortal.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        } finally {
+            // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
+            demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+            testRealmResource().update(demoRealmRep);
+            // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
+        }
     }
 
     @Test
@@ -579,19 +592,17 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalMax = demoRealmRep.getSsoSessionMaxLifespan();
-        demoRealmRep.setSsoSessionMaxLifespan(1);
-        testRealmResource().update(demoRealmRep);
+        try {
+            demoRealmRep.setSsoSessionMaxLifespan(1);
+            testRealmResource().update(demoRealmRep);
 
-        TimeUnit.SECONDS.sleep(2);
-        productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-
-        demoRealmRep.setSsoSessionMaxLifespan(originalMax);
-        testRealmResource().update(demoRealmRep);
-
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
-        driver.navigate().to(logoutUri);
+            TimeUnit.SECONDS.sleep(2);
+            productPortal.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        } finally {
+            demoRealmRep.setSsoSessionMaxLifespan(originalMax);
+            testRealmResource().update(demoRealmRep);
+        }
     }
 
     //KEYCLOAK-518
@@ -754,19 +765,20 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertLogged();
 
         int currentTime = Time.currentTime();
-        setAdapterAndServerTimeOffset(10, securePortal.toString());
+        try {
+            setAdapterAndServerTimeOffset(10, securePortal.toString());
 
-        // Test I need to reauthenticate with prompt=login
-        String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
-        URLUtils.navigateToUri(appUri);
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        AccessToken token = tokenMinTTLPage.getAccessToken();
-        int authTime = token.getAuthTime();
-        assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));
-
-        // Revert times
-        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+            // Test I need to reauthenticate with prompt=login
+            String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
+            URLUtils.navigateToUri(appUri);
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+            testRealmLoginPage.form().login("bburke@redhat.com", "password");
+            AccessToken token = tokenMinTTLPage.getAccessToken();
+            int authTime = token.getAuthTime();
+            assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));
+        } finally {
+            setAdapterAndServerTimeOffset(0, securePortal.toString());
+        }
     }
 
     private static Map<String, String> getQueryFromUrl(String url) {
@@ -1131,14 +1143,14 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     // KEYCLOAK-3016
     @Test
     public void testBasicAuthErrorHandling() {
-        Client client = ClientBuilder.newClient();
+        int numberOfConnections = 10;
+        Client client = new ResteasyClientBuilder().connectionPoolSize(numberOfConnections).build();
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
         Assert.assertEquals(401, response.getStatus());
         response.close();
 
-        // The number of iterations should be HttpClient's connection pool size + 1.
-        final int LIMIT = ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS + 1;
+        final int LIMIT = numberOfConnections + 1;
         for (int i = 0; i < LIMIT; i++) {
             System.out.println("Testing Basic Auth with bad credentials " + i);
             response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
@@ -1258,6 +1270,54 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         clientResource.update(client);
         
         expectResultOfClientNotAuthenticatedInClientSecretJwt(targetClientId, expectedErrorString);
+    }
+
+    @Test
+    public void testTokenInCookieSSORoot() {
+        // Login
+        String tokenCookie = loginToCustomerCookiePortalRoot();
+        Cookie cookie = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
+        assertEquals("/", cookie.getPath());
+
+        // SSO to second app
+        customerPortal.navigateTo();
+        assertLogged();
+
+        customerCookiePortalRoot.navigateTo();
+        assertLogged();
+        cookie = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
+        String tokenCookie2 = cookie.getValue();
+        assertEquals(tokenCookie, tokenCookie2);
+        assertEquals("/", cookie.getPath());
+
+        // Logout with httpServletRequest
+        logoutFromCustomerCookiePortalRoot();
+
+        // Also should be logged-out from the second app
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
+    private String loginToCustomerCookiePortalRoot() {
+        customerCookiePortalRoot.navigateTo("relative");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(customerCookiePortalRoot.getInjectedUrl().toString() + "relative");
+        assertLogged();
+
+        // Assert no JSESSIONID cookie
+        Assert.assertNull(driver.manage().getCookieNamed("JSESSIONID"));
+
+        return driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+    }
+
+    private void logoutFromCustomerCookiePortalRoot() {
+        String logout = customerCookiePortalRoot.logoutURL();
+        driver.navigate().to(logout);
+        WaitUtils.waitUntilElement(By.id("customer_portal_logout")).is().present();
+        assertNull(driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE));
+        customerCookiePortalRoot.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
     
     private void expectResultOfClientAuthenticatedInClientSecretJwt(String targetClientId) {
