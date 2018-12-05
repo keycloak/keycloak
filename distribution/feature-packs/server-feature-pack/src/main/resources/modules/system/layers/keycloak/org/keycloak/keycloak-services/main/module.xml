@@ -44,6 +44,9 @@
         <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
         <module name="org.keycloak.keycloak-authz-policy-drools" services="import"/>
 
+        <!-- Openshift Client Storage -->
+        <module name="com.openshift.openshift-restclient-java" services="import"/>
+
         <module name="com.googlecode.owasp-java-html-sanitizer"/>
         <module name="com.google.guava"/>
         <module name="org.freemarker"/>
