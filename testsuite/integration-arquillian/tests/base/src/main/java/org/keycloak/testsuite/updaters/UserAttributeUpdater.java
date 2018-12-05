@@ -1,29 +1,37 @@
 package org.keycloak.testsuite.updaters;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
 
 /**
  *
  * @author hmlnarik
  */
-public class UserAttributeUpdater {
+public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpdater, UserResource, UserRepresentation> {
 
-    private final UserResource userResource;
+    public static UserAttributeUpdater forUserByUsername(Keycloak adminClient, String realm, String userName) {
+        UsersResource users = adminClient.realm(realm).users();
+        List<UserRepresentation> foundUsers = users.search(userName);
+        assertThat(foundUsers, hasSize(1));
+        UserResource userRes = users.get(foundUsers.get(0).getId());
 
-    private final UserRepresentation rep;
-    private final UserRepresentation origRep;
+        return new UserAttributeUpdater(userRes);
+    }
 
-    public UserAttributeUpdater(UserResource userResource) {
-        this.userResource = userResource;
-        this.origRep = userResource.toRepresentation();
-        this.rep = userResource.toRepresentation();
+    public UserAttributeUpdater(UserResource resource) {
+        super(resource, resource::toRepresentation, resource::update);
         if (this.rep.getAttributes() == null) {
             this.rep.setAttributes(new HashMap<>());
         }
@@ -49,17 +57,19 @@ public class UserAttributeUpdater {
         return this;
     }
 
-    public Closeable update() {
-        userResource.update(rep);
-
-        return () -> userResource.update(origRep);
-    }
-
     public UserAttributeUpdater setRequiredActions(UserModel.RequiredAction... requiredAction) {
         rep.setRequiredActions(Arrays.stream(requiredAction)
                 .map(action -> action.name())
                 .collect(Collectors.toList())
         );
         return this;
+    }
+
+    public RoleScopeUpdater realmRoleScope() {
+        return new RoleScopeUpdater(resource.roles().realmLevel());
+    }
+
+    public RoleScopeUpdater clientRoleScope(String clientUUID) {
+        return new RoleScopeUpdater(resource.roles().clientLevel(clientUUID));
     }
 }

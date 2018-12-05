@@ -57,11 +57,16 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.RoleScopeUpdater;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collections;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -85,6 +90,9 @@ import static org.junit.Assert.assertTrue;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
+
+    public static final String ROOT_URL_CLIENT = "root-url-client";
+    public static final String REALM_NAME = "test";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -1067,7 +1075,50 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
+    @Test
+    public void applicationsVisibilityNoScopesNoConsent() throws Exception {
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
+          .setConsentRequired(false)
+          .setFullScopeAllowed(false)
+          .setDefaultClientScopes(Collections.EMPTY_LIST)
+          .setOptionalClientScopes(Collections.EMPTY_LIST)
+          .update();
+          RoleScopeUpdater rsu = cau.realmRoleScope().update()) {
+            applicationsPage.open();
+            loginPage.login("john-doh@localhost", "password");
+            applicationsPage.assertCurrent();
 
+            Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+            Assert.assertThat(apps.keySet(), containsInAnyOrder(
+              /* "root-url-client", */ "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+
+            rsu.add(testRealm().roles().get("user").toRepresentation())
+              .update();
+
+            driver.navigate().refresh();
+            apps = applicationsPage.getApplications();
+            Assert.assertThat(apps.keySet(), containsInAnyOrder(
+              "root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        }
+    }
+
+    @Test
+    public void applicationsVisibilityNoScopesAndConsent() throws Exception {
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
+          .setConsentRequired(true)
+          .setFullScopeAllowed(false)
+          .setDefaultClientScopes(Collections.EMPTY_LIST)
+          .setOptionalClientScopes(Collections.EMPTY_LIST)
+          .update()) {
+            applicationsPage.open();
+            loginPage.login("john-doh@localhost", "password");
+            applicationsPage.assertCurrent();
+
+            Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+            Assert.assertThat(apps.keySet(), containsInAnyOrder(
+              "root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        }
+    }
 
     // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
@@ -1076,19 +1127,19 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("test-user@localhost", "password");
 
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=applications").assertEvent();
-        Assert.assertTrue(applicationsPage.isCurrent());
+        applicationsPage.assertCurrent();
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
         Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
-        Assert.assertEquals(4, accountEntry.getRolesAvailable().size());
-        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account links in Account"));
-        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
-        Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
-        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Offline access"));
-        Assert.assertEquals(1, accountEntry.getClientScopesGranted().size());
-        Assert.assertTrue(accountEntry.getClientScopesGranted().contains("Full Access"));
+        Assert.assertThat(accountEntry.getRolesAvailable(), containsInAnyOrder(
+          "Manage account links in Account",
+          "Manage account in Account",
+          "View profile in Account",
+          "Offline access"
+        ));
+        Assert.assertThat(accountEntry.getClientScopesGranted(), containsInAnyOrder("Full Access"));
         Assert.assertEquals("http://localhost:8180/auth/realms/test/account", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
