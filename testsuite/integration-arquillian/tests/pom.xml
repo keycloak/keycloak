@@ -69,6 +69,7 @@
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
         <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
         <auth.server.truststore.password>secret</auth.server.truststore.password>
+        <auth.server.jvm.args.extra/>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -103,6 +104,7 @@
         <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
         <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
+        <app.server.jvm.args.extra/>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
@@ -432,6 +434,7 @@
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
                             <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+                            <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
@@ -452,6 +455,7 @@
                             <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
                             <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                            <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -1690,6 +1694,20 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java11-auth-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <properties>
+                <auth.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</auth.server.jvm.args.extra>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <properties>
+                <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
             </properties>
         </profile>
 
