@@ -17,6 +17,8 @@
 import * as React from 'react';
 import {Route, Link} from 'react-router-dom';
 
+import * as moment from 'moment';
+
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {Logout} from './widgets/Logout';
@@ -28,6 +30,8 @@ import {ExtensionPages} from './content/extensions/ExtensionPages';
 
 declare function toggleReact():void;
 declare function isWelcomePage(): boolean;
+
+declare const locale: string;
 
 export interface AppProps {};
 
@@ -47,6 +51,9 @@ export class App extends React.Component<AppProps> {
         if (!this.kcSvc.authenticated() && !isWelcomePage()) {
             this.kcSvc.login();
         }
+        
+        // globally set up locale for date formatting
+        moment.locale(locale);
         
         return (
             <span>

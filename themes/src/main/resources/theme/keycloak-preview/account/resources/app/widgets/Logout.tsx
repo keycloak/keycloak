@@ -20,7 +20,7 @@ import {Link} from 'react-router-dom';
 import {Msg} from './Msg';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
  
-declare const baseUrl;
+declare const baseUrl: string;
 
 export interface LogoutProps {
 }

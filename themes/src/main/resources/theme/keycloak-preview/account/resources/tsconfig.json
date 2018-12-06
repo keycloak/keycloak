@@ -7,7 +7,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [ "es2015", "dom" ],
-    "noImplicitAny": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "jsx": "react",
     "suppressImplicitAnyIndexErrors": true
   }
 }

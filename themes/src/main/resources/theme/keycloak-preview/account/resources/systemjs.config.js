@@ -18,6 +18,8 @@
       'react-dom': 'npm:react-dom/umd/react-dom.development.js',
       'react-router-dom': 'npm:react-router-dom/umd/react-router-dom.js',
       
+      'moment': 'npm:moment/min/moment-with-locales.min.js',
+      
       'axios': 'npm:axios/dist/axios.min.js',
     },
     
