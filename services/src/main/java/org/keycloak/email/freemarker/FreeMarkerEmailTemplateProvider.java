@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -43,7 +44,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 
@@ -52,6 +52,7 @@ import org.keycloak.theme.beans.MessageFormatterMethod;
  */
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
+    private static final Logger logger = Logger.getLogger(FreeMarkerEmailTemplateProvider.class);
     protected KeycloakSession session;
     /**
      * authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link
@@ -211,6 +212,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
                 textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
             } catch (final FreeMarkerException e) {
                 textBody = null;
+                logger.warn("Failed to template plain text email.", e);
             }
             String htmlTemplate = String.format("html/%s", template);
             String htmlBody;
@@ -218,7 +220,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
                 htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
             } catch (final FreeMarkerException e) {
                 htmlBody = null;
+                logger.warn("Failed to template html email.", e);
             }
+
+            if (textBody == null && htmlBody == null) {
+            	throw new EmailException("Both plain text and html are empty!");
+	    }
 
             return new EmailTemplate(subject, textBody, htmlBody);
         } catch (Exception e) {
