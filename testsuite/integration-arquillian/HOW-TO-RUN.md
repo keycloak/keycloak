@@ -800,3 +800,7 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 When running the test, add the following arguments to the command line:
 
     -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+
+## Java 11 support
+Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
+`-Pjava11-app-server` profiles, respectively.
