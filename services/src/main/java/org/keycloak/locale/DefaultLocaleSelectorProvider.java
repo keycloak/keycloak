@@ -85,6 +85,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
         final LocaleSelection uiLocalesQueryParamSelection = getUiLocalesQueryParamSelection(realm, uriInfo);
         if (uiLocalesQueryParamSelection != null) {
+            updateLocaleCookie(realm, uiLocalesQueryParamSelection.getLocaleString(), uriInfo);
             return uiLocalesQueryParamSelection.getLocale();
         }
 
