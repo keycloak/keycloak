@@ -777,10 +777,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
 
         List<UserModel> results = new ArrayList<>();
-        UserProvider users = session.users();
 
         for (UserEntity entity : query.getResultList()) {
-            results.add(users.getUserById(entity.getId(), realm));
+            results.add(new UserAdapter(session, realm, em, entity));
         }
 
         return results;
