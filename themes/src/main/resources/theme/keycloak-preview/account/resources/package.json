@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "tsc --jsx react -p ./",
-    "build:watch": "tsc --jsx react -p ./ -w"
+    "build": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
+    "build:watch": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ -w"
   },
   "keywords": [],
   "author": "Stan Silvert",
@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "bootstrap": "^4.1.0",
+    "moment": "^2.22.2",
     "patternfly": "^3.23.2",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@types/react": "^16.4.14",
     "@types/react-dom": "^16.0.8",
+    "@types/react-router-dom": "^4.3.1",
     "typescript": "^3.1.1"
   },
   "repository": {}
