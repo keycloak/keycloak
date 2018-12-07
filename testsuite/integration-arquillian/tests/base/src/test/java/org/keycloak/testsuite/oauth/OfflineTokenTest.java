@@ -513,10 +513,11 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
 
         // Use accessToken to admin REST request
-        Keycloak offlineTokenAdmin = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken());
-        RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
-        Assert.assertNotNull(testRealm);
+        try (Keycloak offlineTokenAdmin = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken())) {
+            RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
+            Assert.assertNotNull(testRealm);
+        }
     }
 
 

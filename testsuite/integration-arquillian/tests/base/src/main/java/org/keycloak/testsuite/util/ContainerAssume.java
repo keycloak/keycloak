@@ -38,16 +38,6 @@ public class ContainerAssume {
                     AuthServerTestEnricher.AUTH_SERVER_CLUSTER_PROPERTY), AuthServerTestEnricher.AUTH_SERVER_CLUSTER);
     }
 
-    public static void assumeNotAppServerUndertow() {
-        log.warn("TODO: Not stable on app-server-undertow. "
-                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
-                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond");
-        Assume.assumeFalse("Not stable on app-server-undertow. "
-                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
-                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond",
-                System.getProperty("app.server", "undertow").equals("undertow"));
-    }
-
     public static void assumeNotAppServerFuse6() {
         Assume.assumeFalse("The test doesn't work on " + fuse6, fuse6.equals(System.getProperty("app.server")));
     }

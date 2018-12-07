@@ -80,6 +80,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     @Before
+    @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
         testContext.getTestRealmReps().forEach(realmRepresentation -> {

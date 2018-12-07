@@ -427,35 +427,36 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         // test configure client
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "clientConfigurer", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            client.setAdminUrl("http://nowhere");
-            realmClient.realm(TEST).clients().get(client.getId()).update(client);
-            client.setFullScopeAllowed(true);
-            try {
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "clientConfigurer", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                client.setAdminUrl("http://nowhere");
                 realmClient.realm(TEST).clients().get(client.getId()).update(client);
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
+                client.setFullScopeAllowed(true);
+                try {
+                    realmClient.realm(TEST).clients().get(client.getId()).update(client);
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
 
-            }
-            client.setFullScopeAllowed(false);
-            realmClient.realm(TEST).clients().get(client.getId()).update(client);
+                }
+                client.setFullScopeAllowed(false);
+                realmClient.realm(TEST).clients().get(client.getId()).update(client);
 
-            try {
-                realmClient.realm(TEST).clients().get(client.getId()).addDefaultClientScope(scope.getId());
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
+                try {
+                    realmClient.realm(TEST).clients().get(client.getId()).addDefaultClientScope(scope.getId());
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
 
-            }
+                }
 
-            try {
-                realmClient.realm(TEST).clients().get(client.getId()).getScopeMappings().realmLevel().add(realmRoleSet);
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
+                try {
+                    realmClient.realm(TEST).clients().get(client.getId()).getScopeMappings().realmLevel().add(realmRoleSet);
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
 
+                }
             }
         }
 
@@ -463,163 +464,159 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         if (!IMPERSONATION_DISABLED) {
             Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                     TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            realmClient.realm(TEST).users().get(user1.getId()).impersonate();
-            realmClient.close(); // just in case of cookie settings
-            realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
             try {
-                realmClient.realm(TEST).users().get(anotherAdmin.getId()).impersonate();
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
-
+                realmClient.realm(TEST).users().get(user1.getId()).impersonate();
+                realmClient.close(); // just in case of cookie settings
+                realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                        TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+                try {
+                    realmClient.realm(TEST).users().get(anotherAdmin.getId()).impersonate();
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
+            } finally {
+                realmClient.close();
             }
-
         }
 
 
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "authorized", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
-            List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "authorized", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+                List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
 
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.close();
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+            }
         }
 
         {
-            Keycloak realmClient= AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "authorizedComposite", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
-            List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "authorizedComposite", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+                List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
 
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+            }
         }
         {
-            Keycloak realmClient= AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "unauthorized", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            try {
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "unauthorized", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
                 Assert.assertEquals(403, e.getResponse().getStatus());
-
             }
         }
         {
-            Keycloak realmClient= AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "unauthorizedMapper", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            try {
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "unauthorizedMapper", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
                 Assert.assertEquals(403, e.getResponse().getStatus());
-
             }
         }
 
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "groupManager", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            List<RoleRepresentation> roles = null;
-            realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
-            roles = realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "groupManager", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+                List<RoleRepresentation> roles = realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+                realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
 
-            roles = realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().listAvailable();
-            Assert.assertEquals(1, roles.size());
-            realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRoleSet);
-            realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().remove(realmRoleSet);
-            try {
-                realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRole2Set);
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
-
+                roles = realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().listAvailable();
+                Assert.assertEquals(1, roles.size());
+                realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRoleSet);
+                realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().remove(realmRoleSet);
+                try {
+                    realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRole2Set);
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
+                try {
+                    realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
             }
-            try {
-                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
-
-            }
-
         }
 
 
         // test client.mapRoles
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "clientMapper", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            List<RoleRepresentation> roles = null;
-            roles = realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.isEmpty());
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
-            roles = realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            roles = realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAvailable();
-            Assert.assertTrue(roles.isEmpty());
-            try {
-                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
-                Assert.fail("should fail with forbidden exception");
-            } catch (ClientErrorException e) {
-                Assert.assertEquals(403, e.getResponse().getStatus());
-
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "clientMapper", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                List<RoleRepresentation> roles = realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.isEmpty());
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+                roles = realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+                roles = realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAvailable();
+                Assert.assertTrue(roles.isEmpty());
+                try {
+                    realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+                    Assert.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
             }
         }
 
         // KEYCLOAK-5878
 
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    TEST, "groupViewer", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            // Should only return the list of users that belong to "top" group
-            List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
-            Assert.assertEquals(queryUsers.size(), 1);
-            Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
-            for (UserRepresentation user : queryUsers) {
-                System.out.println(user.getUsername());
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "groupViewer", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                // Should only return the list of users that belong to "top" group
+                List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
+                Assert.assertEquals(queryUsers.size(), 1);
+                Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+                for (UserRepresentation user : queryUsers) {
+                    System.out.println(user.getUsername());
+                }
             }
         }
     }
@@ -645,29 +642,29 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
 
         {
-            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting());
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
-            List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("realm-role");
-            }));
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting())) {
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+                List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("realm-role");
+                }));
 
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().anyMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
-            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
-            Assert.assertTrue(roles.stream().noneMatch((r) -> {
-                return r.getName().equals("client-role");
-            }));
-            realmClient.close();
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+                realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
+                roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+                Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                    return r.getName().equals("client-role");
+                }));
+            }
         }
 
     }
@@ -706,21 +703,21 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     public void testRealmWithComposites() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setup5152);
 
-        Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                TEST, "realm-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+        try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST, "realm-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            RoleRepresentation composite = new RoleRepresentation();
+            composite.setName("composite");
+            composite.setComposite(true);
+            realmClient.realm(TEST).roles().create(composite);
+            composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
 
-        RoleRepresentation composite = new RoleRepresentation();
-        composite.setName("composite");
-        composite.setComposite(true);
-        realmClient.realm(TEST).roles().create(composite);
-        composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
+            ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+            RoleRepresentation viewUsers = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
 
-        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        RoleRepresentation viewUsers = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
-
-        List<RoleRepresentation> composites = new LinkedList<>();
-        composites.add(viewUsers);
-        realmClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
+            List<RoleRepresentation> composites = new LinkedList<>();
+            composites.add(viewUsers);
+            realmClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
+        }
     }
     // testRestEvaluationMasterRealm
     // testRestEvaluationMasterAdminTestRealm
@@ -785,16 +782,15 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                 "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
-
-        RealmRepresentation newRealm=new RealmRepresentation();
-        newRealm.setRealm("anotherRealm");
-        newRealm.setId("anotherRealm");
-        newRealm.setEnabled(true);
-        realmClient.realms().create(newRealm);
-
-        ClientRepresentation newClient = new ClientRepresentation();
-
         try {
+            RealmRepresentation newRealm=new RealmRepresentation();
+            newRealm.setRealm("anotherRealm");
+            newRealm.setId("anotherRealm");
+            newRealm.setEnabled(true);
+            realmClient.realms().create(newRealm);
+
+            ClientRepresentation newClient = new ClientRepresentation();
+
             newClient.setName("newClient");
             newClient.setClientId("newClient");
             newClient.setFullScopeAllowed(true);
@@ -812,7 +808,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertEquals(201, response.getStatus());
         } finally {
             adminClient.realm("anotherRealm").remove();
-
+            realmClient.close();
         }
 
 

@@ -37,6 +37,10 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import org.junit.After;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -53,6 +57,13 @@ public class CookiesPathTest extends AbstractKeycloakTest {
     public static final String OLD_COOKIE_PATH = "/auth/realms/foo";
 
     public static final String KC_RESTART = "KC_RESTART";
+
+    private CloseableHttpClient httpClient = null;
+
+    @After
+    public void closeHttpClient() throws IOException {
+        if (httpClient != null) httpClient.close();
+    }
 
     @Test
     public void testCookiesPath() {
@@ -88,7 +99,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         cookies.stream().forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foobar/")));
 
         // lets back to "/realms/foo/account" to test the cookies for "foo" realm are still there and haven't been (correctly) sent to "foobar"
-        URLUtils.navigateToUri( oauth.AUTH_SERVER_ROOT + "/realms/foo/account");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
 
         cookies = driver.manage().getCookies();
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);
@@ -97,7 +108,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testMultipleCookies() throws IOException {
-        String requestURI = oauth.AUTH_SERVER_ROOT + "/realms/foo/account";
+        String requestURI = OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account";
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1);
 
@@ -113,16 +124,15 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
         Assert.assertThat(cookieStore.getCookies(), Matchers.hasSize(3));
 
-        CloseableHttpResponse response = login(requestURI, cookieStore);
-        response.close();
+        login(requestURI, cookieStore);
 
         // old cookie has been removed
-        // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION, OAuth_Token_Request_State
-        Assert.assertThat(cookieStore.getCookies(), Matchers.hasSize(4));
+        // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION
+        Assert.assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()), 
+                Matchers.containsInAnyOrder("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
 
         // does each cookie's path end with "/"
-        cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName()))
-                .map(c -> c.getPath()).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
+        cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getPath).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
 
         // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
         String authSessionId = cookieStore.getCookies().stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
@@ -152,8 +162,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         Assert.assertThat(cookies, Matchers.hasSize(3));
 
         // does each cookie's path end with "/"
-        cookies.stream().map(c -> c.getPath()).forEach(path ->
-                Assert.assertThat(path, Matchers.endsWith("/")));
+        cookies.stream().map(Cookie::getPath).forEach(path -> Assert.assertThat(path, Matchers.endsWith("/")));
 
         // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
         String authSessionId = cookies.stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
@@ -164,7 +173,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testOldCookieWithNodeInValue() throws IOException {
-        String requestURI = oauth.AUTH_SERVER_ROOT + "/realms/foo/account";
+        String requestURI = OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account";
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1);
 
@@ -180,16 +189,15 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
         Assert.assertThat(cookieStore.getCookies(), Matchers.hasSize(3));
 
-        CloseableHttpResponse response = login(requestURI, cookieStore);
-        response.close();
+        login(requestURI, cookieStore);
 
         // old cookie has been removed
         // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION, OAuth_Token_Request_State
-        Assert.assertThat(cookieStore.getCookies(), Matchers.hasSize(4));
+        Assert.assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()), 
+                Matchers.containsInAnyOrder("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
 
         // does each cookie's path end with "/"
-        cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName()))
-                .map(c -> c.getPath()).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
+        cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getPath).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
 
         // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
         String authSessionId = cookieStore.getCookies().stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
@@ -215,29 +223,28 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         testRealms.add(foobar.build());
     }
 
+    // if the client is closed before the response is read, it throws 
+    // org.apache.http.ConnectionClosedException: Premature end of Content-Length delimited message body
+    // that's why the this.httpClient is introduced, the client is closed either here or after test method
     private CloseableHttpResponse sendRequest(HttpRequestBase request, CookieStore cookieStore, HttpCoreContext localContext) throws IOException {
-        CloseableHttpClient c = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
-
-        CloseableHttpResponse response = c.execute(request, localContext);
-
-        return response;
+        if (httpClient != null) httpClient.close();
+        httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
+        return httpClient.execute(request, localContext);
     }
 
     private CookieStore getCorrectCookies(String uri) throws IOException {
         CookieStore cookieStore = new BasicCookieStore();
 
         HttpGet request = new HttpGet(uri);
-        CloseableHttpResponse response = sendRequest(request, new BasicCookieStore(), new HttpCoreContext());
-
-        for (org.apache.http.Header h: response.getHeaders("Set-Cookie")) {
-            if (h.getValue().contains(AuthenticationSessionManager.AUTH_SESSION_ID)) {
-                cookieStore.addCookie(parseCookie(h.getValue(), AuthenticationSessionManager.AUTH_SESSION_ID));
-            } else if (h.getValue().contains(KC_RESTART)) {
-                cookieStore.addCookie(parseCookie(h.getValue(), KC_RESTART));
+        try (CloseableHttpResponse response = sendRequest(request, new BasicCookieStore(), new HttpCoreContext())) {
+            for (org.apache.http.Header h: response.getHeaders("Set-Cookie")) {
+                if (h.getValue().contains(AuthenticationSessionManager.AUTH_SESSION_ID)) {
+                    cookieStore.addCookie(parseCookie(h.getValue(), AuthenticationSessionManager.AUTH_SESSION_ID));
+                } else if (h.getValue().contains(KC_RESTART)) {
+                    cookieStore.addCookie(parseCookie(h.getValue(), KC_RESTART));
+                }
             }
         }
-
-        response.close();
 
         return cookieStore;
     }
@@ -267,18 +274,18 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         return c;
     }
 
-    private CloseableHttpResponse login(String requestURI, CookieStore cookieStore) throws IOException {
+    private void login(String requestURI, CookieStore cookieStore) throws IOException {
         HttpCoreContext httpContext = new HttpCoreContext();
         HttpGet request = new HttpGet(requestURI);
 
         // send an initial request, we are redirected to login page
-        CloseableHttpResponse response = sendRequest(request, cookieStore, httpContext);
-        String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-        response.close();
-        String action = ActionURIUtils.getActionURIFromPageSource(s);
+        String entityContent;
+        try (CloseableHttpResponse response = sendRequest(request, cookieStore, httpContext)) {
+            entityContent = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+        }
 
         // send credentials to login form
-        HttpPost post = new HttpPost(action);
+        HttpPost post = new HttpPost(ActionURIUtils.getActionURIFromPageSource(entityContent));
         List<NameValuePair> params = new LinkedList<>();
         params.add(new BasicNameValuePair("username", "foo"));
         params.add(new BasicNameValuePair("password", "password"));
@@ -286,6 +293,8 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         post.setHeader("Content-Type", "application/x-www-form-urlencoded");
         post.setEntity(new UrlEncodedFormEntity(params));
 
-        return sendRequest(post, cookieStore, httpContext);
+        try (CloseableHttpResponse response = sendRequest(post, cookieStore, httpContext)) {
+            Assert.assertThat("Expected successful login.", response.getStatusLine().getStatusCode(), is(equalTo(200)));
+        }
     }
 }

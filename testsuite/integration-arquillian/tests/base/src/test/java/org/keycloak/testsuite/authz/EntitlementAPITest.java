@@ -1170,8 +1170,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testOfflineRequestingPartyToken() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
-
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
 
