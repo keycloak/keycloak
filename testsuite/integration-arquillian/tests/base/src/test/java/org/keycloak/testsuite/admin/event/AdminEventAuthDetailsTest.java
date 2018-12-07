@@ -127,9 +127,8 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
     }
 
     private void testClient(String realmName, String username, String password, String clientId, String expectedRealmId, String expectedClientUuid, String expectedUserId) {
-        Keycloak keycloak = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                realmName, username, password, clientId);
-        try {
+        try (Keycloak keycloak = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                realmName, username, password, clientId)) {
             UserRepresentation rep = UserBuilder.create().id(appUserId).username("app-user").email("foo@email.org").build();
             keycloak.realm("test").users().get(appUserId).update(rep);
 
@@ -141,8 +140,6 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
                     .representation(rep)
                     .authDetails(expectedRealmId, expectedClientUuid, expectedUserId)
                     .assertEvent();
-        } finally {
-            keycloak.close();
         }
     }
 }

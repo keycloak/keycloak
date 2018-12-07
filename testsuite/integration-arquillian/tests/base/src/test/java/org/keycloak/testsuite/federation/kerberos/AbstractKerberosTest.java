@@ -20,7 +20,6 @@ package org.keycloak.testsuite.federation.kerberos;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
@@ -315,7 +314,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected OAuthClient.AccessTokenResponse assertAuthenticationSuccess(String codeUrl) throws Exception {
-        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), Charset.forName("UTF-8"));
+        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), "UTF-8");
         String code = null;
         String state = null;
         for (NameValuePair pair : pairs) {

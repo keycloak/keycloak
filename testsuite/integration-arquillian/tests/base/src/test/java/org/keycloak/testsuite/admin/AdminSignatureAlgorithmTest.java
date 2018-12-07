@@ -50,19 +50,19 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
         TokenSignatureUtil.registerKeyProvider("master", "P-256", adminClient, testContext);
         TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, Algorithm.ES256);
 
-        Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), suiteContext.getAuthServerInfo().getContextRoot().toString());
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), suiteContext.getAuthServerInfo().getContextRoot().toString())) {
+            AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(accessToken.getToken(), AccessToken.class);
+            assertEquals(Algorithm.ES256, verifier.getHeader().getAlgorithm().name());
 
-        AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
-        TokenVerifier<AccessToken> verifier = TokenVerifier.create(accessToken.getToken(), AccessToken.class);
-        assertEquals(Algorithm.ES256, verifier.getHeader().getAlgorithm().name());
+            assertNotNull(adminClient.realms().findAll());
+        
+            String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami";
 
-        assertNotNull(adminClient.realms().findAll());
-
-        String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami";
-
-        JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
-        assertNotNull(jsonNode.get("realm"));
-        assertNotNull(jsonNode.get("userId"));
+            JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
+            assertNotNull(jsonNode.get("realm"));
+            assertNotNull(jsonNode.get("userId"));
+        }
     }
 
 }
