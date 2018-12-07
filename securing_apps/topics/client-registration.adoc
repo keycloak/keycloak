@@ -6,7 +6,7 @@ An admin can do this through the admin console (or admin REST endpoints), but cl
 registration service.
 
 The Client Registration Service provides built-in support for {project_name} Client Representations, OpenID Connect Client Meta Data and SAML Entity Descriptors.
-The Client Registration Service endpoint is `/realms/<realm>/clients-registrations/<provider>`.
+The Client Registration Service endpoint is `/auth/realms/<realm>/clients-registrations/<provider>`.
 
 The built-in supported `providers` are: 
 
@@ -73,22 +73,22 @@ The `default` client registration provider can be used to create, retrieve, upda
 It uses {project_name} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
 console, including for example configuring protocol mappers.
 
-To create a client create a Client Representation (JSON) then perform an HTTP POST request to `/realms/<realm>/clients-registrations/default`.
+To create a client create a Client Representation (JSON) then perform an HTTP POST request to `/auth/realms/<realm>/clients-registrations/default`.
 
 It will return a Client Representation that also includes the registration access token.
 You should save the registration access token somewhere if you want to retrieve the config, update or delete the client later. 
 
-To retrieve the Client Representation perform an HTTP GET request to `/realms/<realm>/clients-registrations/default/<client id>`.
+To retrieve the Client Representation perform an HTTP GET request to `/auth/realms/<realm>/clients-registrations/default/<client id>`.
 
 It will also return a new registration access token. 
 
 To update the Client Representation perform an HTTP PUT request with the updated Client Representation to:
-`/realms/<realm>/clients-registrations/default/<client id>`.
+`/auth/realms/<realm>/clients-registrations/default/<client id>`.
 
 It will also return a new registration access token. 
 
 To delete the Client Representation perform an HTTP DELETE request to:
-`/realms/<realm>/clients-registrations/default/<client id>`
+`/auth/realms/<realm>/clients-registrations/default/<client id>`
 
 === {project_name} Adapter Configuration
 
@@ -101,7 +101,7 @@ To do this include the following header in the request:
 Authorization: basic BASE64(client-id + ':' + client-secret)
 ----        
 
-To retrieve the Adapter Configuration then perform an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
+To retrieve the Adapter Configuration then perform an HTTP GET request to `/auth/realms/<realm>/clients-registrations/install/<client id>`.
 
 No authentication is required for public clients.
 This means that for the JavaScript adapter you can load the client configuration directly from {project_name} using the above URL.
@@ -110,9 +110,9 @@ This means that for the JavaScript adapter you can load the client configuration
 
 {project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://tools.ietf.org/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://tools.ietf.org/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
 
-The endpoint to use these specifications to register clients in {project_name} is `/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
+The endpoint to use these specifications to register clients in {project_name} is `/auth/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
 
-This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm, `/realms/<realm>/.well-known/openid-configuration`.
+This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm, `/auth/realms/<realm>/.well-known/openid-configuration`.
 
 === SAML Entity Descriptors
 
@@ -121,7 +121,7 @@ It doesn't support retrieving, updating or deleting clients.
 For those operations the {project_name} representation endpoints should be used.
 When creating a client a {project_name} Client Representation is returned with details about the created client, including a registration access token.
 
-To create a client perform an HTTP POST request with the SAML Entity Descriptor to `/realms/<realm>/clients-registrations/saml2-entity-descriptor`.
+To create a client perform an HTTP POST request with the SAML Entity Descriptor to `/auth/realms/<realm>/clients-registrations/saml2-entity-descriptor`.
 
 === Example using CURL
 
