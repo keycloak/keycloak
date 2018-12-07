@@ -100,10 +100,10 @@ public class TokenSignatureUtil {
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecNistRep);
 
-        Response response = adminClient.realm(realm).components().add(rep);
-        String id = ApiUtil.getCreatedId(response);
-        testContext.getOrCreateCleanup(realm).addComponentId(id);
-        response.close();
+        try (Response response = adminClient.realm(realm).components().add(rep)) {
+            String id = ApiUtil.getCreatedId(response);
+            testContext.getOrCreateCleanup(realm).addComponentId(id);
+        }
     }
 
     private static ComponentRepresentation createKeyRep(String name, String providerId) {

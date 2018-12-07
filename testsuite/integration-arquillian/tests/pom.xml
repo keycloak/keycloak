@@ -1438,11 +1438,21 @@
                     <version>${appium.client.version}</version>
                 </dependency>
 
+                <!-- 
+                    httpclient and httpcore are here to ensure we use the same version
+                    as in keycloak/pom.xml and to prevent the other versions beeing present 
+                    on classpath during tests (as a transitive dependencies e.g.). 
+                    There has beeen issues due to this.
+                -->
                 <dependency>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
-                    <version>4.5.3</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </dependency>
+
                 <dependency>
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>

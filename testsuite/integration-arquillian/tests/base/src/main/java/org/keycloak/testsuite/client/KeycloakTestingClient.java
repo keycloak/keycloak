@@ -25,31 +25,27 @@ import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.runonserver.*;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
-
-import javax.net.ssl.HostnameVerifier;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KeycloakTestingClient {
+public class KeycloakTestingClient implements AutoCloseable {
 
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
-    private static final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     KeycloakTestingClient(String serverUrl, ResteasyClient resteasyClient) {
-        client = resteasyClient != null ? resteasyClient : newResteasyClientBuilder().connectionPoolSize(10).build();
-        target = client.target(serverUrl);
-    }
-
-    private static ResteasyClientBuilder newResteasyClientBuilder() {
-        if (authServerSslRequired) {
-            // Disable PKIX path validation errors when running tests using SSL
-            HostnameVerifier hostnameVerifier = (hostName, session) -> true;
-            return new ResteasyClientBuilder().disableTrustManager().hostnameVerifier(hostnameVerifier);
+        if (resteasyClient != null) {
+            client = resteasyClient;
+        } else {
+            ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+            resteasyClientBuilder.connectionPoolSize(10);
+            resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10));
+            client = resteasyClientBuilder.build();
         }
-        return new ResteasyClientBuilder();
+        target = client.target(serverUrl);
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -84,7 +80,7 @@ public class KeycloakTestingClient {
 
     public class Server {
 
-        private String realm;
+        private final String realm;
 
         public Server(String realm) {
             this.realm = realm;
@@ -150,6 +146,7 @@ public class KeycloakTestingClient {
 
     }
 
+    @Override
     public void close() {
         client.close();
     }
