@@ -15,9 +15,9 @@ For users with more advanced docker registry configurations, it is generally rec
 
 	auth:
 	  token:
-	    realm: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
+	    realm: http://localhost:8080/auth/realms/master/protocol/docker-v2/auth
 	    service: docker-test
-	    issuer: http://localhost:8080/auth/auth/realms/master
+	    issuer: http://localhost:8080/auth/realms/master
 
 This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with link:https://github.com/docker/distribution/blob/master/cmd/registry/config-example.yml[a basic example].
 
@@ -28,9 +28,9 @@ WARNING: Don't forget to configure the `rootcertbundle` field with the location 
 
 Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
 
-    REGISTRY_AUTH_TOKEN_REALM: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
+    REGISTRY_AUTH_TOKEN_REALM: http://localhost:8080/auth/realms/master/protocol/docker-v2/auth
     REGISTRY_AUTH_TOKEN_SERVICE: docker-test
-    REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/auth/realms/master
+    REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/realms/master
 
 WARNING: Don't forget to configure the `REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE` override with the location of the {project_name} realm's pulic certificate.  The auth configuration will not work without this argument.
 
