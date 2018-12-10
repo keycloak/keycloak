@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +115,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
 
         log.debugf("Will do bulk load of sessions from remote cache '%s' . Segment: %d", cache.getName(), ctx.getSegment());
 
+        Map<Object, Object> remoteEntries = new HashMap<>();
         CloseableIterator<Map.Entry> iterator = null;
         int countLoaded = 0;
         try {
@@ -121,7 +123,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
             while (iterator.hasNext()) {
                 countLoaded++;
                 Map.Entry entry = iterator.next();
-                decoratedCache.putAsync(entry.getKey(), entry.getValue());
+                remoteEntries.put(entry.getKey(), entry.getValue());
             }
         } catch (RuntimeException e) {
             log.warnf(e, "Error loading sessions from remote cache '%s' for segment '%d'", remoteCache.getName(), ctx.getSegment());
@@ -131,6 +133,8 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
                 iterator.close();
             }
         }
+
+        decoratedCache.putAll(remoteEntries);
 
         log.debugf("Successfully finished loading sessions from cache '%s' . Segment: %d, Count of sessions loaded: %d", cache.getName(), ctx.getSegment(), countLoaded);
 
