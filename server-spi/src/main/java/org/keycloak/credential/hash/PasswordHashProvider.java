@@ -25,7 +25,7 @@ import org.keycloak.provider.Provider;
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
 public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
+    boolean policyCheck(PasswordPolicy policy, CredentialModel credential);
 
     void encode(String rawPassword, int iterations, CredentialModel credential);
 
