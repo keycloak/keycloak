@@ -28,7 +28,9 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -69,6 +71,11 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/hawtio-realm/demorealm.json"));
+    }
+
+    @BeforeClass
+    public static void enabled() {
+        Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     }
 
     @Before

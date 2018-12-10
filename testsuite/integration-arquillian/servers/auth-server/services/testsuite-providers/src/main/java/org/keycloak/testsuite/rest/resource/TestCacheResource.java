@@ -42,6 +42,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.testsuite.rest.representation.JGroupsStats;
 import org.keycloak.utils.MediaType;
+import org.infinispan.stream.CacheCollectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -76,11 +77,9 @@ public class TestCacheResource {
     @Path("/enumerate-keys")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> enumerateKeys() {
-        return cache.keySet().stream().map((Object o) -> {
-
-            return o.toString();
-
-        }).collect(Collectors.toSet());
+        return cache.keySet().stream()
+          .map(Object::toString)
+          .collect(CacheCollectors.serializableCollector(Collectors::toSet));    // See https://issues.jboss.org/browse/ISPN-7596
     }
 
 

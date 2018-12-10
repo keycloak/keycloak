@@ -148,7 +148,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
             OnlineManagementClient client = AppServerTestEnricher.getManagementClient();
             Administration administration = new Administration(client);
 
-            client.execute("/system-property=jackson.deserialization.whitelist.packages:add(value=org.keycloak.testsuite.photoz)");
+            client.execute("/system-property=jackson.deserialization.whitelist.packages:add(value=org.keycloak.example.photoz)");
             administration.reloadIfRequired();
         }
     }

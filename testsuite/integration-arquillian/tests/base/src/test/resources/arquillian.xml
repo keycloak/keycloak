@@ -132,6 +132,7 @@
                 ${auth.server.jboss.jvm.debug.args}
                 ${auth.server.memory.settings}
                 -Djava.net.preferIPv4Stack=true
+                ${auth.server.jvm.args.extra}
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
@@ -157,6 +158,7 @@
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend1.management.port}</property>
@@ -181,6 +183,7 @@
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
@@ -260,6 +263,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${cache.server.crossdc1.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.management.port}</property>
@@ -288,6 +292,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${cache.server.crossdc2.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.2.management.port}</property>
@@ -423,6 +428,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc01.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="managementPort">${auth.server.crossdc01.management.port}</property>
                 <property name="bindHttpPortOffset">-79</property>
@@ -451,6 +457,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc02.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="managementPort">${auth.server.crossdc02.management.port}</property>
                 <property name="bindHttpPortOffset">-78</property>
@@ -480,6 +487,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc11.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="managementPort">${auth.server.crossdc11.management.port}</property>
                 <property name="bindHttpPortOffset">-69</property>
@@ -508,6 +516,7 @@
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.crossdc12.jvm.debug.args}
+                    ${auth.server.jvm.args.extra}
                 </property>
                 <property name="managementPort">${auth.server.crossdc12.management.port}</property>
                 <property name="bindHttpPortOffset">-68</property>

@@ -628,8 +628,13 @@ public final class KeycloakModelUtils {
      * Lookup clientScope OR client by id. Method is useful if you know just ID, but you don't know
      * if underlying model is clientScope or client
      */
-    public static ClientScopeModel findClientScopeById(RealmModel realm, String clientScopeId) {
+    public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+
+        if (clientScope ==  null) {
+            // as fallback we try to resolve dynamic scopes
+            clientScope = client.getDynamicClientScope(clientScopeId);
+        }
 
         if (clientScope != null) {
             return clientScope;

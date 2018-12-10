@@ -177,6 +177,17 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      */
     Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol);
 
+    /**
+     * <p>Returns a {@link ClientScopeModel} associated with this client.
+     *
+     * <p>This method is used as a fallback in order to let clients to resolve a {@code scope} dynamically which is not listed as default or optional scope when calling {@link #getClientScopes(boolean, boolean)}.
+     *
+     * @param scope the scope name
+     * @return the client scope
+     */
+    default ClientScopeModel getDynamicClientScope(String scope) {
+        return null;
+    }
 
     /**
      * Time in seconds since epoc

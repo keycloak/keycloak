@@ -1369,11 +1369,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient(String configFile) {
         if (authzClient == null) {
-            try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to create authz client", cause);
-            }
+            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
         }
 
         return authzClient;

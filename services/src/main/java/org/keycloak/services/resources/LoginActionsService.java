@@ -845,8 +845,8 @@ public class LoginActionsService {
         boolean updateConsentRequired = false;
 
         for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
-            if (clientScope != null) {
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
+            if (clientScope != null && clientScope.isDisplayOnConsentScreen()) {
                 if (!grantedConsent.isClientScopeGranted(clientScope)) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
