@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -24,6 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.util.UUID;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,7 +59,7 @@ public class SamlSPFacade extends HttpServlet {
             System.out.println("ParameterMap is empty, redirecting to keycloak server ");
             resp.setStatus(302);
             // Redirect
-            UriBuilder builder = UriBuilder.fromUri(ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/demo/protocol/saml?SAMLRequest=" + getSamlRequest());
+            UriBuilder builder = UriBuilder.fromUri(getSamlAuthnRequest(req));
             builder.queryParam("RelayState", RELAY_STATE);
             resp.setHeader("Location", builder.build().toString());
             return;
@@ -85,14 +94,20 @@ public class SamlSPFacade extends HttpServlet {
     *         <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">saml-employee</saml:Issuer> 
     *         <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/> 
     * </samlp:AuthnRequest> 
-    *
-    * It should be replaced by dynamically generated code. See KEYCLOAK-8245
     */
-    private String getSamlRequest() {
-        if (System.getProperty("auth.server.ssl.required", "false").equals("true")) {
-            return "jVJLbxshEL5Xyn9A3Ndg%2FNgN8lpyYkW1lDYr2%2B2hl4qw4xiJhQ3Dus2%2FD17HSqqoaQUHBN%2FM9xhmqBrbykUX924Njx1gJL8b61D2DyXtgpNeoUHpVAMoo5abxZdbKQZctsFHr72lp5KPwQoRQjTeUbI4H6%2B9w66BsIFwMBq%2BrW9Luo%2BxlYxZr5Xde4yyEAVn0LTWPwEwSpZJo3HqWH9C45%2FwyXjEVPLDAijbIKuh8ewslR1tUXLjg4bedEl3yiJQslqWdLX8Oa4LmGgQWS74NBvn4j5TxWWeiboY5fySa84nCYxV8mMO8FqO2MHKYVQullTw4STjo4xPt0LItIf5IAn7QUn1IuTKuNq4h48zuz%2BBUH7ebqusuttsKfkOAXvrCUDnZHY0JHv28GZy%2FzuL%2BT%2FinrE3%2FV%2FYWvk1dVwtK2%2BNfiILa%2F2v6xR2TGnE0EEfb6Pi3zUMB8P%2BxtTZrofKzmEL2uwM1JQlHvb%2BX84vPh3XMw%3D%3D";
-        }
+    private URI getSamlAuthnRequest(HttpServletRequest req) {
+        try {
+            BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+            SAML2Request samlReq = new SAML2Request();
+            String appServerUrl = ServletTestUtils.getUrlBase(req) + "/employee/";
+            String authServerUrl = ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/demo/protocol/saml";
+            AuthnRequestType loginReq;
+            loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), appServerUrl, authServerUrl, "http://localhost:8280/employee/");
+            loginReq.getNameIDPolicy().setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.getUri());
 
-        return "jZJRT9swFIX%2FiuX31I5pSbCaSoVqWiXYIlp42Asyzu1qybGDr1PWfz83LQKJAZP8YNnf9T3nXE9RtbaT8z5u3S089YCR%2FGmtQzlcVLQPTnqFBqVTLaCMWq7mN9dSjLjsgo9ee0uPJZ%2FDChFCNN5RMn%2FZXnmHfQthBWFnNNzdXld0G2MnGbNeK7v1GGUpSs6g7azfAzBKFkmjcepQ%2Fy86T7RKdlgAZVtkDbSevShlB1eUfPNBw%2BC5ohtlEShZLiq6XDyMmxImGkRWCH6ejQvxmKnyoshEU54V%2FIJrzicJxjrZMTt4LUfsYekwKhcrKng%2ByfhZxs%2FXQsi08mJUTsa%2FKKlPQi6Na4z7%2FXlkj0cI5ff1us7qn6s1JfcQcHCeADoj04MhOXQPbwb3v6OYfZH2lL15%2F9Stkz%2FSi8tF7a3RezK31j9fpbBjSiOGHoZ4WxU%2F1pCP8uHENNlmQGXvsANtNgYaylIf9v5bzv4C";
+            return binding.redirectBinding(SAML2Request.convert(loginReq)).requestURI(authServerUrl);
+        } catch (IOException | ConfigurationException | ParsingException | ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }
