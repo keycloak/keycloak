@@ -58,15 +58,16 @@ ifeval::[{project_community}==true]
 .WildFly 11 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
+$ cd $JBOSS_HOME
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
 .WildFly 10 and older
 [source]
 ----
 
-$ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install-saml.cli
+$ cd $JBOSS_HOME
+$ /bin/boss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-saml.cli`
@@ -78,15 +79,16 @@ ifeval::[{project_product}==true]
 .JBoss EAP 7.1 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
+$ cd $JBOSS_HOME
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
 .JBoss EAP 7.0 and EAP 6
 [source]
 ----
 
-$ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install-saml.cli
+$ cd $JBOSS_HOME
+$ ./bin/boss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-saml.cli`

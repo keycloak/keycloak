@@ -111,13 +111,13 @@ ifeval::[{project_community}==true]
 .WildFly 11 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install-offline.cli
+$ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
 ----
 
 .WildFly 10 or older
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
+$ ./bin/jboss-cli.sh --file=bin/adapter-install-offline.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-offline.cli`
@@ -129,13 +129,13 @@ ifeval::[{project_product}==true]
 .JBoss EAP 7.1 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install-offline.cli
+$ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
 ----
 
 .JBoss EAP 7.0
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
+$ ./bin/jboss-cli.sh --file=bin/adapter-install-offline.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-offline.cli`
@@ -151,13 +151,13 @@ ifeval::[{project_community}==true]
 .WildFly 11 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
 ----
 
 .WildFly 10 or older
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-install.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
 ----
 endif::[]
 
@@ -165,13 +165,13 @@ ifeval::[{project_product}==true]
 .JBoss EAP 7.1 or newer
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-elytron-install.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
 ----
 
 .JBoss EAP 7.0 and 6.4
 [source]
 ----
-$ ./bin/jboss-cli.sh --file=adapter-install.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
 ----
 endif::[]
 
