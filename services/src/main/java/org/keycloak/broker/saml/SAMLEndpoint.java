@@ -418,7 +418,9 @@ public class SAMLEndpoint {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
-                    cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                    if (responseType.getDestination() != null) {
+                        cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                    }
                 } catch (IllegalArgumentException ex) {
                     // warning has been already emitted in DeploymentBuilder
                 }
