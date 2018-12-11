@@ -55,6 +55,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -422,6 +423,9 @@ public class TokenManager {
         Map<String, String> transferredNotes = authSession.getClientNotes();
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
             clientSession.setNote(entry.getKey(), entry.getValue());
+        }
+        if (!authSession.getClientNotes().containsKey(GeneralConstants.RELAY_STATE)) {
+           clientSession.removeNote(GeneralConstants.RELAY_STATE);
         }
 
         Map<String, String> transferredUserSessionNotes = authSession.getUserSessionNotes();

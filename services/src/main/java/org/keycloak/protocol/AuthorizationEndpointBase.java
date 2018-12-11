@@ -32,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -161,7 +162,7 @@ public abstract class AuthorizationEndpointBase {
         }
     }
 
-    protected AuthenticationSessionModel createAuthenticationSession(ClientModel client, String requestState) {
+    protected AuthenticationSessionModel createAuthenticationSession(ClientModel client, String relayState) {
         AuthenticationSessionManager manager = new AuthenticationSessionManager(session);
         RootAuthenticationSessionModel rootAuthSession = manager.getCurrentRootAuthenticationSession(realm);
 
@@ -190,6 +191,7 @@ public abstract class AuthorizationEndpointBase {
             }
         }
 
+        authSession.setClientNote(GeneralConstants.RELAY_STATE, relayState);
         session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
 
         return authSession;

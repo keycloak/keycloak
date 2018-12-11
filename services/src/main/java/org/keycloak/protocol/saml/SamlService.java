@@ -695,7 +695,7 @@ public class SamlService extends AuthorizationEndpointBase {
             redirect = client.getManagementUrl();
         }
 
-        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
+        AuthenticationSessionModel authSession = createAuthenticationSession(client, relayState);
 
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
@@ -708,6 +708,8 @@ public class SamlService extends AuthorizationEndpointBase {
         }
         if (relayState != null && !relayState.trim().equals("")) {
             authSession.setClientNote(GeneralConstants.RELAY_STATE, relayState);
+        } else {
+            authSession.removeClientNote(GeneralConstants.RELAY_STATE);
         }
 
         return authSession;
