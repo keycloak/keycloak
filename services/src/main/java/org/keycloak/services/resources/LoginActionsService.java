@@ -864,7 +864,7 @@ public class LoginActionsService {
         event.success();
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession.getProtocol());
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
     }
 
     private void initLoginEvent(AuthenticationSessionModel authSession) {

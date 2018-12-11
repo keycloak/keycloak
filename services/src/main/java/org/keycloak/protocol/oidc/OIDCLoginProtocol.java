@@ -181,16 +181,16 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession= clientSessionCtx.getClientSession();
 
-        String responseTypeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        String responseModeParam = clientSession.getNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+        String responseTypeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        String responseModeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
         setupResponseTypeAndMode(responseTypeParam, responseModeParam);
 
-        String redirect = clientSession.getRedirectUri();
+        String redirect = authSession.getRedirectUri();
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
-        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
+        String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
         logger.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
@@ -198,12 +198,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
-        }
-
-        AuthenticationSessionModel authSession = clientSessionCtx.getAttribute(ClientSessionContext.AUTHENTICATION_SESSION_ATTR, AuthenticationSessionModel.class);
-        if (authSession == null) {
-            // Shouldn't happen if correctly used
-            throw new IllegalStateException("AuthenticationSession attachement not set in the ClientSessionContext");
         }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
