@@ -119,7 +119,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 ===== Configure {project_name} to Use the Keystore
 
 Now that you have a Java keystore with the appropriate certificates, you need to configure your {project_name} installation to use it.
-First, you must move the keystore file to the _configuration/_ directory of your deployment and edit the _standalone.xml_, _standalone-ha.xml_, or _host.xml_ file to use the keystore and enable HTTPS.  (See <<_operating-mode, operating mode>>).
+First, you must edit the _standalone.xml_, _standalone-ha.xml_, or _host.xml_ file to use the keystore and enable HTTPS. You may then either move the keystore file to the _configuration/_ directory of your deployment or the file in a location you choose and provide an absolute path to it. If you are using absolute paths, remove the optional `relative-to` parameter from your configuration (See <<_operating-mode, operating mode>>).
 
 Add the new `security-realm` element using the CLI:
 
