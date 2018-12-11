@@ -733,20 +733,20 @@ public class AuthenticationManager {
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
                                                        ClientSessionContext clientSessionCtx,
                                                 HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
-                                                EventBuilder event, String protocol) {
-        LoginProtocol protocolImpl = session.getProvider(LoginProtocol.class, protocol);
+                                                EventBuilder event, AuthenticationSessionModel authSession) {
+        LoginProtocol protocolImpl = session.getProvider(LoginProtocol.class, authSession.getProtocol());
         protocolImpl.setRealm(realm)
                 .setHttpHeaders(request.getHttpHeaders())
                 .setUriInfo(uriInfo)
                 .setEventBuilder(event);
-        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, protocolImpl);
+        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession, protocolImpl);
 
     }
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
                                                        ClientSessionContext clientSessionCtx,
                                                        HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
-                                                       EventBuilder event, LoginProtocol protocol) {
+                                                       EventBuilder event, AuthenticationSessionModel authSession, LoginProtocol protocol) {
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
 
@@ -787,7 +787,7 @@ public class AuthenticationManager {
             clientSession.removeNote(SSO_AUTH);
         }
 
-        return protocol.authenticated(userSession, clientSessionCtx);
+        return protocol.authenticated(authSession, userSession, clientSessionCtx);
 
     }
 
@@ -873,7 +873,7 @@ public class AuthenticationManager {
         event.event(EventType.LOGIN);
         event.session(userSession);
         event.success();
-        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession.getProtocol());
+        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession);
     }
 
     // Return null if action is not required. Or the name of the requiredAction in case it is required.

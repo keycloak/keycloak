@@ -37,6 +37,7 @@ import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -167,6 +168,33 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertEquals("\"><foo>bar_baz(2)far</foo>", state);
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+    }
+
+
+    @Test
+    public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
+        // Set response_mode=fragment and login
+        oauth.responseMode(OIDCResponseMode.FRAGMENT.toString().toLowerCase());
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        Assert.assertNotNull(response.getState());
+
+        URI currentUri = new URI(driver.getCurrentUrl());
+        Assert.assertNull(currentUri.getRawQuery());
+        Assert.assertNotNull(currentUri.getRawFragment());
+
+        // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
+        oauth.responseMode(null);
+        oauth.openLoginForm();
+        response = new OAuthClient.AuthorizationEndpointResponse(oauth);
+
+        Assert.assertNotNull(response.getCode());
+        Assert.assertNotNull(response.getState());
+
+        currentUri = new URI(driver.getCurrentUrl());
+        Assert.assertNotNull(currentUri.getRawQuery());
+        Assert.assertNull(currentUri.getRawFragment());
     }
 
 }

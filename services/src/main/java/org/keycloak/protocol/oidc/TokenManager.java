@@ -435,8 +435,6 @@ public class TokenManager {
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds);
-        clientSessionCtx.setAttribute(ClientSessionContext.AUTHENTICATION_SESSION_ATTR, authSession);
-
         return clientSessionCtx;
     }
 

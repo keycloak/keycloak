@@ -68,7 +68,7 @@ public interface LoginProtocol extends Provider {
 
     LoginProtocol setEventBuilder(EventBuilder event);
 
-    Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx);
+    Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx);
 
     Response sendError(AuthenticationSessionModel authSession, Error error);
 

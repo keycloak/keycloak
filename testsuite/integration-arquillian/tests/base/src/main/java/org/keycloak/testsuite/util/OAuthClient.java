@@ -760,6 +760,10 @@ public class OAuthClient {
         return redirectUri;
     }
 
+    public String getState() {
+        return state.getState();
+    }
+
     public String getNonce() {
         return nonce;
     }

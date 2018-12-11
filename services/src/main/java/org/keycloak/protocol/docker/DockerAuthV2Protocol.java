@@ -92,7 +92,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(final UserSessionModel userSession, final ClientSessionContext clientSessionCtx) {
+    public Response authenticated(final AuthenticationSessionModel authSession, final UserSessionModel userSession, final ClientSessionContext clientSessionCtx) {
         // First, create a base response token with realm + user values populated
         final AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         final ClientModel client = clientSession.getClient();
@@ -100,7 +100,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
         DockerResponseToken responseToken = new DockerResponseToken()
                 .id(KeycloakModelUtils.generateId())
                 .type(TokenUtil.TOKEN_TYPE_BEARER)
-                .issuer(clientSession.getNote(DockerAuthV2Protocol.ISSUER))
+                .issuer(authSession.getClientNote(DockerAuthV2Protocol.ISSUER))
                 .subject(userSession.getUser().getUsername())
                 .issuedNow()
                 .audience(client.getClientId())
