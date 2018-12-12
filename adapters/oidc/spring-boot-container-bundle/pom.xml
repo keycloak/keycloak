@@ -44,6 +44,7 @@
                                     <include>org.keycloak:keycloak-tomcat8-adapter</include>
                                     <include>org.keycloak:keycloak-undertow-adapter</include>
                                     <include>org.keycloak:keycloak-jetty93-adapter</include>
+                                    <include>org.keycloak:keycloak-jetty94-adapter</include>
                                     <include>org.keycloak:keycloak-tomcat-core-adapter</include>
                                     <include>org.keycloak:keycloak-tomcat-adapter-spi</include>
                                     <include>org.keycloak:keycloak-undertow-adapter</include>
