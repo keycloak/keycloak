@@ -19,7 +19,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ModelException;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 
 public class AccountCredentialResource {
@@ -28,11 +30,13 @@ public class AccountCredentialResource {
     private final EventBuilder event;
     private final UserModel user;
     private final RealmModel realm;
+    private Auth auth;
 
-    public AccountCredentialResource(KeycloakSession session, EventBuilder event, UserModel user) {
+    public AccountCredentialResource(KeycloakSession session, EventBuilder event, UserModel user, Auth auth) {
         this.session = session;
         this.event = event;
         this.user = user;
+        this.auth = auth;
         realm = session.getContext().getRealm();
     }
 
@@ -40,6 +44,8 @@ public class AccountCredentialResource {
     @Path("password")
     @Produces(MediaType.APPLICATION_JSON)
     public PasswordDetails passwordDetails() {
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        
         PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) session.getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
         CredentialModel password = passwordProvider.getPassword(realm, user);
 
@@ -58,6 +64,8 @@ public class AccountCredentialResource {
     @Path("password")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response passwordUpdate(PasswordUpdate update) {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
         event.event(EventType.UPDATE_PASSWORD);
 
         UserCredentialModel cred = UserCredentialModel.password(update.getCurrentPassword());
