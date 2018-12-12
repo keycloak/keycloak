@@ -102,4 +102,8 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return new RoleScopeUpdater(resource.getScopeMappings().clientLevel(clientUUID));
     }
 
+    public ClientAttributeUpdater setAdminUrl(String adminUrl) {
+        rep.setAdminUrl(adminUrl);
+        return this;
+    }
 }
