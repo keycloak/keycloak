@@ -22,6 +22,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -29,6 +31,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -42,6 +46,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
@@ -60,6 +65,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -147,6 +153,51 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             testSuccessfulUserInfoResponse(response);
 
+        } finally {
+            client.close();
+        }
+    }
+
+
+    // KEYCLOAK-8838
+    @Test
+    public void testSuccess_dotsInClientId() throws Exception {
+        // Create client with dot in the name and with some role
+        ClientRepresentation clientRep = org.keycloak.testsuite.util.ClientBuilder.create()
+                .clientId("my.foo.client")
+                .addRedirectUri("http://foo.host")
+                .secret("password")
+                .directAccessGrants()
+                .defaultRoles("my.foo.role")
+                .build();
+
+        RealmResource realm = adminClient.realm("test");
+
+        Response resp = realm.clients().create(clientRep);
+        String clientUUID = ApiUtil.getCreatedId(resp);
+        resp.close();
+        getCleanup().addClientUuid(clientUUID);
+
+        // Assign role to the user
+        RoleRepresentation fooRole = realm.clients().get(clientUUID).roles().get("my.foo.role").toRepresentation();
+        UserResource userResource = ApiUtil.findUserByUsernameId(realm, "test-user@localhost");
+        userResource.roles().clientLevel(clientUUID).add(Collections.singletonList(fooRole));
+
+        // Login to the new client
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.clientId("my.foo.client")
+                .doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+
+        AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
+        Assert.assertNames(accessToken.getResourceAccess("my.foo.client").getRoles(), "my.foo.role");
+
+        events.clear();
+
+        // Send UserInfo request and ensure it is correct
+        Client client = ClientBuilder.newClient();
+        try {
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+
+            testSuccessfulUserInfoResponse(response, "my.foo.client");
         } finally {
             client.close();
         }
@@ -418,11 +469,16 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private void testSuccessfulUserInfoResponse(Response response) {
+        testSuccessfulUserInfoResponse(response, "test-app");
+    }
+
+    private void testSuccessfulUserInfoResponse(Response response, String expectedClientId) {
         events.expect(EventType.USER_INFO_REQUEST)
                 .session(Matchers.notNullValue(String.class))
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                 .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.SIGNATURE_REQUIRED, "false")
+                .client(expectedClientId)
                 .assertEvent();
         UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
