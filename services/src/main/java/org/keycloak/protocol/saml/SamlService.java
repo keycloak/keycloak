@@ -655,17 +655,43 @@ public class SamlService extends AuthorizationEndpointBase {
             event.error(Errors.INVALID_CLIENT);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
         }
-        if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
+
+        session.getContext().setClient(client);
+
+        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+        if (authSession == null) {
             logger.error("SAML assertion consumer url not set up");
             event.error(Errors.INVALID_REDIRECT_URI);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
         }
 
-        session.getContext().setClient(client);
-
-        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
-
         return newBrowserAuthentication(authSession, false, false);
+    }
+
+    /**
+     * Checks the client configuration to return the redirect URL and the binding type.
+     * POST is preferred, only if the SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE
+     * and management URL are empty REDIRECT is chosen.
+     *
+     * @param client Client to create client session for
+     * @return a two string array [samlUrl, bindingType] or null if error
+     */
+    private String[] getUrlAndBindingForIdpInitiatedSso(ClientModel client) {
+        String postUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        String getUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+        if (postUrl != null && !postUrl.trim().isEmpty()) {
+            // first the POST binding URL
+            return new String[] {postUrl.trim(), SamlProtocol.SAML_POST_BINDING};
+        } else if (client.getManagementUrl() != null && !client.getManagementUrl().trim().isEmpty()) {
+            // second the management URL and POST
+            return new String[] {client.getManagementUrl().trim(), SamlProtocol.SAML_POST_BINDING};
+        } else if (getUrl != null && !getUrl.trim().isEmpty()){
+            // last option REDIRECT binding and URL
+            return new String[] {getUrl.trim(), SamlProtocol.SAML_REDIRECT_BINDING};
+        } else {
+            // error
+            return null;
+        }
     }
 
     /**
@@ -677,29 +703,21 @@ public class SamlService extends AuthorizationEndpointBase {
      * @param realm Realm to create client session in
      * @param client Client to create client session for
      * @param relayState Optional relay state - free field as per SAML specification
-     * @return
+     * @return The auth session model or null if there is no SAML url is found
      */
     public AuthenticationSessionModel getOrCreateLoginSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
-        String bindingType = SamlProtocol.SAML_POST_BINDING;
-        if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
-            bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
+        String[] bindingProperties = getUrlAndBindingForIdpInitiatedSso(client);
+        if (bindingProperties == null) {
+            return null;
         }
-
-        String redirect;
-        if (bindingType.equals(SamlProtocol.SAML_REDIRECT_BINDING)) {
-            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
-        } else {
-            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
-        }
-        if (redirect == null) {
-            redirect = client.getManagementUrl();
-        }
+        String redirect = bindingProperties[0];
+        String bindingType = bindingProperties[1];
 
         AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
 
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        authSession.setClientNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
+        authSession.setClientNote(SamlProtocol.SAML_BINDING, bindingType);
         authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         authSession.setRedirectUri(redirect);
 
