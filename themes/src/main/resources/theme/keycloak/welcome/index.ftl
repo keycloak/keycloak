@@ -23,7 +23,7 @@
  
 <html>
 <head>
-    <title>Welcome to ${productName}</title>
+    <title>Welcome to ${productNameFull}</title>
 
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -91,7 +91,7 @@
             <div class="welcome-primary-link">
               <h3><a href="admin/"><img src="welcome-content/user.png">Administration Console <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
               <div class="description">
-                Centrally manage all aspects of the KeyCloak server
+                Centrally manage all aspects of the ${productNameFull} server
               </div>
             </div>
           </div>
