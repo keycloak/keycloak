@@ -15,11 +15,13 @@ Some of the new features in this release are technology preview features, which 
 
 Features that remain in tech preview in this release include:
 
-* Fine-grained authorization permissions
-
 * Token exchange
 
+* Fine-grained authorization permissions
+
 * Cross data-center replication
+
+* Rules (Drools) based policies in Authorization Services
 
 == Authorization Services
 
